@@ -3,15 +3,15 @@ import logging
 import os
 import tempfile
 
-from urlparse import urlparse, parse_qs
-from urllib import unquote
+from urllib.parse import urlparse, parse_qs, unquote
 
 from assemblyline.common.exceptions import get_stacktrace_info
 from assemblyline.common.net import get_hostip, get_hostname
-from assemblyline.al.common import forge
-from assemblyline.al.common.transport.local import TransportLocal
-
-config = forge.get_config()
+from assemblyline.filestore.transport.local import TransportLocal
+from assemblyline.filestore.transport.ftp import TransportFTP
+from assemblyline.filestore.transport.sftp import TransportSFTP
+from assemblyline.filestore.transport.http import TransportHTTP
+from assemblyline.filestore.transport.s3 import TransportS3
 
 
 class FileStoreException(Exception):
@@ -51,7 +51,7 @@ def create_transport(url):
           sftp: private_key (string), private_key_pass (string), validate_host (bool), base_path (string)
           file: None
 
-    NOTE 2: user_base_path which is available in all transport that are non-local is the base of the path that will
+    NOTE 2: base_path which is available in all transport that are non-local is the base of the path that will
             be used when transforming a remote transport to a local transport if the transport host IP or domain
             matches with the IP or domain where the transport object is instantiated.
     """
@@ -76,12 +76,9 @@ def create_transport(url):
             base = os.path.join(qs['base_path'][0], base)
 
     if scheme == 'ftp':
-        from assemblyline.al.common.transport.ftp import TransportFTP
-        base = base.replace(config.filestore.ftp_root, "")
+        # TODO: base = base.replace(config.filestore.ftp_root, "")
         t = TransportFTP(base=base, host=host, password=password, user=user)
     elif scheme == "sftp":
-        from assemblyline.al.common.transport.sftp import TransportSFTP
-
         def get_extras(parsed_dict):
             valid_str_keys = ['private_key', 'private_key_pass']
             valid_bool_keys = ['validate_host']
@@ -100,8 +97,6 @@ def create_transport(url):
         extras = get_extras(parse_qs(parsed.query))
         t = TransportSFTP(base=base, host=host, password=password, user=user, **extras)
     elif scheme == 'http':
-        from assemblyline.al.common.transport.http import TransportHTTP
-
         def get_extras(parsed_dict):
             valid_str_keys = ['pki']
 
@@ -134,7 +129,6 @@ class FileStore(object):
     def __enter__(self):
         return self
 
-
     def __exit__(self, ex_type, exc_val, exc_tb):
         self.close()
 
@@ -165,7 +159,7 @@ class FileStore(object):
                 successful = True
                 break
             except Exception as ex:
-                download_errors.append((str(t), ex.message))
+                download_errors.append((str(t), str(ex)))
 
         if not successful:
             raise FileStoreException('No transport succeeded => %s' % json.dumps(download_errors))
