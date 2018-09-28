@@ -98,7 +98,8 @@ def create_transport(url):
 
     elif scheme == 'http' or scheme == 'https':
         valid_str_keys = ['pki']
-        extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys)
+        valid_bool_keys = ['verify']
+        extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         t = TransportHTTP(scheme=scheme, base=base, host=host, password=password, user=user, port=port, **extras)
 
