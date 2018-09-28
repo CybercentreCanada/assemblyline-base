@@ -83,7 +83,7 @@ class TransportSFTP(Transport):
         super(TransportSFTP, self).__init__(normalize=sftp_normalize)
 
     def __str__(self):
-        return 'SFTP:{}@{}'.format(self.user, self.host)
+        return 'sftp://{}@{}{}'.format(self.user, self.host, self.base)
         
     def close(self):
         if self.sftp:

@@ -125,7 +125,7 @@ class TransportLocal(Transport):
             assert(self.exists(path))
 
     def __str__(self):
-        return '{0}:{1}'.format(self.__class__.__name__, self.base)
+        return 'file://{}'.format(self.base)
 
 ###############################
 # Helper functions.

@@ -19,7 +19,6 @@ class TransportHTTP(Transport):
         self.password = password
         self.user = user
         self.pki = pki
-        self.port = port
         self.scheme = scheme
 
         if not port:
@@ -27,6 +26,7 @@ class TransportHTTP(Transport):
                 port = 80
             else:
                 port = 443
+        self.port = port
 
         if user and password:
             self.auth = (user, password)
@@ -52,7 +52,13 @@ class TransportHTTP(Transport):
         return self._session
 
     def __str__(self):
-        return '{}://{}@{}:{}'.format(self.scheme, self.user, self.host, self.port)
+        out = "%s://" % self.scheme
+        if self.user:
+            out += "%s@" % self.user
+        out += "%s:%s" % (self.host, self.port)
+        if self.base:
+            out += self.base
+        return out
         
     def close(self):
         if self._session:

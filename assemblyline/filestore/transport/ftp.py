@@ -104,7 +104,10 @@ class TransportFTP(Transport):
         super(TransportFTP, self).__init__(normalize=ftp_normalize)
 
     def __str__(self):
-        return 'Ftp:{}@{}'.format(self.user, self.host)
+        out = 'ftp://{}@{}'.format(self.user, self.host)
+        if self.base:
+            out += self.base
+        return out
 
     def close(self):
         if self.ftp:

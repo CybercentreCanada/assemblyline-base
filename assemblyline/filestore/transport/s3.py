@@ -26,6 +26,7 @@ class TransportS3(Transport):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
+        self.accesskey = accesskey
 
         if use_ssl is None:
             self.use_ssl = True
@@ -61,6 +62,17 @@ class TransportS3(Transport):
             return os.path.basename(path)
 
         super(TransportS3, self).__init__(normalize=s3_normalize)
+
+    def __str__(self):
+        out = "s3://"
+        if self.accesskey:
+            out += "%s@" % self.accesskey
+        out += "%s:%s" % (self.host, self.port)
+        if self.bucket:
+            out += "/%s" % self.bucket
+        if self.base:
+            out += self.base
+        return out
 
     def delete(self, path):
         key = self.normalize(path)
