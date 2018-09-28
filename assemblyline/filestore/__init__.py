@@ -28,7 +28,7 @@ def _get_extras(parsed_dict, valid_str_keys=None, valid_bool_keys=None):
         valid_bool_keys = []
 
     out = {}
-    for k, v in parsed_dict.iteritems():
+    for k, v in parsed_dict.items():
         if k in valid_bool_keys:
             if v[0].lower() == 'true':
                 out[k] = True
@@ -100,7 +100,7 @@ def create_transport(url):
         valid_str_keys = ['pki']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys)
 
-        t = TransportHTTP(scheme=scheme, base=base, host=host, password=password, user=user, **extras)
+        t = TransportHTTP(scheme=scheme, base=base, host=host, password=password, user=user, port=port, **extras)
 
     elif scheme == 'file':
         valid_bool_keys = ['normalize']
