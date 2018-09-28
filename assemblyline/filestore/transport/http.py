@@ -12,7 +12,7 @@ class TransportHTTP(Transport):
     """
     HTTP Transport class.
     """
-    def __init__(self, scheme='http', base=None, host=None, password=None, user=None, pki=None, port=None):
+    def __init__(self, scheme='http', base=None, host=None, password=None, user=None, pki=None, port=None, verify=None):
         self.log = logging.getLogger('assemblyline.transport.http')
         self.base = base
         self.host = host
@@ -20,6 +20,7 @@ class TransportHTTP(Transport):
         self.user = user
         self.pki = pki
         self.scheme = scheme
+        self.verify = verify
 
         if not port:
             if scheme == 'http':
@@ -73,6 +74,7 @@ class TransportHTTP(Transport):
             os.makedirs(dir_path)
         with open(dst_path, 'wb') as localfile:
             src_path = self.normalize(src_path)
+            # TODO: SSL Verify
             resp = self.session.get(src_path, auth=self.auth, cert=self.pki)
             if resp.ok:
                 for chunk in resp.iter_content(chunk_size=1024):
@@ -83,11 +85,13 @@ class TransportHTTP(Transport):
         
     def exists(self, path):
         path = self.normalize(path)
+        # TODO: SSL Verify
         resp = self.session.head(path, auth=self.auth, cert=self.pki)
         return resp.ok
 
     def get(self, path):
         path = self.normalize(path)
+        # TODO: SSL Verify
         resp = self.session.get(path, auth=self.auth, cert=self.pki)
         if resp.ok:
             return resp.content
