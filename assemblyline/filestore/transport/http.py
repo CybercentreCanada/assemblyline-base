@@ -12,13 +12,22 @@ class TransportHTTP(Transport):
     """
     HTTP Transport class.
     """
-    def __init__(self, base=None, host=None, password=None, user=None, pki=None):
+    def __init__(self, scheme='http', base=None, host=None, password=None, user=None, pki=None, port=None):
         self.log = logging.getLogger('assemblyline.transport.http')
         self.base = base
         self.host = host
         self.password = password
         self.user = user
         self.pki = pki
+        self.port = port
+        self.scheme = scheme
+
+        if not port:
+            if scheme == 'http':
+                port = 80
+            else:
+                port = 443
+
         if user and password:
             self.auth = (user, password)
         else:
@@ -28,8 +37,9 @@ class TransportHTTP(Transport):
             if '/' in path or len(path) != 64:
                 s = posixpath.join(self.base, path)
             else:
-                s = posixpath.join(self.base, normalize_srl_path(path))  
-            return "{scheme}://{host}{path}".format(scheme="http", host=host, path=s)
+                s = posixpath.join(self.base, normalize_srl_path(path))
+
+            return "{scheme}://{host}:{port}{path}".format(scheme=scheme, host=host, port=port, path=s)
 
         self._session = None
 
@@ -42,7 +52,7 @@ class TransportHTTP(Transport):
         return self._session
 
     def __str__(self):
-        return 'http:{}@{}'.format(self.user, self.host)
+        return '{}://{}@{}:{}'.format(self.scheme, self.user, self.host, self.port)
         
     def close(self):
         if self._session:

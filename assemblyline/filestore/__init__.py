@@ -6,7 +6,6 @@ import tempfile
 from urllib.parse import urlparse, parse_qs, unquote
 
 from assemblyline.common.exceptions import get_stacktrace_info
-from assemblyline.common.net import get_hostip, get_hostname
 from assemblyline.filestore.transport.local import TransportLocal
 from assemblyline.filestore.transport.ftp import TransportFTP
 from assemblyline.filestore.transport.sftp import TransportSFTP
@@ -22,16 +21,37 @@ class CorruptedFileStoreException(Exception):
     pass
 
 
+def _get_extras(parsed_dict, valid_str_keys=None, valid_bool_keys=None):
+    if not valid_str_keys:
+        valid_str_keys = []
+    if not valid_bool_keys:
+        valid_bool_keys = []
+
+    out = {}
+    for k, v in parsed_dict.iteritems():
+        if k in valid_bool_keys:
+            if v[0].lower() == 'true':
+                out[k] = True
+            elif v[0].lower() != 'true':
+                out[k] = False
+        if k in valid_str_keys:
+            out[k] = v[0]
+
+    return out
+
+
 def create_transport(url):
     """
     Transport are being initiated using an URL. They follow the normal url format:
-    ftp://user:pass@host.com/path/to/file
+    scheme://user:pass@host:port/path/to/file
 
     In this example, it will extract the following parameters:
-    scheme: ftp
-    host: host.com
+    scheme: scheme
+    host: host
     user: user
     password: pass
+    port: port
+    base: /path/to/file
 
     Certain transports can have extra parameters, those parameters need to be specified in the query part of the url.
     e.g.: sftp://host.com/path/to/file?private_key=/etc/ssl/pkey&private_key_pass=pass&validate_host=true
@@ -46,20 +66,19 @@ def create_transport(url):
     NOTE: For transport with extra parameters, only specific extra parameters are allow. This is the list of extra
           parameter allowed:
 
-          ftp: base_path (string)
-          http: pki (string), base_path (string)
-          sftp: private_key (string), private_key_pass (string), validate_host (bool), base_path (string)
-          file: None
+          ftp: None
+          http: pki (string)
+          sftp: private_key (string), private_key_pass (string), validate_host (bool)
+          s3: aws_region (string), s3_bucket(string), use_ssl (bool), verify (bool)
+          file: normalize (bool)
 
-    NOTE 2: base_path which is available in all transport that are non-local is the base of the path that will
-            be used when transforming a remote transport to a local transport if the transport host IP or domain
-            matches with the IP or domain where the transport object is instantiated.
     """
 
     parsed = urlparse(url)
 
     base = parsed.path or '/'
     host = parsed.hostname
+    port = parsed.port
     if parsed.password:
         password = unquote(parsed.password)
     else:
@@ -67,51 +86,35 @@ def create_transport(url):
     user = parsed.username or ''
 
     scheme = parsed.scheme.lower()
-    if (scheme == 'ftp' or scheme == 'sftp' or scheme == 'http') and (host == get_hostname() or host == get_hostip()):
-        scheme = 'file'
-        qs = parse_qs(parsed.query)
-        if 'base_path' in qs:
-            if base.startswith("/") or base.startswith("\\"):
-                base = base[1:]
-            base = os.path.join(qs['base_path'][0], base)
-
     if scheme == 'ftp':
-        # TODO: base = base.replace(config.filestore.ftp_root, "")
         t = TransportFTP(base=base, host=host, password=password, user=user)
+
     elif scheme == "sftp":
-        def get_extras(parsed_dict):
-            valid_str_keys = ['private_key', 'private_key_pass']
-            valid_bool_keys = ['validate_host']
+        valid_str_keys = ['private_key', 'private_key_pass']
+        valid_bool_keys = ['validate_host']
+        extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
-            out = {}
-            for k, v in parsed_dict.iteritems():
-                if k in valid_bool_keys:
-                    if v[0].lower() == 'true':
-                        out[k] = True
-                    elif v[0].lower() == 'true':
-                        out[k] = False
-                if k in valid_str_keys:
-                    out[k] = v[0]
-
-            return out
-        extras = get_extras(parse_qs(parsed.query))
         t = TransportSFTP(base=base, host=host, password=password, user=user, **extras)
-    elif scheme == 'http':
-        def get_extras(parsed_dict):
-            valid_str_keys = ['pki']
 
-            out = {}
-            for k, v in parsed_dict.iteritems():
-                if k in valid_str_keys:
-                    out[k] = v[0]
+    elif scheme == 'http' or scheme == 'https':
+        valid_str_keys = ['pki']
+        extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys)
 
-            return out
-
-        extras = get_extras(parse_qs(parsed.query))
-        t = TransportHTTP(base=base, host=host, password=password, user=user, **extras)
+        t = TransportHTTP(scheme=scheme, base=base, host=host, password=password, user=user, **extras)
 
     elif scheme == 'file':
-        t = TransportLocal(base=base)
+        valid_bool_keys = ['normalize']
+        extras = _get_extras(parse_qs(parsed.query), valid_bool_keys=valid_bool_keys)
+
+        t = TransportLocal(base=base, **extras)
+
+    elif scheme == 's3':
+        valid_str_keys = ['aws_region', 's3_bucket']
+        valid_bool_keys = ['use_ssl', 'verify']
+        extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
+
+        t = TransportS3(base=base, host=host, port=port, accesskey=user, secretkey=password, **extras)
+
     else:
         raise FileStoreException("Unknown transport: %s" % scheme)
 

@@ -23,7 +23,7 @@ class TransportS3(Transport):
 
     def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket=None,
                  host=None, port=None, use_ssl=None, verify=False):
-        self.log = logging.getLogger('assemblyline.transport.local')
+        self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
 
