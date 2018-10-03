@@ -1,10 +1,14 @@
+from assemblyline.filestore import FileStore
+
 
 def test_http():
     """
 
     :return:
     """
-    pass
+    fs = FileStore('http://google.ca')
+    assert fs.exists('index.html') != []
+    assert fs.get('index.html') is not None
 
 
 def test_https():
@@ -12,7 +16,9 @@ def test_https():
 
     :return:
     """
-    pass
+    fs = FileStore('https://google.ca')
+    assert fs.exists('index.html') != []
+    assert fs.get('index.html') is not None
 
 
 def test_sftp():
