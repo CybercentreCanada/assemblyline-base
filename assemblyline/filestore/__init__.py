@@ -66,7 +66,7 @@ def create_transport(url):
     NOTE: For transport with extra parameters, only specific extra parameters are allow. This is the list of extra
           parameter allowed:
 
-          ftp: None
+          ftp: use_tls (bool)
           http: pki (string)
           sftp: private_key (string), private_key_pass (string), validate_host (bool)
           s3: aws_region (string), s3_bucket(string), use_ssl (bool), verify (bool)
@@ -86,8 +86,13 @@ def create_transport(url):
     user = parsed.username or ''
 
     scheme = parsed.scheme.lower()
-    if scheme == 'ftp':
-        t = TransportFTP(base=base, host=host, password=password, user=user)
+    if scheme == 'ftp' or scheme == 'ftps':
+        valid_bool_keys = ['use_tls']
+        extras = _get_extras(parse_qs(parsed.query), valid_bool_keys=valid_bool_keys)
+        if scheme == 'ftps':
+            extras['use_tls'] = True
+
+        t = TransportFTP(base=base, host=host, password=password, user=user, port=port, **extras)
 
     elif scheme == "sftp":
         valid_str_keys = ['private_key', 'private_key_pass']

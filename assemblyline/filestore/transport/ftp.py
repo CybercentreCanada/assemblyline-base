@@ -21,7 +21,18 @@ def reconnect_retry_on_fail(func):
         while try_count < max_retry:
             try:
                 if not self.ftp:
-                    self.ftp = ftplib.FTP(self.host, self.user, self.password)
+                    if self.use_tls:
+                        self.ftp = ftplib.FTP_TLS()
+                        self.ftp.connect(self.host, port=self.port)
+                        self.ftp.auth()
+                        self.ftp.prot_p()
+
+                    else:
+                        self.ftp = ftplib.FTP()
+                        self.ftp.connect(self.host, port=self.port)
+
+                    self.ftp.login(self.user, self.password)
+                    self.ftp.sendcmd("TYPE I")
                     try:
                         self.ftp.voidcmd('site umask 002')
                     except ftplib.Error:
@@ -81,13 +92,15 @@ class TransportFTP(Transport):
     """
     FTP Transport class.
     """
-    def __init__(self, base=None, host=None, password=None, user=None):
+    def __init__(self, base=None, host=None, password=None, user=None, port=None, use_tls=None):
         self.log = logging.getLogger('assemblyline.transport.ftp')
         self.base = base
         self.ftp = None
         self.host = host
+        self.port = int(port or 21)
         self.password = password
         self.user = user
+        self.use_tls = use_tls
 
         def ftp_normalize(path):
             # If they've provided an absolute path. Leave it a is.
