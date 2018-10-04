@@ -22,7 +22,7 @@ class TransportS3(Transport):
     DEFAULT_HOST = "s3.amazonaws.com"
 
     def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket=None,
-                 host=None, port=None, use_ssl=None, verify=False):
+                 host=None, port=None, use_ssl=None, verify=True):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
@@ -76,7 +76,7 @@ class TransportS3(Transport):
 
     def delete(self, path):
         key = self.normalize(path)
-        self.client.delete_object(self.bucket, key)
+        self.client.delete_object(Bucket=self.bucket, Key=key)
 
     def download(self, src_path, dst_path):
         key = self.normalize(src_path)
@@ -92,7 +92,7 @@ class TransportS3(Transport):
         key = self.normalize(path)
         self.log.debug('Checking for existence of %s', key)
         try:
-            self.client.head_object(self.bucket, key)
+            self.client.head_object(Bucket=self.bucket, Key=key)
         except ClientError:
             return False
 

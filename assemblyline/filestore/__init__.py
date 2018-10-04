@@ -78,6 +78,8 @@ def create_transport(url):
 
     base = parsed.path or '/'
     host = parsed.hostname
+    if host == ".":
+        base = "%s%s" % (host, base)
     port = parsed.port
     if parsed.password:
         password = unquote(parsed.password)
