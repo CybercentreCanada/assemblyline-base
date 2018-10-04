@@ -6,9 +6,9 @@ def test_http():
 
     :return:
     """
-    fs = FileStore('http://google.ca')
-    assert fs.exists('index.html') != []
-    assert fs.get('index.html') is not None
+    fs = FileStore('http://cyber.gc.ca/en/')
+    assert fs.exists('assemblyline') != []
+    assert fs.get('assemblyline') is not None
 
 
 def test_https():
@@ -16,9 +16,9 @@ def test_https():
 
     :return:
     """
-    fs = FileStore('https://google.ca')
-    assert fs.exists('index.html') != []
-    assert fs.get('index.html') is not None
+    fs = FileStore('https://cyber.gc.ca/en/')
+    assert fs.exists('assemblyline') != []
+    assert fs.get('assemblyline') is not None
 
 
 def test_sftp():
@@ -26,7 +26,9 @@ def test_sftp():
 
     :return:
     """
-    pass
+    fs = FileStore('sftp://demo:password@test.rebex.net')
+    assert fs.exists('readme.txt') != []
+    assert fs.get('readme.txt') is not None
 
 
 def test_ftp():
@@ -34,7 +36,9 @@ def test_ftp():
 
     :return:
     """
-    pass
+    fs = FileStore('ftp://demo:password@test.rebex.net')
+    assert fs.exists('readme.txt') != []
+    assert fs.get('readme.txt') is not None
 
 
 def test_ftps():
@@ -42,7 +46,9 @@ def test_ftps():
 
     :return:
     """
-    pass
+    fs = FileStore('ftps://demo:password@test.rebex.net')
+    assert fs.exists('readme.txt') != []
+    assert fs.get('readme.txt') is not None
 
 
 def test_file():
@@ -50,7 +56,9 @@ def test_file():
 
     :return:
     """
-    pass
+    fs = FileStore('file://./')
+    assert fs.exists('README.md') != []
+    assert fs.get('README.md') is not None
 
 
 def test_s3():
@@ -58,4 +66,7 @@ def test_s3():
 
     :return:
     """
-    pass
+    fs = FileStore('s3://AKIAIIESFCKMSXUP6KWQ:Uud08qLQ48Cbo9RB7b+H+M97aA2wdR8OXaHXIKwL@'
+                   's3.amazonaws.com/?s3_bucket=assemblyline-support&aws_region=us-east-1')
+    assert fs.exists('al4_s3_pytest.txt') != []
+    assert fs.get('al4_s3_pytest.txt') is not None
