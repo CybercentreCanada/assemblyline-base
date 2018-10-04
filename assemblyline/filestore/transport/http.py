@@ -74,8 +74,7 @@ class TransportHTTP(Transport):
             os.makedirs(dir_path)
         with open(dst_path, 'wb') as localfile:
             src_path = self.normalize(src_path)
-            # TODO: SSL Verify
-            resp = self.session.get(src_path, auth=self.auth, cert=self.pki)
+            resp = self.session.get(src_path, auth=self.auth, cert=self.pki, verify=self.verify)
             if resp.ok:
                 for chunk in resp.iter_content(chunk_size=1024):
                     if chunk:
@@ -85,14 +84,12 @@ class TransportHTTP(Transport):
         
     def exists(self, path):
         path = self.normalize(path)
-        # TODO: SSL Verify
-        resp = self.session.head(path, auth=self.auth, cert=self.pki)
+        resp = self.session.head(path, auth=self.auth, cert=self.pki, verify=self.verify)
         return resp.ok
 
     def get(self, path):
         path = self.normalize(path)
-        # TODO: SSL Verify
-        resp = self.session.get(path, auth=self.auth, cert=self.pki)
+        resp = self.session.get(path, auth=self.auth, cert=self.pki, verify=self.verify)
         if resp.ok:
             return resp.content
         else:
