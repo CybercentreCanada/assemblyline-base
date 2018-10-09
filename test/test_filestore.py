@@ -3,8 +3,8 @@ from assemblyline.filestore import FileStore
 
 def test_http():
     """
-
-    :return:
+    Test HTTP FileStore by fetching the assemblyline page on
+    CSE's cyber center page.
     """
     fs = FileStore('http://cyber.gc.ca/en/')
     assert fs.exists('assemblyline') != []
@@ -13,8 +13,8 @@ def test_http():
 
 def test_https():
     """
-
-    :return:
+    Test HTTPS FileStore by fetching the assemblyline page on
+    CSE's cyber center page.
     """
     fs = FileStore('https://cyber.gc.ca/en/')
     assert fs.exists('assemblyline') != []
@@ -23,8 +23,8 @@ def test_https():
 
 def test_sftp():
     """
-
-    :return:
+    Test SFTP FileStore by fetching the readme.txt file from
+    Rebex test server.
     """
     fs = FileStore('sftp://demo:password@test.rebex.net')
     assert fs.exists('readme.txt') != []
@@ -33,8 +33,8 @@ def test_sftp():
 
 def test_ftp():
     """
-
-    :return:
+    Test FTP FileStore by fetching the readme.txt file from
+    Rebex test server.
     """
     fs = FileStore('ftp://demo:password@test.rebex.net')
     assert fs.exists('readme.txt') != []
@@ -43,8 +43,8 @@ def test_ftp():
 
 def test_ftps():
     """
-
-    :return:
+    Test FTP over TLS FileStore by fetching the readme.txt file from
+    Rebex test server.
     """
     fs = FileStore('ftps://demo:password@test.rebex.net')
     assert fs.exists('readme.txt') != []
@@ -53,8 +53,11 @@ def test_ftps():
 
 def test_file():
     """
+    Test Local FileStore by fetching the README.md file from
+    the assemblyline core repo directory.
 
-    :return:
+    Note: This test will fail if pytest is not ran from the root
+          of the assemblyline core repo.
     """
     fs = FileStore('file://./')
     assert fs.exists('README.md') != []
@@ -63,8 +66,8 @@ def test_file():
 
 def test_s3():
     """
-
-    :return:
+    Test Amazon S3 FileStore by fetching a test file from
+    the assemblyline-support bucket on Amazon S3.
     """
     fs = FileStore('s3://AKIAIIESFCKMSXUP6KWQ:Uud08qLQ48Cbo9RB7b+H+M97aA2wdR8OXaHXIKwL@'
                    's3.amazonaws.com/?s3_bucket=assemblyline-support&aws_region=us-east-1')
