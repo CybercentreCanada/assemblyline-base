@@ -3,6 +3,7 @@ import os
 import posixpath
 import pysftp
 import uuid
+import warnings
 
 from io import BytesIO
 
@@ -14,37 +15,40 @@ from assemblyline.filestore.transport.base import Transport, TransportException,
 
 def reconnect_retry_on_fail(func):
     def new_func(self, *args, **kwargs):
-        if not self.validate_host:
-            cnopts = pysftp.CnOpts()
-            cnopts.hostkeys = None
-        else:
-            cnopts = None
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        try:
-            if not self.sftp:
-                self.sftp = pysftp.Connection(self.host,
-                                              username=self.user,
-                                              password=self.password,
-                                              private_key=self.private_key,
-                                              private_key_pass=self.private_key_pass,
-                                              cnopts=cnopts)
+            if not self.validate_host:
+                cnopts = pysftp.CnOpts()
+                cnopts.hostkeys = None
+            else:
+                cnopts = None
+
+            try:
+                if not self.sftp:
+                    self.sftp = pysftp.Connection(self.host,
+                                                  username=self.user,
+                                                  password=self.password,
+                                                  private_key=self.private_key,
+                                                  private_key_pass=self.private_key_pass,
+                                                  cnopts=cnopts)
+                return func(self, *args, **kwargs)
+            except SSHException:
+                pass
+
+            # The previous attempt at calling original func failed.
+            # Reset the connection and try again (one time).
+            if self.sftp:
+                self.sftp.close()   # Just best effort.
+
+            # The original func will reconnect automatically.
+            self.sftp = pysftp.Connection(self.host,
+                                          username=self.user,
+                                          password=self.password,
+                                          private_key=self.private_key,
+                                          private_key_pass=self.private_key_pass,
+                                          cnopts=cnopts)
             return func(self, *args, **kwargs)
-        except SSHException:
-            pass
-
-        # The previous attempt at calling original func failed.
-        # Reset the connection and try again (one time).
-        if self.sftp:
-            self.sftp.close()   # Just best effort.
-
-        # The original func will reconnect automatically.
-        self.sftp = pysftp.Connection(self.host,
-                                      username=self.user,
-                                      password=self.password,
-                                      private_key=self.private_key,
-                                      private_key_pass=self.private_key_pass,
-                                      cnopts=cnopts)
-        return func(self, *args, **kwargs)
 
     new_func.__name__ = func.__name__
     new_func.__doc__ = func.__doc__
