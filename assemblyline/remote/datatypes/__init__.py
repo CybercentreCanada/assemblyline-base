@@ -9,7 +9,6 @@ import uuid
 
 from datetime import datetime
 from distutils.version import StrictVersion
-from time import time
 
 
 # Add a version warning if redis python client is < 2.10.0. Older versions
@@ -26,7 +25,7 @@ pool = {}
 
 
 def now_as_iso():
-    s = datetime.utcfromtimestamp(time()).isoformat()
+    s = datetime.utcfromtimestamp(time.time()).isoformat()
     return ''.join((s, 'Z'))
 
 

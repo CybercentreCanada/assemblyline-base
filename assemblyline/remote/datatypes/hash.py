@@ -15,17 +15,28 @@ class Hash(object):
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.delete()
+
     def add(self, key, value):
+        if isinstance(key, bytes):
+            raise ValueError("Cannot use bytes for hashmap keys")
         return retry_call(self.c.hsetnx, self.name, key, json.dumps(value))
 
     def exists(self, key):
         return retry_call(self.c.hexists, self.name, key)
 
     def get(self, key):
-        return retry_call(self.c.hget, self.name, key)
+        item = retry_call(self.c.hget, self.name, key)
+        if not item:
+            return item
+        return json.loads(item)
 
     def keys(self):
-        return retry_call(self.c.hkeys, self.name)
+        return [k.decode('utf-8') for k in retry_call(self.c.hkeys, self.name)]
 
     def length(self):
         return retry_call(self.c.hlen, self.name)
@@ -36,7 +47,7 @@ class Hash(object):
             return {}
         for k in items.keys():
             items[k] = json.loads(items[k])
-        return items
+        return {k.decode('utf-8'): v for k, v in items.items()}
 
     def pop(self, key):
         item = retry_call(self._pop, args=[self.name, key])
@@ -45,6 +56,8 @@ class Hash(object):
         return json.loads(item)
 
     def set(self, key, value):
+        if isinstance(key, bytes):
+            raise ValueError("Cannot use bytes for hashmap keys")
         return retry_call(self.c.hset, self.name, key, json.dumps(value))
 
     def delete(self):
