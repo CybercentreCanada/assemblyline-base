@@ -51,11 +51,9 @@ def retry_call(func, *args, **kw):
 
 
 def get_client(host, port, db, private):
-    if not host or not port or not db:
-        config = forge.get_config()
-        host = host or config.core.redis.nonpersistent.host
-        port = int(port or config.core.redis.nonpersistent.port)
-        db = int(db or config.core.redis.nonpersistent.db)
+    host = host or '127.0.0.1'
+    port = int(port) or 6379
+    db = int(db) or 0
 
     if private:
         return redis.StrictRedis(host=host, port=port, db=db)
@@ -80,13 +78,9 @@ def get_pool(host, port, db):
     return connection_pool
 
 
-# noinspection PyBroadException
 def decode(data):
     try:
         return json.loads(data)
-    except:  # pylint: disable=W0702
+    except ValueError:
         log.warning("Invalid data on queue: %s", str(data))
         return None
-
-
-

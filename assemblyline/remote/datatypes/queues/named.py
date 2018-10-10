@@ -93,5 +93,3 @@ def select(*queues, **kw):
         return response
 
     return response[0], json.loads(response[1])
-
-
