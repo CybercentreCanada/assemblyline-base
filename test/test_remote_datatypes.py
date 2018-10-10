@@ -66,7 +66,7 @@ def test_basic_counters(redis_connection):
 
 
 # noinspection PyShadowingNames
-def test_tacked_counters(redis_connection):
+def test_tracked_counters(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.counters import Counters
         with Counters('tracked-test-counter', track_counters=True) as ct:
@@ -87,7 +87,45 @@ def test_tacked_counters(redis_connection):
                                              'tracked-test-counter-t2': 0}
 
 
-from assemblyline.remote.datatypes.set import ExpiringSet
+# noinspection PyShadowingNames
+def test_sets(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.set import Set
+        with Set('test-set') as s:
+            values = ['a', 'b', 1, 2]
+            assert s.add(*values) == 4
+            assert s.length() == 4
+            for x in s.members():
+                assert x in values
+            assert s.random() in values
+            assert s.exist(values[2])
+            s.remove(values[2])
+            assert not s.exist(values[2])
+            pop_val = s.pop()
+            assert pop_val in values
+            assert not s.exist(pop_val)
+            assert s.length() == 2
+
+
+# noinspection PyShadowingNames
+def test_expiring_sets(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.set import ExpiringSet
+        with ExpiringSet('test-expiring-set', ttl=2) as es:
+            values = ['a', 'b', 1, 2]
+            assert es.add(*values) == 4
+            assert es.length() == 4
+            assert es.exist(values[2])
+            for x in es.members():
+                assert x in values
+            time.sleep(2)
+            assert es.length() == 0
+            assert not es.exist(values[2])
+
+
+
+
+
 from assemblyline.remote.datatypes.syncronization import ExclusionWindow
 from assemblyline.remote.datatypes.queues.priority import PriorityQueue
 from assemblyline.remote.datatypes.queues.dispatch import DispatchQueue
