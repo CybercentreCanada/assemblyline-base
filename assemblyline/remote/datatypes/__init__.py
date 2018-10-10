@@ -52,8 +52,8 @@ def retry_call(func, *args, **kw):
 
 def get_client(host, port, db, private):
     host = host or '127.0.0.1'
-    port = int(port) or 6379
-    db = int(db) or 0
+    port = int(port or 6379)
+    db = int(db or 0)
 
     if private:
         return redis.StrictRedis(host=host, port=port, db=db)

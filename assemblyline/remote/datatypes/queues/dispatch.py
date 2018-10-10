@@ -11,9 +11,9 @@ def determine_dispatcher(sid, shards):
 class DispatchQueue(object):
     def __init__(self, host=None, port=None, db=None, shards=None):
         self.host = host or '127.0.0.1'
-        self.port = int(port) or 6379
-        self.db = int(db) or 0
-        self.shards = int(shards) or 1
+        self.port = int(port or 6379)
+        self.db = int(db or 0)
+        self.shards = int(shards or 1)
 
         self.queues = {}
 
