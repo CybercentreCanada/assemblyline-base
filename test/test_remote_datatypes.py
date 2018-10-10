@@ -45,8 +45,48 @@ def test_expiring_hash(redis_connection):
             assert eh.length() == 0
 
 
+# noinspection PyShadowingNames
+def test_basic_counters(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.counters import Counters
+        with Counters('test-counter') as ct:
+            for x in range(10):
+                ct.inc('t1')
+            for x in range(20):
+                ct.inc('t2', value=2)
+            ct.dec('t1')
+            ct.dec('t2')
+            assert ct.get_queues() == ['test-counter-t1',
+                                       'test-counter-t2']
+            assert ct.get_queues_sizes() == {'test-counter-t1': 9,
+                                             'test-counter-t2': 39}
+            ct.reset_queues()
+            assert ct.get_queues_sizes() == {'test-counter-t1': 0,
+                                             'test-counter-t2': 0}
 
-from assemblyline.remote.datatypes.counters import Counters
+
+# noinspection PyShadowingNames
+def test_tacked_counters(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.counters import Counters
+        with Counters('tracked-test-counter', track_counters=True) as ct:
+            for x in range(10):
+                ct.inc('t1')
+            for x in range(20):
+                ct.inc('t2', value=2)
+            assert ct.tracker.keys() == ['t1', 't2']
+            ct.dec('t1')
+            ct.dec('t2')
+            assert ct.tracker.keys() == []
+            assert ct.get_queues() == ['tracked-test-counter-t1',
+                                       'tracked-test-counter-t2']
+            assert ct.get_queues_sizes() == {'tracked-test-counter-t1': 9,
+                                             'tracked-test-counter-t2': 39}
+            ct.reset_queues()
+            assert ct.get_queues_sizes() == {'tracked-test-counter-t1': 0,
+                                             'tracked-test-counter-t2': 0}
+
+
 from assemblyline.remote.datatypes.set import ExpiringSet
 from assemblyline.remote.datatypes.syncronization import ExclusionWindow
 from assemblyline.remote.datatypes.queues.priority import PriorityQueue

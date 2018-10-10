@@ -1,6 +1,8 @@
 from assemblyline.remote.datatypes import get_client, retry_call, now_as_iso
 from assemblyline.remote.datatypes.hash import Hash
 
+from redis.exceptions import ConnectionError
+
 
 class Counters(object):
     def __init__(self, prefix="counter", host=None, port=None, db=None, track_counters=False):
@@ -11,38 +13,49 @@ class Counters(object):
         else:
             self.tracker = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.delete()
+
     def inc(self, name, value=1, track_id=None):
         if self.tracker:
-            self.tracker.add(track_id, now_as_iso())
+            self.tracker.add(track_id or name, now_as_iso())
         return retry_call(self.c.incr, "%s-%s" % (self.prefix, name), value)
 
     def dec(self, name, value=1, track_id=None):
         if self.tracker:
-            self.tracker.pop(str(track_id))
+            self.tracker.pop(str(track_id or name))
         return retry_call(self.c.decr, "%s-%s" % (self.prefix, name), value)
 
     def get_queues_sizes(self):
         out = {}
         for queue in retry_call(self.c.keys, "%s-*" % self.prefix):
             queue_size = int(retry_call(self.c.get, queue))
-            if queue_size != 0:
-                out[queue] = queue_size
+            out[queue] = queue_size
 
-        return out
+        return {k.decode('utf-8'): v for k, v in out.items()}
 
     def get_queues(self):
-        return retry_call(self.c.keys, "%s-*" % self.prefix)
+        return [k.decode('utf-8') for k in retry_call(self.c.keys, "%s-*" % self.prefix)]
 
-    # noinspection PyBroadException
     def ready(self):
         try:
             self.c.ping()
-        except Exception:  # pylint: disable=W0702
+        except ConnectionError:
             return False
 
         return True
 
     def reset_queues(self):
-        self.c.delete("c-tracker-%s" % self.prefix)
+        if self.tracker:
+            self.tracker.delete()
         for queue in retry_call(self.c.keys, "%s-*" % self.prefix):
             retry_call(self.c.set, queue, "0")
+
+    def delete(self):
+        if self.tracker:
+            self.tracker.delete()
+        for queue in retry_call(self.c.keys, "%s-*" % self.prefix):
+            retry_call(self.c.delete, queue)
