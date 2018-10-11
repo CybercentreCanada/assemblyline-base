@@ -2,22 +2,26 @@ import json
 
 from assemblyline.remote.datatypes import get_client, retry_call, decode
 
-# ARGV[1]: <queue name>, ARGV[2]: <max items to pop minus one>.
+# ARGV[1]: <queue name>
+# ARGV[2]: <max items to pop minus one>
 pq_pop_script = """
 local result = redis.call('zrange', ARGV[1], 0, ARGV[2])
 if result then redis.call('zremrangebyrank', ARGV[1], 0, ARGV[2]) end
 return result
 """
 
-# ARGV[1]: <queue name>, ARGV[2]: <priority>, ARGV[3]: <vip>,
-# ARGV[4]: <item (string) to push>.
+# ARGV[1]: <queue name>
+# ARGV[2]: <priority>
+# ARGV[3]: <vip>,
+# ARGV[4]: <item (string) to push>
 pq_push_script = """
 local seq = string.format('%020d', redis.call('incr', 'global-sequence'))
 local vip = string.format('%1d', ARGV[3])
 redis.call('zadd', ARGV[1], 0 - ARGV[2], vip..seq..ARGV[4])
 """
 
-# ARGV[1]: <queue name>, ARGV[2]: <max items to unpush>.
+# ARGV[1]: <queue name>
+# ARGV[2]: <max items to unpush>
 pq_unpush_script = """
 local result = redis.call('zrange', ARGV[1], 0 - ARGV[2], 0 - 1)
 if result then redis.call('zremrangebyrank', ARGV[1], 0 - ARGV[2], 0 - 1) end
@@ -32,6 +36,12 @@ class PriorityQueue(object):
         self.s = self.c.register_script(pq_push_script)
         self.t = self.c.register_script(pq_unpush_script)
         self.name = name
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.delete()
 
     def count(self, lowest, highest):
         return retry_call(self.c.zcount, self.name, -highest, -lowest)

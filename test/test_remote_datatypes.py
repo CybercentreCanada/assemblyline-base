@@ -154,7 +154,22 @@ def test_lock(redis_connection):
 def test_priority_queue(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.queues.priority import PriorityQueue
+        with PriorityQueue('test-priority-queue') as pq:
+            for x in range(10):
+                pq.push(100, x)
 
+            pq.push(101, 'a')
+            pq.push(99, 'z')
+
+            assert pq.pop() == 'a'
+            assert pq.unpush() == 'z'
+            assert pq.count(100, 100) == 10
+            assert pq.pop() == 0
+            assert pq.unpush() == 9
+            assert pq.length() == 8
+            assert pq.pop(4) == [1, 2, 3, 4]
+            assert pq.unpush(3) == [6, 7, 8]
+            assert pq.length() == 1
 
 from assemblyline.remote.datatypes.queues.dispatch import DispatchQueue
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
