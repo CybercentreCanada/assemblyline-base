@@ -44,7 +44,7 @@ def retry_call(func, *args, **kw):
         try:
             return func(*args, **kw)
         except redis.ConnectionError:
-            log.exception('Reconnect')
+            log.exception('Failed to connect to redis. Reconnect...')
             time.sleep(2 ** exponent)
             exponent = exponent + 1 if exponent < maximum else exponent
 

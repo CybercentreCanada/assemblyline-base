@@ -171,8 +171,42 @@ def test_priority_queue(redis_connection):
             assert pq.unpush(3) == [6, 7, 8]
             assert pq.length() == 1
 
+
+# noinspection PyShadowingNames
+def test_named_queue(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.queues.named import NamedQueue, select
+        with NamedQueue('test-named-queue') as nq:
+            for x in range(5):
+                nq.push(x)
+
+            assert nq.length() == 5
+            nq.push(*list(range(5)))
+            assert nq.length() == 10
+
+            assert nq.peek_next() == nq.pop()
+            assert nq.peek_next() == 1
+            v = nq.pop()
+            assert v == 1
+            assert nq.peek_next() == 2
+            nq.unpop(v)
+            assert nq.peek_next() == 1
+
+            assert select(nq) == ('test-named-queue', 1)
+
+        with NamedQueue('test-named-queue-1') as nq1:
+            with NamedQueue('test-named-queue-2') as nq2:
+                nq1.push(1)
+                nq2.push(2)
+
+                assert select(nq1, nq2) == ('test-named-queue-1', 1)
+                assert select(nq1, nq2) == ('test-named-queue-2', 2)
+
+
+
+
+
 from assemblyline.remote.datatypes.queues.dispatch import DispatchQueue
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 from assemblyline.remote.datatypes.queues.local import LocalQueue
 from assemblyline.remote.datatypes.queues.multi import MultiQueue
-from assemblyline.remote.datatypes.queues.named import NamedQueue
