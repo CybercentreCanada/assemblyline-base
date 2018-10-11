@@ -249,4 +249,3 @@ def test_multi_queue(redis_connection):
 
 from assemblyline.remote.datatypes.queues.dispatch import DispatchQueue
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
-from assemblyline.remote.datatypes.queues.local import LocalQueue
