@@ -51,6 +51,8 @@ def test_basic_counters(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.counters import Counters
         with Counters('test-counter') as ct:
+            ct.delete()
+
             for x in range(10):
                 ct.inc('t1')
             for x in range(20):
@@ -71,6 +73,8 @@ def test_tracked_counters(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.counters import Counters
         with Counters('tracked-test-counter', track_counters=True) as ct:
+            ct.delete()
+
             for x in range(10):
                 ct.inc('t1')
             for x in range(20):
@@ -93,6 +97,8 @@ def test_sets(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.set import Set
         with Set('test-set') as s:
+            s.delete()
+
             values = ['a', 'b', 1, 2]
             assert s.add(*values) == 4
             assert s.length() == 4
@@ -113,6 +119,8 @@ def test_expiring_sets(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.set import ExpiringSet
         with ExpiringSet('test-expiring-set', ttl=2) as es:
+            es.delete()
+
             values = ['a', 'b', 1, 2]
             assert es.add(*values) == 4
             assert es.length() == 4
@@ -155,6 +163,8 @@ def test_priority_queue(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.queues.priority import PriorityQueue
         with PriorityQueue('test-priority-queue') as pq:
+            pq.delete()
+
             for x in range(10):
                 pq.push(100, x)
 
@@ -177,6 +187,8 @@ def test_named_queue(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.queues.named import NamedQueue, select
         with NamedQueue('test-named-queue') as nq:
+            nq.delete()
+
             for x in range(5):
                 nq.push(x)
 
@@ -195,7 +207,11 @@ def test_named_queue(redis_connection):
             assert select(nq) == ('test-named-queue', 1)
 
         with NamedQueue('test-named-queue-1') as nq1:
+            nq1.delete()
+
             with NamedQueue('test-named-queue-2') as nq2:
+                nq2.delete()
+
                 nq1.push(1)
                 nq2.push(2)
 
@@ -203,10 +219,34 @@ def test_named_queue(redis_connection):
                 assert select(nq1, nq2) == ('test-named-queue-2', 2)
 
 
+# noinspection PyShadowingNames
+def test_multi_queue(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.queues.multi import MultiQueue
+        mq = MultiQueue()
+        mq.delete('test-multi-q1')
+        mq.delete('test-multi-q2')
 
+        for x in range(5):
+            mq.push('test-multi-q1', x+1)
+            mq.push('test-multi-q2', x+6)
+
+        assert mq.length('test-multi-q1') == 5
+        assert mq.length('test-multi-q2') == 5
+
+        assert mq.pop('test-multi-q1') == 1
+        assert mq.pop('test-multi-q2') == 6
+
+        assert mq.length('test-multi-q1') == 4
+        assert mq.length('test-multi-q2') == 4
+
+        mq.delete('test-multi-q1')
+        mq.delete('test-multi-q2')
+
+        assert mq.length('test-multi-q1') == 0
+        assert mq.length('test-multi-q2') == 0
 
 
 from assemblyline.remote.datatypes.queues.dispatch import DispatchQueue
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 from assemblyline.remote.datatypes.queues.local import LocalQueue
-from assemblyline.remote.datatypes.queues.multi import MultiQueue
