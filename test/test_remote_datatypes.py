@@ -2,6 +2,7 @@ import pytest
 import time
 
 from redis.exceptions import ConnectionError
+from threading import Thread
 
 
 @pytest.fixture
@@ -56,8 +57,8 @@ def test_basic_counters(redis_connection):
                 ct.inc('t2', value=2)
             ct.dec('t1')
             ct.dec('t2')
-            assert ct.get_queues() == ['test-counter-t1',
-                                       'test-counter-t2']
+            assert sorted(ct.get_queues()) == ['test-counter-t1',
+                                               'test-counter-t2']
             assert ct.get_queues_sizes() == {'test-counter-t1': 9,
                                              'test-counter-t2': 39}
             ct.reset_queues()
@@ -78,8 +79,8 @@ def test_tracked_counters(redis_connection):
             ct.dec('t1')
             ct.dec('t2')
             assert ct.tracker.keys() == []
-            assert ct.get_queues() == ['tracked-test-counter-t1',
-                                       'tracked-test-counter-t2']
+            assert sorted(ct.get_queues()) == ['tracked-test-counter-t1',
+                                               'tracked-test-counter-t2']
             assert ct.get_queues_sizes() == {'tracked-test-counter-t1': 9,
                                              'tracked-test-counter-t2': 39}
             ct.reset_queues()
@@ -123,10 +124,32 @@ def test_expiring_sets(redis_connection):
             assert not es.exist(values[2])
 
 
+# noinspection PyShadowingNames
+def test_lock(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.lock import Lock
+
+        def locked_execution(next_thread=None):
+            with Lock('test', 10):
+                if next_thread:
+                    next_thread.start()
+                time.sleep(2)
+
+        t2 = Thread(target=locked_execution)
+        t1 = Thread(target=locked_execution, args=(t2,))
+        t1.start()
+
+        time.sleep(1)
+        assert t1.is_alive()
+        assert t2.is_alive()
+        time.sleep(2)
+        assert not t1.is_alive()
+        assert t2.is_alive()
+        time.sleep(2)
+        assert not t1.is_alive()
+        assert not t2.is_alive()
 
 
-
-from assemblyline.remote.datatypes.syncronization import ExclusionWindow
 from assemblyline.remote.datatypes.queues.priority import PriorityQueue
 from assemblyline.remote.datatypes.queues.dispatch import DispatchQueue
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
