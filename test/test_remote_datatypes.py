@@ -150,7 +150,12 @@ def test_lock(redis_connection):
         assert not t2.is_alive()
 
 
-from assemblyline.remote.datatypes.queues.priority import PriorityQueue
+# noinspection PyShadowingNames
+def test_priority_queue(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.queues.priority import PriorityQueue
+
+
 from assemblyline.remote.datatypes.queues.dispatch import DispatchQueue
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 from assemblyline.remote.datatypes.queues.local import LocalQueue

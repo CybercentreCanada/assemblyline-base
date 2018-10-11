@@ -1,9 +1,6 @@
-
 import json
-import redis
 
-from assemblyline.common.exceptions import get_stacktrace_info
-from assemblyline.remote.datatypes import get_client, retry_call, decode, log
+from assemblyline.remote.datatypes import get_client, retry_call, decode
 
 # ARGV[1]: <queue name>, ARGV[2]: <max items to pop minus one>.
 pq_pop_script = """
@@ -45,28 +42,30 @@ class PriorityQueue(object):
     def length(self):
         return retry_call(self.c.zcard, self.name)
 
-    def pop(self, num=1):
-        num -= 1
-        if num < 0:
+    def pop(self, num=None):
+        if num is not None and num <= 0:
             return []
-        try:
-            return [decode(s[21:]) for s in retry_call(self.r, args=[self.name, num])]
-        except redis.ConnectionError as ex:
-            trace = get_stacktrace_info(ex)
-            log.warning('Redis connection error (5): %s', trace)
-            return []
+
+        if num:
+            return [decode(s[21:]) for s in retry_call(self.r, args=[self.name, num-1])]
+        else:
+            ret_val = retry_call(self.r, args=[self.name, 0])
+            if ret_val:
+                return decode(ret_val[0][21:])
+            return None
 
     def push(self, priority, data, vip=None):
         vip = 0 if vip else 9
         retry_call(self.s, args=[self.name, priority, vip, json.dumps(data)])
 
-    def unpush(self, num=1):
-        if num < 0:
+    def unpush(self, num=None):
+        if num is not None and num <= 0:
             return []
-        try:
-            return [json.loads(s[21:])
-                    for s in retry_call(self.t, args=[self.name, num])]
-        except redis.ConnectionError as ex:
-            trace = get_stacktrace_info(ex)
-            log.warning('Redis connection error (6): %s', trace)
-            return []
+
+        if num:
+            return [decode(s[21:]) for s in retry_call(self.t, args=[self.name, num])]
+        else:
+            ret_val = retry_call(self.t, args=[self.name, 1])
+            if ret_val:
+                return decode(ret_val[0][21:])
+            return None
