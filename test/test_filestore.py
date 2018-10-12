@@ -1,3 +1,5 @@
+import os
+
 from assemblyline.filestore import FileStore
 
 
@@ -59,9 +61,9 @@ def test_file():
     Note: This test will fail if pytest is not ran from the root
           of the assemblyline core repo.
     """
-    fs = FileStore('file://./')
-    assert fs.exists('README.md') != []
-    assert fs.get('README.md') is not None
+    fs = FileStore('file://%s' % os.path.dirname(__file__))
+    assert fs.exists(os.path.basename(__file__)) != []
+    assert fs.get(os.path.basename(__file__)) is not None
 
 
 def test_s3():
