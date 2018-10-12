@@ -247,5 +247,30 @@ def test_multi_queue(redis_connection):
         assert mq.length('test-multi-q2') == 0
 
 
-from assemblyline.remote.datatypes.queues.dispatch import DispatchQueue
-from assemblyline.remote.datatypes.queues.comms import CommsQueue
+# noinspection PyShadowingNames
+def test_comms_queue(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.queues.comms import CommsQueue
+
+        def publish_messages(msg_list):
+            time.sleep(1)
+            with CommsQueue('test-comms-queue') as cq:
+                for msg in msg_list:
+                    cq.publish(msg)
+
+        msg_list = ["bob", 1, {"bob": 1}, [1, 2, 3], None, "Nice!", "stop"]
+        t = Thread(target=publish_messages, args=(msg_list,))
+        t.start()
+
+        with CommsQueue('test-comms-queue') as cq:
+            x = 0
+            for msg in cq.listen():
+                if msg == "stop":
+                    break
+
+                assert msg == msg_list[x]
+
+                x += 1
+
+        t.join()
+        assert not t.is_alive()

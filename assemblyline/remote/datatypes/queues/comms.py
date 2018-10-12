@@ -1,8 +1,7 @@
 import json
 import redis
 
-from assemblyline.common.exceptions import get_stacktrace_info
-from assemblyline.remote.datatypes import get_client, retry_call, log
+from assemblyline.remote.datatypes import get_client, retry_call, log, decode
 
 
 class CommsQueue(object):
@@ -13,6 +12,12 @@ class CommsQueue(object):
             names = [names]
         self.names = names
         self._connected = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        retry_call(self.p.unsubscribe)
 
     def _connect(self):
         if not self._connected:
@@ -28,11 +33,11 @@ class CommsQueue(object):
             try:
                 i = self.p.listen()
                 v = next(i)
-                if isinstance(v, dict) and v.get('type', '') != 'subscribe':
-                    yield (v)
-            except redis.ConnectionError as ex:
-                trace = get_stacktrace_info(ex)
-                log.warning('Redis connection error (1): %s', trace)
+                if isinstance(v, dict) and v.get('type', None) == 'message':
+                    data = decode(v.get('data', 'null'))
+                    yield (data)
+            except redis.ConnectionError:
+                log.warning('No connection to Redis, reconnecting...')
                 self._connected = False
 
     def publish(self, message):
