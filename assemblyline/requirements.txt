@@ -2,3 +2,6 @@ boto3
 pysftp
 netifaces
 pyroute2
+riak
+requests
+elasticsearch>=6.0.0

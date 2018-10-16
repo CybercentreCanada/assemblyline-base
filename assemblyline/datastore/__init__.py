@@ -1,0 +1,309 @@
+import logging
+
+from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, \
+    SearchRetryException
+from assemblyline.datastore.reconnect import collection_reconnect
+
+log = logging.getLogger('assemblyline.datastore')
+
+
+class Collection(object):
+    RETRY_NORMAL = 1
+    RETRY_NONE = 0
+    RETRY_INFINITY = -1
+    DEFAULT_ROW_SIZE = 25
+
+    def __init__(self, datastore, name, model_class=None):
+        self.datastore = datastore
+        self.name = name
+        self.model_class = model_class
+        self._ensure_index()
+
+    def normalize(self, data):
+        """
+        Normalize the data using the model class
+
+        :param data: data to normalize
+        :return: instance of the model class
+        """
+        if self.model_class and not isinstance(data, self.model_class):
+            return self.model_class(data)
+
+        return data
+
+    @collection_reconnect(log)
+    def commit(self):
+        """
+        This function should be overloaded to perform a commit of the index data of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the commit was successful on all hosts
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def multiget(self, key_list):
+        """
+        Get a list of documents from the datastore and make sure they are normalized using
+        the model class
+
+        :param key_list: list of keys of documents to get
+        :return: list of instances of the model class
+        """
+        return [self.get(x) for x in key_list]
+
+    def _get(self, key, retries):
+        """
+        This function should be overloaded in a way that if the document is not found,
+        the function retries to get the document the specified amount of time.
+
+        retries = -1 means that we will retry forever.
+
+        :param key: key of the document to get from the datastore
+        :param retries: number of time to retry if the document can't be found
+        :return: The document strait of the datastore
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def get(self, key):
+        """
+        Get a document from the datastore, retry a few times if not found and normalize the
+        document with the model provided with the collection.
+
+        This is the normal way to get data of the system.
+
+        :param key: key of the document to get from the datastore
+        :return: an instance of the model class loaded with the document data
+        """
+        return self.normalize(self._get(key, self.RETRY_NORMAL))
+
+    @collection_reconnect(log)
+    def get_if_exists(self, key):
+        """
+        Get a document from the datastore but do not retry if not found.
+
+        Use this more in caching scenarios because eventually consistent database may lead
+        to have document reported has missing even if they exist.
+
+        :param key: key of the document to get from the datastore
+        :return: an instance of the model class loaded with the document data
+        """
+        return self.normalize(self._get(key, self.RETRY_NONE))
+
+    @collection_reconnect(log)
+    def require(self, key):
+        """
+        Get a document from the datastore and retry forever because we know for sure
+        that this document should exist. If it does not right now, this will wait for the
+        document to show up in the datastore.
+
+        :param key: key of the document to get from the datastore
+        :return: an instance of the model class loaded with the document data
+        """
+        return self.normalize(self._get(key, self.RETRY_INFINITY))
+
+    @collection_reconnect(log)
+    def save(self, key, data):
+        """
+        Save a to document to the datastore using the key as its document id.
+
+        The document data will be normalized before being saved in the datastore.
+
+        :param key: ID of the document to save
+        :param data: raw data or instance of the model class to save as the document
+        :return: True if the document was saved properly
+        """
+        return self._save(key, self.normalize(data))
+
+    def _save(self, key, data):
+        """
+        This function should takes in an instance of the the model class as input
+        and saves it to the database backend at the id mentioned by the key.
+
+        This function should return True if the data was saved correctly
+
+        :param key: key to use to store the document
+        :param data: instance of the model class to save to the database
+        :return: True if save was successful
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def delete(self, key):
+        """
+        This function should delete the underlying document referenced by the key.
+        It should return true if the document was in fact properly deleted.
+
+        :param key: id of the document to delete
+        :return: True is delete successful
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
+               filters=(), access_control=None):
+        """
+        This function should perform a search through the datastore and return a
+        search result object that consist on the following:
+
+        {
+            "offset": 0,      # Offset in the search index
+            "rows": 25,       # Number of document returned per page
+            "total": 123456,  # Total number of documents matching the query
+            "items": [        # List of dictionary where each keys are one of
+                {             #   the field list parameter specified
+                    fl[0]: value,
+                    ...
+                    fl[x]: value
+                }, ...]
+        }
+
+        :param query: lucene query to search for
+        :param offset: offset at which you want the results to start at (paging)
+        :param rows: number of items that the search function should return
+        :param sort: field to sort the data with
+        :param fl: list of fields to return from the search
+        :param timeout: maximum time of execution
+        :param filters: additional queries to run on the original query to reduce the scope
+        :param access_control: access control parameters to limiti the scope of the query
+        :return: a search result object
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def stream_search(self, query, sort=None, fl=None, filters=(), access_control=None, buffer_size=200):
+        """
+        This function should perform a search through the datastore and stream
+        all related results as a dictionary of key value pair where each keys
+        are one of the field specified in the field list parameter.
+
+        {
+            fl[0]: value,
+            ...
+            fl[x]: value
+        }
+
+        :param query: lucene query to search for
+        :param sort: field to sort the data with
+        :param fl: list of fields to return from the search
+        :param filters: additional queries to run on the original query to reduce the scope
+        :param access_control: access control parameters to run the query with
+        :param buffer_size: number of items to buffer with each search call
+        :return: a generator of dictionary of field list results
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def keys(self, access_control=None):
+        """
+        This function should streams the keys of all the documents of this collection
+        from the datastore.
+
+        :param access_control: access control parameter to limit the scope of the key scan
+        :return: a generator of keys
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def histogram(self, field, query, start, end, gap, mincount, filters=(), access_control=None):
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def grouped_search(self, query, group_on, start=None, sort=None, group_sort=None, fields=None, rows=None,
+                       filters=(), access_control=None):
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def _ensure_index(self):
+        """
+        This function should test if the collection that you are trying to access does indeed exist
+        and should create it if it does not.
+
+        :return:
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+
+class BaseStore(object):
+    ID = "_id"
+    DEFAULT_SORT = "_id asc"
+    DATE_FORMAT = {
+        'NOW': 'NOW',
+        'YEAR': 'YEAR',
+        'MONTH': 'MONTH',
+        'WEEK': 'WEEK',
+        'DAY': 'DAY',
+        'HOUR': 'HOUR',
+        'MINUTE': 'MINUTE',
+        'SECOND': 'SECOND',
+        'MILLISECOND': 'MILLISECOND',
+        'MICROSECOND': 'MICROSECOND',
+        'NANOSECOND': 'NANOSECOND',
+        'SEPARATOR': '',
+    }
+
+    def __init__(self, hosts, filestore_factory, collection_class):
+        self._filestore_factory = filestore_factory
+        self._hosts = hosts
+        self._collection_class = collection_class
+        self._closed = False
+        self._collections = {}
+        self._models = {}
+
+    def __enter__(self):
+        return self
+
+    # noinspection PyUnusedLocal
+    def __exit__(self, ex_type, exc_val, exc_tb):
+        self.close()
+
+    def __str__(self):
+        return '{0}'.format(self.__class__.__name__)
+
+    def __getattr__(self, name):
+        if name not in self._collections:
+            model_class = self._models[name]
+            self._collections[name] = self._collection_class(self, name, model_class=model_class)
+
+        return self._collections[name]
+
+    @property
+    def year(self):
+        return self.DATE_FORMAT['YEAR']
+
+    @property
+    def month(self):
+        return self.DATE_FORMAT['MONTH']
+
+    @property
+    def day(self):
+        return self.DATE_FORMAT['DAY']
+
+    @property
+    def hour(self):
+        return self.DATE_FORMAT['HOUR']
+
+    @property
+    def minute(self):
+        return self.DATE_FORMAT['MINUTE']
+
+    @property
+    def second(self):
+        return self.DATE_FORMAT['SECOND']
+
+    @property
+    def date_separator(self):
+        return self.DATE_FORMAT['SEPARATOR']
+
+    def close(self):
+        self._closed = True
+
+    def connection_reset(self):
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    def is_closed(self):
+        return self._closed
+
+    def register(self, name, model_class=None):
+        self._models[name] = model_class
