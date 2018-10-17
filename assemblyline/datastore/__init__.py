@@ -243,8 +243,7 @@ class BaseStore(object):
         'SEPARATOR': '',
     }
 
-    def __init__(self, hosts, filestore_factory, collection_class):
-        self._filestore_factory = filestore_factory
+    def __init__(self, hosts, collection_class):
         self._hosts = hosts
         self._collection_class = collection_class
         self._closed = False
