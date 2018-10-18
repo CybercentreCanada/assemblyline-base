@@ -14,7 +14,7 @@
         <field name="__expiry_ts__" type="pdate" indexed="true" stored="true"/>
 
         <!-- Default fields -->
-        <field name="text" type="text_general" indexed="true" stored="false"/>
+        <field name="__text__" type="text_general" indexed="true" stored="false"/>
         <field name="_version_" type="plong" indexed="true" stored="true"/>
         <field name="_id_" type="string" indexed="true" stored="true" required="true"/>
         <field name="_source_" type="string" docValues="false" indexed="false" stored="true" required="true"/>
