@@ -1,5 +1,8 @@
 import json
 import os
+import uuid
+from urllib.parse import quote
+
 import requests
 import time
 import threading
@@ -8,14 +11,19 @@ from copy import copy, deepcopy
 from random import choice
 
 from assemblyline.common.memory_zip import InMemoryZip
-from assemblyline.datastore import BaseStore, log, Collection, DataStoreException
+from assemblyline.common.str_utils import safe_str
+from assemblyline.datastore import BaseStore, log, Collection, DataStoreException, SearchException, SearchRetryException
 from assemblyline.datastore.reconnect import collection_reconnect
 
 
 class SolrCollection(Collection):
     SOLR_GET_TIMEOUT_SEC = 5
     MULTIGET_MAX_RETRY = 5
+    MAX_SEARCH_ROWS = 500
+    MAX_GROUP_LIMIT = 10
+    MAX_FACET_LIMIT = 100
     EXTRA_SEARCH_FIELD = '__text__'
+    DEFAULT_SORT = "_id_ asc"
 
     COMMIT_WITHIN_MAP = {
         "alert": 60000,
@@ -78,9 +86,9 @@ class SolrCollection(Collection):
                             data = json.loads(data)
                             if isinstance(data, dict):
                                 data.pop(self.EXTRA_SEARCH_FIELD, None)
-                            ret.append(data)
+                            ret.append(self.normalize(data))
                         except ValueError:
-                            ret.append(data)
+                            ret.append(self.normalize(data))
                         temp_keys.remove(doc.get(self.datastore.ID, None))
 
             if len(temp_keys) == 0:
@@ -161,11 +169,211 @@ class SolrCollection(Collection):
         res = session.post(url, data=json.dumps(data), headers={"content-type": "application/json"})
         return res.ok
 
+    def _valid_solr_param(self, k, v):
+        msg = "Invalid parameter (%s=%s). Should be between %d and %d"
+
+        if k.endswith('facet.offset') or k.endswith('group.offset'):
+            return False
+        if k.endswith('facet.limit') and not 1 <= int(v) <= self.MAX_FACET_LIMIT:
+            raise SearchException(msg % (k, v, 1, self.MAX_FACET_LIMIT))
+        if k.endswith('group.limit') and not 1 <= int(v) <= self.MAX_GROUP_LIMIT:
+            raise SearchException(msg % (k, v, 1, self.MAX_GROUP_LIMIT))
+        if k == 'rows' and not 0 <= int(v) <= self.MAX_SEARCH_ROWS:
+            raise SearchException(msg % (k, v, 0, self.MAX_SEARCH_ROWS))
+
+        return True
+
+    @staticmethod
+    def _get_value(key, args):
+        for (k, v) in args:
+            if k == key:
+                return v
+
+        return None
+
+    def _cleanup_search_result(self, item):
+        if isinstance(item, dict):
+            item.pop('_source_', None)
+            item.pop('_version_', None)
+            item.pop(self.EXTRA_SEARCH_FIELD, None)
+
+        return item
+
+    # noinspection PyBroadException
+    @collection_reconnect(log)
+    def _search(self, args=None):
+        if not isinstance(args, list):
+            raise SearchException('args needs to be a list of tuples')
+
+        session, host = self._get_session()
+
+        query = self._get_value('q', args)
+
+        if not query:
+            raise SearchException("You must specify a query")
+
+        rows = self._get_value('rows', args)
+
+        if not rows:
+            rows = self.DEFAULT_ROW_SIZE
+            args.append(('rows', rows))
+
+        kw = "&".join(["%s=%s" % (k, quote(safe_str(v, force_str=True)))
+                       for k, v in args if self._valid_solr_param(k, v)])
+        url = "http://{host}/{api_base}/{collection}/select/?".format(host=host,
+                                                                      api_base=self.api_base,
+                                                                      collection=self.name)
+        if kw:
+            url += kw
+
+        res = session.get(url)
+        if res.ok:
+            data = res.json()
+            output = {
+                "offset": int(data['response']['start']),
+                "rows": int(rows),
+                "total": int(data['response']['numFound']),
+                "items": [self._cleanup_search_result(x) for x in data['response']['docs']]
+            }
+            if 'nextCursorMark' in data:
+                output['nextCursorMark'] = data['nextCursorMark']
+            return output
+        else:
+            try:
+                solr_error = res.json()
+                message = solr_error["error"]["msg"]
+                if "IOException" in message or "Server refused" in message:
+                    raise SearchRetryException()
+                else:
+                    if "neither indexed nor has doc values: " in message:
+                        return solr_error
+                    else:
+                        raise SearchException(message)
+            except SearchException:
+                raise
+            except Exception:
+                if res.status_code == 404:
+                    raise SearchException("Collection %s does not exists." % self.name)
+                elif res.status_code == 500:
+                    raise SearchRetryException()
+                else:
+                    raise SearchException("Collection: %s, query: %s, args: %s\n%s" %
+                                          (self.name, query, args, res.content))
+
+    def search(self, query, offset=0, rows=Collection.DEFAULT_ROW_SIZE, sort=DEFAULT_SORT,
+               fl=None, timeout=None, filters=(), access_control=None):
+
+        args = [
+            ('q', query),
+            ('start', offset),
+            ('rows', rows),
+            ('sort', sort)
+        ]
+
+        if fl:
+            args.append(('fl', fl))
+
+        if timeout:
+            args.append(('timeAllowed', timeout))
+
+        if filters:
+            if isinstance(filters, list):
+                args.extend(('fq', ff) for ff in filters)
+            else:
+                args.append(('fq', filters))
+
+        if access_control:
+            args.append(('fq', access_control))
+
+        return self._search(args)
+
+    @collection_reconnect(log)
+    def stream_search(self, query, sort=DEFAULT_SORT, fl=None, filters=(), access_control=None, buffer_size=200):
+
+        def _auto_fill(_items, _lock, _args):
+            page_size = self._get_value('rows', args)
+            _max_yield_cache = 50000
+
+            done = False
+            while not done:
+                skip = False
+                with lock:
+                    if len(_items) > _max_yield_cache:
+                        skip = True
+
+                if skip:
+                    time.sleep(0.01)
+                    continue
+
+                j = self._search(_args)
+
+                # Replace cursorMark.
+                _args = _args[:-1]
+                _args.append(('cursorMark', j.get('nextCursorMark', '*')))
+
+                with _lock:
+                    _items.extend(j['items'])
+
+                done = int(page_size) - len(j['items'])
+
+        if buffer_size > 500 or buffer_size < 50:
+            raise SearchException("Variable item_buffer_size must be between 50 and 500.")
+
+        if query in ["*", "*:*"] and fl != self.datastore.ID:
+            raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
+
+        args = [
+            ('q', query),
+            ('sort', sort),
+            ("rows", str(buffer_size))
+        ]
+
+        if fl:
+            args.append(('fl', fl))
+
+        if filters:
+            if isinstance(filters, list):
+                args.extend(('fq', ff) for ff in filters)
+            else:
+                args.append(('fq', filters))
+
+        if access_control:
+            args.append(('fq', access_control))
+
+        args.append(('cursorMark', '*'))
+
+        yield_done = False
+        items = []
+        lock = threading.Lock()
+        sf_t = threading.Thread(target=_auto_fill,
+                                args=[items, lock, args],
+                                name="stream_search_%s" % uuid.uuid4().hex)
+        sf_t.setDaemon(True)
+        sf_t.start()
+        while not yield_done:
+            try:
+                with lock:
+                    item = items.pop(0)
+
+                yield item
+            except IndexError:
+                if not sf_t.is_alive() and len(items) == 0:
+                    yield_done = True
+                time.sleep(0.01)
+
     @collection_reconnect(log)
     def keys(self, access_control=None):
-        for item in self.datastore.stream_search(self.name, "*", fl=self.datastore.ID, access_control=access_control,
-                                                 strict=False):
+        for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
             yield item[self.datastore.ID]
+
+    @collection_reconnect(log)
+    def histogram(self, field, query, start, end, gap, mincount, filters=(), access_control=None):
+        pass
+
+    @collection_reconnect(log)
+    def grouped_search(self, query, group_on, start=None, sort=None, group_sort=None, fields=None, rows=None,
+                       filters=(), access_control=None):
+        pass
 
     def _get_configset(self):
         schema = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/managed-schema"))
@@ -310,3 +518,6 @@ if __name__ == "__main__":
     s.register('user')
     print(s.user.get('sgaron'))
     print(s.user.multiget(['sgaron']))
+    #print(s.user.search("*:*"))
+    for k in s.user.keys():
+        print(k)
