@@ -10,6 +10,7 @@ import threading
 from copy import copy, deepcopy
 from random import choice
 
+from assemblyline.common.chunk import chunked_list
 from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
 from assemblyline.datastore import BaseStore, log, Collection, DataStoreException, SearchException, SearchRetryException
@@ -169,25 +170,25 @@ class SolrCollection(Collection):
         res = session.post(url, data=json.dumps(data), headers={"content-type": "application/json"})
         return res.ok
 
-    def _valid_solr_param(self, k, v):
+    def _valid_solr_param(self, key, value):
         msg = "Invalid parameter (%s=%s). Should be between %d and %d"
 
-        if k.endswith('facet.offset') or k.endswith('group.offset'):
+        if key.endswith('facet.offset') or key.endswith('group.offset'):
             return False
-        if k.endswith('facet.limit') and not 1 <= int(v) <= self.MAX_FACET_LIMIT:
-            raise SearchException(msg % (k, v, 1, self.MAX_FACET_LIMIT))
-        if k.endswith('group.limit') and not 1 <= int(v) <= self.MAX_GROUP_LIMIT:
-            raise SearchException(msg % (k, v, 1, self.MAX_GROUP_LIMIT))
-        if k == 'rows' and not 0 <= int(v) <= self.MAX_SEARCH_ROWS:
-            raise SearchException(msg % (k, v, 0, self.MAX_SEARCH_ROWS))
+        if key.endswith('facet.limit') and not 1 <= int(value) <= self.MAX_FACET_LIMIT:
+            raise SearchException(msg % (key, value, 1, self.MAX_FACET_LIMIT))
+        if key.endswith('group.limit') and not 1 <= int(value) <= self.MAX_GROUP_LIMIT:
+            raise SearchException(msg % (key, value, 1, self.MAX_GROUP_LIMIT))
+        if key == 'rows' and not 0 <= int(value) <= self.MAX_SEARCH_ROWS:
+            raise SearchException(msg % (key, value, 0, self.MAX_SEARCH_ROWS))
 
         return True
 
     @staticmethod
-    def _get_value(key, args):
-        for (k, v) in args:
-            if k == key:
-                return v
+    def _get_value(searched_key, args):
+        for (key, value) in args:
+            if key == searched_key:
+                return value
 
         return None
 
@@ -218,8 +219,8 @@ class SolrCollection(Collection):
             rows = self.DEFAULT_ROW_SIZE
             args.append(('rows', rows))
 
-        kw = "&".join(["%s=%s" % (k, quote(safe_str(v, force_str=True)))
-                       for k, v in args if self._valid_solr_param(k, v)])
+        kw = "&".join(["%s=%s" % (param_name, quote(safe_str(param_value, force_str=True)))
+                       for param_name, param_value in args if self._valid_solr_param(param_name, param_value)])
         url = "http://{host}/{api_base}/{collection}/select/?".format(host=host,
                                                                       api_base=self.api_base,
                                                                       collection=self.name)
@@ -228,16 +229,7 @@ class SolrCollection(Collection):
 
         res = session.get(url)
         if res.ok:
-            data = res.json()
-            output = {
-                "offset": int(data['response']['start']),
-                "rows": int(rows),
-                "total": int(data['response']['numFound']),
-                "items": [self._cleanup_search_result(x) for x in data['response']['docs']]
-            }
-            if 'nextCursorMark' in data:
-                output['nextCursorMark'] = data['nextCursorMark']
-            return output
+            return res.json()
         else:
             try:
                 solr_error = res.json()
@@ -285,7 +277,14 @@ class SolrCollection(Collection):
         if access_control:
             args.append(('fq', access_control))
 
-        return self._search(args)
+        data = self._search(args)
+        output = {
+            "offset": int(data['response']['start']),
+            "rows": int(rows),
+            "total": int(data['response']['numFound']),
+            "items": [self._cleanup_search_result(x) for x in data['response']['docs']]
+        }
+        return output
 
     @collection_reconnect(log)
     def stream_search(self, query, sort=DEFAULT_SORT, fl=None, filters=(), access_control=None, buffer_size=200):
@@ -305,16 +304,16 @@ class SolrCollection(Collection):
                     time.sleep(0.01)
                     continue
 
-                j = self._search(_args)
+                data = self._search(_args)
 
                 # Replace cursorMark.
                 _args = _args[:-1]
-                _args.append(('cursorMark', j.get('nextCursorMark', '*')))
+                _args.append(('cursorMark', data.get('nextCursorMark', '*')))
 
                 with _lock:
-                    _items.extend(j['items'])
+                    _items.extend([self._cleanup_search_result(x) for x in data['response']['docs']])
 
-                done = int(page_size) - len(j['items'])
+                done = int(page_size) - len(data['response']['docs'])
 
         if buffer_size > 500 or buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
@@ -368,7 +367,25 @@ class SolrCollection(Collection):
 
     @collection_reconnect(log)
     def histogram(self, field, query, start, end, gap, mincount, filters=(), access_control=None):
-        pass
+        """Build a histogram of `query` data over `field`"""
+        args = [
+            ("rows", "0"),
+            ("facet", "on"),
+            ("facet.range", field),
+            ("facet.range.start", start),
+            ("facet.range.end", end),
+            ("facet.range.gap", gap),
+            ("facet.mincount", mincount),
+            ("q", query)
+        ]
+        if filters:
+            if isinstance(filters, list):
+                args.extend(('fq', ff) for ff in filters)
+            else:
+                args.append(('fq', filters))
+
+        result = self._search(args)
+        return dict(chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2))
 
     @collection_reconnect(log)
     def grouped_search(self, query, group_on, start=None, sort=None, group_sort=None, fields=None, rows=None,
@@ -395,7 +412,6 @@ class SolrCollection(Collection):
             pass
 
         return None
-
 
     @collection_reconnect(log)
     def _ensure_configset(self):
@@ -475,10 +491,10 @@ class SolrStore(BaseStore):
             self._hosts)
 
     def is_alive(self):
-        with requests.Session() as s:
+        with requests.Session() as cur_session:
             for host in self._hosts:
                 try:
-                    res = s.get('http://{host}/solr/admin/cores?action=STATUS'.format(host=host))
+                    res = cur_session.get('http://{host}/solr/admin/cores?action=STATUS'.format(host=host))
                     if not res.ok:
                         return False
                 except requests.ConnectionError:
@@ -513,11 +529,17 @@ class SolrStore(BaseStore):
 
 
 if __name__ == "__main__":
-
     s = SolrStore(['127.0.0.1:8983'])
     s.register('user')
+    if not s.user.get('sgaron'):
+        s.user.save('sgaron', {'uname': 'sgaron', 'is_admin': True})
     print(s.user.get('sgaron'))
     print(s.user.multiget(['sgaron']))
-    #print(s.user.search("*:*"))
+    print(s.user.search("*:*"))
+    print(s.user.search("*:*", fl="*"))
+
     for k in s.user.keys():
         print(k)
+    print(s.user.histogram('_version_', "*", 1614679643837693700, 1614679643837694200, 100, 0))
+    print(s.user._search([('q', "*:*")]))
+    print(s.user._search([('q', "*:*"), ('fl', "*")]))
