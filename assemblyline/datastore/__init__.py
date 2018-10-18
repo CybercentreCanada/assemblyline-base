@@ -1,4 +1,5 @@
 import logging
+import re
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, \
     SearchRetryException
@@ -17,7 +18,7 @@ class Collection(object):
         self.datastore = datastore
         self.name = name
         self.model_class = model_class
-        self._ensure_index()
+        self._ensure_collection()
 
     def normalize(self, data):
         """
@@ -63,7 +64,7 @@ class Collection(object):
         :param retries: number of time to retry if the document can't be found
         :return: The document strait of the datastore
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def get(self, key):
@@ -127,7 +128,7 @@ class Collection(object):
         :param data: instance of the model class to save to the database
         :return: True if save was successful
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def delete(self, key):
@@ -138,7 +139,7 @@ class Collection(object):
         :param key: id of the document to delete
         :return: True is delete successful
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
@@ -169,7 +170,7 @@ class Collection(object):
         :param access_control: access control parameters to limiti the scope of the query
         :return: a search result object
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def stream_search(self, query, sort=None, fl=None, filters=(), access_control=None, buffer_size=200):
@@ -192,7 +193,7 @@ class Collection(object):
         :param buffer_size: number of items to buffer with each search call
         :return: a generator of dictionary of field list results
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def keys(self, access_control=None):
@@ -203,26 +204,26 @@ class Collection(object):
         :param access_control: access control parameter to limit the scope of the key scan
         :return: a generator of keys
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def histogram(self, field, query, start, end, gap, mincount, filters=(), access_control=None):
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def grouped_search(self, query, group_on, start=None, sort=None, group_sort=None, fields=None, rows=None,
                        filters=(), access_control=None):
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def _ensure_index(self):
+    def _ensure_collection(self):
         """
         This function should test if the collection that you are trying to access does indeed exist
         and should create it if it does not.
 
         :return:
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
 
 class BaseStore(object):
@@ -295,14 +296,24 @@ class BaseStore(object):
     def date_separator(self):
         return self.DATE_FORMAT['SEPARATOR']
 
+    def get_hosts(self):
+        return self._hosts
+
     def close(self):
         self._closed = True
 
     def connection_reset(self):
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic datastore object, connection_reset method is undefined.")
+
+    def is_alive(self):
+        raise UndefinedFunction("This is the basic datastore object, is_alive method is undefined.")
 
     def is_closed(self):
         return self._closed
 
     def register(self, name, model_class=None):
+        if re.match(r'[a-z0-9_]*', name).string != name:
+            raise DataStoreException('Invalid characters in model name. '
+                                     'You can only use lower case letters, numbers and underscores.')
+
         self._models[name] = model_class

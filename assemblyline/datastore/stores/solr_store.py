@@ -1,4 +1,5 @@
 import json
+import os
 import requests
 import time
 import threading
@@ -6,6 +7,7 @@ import threading
 from copy import copy, deepcopy
 from random import choice
 
+from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.datastore import BaseStore, log, Collection, DataStoreException
 from assemblyline.datastore.reconnect import collection_reconnect
 
@@ -36,13 +38,15 @@ class SolrCollection(Collection):
 
     #####################################
     # Overloaded functions
-    def __init__(self, datastore, name, model_class=None, api_base="solr"):
+    def __init__(self, datastore, name, model_class=None, api_base="solr", replication_factor=1, num_shards=1):
         self.api_base = api_base
+        self.num_shards = replication_factor
+        self.replication_factor = num_shards
         super().__init__(datastore, name, model_class=model_class)
 
     @collection_reconnect(log)
-    def commit(self, host=None):
-        for host in self.datastore.hosts:
+    def commit(self):
+        for host in self.datastore.get_hosts():
             if ":" not in host:
                 host += ":8983"
             url = "http://{host}/{api_base}/{core}/update/?commit=true" \
@@ -61,8 +65,9 @@ class SolrCollection(Collection):
         while not done:
             session, host = self._get_session()
 
-            url = "http://{host}/{api_base}/{core}/get?id={keys}&wt=json&fl=_source_".format(
-                host=host, api_base=self.api_base, core=self.name, keys=','.join(temp_keys))
+            url = "http://{host}/{api_base}/{core}/get?ids={keys}" \
+                  "&wt=json&fl=_source_,{id_field}".format(host=host, api_base=self.api_base, core=self.name,
+                                                           keys=','.join(temp_keys), id_field=self.datastore.ID)
 
             res = session.get(url, timeout=self.SOLR_GET_TIMEOUT_SEC)
             if res.ok:
@@ -93,7 +98,8 @@ class SolrCollection(Collection):
         if retries is None:
             retries = self.RETRY_NONE
 
-        while retries != 0:
+        done = False
+        while not done:
             session, host = self._get_session()
 
             url = "http://{host}/{api_base}/{core}/get?id={key}&wt=json&fl=_source_".format(
@@ -115,6 +121,10 @@ class SolrCollection(Collection):
             if retries > 0:
                 time.sleep(0.05)
                 retries -= 1
+            elif retries < 0:
+                time.sleep(0.05)
+            else:
+                done = True
 
         return None
 
@@ -157,16 +167,76 @@ class SolrCollection(Collection):
                                                  strict=False):
             yield item[self.datastore.ID]
 
-    @collection_reconnect(log)
-    def _ensure_index(self):
-        # Test that the core exists and create it if it does not
-        pass
-        """
-        http://localhost:8983/solr/admin/collections?action=LIST
-        http://localhost:8983/solr/admin/collections?action=CREATE&name=test&numShards=1&replicationFactor=1
-        
-        """
+    def _get_configset(self):
+        schema = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/managed-schema"))
+        cfg = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/solrconfig.xml"))
 
+        with open(schema, 'rb') as fh:
+            schema_raw = fh.read()
+
+        with open(cfg, 'rb') as fh:
+            cfg_raw = fh.read()
+
+        if self.model_class is None:
+            zobj = InMemoryZip()
+            zobj.append('managed-schema', schema_raw)
+            zobj.append('solrconfig.xml', cfg_raw)
+            return zobj.read()
+        else:
+            # TODO: Build a configset based on the model
+            pass
+
+        return None
+
+
+    @collection_reconnect(log)
+    def _ensure_configset(self):
+        session, host = self._get_session()
+        test_url = "http://{host}/{api_base}/admin/configs?action=LIST".format(host=host, api_base=self.api_base)
+        res = session.get(test_url, headers={"content-type": "application/json"})
+        if res.ok:
+            data = res.json()
+            if self.name not in data.get('configSets', []):
+                log.info("ConfigSet {collection} does not exists. "
+                         "Creating it now...".format(collection=self.name.upper()))
+                upload_url = "http://{host}/{api_base}/admin/configs?action=UPLOAD" \
+                             "&name={collection}".format(host=host, api_base=self.api_base, collection=self.name)
+                res = session.post(upload_url, data=self._get_configset(), headers={"content-type": "application/json"})
+                if res.ok:
+                    log.info("Configset {collection} created!".format(collection=self.name))
+                else:
+                    raise DataStoreException("Could not create configset {collection}.".format(collection=self.name))
+        else:
+            raise DataStoreException("Cannot get to configset admin page.")
+
+    @collection_reconnect(log)
+    def _ensure_collection(self):
+        session, host = self._get_session()
+        test_url = "http://{host}/{api_base}/admin/collections?action=LIST".format(host=host, api_base=self.api_base)
+        res = session.get(test_url, headers={"content-type": "application/json"})
+        if res.ok:
+            data = res.json()
+            if self.name not in data.get('collections', []):
+                # Make sure configset for collection exists
+                self._ensure_configset()
+
+                # Create collection
+                log.warn("Collection {collection} does not exists. "
+                         "Creating it now...".format(collection=self.name.upper()))
+                create_url = "http://{host}/{api_base}/admin/collections?action=CREATE" \
+                             "&name={collection}&numShards={shards}&replicationFactor={replication}" \
+                             "&collection.configName={collection}".format(host=host,
+                                                                          api_base=self.api_base,
+                                                                          collection=self.name,
+                                                                          shards=self.num_shards,
+                                                                          replication=self.replication_factor)
+                res = session.get(create_url, headers={"content-type": "application/json"})
+                if res.ok:
+                    log.info("Collection {collection} created!".format(collection=self.name))
+                else:
+                    raise DataStoreException("Could not create collection {collection}.".format(collection=self.name))
+        else:
+            raise DataStoreException("Cannot get to collection admin page.")
 
 
 class SolrStore(BaseStore):
@@ -195,6 +265,18 @@ class SolrStore(BaseStore):
         return '{0} - {1}'.format(
             self.__class__.__name__,
             self._hosts)
+
+    def is_alive(self):
+        with requests.Session() as s:
+            for host in self._hosts:
+                try:
+                    res = s.get('http://{host}/solr/admin/cores?action=STATUS'.format(host=host))
+                    if not res.ok:
+                        return False
+                except requests.ConnectionError:
+                    return False
+
+        return True
 
     def close(self):
         super().close()
@@ -225,7 +307,6 @@ class SolrStore(BaseStore):
 if __name__ == "__main__":
 
     s = SolrStore(['127.0.0.1:8983'])
-    s.register('test')
-    print(s.test.get('test'))
-    s.test.save('test', 'test')
-    print(s.test.get('test'))
+    s.register('user')
+    print(s.user.get('sgaron'))
+    print(s.user.multiget(['sgaron']))
