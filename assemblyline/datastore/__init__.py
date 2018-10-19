@@ -207,11 +207,16 @@ class Collection(object):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def histogram(self, field, query, start, end, gap, mincount, filters=(), access_control=None):
+    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def grouped_search(self, query, group_on, start=None, sort=None, group_sort=None, fields=None, rows=None,
+    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
+                       min_count=1, filters=(), access_control=None):
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def grouped_search(self, group_on, query="*", start=None, sort=None, group_sort=None, fields=None, rows=None,
                        filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
@@ -230,18 +235,31 @@ class BaseStore(object):
     ID = "_id"
     DEFAULT_SORT = "_id asc"
     DATE_FORMAT = {
-        'NOW': 'NOW',
-        'YEAR': 'YEAR',
-        'MONTH': 'MONTH',
-        'WEEK': 'WEEK',
-        'DAY': 'DAY',
-        'HOUR': 'HOUR',
-        'MINUTE': 'MINUTE',
-        'SECOND': 'SECOND',
-        'MILLISECOND': 'MILLISECOND',
-        'MICROSECOND': 'MICROSECOND',
-        'NANOSECOND': 'NANOSECOND',
-        'SEPARATOR': '',
+        'NOW': None,
+        'YEAR': None,
+        'MONTH': None,
+        'WEEK': None,
+        'DAY': None,
+        'HOUR': None,
+        'MINUTE': None,
+        'SECOND': None,
+        'MILLISECOND': None,
+        'MICROSECOND': None,
+        'NANOSECOND': None,
+        'SEPARATOR': None,
+        'DATE_END': None
+    }
+
+    DATEMATH_MAP = {
+        'NOW': 'now',
+        'YEAR': 'y',
+        'MONTH': 'M',
+        'WEEK': 'w',
+        'DAY': 'd',
+        'HOUR': 'h',
+        'MINUTE': 'm',
+        'SECOND': 's',
+        'DATE_END': 'Z||'
     }
 
     def __init__(self, hosts, collection_class):

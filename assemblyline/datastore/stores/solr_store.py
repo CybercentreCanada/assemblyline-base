@@ -1,20 +1,25 @@
 import json
 import os
-import uuid
-from urllib.parse import quote
-
 import requests
 import time
 import threading
+import uuid
 
 from copy import copy, deepcopy
+from datemath import dm
+from datemath.helpers import DateMathException
 from random import choice
+from urllib.parse import quote
 
 from assemblyline.common.chunk import chunked_list
 from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
 from assemblyline.datastore import BaseStore, log, Collection, DataStoreException, SearchException, SearchRetryException
 from assemblyline.datastore.reconnect import collection_reconnect
+
+
+class DateMathException(object):
+    pass
 
 
 class SolrCollection(Collection):
@@ -173,8 +178,34 @@ class SolrCollection(Collection):
     def _valid_solr_param(self, key, value):
         msg = "Invalid parameter (%s=%s). Should be between %d and %d"
 
-        if key.endswith('facet.offset') or key.endswith('group.offset'):
-            return False
+        banned_suffix = [
+            'facet.offset',
+            'group.offset',
+            'facet.enum.cache.minDf',
+            'facet.range.hardend',
+            'facet.range.include',
+            'facet.range.other',
+            'facet.range.method',
+            'facet.missing',
+            'facet.overrequest.count',
+            'facet.overrequest.ratio',
+            'facet.threads',
+            'facet.method',
+        ]
+
+        banned_prefix = [
+            'facet.interval',
+            'facet.pivot'
+        ]
+
+        for banned in banned_suffix:
+            if key.endswith(banned):
+                return False
+
+        for banned in banned_prefix:
+            if key.startswith(banned):
+                return False
+
         if key.endswith('facet.limit') and not 1 <= int(value) <= self.MAX_FACET_LIMIT:
             raise SearchException(msg % (key, value, 1, self.MAX_FACET_LIMIT))
         if key.endswith('group.limit') and not 1 <= int(value) <= self.MAX_GROUP_LIMIT:
@@ -365,9 +396,61 @@ class SolrCollection(Collection):
         for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
             yield item[self.datastore.ID]
 
+    @staticmethod
+    def _to_python_datemath(value):
+        replace_list = [
+            (SolrStore.DATE_FORMAT['NOW'], SolrStore.DATEMATH_MAP['NOW']),
+            (SolrStore.DATE_FORMAT['YEAR'], SolrStore.DATEMATH_MAP['YEAR']),
+            (SolrStore.DATE_FORMAT['MONTH'], SolrStore.DATEMATH_MAP['MONTH']),
+            (SolrStore.DATE_FORMAT['WEEK'], SolrStore.DATEMATH_MAP['WEEK']),
+            (SolrStore.DATE_FORMAT['DAY'], SolrStore.DATEMATH_MAP['DAY']),
+            (SolrStore.DATE_FORMAT['HOUR'], SolrStore.DATEMATH_MAP['HOUR']),
+            (SolrStore.DATE_FORMAT['MINUTE'], SolrStore.DATEMATH_MAP['MINUTE']),
+            (SolrStore.DATE_FORMAT['SECOND'], SolrStore.DATEMATH_MAP['SECOND']),
+            (SolrStore.DATE_FORMAT['DATE_END'], SolrStore.DATEMATH_MAP['DATE_END'])
+        ]
+
+        for x in replace_list:
+            value = value.replace(*x)
+
+        return value
+
+    def _validate_steps_count(self, start, end, gap):
+        gaps_count = None
+        try:
+            start = int(start)
+            end = int(end)
+            gap = int(gap)
+
+            gaps_count = int((end - start) / gap)
+        except ValueError:
+            pass
+
+        if not gaps_count:
+            try:
+                parsed_start = dm(self._to_python_datemath(start)).timestamp
+                parsed_end = dm(self._to_python_datemath(end)).timestamp
+                parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
+
+                gaps_count = int((parsed_end - parsed_start) / parsed_gap)
+            except BaseException:
+                pass
+
+        if not gaps_count:
+            raise SearchException(
+                "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
+
+        if gaps_count > self.MAX_FACET_LIMIT:
+            raise SearchException('Facet max steps are limited to %s. '
+                                  'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
+                                                                                gaps_count))
+
     @collection_reconnect(log)
-    def histogram(self, field, query, start, end, gap, mincount, filters=(), access_control=None):
+    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
         """Build a histogram of `query` data over `field`"""
+
+        self._validate_steps_count(start, end, gap)
+
         args = [
             ("rows", "0"),
             ("facet", "on"),
@@ -378,17 +461,58 @@ class SolrCollection(Collection):
             ("facet.mincount", mincount),
             ("q", query)
         ]
+
         if filters:
             if isinstance(filters, list):
                 args.extend(('fq', ff) for ff in filters)
             else:
                 args.append(('fq', filters))
 
+        if access_control:
+            args.append(('fq', access_control))
+
         result = self._search(args)
         return dict(chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2))
 
     @collection_reconnect(log)
-    def grouped_search(self, query, group_on, start=None, sort=None, group_sort=None, fields=None, rows=None,
+    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
+                       min_count=1, filters=(), access_control=None):
+        args = [
+            ("q", query),
+            ("rows", "0"),
+            ("facet", "on"),
+            ("facet.field", field),
+            ("facet.exists", 'true'),
+            ("facet.limit", limit),
+            ("facet.mincount", min_count)
+        ]
+
+        if prefix:
+            args.append(("facet.prefix", prefix))
+
+        if contains:
+            args.append(("facet.contains", contains))
+
+        if ignore_case:
+            args.append(("facet.contains.ignore_case", 'true'))
+
+        if sort:
+            args.append(("facet.sort", sort))
+
+        if filters:
+            if isinstance(filters, list):
+                args.extend(('fq', ff) for ff in filters)
+            else:
+                args.append(('fq', filters))
+
+        if access_control:
+            args.append(('fq', access_control))
+
+        result = self._search(args)
+        return dict(chunked_list(result["facet_counts"]["facet_fields"][field], 2))
+
+    @collection_reconnect(log)
+    def grouped_search(self, group_on, query="*", start=None, sort=None, group_sort=None, fields=None, rows=None,
                        filters=(), access_control=None):
         pass
 
@@ -479,6 +603,7 @@ class SolrStore(BaseStore):
         'MICROSECOND': 'MICROSECOND',
         'NANOSECOND': 'NANOSECOND',
         'SEPARATOR': '',
+        'DATE_END': 'Z'
     }
 
     def __init__(self, hosts):
@@ -533,13 +658,28 @@ if __name__ == "__main__":
     s.register('user')
     if not s.user.get('sgaron'):
         s.user.save('sgaron', {'uname': 'sgaron', 'is_admin': True})
+    if not s.user.get('bob'):
+        s.user.save('bob', {'uname': 'bob', 'is_admin': False})
+    if not s.user.get('denis'):
+        s.user.save('denis', {'__expiry_ts__': 'NOW', 'uname': 'denis', 'is_admin': False})
+    if not s.user.get('robert'):
+        s.user.save('robert', {'__expiry_ts__': 'NOW', 'robert': 'denis', 'is_admin': False})
+
+    s.user.commit()
     print(s.user.get('sgaron'))
+    print(s.user.get('bob'))
+
     print(s.user.multiget(['sgaron']))
     print(s.user.search("*:*"))
-    print(s.user.search("*:*", fl="*"))
+    print(s.user.search('__expiry_ts__:"2018-10-18T16:26:42.961Z+1DAY"', fl="*"))
 
     for k in s.user.keys():
         print(k)
-    print(s.user.histogram('_version_', "*", 1614679643837693700, 1614679643837694200, 100, 0))
-    print(s.user._search([('q', "*:*")]))
-    print(s.user._search([('q', "*:*"), ('fl', "*")]))
+
+    print(s.user.histogram('_version_', 1614000000000000000, 1615000000000000000, 10000000000000))
+    print(s.user.histogram('__expiry_ts__', 'NOW-1MONTH/DAY', 'NOW+1DAY/DAY', '+1DAY'))
+
+    print(s.user.field_analysis('_id_'))
+
+    # print(s.user._search([('q', "*:*")]))
+    # print(s.user._search([('q', "*:*"), ('fl', "*")]))
