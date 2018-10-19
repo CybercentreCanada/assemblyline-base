@@ -7,7 +7,6 @@ import uuid
 
 from copy import copy, deepcopy
 from datemath import dm
-from datemath.helpers import DateMathException
 from random import choice
 from urllib.parse import quote
 
@@ -415,6 +414,7 @@ class SolrCollection(Collection):
 
         return value
 
+    # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):
         gaps_count = None
         try:
@@ -475,8 +475,8 @@ class SolrCollection(Collection):
         return dict(chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2))
 
     @collection_reconnect(log)
-    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-                       min_count=1, filters=(), access_control=None):
+    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=DEFAULT_SORT,
+                       limit=10, min_count=1, filters=(), access_control=None):
         args = [
             ("q", query),
             ("rows", "0"),
@@ -512,9 +512,51 @@ class SolrCollection(Collection):
         return dict(chunked_list(result["facet_counts"]["facet_fields"][field], 2))
 
     @collection_reconnect(log)
-    def grouped_search(self, group_on, query="*", start=None, sort=None, group_sort=None, fields=None, rows=None,
-                       filters=(), access_control=None):
-        pass
+    def grouped_search(self, field, query="*", offset=None, sort=DEFAULT_SORT, group_sort=None, fl=None, limit=1,
+                       rows=Collection.DEFAULT_ROW_SIZE, filters=(), access_control=None):
+        args = [
+            ("group", "on"),
+            ("group.field", field),
+            ('rows', rows),
+            ('q', query)
+        ]
+
+        if offset:
+            args.append(("start", offset))
+
+        if sort:
+            args.append(("sort", sort))
+
+        if group_sort:
+            args.append(("group.sort", group_sort))
+
+        if fl:
+            args.append(("fl", fl))
+
+        if limit:
+            args.append(('group.limit', limit))
+
+        if filters:
+            if isinstance(filters, list):
+                args.extend(('fq', ff) for ff in filters)
+            else:
+                args.append(('fq', filters))
+
+        if access_control:
+            args.append(('fq', access_control))
+
+        data = self._search(args)['grouped'][field]
+
+        return {
+            'offset': offset,
+            'rows': rows,
+            'total': data['matches'],
+            'items': [{
+                'value': grouping['groupValue'],
+                'total': grouping['doclist']['numFound'],
+                'items': [self._cleanup_search_result(x) for x in grouping['doclist']['docs']]
+            } for grouping in data['groups']]
+        }
 
     def _get_configset(self):
         schema = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/managed-schema"))
@@ -654,6 +696,8 @@ class SolrStore(BaseStore):
 
 
 if __name__ == "__main__":
+    from pprint import pprint
+
     s = SolrStore(['127.0.0.1:8983'])
     s.register('user')
     if not s.user.get('sgaron'):
@@ -666,20 +710,21 @@ if __name__ == "__main__":
         s.user.save('robert', {'__expiry_ts__': 'NOW', 'robert': 'denis', 'is_admin': False})
 
     s.user.commit()
-    print(s.user.get('sgaron'))
-    print(s.user.get('bob'))
+    pprint(s.user.get('sgaron'))
+    pprint(s.user.get('bob'))
 
-    print(s.user.multiget(['sgaron']))
-    print(s.user.search("*:*"))
-    print(s.user.search('__expiry_ts__:"2018-10-18T16:26:42.961Z+1DAY"', fl="*"))
+    pprint(s.user.multiget(['sgaron']))
+    pprint(s.user.search("*:*"))
+    pprint(s.user.search('__expiry_ts__:"2018-10-18T16:26:42.961Z+1DAY"', fl="*"))
 
     for k in s.user.keys():
         print(k)
 
-    print(s.user.histogram('_version_', 1614000000000000000, 1615000000000000000, 10000000000000))
-    print(s.user.histogram('__expiry_ts__', 'NOW-1MONTH/DAY', 'NOW+1DAY/DAY', '+1DAY'))
+    pprint(s.user.histogram('_version_', 1614000000000000000, 1615000000000000000, 10000000000000))
+    pprint(s.user.histogram('__expiry_ts__', 'NOW-1MONTH/DAY', 'NOW+1DAY/DAY', '+1DAY'))
 
-    print(s.user.field_analysis('_id_'))
+    pprint(s.user.field_analysis('_id_'))
+    pprint(s.user.grouped_search('_id_', rows=1, offset=1, sort='_id_ asc'))
 
     # print(s.user._search([('q', "*:*")]))
     # print(s.user._search([('q', "*:*"), ('fl', "*")]))

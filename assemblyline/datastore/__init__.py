@@ -216,8 +216,8 @@ class Collection(object):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def grouped_search(self, group_on, query="*", start=None, sort=None, group_sort=None, fields=None, rows=None,
-                       filters=(), access_control=None):
+    def grouped_search(self, group_field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
+                       rows=DEFAULT_ROW_SIZE, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
