@@ -700,31 +700,46 @@ if __name__ == "__main__":
 
     s = SolrStore(['127.0.0.1:8983'])
     s.register('user')
-    if not s.user.get('sgaron'):
-        s.user.save('sgaron', {'uname': 'sgaron', 'is_admin': True})
-    if not s.user.get('bob'):
-        s.user.save('bob', {'uname': 'bob', 'is_admin': False})
-    if not s.user.get('denis'):
-        s.user.save('denis', {'__expiry_ts__': 'NOW', 'uname': 'denis', 'is_admin': False})
-    if not s.user.get('robert'):
-        s.user.save('robert', {'__expiry_ts__': 'NOW', 'robert': 'denis', 'is_admin': False})
+    s.user.delete('sgaron')
+    s.user.delete('bob')
+    s.user.delete('robert')
+    s.user.delete('denis')
+
+    s.user.save('sgaron', {'uname': 'sgaron', 'is_admin': True})
+    s.user.save('bob', {'uname': 'bob', 'is_admin': False})
+    s.user.save('denis', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'denis', 'is_admin': False})
+    s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert', 'is_admin': False})
 
     s.user.commit()
+    print('\n# get sgaron')
     pprint(s.user.get('sgaron'))
+    print('\n# get bob')
     pprint(s.user.get('bob'))
 
-    pprint(s.user.multiget(['sgaron']))
+    print('\n# multiget sgaron, robert, denis')
+    pprint(s.user.multiget(['sgaron', 'robert', 'denis']))
+
+    print('\n# search *:*')
     pprint(s.user.search("*:*"))
+
+    print('\n# search __expiry_ts__ all fields')
     pprint(s.user.search('__expiry_ts__:"2018-10-18T16:26:42.961Z+1DAY"', fl="*"))
 
+    print('\n# stream keys')
     for k in s.user.keys():
         print(k)
 
-    pprint(s.user.histogram('_version_', 1614000000000000000, 1615000000000000000, 10000000000000))
+    print('\n# histogram number')
+    pprint(s.user.histogram('_version_', 1610000000000000000, 1620000000000000000, 100000000000000))
+
+    print('\n# histogram date')
     pprint(s.user.histogram('__expiry_ts__', 'NOW-1MONTH/DAY', 'NOW+1DAY/DAY', '+1DAY'))
 
+    print('\n# field analysis')
     pprint(s.user.field_analysis('_id_'))
-    pprint(s.user.grouped_search('_id_', rows=1, offset=1, sort='_id_ asc'))
+
+    print('\n# grouped search')
+    pprint(s.user.grouped_search('_id_', rows=2, offset=1, sort='_id_ asc'))
 
     # print(s.user._search([('q', "*:*")]))
     # print(s.user._search([('q', "*:*"), ('fl', "*")]))
