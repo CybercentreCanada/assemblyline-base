@@ -316,7 +316,6 @@ class SolrCollection(Collection):
         }
         return output
 
-    @collection_reconnect(log)
     def stream_search(self, query, sort=DEFAULT_SORT, fl=None, filters=(), access_control=None, buffer_size=200):
 
         def _auto_fill(_items, _lock, _args):
@@ -390,7 +389,6 @@ class SolrCollection(Collection):
                     yield_done = True
                 time.sleep(0.01)
 
-    @collection_reconnect(log)
     def keys(self, access_control=None):
         for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
             yield item[self.datastore.ID]
@@ -445,7 +443,6 @@ class SolrCollection(Collection):
                                   'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
                                                                                 gaps_count))
 
-    @collection_reconnect(log)
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
         """Build a histogram of `query` data over `field`"""
 
@@ -474,7 +471,6 @@ class SolrCollection(Collection):
         result = self._search(args)
         return dict(chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2))
 
-    @collection_reconnect(log)
     def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=DEFAULT_SORT,
                        limit=10, min_count=1, filters=(), access_control=None):
         args = [
@@ -511,7 +507,6 @@ class SolrCollection(Collection):
         result = self._search(args)
         return dict(chunked_list(result["facet_counts"]["facet_fields"][field], 2))
 
-    @collection_reconnect(log)
     def grouped_search(self, field, query="*", offset=None, sort=DEFAULT_SORT, group_sort=None, fl=None, limit=1,
                        rows=Collection.DEFAULT_ROW_SIZE, filters=(), access_control=None):
         args = [
