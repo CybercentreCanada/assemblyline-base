@@ -232,8 +232,8 @@ class Collection(object):
 
 
 class BaseStore(object):
-    ID = "_id"
-    DEFAULT_SORT = "_id asc"
+    ID = None
+    DEFAULT_SORT = None
     DATE_FORMAT = {
         'NOW': None,
         'YEAR': None,
