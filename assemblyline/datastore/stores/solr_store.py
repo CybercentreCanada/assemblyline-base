@@ -100,7 +100,7 @@ class SolrCollection(Collection):
 
         return ret
 
-    def _get(self, key, retries=None):
+    def _get(self, key, retries):
         if retries is None:
             retries = self.RETRY_NONE
 
