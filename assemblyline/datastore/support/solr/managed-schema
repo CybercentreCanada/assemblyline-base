@@ -7,11 +7,11 @@
 
         <!--  AL Access fields   -->
         <field name="classification" type="string" indexed="true" stored="true"/>
-        <field name="__access_lvl__" type="pint" indexed="true" stored="true"/>
-        <field name="__access_req__" type="strings" indexed="true" stored="true"/>
-        <field name="__access_grp1__" type="strings" indexed="true" stored="true" default="__EMPTY__"/>
-        <field name="__access_grp2__" type="strings" indexed="true" stored="true" default="__EMPTY__"/>
-        <field name="__expiry_ts__" type="pdate" indexed="true" stored="true"/>
+        <field name="__access_lvl__" type="pint" indexed="true" stored="false"/>
+        <field name="__access_req__" type="strings" indexed="true" stored="false"/>
+        <field name="__access_grp1__" type="strings" indexed="true" stored="false" default="__EMPTY__"/>
+        <field name="__access_grp2__" type="strings" indexed="true" stored="false" default="__EMPTY__"/>
+        <field name="__expiry_ts__" type="pdate" indexed="true" stored="false"/>
 
         <!-- Default fields -->
         <field name="__text__" type="text_general" indexed="true" stored="false"/>
