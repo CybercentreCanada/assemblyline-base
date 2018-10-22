@@ -1,51 +1,51 @@
 import json
+import os
+
 import requests
+import riak
+import threading
+import time
 
 from copy import copy
-from urllib import quote, unquote
 
-from assemblyline.al.core.datastore import BaseStore, config, DataStoreException, log, SearchException, \
-    SearchRetryException, DatastoreObject
-from assemblyline.al.core.bucket_logic import EXTRA_SEARCH_FIELD
-from assemblyline.common.charset import safe_str
-from assemblyline.common.datastore_reconnect import DatastoreReconnect, DatastoreObjectReconnect
-
-DATASTORE_STREAM_PORT = config.datastore.riak.stream_port
-DATASTORE_SOLR_PORT = config.datastore.riak.solr_port
-
-riak = None
+from assemblyline.datastore import collection_reconnect, log, DataStoreException
+from assemblyline.datastore.stores.solr_store import SolrCollection, SolrStore
 
 
 def utf8safe_encoder(obj):
     """
     This fixes riak unicode issues when strings in blob are already UTF-8.
     """
-    return json.dumps(obj)
+    return json.dumps(obj).encode('UTF-8')
 
 
-class RiakObject(DatastoreObject):
-    def __init__(self, datastore, name):
-        super(RiakObject, self).__init__(datastore, name)
-        self.riak_bucket = datastore.client.bucket(name, bucket_type="data")
+class RiakCollection(SolrCollection):
+    MULTIGET_MAX_RETRY = 5
+    DEFAULT_SORT = "_yz_id asc"
 
-    def commit(self, host=None):
-        url = "http://{host}:{port}/{path}/{bucket}/update/?commit=true" \
-              "&softCommit=true&wt=json".format(host=host, port=self.datastore.solr_port,
-                                                path=self.datastore.url_path, bucket=self.name)
-        res = requests.get(url)
+    def __init__(self, datastore, name, model_class=None, solr_port=8093, riak_http_port=8098):
+        self.riak_bucket = datastore.client.bucket(name)
+        self.solr_port = solr_port
+        self.riak_http_port = riak_http_port
+        self.query_plan = None
+        self.riak_api_base = "search/query"
 
-        if res.ok:
-            solr_out = res.json()
-            return solr_out
-        else:
-            return None
+        super().__init__(datastore, name, model_class=model_class, api_base="internal_solr")
+
+    @collection_reconnect(log)
+    def commit(self):
+        for host in self.datastore.get_hosts():
+            if ":" not in host:
+                host += ":%s" % self.solr_port
+            url = "http://{host}/{api_base}/{core}/update/?commit=true" \
+                  "&softCommit=true&wt=json".format(host=host, api_base=self.api_base, core=self.name)
+
+            res = requests.get(url)
+            return res.ok
 
     # noinspection PyBroadException
     @staticmethod
-    def get_data_from_riak_item(item, strict=False):
-        if strict and not item.exists:
-            raise DataStoreException("Key '{key}' does not exist in bucket {bucket}.".format(key=item.key,
-                                                                                             bucket=item.bucket.name))
+    def get_data_from_riak_item(item):
         if item.encoded_data == 'None':
             return None
         try:
@@ -56,15 +56,8 @@ class RiakObject(DatastoreObject):
                               "decoding method to pull the data." % (item.bucket.name, item.key))
             return item.encoded_data
 
-    @DatastoreObjectReconnect(log)
-    def get(self, key, strict=False):
-        data = self.get_data_from_riak_item(self.riak_bucket.get(key), strict=strict)
-        if data and isinstance(data, dict):
-            data.pop(EXTRA_SEARCH_FIELD, None)
-        return data
-
-    @DatastoreObjectReconnect(log)
-    def multiget(self, key_list, strict=False):
+    @collection_reconnect(log)
+    def multiget(self, key_list):
         temp_keys = copy(key_list)
         done = False
         retry = 0
@@ -73,12 +66,12 @@ class RiakObject(DatastoreObject):
             for bucket_item in self.riak_bucket.multiget(temp_keys):
                 if not isinstance(bucket_item, tuple):
                     try:
-                        item_data = RiakObject.get_data_from_riak_item(bucket_item, strict=strict)
+                        item_data = RiakCollection.get_data_from_riak_item(bucket_item)
                     except DataStoreException:
                         continue
                     if item_data is not None:
                         if isinstance(item_data, dict):
-                            item_data.pop(EXTRA_SEARCH_FIELD, None)
+                            item_data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
                         ret.append(item_data)
                     temp_keys.remove(bucket_item.key)
 
@@ -87,42 +80,115 @@ class RiakObject(DatastoreObject):
             else:
                 retry += 1
 
-            if retry >= BaseStore.MAX_RETRY:
+            if retry >= self.MULTIGET_MAX_RETRY:
                 raise DataStoreException("%s is missing data for the following keys: %s" % (self.name.upper(),
                                                                                             temp_keys))
         return ret
+
+    @collection_reconnect(log)
+    def _get(self, key, retries=None):
+        if retries is None:
+            retries = self.RETRY_NONE
+
+        done = False
+        while not done:
+            data = self.get_data_from_riak_item(self.riak_bucket.get(key))
+            if data and isinstance(data, dict):
+                data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
+
+            if data:
+                return data
+
+            if retries > 0:
+                time.sleep(0.05)
+                retries -= 1
+            elif retries < 0:
+                time.sleep(0.05)
+            else:
+                done = True
+
+        return None
 
     def _save(self, key, data):
         item = self.riak_bucket.new(key=key, data=data, content_type='application/json')
         item.store()
 
-    @DatastoreObjectReconnect(log)
-    def keys(self, access_control=None):
-        out = []
-        for item in self.datastore.stream_search(self.name, "*", fl=self.datastore.ID, access_control=access_control):
-            out.append(item[self.datastore.ID])
-        return list(set(out))
+    @collection_reconnect(log)
+    def delete(self, key):
+        self.riak_bucket.delete(key)
 
-    @DatastoreObjectReconnect(log)
-    def stream_keys(self, **_):
+    def _cleanup_search_result(self, item):
+        if isinstance(item, dict):
+            item.pop('_source_', None)
+            item.pop('_version_', None)
+            item.pop('_yz_id', None)
+            item.pop('_yz_rt', None)
+            item.pop('_yz_rb', None)
+            item.pop(self.EXTRA_SEARCH_FIELD, None)
+
+        return item
+
+    @collection_reconnect(log)
+    def _search(self, args=None, port=None, api_base=None, search_api='select/'):
+        if self.query_plan:
+            temp_args = args + self.query_plan
+            return super()._search(args=temp_args, port=self.solr_port, api_base=self.api_base, search_api=search_api)
+        else:
+            ret_val = super()._search(args=args, port=self.riak_http_port, api_base=self.riak_api_base, search_api="")
+
+            qp = []
+            for k, v in ret_val['responseHeader']['params'].items():
+                if ":%s" % self.solr_port in k or ":8093" in k or k == "shards":
+                    qp.append((k, v))
+            self.query_plan = qp
+
+            return ret_val
+
+    @collection_reconnect(log)
+    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
+        ret_val = super().histogram(field, start, end, gap, query=query, mincount=mincount,
+                                    filters=filters, access_control=access_control)
+
+        # NOTE: mincount does not seem to be applied correctly in the solr instance provided by riak
+        #       we will apply mincount here
+
+        return {step: count for step, count in ret_val.items() if count >= mincount}
+
+    @collection_reconnect(log)
+    def keys(self, access_control=None):
+        for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
+            yield item[self.datastore.ID]
+
+    @collection_reconnect(log)
+    def debug_keys(self, **_):
         for items in self.riak_bucket.stream_index("$bucket", ""):
             for item in items:
                 yield item
 
-    @DatastoreObjectReconnect(log)
-    def delete(self, key):
-        self.riak_bucket.delete(key)
+    @collection_reconnect(log)
+    def _ensure_collection(self):
+        # TODO: get schema and nvals from model_class
+        schema_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/riak/schema.xml"))
+        with open(schema_path) as sf:
+            schema_raw = sf.read()
+        nval = 1
+
+        # TODO: Check if schema, index and bucket already exist before creating them blindly??!
+        self.datastore.client.create_search_schema(schema=self.name, content=schema_raw)
+        self.datastore.client.create_search_index(self.name, self.name, nval)
+        props = {
+            'dvv_enabled': False,
+            'last_write_wins': True,
+            'allow_mult': False,
+            'n_val': nval,
+            'search_index': self.name
+        }
+        self.datastore.client.set_bucket_props(bucket=self.riak_bucket, props=props)
 
 
-class RiakStore(BaseStore):
+class RiakStore(SolrStore):
     """ Riak implementation of the ResultStore interface."""
-
     ID = "_yz_rk"
-    DEFAULT_SORT = "_yz_id asc"
-
-    READ_TIMEOUT_MILLISECS = 30000
-    CURRENT_QUERY_PLAN = {}
-
     DATE_FORMAT = {
         'NOW': 'NOW',
         'YEAR': 'YEAR',
@@ -139,19 +205,17 @@ class RiakStore(BaseStore):
     }
 
     # noinspection PyUnresolvedReferences
-    def __init__(self, hosts=None, port=config.datastore.riak.port, protocol_used='pbc', filestore_factory=None):
-        global riak
-        if riak is None:
-            import riak
+    def __init__(self, hosts=None, collection_class=RiakCollection, protocol_used='pbc',
+                 solr_port=8093, riak_http_port=8098, riak_pb_port=8087):
+        super().__init__(hosts, collection_class)
+        self.CURRENT_QUERY_PLAN = {}
 
-        super(RiakStore, self).__init__(hosts or self.get_db_node_list(), filestore_factory)
-
-        self.port = port or config.datastore.riak.port
-        self.stream_port = DATASTORE_STREAM_PORT
-        self.solr_port = DATASTORE_SOLR_PORT
+        self.riak_pb_port = riak_pb_port
+        self.riak_http_port = riak_http_port
+        self.solr_port = solr_port
 
         # Init Client
-        self.riak_nodes = [{'host': n, 'pb_port': self.port, 'http_port': DATASTORE_STREAM_PORT} for n in self.hosts]
+        self.riak_nodes = [{'host': n, 'pb_port': self.riak_pb_port, 'http_port': riak_http_port} for n in self._hosts]
         self.client = riak.RiakClient(protocol=protocol_used, nodes=self.riak_nodes)
         log.debug('riakclient opened...')
 
@@ -162,136 +226,20 @@ class RiakStore(BaseStore):
         # Set default resolver
         self.client.resolver = riak.resolver.last_written_resolver
 
-        # Initialize buckets
-        self._alerts = RiakObject(self, "alert")
-        self._blobs = RiakObject(self, "blob")
-        self._emptyresults = RiakObject(self, "emptyresult")
-        self._errors = RiakObject(self, "error")
-        self._files = RiakObject(self, "file")
-        self._filescores = RiakObject(self, "filescore")
-        self._nodes = RiakObject(self, "node")
-        self._results = RiakObject(self, "result")
-        self._signatures = RiakObject(self, "signature")
-        self._submissions = RiakObject(self, "submission")
-        self._users = RiakObject(self, "user")
-        self._workflows = RiakObject(self, "workflow")
-        self._apply_proxies()
-
-        self.protocol_used = protocol_used
-        self.url_path = "internal_solr"
-
     def __str__(self):
         return '{0} - {1}:{2}'.format(
             self.__class__.__name__,
             self.hosts,
-            self.port)
+            self.riak_pb_port)
 
-    # noinspection PyBroadException
-    def datastore_connection_reset(self):
-        global riak
-        if riak is None:
-            import riak
+    def __getattr__(self, name):
+        if name not in self._collections:
+            model_class = self._models[name]
+            self._collections[name] = self._collection_class(self, name, model_class=model_class,
+                                                             solr_port=self.solr_port,
+                                                             riak_http_port=self.riak_http_port)
 
-        try:
-            if not self.client.ping():
-                self.client.close()
-                self.client = None
-                self.client = riak.RiakClient(protocol=self.protocol_used, nodes=self.riak_nodes)
-        except Exception:
-            pass
-
-    # noinspection PyBroadException
-    def advanced_search(self, bucket, query, args, df="text", wt="json", save_qp=False, access_control=None,
-                        _hosts_=None, filters=()):
-
-        if bucket not in BaseStore.ALL_INDEXED_BUCKET_LIST:
-            raise SearchException("Bucket %s does not exists." % bucket)
-
-        host_list = copy(_hosts_ or self.hosts)
-
-        args = list(args)
-        if filters:
-            if isinstance(filters, basestring):
-                args.append(('fq', filters))
-            else:
-                args.extend(('fq', ff) for ff in filters)
-
-        try:
-            query = quote(query)
-        except Exception:
-            raise SearchException("Unable to URL quote query: %s" % safe_str(query))
-
-        while True:
-            session, host, _ = self.get_or_create_session(host_list, self.stream_port)
-            try:
-                kw = "&".join(["%s=%s" % (k, quote(safe_str(v))) for k, v in args if self.valid_solr_param(k, v)])
-                url = "http://%s/search/query/%s/?q=%s&df=%s&wt=%s" % (host, bucket, query, df, wt)
-
-                if access_control:
-                    url += "&fq=%s" % access_control
-
-                if kw:
-                    url += "&" + kw
-
-                res = session.get(url)
-                if res.ok:
-                    solr_out = res.json()
-
-                    # Cleanup potential leak of information about our cluster
-                    qp_fields = {}
-                    params = [k for k in solr_out.get("responseHeader", {}).get("params", {}).keys()]
-                    for k in params:
-                        if ":%s" % DATASTORE_SOLR_PORT in k or ":8093" in k or k == "shards":
-                            if save_qp:
-                                qp_fields[k] = solr_out["responseHeader"]["params"][k]
-                            del solr_out["responseHeader"]["params"][k]
-
-                    if save_qp:
-                        self.CURRENT_QUERY_PLAN[bucket] = "&%s" % "&".join(["%s=%s" % (k, v)
-                                                                            for k, v in qp_fields.iteritems()])
-
-                    return solr_out
-                else:
-                    try:
-                        solr_error = res.json()
-                        message = solr_error["error"]["msg"]
-                        if "IOException" in message or "Server refused" in message:
-                            raise SearchRetryException()
-                        else:
-                            if "neither indexed nor has doc values: " in message:
-                                # Cleanup potential leak of information about our cluster
-                                qp_fields = {}
-                                params = [k for k in solr_error.get("responseHeader", {}).get("params", {}).keys()]
-                                for k in params:
-                                    if ":%s" % DATASTORE_SOLR_PORT in k or ":8093" in k or k == "shards":
-                                        if save_qp:
-                                            qp_fields[k] = solr_error["responseHeader"]["params"][k]
-                                        del solr_error["responseHeader"]["params"][k]
-
-                                if save_qp:
-                                    self.CURRENT_QUERY_PLAN[bucket] = "&%s" % "&".join(["%s=%s" % (k, v)
-                                                                                        for k, v in
-                                                                                        qp_fields.iteritems()])
-                                return solr_error
-                            else:
-                                raise SearchException(message)
-                    except SearchException:
-                        raise
-                    except Exception:
-                        if res.status_code == 404:
-                            raise SearchException("Bucket %s does not exists." % bucket)
-                        elif res.status_code == 500:
-                            raise SearchRetryException()
-                        else:
-                            raise SearchException("bucket: %s, query: %s, args: %s\n%s" %
-                                                  (bucket, query, args, res.content))
-            except requests.ConnectionError:
-                host_list.remove(host)
-            except SearchRetryException:
-                host_list.remove(host)
-            finally:
-                if save_qp:
-                    self.terminate_session(host)
+        return self._collections[name]
 
     def close(self):
         super(RiakStore, self).close()
@@ -301,33 +249,74 @@ class RiakStore(BaseStore):
             self.client.close()
             self.client = None
 
-    def direct_search(self, bucket, query, args=(), df="text", wt="json", access_control=None,
-                      url_extra=None, _hosts_=None, filters=()):
-        if bucket not in self.CURRENT_QUERY_PLAN or not self.CURRENT_QUERY_PLAN[bucket]:
-            log.debug("There is no coverage plan for bucket '%s'. Re-dispatching to advanced_search and saving the "
-                      "coverage plan..." % bucket)
-            riak_out = self.advanced_search(bucket, query, args, df=df, wt=wt, save_qp=True,
-                                            access_control=access_control, _hosts_=_hosts_, filters=filters)
-            log.debug("Coverage plan for '%s' saved as: %s" % (bucket, self.CURRENT_QUERY_PLAN[bucket]))
-            riak_out['provider'] = "RIAK"
-            return riak_out
+        self._terminate_session(threading.get_ident())
 
+    # noinspection PyBroadException
+    def connection_reset(self):
         try:
-            return super(RiakStore, self).direct_search(bucket, query, args, df, wt, access_control, filters=filters,
-                                                        url_extra=self.CURRENT_QUERY_PLAN[bucket], _hosts_=_hosts_)
+            if not self.client.ping():
+                self.client.close()
+                self.client = None
+                self.client = riak.RiakClient(protocol=self.protocol_used, nodes=self.riak_nodes)
 
-        except requests.ConnectionError:
-            riak_out = self.advanced_search(bucket, unquote(query), args, df=df, wt=wt, save_qp=True,
-                                            access_control=access_control, filters=filters)
-            riak_out['provider'] = "RIAK"
-            return riak_out
-        except SearchRetryException:
-            riak_out = self.advanced_search(bucket, unquote(query), args, df=df, wt=wt, save_qp=True,
-                                            access_control=access_control, filters=filters)
-            riak_out['provider'] = "RIAK"
-            return riak_out
+        except Exception:
+            pass
 
-    def get_db_node_list(self, full=True):
-        if full:
-            return config.datastore.riak.nodes
-        return config.datastore.hosts
+        for collection in self._collections.values():
+            collection.query_plan = None
+
+        self._terminate_session(threading.get_ident())
+
+
+if __name__ == "__main__":
+    from pprint import pprint
+
+    s = RiakStore(['127.0.0.1'])
+    s.register('user')
+    s.user.delete('sgaron')
+    s.user.delete('bob')
+    s.user.delete('robert')
+    s.user.delete('denis')
+
+    s.user.save('sgaron', {'__expiry_ts__': '2018-10-10T16:26:42.961Z', 'uname': 'sgaron',
+                           'is_admin': True, '__access_lvl__': 400})
+    s.user.save('bob', {'__expiry_ts__': '2018-10-21T16:26:42.961Z', 'uname': 'bob',
+                        'is_admin': False, '__access_lvl__': 100})
+    s.user.save('denis', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'denis',
+                          'is_admin': False, '__access_lvl__': 100})
+    s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert',
+                           'is_admin': False, '__access_lvl__': 200})
+
+    s.user.commit()
+    print('\n# get sgaron')
+    pprint(s.user.get('sgaron'))
+    print('\n# get bob')
+    pprint(s.user.get('bob'))
+
+    print('\n# multiget sgaron, robert, denis')
+    pprint(s.user.multiget(['sgaron', 'robert', 'denis']))
+
+    print('\n# search *:*')
+    pprint(s.user.search("*:*"))
+
+    print('\n# search __expiry_ts__ all fields')
+    pprint(s.user.search('__expiry_ts__:"2018-10-18T16:26:42.961Z+1DAY"', fl="*"))
+
+    print('\n# stream keys')
+    for k in s.user.keys():
+        print(k)
+
+    print('\n# histogram number')
+    pprint(s.user.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
+
+    print('\n# histogram date')
+    pprint(s.user.histogram('__expiry_ts__', 'NOW-1MONTH/DAY', 'NOW+1DAY/DAY', '+1DAY'))
+
+    print('\n# field analysis')
+    pprint(s.user.field_analysis(s.ID))
+
+    print('\n# grouped search')
+    pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))
+
+    # print(s.user._search([('q', "*:*")]))
+    # print(s.user._search([('q', "*:*"), ('fl', "*")]))
