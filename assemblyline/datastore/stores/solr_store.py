@@ -7,6 +7,7 @@ import uuid
 
 from copy import copy, deepcopy
 from datemath import dm
+from datemath.helpers import DateMathException
 from random import choice
 from urllib.parse import quote
 
@@ -15,10 +16,6 @@ from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
 from assemblyline.datastore import BaseStore, log, Collection, DataStoreException, SearchException, SearchRetryException
 from assemblyline.datastore.reconnect import collection_reconnect
-
-
-class DateMathException(object):
-    pass
 
 
 class SolrCollection(Collection):
@@ -41,21 +38,17 @@ class SolrCollection(Collection):
         "_default_": 1000
     }
 
-    ######################################
-    # SOLR only methods
-    def _get_session(self):
-        session, host = self.datastore.get_or_create_session()
-        if ":" not in host:
-            host += ":8983"
-        return session, host
-
-    #####################################
-    # Overloaded functions
     def __init__(self, datastore, name, model_class=None, api_base="solr", replication_factor=1, num_shards=1):
         self.api_base = api_base
         self.num_shards = replication_factor
         self.replication_factor = num_shards
         super().__init__(datastore, name, model_class=model_class)
+
+    def _get_session(self, port=8983):
+        session, host = self.datastore.get_or_create_session()
+        if ":" not in host:
+            host += ":%s" % port
+        return session, host
 
     @collection_reconnect(log)
     def commit(self):
@@ -232,11 +225,11 @@ class SolrCollection(Collection):
 
     # noinspection PyBroadException
     @collection_reconnect(log)
-    def _search(self, args=None):
+    def _search(self, args=None, port=8983, api_base=None, search_api='select/'):
         if not isinstance(args, list):
             raise SearchException('args needs to be a list of tuples')
 
-        session, host = self._get_session()
+        session, host = self._get_session(port)
 
         query = self._get_value('q', args)
 
@@ -251,9 +244,10 @@ class SolrCollection(Collection):
 
         kw = "&".join(["%s=%s" % (param_name, quote(safe_str(param_value, force_str=True)))
                        for param_name, param_value in args if self._valid_solr_param(param_name, param_value)])
-        url = "http://{host}/{api_base}/{collection}/select/?".format(host=host,
-                                                                      api_base=self.api_base,
-                                                                      collection=self.name)
+        url = "http://{host}/{api_base}/{collection}/{search_api}?".format(host=host,
+                                                                           api_base=api_base or self.api_base,
+                                                                           collection=self.name,
+                                                                           search_api=search_api)
         if kw:
             url += kw
 
@@ -282,14 +276,22 @@ class SolrCollection(Collection):
                     raise SearchException("Collection: %s, query: %s, args: %s\n%s" %
                                           (self.name, query, args, res.content))
 
-    def search(self, query, offset=0, rows=Collection.DEFAULT_ROW_SIZE, sort=DEFAULT_SORT,
+    def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=(), access_control=None):
+
+        if not rows:
+            rows = self.DEFAULT_ROW_SIZE
+
+        if not sort:
+            sort = self.DEFAULT_SORT
 
         args = [
             ('q', query),
             ('start', offset),
             ('rows', rows),
-            ('sort', sort)
+            ('sort', sort),
+            ('wt', 'json'),
+            ('df', '__text__')
         ]
 
         if fl:
@@ -316,7 +318,7 @@ class SolrCollection(Collection):
         }
         return output
 
-    def stream_search(self, query, sort=DEFAULT_SORT, fl=None, filters=(), access_control=None, buffer_size=200):
+    def stream_search(self, query, sort=None, fl=None, filters=(), access_control=None, buffer_size=200):
 
         def _auto_fill(_items, _lock, _args):
             page_size = self._get_value('rows', args)
@@ -350,10 +352,15 @@ class SolrCollection(Collection):
         if query in ["*", "*:*"] and fl != self.datastore.ID:
             raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
 
+        if not sort:
+            sort = self.DEFAULT_SORT
+
         args = [
             ('q', query),
             ('sort', sort),
-            ("rows", str(buffer_size))
+            ("rows", str(buffer_size)),
+            ('wt', 'json'),
+            ('df', '__text__')
         ]
 
         if fl:
@@ -431,7 +438,7 @@ class SolrCollection(Collection):
                 parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
 
                 gaps_count = int((parsed_end - parsed_start) / parsed_gap)
-            except BaseException:
+            except DateMathException:
                 pass
 
         if not gaps_count:
@@ -456,7 +463,9 @@ class SolrCollection(Collection):
             ("facet.range.end", end),
             ("facet.range.gap", gap),
             ("facet.mincount", mincount),
-            ("q", query)
+            ("q", query),
+            ('wt', 'json'),
+            ('df', '__text__')
         ]
 
         if filters:
@@ -471,8 +480,12 @@ class SolrCollection(Collection):
         result = self._search(args)
         return dict(chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2))
 
-    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=DEFAULT_SORT,
+    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None,
                        limit=10, min_count=1, filters=(), access_control=None):
+
+        if not sort:
+            sort = self.DEFAULT_SORT
+
         args = [
             ("q", query),
             ("rows", "0"),
@@ -480,7 +493,9 @@ class SolrCollection(Collection):
             ("facet.field", field),
             ("facet.exists", 'true'),
             ("facet.limit", limit),
-            ("facet.mincount", min_count)
+            ("facet.mincount", min_count),
+            ('wt', 'json'),
+            ('df', '__text__')
         ]
 
         if prefix:
@@ -507,13 +522,22 @@ class SolrCollection(Collection):
         result = self._search(args)
         return dict(chunked_list(result["facet_counts"]["facet_fields"][field], 2))
 
-    def grouped_search(self, field, query="*", offset=None, sort=DEFAULT_SORT, group_sort=None, fl=None, limit=1,
-                       rows=Collection.DEFAULT_ROW_SIZE, filters=(), access_control=None):
+    def grouped_search(self, field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=1,
+                       rows=None, filters=(), access_control=None):
+
+        if not sort:
+            sort = self.DEFAULT_SORT
+
+        if not rows:
+            rows = self.DEFAULT_ROW_SIZE
+
         args = [
             ("group", "on"),
             ("group.field", field),
             ('rows', rows),
-            ('q', query)
+            ('q', query),
+            ('wt', 'json'),
+            ('df', '__text__')
         ]
 
         if offset:
@@ -643,8 +667,8 @@ class SolrStore(BaseStore):
         'DATE_END': 'Z'
     }
 
-    def __init__(self, hosts):
-        super().__init__(hosts, SolrCollection)
+    def __init__(self, hosts, collection_class=SolrCollection):
+        super().__init__(hosts, collection_class)
         self.HTTP_SESSION_POOL = {}
 
     def __str__(self):
@@ -693,17 +717,21 @@ class SolrStore(BaseStore):
 if __name__ == "__main__":
     from pprint import pprint
 
-    s = SolrStore(['127.0.0.1:8983'])
+    s = SolrStore(['127.0.0.1'])
     s.register('user')
     s.user.delete('sgaron')
     s.user.delete('bob')
     s.user.delete('robert')
     s.user.delete('denis')
 
-    s.user.save('sgaron', {'uname': 'sgaron', 'is_admin': True})
-    s.user.save('bob', {'uname': 'bob', 'is_admin': False})
-    s.user.save('denis', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'denis', 'is_admin': False})
-    s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert', 'is_admin': False})
+    s.user.save('sgaron', {'__expiry_ts__': '2018-10-10T16:26:42.961Z', 'uname': 'sgaron',
+                           'is_admin': True, '__access_lvl__': 400})
+    s.user.save('bob', {'__expiry_ts__': '2018-10-21T16:26:42.961Z', 'uname': 'bob',
+                        'is_admin': False, '__access_lvl__': 100})
+    s.user.save('denis', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'denis',
+                          'is_admin': False, '__access_lvl__': 100})
+    s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert',
+                           'is_admin': False, '__access_lvl__': 200})
 
     s.user.commit()
     print('\n# get sgaron')
@@ -725,16 +753,16 @@ if __name__ == "__main__":
         print(k)
 
     print('\n# histogram number')
-    pprint(s.user.histogram('_version_', 1610000000000000000, 1620000000000000000, 100000000000000))
+    pprint(s.user.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
 
     print('\n# histogram date')
     pprint(s.user.histogram('__expiry_ts__', 'NOW-1MONTH/DAY', 'NOW+1DAY/DAY', '+1DAY'))
 
     print('\n# field analysis')
-    pprint(s.user.field_analysis('_id_'))
+    pprint(s.user.field_analysis(s.ID))
 
     print('\n# grouped search')
-    pprint(s.user.grouped_search('_id_', rows=2, offset=1, sort='_id_ asc'))
+    pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))
 
     # print(s.user._search([('q', "*:*")]))
     # print(s.user._search([('q', "*:*"), ('fl', "*")]))
