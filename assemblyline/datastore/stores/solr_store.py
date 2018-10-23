@@ -577,6 +577,53 @@ class SolrCollection(Collection):
             } for grouping in data['groups']]
         }
 
+    @collection_reconnect(log)
+    def fields(self):
+        session, host = self._get_session()
+
+        url = "http://{host}/{api_base}/{collection}/admin/luke/?wt=json".format(host=host,
+                                                                                 api_base=self.api_base,
+                                                                                 collection=self.name)
+        res = session.get(url)
+        if res.ok:
+            collection_data = {}
+            j = res.json()
+
+            fields = j.get("fields", {})
+            for k, v in fields.items():
+                if v.get("docs", 0) == 0:
+                    continue
+                if k.startswith("_") or "//" in k:
+                    continue
+                if not Collection.FIELD_SANITIZER.match(k):
+                    continue
+
+                collection_data[k] = {
+                    "indexed": v.get("schema", "").startswith("I"),
+                    "stored": v.get("schema", "")[:3].endswith("S"),
+                    "list": v.get("schema", "")[:5].endswith("M"),
+                    "type": v.get("type", "")
+                }
+
+            return collection_data
+        else:
+            try:
+                j = res.json()
+                message = j["error"]["msg"]
+                if "IOException" in message or "Server refused" in message:
+                    raise SearchRetryException()
+                else:
+                    raise SearchException(message)
+            except SearchException:
+                raise
+            except Exception:
+                if res.status_code == 404:
+                    return {}
+                elif res.status_code == 500:
+                    raise SearchRetryException()
+                else:
+                    raise SearchException(res.content)
+
     def _get_configset(self):
         schema = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/managed-schema"))
         cfg = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/solrconfig.xml"))
@@ -763,6 +810,10 @@ if __name__ == "__main__":
 
     print('\n# grouped search')
     pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))
+    pprint(s.user.grouped_search('__access_lvl__', rows=2, offset=1, sort='__access_lvl__ asc', fl=s.ID))
+
+    print('\n# fields')
+    pprint(s.user.fields())
 
     # print(s.user._search([('q', "*:*")]))
     # print(s.user._search([('q', "*:*"), ('fl', "*")]))

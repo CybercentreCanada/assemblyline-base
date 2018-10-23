@@ -13,6 +13,7 @@ class Collection(object):
     RETRY_NONE = 0
     RETRY_INFINITY = -1
     DEFAULT_ROW_SIZE = 25
+    FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
 
     def __init__(self, datastore, name, model_class=None):
         self.datastore = datastore
@@ -218,6 +219,15 @@ class Collection(object):
     @collection_reconnect(log)
     def grouped_search(self, group_field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
                        rows=DEFAULT_ROW_SIZE, filters=(), access_control=None):
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def fields(self):
+        """
+        This function should return all the fields in the index with their types
+
+        :return:
+        """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
