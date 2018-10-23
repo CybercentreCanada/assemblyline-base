@@ -4,5 +4,5 @@ netifaces
 pyroute2
 riak
 requests
-elasticsearch>=6.0.0
+elasticsearch>=6.0.0,<7.0.0
 python-datemath

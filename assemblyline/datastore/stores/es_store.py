@@ -1,15 +1,22 @@
+import time
 
+import elasticsearch
+import elasticsearch.helpers
 import json
-from copy import copy
 
-from assemblyline.common.datastore_reconnect import DatastoreObjectReconnect
-from assemblyline.al.core.datastore import BaseStore, DatastoreObject, SearchException, \
-    field_sanitizer, SearchRetryException, config, log
+from copy import copy, deepcopy
+from datemath import dm
+from datemath.helpers import DateMathException
 
-elasticsearch = None
+from assemblyline.datastore import Collection, collection_reconnect, BaseStore, SearchException, \
+    SearchRetryException, log
+from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping
 
 
 def parse_sort(sort):
+    if isinstance(sort, list):
+        return sort
+
     parts = sort.split(' ')
     if len(parts) == 1:
         return [parts]
@@ -20,18 +27,72 @@ def parse_sort(sort):
     raise SearchException('Unknown sort parameter ' + sort)
 
 
-class ESObject(DatastoreObject):
-    @DatastoreObjectReconnect(log)
-    def commit(self, host=None):
+class ESCollection(Collection):
+    DEFAULT_SORT = [{'_id': 'asc'}]
+    DEFAULT_SEARCH_FIELD = '__text__'
+    MAX_SEARCH_ROWS = 500
+    MAX_GROUP_LIMIT = 10
+    MAX_FACET_LIMIT = 100
+    DEFAULT_SEARCH_VALUES = {
+        'timeout': None,
+        'source_filter': None,
+        'facet_active': False,
+        'facet_mincount': 1,
+        'facet_fields': [],
+        'filters': [],
+        'group_active': False,
+        'group_field': None,
+        'group_sort': None,
+        'group_limit': 1,
+        'histogram_active': False,
+        'histogram_field': None,
+        'histogram_type': None,
+        'histogram_gap': None,
+        'histogram_mincount': 1,
+        'start': 0,
+        'rows': Collection.DEFAULT_ROW_SIZE,
+        'query': "*",
+        'sort': DEFAULT_SORT,
+        'df': None
+    }
+
+    def __init__(self, datastore, name, model_class=None, replicas=0):
+        self.replicas = replicas
+
+        super().__init__(datastore, name, model_class=model_class)
+
+    @collection_reconnect(log)
+    def commit(self):
         self.datastore.client.indices.refresh(self.name)
         self.datastore.client.indices.clear_cache(self.name)
+        return True
 
-    @DatastoreObjectReconnect(log)
-    def get(self, key, strict=False):
-        try:
-            return self.datastore.client.get(index=self.name, doc_type='_all', id=key)['_source']
-        except elasticsearch.exceptions.NotFoundError:
-            return None
+    @collection_reconnect(log)
+    def multiget(self, key_list):
+        # TODO: Need to find out how to leverage elastic's multiget
+        #       For now lets use the default multiget
+        return super().multiget(key_list)
+
+    @collection_reconnect(log)
+    def _get(self, key, retries):
+        if retries is None:
+            retries = self.RETRY_NONE
+
+        done = False
+        while not done:
+
+            try:
+                return self.datastore.client.get(index=self.name, doc_type='_all', id=key)['_source']
+            except elasticsearch.exceptions.NotFoundError:
+                if retries > 0:
+                    time.sleep(0.05)
+                    retries -= 1
+                elif retries < 0:
+                    time.sleep(0.05)
+                else:
+                    done = True
+
+        return None
 
     def _save(self, key, data):
         self.datastore.client.update(
@@ -41,64 +102,97 @@ class ESObject(DatastoreObject):
             body=json.dumps({'doc': data, 'doc_as_upsert': True})
         )
 
-    @DatastoreObjectReconnect(log)
-    def search(self, query, index=None, **params):
-        assert index is None
-        return self.datastore.direct_search(self.name, query, **params)['response']
-
-    @DatastoreObjectReconnect(log)
-    def stream_keys(self, access_control=None):
-        for item in self.datastore.stream_search(self.name, "*", fl=self.datastore.ID, access_control=access_control):
-            yield item[self.datastore.ID]
-
-    @DatastoreObjectReconnect(log)
+    @collection_reconnect(log)
     def delete(self, key):
         try:
             info = self.datastore.client.delete(id=key, doc_type=self.name, index=self.name)
             return info['result'] == 'deleted'
-        except elasticsearch.TransportError as error:
-            if error.info['result'] == 'not_found':
-                return True
-            raise
+        except elasticsearch.NotFoundError:
+            return True
 
-    @DatastoreObjectReconnect(log)
-    def histogram(self, field, query, start, end, gap, mincount, filters=(), _hosts_=None):
-        query_body = {
-            "query": {
-                "bool": {
-                    "must": {
-                        "query_string": {
-                            "query": query
-                        }
-                    }
-                }
-            },
-            "aggregations": {
-                "histogram": {
-                    ("date_histogram" if isinstance(gap, basestring) else 'histogram'): {
-                        "field": field,
-                        "interval": gap.strip('+'),
-                        "min_doc_count": mincount
-                    }
-                }
-            }
-        }
+    @staticmethod
+    def _to_python_datemath(value):
+        replace_list = [
+            (ESStore.DATE_FORMAT['NOW'], ESStore.DATEMATH_MAP['NOW']),
+            (ESStore.DATE_FORMAT['YEAR'], ESStore.DATEMATH_MAP['YEAR']),
+            (ESStore.DATE_FORMAT['MONTH'], ESStore.DATEMATH_MAP['MONTH']),
+            (ESStore.DATE_FORMAT['WEEK'], ESStore.DATEMATH_MAP['WEEK']),
+            (ESStore.DATE_FORMAT['DAY'], ESStore.DATEMATH_MAP['DAY']),
+            (ESStore.DATE_FORMAT['HOUR'], ESStore.DATEMATH_MAP['HOUR']),
+            (ESStore.DATE_FORMAT['MINUTE'], ESStore.DATEMATH_MAP['MINUTE']),
+            (ESStore.DATE_FORMAT['SECOND'], ESStore.DATEMATH_MAP['SECOND']),
+            (ESStore.DATE_FORMAT['DATE_END'], ESStore.DATEMATH_MAP['DATE_END'])
+        ]
 
-        # Add the histogram bounds as another filter
-        filters = [filters] if isinstance(filters, basestring) else list(filters)
-        filters.append('{field}:[{min} TO {max}]'.format(field=field, min=start, max=end))
+        for x in replace_list:
+            value = value.replace(*x)
 
-        # Execute the query
-        self.datastore.build_query(query_body, filters=filters)
-        result = self.datastore.raw_search(self.name, query_body, _hosts_=_hosts_)
+        return value
 
-        # Convert the histogram into a dictionary
-        return {row.get('key_as_string', row['key']): row['doc_count']
-                for row in result['aggregations']['histogram']['buckets']}
+    # noinspection PyBroadException
+    def _validate_steps_count(self, start, end, gap):
+        gaps_count = None
+        try:
+            start = int(start)
+            end = int(end)
+            gap = int(gap)
 
-    @DatastoreObjectReconnect(log)
-    def group(self, query, group_on, sort=None, group_sort=None, fields=None, start=None, rows=100,
-              filters=(), access_control=None, group_limit=1):
+            gaps_count = int((end - start) / gap)
+        except ValueError:
+            pass
+
+        if not gaps_count:
+            try:
+                parsed_start = dm(self._to_python_datemath(start)).timestamp
+                parsed_end = dm(self._to_python_datemath(end)).timestamp
+                parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
+
+                gaps_count = int((parsed_end - parsed_start) / parsed_gap)
+            except DateMathException:
+                pass
+
+        if not gaps_count:
+            raise SearchException(
+                "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
+
+        if gaps_count > self.MAX_FACET_LIMIT:
+            raise SearchException('Facet max steps are limited to %s. '
+                                  'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
+                                                                                gaps_count))
+
+    def _read_source(self, result, fields=None):
+        source = result.get('_source', {})
+
+        if isinstance(fields, str):
+            fields = fields
+
+        if fields is None or '*' in fields or self.datastore.ID in fields:
+            source[self.datastore.ID] = result[self.datastore.ID]
+
+        if fields is None or '*' in fields:
+            return source
+
+        return {key: val for key, val in source.items() if key in fields}
+
+    def _cleanup_search_result(self, item):
+        if isinstance(item, dict):
+            item.pop('_source', None)
+            item.pop('_version', None)
+            item.pop(self.DEFAULT_SEARCH_FIELD, None)
+
+        return item
+
+    @collection_reconnect(log)
+    def _search(self, args=None):
+        parsed_values = deepcopy(self.DEFAULT_SEARCH_VALUES)
+
+        for key, value in args:
+            if key not in parsed_values:
+                all_args = '; '.join('%s=%s' % (field_name, field_value) for field_name, field_value in args)
+                raise ValueError("Unknown query argument: %s %s of [%s]" % (key, value, all_args))
+
+            parsed_values[key] = value
+
         # This is our minimal query, the following sections will fill it out
         # with whatever extra options the search has been given.
         query_body = {
@@ -106,70 +200,360 @@ class ESObject(DatastoreObject):
                 "bool": {
                     "must": {
                         "query_string": {
-                            # "default_field": df,
+                            "query": parsed_values['query']
+                        }
+                    }
+                }
+            }
+        }
+
+        if parsed_values['df']:
+            query_body["query"]["bool"]["must"]["query_string"]["default_field"] = parsed_values['df']
+
+        # Time limit for the query
+        if parsed_values['timeout']:
+            query_body['timeout'] = parsed_values['timeout']
+
+        # Add an histogram aggregation
+        if parsed_values['histogram_active']:
+            query_body["aggregations"] = query_body.get("aggregations", {})
+            query_body["aggregations"]["histogram"] = {
+                parsed_values['histogram_type']: {
+                    "field": parsed_values['histogram_field'],
+                    "interval": parsed_values['histogram_gap'],
+                    "min_doc_count": parsed_values['histogram_mincount']
+                }
+            }
+
+        # Add a facet aggregation
+        if parsed_values['facet_active']:
+            query_body["aggregations"] = query_body.get("aggregations", {})
+            for field in parsed_values['facet_fields']:
+                query_body["aggregations"][field] = {
+                    "terms": {
+                        "field": field,
+                        "min_doc_count": parsed_values['facet_mincount']
+                    }
+                }
+
+        # Add a group aggregation
+        if parsed_values['group_active']:
+            query_body["aggregations"] = query_body.get("aggregations", {})
+            for field in [parsed_values['group_field']]:
+                query_body["aggregations"]['group-' + field] = {
+                    "terms": {
+                        "field": field,
+                    },
+                    "aggregations": {
+                        "groupings": {
+                            "top_hits": {
+                                "sort": parsed_values['group_sort'] or [{field: 'asc'}],
+                                "size": parsed_values['group_limit']
+                            }
+                        }
+                    }
+                }
+
+        # Parse the sort string into the format elasticsearch expects
+        if parsed_values['sort']:
+            query_body['sort'] = parse_sort(parsed_values['sort'])
+
+        # Add a field list as a filter on the _source (full document) field
+        source_filter = copy(parsed_values['source_filter'])
+        if source_filter and '_id' in source_filter:
+            source_filter.remove('_id')
+            query_body['stored_fields'] = ['_id']
+
+        if source_filter:
+            query_body['_source'] = source_filter
+
+        # Add an offset/number of results for simple paging
+        if parsed_values['start']:
+            query_body['from'] = parsed_values['start']
+        if parsed_values['rows']:
+            query_body['size'] = parsed_values['rows']
+
+        # Add filters
+        if 'filter' not in query_body['query']['bool']:
+            query_body['query']['bool']['filter'] = []
+
+        if isinstance(parsed_values['filters'], str):
+            query_body['query']['bool']['filter'].append({'query_string': {'query': parsed_values['filters']}})
+        else:
+            query_body['query']['bool']['filter'].extend({'query_string': {'query': ff}}
+                                                         for ff in parsed_values['filters'])
+
+        try:
+            # Run the query
+            result = self.datastore.client.search(index=self.name, body=json.dumps(query_body))
+            return result
+
+        except elasticsearch.RequestError:
+            raise
+
+        except (elasticsearch.TransportError, elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
+            raise SearchRetryException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
+
+        except Exception as error:
+            raise SearchException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
+
+    def search(self, query, offset=0, rows=None, sort=None,
+               fl=None, timeout=None, filters=(), access_control=None):
+
+        if not rows:
+            rows = self.DEFAULT_ROW_SIZE
+
+        if not sort:
+            sort = self.DEFAULT_SORT
+
+        args = [
+            ('query', query),
+            ('start', offset),
+            ('rows', rows),
+            ('sort', sort),
+            ('df', self.DEFAULT_SEARCH_FIELD)
+        ]
+
+        if fl:
+            source_filter = fl.split(',')
+            args.append(('source_filter', source_filter))
+        else:
+            source_filter = None
+
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
+
+        if access_control:
+            if not filters:
+                filters = [access_control]
+            else:
+                if isinstance(filters, list):
+                    filters.append(access_control)
+                else:
+                    filters = [filters] + [access_control]
+
+        if filters:
+            args.append(('filters', filters))
+
+        result = self._search(args)
+
+        docs = [self._read_source(doc, source_filter) for doc in result['hits']['hits']]
+        for doc, resp in zip(docs, result['hits']['hits']):
+            doc.update(_id=resp['_id'])
+
+        output = {
+            "offset": int(offset),
+            "rows": int(rows),
+            "total": int(result['hits']['total']),
+            "items": [self._cleanup_search_result(x) for x in docs]
+        }
+        return output
+
+    def stream_search(self, query, sort=None, fl=None, filters=(), access_control=None, item_buffer_size=200):
+        if item_buffer_size > 500 or item_buffer_size < 50:
+            raise SearchException("Variable item_buffer_size must be between 50 and 500.")
+
+        if query in ["*", "*:*"] and fl != self.datastore.ID:
+            raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
+
+        query_body = {
+            "query": {
+                "bool": {
+                    "must": {
+                        "query_string": {
+                            "default_field": self.datastore.ID,
                             "query": query
                         }
                     }
                 }
-            },
-            "aggregations": {}
+            }
         }
 
-        filters = [filters] if isinstance(filters, basestring) else list(filters)
+        # Add a filter query to the search
+        if access_control:
+            query_body['query']['bool']['filter'] = {'query_string': {'query': access_control}}
+
+        # Add a field list as a filter on the _source (full document) field
+        if fl:
+            query_body['_source'] = fl
+
+        iterator = elasticsearch.helpers.scan(
+            self.datastore.client,
+            query=query_body,
+            index=self.name,
+            doc_type=self.name,
+            preserve_order=sort is not None
+        )
+
+        for value in iterator:
+            # Unpack the results, ensure the id is always set
+            yield self._read_source(value, fl)
+
+    def keys(self, access_control=None):
+        for item in self.stream_search("%s:*" % self.datastore.ID, fl=self.datastore.ID, access_control=access_control):
+            yield item[self.datastore.ID]
+
+    @collection_reconnect(log)
+    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
+        self._validate_steps_count(start, end, gap)
+
+        if not filters:
+            filters = []
+        elif isinstance(filters, str):
+            filters = [filters]
+        filters.append('{field}:[{min} TO {max}]'.format(field=field, min=start, max=end))
+
+        args = [
+            ('query', query),
+            ('histogram_active', True),
+            ('histogram_field', field),
+            ('histogram_type', "date_histogram" if isinstance(gap, str) else 'histogram'),
+            ('histogram_gap', gap.strip('+') if isinstance(gap, str) else gap),
+            ('histogram_mincount', mincount)
+        ]
+
         if access_control:
             filters.append(access_control)
 
-        if fields:
-            fields = fields.split(',')
+        if filters:
+            args.append(('filters', filters))
 
-        self.datastore.build_query(query_body, sort, fields, start=start, filters=filters)
+        result = self._search(args)
 
-        # Add a group aggregation
-        for group_field in group_on:
+        # Convert the histogram into a dictionary
+        return {row.get('key_as_string', row['key']): row['doc_count']
+                for row in result['aggregations']['histogram']['buckets']}
 
-            top_hits = {
-                "size": group_limit
+    @collection_reconnect(log)
+    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
+                       min_count=1, filters=None, access_control=None):
+        if not filters:
+            filters = []
+        elif isinstance(filters, str):
+            filters = [filters]
+
+        args = [
+            ('query', query),
+            ('facet_active', True),
+            ('facet_fields', [field]),
+            ('facet_mincount', min_count)
+        ]
+
+        # TODO: prefix, contains, ignore_case, sort
+
+        if access_control:
+            filters.append(access_control)
+
+        if filters:
+            args.append(('filters', filters))
+
+        result = self._search(args)
+
+        # Convert the histogram into a dictionary
+        return {row.get('key_as_string', row['key']): row['doc_count']
+                for row in result['aggregations'][field]['buckets']}
+
+    @collection_reconnect(log)
+    def grouped_search(self, group_field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=1,
+                       rows=None, filters=(), access_control=None):
+
+        args = [
+            ('query', query),
+            ('group_active', True),
+            ('group_field', group_field),
+            ('group_limit', limit),
+            ('group_sort', group_sort),
+            ('start', offset),
+            ('rows', rows),
+            ('sort', sort)
+        ]
+
+        # TODO: offset and row don't seem to get applied to the grouping
+
+        if fl:
+            source_filter = fl.split(',')
+            args.append(('source_filter', source_filter))
+        else:
+            source_filter = None
+
+        if access_control:
+            if not filters:
+                filters = [access_control]
+            else:
+                if isinstance(filters, list):
+                    filters.append(access_control)
+                else:
+                    filters = [filters] + [access_control]
+
+        if filters:
+            args.append(('filters', filters))
+
+        result = self._search(args)
+
+        group_docs = result['aggregations']['group-%s' % group_field]['buckets']
+
+        return {
+            'offset': offset,
+            'rows': rows,
+            'total': len(group_docs),
+            'items': [{
+                'value': grouping['key'],
+                'total': grouping['doc_count'],
+                'items': [self._cleanup_search_result(self._read_source(row, source_filter))
+                          for row in grouping['groupings']['hits']['hits']]
+            } for grouping in group_docs]
+        }
+
+    @collection_reconnect(log)
+    def fields(self):
+        def flatten_fields(props):
+            out = {}
+            for name, value in props.items():
+                if 'properties' in value:
+                    for child, ctype in flatten_fields(value['properties']).items():
+                        out[name + '.' + child] = ctype
+                elif 'type' in value:
+                    out[name] = value['type']
+                else:
+                    raise ValueError("Unknown field data " + str(props))
+            return out
+
+        data = self.datastore.client.indices.get(self.name)
+
+        properties = flatten_fields(data[self.name]['mappings'][self.name].get('properties', {}))
+
+        collection_data = {}
+
+        for p_name, p_val in properties.items():
+            if p_name.startswith("_") or "//" in k:
+                continue
+            if not Collection.FIELD_SANITIZER.match(k):
+                continue
+
+            collection_data[p_name] = {
+                "indexed": True,
+                "stored": True,
+                "list": True,
+                "type": p_val
             }
 
-            if group_sort:
-                top_hits["sort"] = parse_sort(group_sort)
+        return collection_data
 
-            query_body["aggregations"]['group-' + group_field] = {
-                "terms": {
-                    "field": group_field,
-                    "size": rows
-                },
-                "aggregations": {
-                    "groupings": {
-                        "top_hits": top_hits
-                    }
-                }
-            }
+    @collection_reconnect(log)
+    def _ensure_collection(self):
+        if not self.datastore.client.indices.exists(self.name):
+            log.info('Creating index for: ' + self.name)
+            index = deepcopy(default_index)
+            mappings = deepcopy(default_mapping)
+            if 'settings' not in index:
+                index['settings'] = {}
+            if 'index' not in index['settings']:
+                index['settings']['index'] = {}
+            index['settings']['index']['number_of_replicas'] = self.replicas
 
-        result = self.datastore.raw_search(self.name, query_body)
-
-        output = {}
-        for field in group_on:
-            data = result['aggregations']['group-' + field]
-            field_output = output[field] = []
-            for bucket in data['buckets']:
-                field_output.append({
-                    'value': bucket['key'],
-                    'total': bucket['doc_count'],
-                    'items': [ESStore.read_source(row, fields) for row in bucket['groupings']['hits']['hits']]
-                })
-        return output
-
-
-class ESBlobObject(ESObject):
-    def get(self, key, strict=False):
-        value = super(ESBlobObject, self).get(key, strict)
-        if value:
-            return value['blob']
-        return value
-
-    def _save(self, key, data):
-        super(ESBlobObject, self)._save(key, {'blob': data})
+            # TODO: build schema from model
+            index['mappings'][self.name] = mappings
+            self.datastore.client.indices.create(self.name, index)
 
 
 class ESStore(BaseStore):
@@ -189,357 +573,76 @@ class ESStore(BaseStore):
         'MICROSECOND': 'micros',
         'NANOSECOND': 'nanos',
         'SEPARATOR': '||',
+        'DATE_END': 'Z'
     }
 
-    def __init__(self, hosts=None, filestore_factory=None):
-        super(ESStore, self).__init__(hosts or self.get_db_node_list(), filestore_factory)
-        global elasticsearch
-        import elasticsearch
-        import elasticsearch.helpers
-
+    def __init__(self, hosts, collection_class=ESCollection):
+        super(ESStore, self).__init__(hosts, collection_class)
         self.client = elasticsearch.Elasticsearch(hosts=hosts, connection_class=elasticsearch.RequestsHttpConnection)
-
-        # Initialize solr cores
-        self._alerts = ESObject(self, "alert")
-        self._blobs = ESBlobObject(self, "blob")
-        self._emptyresults = ESObject(self, "emptyresult")
-        self._errors = ESObject(self, "error")
-        self._files = ESObject(self, "file")
-        self._filescores = ESObject(self, "filescore")
-        self._nodes = ESObject(self, "node")
-        self._results = ESObject(self, "result")
-        self._signatures = ESObject(self, "signature")
-        self._submissions = ESObject(self, "submission")
-        self._users = ESObject(self, "user")
-        self._workflows = ESObject(self, "workflow")
-        self._apply_proxies()
 
         self.url_path = 'elastic'
 
     def __str__(self):
-        return '{0} - {1}'.format(self.__class__.__name__, self.hosts)
+        return '{0} - {1}'.format(self.__class__.__name__, self._hosts)
 
-    @staticmethod
-    def build_query(query_body, sort=None, source_filter=None, start=None, rows=None, filters=()):
-        # Parse the sort string into the format elasticsearch expects
-        if sort:
-            query_body['sort'] = parse_sort(sort)
+    def connection_reset(self):
+        self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
+                                                  connection_class=elasticsearch.RequestsHttpConnection)
 
-        # Add a field list as a filter on the _source (full document) field
-        source_filter = copy(source_filter)
-        if source_filter and '_id' in source_filter:
-            source_filter.remove('_id')
-            query_body['stored_fields'] = ['_id']
 
-        if source_filter:
-            query_body['_source'] = source_filter
+if __name__ == "__main__":
+    from pprint import pprint
 
-        # Add an offset/number of results for simple paging
-        if start:
-            query_body['from'] = start
-        if rows:
-            query_body['size'] = rows
+    s = ESStore(['127.0.0.1'])
+    s.register('user')
+    s.user.delete('sgaron')
+    s.user.delete('bob')
+    s.user.delete('robert')
+    s.user.delete('denis')
 
-        # Add filters
-        if 'filter' not in query_body['query']['bool']:
-            query_body['query']['bool']['filter'] = []
-        if isinstance(filters, basestring):
-            query_body['query']['bool']['filter'].append({'query_string': {'query': filters}})
-        else:
-            query_body['query']['bool']['filter'].extend({'query_string': {'query': ff}} for ff in filters)
+    s.user.save('sgaron', {'__expiry_ts__': '2018-10-10T16:26:42.961Z', 'uname': 'sgaron',
+                           'is_admin': True, '__access_lvl__': 400})
+    s.user.save('bob', {'__expiry_ts__': '2018-10-21T16:26:42.961Z', 'uname': 'bob',
+                        'is_admin': False, '__access_lvl__': 100})
+    s.user.save('denis', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'denis',
+                          'is_admin': False, '__access_lvl__': 100})
+    s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert',
+                           'is_admin': False, '__access_lvl__': 200})
 
-    def direct_search(self, bucket, query, args=(), start=None, rows=None, sort=None, df="text", wt="json",
-                      access_control=None, filters=(), _hosts_=None, fl=None, timeout=None):
-        """Attempt to translate solr or function arguments to elasticsearch queries."""
-        if bucket not in BaseStore.ALL_INDEXED_BUCKET_LIST:
-            raise SearchException("Bucket %s does not exists." % bucket)
+    s.user.commit()
+    print('\n# get sgaron')
+    pprint(s.user.get('sgaron'))
+    print('\n# get bob')
+    pprint(s.user.get('bob'))
 
-        timeout = str(timeout) + 'ms' if timeout else None
-        source_filter = fl.split(',') if fl is not None else []
+    print('\n# multiget sgaron, robert, denis')
+    pprint(s.user.multiget(['sgaron', 'robert', 'denis']))
 
-        facet_active = False
-        facet_mincount = 1
-        facet_fields = []
-        filters = list(filters)
+    print('\n# search *:*')
+    pprint(s.user.search("*:*"))
 
-        group_active = False
-        group_field = None
-        group_sort = None
-        group_limit = 1
+    print('\n# search __expiry_ts__ all fields')
+    pprint(s.user.search('__expiry_ts__:"2018-10-19T16:26:42.961Z"', fl="*"))
 
-        for key, value in args:
-            if key == 'start':
-                start = value
-            elif key == 'rows':
-                rows = value
-            elif key == 'timeAllowed':
-                timeout = value + 'ms'
-            elif key == 'fq':
-                filters.append(value)
-            elif key == 'q':
-                query = value
-            elif key == 'sort':
-                sort = value
-            elif key == 'df':
-                df = value
-            elif key == 'fl':
-                source_filter += value.split(',')
-            elif key == 'facet' and value:
-                facet_active = True
-            elif key == 'facet.mincount':
-                facet_mincount = value
-            elif key == 'facet.field':
-                facet_fields.append(value)
-            elif key == 'group' and value:
-                group_active = True
-            elif key == 'group.field':
-                group_field = value
-            elif key == 'group.sort':
-                group_sort = parse_sort(value)
-            elif key == 'group.limit':
-                group_limit = value
-            else:
-                all_args = '; '.join(k + ': ' + v for k, v in args)
-                raise ValueError("Unknown query argument: %s %s of [%s]" % (key, value, all_args))
+    print('\n# stream keys')
+    for k in s.user.keys():
+        print(k)
 
-        # This is our minimal query, the following sections will fill it out
-        # with whatever extra options the search has been given.
-        query_body = {
-            "query": {
-                "bool": {
-                    "must": {
-                        "query_string": {
-                            "default_field": df,
-                            "query": query
-                        }
-                    }
-                }
-            }
-        }
+    print('\n# histogram number')
+    pprint(s.user.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
 
-        # Add a filter query to the search
-        if access_control:
-            if isinstance(access_control, basestring):
-                filters.append(access_control)
-            else:
-                filters.extend(access_control)
+    print('\n# histogram date')
+    pprint(s.user.histogram('__expiry_ts__', 'now-1M/d', 'now+1d/d', '+1d'))
 
-        # Time limit for the query
-        if timeout:
-            query_body['timeout'] = timeout
+    print('\n# field analysis')
+    pprint(s.user.field_analysis(s.ID))
 
-        # Add a facet aggregation
-        if facet_active:
-            query_body["aggregations"] = {}
-            for field in facet_fields:
-                query_body["aggregations"][field] = {
-                    "terms": {
-                        "field": field,
-                        "min_doc_count": facet_mincount
-                    }
-                }
+    print('\n# grouped search')
+    pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))
+    pprint(s.user.grouped_search('__access_lvl__', rows=2, offset=1, sort='__access_lvl__ asc', fl=s.ID))
 
-        # Add a group aggregation
-        if group_active:
-            query_body["aggregations"] = query_body.get("aggregations", {})
-            for field in [group_field]:
-                query_body["aggregations"]['group-' + field] = {
-                    "terms": {
-                        "field": field,
-                    },
-                    "aggregations": {
-                        "groupings": {
-                            "top_hits": {
-                                "sort": group_sort,
-                                "size": group_limit
-                            }
-                        }
-                    }
-                }
+    print('\n# fields')
+    pprint(s.user.fields())
 
-        # Add all the other query parameters
-        self.build_query(query_body, sort, source_filter, start, rows, filters=filters)
-
-        try:
-            # Run the query
-            result = self.raw_search(bucket=bucket, query=query_body, _hosts_=_hosts_)
-
-            # Unpack the results, ensure the id is always set
-            docs = [self.read_source(doc, source_filter) for doc in result['hits']['hits']]
-            for doc, resp in zip(docs, result['hits']['hits']):
-                doc.update(_id=resp['_id'])
-
-            output = {
-                'provider': 'elasticsearch',
-                'response': {
-                    'num_found': result['hits']['total'],
-                    'numFound': result['hits']['total'],
-                    'docs': docs
-                }
-            }
-
-            if facet_active:
-                # Elastic search will come back with something with this format:
-                # 'aggregations': {
-                #     <query name (given field name)>: {
-                #         'buckets': [{'key': 'admin', 'doc_count': 1}, {'key': 'user', 'doc_count': 5}],
-                #     }
-                # }
-                #
-                # Need to make it match the solr format for the same data:
-                # 'facet_counts': {
-                #     'facet_fields': {
-                #          <fieldname>: ['admin', 1, 'user', 5]
-                #     }
-                # }
-                facet_results = {}
-                for field, data in result['aggregations'].items():
-                    field_row = []
-                    for bucket in data['buckets']:
-                        field_row.append(bucket['key'])
-                        field_row.append(bucket['doc_count'])
-                    facet_results[field] = field_row
-
-                output['facet_counts'] = {'facet_fields': facet_results}
-
-            if group_active:
-                # We are using an elasticsearch aggregation to do grouping, so the
-                # output is similar to the above, but each bucket also has a document
-                # set at: buckets.##.groupings.hits.hits
-                #
-                # solr group output:
-                # 'grouped': {<field>: {'matches': ##, 'groups':[{
-                #   'groupValue': <field value>,
-                #   'docList': {'numFound': ##, 'start': ##, 'docs': [<limit documents>]}
-                # }]}}
-                output['grouped'] = group_results = {}
-
-                for field in [group_field]:
-                    data = result['aggregations']['group-' + field]
-                    groups = []
-                    group_results[field] = {'matches': len(data['buckets']), 'groups': groups}
-                    for bucket in data['buckets']:
-                        groups.append({
-                            'groupValue': bucket['key'],
-                            'docList': {
-                                'start': 0,
-                                'numFound': bucket['doc_count'],
-                                'docs': [self.read_source(row, source_filter)
-                                         for row in bucket['groupings']['hits']['hits']]
-                            }
-                        })
-
-            return output
-
-        except (elasticsearch.TransportError, elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
-            raise SearchRetryException("bucket: %s, query: %s, error: %s" % (bucket, query, str(error)))
-        except Exception as error:
-            raise SearchException("bucket: %s, query: %s, error: %s" % (bucket, query, str(error)))
-
-    @classmethod
-    def read_source(cls, result, fields=None):
-        out = result.get('_source', {})
-        if fields is None or '*' in fields or cls.ID in fields:
-            out[cls.ID] = result[cls.ID]
-        return out
-
-    def raw_search(self, bucket, query, _hosts_=None):
-        if bucket not in BaseStore.ALL_INDEXED_BUCKET_LIST:
-            raise SearchException("Bucket %s does not exists." % bucket)
-
-        # Select either the default client or build one from custom hosts for this query
-        client = self.client if _hosts_ is None else elasticsearch.Elasticsearch(_hosts_)
-
-        try:
-            # Run the query
-            return client.search(index=bucket, body=json.dumps(query))
-
-        except (elasticsearch.TransportError, elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
-            raise SearchRetryException("bucket: %s, query: %s, error: %s" % (bucket, query, str(error)))
-        except Exception as error:
-            raise SearchException("bucket: %s, query: %s, error: %s" % (bucket, query, str(error)))
-
-    def stream_search(self, bucket, query, df="text", sort=None, fl=None, item_buffer_size=200, access_control=None, fq=None):
-        if item_buffer_size > 500 or item_buffer_size < 50:
-            raise SearchException("Variable item_buffer_size must be between 50 and 500.")
-        assert sort is None
-
-        if query in ["*", "*:*"] and fl != self.ID:
-            raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
-
-        query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-
-        # Add a filter query to the search
-        if access_control:
-            query_body['query']['bool']['filter'] = {'query_string': {'query': access_control}}
-
-        # Add a field list as a filter on the _source (full document) field
-        if fl:
-            query_body['_source'] = fl
-
-        iterator = elasticsearch.helpers.scan(
-            self.client,
-            query=query_body,
-            index=bucket,
-            doc_type=bucket,
-            preserve_order=sort is not None
-        )
-
-        for value in iterator:
-            # Unpack the results, ensure the id is always set
-            yield self.read_source(value, fl)
-
-    # noinspection PyBroadException
-    def datastore_connection_reset(self):
-        self.client = elasticsearch.Elasticsearch(hosts=self.hosts, connection_class=elasticsearch.RequestsHttpConnection)
-
-    def get_db_node_list(self, full=True):
-        return config.datastore.get('elasticsearch', {}).get('nodes', [])
-
-    def generate_field_list(self, get_full_list, specific_bucket=None):
-        if specific_bucket and (specific_bucket in BaseStore.INDEXED_BUCKET_LIST
-                                or specific_bucket in BaseStore.ADMIN_INDEXED_BUCKET_LIST):
-            bucket_list = [specific_bucket]
-        elif not specific_bucket:
-            bucket_list = list(BaseStore.INDEXED_BUCKET_LIST)
-            if get_full_list:
-                bucket_list += BaseStore.ADMIN_INDEXED_BUCKET_LIST
-        else:
-            bucket_list = []
-
-        def flatten_fields(props):
-            out = {}
-            for name, value in props.items():
-                if 'properties' in value:
-                    for child, ctype in flatten_fields(value['properties']).items():
-                        out[name + '.' + child] = ctype
-                elif 'type' in value:
-                    out['name'] = value['type']
-                else:
-                    raise ValueError("Unknown field data " + str(props))
-            return out
-
-        output = {}
-        for bucket_name in bucket_list:
-            data = self.client.indices.get(bucket_name)
-
-            properties = flatten_fields(data[bucket_name]['mappings'][bucket_name].get('properties', {}))
-
-            bucket_data = {}
-
-            for k, v in properties.items():
-                if k.startswith("_") or "//" in k:
-                    continue
-                if not field_sanitizer.match(k):
-                    continue
-
-                bucket_data[k] = {
-                    "indexed": True,
-                    "stored": True,
-                    "list": True,
-                    "type": v
-                }
-
-            output[bucket_name] = bucket_data
-
-        return output
+    # print(s.user._search([('q', "*:*")]))
+    # print(s.user._search([('q', "*:*"), ('fl', "*")]))
