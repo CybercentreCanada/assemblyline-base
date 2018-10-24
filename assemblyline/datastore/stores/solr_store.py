@@ -790,7 +790,8 @@ class SolrStore(BaseStore):
 
     def close(self):
         super().close()
-        for thread_id in self.HTTP_SESSION_POOL.keys():
+        thread_ids = list(self.HTTP_SESSION_POOL.keys())
+        for thread_id in thread_ids:
             self._terminate_session(thread_id)
 
     def _terminate_session(self, thread_id):
