@@ -647,53 +647,101 @@ class SolrCollection(Collection):
         return None
 
     @collection_reconnect(log)
-    def _ensure_configset(self):
-        session, host = self._get_session()
+    def _configset_exist(self, session=None, host=None):
+        if session is None or host is None:
+            session, host = self._get_session()
+
         test_url = "http://{host}/{api_base}/admin/configs?action=LIST".format(host=host, api_base=self.api_base)
         res = session.get(test_url, headers={"content-type": "application/json"})
         if res.ok:
             data = res.json()
             if self.name not in data.get('configSets', []):
-                log.info("ConfigSet {collection} does not exists. "
-                         "Creating it now...".format(collection=self.name.upper()))
-                upload_url = "http://{host}/{api_base}/admin/configs?action=UPLOAD" \
-                             "&name={collection}".format(host=host, api_base=self.api_base, collection=self.name)
-                res = session.post(upload_url, data=self._get_configset(), headers={"content-type": "application/json"})
-                if res.ok:
-                    log.info("Configset {collection} created!".format(collection=self.name))
-                else:
-                    raise DataStoreException("Could not create configset {collection}.".format(collection=self.name))
+                return False
+            return True
         else:
             raise DataStoreException("Cannot get to configset admin page.")
 
     @collection_reconnect(log)
-    def _ensure_collection(self):
-        session, host = self._get_session()
+    def _ensure_configset(self, session=None, host=None):
+        if session is None or host is None:
+            session, host = self._get_session()
+
+        if not self._configset_exist(session=session, host=host):
+            log.info("ConfigSet {collection} does not exists. "
+                     "Creating it now...".format(collection=self.name.upper()))
+            upload_url = "http://{host}/{api_base}/admin/configs?action=UPLOAD" \
+                         "&name={collection}".format(host=host, api_base=self.api_base, collection=self.name)
+            res = session.post(upload_url, data=self._get_configset(), headers={"content-type": "application/json"})
+            if res.ok:
+                log.info("Configset {collection} created!".format(collection=self.name))
+            else:
+                raise DataStoreException("Could not create configset {collection}.".format(collection=self.name))
+
+    @collection_reconnect(log)
+    def _collection_exist(self, session=None, host=None):
+        if session is None or host is None:
+            session, host = self._get_session()
+
         test_url = "http://{host}/{api_base}/admin/collections?action=LIST".format(host=host, api_base=self.api_base)
         res = session.get(test_url, headers={"content-type": "application/json"})
         if res.ok:
             data = res.json()
             if self.name not in data.get('collections', []):
-                # Make sure configset for collection exists
-                self._ensure_configset()
-
-                # Create collection
-                log.warn("Collection {collection} does not exists. "
-                         "Creating it now...".format(collection=self.name.upper()))
-                create_url = "http://{host}/{api_base}/admin/collections?action=CREATE" \
-                             "&name={collection}&numShards={shards}&replicationFactor={replication}" \
-                             "&collection.configName={collection}".format(host=host,
-                                                                          api_base=self.api_base,
-                                                                          collection=self.name,
-                                                                          shards=self.num_shards,
-                                                                          replication=self.replication_factor)
-                res = session.get(create_url, headers={"content-type": "application/json"})
-                if res.ok:
-                    log.info("Collection {collection} created!".format(collection=self.name))
-                else:
-                    raise DataStoreException("Could not create collection {collection}.".format(collection=self.name))
+                return False
+            return True
         else:
             raise DataStoreException("Cannot get to collection admin page.")
+
+    @collection_reconnect(log)
+    def _ensure_collection(self):
+        session, host = self._get_session()
+
+        # Make sure configset for collection exists
+        self._ensure_configset(session=session, host=host)
+
+        if not self._collection_exist(session=session, host=host):
+            # Create collection
+            log.warn("Collection {collection} does not exists. "
+                     "Creating it now...".format(collection=self.name.upper()))
+            create_url = "http://{host}/{api_base}/admin/collections?action=CREATE" \
+                         "&name={collection}&numShards={shards}&replicationFactor={replication}" \
+                         "&collection.configName={collection}".format(host=host,
+                                                                      api_base=self.api_base,
+                                                                      collection=self.name,
+                                                                      shards=self.num_shards,
+                                                                      replication=self.replication_factor)
+            res = session.get(create_url, headers={"content-type": "application/json"})
+            if res.ok:
+                log.info("Collection {collection} created!".format(collection=self.name))
+            else:
+                raise DataStoreException("Could not create collection {collection}.".format(collection=self.name))
+
+    @collection_reconnect(log)
+    def wipe(self):
+        log.warning("Wipe operation started for collection: %s" % self.name.upper())
+        session, host = self._get_session()
+
+        if self._collection_exist(session=session, host=host):
+            log.warning("Removing collection: {collection}".format(collection=self.name.upper()))
+
+            delete_url = "http://{host}/{api_base}/admin/collections?action=DELETE" \
+                         "&name={collection}".format(host=host, api_base=self.api_base,
+                                                     collection=self.name)
+            res = session.get(delete_url, headers={"content-type": "application/json"})
+            if res.ok:
+                log.warning("Collection {collection} deleted!".format(collection=self.name))
+            else:
+                raise DataStoreException("Could not create collection {collection}.".format(collection=self.name))
+
+        if self._configset_exist(session=session, host=host):
+            log.warning("Removing configset: {collection}".format(collection=self.name.upper()))
+            delete_url = "http://{host}/{api_base}/admin/configs?action=DELETE" \
+                         "&name={collection}".format(host=host, api_base=self.api_base, collection=self.name)
+            res = session.post(delete_url, data=self._get_configset(), headers={"content-type": "application/json"})
+            if res.ok:
+                log.warning("Configset {collection} deleted!".format(collection=self.name))
+            else:
+                raise DataStoreException("Could not delete configset {collection}.".format(collection=self.name))
 
 
 class SolrStore(BaseStore):
@@ -715,23 +763,27 @@ class SolrStore(BaseStore):
         'DATE_END': 'Z'
     }
 
-    def __init__(self, hosts, collection_class=SolrCollection):
+    def __init__(self, hosts, collection_class=SolrCollection, port=8983):
         super().__init__(hosts, collection_class)
         self.HTTP_SESSION_POOL = {}
+        self.solr_port = port
 
     def __str__(self):
         return '{0} - {1}'.format(
             self.__class__.__name__,
             self._hosts)
 
-    def is_alive(self):
+    def ping(self):
         with requests.Session() as cur_session:
             for host in self._hosts:
+                if ":" not in host:
+                    host += ":%s" % self.solr_port
                 try:
                     res = cur_session.get('http://{host}/solr/admin/cores?action=STATUS'.format(host=host))
                     if not res.ok:
                         return False
-                except requests.ConnectionError:
+                except requests.ConnectionError as e:
+                    print(e)
                     return False
 
         return True
@@ -816,5 +868,6 @@ if __name__ == "__main__":
     print('\n# fields')
     pprint(s.user.fields())
 
+    s.user.wipe()
     # print(s.user._search([('q', "*:*")]))
     # print(s.user._search([('q', "*:*"), ('fl', "*")]))

@@ -160,30 +160,50 @@ class RiakCollection(SolrCollection):
             yield item[self.datastore.ID]
 
     @collection_reconnect(log)
-    def debug_keys(self, **_):
-        for items in self.riak_bucket.stream_index("$bucket", ""):
-            for item in items:
-                yield item
+    def _index_exists(self):
+        try:
+            self.datastore.client.get_search_index('name')
+            return True
+        except riak.RiakError as e:
+            return False
 
     @collection_reconnect(log)
     def _ensure_collection(self):
         # TODO: get schema and nvals from model_class
-        schema_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/riak/schema.xml"))
-        with open(schema_path) as sf:
-            schema_raw = sf.read()
-        nval = 1
+        if not self._index_exists():
+            log.warn("Collection {collection} does not exists. "
+                     "Creating it now...".format(collection=self.name.upper()))
+            schema_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/riak/schema.xml"))
+            with open(schema_path) as sf:
+                schema_raw = sf.read()
+            nval = 1
 
-        # TODO: Check if schema, index and bucket already exist before creating them blindly??!
-        self.datastore.client.create_search_schema(schema=self.name, content=schema_raw)
-        self.datastore.client.create_search_index(self.name, self.name, nval)
+            # TODO: Check if schema, index and bucket already exist before creating them blindly??!
+            self.datastore.client.create_search_schema(schema=self.name, content=schema_raw)
+            self.datastore.client.create_search_index(self.name, self.name, nval)
+            props = {
+                'dvv_enabled': False,
+                'last_write_wins': True,
+                'allow_mult': False,
+                'n_val': nval,
+                'search_index': self.name
+            }
+            self.datastore.client.set_bucket_props(bucket=self.riak_bucket, props=props)
+
+    @collection_reconnect(log)
+    def wipe(self):
+        log.warning("Wipe operation started for collection: %s" % self.name.upper())
+
+        for items in self.riak_bucket.stream_index("$bucket", ""):
+            for item in items:
+                log.warning("{bucket}: deleting key [{key}]".format(bucket=self.name, key=item))
+                self.riak_bucket.delete(item)
+
         props = {
-            'dvv_enabled': False,
-            'last_write_wins': True,
-            'allow_mult': False,
-            'n_val': nval,
-            'search_index': self.name
+            'search_index': "_dont_index_"
         }
         self.datastore.client.set_bucket_props(bucket=self.riak_bucket, props=props)
+        self.datastore.client.delete_search_index(self.name)
 
 
 class RiakStore(SolrStore):
@@ -238,11 +258,13 @@ class RiakStore(SolrStore):
             self._collections[name] = self._collection_class(self, name, model_class=model_class,
                                                              solr_port=self.solr_port,
                                                              riak_http_port=self.riak_http_port)
-
         return self._collections[name]
 
+    def ping(self):
+        return self.client.ping()
+
     def close(self):
-        super(RiakStore, self).close()
+        super().close()
 
         if self.client:
             log.debug('riakclient closed...')
@@ -322,5 +344,6 @@ if __name__ == "__main__":
     print('\n# fields')
     pprint(s.user.fields())
 
+    s.user.wipe()
     # print(s.user._search([('q', "*:*")]))
     # print(s.user._search([('q', "*:*"), ('fl', "*")]))

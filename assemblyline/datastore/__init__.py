@@ -240,6 +240,17 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
+    @collection_reconnect(log)
+    def wipe(self):
+        """
+        This function should completely delete the collection
+
+        NEVER USE THIS!
+
+        :return:
+        """
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
 
 class BaseStore(object):
     ID = None
@@ -333,8 +344,8 @@ class BaseStore(object):
     def connection_reset(self):
         raise UndefinedFunction("This is the basic datastore object, connection_reset method is undefined.")
 
-    def is_alive(self):
-        raise UndefinedFunction("This is the basic datastore object, is_alive method is undefined.")
+    def ping(self):
+        raise UndefinedFunction("This is the basic datastore object, ping method is undefined.")
 
     def is_closed(self):
         return self._closed

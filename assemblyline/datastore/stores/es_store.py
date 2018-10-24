@@ -3,6 +3,7 @@ import time
 import elasticsearch
 import elasticsearch.helpers
 import json
+import logging
 
 from copy import copy, deepcopy
 from datemath import dm
@@ -542,7 +543,8 @@ class ESCollection(Collection):
     @collection_reconnect(log)
     def _ensure_collection(self):
         if not self.datastore.client.indices.exists(self.name):
-            log.info('Creating index for: ' + self.name)
+            log.warn("Collection {collection} does not exists. "
+                     "Creating it now...".format(collection=self.name.upper()))
             index = deepcopy(default_index)
             mappings = deepcopy(default_mapping)
             if 'settings' not in index:
@@ -554,6 +556,13 @@ class ESCollection(Collection):
             # TODO: build schema from model
             index['mappings'][self.name] = mappings
             self.datastore.client.indices.create(self.name, index)
+
+    @collection_reconnect(log)
+    def wipe(self):
+        log.warning("Wipe operation started for collection: %s" % self.name.upper())
+
+        if self.datastore.client.indices.exists(self.name):
+            self.datastore.client.indices.delete(self.name)
 
 
 class ESStore(BaseStore):
@@ -578,12 +587,22 @@ class ESStore(BaseStore):
 
     def __init__(self, hosts, collection_class=ESCollection):
         super(ESStore, self).__init__(hosts, collection_class)
+        tracer = logging.getLogger('elasticsearch')
+        tracer.setLevel(logging.CRITICAL)
+
         self.client = elasticsearch.Elasticsearch(hosts=hosts, connection_class=elasticsearch.RequestsHttpConnection)
 
         self.url_path = 'elastic'
 
     def __str__(self):
         return '{0} - {1}'.format(self.__class__.__name__, self._hosts)
+
+    def ping(self):
+        return self.client.ping()
+
+    def close(self):
+        super().close()
+        self.client = None
 
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
@@ -644,5 +663,6 @@ if __name__ == "__main__":
     print('\n# fields')
     pprint(s.user.fields())
 
+    s.user.wipe()
     # print(s.user._search([('q', "*:*")]))
     # print(s.user._search([('q', "*:*"), ('fl', "*")]))
