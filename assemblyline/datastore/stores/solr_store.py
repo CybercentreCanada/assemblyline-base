@@ -577,6 +577,7 @@ class SolrCollection(Collection):
             } for grouping in data['groups']]
         }
 
+    # noinspection PyBroadException
     @collection_reconnect(log)
     def fields(self):
         session, host = self._get_session()
@@ -590,19 +591,19 @@ class SolrCollection(Collection):
             j = res.json()
 
             fields = j.get("fields", {})
-            for k, v in fields.items():
-                if v.get("docs", 0) == 0:
+            for field_name, field_value in fields.items():
+                if field_value.get("docs", 0) == 0:
                     continue
-                if k.startswith("_") or "//" in k:
+                if field_name.startswith("_") or "//" in field_name:
                     continue
-                if not Collection.FIELD_SANITIZER.match(k):
+                if not Collection.FIELD_SANITIZER.match(field_name):
                     continue
 
-                collection_data[k] = {
-                    "indexed": v.get("schema", "").startswith("I"),
-                    "stored": v.get("schema", "")[:3].endswith("S"),
-                    "list": v.get("schema", "")[:5].endswith("M"),
-                    "type": v.get("type", "")
+                collection_data[field_name] = {
+                    "indexed": field_value.get("schema", "").startswith("I"),
+                    "stored": field_value.get("schema", "")[:3].endswith("S"),
+                    "list": field_value.get("schema", "")[:5].endswith("M"),
+                    "type": field_value.get("type", "")
                 }
 
             return collection_data
