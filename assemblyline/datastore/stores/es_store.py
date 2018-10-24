@@ -83,7 +83,10 @@ class ESCollection(Collection):
         while not done:
 
             try:
-                return self.datastore.client.get(index=self.name, doc_type='_all', id=key)['_source']
+                data = self.datastore.client.get(index=self.name, doc_type='_all', id=key)['_source']
+                if "__non_doc_raw__" in data:
+                    return data['__non_doc_raw__']
+                return data
             except elasticsearch.exceptions.NotFoundError:
                 if retries > 0:
                     time.sleep(0.05)
@@ -96,11 +99,16 @@ class ESCollection(Collection):
         return None
 
     def _save(self, key, data):
+        if not isinstance(data, dict):
+            saved_data = {'__non_doc_raw__': data}
+        else:
+            saved_data = data
+
         self.datastore.client.update(
             index=self.name,
             doc_type=self.name,
             id=key,
-            body=json.dumps({'doc': data, 'doc_as_upsert': True})
+            body=json.dumps({'doc': saved_data, 'doc_as_upsert': True})
         )
 
     @collection_reconnect(log)
@@ -543,8 +551,8 @@ class ESCollection(Collection):
     @collection_reconnect(log)
     def _ensure_collection(self):
         if not self.datastore.client.indices.exists(self.name):
-            log.warn("Collection {collection} does not exists. "
-                     "Creating it now...".format(collection=self.name.upper()))
+            log.warning("Collection {collection} does not exists. "
+                        "Creating it now...".format(collection=self.name.upper()))
             index = deepcopy(default_index)
             mappings = deepcopy(default_mapping)
             if 'settings' not in index:
@@ -628,7 +636,15 @@ if __name__ == "__main__":
     s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert',
                            'is_admin': False, '__access_lvl__': 200})
 
+    s.user.save('string', 'a')
+    s.user.save('list', ['a', 'b', 1])
+    s.user.save('int', 1)
+
     s.user.commit()
+
+    print('\n# multiget string, list, int')
+    pprint(s.user.multiget(['string', 'list', 'int']))
+
     print('\n# get sgaron')
     pprint(s.user.get('sgaron'))
     print('\n# get bob')
@@ -654,7 +670,7 @@ if __name__ == "__main__":
     pprint(s.user.histogram('__expiry_ts__', 'now-1M/d', 'now+1d/d', '+1d'))
 
     print('\n# field analysis')
-    pprint(s.user.field_analysis(s.ID))
+    pprint(s.user.field_analysis('__access_lvl__'))
 
     print('\n# grouped search')
     pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))

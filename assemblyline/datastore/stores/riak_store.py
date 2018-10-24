@@ -171,8 +171,8 @@ class RiakCollection(SolrCollection):
     def _ensure_collection(self):
         # TODO: get schema and nvals from model_class
         if not self._index_exists():
-            log.warn("Collection {collection} does not exists. "
-                     "Creating it now...".format(collection=self.name.upper()))
+            log.warning("Collection {collection} does not exists. "
+                        "Creating it now...".format(collection=self.name.upper()))
             schema_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/riak/schema.xml"))
             with open(schema_path) as sf:
                 schema_raw = sf.read()
@@ -309,7 +309,15 @@ if __name__ == "__main__":
     s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert',
                            'is_admin': False, '__access_lvl__': 200})
 
+    s.user.save('string', 'a')
+    s.user.save('list', ['a', 'b', 1])
+    s.user.save('int', 1)
+
     s.user.commit()
+
+    print('\n# multiget string, list, int')
+    pprint(s.user.multiget(['string', 'list', 'int']))
+
     print('\n# get sgaron')
     pprint(s.user.get('sgaron'))
     print('\n# get bob')
@@ -335,7 +343,7 @@ if __name__ == "__main__":
     pprint(s.user.histogram('__expiry_ts__', 'NOW-1MONTH/DAY', 'NOW+1DAY/DAY', '+1DAY'))
 
     print('\n# field analysis')
-    pprint(s.user.field_analysis(s.ID))
+    pprint(s.user.field_analysis('__access_lvl__'))
 
     print('\n# grouped search')
     pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))
