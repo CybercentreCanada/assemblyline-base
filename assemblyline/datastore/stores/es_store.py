@@ -147,6 +147,7 @@ class ESCollection(Collection):
             gap = int(gap)
 
             gaps_count = int((end - start) / gap)
+            ret_type = int
         except ValueError:
             pass
 
@@ -157,6 +158,7 @@ class ESCollection(Collection):
                 parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
 
                 gaps_count = int((parsed_end - parsed_start) / parsed_gap)
+                ret_type = str
             except DateMathException:
                 pass
 
@@ -168,6 +170,7 @@ class ESCollection(Collection):
             raise SearchException('Facet max steps are limited to %s. '
                                   'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
                                                                                 gaps_count))
+        return ret_type
 
     def _read_source(self, result, fields=None):
         source = result.get('_source', {})
@@ -408,7 +411,7 @@ class ESCollection(Collection):
 
     @collection_reconnect(log)
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
-        self._validate_steps_count(start, end, gap)
+        type_modifier = self._validate_steps_count(start, end, gap)
 
         if not filters:
             filters = []
@@ -434,7 +437,7 @@ class ESCollection(Collection):
         result = self._search(args)
 
         # Convert the histogram into a dictionary
-        return {row.get('key_as_string', row['key']): row['doc_count']
+        return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
     @collection_reconnect(log)

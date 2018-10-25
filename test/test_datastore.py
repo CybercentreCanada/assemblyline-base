@@ -293,6 +293,10 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
             ss_r_list = list(r_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
             assert compare_output(ss_s_list, ss_e_list, ss_r_list)
 
+            assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(r_tc.keys())))
+            assert compare_output(s_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
+                                  e_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
+                                  r_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
 
         finally:
             for store in stores.values():

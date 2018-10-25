@@ -425,6 +425,7 @@ class SolrCollection(Collection):
             gap = int(gap)
 
             gaps_count = int((end - start) / gap)
+            ret_type = int
         except ValueError:
             pass
 
@@ -435,6 +436,7 @@ class SolrCollection(Collection):
                 parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
 
                 gaps_count = int((parsed_end - parsed_start) / parsed_gap)
+                ret_type = str
             except DateMathException:
                 pass
 
@@ -447,10 +449,12 @@ class SolrCollection(Collection):
                                   'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
                                                                                 gaps_count))
 
+        return ret_type
+
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
         """Build a histogram of `query` data over `field`"""
 
-        self._validate_steps_count(start, end, gap)
+        type_modifier = self._validate_steps_count(start, end, gap)
 
         args = [
             ("rows", "0"),
@@ -475,7 +479,8 @@ class SolrCollection(Collection):
             args.append(('fq', access_control))
 
         result = self._search(args)
-        return dict(chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2))
+        return {type_modifier(x[0]): x[1]
+                for x in chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2)}
 
     def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None,
                        limit=10, min_count=1, filters=(), access_control=None):
