@@ -318,7 +318,7 @@ class SolrCollection(Collection):
         }
         return output
 
-    def stream_search(self, query, sort=None, fl=None, filters=(), access_control=None, buffer_size=200):
+    def stream_search(self, query, fl=None, filters=(), access_control=None, buffer_size=200):
 
         def _auto_fill(_items, _lock, _args):
             page_size = self._get_value('rows', args)
@@ -352,12 +352,9 @@ class SolrCollection(Collection):
         if query in ["*", "*:*"] and fl != self.datastore.ID:
             raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
 
-        if not sort:
-            sort = self.DEFAULT_SORT
-
         args = [
             ('q', query),
-            ('sort', sort),
+            ('sort', self.DEFAULT_SORT),
             ("rows", str(buffer_size)),
             ('wt', 'json'),
             ('df', '__text__')

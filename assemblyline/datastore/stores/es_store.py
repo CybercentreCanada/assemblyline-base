@@ -347,9 +347,6 @@ class ESCollection(Collection):
         result = self._search(args)
 
         docs = [self._read_source(doc, source_filter) for doc in result['hits']['hits']]
-        for doc, resp in zip(docs, result['hits']['hits']):
-            doc.update(_id=resp['_id'])
-
         output = {
             "offset": int(offset),
             "rows": int(rows),
@@ -358,7 +355,7 @@ class ESCollection(Collection):
         }
         return output
 
-    def stream_search(self, query, sort=None, fl=None, filters=(), access_control=None, item_buffer_size=200):
+    def stream_search(self, query, fl=None, filters=(), access_control=None, item_buffer_size=200):
         if item_buffer_size > 500 or item_buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
 
@@ -384,6 +381,7 @@ class ESCollection(Collection):
 
         # Add a field list as a filter on the _source (full document) field
         if fl:
+            fl = fl.split(',')
             query_body['_source'] = fl
 
         iterator = elasticsearch.helpers.scan(
@@ -391,7 +389,7 @@ class ESCollection(Collection):
             query=query_body,
             index=self.name,
             doc_type=self.name,
-            preserve_order=sort is not None
+            preserve_order=True
         )
 
         for value in iterator:

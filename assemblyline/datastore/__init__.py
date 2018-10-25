@@ -174,7 +174,7 @@ class Collection(object):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def stream_search(self, query, sort=None, fl=None, filters=(), access_control=None, buffer_size=200):
+    def stream_search(self, query, fl=None, filters=(), access_control=None, buffer_size=200):
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys
