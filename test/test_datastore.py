@@ -282,12 +282,12 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
             assert compare_output(s_tc.multiget(['int', 'int']),
                                   e_tc.multiget(['int', 'int']),
                                   r_tc.multiget(['int', 'int']))
-            assert compare_output(s_tc.search('*:*', offset=1, rows=1, sort="%s asc" % s_tc.datastore.ID,
-                                              fl='classification'),
-                                  e_tc.search('*:*', offset=1, rows=1, sort="%s asc" % e_tc.datastore.ID,
-                                              fl='classification'),
-                                  r_tc.search('*:*', offset=1, rows=1, sort="%s asc" %r_tc.datastore.ID,
-                                              fl='classification'))
+            assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
+                                              sort="%s asc" % s_tc.datastore.ID, fl='classification'),
+                                  e_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
+                                              sort="%s asc" % e_tc.datastore.ID, fl='classification'),
+                                  r_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
+                                              sort="%s asc" %r_tc.datastore.ID, fl='classification'))
             ss_s_list = list(s_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
             ss_e_list = list(e_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
             ss_r_list = list(r_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))

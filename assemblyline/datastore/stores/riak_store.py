@@ -330,7 +330,7 @@ if __name__ == "__main__":
     pprint(s.user.search("*:*"))
 
     print('\n# search __expiry_ts__ all fields')
-    pprint(s.user.search('__expiry_ts__:"2018-10-18T16:26:42.961Z+1DAY"', fl="*"))
+    pprint(s.user.search('__expiry_ts__:"2018-10-18T16:26:42.961Z+1DAY"', filters="__access_lvl__:100", fl="*"))
 
     print('\n# stream keys')
     for k in s.user.keys():

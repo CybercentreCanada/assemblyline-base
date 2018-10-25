@@ -370,14 +370,20 @@ class ESCollection(Collection):
                             "default_field": self.datastore.ID,
                             "query": query
                         }
-                    }
+                    },
+                    'filter': []
                 }
             }
         }
 
         # Add a filter query to the search
         if access_control:
-            query_body['query']['bool']['filter'] = {'query_string': {'query': access_control}}
+            query_body['query']['bool']['filter'].append({'query_string': {'query': access_control}})
+
+        if isinstance(filters, str):
+            query_body['query']['bool']['filter'].append({'query_string': {'query': filters}})
+        else:
+            query_body['query']['bool']['filter'].extend({'query_string': {'query': ff}} for ff in filters)
 
         # Add a field list as a filter on the _source (full document) field
         if fl:
@@ -655,7 +661,7 @@ if __name__ == "__main__":
     pprint(s.user.search("*:*"))
 
     print('\n# search __expiry_ts__ all fields')
-    pprint(s.user.search('__expiry_ts__:"2018-10-19T16:26:42.961Z"', fl="*"))
+    pprint(s.user.search('__expiry_ts__:"2018-10-19T16:26:42.961Z"', filters="__access_lvl__:100", fl="*"))
 
     print('\n# stream keys')
     for k in s.user.keys():
