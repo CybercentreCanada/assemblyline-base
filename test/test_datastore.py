@@ -287,7 +287,7 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
                                   e_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
                                               sort="%s asc" % e_tc.datastore.ID, fl='classification'),
                                   r_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
-                                              sort="%s asc" %r_tc.datastore.ID, fl='classification'))
+                                              sort="%s asc" % r_tc.datastore.ID, fl='classification'))
             ss_s_list = list(s_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
             ss_e_list = list(e_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
             ss_r_list = list(r_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
@@ -297,6 +297,21 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
             assert compare_output(s_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
                                   e_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
                                   r_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
+
+            s_date = "2018-10-10T16:26:42.961Z"
+            h_s = s_tc.histogram('__expiry_ts__',
+                                 '{s}/{d}'.format(s=s_date, d=s_tc.datastore.day),
+                                 '{s}+5{d}/{d}'.format(s=s_date, d=s_tc.datastore.day),
+                                 '+1{d}'.format(d=s_tc.datastore.day, mincount=2))
+            h_e = e_tc.histogram('__expiry_ts__',
+                                 '{s}/{d}'.format(s=s_date, d=e_tc.datastore.day),
+                                 '{s}+5{d}/{d}'.format(s=s_date, d=e_tc.datastore.day),
+                                 '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
+            h_r = r_tc.histogram('__expiry_ts__',
+                                 '{s}/{d}'.format(s=s_date, d=r_tc.datastore.day),
+                                 '{s}+5{d}/{d}'.format(s=s_date, d=r_tc.datastore.day),
+                                 '+1{d}'.format(d=r_tc.datastore.day, mincount=2))
+            assert compare_output(h_s, h_e, h_r)
 
         finally:
             for store in stores.values():
