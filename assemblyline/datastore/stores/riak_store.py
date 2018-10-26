@@ -209,20 +209,6 @@ class RiakCollection(SolrCollection):
 class RiakStore(SolrStore):
     """ Riak implementation of the ResultStore interface."""
     ID = "_yz_rk"
-    DATE_FORMAT = {
-        'NOW': 'NOW',
-        'YEAR': 'YEAR',
-        'MONTH': 'MONTH',
-        'WEEK': 'WEEK',
-        'DAY': 'DAY',
-        'HOUR': 'HOUR',
-        'MINUTE': 'MINUTE',
-        'SECOND': 'SECOND',
-        'MILLISECOND': 'MILLISECOND',
-        'MICROSECOND': 'MICROSECOND',
-        'NANOSECOND': 'NANOSECOND',
-        'SEPARATOR': '',
-    }
 
     # noinspection PyUnresolvedReferences
     def __init__(self, hosts=None, collection_class=RiakCollection, protocol_used='pbc',

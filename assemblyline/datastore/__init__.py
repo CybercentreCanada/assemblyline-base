@@ -307,6 +307,25 @@ class BaseStore(object):
 
         return self._collections[name]
 
+    def to_pydatemath(self, value):
+        replace_list = [
+            (self.now, self.DATEMATH_MAP['NOW']),
+            (self.year, self.DATEMATH_MAP['YEAR']),
+            (self.month, self.DATEMATH_MAP['MONTH']),
+            (self.week, self.DATEMATH_MAP['WEEK']),
+            (self.day, self.DATEMATH_MAP['DAY']),
+            (self.hour, self.DATEMATH_MAP['HOUR']),
+            (self.minute, self.DATEMATH_MAP['MINUTE']),
+            (self.second, self.DATEMATH_MAP['SECOND']),
+            (self.DATE_FORMAT['DATE_END'], self.DATEMATH_MAP['DATE_END'])
+        ]
+
+        for x in replace_list:
+            value = value.replace(*x)
+
+        return value
+
+
     @property
     def now(self):
         return self.DATE_FORMAT['NOW']
@@ -330,6 +349,10 @@ class BaseStore(object):
     @property
     def month(self):
         return self.DATE_FORMAT['MONTH']
+
+    @property
+    def week(self):
+        return self.DATE_FORMAT['WEEK']
 
     @property
     def day(self):

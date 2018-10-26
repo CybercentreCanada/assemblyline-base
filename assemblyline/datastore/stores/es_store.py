@@ -120,25 +120,6 @@ class ESCollection(Collection):
         except elasticsearch.NotFoundError:
             return True
 
-    @staticmethod
-    def _to_python_datemath(value):
-        replace_list = [
-            (ESStore.DATE_FORMAT['NOW'], ESStore.DATEMATH_MAP['NOW']),
-            (ESStore.DATE_FORMAT['YEAR'], ESStore.DATEMATH_MAP['YEAR']),
-            (ESStore.DATE_FORMAT['MONTH'], ESStore.DATEMATH_MAP['MONTH']),
-            (ESStore.DATE_FORMAT['WEEK'], ESStore.DATEMATH_MAP['WEEK']),
-            (ESStore.DATE_FORMAT['DAY'], ESStore.DATEMATH_MAP['DAY']),
-            (ESStore.DATE_FORMAT['HOUR'], ESStore.DATEMATH_MAP['HOUR']),
-            (ESStore.DATE_FORMAT['MINUTE'], ESStore.DATEMATH_MAP['MINUTE']),
-            (ESStore.DATE_FORMAT['SECOND'], ESStore.DATEMATH_MAP['SECOND']),
-            (ESStore.DATE_FORMAT['DATE_END'], ESStore.DATEMATH_MAP['DATE_END'])
-        ]
-
-        for x in replace_list:
-            value = value.replace(*x)
-
-        return value
-
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):
         with warnings.catch_warnings():
@@ -159,9 +140,9 @@ class ESCollection(Collection):
 
             if not gaps_count:
                 try:
-                    parsed_start = dm(self._to_python_datemath(start)).timestamp
-                    parsed_end = dm(self._to_python_datemath(end)).timestamp
-                    parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
+                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp
+                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp
+                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp - dm('now').timestamp
 
                     gaps_count = int((parsed_end - parsed_start) / parsed_gap)
                     ret_type = str

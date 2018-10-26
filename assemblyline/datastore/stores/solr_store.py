@@ -398,25 +398,6 @@ class SolrCollection(Collection):
         for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
             yield item[self.datastore.ID]
 
-    @staticmethod
-    def _to_python_datemath(value):
-        replace_list = [
-            (SolrStore.DATE_FORMAT['NOW'], SolrStore.DATEMATH_MAP['NOW']),
-            (SolrStore.DATE_FORMAT['YEAR'], SolrStore.DATEMATH_MAP['YEAR']),
-            (SolrStore.DATE_FORMAT['MONTH'], SolrStore.DATEMATH_MAP['MONTH']),
-            (SolrStore.DATE_FORMAT['WEEK'], SolrStore.DATEMATH_MAP['WEEK']),
-            (SolrStore.DATE_FORMAT['DAY'], SolrStore.DATEMATH_MAP['DAY']),
-            (SolrStore.DATE_FORMAT['HOUR'], SolrStore.DATEMATH_MAP['HOUR']),
-            (SolrStore.DATE_FORMAT['MINUTE'], SolrStore.DATEMATH_MAP['MINUTE']),
-            (SolrStore.DATE_FORMAT['SECOND'], SolrStore.DATEMATH_MAP['SECOND']),
-            (SolrStore.DATE_FORMAT['DATE_END'], SolrStore.DATEMATH_MAP['DATE_END'])
-        ]
-
-        for x in replace_list:
-            value = value.replace(*x)
-
-        return value
-
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):
         with warnings.catch_warnings():
@@ -437,9 +418,9 @@ class SolrCollection(Collection):
 
             if not gaps_count:
                 try:
-                    parsed_start = dm(self._to_python_datemath(start)).timestamp
-                    parsed_end = dm(self._to_python_datemath(end)).timestamp
-                    parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
+                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp
+                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp
+                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp - dm('now').timestamp
 
                     gaps_count = int((parsed_end - parsed_start) / parsed_gap)
                     ret_type = str
