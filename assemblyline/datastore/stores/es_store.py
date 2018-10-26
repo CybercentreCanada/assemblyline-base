@@ -432,10 +432,21 @@ class ESCollection(Collection):
 
     @collection_reconnect(log)
     def grouped_search(self, group_field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
-                       rows=None, filters=(), access_control=None):
+                       rows=None, filters=None, access_control=None):
 
         if not rows:
             rows = self.DEFAULT_ROW_SIZE
+
+        if not sort:
+            sort = self.DEFAULT_SORT
+
+        if not group_sort:
+            group_sort = self.DEFAULT_SORT
+
+        if not filters:
+            filters = []
+        elif isinstance(filters, str):
+            filters = [filters]
 
         args = [
             ('query', query),
@@ -448,6 +459,8 @@ class ESCollection(Collection):
             ('sort', sort)
         ]
 
+        filters.append("%s:*" % group_field)
+
         if fl:
             field_list = fl.split(',')
             args.append(('field_list', field_list))
@@ -455,13 +468,7 @@ class ESCollection(Collection):
             field_list = None
 
         if access_control:
-            if not filters:
-                filters = [access_control]
-            else:
-                if isinstance(filters, list):
-                    filters.append(access_control)
-                else:
-                    filters = [filters] + [access_control]
+            filters.append(access_control)
 
         if filters:
             args.append(('filters', filters))
@@ -481,7 +488,7 @@ class ESCollection(Collection):
         return {
             'offset': offset,
             'rows': rows,
-            'total': len(group_docs),
+            'total': result['hits']['total'],
             'items': [{
                 'value': grouping['key'],
                 'total': grouping['doc_count'],
