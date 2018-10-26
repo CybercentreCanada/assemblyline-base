@@ -211,11 +211,13 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
                 errors.append("elastic != riak")
 
             if errors:
-                raise ValueError("Not all outputs are equal: {non_equal} "
-                                 "[{solr}, {elastic}, {riak}]".format(non_equal=", ".join(errors),
-                                                                      solr=solr,
-                                                                      elastic=elastic,
-                                                                      riak=riak))
+                print("\n\nNot all outputs are equal: {non_equal}\n\n"
+                      "solr = {solr}\nelastic = {elastic}\nriak = {riak}\n\n".format(non_equal=", ".join(errors),
+                                                                                     solr=solr,
+                                                                                     elastic=elastic,
+                                                                                     riak=riak))
+                return False
+
             return True
 
         stores = {}
@@ -269,10 +271,14 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
                                   e_tc.field_analysis('classification'),
                                   r_tc.field_analysis('classification'))
 
+            assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification'),
+                                  e_tc.grouped_search('__access_lvl__', fl='classification'),
+                                  r_tc.grouped_search('__access_lvl__', fl='classification'))
+
+            # TODO: fields are not of the same type in-between datastores does that matter?
+            #       will print output for now without failing the test
+            compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())
+
         finally:
             for store in stores.values():
                 store.wipe()
-
-
-
-
