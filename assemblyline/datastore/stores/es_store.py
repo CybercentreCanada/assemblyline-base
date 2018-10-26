@@ -1,9 +1,10 @@
-import time
 
 import elasticsearch
 import elasticsearch.helpers
 import json
 import logging
+import time
+import warnings
 
 from copy import copy, deepcopy
 from datemath import dm
@@ -140,39 +141,42 @@ class ESCollection(Collection):
 
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):
-        gaps_count = None
-        ret_type = None
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        try:
-            start = int(start)
-            end = int(end)
-            gap = int(gap)
+            gaps_count = None
+            ret_type = None
 
-            gaps_count = int((end - start) / gap)
-            ret_type = int
-        except ValueError:
-            pass
-
-        if not gaps_count:
             try:
-                parsed_start = dm(self._to_python_datemath(start)).timestamp
-                parsed_end = dm(self._to_python_datemath(end)).timestamp
-                parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
+                start = int(start)
+                end = int(end)
+                gap = int(gap)
 
-                gaps_count = int((parsed_end - parsed_start) / parsed_gap)
-                ret_type = str
-            except DateMathException:
+                gaps_count = int((end - start) / gap)
+                ret_type = int
+            except ValueError:
                 pass
 
-        if not gaps_count:
-            raise SearchException(
-                "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
+            if not gaps_count:
+                try:
+                    parsed_start = dm(self._to_python_datemath(start)).timestamp
+                    parsed_end = dm(self._to_python_datemath(end)).timestamp
+                    parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
 
-        if gaps_count > self.MAX_FACET_LIMIT:
-            raise SearchException('Facet max steps are limited to %s. '
-                                  'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
-                                                                                gaps_count))
-        return ret_type
+                    gaps_count = int((parsed_end - parsed_start) / parsed_gap)
+                    ret_type = str
+                except DateMathException:
+                    pass
+
+            if not gaps_count:
+                raise SearchException(
+                    "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
+
+            if gaps_count > self.MAX_FACET_LIMIT:
+                raise SearchException('Facet max steps are limited to %s. '
+                                      'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
+                                                                                    gaps_count))
+            return ret_type
 
     def _format_output(self, result, fields=None):
         source = result.get('fields', {})
@@ -184,9 +188,9 @@ class ESCollection(Collection):
             source[self.datastore.ID] = result[self.datastore.ID]
 
         if fields is None or '*' in fields:
-            return source
+            return {key: val[0] if isinstance(val, list) else val for key, val in source.items()}
 
-        return {key: val for key, val in source.items() if key in fields}
+        return {key: val[0] if isinstance(val, list) else val for key, val in source.items() if key in fields}
 
     def _cleanup_search_result(self, item):
         if isinstance(item, dict):
@@ -216,9 +220,13 @@ class ESCollection(Collection):
                         "query_string": {
                             "query": parsed_values['query']
                         }
-                    }
+                    },
+                    'filter': [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
                 }
             },
+            'from': parsed_values['start'],
+            'size': parsed_values['rows'],
+            'sort': parse_sort(parsed_values['sort']),
             "stored_fields": parsed_values['field_list'] or ['*']
         }
 
@@ -270,26 +278,6 @@ class ESCollection(Collection):
                     }
                 }
 
-        # Parse the sort string into the format elasticsearch expects
-        if parsed_values['sort']:
-            query_body['sort'] = parse_sort(parsed_values['sort'])
-
-        # Add an offset/number of results for simple paging
-        if parsed_values['start']:
-            query_body['from'] = parsed_values['start']
-        if parsed_values['rows']:
-            query_body['size'] = parsed_values['rows']
-
-        # Add filters
-        if 'filter' not in query_body['query']['bool']:
-            query_body['query']['bool']['filter'] = []
-
-        if isinstance(parsed_values['filters'], str):
-            query_body['query']['bool']['filter'].append({'query_string': {'query': parsed_values['filters']}})
-        else:
-            query_body['query']['bool']['filter'].extend({'query_string': {'query': ff}}
-                                                         for ff in parsed_values['filters'])
-
         try:
             # Run the query
             result = self.datastore.client.search(index=self.name, body=json.dumps(query_body))
@@ -305,13 +293,21 @@ class ESCollection(Collection):
             raise SearchException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
 
     def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=(), access_control=None):
+               fl=None, timeout=None, filters=None, access_control=None):
 
         if not rows:
             rows = self.DEFAULT_ROW_SIZE
 
         if not sort:
             sort = self.DEFAULT_SORT
+
+        if not filters:
+            filters = []
+        elif isinstance(filters, str):
+            filters = [filters]
+
+        if access_control:
+            filters.append(access_control)
 
         args = [
             ('query', query),
@@ -330,15 +326,6 @@ class ESCollection(Collection):
         if timeout:
             args.append(('timeout', "%sms" % timeout))
 
-        if access_control:
-            if not filters:
-                filters = [access_control]
-            else:
-                if isinstance(filters, list):
-                    filters.append(access_control)
-                else:
-                    filters = [filters] + [access_control]
-
         if filters:
             args.append(('filters', filters))
 
@@ -353,12 +340,20 @@ class ESCollection(Collection):
         }
         return output
 
-    def stream_search(self, query, fl=None, filters=(), access_control=None, item_buffer_size=200):
+    def stream_search(self, query, fl=None, filters=None, access_control=None, item_buffer_size=200):
         if item_buffer_size > 500 or item_buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
 
         if query in ["*", "*:*"] and fl != self.datastore.ID:
             raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
+
+        if not filters:
+            filters = []
+        elif isinstance(filters, str):
+            filters = [filters]
+
+        if access_control:
+            filters.append(access_control)
 
         if fl:
             fl = fl.split(',')
@@ -372,20 +367,11 @@ class ESCollection(Collection):
                             "query": query
                         }
                     },
-                    'filter': []
+                    'filter': [{'query_string': {'query': ff}} for ff in filters]
                 }
             },
             "stored_fields": fl or ['*']
         }
-
-        # Add a filter query to the search
-        if access_control:
-            query_body['query']['bool']['filter'].append({'query_string': {'query': access_control}})
-
-        if isinstance(filters, str):
-            query_body['query']['bool']['filter'].append({'query_string': {'query': filters}})
-        else:
-            query_body['query']['bool']['filter'].extend({'query_string': {'query': ff}} for ff in filters)
 
         iterator = elasticsearch.helpers.scan(
             self.datastore.client,
@@ -481,8 +467,6 @@ class ESCollection(Collection):
             ('sort', sort)
         ]
 
-        # TODO: offset and row don't seem to get applied to the grouping
-
         if fl:
             field_list = fl.split(',')
             args.append(('field_list', field_list))
@@ -504,6 +488,14 @@ class ESCollection(Collection):
         result = self._search(args)
 
         group_docs = result['aggregations']['group-%s' % group_field]['buckets']
+
+        # TODO: It is impossible to do paging of aggragated data in elasticsearch
+        #       therefore we are just slicing the result given the offset
+        #       that may make the call to slow if we have a large amount of data.
+        #
+        #       see [offset:offset+rows]
+        #
+        #       Can we find another way or am I just wrong?
 
         return {
             'offset': offset,

@@ -308,6 +308,22 @@ class BaseStore(object):
         return self._collections[name]
 
     @property
+    def now(self):
+        return self.DATE_FORMAT['NOW']
+
+    @property
+    def ms(self):
+        return self.DATE_FORMAT['MILLISECOND']
+
+    @property
+    def us(self):
+        return self.DATE_FORMAT['MICROSECOND']
+
+    @property
+    def ns(self):
+        return self.DATE_FORMAT['NANOSECOND']
+
+    @property
     def year(self):
         return self.DATE_FORMAT['YEAR']
 

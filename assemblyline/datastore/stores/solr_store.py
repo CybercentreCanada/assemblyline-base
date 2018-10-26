@@ -4,6 +4,7 @@ import requests
 import time
 import threading
 import uuid
+import warnings
 
 from copy import copy, deepcopy
 from datemath import dm
@@ -418,40 +419,43 @@ class SolrCollection(Collection):
 
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):
-        gaps_count = None
-        ret_type = None
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        try:
-            start = int(start)
-            end = int(end)
-            gap = int(gap)
+            gaps_count = None
+            ret_type = None
 
-            gaps_count = int((end - start) / gap)
-            ret_type = int
-        except ValueError:
-            pass
-
-        if not gaps_count:
             try:
-                parsed_start = dm(self._to_python_datemath(start)).timestamp
-                parsed_end = dm(self._to_python_datemath(end)).timestamp
-                parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
+                start = int(start)
+                end = int(end)
+                gap = int(gap)
 
-                gaps_count = int((parsed_end - parsed_start) / parsed_gap)
-                ret_type = str
-            except DateMathException:
+                gaps_count = int((end - start) / gap)
+                ret_type = int
+            except ValueError:
                 pass
 
-        if not gaps_count:
-            raise SearchException(
-                "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
+            if not gaps_count:
+                try:
+                    parsed_start = dm(self._to_python_datemath(start)).timestamp
+                    parsed_end = dm(self._to_python_datemath(end)).timestamp
+                    parsed_gap = dm(self._to_python_datemath(gap)).timestamp - dm('now').timestamp
 
-        if gaps_count > self.MAX_FACET_LIMIT:
-            raise SearchException('Facet max steps are limited to %s. '
-                                  'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
-                                                                                gaps_count))
+                    gaps_count = int((parsed_end - parsed_start) / parsed_gap)
+                    ret_type = str
+                except DateMathException:
+                    pass
 
-        return ret_type
+            if not gaps_count:
+                raise SearchException(
+                    "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
+
+            if gaps_count > self.MAX_FACET_LIMIT:
+                raise SearchException('Facet max steps are limited to %s. '
+                                      'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
+                                                                                    gaps_count))
+
+            return ret_type
 
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
         """Build a histogram of `query` data over `field`"""
