@@ -419,6 +419,8 @@ class SolrCollection(Collection):
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):
         gaps_count = None
+        ret_type = None
+
         try:
             start = int(start)
             end = int(end)
@@ -827,13 +829,13 @@ if __name__ == "__main__":
     s.user.delete('denis')
 
     s.user.save('sgaron', {'__expiry_ts__': '2018-10-10T16:26:42.961Z', 'uname': 'sgaron',
-                           'is_admin': True, '__access_lvl__': 400})
+                           'is_admin': True, '__access_lvl__': 400, 'classification': "U"})
     s.user.save('bob', {'__expiry_ts__': '2018-10-21T16:26:42.961Z', 'uname': 'bob',
-                        'is_admin': False, '__access_lvl__': 100})
+                        'is_admin': False, '__access_lvl__': 100, 'classification': "U"})
     s.user.save('denis', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'denis',
-                          'is_admin': False, '__access_lvl__': 100})
+                          'is_admin': False, '__access_lvl__': 100, 'classification': "TS"})
     s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert',
-                           'is_admin': False, '__access_lvl__': 200})
+                           'is_admin': False, '__access_lvl__': 200, 'classification': "C"})
 
     s.user.save('string', 'a')
     s.user.save('list', ['a', 'b', 1])
@@ -873,6 +875,7 @@ if __name__ == "__main__":
 
     print('\n# grouped search')
     pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))
+    pprint(s.user.grouped_search('__access_lvl__', sort='__access_lvl__ asc', fl=s.ID))
     pprint(s.user.grouped_search('__access_lvl__', rows=2, offset=1, sort='__access_lvl__ asc', fl=s.ID))
 
     print('\n# fields')

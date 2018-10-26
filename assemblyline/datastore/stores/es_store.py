@@ -36,7 +36,7 @@ class ESCollection(Collection):
     MAX_FACET_LIMIT = 100
     DEFAULT_SEARCH_VALUES = {
         'timeout': None,
-        'source_filter': None,
+        'field_list': None,
         'facet_active': False,
         'facet_mincount': 1,
         'facet_fields': [],
@@ -141,6 +141,8 @@ class ESCollection(Collection):
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):
         gaps_count = None
+        ret_type = None
+
         try:
             start = int(start)
             end = int(end)
@@ -172,8 +174,8 @@ class ESCollection(Collection):
                                                                                 gaps_count))
         return ret_type
 
-    def _read_source(self, result, fields=None):
-        source = result.get('_source', {})
+    def _format_output(self, result, fields=None):
+        source = result.get('fields', {})
 
         if isinstance(fields, str):
             fields = fields
@@ -216,7 +218,8 @@ class ESCollection(Collection):
                         }
                     }
                 }
-            }
+            },
+            "stored_fields": parsed_values['field_list'] or ['*']
         }
 
         if parsed_values['df']:
@@ -260,7 +263,8 @@ class ESCollection(Collection):
                         "groupings": {
                             "top_hits": {
                                 "sort": parsed_values['group_sort'] or [{field: 'asc'}],
-                                "size": parsed_values['group_limit']
+                                "size": parsed_values['group_limit'],
+                                "stored_fields": parsed_values['field_list'] or ['*']
                             }
                         }
                     }
@@ -269,15 +273,6 @@ class ESCollection(Collection):
         # Parse the sort string into the format elasticsearch expects
         if parsed_values['sort']:
             query_body['sort'] = parse_sort(parsed_values['sort'])
-
-        # Add a field list as a filter on the _source (full document) field
-        source_filter = copy(parsed_values['source_filter'])
-        if source_filter and '_id' in source_filter:
-            source_filter.remove('_id')
-            query_body['stored_fields'] = ['_id']
-
-        if source_filter:
-            query_body['_source'] = source_filter
 
         # Add an offset/number of results for simple paging
         if parsed_values['start']:
@@ -327,10 +322,10 @@ class ESCollection(Collection):
         ]
 
         if fl:
-            source_filter = fl.split(',')
-            args.append(('source_filter', source_filter))
+            field_list = fl.split(',')
+            args.append(('field_list', field_list))
         else:
-            source_filter = None
+            field_list = None
 
         if timeout:
             args.append(('timeout', "%sms" % timeout))
@@ -349,7 +344,7 @@ class ESCollection(Collection):
 
         result = self._search(args)
 
-        docs = [self._read_source(doc, source_filter) for doc in result['hits']['hits']]
+        docs = [self._format_output(doc, field_list) for doc in result['hits']['hits']]
         output = {
             "offset": int(offset),
             "rows": int(rows),
@@ -365,6 +360,9 @@ class ESCollection(Collection):
         if query in ["*", "*:*"] and fl != self.datastore.ID:
             raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
 
+        if fl:
+            fl = fl.split(',')
+
         query_body = {
             "query": {
                 "bool": {
@@ -376,7 +374,8 @@ class ESCollection(Collection):
                     },
                     'filter': []
                 }
-            }
+            },
+            "stored_fields": fl or ['*']
         }
 
         # Add a filter query to the search
@@ -388,11 +387,6 @@ class ESCollection(Collection):
         else:
             query_body['query']['bool']['filter'].extend({'query_string': {'query': ff}} for ff in filters)
 
-        # Add a field list as a filter on the _source (full document) field
-        if fl:
-            fl = fl.split(',')
-            query_body['_source'] = fl
-
         iterator = elasticsearch.helpers.scan(
             self.datastore.client,
             query=query_body,
@@ -403,7 +397,7 @@ class ESCollection(Collection):
 
         for value in iterator:
             # Unpack the results, ensure the id is always set
-            yield self._read_source(value, fl)
+            yield self._format_output(value, fl)
 
     def keys(self, access_control=None):
         for item in self.stream_search("%s:*" % self.datastore.ID, fl=self.datastore.ID, access_control=access_control):
@@ -470,8 +464,11 @@ class ESCollection(Collection):
                 for row in result['aggregations'][field]['buckets']}
 
     @collection_reconnect(log)
-    def grouped_search(self, group_field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=1,
+    def grouped_search(self, group_field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=(), access_control=None):
+
+        if not rows:
+            rows = self.DEFAULT_ROW_SIZE
 
         args = [
             ('query', query),
@@ -487,10 +484,10 @@ class ESCollection(Collection):
         # TODO: offset and row don't seem to get applied to the grouping
 
         if fl:
-            source_filter = fl.split(',')
-            args.append(('source_filter', source_filter))
+            field_list = fl.split(',')
+            args.append(('field_list', field_list))
         else:
-            source_filter = None
+            field_list = None
 
         if access_control:
             if not filters:
@@ -515,9 +512,9 @@ class ESCollection(Collection):
             'items': [{
                 'value': grouping['key'],
                 'total': grouping['doc_count'],
-                'items': [self._cleanup_search_result(self._read_source(row, source_filter))
+                'items': [self._cleanup_search_result(self._format_output(row, field_list))
                           for row in grouping['groupings']['hits']['hits']]
-            } for grouping in group_docs]
+            } for grouping in group_docs[offset:offset+rows]]
         }
 
     @collection_reconnect(log)
@@ -635,13 +632,13 @@ if __name__ == "__main__":
     s.user.delete('denis')
 
     s.user.save('sgaron', {'__expiry_ts__': '2018-10-10T16:26:42.961Z', 'uname': 'sgaron',
-                           'is_admin': True, '__access_lvl__': 400})
+                           'is_admin': True, '__access_lvl__': 400, 'classification': "U"})
     s.user.save('bob', {'__expiry_ts__': '2018-10-21T16:26:42.961Z', 'uname': 'bob',
-                        'is_admin': False, '__access_lvl__': 100})
+                        'is_admin': False, '__access_lvl__': 100, 'classification': "U"})
     s.user.save('denis', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'denis',
-                          'is_admin': False, '__access_lvl__': 100})
+                          'is_admin': False, '__access_lvl__': 100, 'classification': "TS"})
     s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert',
-                           'is_admin': False, '__access_lvl__': 200})
+                           'is_admin': False, '__access_lvl__': 200, 'classification': "C"})
 
     s.user.save('string', 'a')
     s.user.save('list', ['a', 'b', 1])
@@ -681,6 +678,7 @@ if __name__ == "__main__":
 
     print('\n# grouped search')
     pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))
+    pprint(s.user.grouped_search('__access_lvl__', sort='__access_lvl__ asc', fl=s.ID))
     pprint(s.user.grouped_search('__access_lvl__', rows=2, offset=1, sort='__access_lvl__ asc', fl=s.ID))
 
     print('\n# fields')
