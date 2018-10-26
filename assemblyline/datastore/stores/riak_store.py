@@ -168,7 +168,7 @@ class RiakCollection(SolrCollection):
         try:
             self.datastore.client.get_search_index('name')
             return True
-        except riak.RiakError as e:
+        except riak.RiakError:
             return False
 
     @collection_reconnect(log)
