@@ -160,6 +160,10 @@ class RiakCollection(SolrCollection):
             yield item[self.datastore.ID]
 
     @collection_reconnect(log)
+    def fields(self, port=8093):
+        return super().fields(self.solr_port)
+
+    @collection_reconnect(log)
     def _index_exists(self):
         try:
             self.datastore.client.get_search_index('name')
