@@ -278,7 +278,7 @@ class SolrCollection(Collection):
                                           (self.name, query, args, res.content))
 
     def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=(), access_control=None):
+               fl=None, timeout=None, filters=None, access_control=None):
 
         if not rows:
             rows = self.DEFAULT_ROW_SIZE
@@ -319,7 +319,7 @@ class SolrCollection(Collection):
         }
         return output
 
-    def stream_search(self, query, fl=None, filters=(), access_control=None, buffer_size=200):
+    def stream_search(self, query, fl=None, filters=None, access_control=None, buffer_size=200):
 
         def _auto_fill(_items, _lock, _args):
             page_size = self._get_value('rows', args)
@@ -438,7 +438,7 @@ class SolrCollection(Collection):
 
             return ret_type
 
-    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
+    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
         """Build a histogram of `query` data over `field`"""
 
         type_modifier = self._validate_steps_count(start, end, gap)
@@ -470,7 +470,7 @@ class SolrCollection(Collection):
                 for x in chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2)}
 
     def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None,
-                       limit=10, min_count=1, filters=(), access_control=None):
+                       limit=10, min_count=1, filters=None, access_control=None):
 
         if not sort:
             sort = self.DEFAULT_SORT
@@ -510,11 +510,14 @@ class SolrCollection(Collection):
         result = self._search(args)
         return dict(chunked_list(result["facet_counts"]["facet_fields"][field], 2))
 
-    def grouped_search(self, field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=1,
-                       rows=None, filters=(), access_control=None):
+    def grouped_search(self, field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
+                       rows=None, filters=None, access_control=None):
 
         if not sort:
             sort = self.DEFAULT_SORT
+
+        if not group_sort:
+            group_sort = self.DEFAULT_SORT
 
         if not rows:
             rows = self.DEFAULT_ROW_SIZE
@@ -525,17 +528,11 @@ class SolrCollection(Collection):
             ('rows', rows),
             ('q', query),
             ('wt', 'json'),
-            ('df', '__text__')
+            ('df', '__text__'),
+            ("group.sort", group_sort),
+            ("sort", sort),
+            ("start", offset)
         ]
-
-        if offset:
-            args.append(("start", offset))
-
-        if sort:
-            args.append(("sort", sort))
-
-        if group_sort:
-            args.append(("group.sort", group_sort))
 
         if fl:
             args.append(("fl", fl))
@@ -552,6 +549,8 @@ class SolrCollection(Collection):
         if access_control:
             args.append(('fq', access_control))
 
+        args.append(('fq', "%s:[* TO *]" % field))
+
         data = self._search(args)['grouped'][field]
 
         return {
@@ -567,8 +566,8 @@ class SolrCollection(Collection):
 
     # noinspection PyBroadException
     @collection_reconnect(log)
-    def fields(self):
-        session, host = self._get_session()
+    def fields(self, port=8983):
+        session, host = self._get_session(port=port)
 
         url = "http://{host}/{api_base}/{collection}/admin/luke/?wt=json".format(host=host,
                                                                                  api_base=self.api_base,
