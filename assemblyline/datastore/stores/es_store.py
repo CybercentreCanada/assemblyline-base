@@ -6,7 +6,7 @@ import logging
 import time
 import warnings
 
-from copy import copy, deepcopy
+from copy import deepcopy
 from datemath import dm
 from datemath.helpers import DateMathException
 
@@ -511,9 +511,9 @@ class ESCollection(Collection):
         collection_data = {}
 
         for p_name, p_val in properties.items():
-            if p_name.startswith("_") or "//" in k:
+            if p_name.startswith("_") or "//" in p_name:
                 continue
-            if not Collection.FIELD_SANITIZER.match(k):
+            if not Collection.FIELD_SANITIZER.match(p_name):
                 continue
 
             collection_data[p_name] = {
@@ -592,71 +592,3 @@ class ESStore(BaseStore):
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   connection_class=elasticsearch.RequestsHttpConnection)
-
-
-if __name__ == "__main__":
-    from pprint import pprint
-
-    s = ESStore(['127.0.0.1'])
-    s.register('user')
-    s.user.delete('sgaron')
-    s.user.delete('bob')
-    s.user.delete('robert')
-    s.user.delete('denis')
-
-    s.user.save('sgaron', {'__expiry_ts__': '2018-10-10T16:26:42.961Z', 'uname': 'sgaron',
-                           'is_admin': True, '__access_lvl__': 400, 'classification': "U"})
-    s.user.save('bob', {'__expiry_ts__': '2018-10-21T16:26:42.961Z', 'uname': 'bob',
-                        'is_admin': False, '__access_lvl__': 100, 'classification': "U"})
-    s.user.save('denis', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'denis',
-                          'is_admin': False, '__access_lvl__': 100, 'classification': "TS"})
-    s.user.save('robert', {'__expiry_ts__': '2018-10-19T16:26:42.961Z', 'uname': 'robert',
-                           'is_admin': False, '__access_lvl__': 200, 'classification': "C"})
-
-    s.user.save('string', 'a')
-    s.user.save('list', ['a', 'b', 1])
-    s.user.save('int', 1)
-
-    s.user.commit()
-
-    print('\n# multiget string, list, int')
-    pprint(s.user.multiget(['string', 'list', 'int']))
-
-    print('\n# get sgaron')
-    pprint(s.user.get('sgaron'))
-    print('\n# get bob')
-    pprint(s.user.get('bob'))
-
-    print('\n# multiget sgaron, robert, denis')
-    pprint(s.user.multiget(['sgaron', 'robert', 'denis']))
-
-    print('\n# search *:*')
-    pprint(s.user.search("*:*"))
-
-    print('\n# search __expiry_ts__ all fields')
-    pprint(s.user.search('__expiry_ts__:"2018-10-19T16:26:42.961Z"', filters="__access_lvl__:100", fl="*"))
-
-    print('\n# stream keys')
-    for k in s.user.keys():
-        print(k)
-
-    print('\n# histogram number')
-    pprint(s.user.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
-
-    print('\n# histogram date')
-    pprint(s.user.histogram('__expiry_ts__', 'now-1M/d', 'now+1d/d', '+1d'))
-
-    print('\n# field analysis')
-    pprint(s.user.field_analysis('__access_lvl__'))
-
-    print('\n# grouped search')
-    pprint(s.user.grouped_search(s.ID, rows=2, offset=1, sort='%s asc' % s.ID))
-    pprint(s.user.grouped_search('__access_lvl__', sort='__access_lvl__ asc', fl=s.ID))
-    pprint(s.user.grouped_search('__access_lvl__', rows=2, offset=1, sort='__access_lvl__ asc', fl=s.ID))
-
-    print('\n# fields')
-    pprint(s.user.fields())
-
-    s.user.wipe()
-    # print(s.user._search([('q', "*:*")]))
-    # print(s.user._search([('q', "*:*"), ('fl', "*")]))
