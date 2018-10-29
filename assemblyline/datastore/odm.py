@@ -15,18 +15,7 @@ from datetime import datetime
 
 
 class _Field:
-    def __init__(self, index=None, store=None, copyto=None, name=None):
-        """
-        Abstract base for a field in a model.
-
-        This base field has no type; the typed children of this class should be used.
-
-        Args:
-            index (bool): Index this field for fast searching.
-            store (bool): Store the field value in the index for fast reading.
-            copyto (str): Add the values of this field under another name.
-            name (str): The name of this field. (Set by the model decorator usually)
-        """
+    def __init__(self, name=None, index=None, store=None, copyto=None):
         self.index = index
         self.store = store
         self.copyto = []
@@ -36,10 +25,13 @@ class _Field:
             self.copyto.extend(copyto)
 
         self.name = name
+        self.getter_function = None
         self.setter_function = None
 
     def __get__(self, obj, objtype=None):
         """Read the value of this field from the model instance (obj)."""
+        if self.getter_function:
+            return self.getter_function(obj, getattr(obj, '_' + self.name))
         return getattr(obj, '_' + self.name)
 
     def __set__(self, obj, value):
@@ -48,6 +40,12 @@ class _Field:
         if self.setter_function:
             return self.setter_function(obj, value)
         setattr(obj, '_' + self.name, value)
+
+    def getter(self, method):
+        """Decorator to create getter method for a field."""
+        out = copy.deepcopy(self)
+        out.getter_function = method
+        return out
 
     def setter(self, method):
         """
@@ -60,8 +58,9 @@ class _Field:
         >>>     assert value
         >>>     self._expiry = value
         """
-        self.setter_function = method
-        return self
+        out = copy.deepcopy(self)
+        out.setter_function = method
+        return out
 
     def apply_defaults(self, index, store):
         """Used by the model decorator to pass through default parameters."""
@@ -69,6 +68,14 @@ class _Field:
             self.index = index
         if self.store is None:
             self.store = store
+
+    def fields(self):
+        """
+        Return the subfields/modified field data.
+
+        For simple fields this is an identity function.
+        """
+        return {'': self}
 
 
 class Date(_Field):
@@ -139,6 +146,30 @@ class Classification(Keyword):
         self.expand = expand
 
 
+class TypedList(list):
+
+    def __init__(self, type, *items):
+        super().__init__([type.check(el) for el in items])
+        self.type = type
+
+    def append(self, item):
+        super().append(self.type.check(item))
+
+    def extend(self, sequence):
+        super().extend(self.type.check(item) for item in sequence)
+
+    def insert(self, index, item):
+        super().insert(index, self.type.check(item))
+
+    def __iconcat__(self, sequence):
+        super().__iconcat__(self.type.check(item) for item in sequence)
+
+    def __setitem__(self, index, item):
+        super().__setitem__(index, self.type.check(item))
+
+    # __setslice__
+
+
 class List(_Field):
     """A field storing a sequence of typed elements."""
 
@@ -147,7 +178,7 @@ class List(_Field):
         self.child_type = child_type
 
     def check(self, value):
-        return [self.child_type.check(el) for el in value]
+        return TypedList(self.child_type, *value)
 
     def apply_defaults(self, index, store):
         """Initialize the default settings for the child field."""
@@ -158,40 +189,20 @@ class List(_Field):
 
 
 class Compound(_Field):
-    """
-    A field composed from several other fields.
+    def __init__(self, field_type, **kwargs):
+        super().__init__(**kwargs)
+        self.child_type = field_type
 
-    A compound field should inherit from this class, and have the class decorator
-    `compound` applied to it.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.children = {}
-        for name, field_data in self.__class__.__dict__.items():
-            if not isinstance(field_data, _Field):
-                continue
-            self.children[name] = copy.deepcopy(field_data)
+    def check(self, value):
+        return self.child_type(**value)
 
     def fields(self):
-        """Describe the elements of the compound field with a name -> field object mapping."""
-        return self.children
-
-    def apply_defaults(self, index, store):
-        """Initialize the default settings for all components of the compound field."""
-        super().apply_defaults(index, store)
-        for type in self.children.values():
-            type.apply_defaults(self.index, self.store)
-
-
-def compound(cls):
-    """Decorator to create compound model fields."""
-    for name, field_data in cls.__dict__.items():
-        if not isinstance(field_data, _Field):
-            continue
-        field_data.name = name
-    return cls
+        out = dict()
+        for name, field_data in self.child_type.fields().items():
+            field_data = copy.deepcopy(field_data)
+            field_data.apply_defaults(self.index, self.store)
+            out[name] = field_data
+        return out
 
 
 class Model:
@@ -201,12 +212,29 @@ class Model:
 
     @classmethod
     def fields(cls):
-        """Describe the elements of the model with a name -> field object mapping."""
+        """
+        Describe the elements of the model with a name -> field object mapping.
+
+        For compound fields return the field object.
+        """
         out = dict()
         for name, field_data in cls.__dict__.items():
-            if not isinstance(field_data, _Field):
-                continue
-            out[name] = field_data
+            if isinstance(field_data, _Field):
+                out[name] = field_data
+        return out
+
+    @classmethod
+    def flat_fields(cls):
+        """
+        Describe the elements of the model with a name -> field object mapping.
+
+        Recurse into compound fields, concatinating the names with '.' separators.
+        """
+        out = dict()
+        for name, field_data in cls.__dict__.items():
+            if isinstance(field_data, _Field):
+                for sub_name, sub_data in field_data.fields().items():
+                    out[(name + '.' + sub_name).strip('.')] = sub_data
         return out
 
     def __init__(self, **data):

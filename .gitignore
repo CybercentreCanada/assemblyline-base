@@ -3,6 +3,7 @@
 .pydevproject
 .coverage
 .pytest_cache
+.python-version
 htmlcov
 .idea
 dist
