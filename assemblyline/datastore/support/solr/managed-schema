@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<schema name="REPLACE_NAME" version="1.6">
+    <fields>
+        <!-- Collection specific fields-->
+        <!-- REPLACE_FIELDS -->
+
+        <!--  AL Access fields   -->
+        <field name="classification" type="string" indexed="true" stored="true"/>
+        <field name="__access_lvl__" type="pint" indexed="true" stored="false"/>
+        <field name="__access_req__" type="strings" indexed="true" stored="false"/>
+        <field name="__access_grp1__" type="strings" indexed="true" stored="false" default="__EMPTY__"/>
+        <field name="__access_grp2__" type="strings" indexed="true" stored="false" default="__EMPTY__"/>
+        <field name="__expiry_ts__" type="pdate" indexed="true" stored="false"/>
+
+        <!-- Default fields -->
+        <field name="__text__" type="text_general" indexed="true" stored="false"/>
+        <field name="_version_" type="plong" indexed="true" stored="true"/>
+        <field name="_id_" type="string" indexed="true" stored="true" required="true"/>
+        <field name="_source_" type="string" docValues="false" indexed="false" stored="true" required="true"/>
+
+        <!-- catch-all field -->
+        <dynamicField name="*" type="ignored"/>
+    </fields>
+
+    <uniqueKey>_id_</uniqueKey>
+
+    <types>
+        <fieldType name="string" class="solr.StrField" sortMissingLast="true" docValues="true" />
+        <fieldType name="strings" class="solr.StrField" sortMissingLast="true" multiValued="true" docValues="true" />
+        <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+        <fieldType name="booleans" class="solr.BoolField" sortMissingLast="true" multiValued="true"/>
+        <fieldType name="pint" class="solr.IntPointField" docValues="true"/>
+        <fieldType name="pints" class="solr.IntPointField" docValues="true" multiValued="true"/>
+        <fieldType name="pfloat" class="solr.FloatPointField" docValues="true"/>
+        <fieldType name="pfloats" class="solr.FloatPointField" docValues="true" multiValued="true"/>
+        <fieldType name="plong" class="solr.LongPointField" docValues="true"/>
+        <fieldType name="plongs" class="solr.LongPointField" docValues="true" multiValued="true"/>
+        <fieldType name="pdouble" class="solr.DoublePointField" docValues="true"/>
+        <fieldType name="pdoubles" class="solr.DoublePointField" docValues="true" multiValued="true"/>
+        <fieldType name="pdate" class="solr.DatePointField" docValues="true"/>
+        <fieldType name="pdates" class="solr.DatePointField" docValues="true" multiValued="true"/>
+        <fieldType name="binary" class="solr.BinaryField"/>
+        <fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
+
+        <fieldType name="text_fuzzy" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.PatternTokenizerFactory" pattern="\s*:\s*"/>
+            </analyzer>
+        </fieldType>
+
+        <fieldType name="string_ci" class="solr.TextField" sortMissingLast="true" omitNorms="true">
+            <analyzer>
+                <tokenizer class="solr.KeywordTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <fieldType name="text_ws" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <fieldType name="text_ws_dsplit" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="(\.)" replacement=" "/>
+                <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100" multiValued="true">
+            <analyzer type="index">
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+            </analyzer>
+            <analyzer type="query">
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+            </analyzer>
+        </fieldType>
+    </types>
+    
+</schema>

@@ -1,4 +1,5 @@
 import logging
+import re
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, \
     SearchRetryException
@@ -12,12 +13,13 @@ class Collection(object):
     RETRY_NONE = 0
     RETRY_INFINITY = -1
     DEFAULT_ROW_SIZE = 25
+    FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
 
     def __init__(self, datastore, name, model_class=None):
         self.datastore = datastore
         self.name = name
         self.model_class = model_class
-        self._ensure_index()
+        self._ensure_collection()
 
     def normalize(self, data):
         """
@@ -63,7 +65,7 @@ class Collection(object):
         :param retries: number of time to retry if the document can't be found
         :return: The document strait of the datastore
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def get(self, key):
@@ -127,7 +129,7 @@ class Collection(object):
         :param data: instance of the model class to save to the database
         :return: True if save was successful
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def delete(self, key):
@@ -138,7 +140,7 @@ class Collection(object):
         :param key: id of the document to delete
         :return: True is delete successful
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
@@ -169,10 +171,10 @@ class Collection(object):
         :param access_control: access control parameters to limiti the scope of the query
         :return: a search result object
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def stream_search(self, query, sort=None, fl=None, filters=(), access_control=None, buffer_size=200):
+    def stream_search(self, query, fl=None, filters=(), access_control=None, buffer_size=200):
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys
@@ -192,7 +194,7 @@ class Collection(object):
         :param buffer_size: number of items to buffer with each search call
         :return: a generator of dictionary of field list results
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def keys(self, access_control=None):
@@ -203,48 +205,85 @@ class Collection(object):
         :param access_control: access control parameter to limit the scope of the key scan
         :return: a generator of keys
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def histogram(self, field, query, start, end, gap, mincount, filters=(), access_control=None):
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def grouped_search(self, query, group_on, start=None, sort=None, group_sort=None, fields=None, rows=None,
-                       filters=(), access_control=None):
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
+                       min_count=1, filters=(), access_control=None):
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
-    def _ensure_index(self):
+    def grouped_search(self, group_field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
+                       rows=DEFAULT_ROW_SIZE, filters=(), access_control=None):
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def fields(self):
+        """
+        This function should return all the fields in the index with their types
+
+        :return:
+        """
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def _ensure_collection(self):
         """
         This function should test if the collection that you are trying to access does indeed exist
         and should create it if it does not.
 
         :return:
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def wipe(self):
+        """
+        This function should completely delete the collection
+
+        NEVER USE THIS!
+
+        :return:
+        """
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
 
 class BaseStore(object):
-    ID = "_id"
-    DEFAULT_SORT = "_id asc"
+    ID = None
+    DEFAULT_SORT = None
     DATE_FORMAT = {
-        'NOW': 'NOW',
-        'YEAR': 'YEAR',
-        'MONTH': 'MONTH',
-        'WEEK': 'WEEK',
-        'DAY': 'DAY',
-        'HOUR': 'HOUR',
-        'MINUTE': 'MINUTE',
-        'SECOND': 'SECOND',
-        'MILLISECOND': 'MILLISECOND',
-        'MICROSECOND': 'MICROSECOND',
-        'NANOSECOND': 'NANOSECOND',
-        'SEPARATOR': '',
+        'NOW': None,
+        'YEAR': None,
+        'MONTH': None,
+        'WEEK': None,
+        'DAY': None,
+        'HOUR': None,
+        'MINUTE': None,
+        'SECOND': None,
+        'MILLISECOND': None,
+        'MICROSECOND': None,
+        'NANOSECOND': None,
+        'SEPARATOR': None,
+        'DATE_END': None
     }
 
-    def __init__(self, hosts, filestore_factory, collection_class):
-        self._filestore_factory = filestore_factory
+    DATEMATH_MAP = {
+        'NOW': 'now',
+        'YEAR': 'y',
+        'MONTH': 'M',
+        'WEEK': 'w',
+        'DAY': 'd',
+        'HOUR': 'h',
+        'MINUTE': 'm',
+        'SECOND': 's',
+        'DATE_END': 'Z||'
+    }
+
+    def __init__(self, hosts, collection_class):
         self._hosts = hosts
         self._collection_class = collection_class
         self._closed = False
@@ -268,6 +307,41 @@ class BaseStore(object):
 
         return self._collections[name]
 
+    def to_pydatemath(self, value):
+        replace_list = [
+            (self.now, self.DATEMATH_MAP['NOW']),
+            (self.year, self.DATEMATH_MAP['YEAR']),
+            (self.month, self.DATEMATH_MAP['MONTH']),
+            (self.week, self.DATEMATH_MAP['WEEK']),
+            (self.day, self.DATEMATH_MAP['DAY']),
+            (self.hour, self.DATEMATH_MAP['HOUR']),
+            (self.minute, self.DATEMATH_MAP['MINUTE']),
+            (self.second, self.DATEMATH_MAP['SECOND']),
+            (self.DATE_FORMAT['DATE_END'], self.DATEMATH_MAP['DATE_END'])
+        ]
+
+        for x in replace_list:
+            value = value.replace(*x)
+
+        return value
+
+
+    @property
+    def now(self):
+        return self.DATE_FORMAT['NOW']
+
+    @property
+    def ms(self):
+        return self.DATE_FORMAT['MILLISECOND']
+
+    @property
+    def us(self):
+        return self.DATE_FORMAT['MICROSECOND']
+
+    @property
+    def ns(self):
+        return self.DATE_FORMAT['NANOSECOND']
+
     @property
     def year(self):
         return self.DATE_FORMAT['YEAR']
@@ -275,6 +349,10 @@ class BaseStore(object):
     @property
     def month(self):
         return self.DATE_FORMAT['MONTH']
+
+    @property
+    def week(self):
+        return self.DATE_FORMAT['WEEK']
 
     @property
     def day(self):
@@ -296,14 +374,24 @@ class BaseStore(object):
     def date_separator(self):
         return self.DATE_FORMAT['SEPARATOR']
 
+    def get_hosts(self):
+        return self._hosts
+
     def close(self):
         self._closed = True
 
     def connection_reset(self):
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise UndefinedFunction("This is the basic datastore object, connection_reset method is undefined.")
+
+    def ping(self):
+        raise UndefinedFunction("This is the basic datastore object, ping method is undefined.")
 
     def is_closed(self):
         return self._closed
 
     def register(self, name, model_class=None):
+        if re.match(r'[a-z0-9_]*', name).string != name:
+            raise DataStoreException('Invalid characters in model name. '
+                                     'You can only use lower case letters, numbers and underscores.')
+
         self._models[name] = model_class
