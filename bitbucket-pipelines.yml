@@ -1,0 +1,11 @@
+
+image: python:3.6.6
+
+pipelines:
+  default:
+    - step:
+        caches:
+          - pip
+        script:
+          - pip install -r assemblyline/requirements.txt -r test/requirements.txt
+          - pytest
