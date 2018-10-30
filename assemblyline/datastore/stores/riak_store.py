@@ -118,6 +118,8 @@ class RiakCollection(SolrCollection):
         self.riak_bucket.delete(key)
 
     def _cleanup_search_result(self, item):
+        # TODO: This could just be validate using the model?
+
         if isinstance(item, dict):
             item.pop('_source_', None)
             item.pop('_version_', None)

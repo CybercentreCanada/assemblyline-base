@@ -4,11 +4,8 @@ import elasticsearch.helpers
 import json
 import logging
 import time
-import warnings
 
 from copy import deepcopy
-from datemath import dm
-from datemath.helpers import DateMathException
 
 from assemblyline.datastore import Collection, collection_reconnect, BaseStore, SearchException, \
     SearchRetryException, log
@@ -85,6 +82,7 @@ class ESCollection(Collection):
 
             try:
                 data = self.datastore.client.get(index=self.name, doc_type='_all', id=key)['_source']
+                # TODO: Maybe we should not allow data that is not a dictionary...
                 if "__non_doc_raw__" in data:
                     return data['__non_doc_raw__']
                 return data
@@ -100,6 +98,7 @@ class ESCollection(Collection):
         return None
 
     def _save(self, key, data):
+        # TODO: Maybe we should not allow data that is not a dictionary...
         if not isinstance(data, dict):
             saved_data = {'__non_doc_raw__': data}
         else:
@@ -120,45 +119,6 @@ class ESCollection(Collection):
         except elasticsearch.NotFoundError:
             return True
 
-    # noinspection PyBroadException
-    def _validate_steps_count(self, start, end, gap):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-
-            gaps_count = None
-            ret_type = None
-
-            try:
-                start = int(start)
-                end = int(end)
-                gap = int(gap)
-
-                gaps_count = int((end - start) / gap)
-                ret_type = int
-            except ValueError:
-                pass
-
-            if not gaps_count:
-                try:
-                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp
-                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp
-                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp - dm('now').timestamp
-
-                    gaps_count = int((parsed_end - parsed_start) / parsed_gap)
-                    ret_type = str
-                except DateMathException:
-                    pass
-
-            if not gaps_count:
-                raise SearchException(
-                    "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
-
-            if gaps_count > self.MAX_FACET_LIMIT:
-                raise SearchException('Facet max steps are limited to %s. '
-                                      'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
-                                                                                    gaps_count))
-            return ret_type
-
     def _format_output(self, result, fields=None):
         source = result.get('fields', {})
 
@@ -169,11 +129,15 @@ class ESCollection(Collection):
             source[self.datastore.ID] = result[self.datastore.ID]
 
         if fields is None or '*' in fields:
+            # TODO: This should be validated by the model not use val[0] blindly
             return {key: val[0] if isinstance(val, list) else val for key, val in source.items()}
 
+        # TODO: This should be validated by the model not use val[0] blindly
         return {key: val[0] if isinstance(val, list) else val for key, val in source.items() if key in fields}
 
     def _cleanup_search_result(self, item):
+        # TODO: This could just be validate using the model?
+
         if isinstance(item, dict):
             item.pop('_source', None)
             item.pop('_version', None)
@@ -185,6 +149,7 @@ class ESCollection(Collection):
     def _search(self, args=None):
         parsed_values = deepcopy(self.DEFAULT_SEARCH_VALUES)
 
+        # TODO: we should validate values for max rows, group length, history length...
         for key, value in args:
             if key not in parsed_values:
                 all_args = '; '.join('%s=%s' % (field_name, field_value) for field_name, field_value in args)
@@ -219,6 +184,7 @@ class ESCollection(Collection):
             query_body['timeout'] = parsed_values['timeout']
 
         # Add an histogram aggregation
+        # TODO: Should we turn off normal queries when histogram is active?
         if parsed_values['histogram_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
             query_body["aggregations"]["histogram"] = {
@@ -230,6 +196,7 @@ class ESCollection(Collection):
             }
 
         # Add a facet aggregation
+        # TODO: Should we turn off normal queries when facet is active?
         if parsed_values['facet_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
             for field in parsed_values['facet_fields']:
@@ -482,6 +449,8 @@ class ESCollection(Collection):
 
     @collection_reconnect(log)
     def fields(self):
+        # TODO: map fields using the model so they are consistent throughout all datastores?
+
         def flatten_fields(props):
             out = {}
             for name, value in props.items():

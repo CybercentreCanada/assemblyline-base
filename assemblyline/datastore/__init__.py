@@ -1,5 +1,9 @@
 import logging
 import re
+import warnings
+
+from datemath import dm
+from datemath.helpers import DateMathException
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, \
     SearchRetryException
@@ -14,6 +18,7 @@ class Collection(object):
     RETRY_INFINITY = -1
     DEFAULT_ROW_SIZE = 25
     FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
+    MAX_FACET_LIMIT = 100
 
     def __init__(self, datastore, name, model_class=None):
         self.datastore = datastore
@@ -187,7 +192,6 @@ class Collection(object):
         }
 
         :param query: lucene query to search for
-        :param sort: field to sort the data with
         :param fl: list of fields to return from the search
         :param filters: additional queries to run on the original query to reduce the scope
         :param access_control: access control parameters to run the query with
@@ -206,6 +210,45 @@ class Collection(object):
         :return: a generator of keys
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
+    # noinspection PyBroadException
+    def _validate_steps_count(self, start, end, gap):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            gaps_count = None
+            ret_type = None
+
+            try:
+                start = int(start)
+                end = int(end)
+                gap = int(gap)
+
+                gaps_count = int((end - start) / gap)
+                ret_type = int
+            except ValueError:
+                pass
+
+            if not gaps_count:
+                try:
+                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp
+                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp
+                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp - dm('now').timestamp
+
+                    gaps_count = int((parsed_end - parsed_start) / parsed_gap)
+                    ret_type = str
+                except DateMathException:
+                    pass
+
+            if not gaps_count:
+                raise SearchException(
+                    "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
+
+            if gaps_count > self.MAX_FACET_LIMIT:
+                raise SearchException('Facet max steps are limited to %s. '
+                                      'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
+                                                                                    gaps_count))
+            return ret_type
 
     @collection_reconnect(log)
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
@@ -324,7 +367,6 @@ class BaseStore(object):
             value = value.replace(*x)
 
         return value
-
 
     @property
     def now(self):

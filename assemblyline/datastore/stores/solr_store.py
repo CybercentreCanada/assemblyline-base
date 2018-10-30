@@ -4,11 +4,8 @@ import requests
 import time
 import threading
 import uuid
-import warnings
 
 from copy import copy, deepcopy
-from datemath import dm
-from datemath.helpers import DateMathException
 from random import choice
 from urllib.parse import quote
 
@@ -217,6 +214,8 @@ class SolrCollection(Collection):
         return None
 
     def _cleanup_search_result(self, item):
+        # TODO: This could just be validate using the model?
+
         if isinstance(item, dict):
             item.pop('_source_', None)
             item.pop('_version_', None)
@@ -398,46 +397,6 @@ class SolrCollection(Collection):
         for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
             yield item[self.datastore.ID]
 
-    # noinspection PyBroadException
-    def _validate_steps_count(self, start, end, gap):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-
-            gaps_count = None
-            ret_type = None
-
-            try:
-                start = int(start)
-                end = int(end)
-                gap = int(gap)
-
-                gaps_count = int((end - start) / gap)
-                ret_type = int
-            except ValueError:
-                pass
-
-            if not gaps_count:
-                try:
-                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp
-                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp
-                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp - dm('now').timestamp
-
-                    gaps_count = int((parsed_end - parsed_start) / parsed_gap)
-                    ret_type = str
-                except DateMathException:
-                    pass
-
-            if not gaps_count:
-                raise SearchException(
-                    "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
-
-            if gaps_count > self.MAX_FACET_LIMIT:
-                raise SearchException('Facet max steps are limited to %s. '
-                                      'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
-                                                                                    gaps_count))
-
-            return ret_type
-
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
         """Build a histogram of `query` data over `field`"""
 
@@ -567,6 +526,8 @@ class SolrCollection(Collection):
     # noinspection PyBroadException
     @collection_reconnect(log)
     def fields(self, port=8983):
+        # TODO: map fields using the model so they are consistent throughout all datastores?
+
         session, host = self._get_session(port=port)
 
         url = "http://{host}/{api_base}/{collection}/admin/luke/?wt=json".format(host=host,
