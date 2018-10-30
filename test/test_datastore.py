@@ -275,6 +275,13 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
                                   e_tc.grouped_search('__access_lvl__', fl='classification'),
                                   r_tc.grouped_search('__access_lvl__', fl='classification'))
 
+            assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
+                                                      sort="__access_lvl__ desc"),
+                                  e_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
+                                                      sort="__access_lvl__ desc"),
+                                  r_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
+                                                      sort="__access_lvl__ desc"))
+
             # TODO: fields are not of the same type in-between datastores does that matter?
             #       will print output for now without failing the test
             compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())

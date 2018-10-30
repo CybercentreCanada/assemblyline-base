@@ -242,22 +242,15 @@ class ESCollection(Collection):
 
         # Add a group aggregation
         if parsed_values['group_active']:
-            query_body["aggregations"] = query_body.get("aggregations", {})
-            for field in [parsed_values['group_field']]:
-                query_body["aggregations"]['group-' + field] = {
-                    "terms": {
-                        "field": field,
-                    },
-                    "aggregations": {
-                        "groupings": {
-                            "top_hits": {
-                                "sort": parsed_values['group_sort'] or [{field: 'asc'}],
-                                "size": parsed_values['group_limit'],
-                                "stored_fields": parsed_values['field_list'] or ['*']
-                            }
-                        }
-                    }
+            query_body["collapse"] = {
+                "field": parsed_values['group_field'],
+                "inner_hits": {
+                    "name": "group",
+                    "stored_fields": parsed_values['field_list'] or ['*'],
+                    "size": parsed_values['group_limit'],
+                    "sort": parsed_values['group_sort'] or [{parsed_values['group_field']: 'asc'}]
                 }
+            }
 
         try:
             # Run the query
@@ -475,26 +468,16 @@ class ESCollection(Collection):
 
         result = self._search(args)
 
-        group_docs = result['aggregations']['group-%s' % group_field]['buckets']
-
-        # TODO: It is impossible to do paging of aggragated data in elasticsearch
-        #       therefore we are just slicing the result given the offset
-        #       that may make the call to slow if we have a large amount of data.
-        #
-        #       see [offset:offset+rows]
-        #
-        #       Can we find another way or am I just wrong?
-
         return {
             'offset': offset,
             'rows': rows,
             'total': result['hits']['total'],
             'items': [{
-                'value': grouping['key'],
-                'total': grouping['doc_count'],
+                'value': collapsed['fields'][group_field][0],
+                'total': collapsed['inner_hits']['group']['hits']['total'],
                 'items': [self._cleanup_search_result(self._format_output(row, field_list))
-                          for row in grouping['groupings']['hits']['hits']]
-            } for grouping in group_docs[offset:offset+rows]]
+                          for row in collapsed['inner_hits']['group']['hits']['hits']]
+            } for collapsed in result['hits']['hits']]
         }
 
     @collection_reconnect(log)
