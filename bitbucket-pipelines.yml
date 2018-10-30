@@ -9,3 +9,11 @@ pipelines:
         script:
           - pip install -r assemblyline/requirements.txt -r test/requirements.txt
           - pytest
+        services:
+          - elasticsearch
+
+definitions:
+  services:
+    elasticsearch:
+      image: douglasscse/bitbucket_elasticsearch:6.4.2
+      memory: 2048
