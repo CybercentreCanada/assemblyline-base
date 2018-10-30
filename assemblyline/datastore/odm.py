@@ -10,6 +10,7 @@ independent data models in python. This gives us:
 
 """
 
+import json
 import copy
 from datetime import datetime
 
@@ -31,15 +32,15 @@ class _Field:
     def __get__(self, obj, objtype=None):
         """Read the value of this field from the model instance (obj)."""
         if self.getter_function:
-            return self.getter_function(obj, getattr(obj, '_' + self.name))
-        return getattr(obj, '_' + self.name)
+            return self.getter_function(obj, obj.py_obj[self.name])
+        return obj.py_obj[self.name]
 
     def __set__(self, obj, value):
         """Set the value of this field, calling a setter method if available."""
         value = self.check(value)
         if self.setter_function:
-            return self.setter_function(obj, value)
-        setattr(obj, '_' + self.name, value)
+            value = self.setter_function(obj, value)
+        obj.py_obj[self.name] = value
 
     def getter(self, method):
         """Decorator to create getter method for a field."""
@@ -54,9 +55,9 @@ class _Field:
         >>> expiry = Date()
         >>>
         >>> @expiry.setter
-        >>> def expiry(self, value):
+        >>> def expiry(self, assign, value):
         >>>     assert value
-        >>>     self._expiry = value
+        >>>     assign(value)
         """
         out = copy.deepcopy(self)
         out.setter_function = method
@@ -238,6 +239,7 @@ class Model:
         return out
 
     def __init__(self, **data):
+        self.py_obj = {}
         fields = self.fields()
 
         # Check to make sure we can use all the data we are given
@@ -249,8 +251,17 @@ class Model:
         for name, field_type in fields.items():
             if name not in data:
                 raise ValueError('{} expected a parameter named {}'.format(self.__class__.__name__, name))
-            value = field_type.check(data[name])
-            setattr(self, '_' + name, value)
+
+            self.py_obj[name] = field_type.check(data[name])
+
+    def _json(self):
+        return {
+            key: (value._json() if isinstance(value, Model) else value)
+            for key, value in self.py_obj.items()
+        }
+
+    def json(self):
+        return json.dumps(self._json())
 
 
 def model(index=None, store=None):

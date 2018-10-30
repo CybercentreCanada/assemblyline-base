@@ -1,6 +1,7 @@
 from assemblyline.datastore.odm import model, Model
 from assemblyline.datastore.odm import Compound, List, Keyword, Integer
 
+import json
 import pytest
 
 
@@ -116,7 +117,7 @@ def test_setters():
             assert isinstance(value, str)
             if value.startswith('cat'):
                 raise CatError()
-            self._first = value
+            return value
 
     instance = Test(first='abc')
     assert instance.first == 'abc'
@@ -129,6 +130,32 @@ def test_setters():
 
     with pytest.raises(CatError):
         instance.first = 'cats'
+
+
+def test_setters_side_effects():
+    """Test setters that change other field values."""
+    @model()
+    class Test(Model):
+        a = Integer()
+        b = Integer()
+        best = Integer()
+
+        @a.setter
+        def a(self, value):
+            self.best = min(self.b, value)
+            return value
+
+        @b.setter
+        def b(self, value):
+            self.best = min(self.a, value)
+            return value
+
+    instance = Test(a=-100, b=10, best=-100)
+
+    instance.a = 50
+    assert instance.best == 10
+    instance.b = -10
+    assert instance.best == -10
 
 
 def test_getters():
@@ -165,6 +192,26 @@ def test_create_compound():
     assert test.first.key == 'a'
     test.first.key = 100
     assert test.first.key == '100'
+
+
+def test_json():
+
+    @model()
+    class Inner(Model):
+        number = Integer()
+        value = Keyword()
+
+    @model()
+    class Test(Model):
+        a = Compound(Inner)
+        b = Integer()
+
+    a = Test(b=10, a={'number': 499, 'value': 'cats'})
+    b = Test(**json.loads(a.json()))
+
+    assert b.b == 10
+    assert b.a.number == 499
+    assert b.a.value == 'cats'
 
 
 def test_create_list():
