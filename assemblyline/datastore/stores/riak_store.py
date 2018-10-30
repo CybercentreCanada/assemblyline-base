@@ -242,7 +242,7 @@ class RiakStore(SolrStore):
             self.hosts,
             self.riak_pb_port)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name) -> RiakCollection:
         if name not in self._collections:
             model_class = self._models[name]
             self._collections[name] = self._collection_class(self, name, model_class=model_class,

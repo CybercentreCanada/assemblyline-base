@@ -4,6 +4,8 @@ import warnings
 
 from datemath import dm
 
+from assemblyline.datastore import Collection
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     test_map = {
@@ -38,18 +40,19 @@ def solr_connection():
         ret_val = s.ping()
         if ret_val:
             s.register("test_collection")
+            collection = s.__getattr__("test_collection")
 
             # cleanup
             for k in test_map.keys():
-                s.test_collection.delete(k)
+                collection.delete(k)
 
             for k, v in test_map.items():
-                s.test_collection.save(k, v)
+                collection.save(k, v)
 
             # Commit saved data
-            s.test_collection.commit()
+            collection.commit()
 
-            return s.test_collection
+            return collection
     except ConnectionError:
         pass
 
@@ -65,17 +68,18 @@ def es_connection():
         ret_val = e.ping()
         if ret_val:
             e.register("test_collection")
+            collection = e.__getattr__("test_collection")
             # cleanup
             for k in test_map.keys():
-                e.test_collection.delete(k)
+                collection.delete(k)
 
             for k, v in test_map.items():
-                e.test_collection.save(k, v)
+                collection.save(k, v)
 
             # Commit saved data
-            e.test_collection.commit()
+            collection.commit()
 
-        return e.test_collection
+            return collection
     except ConnectionError:
         pass
 
@@ -91,17 +95,18 @@ def riak_connection():
         ret_val = r.ping()
         if ret_val:
             r.register("test_collection")
+            collection = r.__getattr__("test_collection")
             # cleanup
             for k in test_map.keys():
-                r.test_collection.delete(k)
+                collection.delete(k)
 
             for k, v in test_map.items():
-                r.test_collection.save(k, v)
+                collection.save(k, v)
 
             # Commit saved data
-            r.test_collection.commit()
+            collection.commit()
 
-        return r.test_collection
+            return collection
     except ConnectionError:
         pass
 
@@ -109,7 +114,7 @@ def riak_connection():
 
 
 # noinspection PyShadowingNames
-def test_solr(solr_connection):
+def test_solr(solr_connection: Collection):
     if solr_connection:
         s_tc = solr_connection
 
@@ -134,7 +139,7 @@ def test_solr(solr_connection):
 
 
 # noinspection PyShadowingNames
-def test_es(es_connection):
+def test_es(es_connection: Collection):
     if es_connection:
         s_tc = es_connection
 
@@ -159,7 +164,7 @@ def test_es(es_connection):
 
 
 # noinspection PyShadowingNames
-def test_riak(riak_connection):
+def test_riak(riak_connection: Collection):
     if riak_connection:
         s_tc = riak_connection
 
@@ -184,7 +189,9 @@ def test_riak(riak_connection):
 
 
 # noinspection PyShadowingNames
-def test_datastore_consistency(riak_connection, solr_connection, es_connection):
+def test_datastore_consistency(riak_connection: Collection,
+                               solr_connection: Collection,
+                               es_connection: Collection):
     if riak_connection and solr_connection and es_connection:
 
         def fix_date(data):
