@@ -241,4 +241,42 @@ def test_create_list():
         test.values[0] = 'cats'
 
 
-# def test_create_list_compounds():
+def test_create_list_compounds():
+    @model()
+    class Entry(Model):
+        value = Integer()
+        key = Keyword()
+
+    @model()
+    class Test(Model):
+        values = List(Compound(Entry))
+
+    test = Test(values=[])
+    test = Test(values=[
+        {'key': 'cat', 'value': 0},
+        {'key': 'rat', 'value': 100}
+    ])
+
+    with pytest.raises(TypeError):
+        Test(values=['bugs'])
+
+    with pytest.raises(TypeError):
+        Test(values='bugs')
+
+    assert test.values[0].value == 0
+    assert test.values[1].value == 100
+
+    test.values.append({'key': 'bat', 'value': 50})
+
+    assert len(test.values) == 3
+
+    with pytest.raises(TypeError):
+        test.values.append(1000)
+
+    with pytest.raises(TypeError):
+        test.values[0] = 'cats'
+
+    with pytest.raises(ValueError):
+        test.values[0] = {'key': 'bat', 'value': 50, 'extra': 1000}
+
+    test.values[0].key = 'dog'
