@@ -1,3 +1,9 @@
+#
+# By default a pipeline is given 4G of ram.
+#   - 2G elasticsearch
+#   - 0.5G redis
+#   - ??? pytest (probably quite small)
+#
 
 image: python:3.6.6
 
@@ -11,9 +17,12 @@ pipelines:
           - pytest
         services:
           - elasticsearch
+          - redis
 
 definitions:
   services:
     elasticsearch:
       image: douglasscse/bitbucket_elasticsearch:6.4.2
       memory: 2048
+    redis:
+      image: redis
