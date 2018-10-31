@@ -1,3 +1,8 @@
+"""
+
+TODO copyto
+
+"""
 from assemblyline.datastore.odm import Keyword, Text, List, Compound
 from assemblyline.datastore.odm import Date, Integer, Float, Boolean
 

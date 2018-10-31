@@ -14,6 +14,7 @@ from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
 from assemblyline.datastore import BaseStore, log, Collection, DataStoreException, SearchException, SearchRetryException
 from assemblyline.datastore.reconnect import collection_reconnect
+from assemblyline.datastore.support.solr.build import build_mapping
 
 
 class SolrCollection(Collection):
@@ -133,11 +134,16 @@ class SolrCollection(Collection):
         return None
 
     def _save(self, key, source_data):
-        data = deepcopy(source_data)
+        try:
+            data = source_data._json()
+        except AttributeError:
+            data = deepcopy(source_data)
+
         if not isinstance(data, dict):
             data = {"_source_": json.dumps(data)}
         else:
             data["_source_"] = json.dumps(data)
+
         data[self.datastore.ID] = key
         commit_within = int(self.COMMIT_WITHIN_MAP.get(self.name, None) or self.COMMIT_WITHIN_MAP["_default_"])
 
@@ -583,14 +589,16 @@ class SolrCollection(Collection):
         with open(cfg, 'rb') as fh:
             cfg_raw = fh.read()
 
-        if self.model_class is None:
-            zobj = InMemoryZip()
-            zobj.append('managed-schema', schema_raw)
-            zobj.append('solrconfig.xml', cfg_raw)
-            return zobj.read()
-        else:
-            # TODO: Build a configset based on the model
-            pass
+        schema_raw = schema_raw.replace(b'REPLACE_NAME', self.name.upper().encode())
+
+        if self.model_class:
+            mapping = build_mapping(self.model_class.fields().values())
+            schema_raw = schema_raw.replace(b'<!-- REPLACE_FIELDS -->', mapping.encode())
+
+        zobj = InMemoryZip()
+        zobj.append('managed-schema', schema_raw)
+        zobj.append('solrconfig.xml', cfg_raw)
+        return zobj.read()
 
         return None
 
@@ -603,6 +611,7 @@ class SolrCollection(Collection):
         res = session.get(test_url, headers={"content-type": "application/json"})
         if res.ok:
             data = res.json()
+            log.info(f'config sets {data.get("configSets", [])}')
             if self.name not in data.get('configSets', []):
                 return False
             return True
@@ -634,6 +643,7 @@ class SolrCollection(Collection):
         res = session.get(test_url, headers={"content-type": "application/json"})
         if res.ok:
             data = res.json()
+            log.info(f'collections {data.get("collections", [])}')
             if self.name not in data.get('collections', []):
                 return False
             return True
@@ -649,20 +659,23 @@ class SolrCollection(Collection):
 
         if not self._collection_exist(session=session, host=host):
             # Create collection
-            log.warning("Collection {collection} does not exists. "
-                        "Creating it now...".format(collection=self.name.upper()))
-            create_url = "http://{host}/{api_base}/admin/collections?action=CREATE" \
-                         "&name={collection}&numShards={shards}&replicationFactor={replication}" \
-                         "&collection.configName={collection}".format(host=host,
-                                                                      api_base=self.api_base,
-                                                                      collection=self.name,
-                                                                      shards=self.num_shards,
-                                                                      replication=self.replication_factor)
+            log.warning(f"Collection {self.name.upper()} does not exists. "
+                        "Creating it now...")
+            create_url = f"http://{host}/{self.api_base}/admin/collections?action=CREATE" \
+                         f"&name={self.name}&numShards={self.num_shards}&replicationFactor={self.replication_factor}" \
+                         f"&collection.configName={self.name}"
             res = session.get(create_url, headers={"content-type": "application/json"})
-            if res.ok:
-                log.info("Collection {collection} created!".format(collection=self.name))
-            else:
+
+            if not res.ok:
                 raise DataStoreException("Could not create collection {collection}.".format(collection=self.name))
+
+            res = res.json()
+            if 'failure' in res:
+                raise DataStoreException(f"Could not create collection {self.name}. {res['failure']}")
+
+            log.info("Collection {collection} created!".format(collection=self.name))
+            assert self._collection_exist(session=session, host=host)
+
 
     @collection_reconnect(log)
     def wipe(self):
