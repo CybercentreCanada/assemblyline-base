@@ -12,6 +12,7 @@ independent data models in python. This gives us:
 
 import json
 import copy
+import arrow
 from datetime import datetime
 
 
@@ -83,9 +84,8 @@ class Date(_Field):
     """A field storing a datetime value."""
 
     def check(self, value):
-        if isinstance(value, datetime):
-            return value
-        raise ValueError('Failed to interpret value as a date')
+        # Use the arrow library to transform ??? to a datetime
+        return arrow.get(value).datetime
 
 
 class Boolean(_Field):
@@ -134,17 +134,17 @@ class Float(_Field):
         return float(value)
 
 
-class Classification(Keyword):
-    """A field storing access control classification."""
-
-    def __init__(self, expand=True, *args, **kwargs):
-        """
-        An expanded classification is one that controls the access to the document
-        which holds it. If a classification field is only meant to store classification
-        information and not enforce it, expand should be false.
-        """
-        super().__init__(*args, **kwargs)
-        self.expand = expand
+# class Classification(Keyword):
+#     """A field storing access control classification."""
+#
+#     def __init__(self, expand=True, *args, **kwargs):
+#         """
+#         An expanded classification is one that controls the access to the document
+#         which holds it. If a classification field is only meant to store classification
+#         information and not enforce it, expand should be false.
+#         """
+#         super().__init__(*args, **kwargs)
+#         self.expand = expand
 
 
 class TypedList(list):
@@ -255,13 +255,34 @@ class Model:
             self.py_obj[name] = field_type.check(data[name])
 
     def _json(self):
+        """Convert the object back into primatives that can be json serialized.
+
+        TODO this is probably a major point that needs optimization.
+        """
+        def read(value):
+            if isinstance(value, Model):
+                return value._json()
+            elif isinstance(value, datetime):
+                return value.isoformat().replace('+00:00', 'Z')
+            return value
+
         return {
-            key: (value._json() if isinstance(value, Model) else value)
+            key: read(value)
             for key, value in self.py_obj.items()
         }
 
     def json(self):
         return json.dumps(self._json())
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        for name, field in self.fields().items():
+            if field.__get__(self) != field.__get__(other):
+                return False
+
+        return True
 
 
 def model(index=None, store=None):

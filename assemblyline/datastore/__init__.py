@@ -33,8 +33,8 @@ class Collection(object):
         :param data: data to normalize
         :return: instance of the model class
         """
-        if self.model_class and not isinstance(data, self.model_class):
-            return self.model_class(data)
+        if data is not None and self.model_class and not isinstance(data, self.model_class):
+            return self.model_class(**data)
 
         return data
 

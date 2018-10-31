@@ -10,6 +10,7 @@ from copy import deepcopy
 from assemblyline.datastore import Collection, collection_reconnect, BaseStore, SearchException, \
     SearchRetryException, log
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping
+from assemblyline.datastore.support.elasticsearch.build import build_mapping
 
 
 def parse_sort(sort):
@@ -99,10 +100,13 @@ class ESCollection(Collection):
 
     def _save(self, key, data):
         # TODO: Maybe we should not allow data that is not a dictionary...
-        if not isinstance(data, dict):
-            saved_data = {'__non_doc_raw__': data}
-        else:
-            saved_data = data
+        try:
+            saved_data = data._json()
+        except AttributeError:
+            if not isinstance(data, dict):
+                saved_data = {'__non_doc_raw__': data}
+            else:
+                saved_data = data
 
         self.datastore.client.update(
             index=self.name,
@@ -487,17 +491,19 @@ class ESCollection(Collection):
     @collection_reconnect(log)
     def _ensure_collection(self):
         if not self.datastore.client.indices.exists(self.name):
-            log.warning("Collection {collection} does not exists. "
-                        "Creating it now...".format(collection=self.name.upper()))
+            log.warning(f"Collection {self.name.upper()} does not exists. "
+                        "Creating it now...")
+
             index = deepcopy(default_index)
-            mappings = deepcopy(default_mapping)
             if 'settings' not in index:
                 index['settings'] = {}
             if 'index' not in index['settings']:
                 index['settings']['index'] = {}
             index['settings']['index']['number_of_replicas'] = self.replicas
 
-            # TODO: build schema from model
+            mappings = deepcopy(default_mapping)
+            if self.model_class:
+                mappings['properties'] = build_mapping(self.model_class.fields().values())
             index['mappings'][self.name] = mappings
             self.datastore.client.indices.create(self.name, index)
 
