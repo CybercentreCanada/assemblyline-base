@@ -17,7 +17,7 @@ from datetime import datetime
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None):
+    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, default_set=None):
         self.index = index
         self.store = store
         self.copyto = []
@@ -29,6 +29,9 @@ class _Field:
         self.name = name
         self.getter_function = None
         self.setter_function = None
+
+        self.default = default
+        self.default_set = True if default is not None else default_set
 
     def __get__(self, obj, objtype=None):
         """Read the value of this field from the model instance (obj)."""
@@ -249,10 +252,15 @@ class Model:
 
         # Pass each value through it's respective validator, and store it
         for name, field_type in fields.items():
-            if name not in data:
-                raise ValueError('{} expected a parameter named {}'.format(self.__class__.__name__, name))
+            try:
+                value = data[name]
+            except KeyError:
+                if field_type.default_set:
+                    value = field_type.default
+                else:
+                    raise ValueError('{} expected a parameter named {}'.format(self.__class__.__name__, name))
 
-            self.py_obj[name] = field_type.check(data[name])
+            self.py_obj[name] = field_type.check(value)
 
     def _json(self):
         """Convert the object back into primatives that can be json serialized.

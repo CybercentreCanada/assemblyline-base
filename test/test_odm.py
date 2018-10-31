@@ -280,3 +280,40 @@ def test_create_list_compounds():
         test.values[0] = {'key': 'bat', 'value': 50, 'extra': 1000}
 
     test.values[0].key = 'dog'
+
+
+def test_defaults():
+
+    @model()
+    class InnerA(Model):
+        number = Integer(default=10)
+        value = Keyword()
+
+    @model()
+    class InnerB(Model):
+        number = Integer()
+        value = Keyword()
+
+    @model()
+    class Test(Model):
+        a = Compound(InnerA)
+        b = Compound(InnerB)
+        c = Compound(InnerB, default={'number': 99, 'value': 'yellow'})
+        x = Integer()
+        y = Integer(default=-1)
+
+    # Build a model with missing data found in the defaults
+    test = Test(**{
+        'a': {'value': 'red'},
+        'b': {'number': -100, 'value': 'blue'},
+        'x': -55
+    })
+
+    assert test.a.number == 10
+    assert test.a.value == 'red'
+    assert test.b.number == -100
+    assert test.b.value == 'blue'
+    assert test.c.number == 99
+    assert test.c.value == 'yellow'
+    assert test.x == -55
+    assert test.y == -1
