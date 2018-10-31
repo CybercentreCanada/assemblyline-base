@@ -1,4 +1,4 @@
-from assemblyline.datastore.odm import Keyword, Text, List
+from assemblyline.datastore.odm import Keyword, Text, List, Compound
 from assemblyline.datastore.odm import Date, Integer, Float, Boolean
 
 # Simple types can be resolved by a direct mapping
@@ -50,12 +50,10 @@ def build_mapping(field_data, prefix=None, mappings=None):
         elif isinstance(field, List):
             build_mapping([field.child_type], prefix=path, mappings=mappings)
 
+        elif isinstance(field, Compound):
+            build_mapping(field.fields().values(), prefix=path, mappings=mappings)
+
         else:
             raise NotImplementedError(f"Unknown type for elasticsearch schema: {field.__class__}")
 
     return mappings
-    # @visits(Compound)
-    # def compound(self, field, prefix=''):
-    #     prefix = prefix + (field.name + '.') if field.name else ''
-    #     for child in field.children.values():
-    #         self.visit(child, prefix=prefix)

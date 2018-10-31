@@ -9,11 +9,18 @@ from assemblyline.datastore import odm
 
 
 @odm.model(index=True, store=True)
+class BModel(odm.Model):
+    depth = odm.Integer()
+    width = odm.Integer()
+
+
+@odm.model(index=True, store=True)
 class AModel(odm.Model):
     flavour = odm.Text()
     height = odm.Integer()
     birthday = odm.Date()
     tags = odm.List(odm.Keyword())
+    size = odm.Compound(BModel, default={'depth': 100, 'width': 100})
 
 
 with warnings.catch_warnings():
@@ -21,7 +28,7 @@ with warnings.catch_warnings():
     test_map = {
         'test1': AModel(tags=['silly'], flavour='chocolate', height=100, birthday=dm('now-2d')),
         'test2': AModel(tags=['cats'], flavour='A little dry', height=180, birthday=dm('now-1d')),
-        'test3': AModel(tags=['silly'], flavour='Red', height=140, birthday=dm('now')),
+        'test3': AModel(tags=['silly'], flavour='Red', height=140, birthday=dm('now'), size={'depth': 1, 'width': 1}),
         'test4': AModel(tags=['cats'], flavour='Bugs ++', height=30, birthday='2018-10-30T17:48:48+00:00'),
         'dict1': AModel(tags=['cats'], flavour='A--', height=300, birthday='2018-10-30T17:48:48Z'),
         'dict2': AModel(tags=[], flavour='100%', height=90, birthday=datetime.utcnow()),
