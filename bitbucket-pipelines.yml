@@ -8,7 +8,7 @@ pipelines:
           - pip
         script:
           - pip install -r assemblyline/requirements.txt -r test/requirements.txt
-          - pytest
+          - pytest -rsx
         services:
           - zookeeper
           - redis
@@ -19,14 +19,19 @@ pipelines:
 definitions:
   services:
     elasticsearch:
-      image: douglasscse/bitbucket_elasticsearch:6.4.2
+      image: sgaroncse/elasticsearch:6.4.2
       memory: 512
+      environment:
+        ES_JAVA_OPTS: '-Xms128m -Xmx128m'
+        DISCOVERY_TYPE: 'single-node'
     redis:
       image: redis
       memory: 512
     riak:
-      image: douglasscse/bitbucket_riak:2.1.4
+      image: sgaroncse/riak-kv:2.1.4-al
       memory: 512
+      environment:
+        SOLR_HEAP: '-Xms128m -Xmx128m'
     zookeeper:
       image: zookeeper
       memory: 512
