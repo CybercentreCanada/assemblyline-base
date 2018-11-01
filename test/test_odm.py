@@ -80,7 +80,7 @@ def test_creation():
         first = Keyword()
         second = Integer()
 
-    instance = Test(first='abc', second=567)
+    instance = Test(dict(first='abc', second=567))
 
     assert instance.first == 'abc'
     assert instance.second == 567
@@ -101,7 +101,7 @@ def test_type_validation():
     with pytest.raises(ValueError):
         Test(cats=123)
 
-    instance = Test(first='abc', second=567)
+    instance = Test(dict(first='abc', second=567))
 
     with pytest.raises(ValueError):
         instance.second = 'cats'
@@ -119,7 +119,7 @@ def test_setters():
                 raise CatError()
             return value
 
-    instance = Test(first='abc')
+    instance = Test(dict(first='abc'))
     assert instance.first == 'abc'
 
     instance.first = 'xyz'
@@ -150,7 +150,7 @@ def test_setters_side_effects():
             self.best = min(self.a, value)
             return value
 
-    instance = Test(a=-100, b=10, best=-100)
+    instance = Test(dict(a=-100, b=10, best=-100))
 
     instance.a = 50
     assert instance.best == 10
@@ -167,7 +167,7 @@ def test_getters():
         def first(self, value):
             return value if value >= 1 else 100
 
-    instance = Test(first=10)
+    instance = Test(dict(first=10))
     assert instance.first == 10
 
     instance.first = -1
@@ -188,7 +188,7 @@ def test_create_compound():
     class Test(Model):
         first = Compound(TestCompound)
 
-    test = Test(first={'key': 'a', 'value': 'b'})
+    test = Test({'first': {'key': 'a', 'value': 'b'}})
     assert test.first.key == 'a'
     test.first.key = 100
     assert test.first.key == '100'
@@ -206,8 +206,8 @@ def test_json():
         a = Compound(Inner)
         b = Integer()
 
-    a = Test(b=10, a={'number': 499, 'value': 'cats'})
-    b = Test(**json.loads(a.json()))
+    a = Test(dict(b=10, a={'number': 499, 'value': 'cats'}))
+    b = Test(json.loads(a.json()))
 
     assert b.b == 10
     assert b.a.number == 499
@@ -223,10 +223,10 @@ def test_create_list():
     test = Test(values=[0, 100])
 
     with pytest.raises(ValueError):
-        Test(values=['bugs'])
+        Test(dict(values=['bugs']))
 
     with pytest.raises(ValueError):
-        Test(values='bugs')
+        Test(dict(values='bugs'))
 
     assert test.values[0] == 0
     assert test.values[1] == 100
@@ -251,11 +251,11 @@ def test_create_list_compounds():
     class Test(Model):
         values = List(Compound(Entry))
 
-    test = Test(values=[])
-    test = Test(values=[
+    test = Test(dict(values=[]))
+    test = Test({'values': [
         {'key': 'cat', 'value': 0},
         {'key': 'rat', 'value': 100}
-    ])
+    ]})
 
     with pytest.raises(TypeError):
         Test(values=['bugs'])
@@ -303,7 +303,7 @@ def test_defaults():
         y = Integer(default=-1)
 
     # Build a model with missing data found in the defaults
-    test = Test(**{
+    test = Test({
         'a': {'value': 'red'},
         'b': {'number': -100, 'value': 'blue'},
         'x': -55

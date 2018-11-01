@@ -74,7 +74,10 @@ class ESCollection(Collection):
         for row in data.get('docs', []):
             if 'found' in row and not row['found']:
                 raise KeyError(row['_id'])
-            out.append(self.normalize(row['_source']))
+            if '__non_doc_raw__' in row['_source']:
+                out.append(row['_source']['__non_doc_raw__'])
+            else:
+                out.append(self.normalize(row['_source']))
         return out
 
     @collection_reconnect(log)
@@ -145,6 +148,10 @@ class ESCollection(Collection):
 
     def _cleanup_search_result(self, item):
         # TODO: This could just be validate using the model?
+        if self.model_class:
+            if '_source' in item:
+                return self.model_class(item['_source'])
+            return self.model_class(item)
 
         if isinstance(item, dict):
             item.pop('_source', None)

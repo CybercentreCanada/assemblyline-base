@@ -1,7 +1,8 @@
 
 import pytest
 import warnings
-
+import random
+import string
 from datemath import dm
 
 from assemblyline.datastore import Collection
@@ -31,16 +32,14 @@ with warnings.catch_warnings():
     }
 
 
-@pytest.fixture
-def solr_connection():
-    from assemblyline.datastore.stores.solr_store import SolrStore
-
-    s = SolrStore(['127.0.0.1'])
+def setup_store(docstore, request):
     try:
-        ret_val = s.ping()
+        ret_val = docstore.ping()
         if ret_val:
-            s.register("test_collection")
-            collection = s.__getattr__("test_collection")
+            collection_name = ''.join(random.choices(string.ascii_lowercase, k=10))
+            docstore.register(collection_name)
+            collection = docstore.__getattr__(collection_name)
+            request.addfinalizer(collection.wipe)
 
             # cleanup
             for k in test_map.keys():
@@ -55,62 +54,40 @@ def solr_connection():
             return collection
     except ConnectionError:
         pass
+    return None
+
+
+@pytest.fixture
+def solr_connection(request):
+    from assemblyline.datastore.stores.solr_store import SolrStore
+
+    collection = setup_store(SolrStore(['127.0.0.1']), request)
+    if collection:
+        return collection
 
     return pytest.skip("Connection to the SOLR server failed. This test cannot be performed...")
 
 
 @pytest.fixture
-def es_connection():
+def es_connection(request):
     from assemblyline.datastore.stores.es_store import ESStore
 
-    e = ESStore(['127.0.0.1'])
-    try:
-        ret_val = e.ping()
-        if ret_val:
-            e.register("test_collection")
-            collection = e.__getattr__("test_collection")
-            # cleanup
-            for k in test_map.keys():
-                collection.delete(k)
-
-            for k, v in test_map.items():
-                collection.save(k, v)
-
-            # Commit saved data
-            collection.commit()
-
-            return collection
-    except ConnectionError:
-        pass
+    collection = setup_store(ESStore(['127.0.0.1']), request)
+    if collection:
+        return collection
 
     return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
 @pytest.fixture
-def riak_connection():
+def riak_connection(request):
     from assemblyline.datastore.stores.riak_store import RiakStore
 
-    r = RiakStore(['127.0.0.1'])
-    try:
-        ret_val = r.ping()
-        if ret_val:
-            r.register("test_collection")
-            collection = r.__getattr__("test_collection")
-            # cleanup
-            for k in test_map.keys():
-                collection.delete(k)
+    collection = setup_store(RiakStore(['127.0.0.1']), request)
+    if collection:
+        return collection
 
-            for k, v in test_map.items():
-                collection.save(k, v)
-
-            # Commit saved data
-            collection.commit()
-
-            return collection
-    except ConnectionError:
-        pass
-
-    return pytest.skip("Connection to the Redis server failed. This test cannot be performed...")
+    return pytest.skip("Connection to the Riak server failed. This test cannot be performed...")
 
 
 # noinspection PyShadowingNames
@@ -232,67 +209,62 @@ def test_datastore_consistency(riak_connection: Collection,
         e_tc = stores['elastic'] = es_connection
         r_tc = stores['riak'] = riak_connection
 
-        try:
-            assert compare_output(s_tc.get('list'), e_tc.get('list'), r_tc.get('list'))
-            assert compare_output(s_tc.require('string'), e_tc.require('string'), r_tc.require('string'))
-            assert compare_output(s_tc.get_if_exists('int'), e_tc.get_if_exists('int'), r_tc.get_if_exists('int'))
-            for x in range(5):
-                key = 'dict%s' % x
-                assert compare_output(s_tc.get(key), e_tc.get(key), r_tc.get(key))
-            assert compare_output(s_tc.multiget(['int', 'int']),
-                                  e_tc.multiget(['int', 'int']),
-                                  r_tc.multiget(['int', 'int']))
-            assert compare_output(fix_ids(s_tc.search('*:*', sort="%s asc" % s_tc.datastore.ID)),
-                                  fix_ids(e_tc.search('*:*', sort="%s asc" % e_tc.datastore.ID)),
-                                  fix_ids(r_tc.search('*:*', sort="%s asc" % r_tc.datastore.ID)))
-            assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
-                                              sort="%s asc" % s_tc.datastore.ID, fl='classification'),
-                                  e_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
-                                              sort="%s asc" % e_tc.datastore.ID, fl='classification'),
-                                  r_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
-                                              sort="%s asc" % r_tc.datastore.ID, fl='classification'))
-            ss_s_list = list(s_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
-            ss_e_list = list(e_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
-            ss_r_list = list(r_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
-            assert compare_output(ss_s_list, ss_e_list, ss_r_list)
+        assert compare_output(s_tc.get('list'), e_tc.get('list'), r_tc.get('list'))
+        assert compare_output(s_tc.require('string'), e_tc.require('string'), r_tc.require('string'))
+        assert compare_output(s_tc.get_if_exists('int'), e_tc.get_if_exists('int'), r_tc.get_if_exists('int'))
+        for x in range(5):
+            key = 'dict%s' % x
+            assert compare_output(s_tc.get(key), e_tc.get(key), r_tc.get(key))
+        assert compare_output(s_tc.multiget(['int', 'int']),
+                              e_tc.multiget(['int', 'int']),
+                              r_tc.multiget(['int', 'int']))
+        assert compare_output(fix_ids(s_tc.search('*:*', sort="%s asc" % s_tc.datastore.ID)),
+                              fix_ids(e_tc.search('*:*', sort="%s asc" % e_tc.datastore.ID)),
+                              fix_ids(r_tc.search('*:*', sort="%s asc" % r_tc.datastore.ID)))
+        assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
+                                          sort="%s asc" % s_tc.datastore.ID, fl='classification'),
+                              e_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
+                                          sort="%s asc" % e_tc.datastore.ID, fl='classification'),
+                              r_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
+                                          sort="%s asc" % r_tc.datastore.ID, fl='classification'))
+        ss_s_list = list(s_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
+        ss_e_list = list(e_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
+        ss_r_list = list(r_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
+        assert compare_output(ss_s_list, ss_e_list, ss_r_list)
 
-            assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(r_tc.keys())))
-            assert compare_output(s_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
-                                  e_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
-                                  r_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
+        assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(r_tc.keys())))
+        assert compare_output(s_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
+                              e_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
+                              r_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
 
-            h_s = s_tc.histogram('__expiry_ts__',
-                                 '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
-                                 '{n}+10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
-                                 '+1{d}'.format(d=s_tc.datastore.day, mincount=2))
-            h_e = e_tc.histogram('__expiry_ts__',
-                                 '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
-                                 '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
-                                 '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
-            h_r = r_tc.histogram('__expiry_ts__',
-                                 '{n}-10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
-                                 '{n}+10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
-                                 '+1{d}'.format(d=r_tc.datastore.day, mincount=2))
-            assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_r))
-            assert compare_output(s_tc.field_analysis('classification'),
-                                  e_tc.field_analysis('classification'),
-                                  r_tc.field_analysis('classification'))
+        h_s = s_tc.histogram('__expiry_ts__',
+                             '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
+                             '{n}+10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
+                             '+1{d}'.format(d=s_tc.datastore.day, mincount=2))
+        h_e = e_tc.histogram('__expiry_ts__',
+                             '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
+                             '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
+                             '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
+        h_r = r_tc.histogram('__expiry_ts__',
+                             '{n}-10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
+                             '{n}+10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
+                             '+1{d}'.format(d=r_tc.datastore.day, mincount=2))
+        assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_r))
+        assert compare_output(s_tc.field_analysis('classification'),
+                              e_tc.field_analysis('classification'),
+                              r_tc.field_analysis('classification'))
 
-            assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification'),
-                                  e_tc.grouped_search('__access_lvl__', fl='classification'),
-                                  r_tc.grouped_search('__access_lvl__', fl='classification'))
+        assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification'),
+                              e_tc.grouped_search('__access_lvl__', fl='classification'),
+                              r_tc.grouped_search('__access_lvl__', fl='classification'))
 
-            assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
-                                                      sort="__access_lvl__ desc"),
-                                  e_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
-                                                      sort="__access_lvl__ desc"),
-                                  r_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
-                                                      sort="__access_lvl__ desc"))
+        assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
+                                                  sort="__access_lvl__ desc"),
+                              e_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
+                                                  sort="__access_lvl__ desc"),
+                              r_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
+                                                  sort="__access_lvl__ desc"))
 
-            # TODO: fields are not of the same type in-between datastores does that matter?
-            #       will print output for now without failing the test
-            compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())
-
-        finally:
-            for store in stores.values():
-                store.wipe()
+        # TODO: fields are not of the same type in-between datastores does that matter?
+        #       will print output for now without failing the test
+        compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())

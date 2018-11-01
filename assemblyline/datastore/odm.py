@@ -241,7 +241,7 @@ class Model:
                     out[(name + '.' + sub_name).strip('.')] = sub_data
         return out
 
-    def __init__(self, **data):
+    def __init__(self, data):
         self.py_obj = {}
         fields = self.fields()
 
