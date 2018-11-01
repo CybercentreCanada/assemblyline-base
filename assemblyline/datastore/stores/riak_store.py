@@ -10,6 +10,7 @@ from copy import copy
 
 from assemblyline.datastore import collection_reconnect, log, DataStoreException
 from assemblyline.datastore.stores.solr_store import SolrCollection, SolrStore
+from assemblyline.datastore.support.riak.build import build_mapping
 
 
 def utf8safe_encoder(obj):
@@ -65,15 +66,17 @@ class RiakCollection(SolrCollection):
         while not done:
             for bucket_item in self.riak_bucket.multiget(temp_keys):
                 if not isinstance(bucket_item, tuple):
+                    item_data = None
                     try:
                         item_data = RiakCollection.get_data_from_riak_item(bucket_item)
                     except DataStoreException:
                         continue
+
                     if item_data is not None:
                         if isinstance(item_data, dict):
                             item_data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
-                        ret.append(item_data)
-                    temp_keys.remove(bucket_item.key)
+                        ret.append(self.normalize(item_data))
+                        temp_keys.remove(bucket_item.key)
 
             if len(temp_keys) == 0:
                 done = True
@@ -81,8 +84,7 @@ class RiakCollection(SolrCollection):
                 retry += 1
 
             if retry >= self.MULTIGET_MAX_RETRY:
-                raise DataStoreException("%s is missing data for the following keys: %s" % (self.name.upper(),
-                                                                                            temp_keys))
+                raise KeyError(str(temp_keys))
         return ret
 
     @collection_reconnect(log)
@@ -110,6 +112,8 @@ class RiakCollection(SolrCollection):
         return None
 
     def _save(self, key, data):
+        if self.model_class:
+            data = data._json()
         item = self.riak_bucket.new(key=key, data=data, content_type='application/json')
         item.store()
 
@@ -183,6 +187,12 @@ class RiakCollection(SolrCollection):
             with open(schema_path) as sf:
                 schema_raw = sf.read()
             nval = 1
+
+            schema_raw = schema_raw.replace('REPLACE_NAME', self.name.upper())
+
+            if self.model_class:
+                mapping = build_mapping(self.model_class.fields().values())
+                schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', mapping)
 
             # TODO: Check if schema, index and bucket already exist before creating them blindly??!
             self.datastore.client.create_search_schema(schema=self.name, content=schema_raw)

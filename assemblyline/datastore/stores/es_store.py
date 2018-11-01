@@ -69,9 +69,13 @@ class ESCollection(Collection):
 
     @collection_reconnect(log)
     def multiget(self, key_list):
-        # TODO: Need to find out how to leverage elastic's multiget
-        #       For now lets use the default multiget
-        return super().multiget(key_list)
+        data = self.datastore.client.mget({'ids': key_list}, index=self.name, doc_type='_all')
+        out = []
+        for row in data.get('docs', []):
+            if 'found' in row and not row['found']:
+                raise KeyError(row['_id'])
+            out.append(self.normalize(row['_source']))
+        return out
 
     @collection_reconnect(log)
     def _get(self, key, retries):

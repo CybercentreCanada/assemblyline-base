@@ -94,8 +94,7 @@ class SolrCollection(Collection):
                 retry += 1
 
             if retry >= SolrCollection.MULTIGET_MAX_RETRY:
-                raise DataStoreException("%s is missing data for the following keys: %s" % (self.name.upper(),
-                                                                                            temp_keys))
+                raise KeyError(str(temp_keys))
 
         return ret
 

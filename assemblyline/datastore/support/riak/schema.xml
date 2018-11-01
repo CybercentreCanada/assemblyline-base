@@ -6,12 +6,12 @@
         <!-- REPLACE_FIELDS -->
 
         <!-- AL Access fields  -->
-        <field name="classification" type="string" indexed="true" stored="true"/>
+        <!-- <field name="classification" type="string" indexed="true" stored="true"/>
         <field name="__access_lvl__" type="int" indexed="true" stored="false"/>
         <field name="__access_req__" type="string" indexed="true" stored="false" multiValued="true"/>
         <field name="__access_grp1__" type="string" indexed="true" stored="false" multiValued="true" default="__EMPTY__"/>
         <field name="__access_grp2__" type="string" indexed="true" stored="false" multiValued="true" default="__EMPTY__"/>
-        <field name="__expiry_ts__" type="date" indexed="true" stored="false"/>
+        <field name="__expiry_ts__" type="date" indexed="true" stored="false"/> -->
 
         <!-- Default fields -->
         <field name="__text__" type="text_general" indexed="true" stored="false"/>
@@ -80,5 +80,5 @@
             </analyzer>
         </fieldType>
     </types>
-    
+
 </schema>
