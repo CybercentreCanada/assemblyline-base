@@ -34,7 +34,7 @@ class Collection(object):
         :return: instance of the model class
         """
         if data is not None and self.model_class and not isinstance(data, self.model_class):
-            return self.model_class(**data)
+            return self.model_class(data)
 
         return data
 

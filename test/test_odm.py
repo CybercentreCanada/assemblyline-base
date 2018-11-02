@@ -1,4 +1,4 @@
-from assemblyline.datastore.odm import model, Model
+from assemblyline.datastore.odm import model, Model, KeyMaskException
 from assemblyline.datastore.odm import Compound, List, Keyword, Integer
 
 import json
@@ -99,7 +99,7 @@ def test_type_validation():
         second = Integer()
 
     with pytest.raises(ValueError):
-        Test(cats=123)
+        Test(dict(cats=123))
 
     instance = Test(dict(first='abc', second=567))
 
@@ -219,8 +219,8 @@ def test_create_list():
     class Test(Model):
         values = List(Integer())
 
-    test = Test(values=[])
-    test = Test(values=[0, 100])
+    test = Test(dict(values=[]))
+    test = Test(dict(values=[0, 100]))
 
     with pytest.raises(ValueError):
         Test(dict(values=['bugs']))
@@ -317,3 +317,20 @@ def test_defaults():
     assert test.c.value == 'yellow'
     assert test.x == -55
     assert test.y == -1
+
+
+def test_field_masking():
+    @model()
+    class Test(Model):
+        a = Integer()
+        b = Integer()
+
+    test = Test(dict(a=10), mask=['a'])
+
+    assert test.a == 10
+
+    with pytest.raises(KeyMaskException):
+        test.b
+
+    with pytest.raises(KeyMaskException):
+        test.b = 100

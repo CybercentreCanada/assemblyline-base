@@ -16,6 +16,10 @@ import arrow
 from datetime import datetime
 
 
+class KeyMaskException(KeyError):
+    pass
+
+
 class _Field:
     def __init__(self, name=None, index=None, store=None, copyto=None, default=None, default_set=None):
         self.index = index
@@ -35,16 +39,20 @@ class _Field:
 
     def __get__(self, obj, objtype=None):
         """Read the value of this field from the model instance (obj)."""
+        if self.name in obj.odm_removed:
+            raise KeyMaskException(self.name)
         if self.getter_function:
-            return self.getter_function(obj, obj.py_obj[self.name])
-        return obj.py_obj[self.name]
+            return self.getter_function(obj, obj.odm_py_obj[self.name])
+        return obj.odm_py_obj[self.name]
 
     def __set__(self, obj, value):
         """Set the value of this field, calling a setter method if available."""
+        if self.name in obj.odm_removed:
+            raise KeyMaskException(self.name)
         value = self.check(value)
         if self.setter_function:
             value = self.setter_function(obj, value)
-        obj.py_obj[self.name] = value
+        obj.odm_py_obj[self.name] = value
 
     def getter(self, method):
         """Decorator to create getter method for a field."""
@@ -81,6 +89,10 @@ class _Field:
         For simple fields this is an identity function.
         """
         return {'': self}
+
+
+class _DeletedField:
+    pass
 
 
 class Date(_Field):
@@ -198,7 +210,7 @@ class Compound(_Field):
         self.child_type = field_type
 
     def check(self, value):
-        return self.child_type(**value)
+        return self.child_type(value)
 
     def fields(self):
         out = dict()
@@ -241,9 +253,32 @@ class Model:
                     out[(name + '.' + sub_name).strip('.')] = sub_data
         return out
 
-    def __init__(self, data):
-        self.py_obj = {}
+    def __init__(self, data: dict, mask: list = None):
+        if not isinstance(data, dict):
+            raise TypeError("Models must be constructed with a dictionary")
+
+        self.id = data.pop('_id', None)
+
+        self.odm_py_obj = {}
+
+        # Get the list of fields we expect this object to have
         fields = self.fields()
+        self.odm_removed = {}
+        if mask:
+            self.odm_removed = {k: v for k, v in fields.items() if k not in mask}
+            fields = {k: v for k, v in fields.items() if k in mask}
+
+        # Trim out keys that actually belong to sub sections
+        sub_data = {}
+        for key, value in list(data.items()):
+            if '.' in key:
+                del data[key]
+                child, sub_key = key.split('.', 1)
+                try:
+                    sub_data[child][sub_key] = value
+                except KeyError:
+                    sub_data[child] = {sub_key: value}
+        data.update(sub_data)
 
         # Check to make sure we can use all the data we are given
         unused_keys = set(data.keys()) - set(fields.keys())
@@ -260,7 +295,7 @@ class Model:
                 else:
                     raise ValueError('{} expected a parameter named {}'.format(self.__class__.__name__, name))
 
-            self.py_obj[name] = field_type.check(value)
+            self.odm_py_obj[name] = field_type.check(value)
 
     def _json(self):
         """Convert the object back into primatives that can be json serialized.
@@ -276,7 +311,7 @@ class Model:
 
         return {
             key: read(value)
-            for key, value in self.py_obj.items()
+            for key, value in self.odm_py_obj.items()
         }
 
     def json(self):

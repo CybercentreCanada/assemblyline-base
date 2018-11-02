@@ -146,12 +146,12 @@ class ESCollection(Collection):
         # TODO: This should be validated by the model not use val[0] blindly
         return {key: val[0] if isinstance(val, list) else val for key, val in source.items() if key in fields}
 
-    def _cleanup_search_result(self, item):
+    def _cleanup_search_result(self, item, fields=None):
         # TODO: This could just be validate using the model?
         if self.model_class:
             if '_source' in item:
                 return self.model_class(item['_source'])
-            return self.model_class(item)
+            return self.model_class(item, mask=fields)
 
         if isinstance(item, dict):
             item.pop('_source', None)
