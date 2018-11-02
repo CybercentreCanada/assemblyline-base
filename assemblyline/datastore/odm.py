@@ -254,10 +254,7 @@ class Model:
         return out
 
     def __init__(self, data: dict, mask: list = None):
-        if not isinstance(data, dict):
-            raise TypeError("Models must be constructed with a dictionary")
-
-        self.id = data.pop('_id', None)
+        self.id = data.pop('_id', data.pop('_id_', data.pop('_yz_rk', None)))
 
         self.odm_py_obj = {}
 

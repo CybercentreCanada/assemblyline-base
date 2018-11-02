@@ -121,16 +121,29 @@ class RiakCollection(SolrCollection):
     def delete(self, key):
         self.riak_bucket.delete(key)
 
-    def _cleanup_search_result(self, item):
+    def _cleanup_search_result(self, item, fields):
         # TODO: This could just be validate using the model?
 
         if isinstance(item, dict):
-            item.pop('_source_', None)
             item.pop('_version_', None)
             item.pop('_yz_id', None)
             item.pop('_yz_rt', None)
             item.pop('_yz_rb', None)
             item.pop(self.EXTRA_SEARCH_FIELD, None)
+
+        if self.model_class:
+            if '*' in fields:
+                fields = None
+            elif isinstance(fields, str):
+                fields = fields.split(',')
+
+            if '_source_' in item:
+                return self.model_class(item['_source_'])
+            return self.model_class(item, mask=fields)
+
+        if isinstance(item, dict):
+            item.pop('_source_', None)
+            item.pop('_yz_rk', None)
 
         return item
 
@@ -163,7 +176,7 @@ class RiakCollection(SolrCollection):
     @collection_reconnect(log)
     def keys(self, access_control=None):
         for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
-            yield item[self.datastore.ID]
+            yield item.id
 
     @collection_reconnect(log)
     def fields(self, port=8093):
@@ -205,6 +218,7 @@ class RiakCollection(SolrCollection):
                 'search_index': self.name
             }
             self.datastore.client.set_bucket_props(bucket=self.riak_bucket, props=props)
+        self._check_fields()
 
     @collection_reconnect(log)
     def wipe(self):

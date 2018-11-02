@@ -283,6 +283,26 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
+    def _check_fields(self, model=None):
+        if model is None:
+            if self.model_class:
+                return self._check_fields(self.model_class)
+            return
+
+        fields = self.fields()
+        model = self.model_class.flat_fields()
+
+        missing = set(model.keys()) - set(fields.keys())
+        if missing:
+            raise RuntimeError(f"Couldn't load collection, fields missing: {missing}")
+
+        matching = set(fields.keys()) & set(model.keys())
+        for field_name in matching:
+            if fields[field_name]['indexed'] != model[field_name].index:
+                raise RuntimeError(f"Field {field_name} didn't have the expected indexing value.")
+            if fields[field_name]['stored'] != model[field_name].store:
+                raise RuntimeError(f"Field {field_name} didn't have the expected store value.")
+
     @collection_reconnect(log)
     def wipe(self):
         """

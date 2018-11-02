@@ -35,7 +35,9 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
 
     def set_mapping(name, field, type):
         name = name.strip('.')
-        mappings.append(f'<field name="{name}" type="{type}" indexed="{field.index}" stored="{field.store}"/>')
+        index = 'true' if field.index else 'false'
+        store = 'true' if field.store else 'false'
+        mappings.append(f'<field name="{name}" type="{type}" indexed="{index}" stored="{store}"/>')
 
     # Fill in the sections
     for field in field_data:

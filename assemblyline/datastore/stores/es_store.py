@@ -292,7 +292,7 @@ class ESCollection(Collection):
             "offset": int(offset),
             "rows": int(rows),
             "total": int(result['hits']['total']),
-            "items": [self._cleanup_search_result(x) for x in docs]
+            "items": [self._cleanup_search_result(x, field_list) for x in docs]
         }
         return output
 
@@ -517,6 +517,7 @@ class ESCollection(Collection):
                 mappings['properties'] = build_mapping(self.model_class.fields().values())
             index['mappings'][self.name] = mappings
             self.datastore.client.indices.create(self.name, index)
+        self._check_fields()
 
     @collection_reconnect(log)
     def wipe(self):

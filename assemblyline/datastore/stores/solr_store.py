@@ -218,8 +218,21 @@ class SolrCollection(Collection):
 
         return None
 
-    def _cleanup_search_result(self, item):
+    def _cleanup_search_result(self, item, fields=None):
         # TODO: This could just be validate using the model?
+
+        if self.model_class:
+            if '*' in fields:
+                fields = None
+            elif isinstance(fields, str):
+                fields = fields.split(',')
+
+            item.pop('_version_', None)
+            if '_source_' in item:
+                data = json.loads(item['_source_'])
+                data['_id_'] = item['_id_']
+                return self.model_class(data)
+            return self.model_class(item, mask=fields)
 
         if isinstance(item, dict):
             item.pop('_source_', None)
@@ -301,6 +314,11 @@ class SolrCollection(Collection):
 
         if fl:
             args.append(('fl', fl))
+        else:
+            # According to the solr documentation this should be the default value
+            # for this parameter, it isn't though?
+            fl = '*'
+            args.append(('fl', '*'))
 
         if timeout:
             args.append(('timeAllowed', timeout))
@@ -315,11 +333,12 @@ class SolrCollection(Collection):
             args.append(('fq', access_control))
 
         data = self._search(args)
+        print(data)
         output = {
             "offset": int(data['response']['start']),
             "rows": int(rows),
             "total": int(data['response']['numFound']),
-            "items": [self._cleanup_search_result(x) for x in data['response']['docs']]
+            "items": [self._cleanup_search_result(x, fl) for x in data['response']['docs']]
         }
         return output
 
@@ -347,7 +366,7 @@ class SolrCollection(Collection):
                 _args.append(('cursorMark', data.get('nextCursorMark', '*')))
 
                 with _lock:
-                    _items.extend([self._cleanup_search_result(x) for x in data['response']['docs']])
+                    _items.extend([self._cleanup_search_result(x, fl) for x in data['response']['docs']])
 
                 done = int(page_size) - len(data['response']['docs'])
 
@@ -400,7 +419,7 @@ class SolrCollection(Collection):
 
     def keys(self, access_control=None):
         for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
-            yield item[self.datastore.ID]
+            yield item.id  # [self.datastore.ID]
 
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
         """Build a histogram of `query` data over `field`"""
@@ -499,7 +518,7 @@ class SolrCollection(Collection):
         ]
 
         if fl:
-            args.append(("fl", fl))
+            args.append(('fl', fl))
 
         if limit:
             args.append(('group.limit', limit))
@@ -535,28 +554,25 @@ class SolrCollection(Collection):
 
         session, host = self._get_session(port=port)
 
-        url = "http://{host}/{api_base}/{collection}/admin/luke/?wt=json".format(host=host,
-                                                                                 api_base=self.api_base,
-                                                                                 collection=self.name)
+        url = f"http://{host}/{self.api_base}/{self.name}/schema/?wt=json"
+
         res = session.get(url)
         if res.ok:
             collection_data = {}
-            j = res.json()
-
-            fields = j.get("fields", {})
-            for field_name, field_value in fields.items():
-                if field_value.get("docs", 0) == 0:
-                    continue
+            fields = res.json()['schema']['fields']
+            for field in fields:
+                field_name = field['name']
+                # if field_value.get("docs", 0) == 0:
+                #     continue
                 if field_name.startswith("_") or "//" in field_name:
                     continue
                 if not Collection.FIELD_SANITIZER.match(field_name):
                     continue
 
                 collection_data[field_name] = {
-                    "indexed": field_value.get("schema", "").startswith("I"),
-                    "stored": field_value.get("schema", "")[:3].endswith("S"),
-                    "list": field_value.get("schema", "")[:5].endswith("M"),
-                    "type": field_value.get("type", "")
+                    "indexed": field['indexed'],
+                    "stored": field['stored'],
+                    "type": field['type'],
                 }
 
             return collection_data
@@ -673,8 +689,8 @@ class SolrCollection(Collection):
                 raise DataStoreException(f"Could not create collection {self.name}. {res['failure']}")
 
             log.info("Collection {collection} created!".format(collection=self.name))
-            assert self._collection_exist(session=session, host=host)
 
+        self._check_fields()
 
     @collection_reconnect(log)
     def wipe(self):
