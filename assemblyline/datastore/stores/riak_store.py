@@ -276,8 +276,12 @@ class RiakStore(SolrStore):
                                                              riak_http_port=self.riak_http_port)
         return self._collections[name]
 
+    # noinspection PyBroadException
     def ping(self):
-        return self.client.ping()
+        try: 
+            return self.client.ping()
+        except Exception:
+            return False
 
     def close(self):
         super().close()
