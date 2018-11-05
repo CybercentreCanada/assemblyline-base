@@ -27,7 +27,9 @@ services:
     networks:
       - zookeeper_bridge
   solr:
-    image: douglasscse/bitbucket_solr:7.5-alpine
+    image: solr:7.5-alpine
+    environment:
+      ZK_HOST: zookeeper:2181
     depends_on:
       - zookeeper
     ports:
@@ -35,7 +37,6 @@ services:
     networks:
       - default
       - zookeeper_bridge
-    command: solr start -f -z zookeeper
 
 networks:
   zookeeper_bridge:
