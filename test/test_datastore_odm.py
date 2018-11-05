@@ -1,13 +1,15 @@
 
+import logging
 import pytest
-import warnings
 import random
 import string
+import warnings
 
 from datetime import datetime
 from datemath import dm
+from retrying import retry
+
 from assemblyline.datastore import odm, log
-import logging
 
 log.setLevel(logging.INFO)
 
@@ -41,6 +43,11 @@ with warnings.catch_warnings():
     }
 
 
+class SetupException(Exception):
+    pass
+
+
+@retry(stop_max_attempt_number=10, wait_random_min=250, wait_random_max=1500)
 def setup_store(docstore, request):
     try:
         ret_val = docstore.ping()
@@ -64,14 +71,18 @@ def setup_store(docstore, request):
             return collection
     except ConnectionError:
         pass
-    return None
+    raise SetupException("Could not setup Datastore: %s" % docstore.__class__.__name__)
 
 
 @pytest.fixture
 def solr_connection(request):
     from assemblyline.datastore.stores.solr_store import SolrStore
 
-    collection = setup_store(SolrStore(['127.0.0.1']), request)
+    try:
+        collection = setup_store(SolrStore(['127.0.0.1']), request)
+    except SetupException:
+        collection = None
+
     if collection:
         return collection
 
@@ -82,7 +93,11 @@ def solr_connection(request):
 def es_connection(request):
     from assemblyline.datastore.stores.es_store import ESStore
 
-    collection = setup_store(ESStore(['127.0.0.1']), request)
+    try:
+        collection = setup_store(ESStore(['127.0.0.1']), request)
+    except SetupException:
+        collection = None
+
     if collection:
         return collection
 
@@ -93,7 +108,11 @@ def es_connection(request):
 def riak_connection(request):
     from assemblyline.datastore.stores.riak_store import RiakStore
 
-    collection = setup_store(RiakStore(['127.0.0.1']), request)
+    try:
+        collection = setup_store(RiakStore(['127.0.0.1']), request)
+    except SetupException:
+        collection = None
+
     if collection:
         return collection
 
