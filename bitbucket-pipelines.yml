@@ -36,5 +36,7 @@ definitions:
       image: zookeeper
       memory: 512
     solr:
-      image: douglasscse/bitbucket_solr:7.5-alpine
+      image: solr:7.5-alpine
       memory: 512
+      environment:
+        ZK_HOST: 'localhost:2181'
