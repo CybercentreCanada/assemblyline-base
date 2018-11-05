@@ -38,7 +38,7 @@ class SetupException(Exception):
     pass
 
 
-@retry(stop_max_attempt_number=10, wait_random_min=250, wait_random_max=1500)
+@retry(stop_max_attempt_number=100, wait_random_min=250, wait_random_max=500)
 def setup_store(docstore, request):
     try:
         ret_val = docstore.ping()
