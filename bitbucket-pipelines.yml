@@ -11,9 +11,9 @@ pipelines:
           - pytest -rsx
         services:
           - zookeeper
+          - riak
           - redis
           - elasticsearch
-          - riak
           - solr
 
 definitions:
