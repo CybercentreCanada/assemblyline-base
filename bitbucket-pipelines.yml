@@ -8,13 +8,13 @@ pipelines:
           - pip
         script:
           - pip install -r assemblyline/requirements.txt -r test/requirements.txt
-          - pytest -rsx
+          - pytest -rsx --target test/test_datastore.py::test_riak
         services:
-          - zookeeper
+          #- zookeeper
           - riak
-          - redis
-          - elasticsearch
-          - solr
+          #- redis
+          #- elasticsearch
+          #- solr
 
 definitions:
   services:
