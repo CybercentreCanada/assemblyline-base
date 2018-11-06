@@ -8,7 +8,7 @@ pipelines:
           - pip
         script:
           - pip install -r assemblyline/requirements.txt -r test/requirements.txt
-          - while [ `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8098/types/default/props` != "200" ]; do curl -s http://127.0.0.1:8098 && curl -s http://riak:8098 && curl -s http://localhost:8098 && sleep 1; done
+          - while [ `curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8098/types/default/props` != "200" ]; do curl -s http://localhost:8098/types/default/props && sleep 1; done
           - pytest -rsx test/test_datastore.py -k test_riak
         services:
           #- zookeeper
