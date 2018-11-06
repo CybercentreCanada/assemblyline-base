@@ -29,9 +29,8 @@ definitions:
       memory: 512
     riak:
       image: sgaroncse/riak-kv:2.1.4-al
-      memory: 2048
+      memory: 1024
       environment:
-        CLUSTER_NAME: riakkv
         SOLR_HEAP: '-Xms256m -Xmx256m'
     zookeeper:
       image: zookeeper
