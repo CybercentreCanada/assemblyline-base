@@ -8,7 +8,7 @@ pipelines:
           - pip
         script:
           - pip install -r assemblyline/requirements.txt -r test/requirements.txt
-          - pytest -rsx --target test/test_datastore.py::test_riak
+          - pytest -rsx test/test_datastore.py -k test_riak
         services:
           #- zookeeper
           - riak
