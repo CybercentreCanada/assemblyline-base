@@ -8,6 +8,7 @@ from assemblyline.datastore.odm import Date, Integer, Float, Boolean
 
 # Simple types can be resolved by a direct mapping
 type_mapping = {
+    Text: 'string',
     Keyword: 'string',
     Boolean: 'boolean',
     Integer: 'int',
@@ -24,20 +25,20 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
     prefix = prefix or []
     mappings = mappings or []
 
-    def set_mapping(name, field, type):
+    def set_mapping(name, field, type, fields=''):
         name = name.strip('.')
-        mappings.append(f'<field name="{name}" type="{type}" indexed="{field.index}" stored="{field.store}" multiValued="{multivalued}" />')
+        mappings.append(f'<field name="{name}" type="{type}" indexed="{field.index}" stored="{field.store}" multiValued="{multivalued}" {fields} />')
 
     # Fill in the sections
     for field in field_data:
         path = prefix + ([field.name] if field.name else [])
         name = '.'.join(path)
 
-        if isinstance(field, (Keyword, Boolean, Integer, Float, Date)):
+        if isinstance(field, (Boolean, Integer, Float, Date)):
             set_mapping(name, field, type_mapping[field.__class__])
 
-        elif isinstance(field, Text):
-            set_mapping(name, field, 'text_general')
+        elif isinstance(field, (Keyword, Text)):
+            set_mapping(name, field, type_mapping[field.__class__], 'required="true" default=""')
 
         elif isinstance(field, List):
             build_mapping([field.child_type], prefix=path, mappings=mappings, multivalued=True)

@@ -11,18 +11,48 @@ from assemblyline.datastore import Collection, collection_reconnect, BaseStore, 
     SearchRetryException, log
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping
 from assemblyline.datastore.support.elasticsearch.build import build_mapping
+from assemblyline.datastore import odm
+
+
+def _strip_lists(model, data):
+    """Elasticsearch returns everything as lists, regardless of whether
+    we want the field to be multi-valued or not. This method uses the model's
+    knowlage of what should or should not have multiple values to fix the data.
+    """
+    fields = model.fields()
+    out = {}
+    for key, value in odm.flat_to_nested(data).items():
+        type = fields[key]
+        if isinstance(type, odm.List):
+            out[key] = value
+        elif isinstance(type, odm.Compound):
+            out[key] = _strip_lists(type.child_type, value)
+        else:
+            out[key] = value[0]
+    return out
 
 
 def parse_sort(sort):
+    """
+    This function tries to do two things at once:
+        - convert solr sort syntax to elastic,
+        - convert any sorts on the key _id to _id_
+    """
     if isinstance(sort, list):
-        return sort
+        return [parse_sort(row) for row in sort]
+    elif isinstance(sort, dict):
+        return {('_id_' if key == '_id' else key): value for key, value in sort.items()}
 
     parts = sort.split(' ')
     if len(parts) == 1:
+        if parts == '_id':
+            return ['_id_']
         return [parts]
     elif len(parts) == 2:
         if parts[1] not in ['asc', 'desc']:
             raise SearchException('Unknown sort parameter ' + sort)
+        if parts[0] == '_id':
+            return [{'_id_': parts[1]}]
         return [{parts[0]: parts[1]}]
     raise SearchException('Unknown sort parameter ' + sort)
 
@@ -77,6 +107,7 @@ class ESCollection(Collection):
             if '__non_doc_raw__' in row['_source']:
                 out.append(row['_source']['__non_doc_raw__'])
             else:
+                row['_source'].pop(self.datastore.SORT_ID, None)
                 out.append(self.normalize(row['_source']))
         return out
 
@@ -93,6 +124,7 @@ class ESCollection(Collection):
                 # TODO: Maybe we should not allow data that is not a dictionary...
                 if "__non_doc_raw__" in data:
                     return data['__non_doc_raw__']
+                data.pop(self.datastore.SORT_ID, None)
                 return data
             except elasticsearch.exceptions.NotFoundError:
                 if retries > 0:
@@ -115,6 +147,8 @@ class ESCollection(Collection):
             else:
                 saved_data = data
 
+        saved_data[self.datastore.SORT_ID] = key
+
         self.datastore.client.update(
             index=self.name,
             doc_type=self.name,
@@ -133,6 +167,20 @@ class ESCollection(Collection):
     def _format_output(self, result, fields=None):
         source = result.get('fields', {})
 
+        if self.model_class:
+            item_id = result['_id']
+            source = result.get('fields', {})
+            if fields and '*' in fields:
+                fields = None
+
+            if '_source' in source:
+                source['_source'].pop(self.datastore.SORT_ID, None)
+                return self.model_class(source['_source'], id=item_id)
+
+            source.pop(self.datastore.SORT_ID, None)
+            source = _strip_lists(self.model_class, source)
+            return self.model_class(source, mask=fields, id=item_id)
+
         if isinstance(fields, str):
             fields = fields
 
@@ -147,13 +195,9 @@ class ESCollection(Collection):
         return {key: val[0] if isinstance(val, list) else val for key, val in source.items() if key in fields}
 
     def _cleanup_search_result(self, item, fields=None):
-        # TODO: This could just be validate using the model?
-        if self.model_class:
-            if '_source' in item:
-                return self.model_class(item['_source'])
-            return self.model_class(item, mask=fields)
-
         if isinstance(item, dict):
+            item.pop(self.datastore.ID, None)
+            item.pop(self.datastore.SORT_ID, None)
             item.pop('_source', None)
             item.pop('_version', None)
             item.pop(self.DEFAULT_SEARCH_FIELD, None)
@@ -218,6 +262,7 @@ class ESCollection(Collection):
                 query_body["aggregations"][field] = {
                     "terms": {
                         "field": field,
+                        "missing": "",
                         "min_doc_count": parsed_values['facet_mincount']
                     }
                 }
@@ -234,6 +279,7 @@ class ESCollection(Collection):
                 }
             }
 
+        print('es query', query_body)
         try:
             # Run the query
             result = self.datastore.client.search(index=self.name, body=json.dumps(query_body))
@@ -286,6 +332,7 @@ class ESCollection(Collection):
             args.append(('filters', filters))
 
         result = self._search(args)
+        print('es result', result)
 
         docs = [self._format_output(doc, field_list) for doc in result['hits']['hits']]
         output = {
@@ -326,6 +373,7 @@ class ESCollection(Collection):
                     'filter': [{'query_string': {'query': ff}} for ff in filters]
                 }
             },
+            "sort": parse_sort(self.datastore.DEFAULT_SORT),
             "stored_fields": fl or ['*']
         }
 
@@ -343,7 +391,7 @@ class ESCollection(Collection):
 
     def keys(self, access_control=None):
         for item in self.stream_search("%s:*" % self.datastore.ID, fl=self.datastore.ID, access_control=access_control):
-            yield item[self.datastore.ID]
+            yield item.id
 
     @collection_reconnect(log)
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
@@ -515,6 +563,11 @@ class ESCollection(Collection):
             mappings = deepcopy(default_mapping)
             if self.model_class:
                 mappings['properties'] = build_mapping(self.model_class.fields().values())
+                mappings['properties'][self.datastore.SORT_ID] = {
+                    "store": True,
+                    "doc_values": True,
+                    "type": 'keyword'
+                }
             index['mappings'][self.name] = mappings
             self.datastore.client.indices.create(self.name, index)
         self._check_fields()
@@ -530,6 +583,7 @@ class ESCollection(Collection):
 class ESStore(BaseStore):
     """ Elasticsearch implementation of the ResultStore interface."""
     ID = '_id'
+    SORT_ID = '_id_'
     DEFAULT_SORT = "_id asc"
     DATE_FORMAT = {
         'NOW': 'now',

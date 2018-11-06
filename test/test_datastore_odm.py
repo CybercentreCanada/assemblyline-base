@@ -148,6 +148,15 @@ def collection_test(collection):
 
     col.search('*:*', sort="%s asc" % col.datastore.ID)
 
+    assert len(col.search(f'{col.datastore.ID}: dict3')['items'][0].tags) == 2
+    assert len(col.search(f'{col.datastore.ID}: dict4')['items'][0].tags) == 3
+
+    assert col.search(f'{col.datastore.ID}: test1')['items'][0].flavour == 'chocolate'
+
+    forward = col.search('*', sort=f'{col.datastore.ID} asc')
+    reverse = col.search('*', sort=f'{col.datastore.ID} desc')
+    assert forward['items'] == list(reversed(reverse['items']))
+
 
 # noinspection PyShadowingNames
 def test_solr(solr_connection):
@@ -180,13 +189,22 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
         def compare_output(solr, elastic, riak):
             errors = []
 
-            if solr != riak:
+            try:
+                if solr != riak:
+                    errors.append("solr != riak")
+            except odm.KeyMaskException:
                 errors.append("solr != riak")
 
-            if solr != elastic:
+            try:
+                if solr != elastic:
+                    errors.append("solr != elastic")
+            except odm.KeyMaskException:
                 errors.append("solr != elastic")
 
-            if elastic != riak:
+            try:
+                if elastic != riak:
+                    errors.append("elastic != riak")
+            except odm.KeyMaskException:
                 errors.append("elastic != riak")
 
             if errors:
@@ -227,36 +245,36 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
                                           sort="%s asc" % e_tc.datastore.ID, fl='flavour'),
                               r_tc.search('*:*', offset=1, rows=1, filters="height:100",
                                           sort="%s asc" % r_tc.datastore.ID, fl='flavour'))
-        # ss_s_list = list(s_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
-        # ss_e_list = list(e_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
-        # ss_r_list = list(r_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
-        # assert compare_output(ss_s_list, ss_e_list, ss_r_list)
-        #
-        # assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(r_tc.keys())))
-        # assert compare_output(s_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
-        #                       e_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
-        #                       r_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
-        #
-        # h_s = s_tc.histogram('__expiry_ts__',
-        #                      '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
-        #                      '{n}+10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
-        #                      '+1{d}'.format(d=s_tc.datastore.day, mincount=2))
-        # h_e = e_tc.histogram('__expiry_ts__',
-        #                      '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
-        #                      '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
-        #                      '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
-        # h_r = r_tc.histogram('__expiry_ts__',
-        #                      '{n}-10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
-        #                      '{n}+10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
-        #                      '+1{d}'.format(d=r_tc.datastore.day, mincount=2))
-        # assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_r))
-        # assert compare_output(s_tc.field_analysis('classification'),
-        #                       e_tc.field_analysis('classification'),
-        #                       r_tc.field_analysis('classification'))
-        #
-        # assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification'),
-        #                       e_tc.grouped_search('__access_lvl__', fl='classification'),
-        #                       r_tc.grouped_search('__access_lvl__', fl='classification'))
+        ss_s_list = list(s_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour'))
+        ss_e_list = list(e_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour'))
+        ss_r_list = list(r_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour'))
+        assert compare_output(ss_s_list, ss_e_list, ss_r_list)
+
+        assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(r_tc.keys())))
+        assert compare_output(s_tc.histogram('height', 0, 200, 20, mincount=2),
+                              e_tc.histogram('height', 0, 200, 20, mincount=2),
+                              r_tc.histogram('height', 0, 200, 20, mincount=2))
+
+        h_s = s_tc.histogram('birthday',
+                             '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
+                             '{n}+10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
+                             '+1{d}'.format(d=s_tc.datastore.day, mincount=2))
+        h_e = e_tc.histogram('birthday',
+                             '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
+                             '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
+                             '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
+        h_r = r_tc.histogram('birthday',
+                             '{n}-10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
+                             '{n}+10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
+                             '+1{d}'.format(d=r_tc.datastore.day, mincount=2))
+        assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_r))
+        assert compare_output(s_tc.field_analysis('tags'),
+                              e_tc.field_analysis('tags'),
+                              r_tc.field_analysis('tags'))
+
+        assert compare_output(s_tc.grouped_search('height', fl='flavour'),
+                              e_tc.grouped_search('height', fl='flavour'),
+                              r_tc.grouped_search('height', fl='flavour'))
         #
         # # TODO: fields are not of the same type in-between datastores does that matter?
         # #       will print output for now without failing the test

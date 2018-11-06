@@ -251,6 +251,11 @@ def test_create_list_compounds():
     class Test(Model):
         values = List(Compound(Entry))
 
+    fields = Test.fields()
+    assert len(fields) == 1
+    fields = Test.flat_fields()
+    assert len(fields) == 2
+
     test = Test(dict(values=[]))
     test = Test({'values': [
         {'key': 'cat', 'value': 0},
@@ -334,3 +339,25 @@ def test_field_masking():
 
     with pytest.raises(KeyMaskException):
         test.b = 100
+
+
+def test_sub_field_masking():
+    @model()
+    class Inner(Model):
+        a = Integer()
+        b = Integer()
+
+    @model()
+    class Test(Model):
+        a = Compound(Inner)
+        b = Compound(Inner)
+
+    test = Test(dict(a=dict(a=10), b=dict(b=10)), mask=['a.a', 'b.b'])
+
+    assert test.a.a == 10
+
+    with pytest.raises(KeyMaskException):
+        test.b.a
+
+    with pytest.raises(KeyMaskException):
+        test.a.b = 100

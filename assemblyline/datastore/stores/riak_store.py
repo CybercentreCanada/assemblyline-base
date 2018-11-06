@@ -132,18 +132,23 @@ class RiakCollection(SolrCollection):
             item.pop(self.EXTRA_SEARCH_FIELD, None)
 
         if self.model_class:
-            if '*' in fields:
-                fields = None
+            item_id = item.pop('_yz_rk', None)
+            if not fields or '*' in fields:
+                fields = self.stored_fields.keys()
             elif isinstance(fields, str):
                 fields = fields.split(',')
 
+            for name, field in self.stored_fields.items():
+                if name in fields and name not in item:
+                    item[name] = field.empty
+
             if '_source_' in item:
-                return self.model_class(item['_source_'])
-            return self.model_class(item, mask=fields)
+                return self.model_class(item['_source_'], id=item_id)
+            return self.model_class(item, mask=fields, id=item_id)
 
         if isinstance(item, dict):
-            item.pop('_source_', None)
             item.pop('_yz_rk', None)
+            item.pop('_source_', None)
 
         return item
 

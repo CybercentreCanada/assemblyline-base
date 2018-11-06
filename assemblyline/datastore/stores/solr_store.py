@@ -43,6 +43,12 @@ class SolrCollection(Collection):
         self.replication_factor = num_shards
         super().__init__(datastore, name, model_class=model_class)
 
+        self.stored_fields = {}
+        if model_class:
+            for name, field in model_class.flat_fields().items():
+                if field.store:
+                    self.stored_fields[name] = field
+
     def _get_session(self, port=8983):
         session, host = self.datastore.get_or_create_session()
         if ":" not in host:
@@ -222,17 +228,22 @@ class SolrCollection(Collection):
         # TODO: This could just be validate using the model?
 
         if self.model_class:
-            if '*' in fields:
-                fields = None
+            item_id = item.pop(self.datastore.ID, None)
+            if not fields or '*' in fields:
+                fields = self.stored_fields.keys()
             elif isinstance(fields, str):
                 fields = fields.split(',')
+
+            for name, field in self.stored_fields.items():
+                if name in fields and name not in item:
+                    item[name] = field.empty
 
             item.pop('_version_', None)
             if '_source_' in item:
                 data = json.loads(item['_source_'])
-                data['_id_'] = item['_id_']
-                return self.model_class(data)
-            return self.model_class(item, mask=fields)
+                return self.model_class(data, id=item_id)
+            # item = strip_lists(self.model_class, item)
+            return self.model_class(item, mask=fields, id=item_id)
 
         if isinstance(item, dict):
             item.pop('_source_', None)
@@ -314,11 +325,6 @@ class SolrCollection(Collection):
 
         if fl:
             args.append(('fl', fl))
-        else:
-            # According to the solr documentation this should be the default value
-            # for this parameter, it isn't though?
-            fl = '*'
-            args.append(('fl', '*'))
 
         if timeout:
             args.append(('timeAllowed', timeout))
@@ -333,7 +339,7 @@ class SolrCollection(Collection):
             args.append(('fq', access_control))
 
         data = self._search(args)
-        print(data)
+        print('solr result', data)
         output = {
             "offset": int(data['response']['start']),
             "rows": int(rows),
@@ -543,7 +549,7 @@ class SolrCollection(Collection):
             'items': [{
                 'value': grouping['groupValue'],
                 'total': grouping['doclist']['numFound'],
-                'items': [self._cleanup_search_result(x) for x in grouping['doclist']['docs']]
+                'items': [self._cleanup_search_result(x, fl) for x in grouping['doclist']['docs']]
             } for grouping in data['groups']]
         }
 
@@ -598,11 +604,9 @@ class SolrCollection(Collection):
         schema = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/managed-schema"))
         cfg = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/solrconfig.xml"))
 
+        # Read the schema file, insert the name and field list
         with open(schema, 'rb') as fh:
             schema_raw = fh.read()
-
-        with open(cfg, 'rb') as fh:
-            cfg_raw = fh.read()
 
         schema_raw = schema_raw.replace(b'REPLACE_NAME', self.name.upper().encode())
 
@@ -610,6 +614,20 @@ class SolrCollection(Collection):
             mapping = build_mapping(self.model_class.fields().values())
             schema_raw = schema_raw.replace(b'<!-- REPLACE_FIELDS -->', mapping.encode())
 
+        # Read the config file, add the fields we want to receive by default
+        with open(cfg, 'rb') as fh:
+            cfg_raw = fh.read()
+
+        if self.model_class:
+            field_list = self.model_class.flat_fields()
+            field_list = [name.encode() for name, field in field_list.items() if field.store]
+            field_list.append(self.datastore.ID.encode())
+            field_list = b','.join(field_list)
+            cfg_raw = cfg_raw.replace(b'DEFAULT_FIELD_LIST', field_list)
+        else:
+            cfg_raw = cfg_raw.replace(b'DEFAULT_FIELD_LIST', self.datastore.ID.encode())
+
+        # Zip up the combined configuration data
         zobj = InMemoryZip()
         zobj.append('managed-schema', schema_raw)
         zobj.append('solrconfig.xml', cfg_raw)

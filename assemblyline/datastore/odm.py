@@ -16,6 +16,26 @@ import arrow
 from datetime import datetime
 
 
+def flat_to_nested(data: dict):
+    sub_data = {}
+    nested_keys = []
+    for key, value in data.items():
+        if '.' in key:
+            child, sub_key = key.split('.', 1)
+            nested_keys.append(child)
+            try:
+                sub_data[child][sub_key] = value
+            except KeyError:
+                sub_data[child] = {sub_key: value}
+        else:
+            sub_data[key] = value
+
+    for key in nested_keys:
+        sub_data[key] = flat_to_nested(sub_data[key])
+
+    return sub_data
+
+
 class KeyMaskException(KeyError):
     pass
 
@@ -117,12 +137,20 @@ class Keyword(_Field):
     Examples: file hashes, service names, document ids
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.empty = ''
+
     def check(self, value):
         return str(value)
 
 
 class Text(_Field):
     """A field storing human readable text data."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.empty = ''
 
     def check(self, value):
         return str(value)
@@ -192,6 +220,7 @@ class List(_Field):
     def __init__(self, child_type, **kwargs):
         super().__init__(**kwargs)
         self.child_type = child_type
+        self.empty = []
 
     def check(self, value):
         return TypedList(self.child_type, *value)
@@ -203,14 +232,22 @@ class List(_Field):
         # Then pass through the initialized values on the list to the child type
         self.child_type.apply_defaults(self.index, self.store)
 
+    def fields(self):
+        out = dict()
+        for name, field_data in self.child_type.fields().items():
+            field_data = copy.deepcopy(field_data)
+            field_data.apply_defaults(self.index, self.store)
+            out[name] = field_data
+        return out
+
 
 class Compound(_Field):
     def __init__(self, field_type, **kwargs):
         super().__init__(**kwargs)
         self.child_type = field_type
 
-    def check(self, value):
-        return self.child_type(value)
+    def check(self, value, mask=None):
+        return self.child_type(value, mask=mask)
 
     def fields(self):
         out = dict()
@@ -224,7 +261,7 @@ class Compound(_Field):
 class Model:
     @classmethod
     def name(cls):
-        return cls.__name__.lower()
+        return cls.__name__
 
     @classmethod
     def fields(cls):
@@ -253,17 +290,31 @@ class Model:
                     out[(name + '.' + sub_name).strip('.')] = sub_data
         return out
 
-    def __init__(self, data: dict, mask: list = None):
-        self.id = data.pop('_id', data.pop('_id_', data.pop('_yz_rk', None)))
-
+    def __init__(self, data: dict, mask: list = tuple(), id=None):
+        if not hasattr(data, 'items'):
+            raise TypeError('Model must be constructed with dict like')
         self.odm_py_obj = {}
+        self.id = id
+
+        # Parse the field mask for sub models
+        mask_map = {}
+        if mask:
+            for entry in mask:
+                if '.' in entry:
+                    child, sub_key = entry.split('.', 1)
+                    try:
+                        mask_map[child].append(sub_key)
+                    except KeyError:
+                        mask_map[child] = [sub_key]
+                else:
+                    mask_map[entry] = None
 
         # Get the list of fields we expect this object to have
         fields = self.fields()
         self.odm_removed = {}
         if mask:
-            self.odm_removed = {k: v for k, v in fields.items() if k not in mask}
-            fields = {k: v for k, v in fields.items() if k in mask}
+            self.odm_removed = {k: v for k, v in fields.items() if k not in mask_map}
+            fields = {k: v for k, v in fields.items() if k in mask_map}
 
         # Trim out keys that actually belong to sub sections
         sub_data = {}
@@ -284,6 +335,10 @@ class Model:
 
         # Pass each value through it's respective validator, and store it
         for name, field_type in fields.items():
+            params = {}
+            if name in mask_map and mask_map[name]:
+                params['mask'] = mask_map[name]
+
             try:
                 value = data[name]
             except KeyError:
@@ -292,7 +347,7 @@ class Model:
                 else:
                     raise ValueError('{} expected a parameter named {}'.format(self.__class__.__name__, name))
 
-            self.odm_py_obj[name] = field_type.check(value)
+            self.odm_py_obj[name] = field_type.check(value, **params)
 
     def _json(self):
         """Convert the object back into primatives that can be json serialized.
@@ -318,11 +373,21 @@ class Model:
         if not isinstance(other, self.__class__):
             return False
 
+        if len(self.odm_py_obj) != len(other.odm_py_obj):
+            return False
+
         for name, field in self.fields().items():
+            if name in self.odm_removed:
+                continue
             if field.__get__(self) != field.__get__(other):
                 return False
 
         return True
+
+    def __repr__(self):
+        if self.id:
+            return f"<{self.name()} {self.id} {self.json()}>"
+        return f"<{self.name()} {self.json()}>"
 
 
 def model(index=None, store=None):
