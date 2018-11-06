@@ -31,6 +31,7 @@ definitions:
       image: sgaroncse/riak-kv:2.1.4-al
       memory: 1024
       environment:
+        CLUSTER_NAME: riakkv
         SOLR_HEAP: '-Xms128m -Xmx128m'
     zookeeper:
       image: zookeeper
@@ -40,3 +41,4 @@ definitions:
       memory: 512
       environment:
         ZK_HOST: 'localhost:2181'
+        SOLR_JAVA_MEM: '-Xms128m -Xmx128m'
