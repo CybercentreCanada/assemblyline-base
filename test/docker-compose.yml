@@ -16,7 +16,6 @@ services:
   riak:
     image: sgaroncse/riak-kv:2.1.4
     environment:
-      CLUSTER_NAME: riakkv
       SOLR_HEAP: '-Xms128m -Xmx128m'
     ports:
       - '8093:8093'
