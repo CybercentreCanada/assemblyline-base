@@ -30,6 +30,7 @@ services:
     image: solr:7.5-alpine
     environment:
       ZK_HOST: zookeeper:2181
+      SOLR_JAVA_MEM: '-Xms128m -Xmx128m'
     depends_on:
       - zookeeper
     ports:
