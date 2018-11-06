@@ -22,16 +22,16 @@ definitions:
       image: sgaroncse/elasticsearch:6.4.2
       memory: 512
       environment:
-        ES_JAVA_OPTS: '-Xms256m -Xmx256m'
+        ES_JAVA_OPTS: '-Xms128m -Xmx128m'
         DISCOVERY_TYPE: 'single-node'
     redis:
       image: redis
       memory: 512
     riak:
       image: sgaroncse/riak-kv:2.1.4
-      memory: 1024
+      memory: 512
       environment:
-        SOLR_HEAP: '-Xms256m -Xmx256m'
+        SOLR_HEAP: '-Xms128m -Xmx128m'
     zookeeper:
       image: zookeeper
       memory: 512
@@ -40,4 +40,4 @@ definitions:
       memory: 512
       environment:
         ZK_HOST: 'localhost:2181'
-        SOLR_JAVA_MEM: '-Xms256m -Xmx256m'
+        SOLR_JAVA_MEM: '-Xms128m -Xmx128m'
