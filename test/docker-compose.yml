@@ -14,7 +14,7 @@ services:
     ports:
       - '6379:6379'
   riak:
-    image: sgaroncse/riak-kv:2.1.4-al
+    image: sgaroncse/riak-kv:2.1.4
     environment:
       CLUSTER_NAME: riakkv
       SOLR_HEAP: '-Xms128m -Xmx128m'
