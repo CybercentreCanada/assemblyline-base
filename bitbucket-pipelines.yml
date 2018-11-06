@@ -31,7 +31,7 @@ definitions:
       image: redis
       memory: 512
     riak:
-      image: sgaroncse/riak-kv:2.1.4-al
+      image: sgaroncse/riak-kv:2.1.4
       memory: 1024
       environment:
         SOLR_HEAP: '-Xms256m -Xmx256m'
