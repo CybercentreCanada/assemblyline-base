@@ -279,7 +279,6 @@ class ESCollection(Collection):
                 }
             }
 
-        print('es query', query_body)
         try:
             # Run the query
             result = self.datastore.client.search(index=self.name, body=json.dumps(query_body))
@@ -332,7 +331,6 @@ class ESCollection(Collection):
             args.append(('filters', filters))
 
         result = self._search(args)
-        print('es result', result)
 
         docs = [self._format_output(doc, field_list) for doc in result['hits']['hits']]
         output = {

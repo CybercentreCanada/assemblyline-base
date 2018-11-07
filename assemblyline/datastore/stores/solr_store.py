@@ -339,7 +339,6 @@ class SolrCollection(Collection):
             args.append(('fq', access_control))
 
         data = self._search(args)
-        print('solr result', data)
         output = {
             "offset": int(data['response']['start']),
             "rows": int(rows),
