@@ -64,7 +64,7 @@ def setup_store(docstore, request):
     raise SetupException("Could not setup Datastore: %s" % docstore.__class__.__name__)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def solr_connection(request):
     from assemblyline.datastore.stores.solr_store import SolrStore
 
@@ -79,7 +79,7 @@ def solr_connection(request):
     return pytest.skip("Connection to the SOLR server failed. This test cannot be performed...")
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def es_connection(request):
     from assemblyline.datastore.stores.es_store import ESStore
 
@@ -94,7 +94,7 @@ def es_connection(request):
     return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def riak_connection(request):
     from assemblyline.datastore.stores.riak_store import RiakStore
 

@@ -5,7 +5,7 @@ from redis.exceptions import ConnectionError
 from threading import Thread
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def redis_connection():
     from assemblyline.remote.datatypes import get_client
     c = get_client(None, None, None, False)
