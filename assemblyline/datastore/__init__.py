@@ -200,16 +200,18 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def keys(self, access_control=None):
         """
-        This function should streams the keys of all the documents of this collection
-        from the datastore.
+        This function streams the keys of all the documents of this collection.
 
         :param access_control: access control parameter to limit the scope of the key scan
         :return: a generator of keys
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        for item in self.stream_search("%s:*" % self.datastore.ID, fl=self.datastore.ID, access_control=access_control):
+            try:
+                yield item.id
+            except AttributeError:
+                yield item[self.datastore.ID]
 
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):

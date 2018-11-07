@@ -12,22 +12,22 @@ from assemblyline.datastore import Collection
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     test_map = {
-        'test1': {'__expiry_ts__': dm('now-2d').isoformat().replace('+00:00', 'Z'),
-                  '__access_lvl__': 400, 'test1': 'hello'},
-        'test2': {'__expiry_ts__': dm('now-1d').isoformat().replace('+00:00', 'Z'),
-                  '__access_lvl__': 100, 'test2': 'hello'},
-        'test3': {'__expiry_ts__': dm('now').isoformat().replace('+00:00', 'Z'),
-                  '__access_lvl__': 200, 'test3': 'hello'},
-        'test4': {'__expiry_ts__': dm('now-2d').isoformat().replace('+00:00', 'Z'),
-                  '__access_lvl__': 400, 'test4': 'hello'},
-        'dict1': {'__expiry_ts__': dm('now-2d').isoformat().replace('+00:00', 'Z'),
-                  '__access_lvl__': 400, 'classification': 'U', 'test1': 'hello'},
-        'dict2': {'__expiry_ts__': dm('now').isoformat().replace('+00:00', 'Z'),
-                  '__access_lvl__': 100, 'classification': 'U', 'test2': 'hello'},
-        'dict3': {'__expiry_ts__': dm('now-3d').isoformat().replace('+00:00', 'Z'),
-                  '__access_lvl__': 200, 'classification': 'C', 'test3': 'hello'},
-        'dict4': {'__expiry_ts__': dm('now-1d').isoformat().replace('+00:00', 'Z'),
-                  '__access_lvl__': 400, 'classification': 'TS', 'test4': 'hello'},
+        'test1': {'expiry_dt': dm('now-2d/m').isoformat().replace('+00:00', '.001Z'),
+                  'lvl_i': 400, 'test1_s': 'hello'},
+        'test2': {'expiry_dt': dm('now-1d/m').isoformat().replace('+00:00', '.001Z'),
+                  'lvl_i': 100, 'test2_s': 'hello'},
+        'test3': {'expiry_dt': dm('now/m').isoformat().replace('+00:00', '.001Z'),
+                  'lvl_i': 200, 'test3_s': 'hello'},
+        'test4': {'expiry_dt': dm('now-2d/m').isoformat().replace('+00:00', '.001Z'),
+                  'lvl_i': 400, 'test4_s': 'hello'},
+        'dict1': {'expiry_dt': dm('now-2d/m').isoformat().replace('+00:00', '.001Z'),
+                  'lvl_i': 400, 'classification_s': 'U', 'test1_s': 'hello'},
+        'dict2': {'expiry_dt': dm('now/m').isoformat().replace('+00:00', '.001Z'),
+                  'lvl_i': 100, 'classification_s': 'U', 'test2_s': 'hello'},
+        'dict3': {'expiry_dt': dm('now-3d/m').isoformat().replace('+00:00', '.001Z'),
+                  'lvl_i': 200, 'classification_s': 'C', 'test3_s': 'hello'},
+        'dict4': {'expiry_dt': dm('now-1d/m').isoformat().replace('+00:00', '.001Z'),
+                  'lvl_i': 400, 'classification_s': 'TS', 'test4_s': 'hello'},
         'string': "A string!",
         'list': ['a', 'list', 'of', 'string', 100],
         'int': 69
@@ -240,49 +240,49 @@ def test_datastore_consistency(riak_connection: Collection,
         assert compare_output(fix_ids(s_tc.search('*:*', sort="%s asc" % s_tc.datastore.ID)),
                               fix_ids(e_tc.search('*:*', sort="%s asc" % e_tc.datastore.ID)),
                               fix_ids(r_tc.search('*:*', sort="%s asc" % r_tc.datastore.ID)))
-        assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
-                                          sort="%s asc" % s_tc.datastore.ID, fl='classification'),
-                              e_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
-                                          sort="%s asc" % e_tc.datastore.ID, fl='classification'),
-                              r_tc.search('*:*', offset=1, rows=1, filters="__access_lvl__:400",
-                                          sort="%s asc" % r_tc.datastore.ID, fl='classification'))
-        ss_s_list = list(s_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
-        ss_e_list = list(e_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
-        ss_r_list = list(r_tc.stream_search('classification:*', filters="__access_lvl__:400", fl='classification'))
+        assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
+                                          sort="%s asc" % s_tc.datastore.ID, fl='classification_s'),
+                              e_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
+                                          sort="%s asc" % e_tc.datastore.ID, fl='classification_s'),
+                              r_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
+                                          sort="%s asc" % r_tc.datastore.ID, fl='classification_s'))
+        ss_s_list = list(s_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
+        ss_e_list = list(e_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
+        ss_r_list = list(r_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
         assert compare_output(ss_s_list, ss_e_list, ss_r_list)
 
         assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(r_tc.keys())))
-        assert compare_output(s_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
-                              e_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2),
-                              r_tc.histogram('__access_lvl__', 0, 1000, 100, mincount=2))
+        assert compare_output(s_tc.histogram('lvl_i', 0, 1000, 100, mincount=2),
+                              e_tc.histogram('lvl_i', 0, 1000, 100, mincount=2),
+                              r_tc.histogram('lvl_i', 0, 1000, 100, mincount=2))
 
-        h_s = s_tc.histogram('__expiry_ts__',
+        h_s = s_tc.histogram('expiry_dt',
                              '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
                              '{n}+10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
                              '+1{d}'.format(d=s_tc.datastore.day, mincount=2))
-        h_e = e_tc.histogram('__expiry_ts__',
+        h_e = e_tc.histogram('expiry_dt',
                              '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
                              '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
                              '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
-        h_r = r_tc.histogram('__expiry_ts__',
+        h_r = r_tc.histogram('expiry_dt',
                              '{n}-10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
                              '{n}+10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
                              '+1{d}'.format(d=r_tc.datastore.day, mincount=2))
         assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_r))
-        assert compare_output(s_tc.field_analysis('classification'),
-                              e_tc.field_analysis('classification'),
-                              r_tc.field_analysis('classification'))
+        assert compare_output(s_tc.field_analysis('classification_s'),
+                              e_tc.field_analysis('classification_s'),
+                              r_tc.field_analysis('classification_s'))
 
-        assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification'),
-                              e_tc.grouped_search('__access_lvl__', fl='classification'),
-                              r_tc.grouped_search('__access_lvl__', fl='classification'))
+        assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s'),
+                              e_tc.grouped_search('lvl_i', fl='classification_s'),
+                              r_tc.grouped_search('lvl_i', fl='classification_s'))
 
-        assert compare_output(s_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
-                                                  sort="__access_lvl__ desc"),
-                              e_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
-                                                  sort="__access_lvl__ desc"),
-                              r_tc.grouped_search('__access_lvl__', fl='classification', offset=1, rows=2,
-                                                  sort="__access_lvl__ desc"))
+        assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
+                                                  sort="lvl_i desc"),
+                              e_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
+                                                  sort="lvl_i desc"),
+                              r_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
+                                                  sort="lvl_i desc"))
 
         # TODO: fields are not of the same type in-between datastores does that matter?
         #       will print output for now without failing the test

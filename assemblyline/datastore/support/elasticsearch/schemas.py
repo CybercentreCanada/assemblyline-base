@@ -41,15 +41,147 @@ default_index = {
 default_mapping = {
     'dynamic': False,
     'properties': {
-
-        # <!-- AL Access fields  -->
-        'classification': {'type': 'keyword', 'store': True},
-        '__expiry_ts__': {'type': 'date', 'format': 'date_optional_time||epoch_millis'},
-        '__access_lvl__': {'type': 'long'},
-        '__access_req__': {'type': 'keyword'},
-        '__access_grp2__': {'type': 'keyword', 'null_value': '__EMPTY__'},
-        '__access_grp1__': {'type': 'keyword', 'null_value': '__EMPTY__'},
-
         '__text__': {'type': 'text', 'analyzer': 'text_general'},
     }
 }
+
+default_dynamic_templates = [
+    {
+        "int": {
+            "path_match": "*_i",
+            "mapping": {
+                "type": "integer",
+                "store": True
+            }
+        }
+    },
+    {
+        "ints": {
+            "path_match": "*_is",
+            "mapping": {
+                "type": "integer",
+                "store": True
+            }
+        }
+    },
+    {
+        "long": {
+            "path_match": "*_l",
+            "mapping": {
+                "type": "long",
+                "store": True
+            }
+        }
+    },
+    {
+        "longs": {
+            "path_match": "*_ls",
+            "mapping": {
+                "type": "long",
+                "store": True
+            }
+        }
+    },
+    {
+        "double": {
+            "path_match": "*_d",
+            "mapping": {
+                "type": "float",
+                "store": True
+            }
+        }
+    },
+    {
+        "doubles": {
+            "path_match": "*_ds",
+            "mapping": {
+                "type": "float",
+                "store": True
+            }
+        }
+    },
+    {
+        "float": {
+            "path_match": "*_f",
+            "mapping": {
+                "type": "float",
+                "store": True
+            }
+        }
+    },
+    {
+        "floats": {
+            "path_match": "*_fs",
+            "mapping": {
+                "type": "float",
+                "store": True
+            }
+        }
+    },
+    {
+        "string": {
+            "path_match": "*_s",
+            "mapping": {
+                "type": "keyword",
+                "store": True
+            }
+        }
+    },
+    {
+        "strings": {
+            "path_match": "*_ss",
+            "mapping": {
+                "type": "keyword",
+                "store": True
+            }
+        }
+    },
+    {
+        "text": {
+            "path_match": "*_t",
+            "mapping": {
+                'type': 'text',
+                'analyzer': 'text_general',
+                "store": True
+            }
+        }
+    },
+    {
+        "boolean": {
+            "path_match": "*_b",
+            "mapping": {
+                'type': 'boolean',
+                "store": True
+            }
+        }
+    },
+    {
+        "booleans": {
+            "path_match": "*_bs",
+            "mapping": {
+                'type': 'boolean',
+                "store": True
+            }
+        }
+    },
+    {
+        "date": {
+            "path_match": "*_dt",
+            "mapping": {
+                'type': 'date',
+                'format': 'date_optional_time||epoch_millis',
+                "store": True
+            }
+        }
+    },
+    {
+        "date": {
+            "path_match": "*_dts",
+            "mapping": {
+                'type': 'date',
+                'format': 'date_optional_time||epoch_millis',
+                "store": True
+            }
+        }
+    }
+]

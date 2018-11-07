@@ -9,7 +9,8 @@ from copy import deepcopy
 
 from assemblyline.datastore import Collection, collection_reconnect, BaseStore, SearchException, \
     SearchRetryException, log
-from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping
+from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
+    default_dynamic_templates
 from assemblyline.datastore.support.elasticsearch.build import build_mapping
 from assemblyline.datastore import odm
 
@@ -22,11 +23,11 @@ def _strip_lists(model, data):
     fields = model.fields()
     out = {}
     for key, value in odm.flat_to_nested(data).items():
-        type = fields[key]
-        if isinstance(type, odm.List):
+        doc_type = fields[key]
+        if isinstance(doc_type, odm.List):
             out[key] = value
-        elif isinstance(type, odm.Compound):
-            out[key] = _strip_lists(type.child_type, value)
+        elif isinstance(doc_type, odm.Compound):
+            out[key] = _strip_lists(doc_type.child_type, value)
         else:
             out[key] = value[0]
     return out
@@ -145,7 +146,7 @@ class ESCollection(Collection):
             if not isinstance(data, dict):
                 saved_data = {'__non_doc_raw__': data}
             else:
-                saved_data = data
+                saved_data = deepcopy(data)
 
         saved_data[self.datastore.SORT_ID] = key
 
@@ -175,11 +176,11 @@ class ESCollection(Collection):
 
             if '_source' in source:
                 source['_source'].pop(self.datastore.SORT_ID, None)
-                return self.model_class(source['_source'], id=item_id)
+                return self.model_class(source['_source'], docid=item_id)
 
             source.pop(self.datastore.SORT_ID, None)
             source = _strip_lists(self.model_class, source)
-            return self.model_class(source, mask=fields, id=item_id)
+            return self.model_class(source, mask=fields, docid=item_id)
 
         if isinstance(fields, str):
             fields = fields
@@ -196,8 +197,6 @@ class ESCollection(Collection):
 
     def _cleanup_search_result(self, item, fields=None):
         if isinstance(item, dict):
-            item.pop(self.datastore.ID, None)
-            item.pop(self.datastore.SORT_ID, None)
             item.pop('_source', None)
             item.pop('_version', None)
             item.pop(self.DEFAULT_SEARCH_FIELD, None)
@@ -262,7 +261,6 @@ class ESCollection(Collection):
                 query_body["aggregations"][field] = {
                     "terms": {
                         "field": field,
-                        "missing": "",
                         "min_doc_count": parsed_values['facet_mincount']
                     }
                 }
@@ -386,10 +384,6 @@ class ESCollection(Collection):
         for value in iterator:
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl)
-
-    def keys(self, access_control=None):
-        for item in self.stream_search("%s:*" % self.datastore.ID, fl=self.datastore.ID, access_control=access_control):
-            yield item.id
 
     @collection_reconnect(log)
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
@@ -561,11 +555,16 @@ class ESCollection(Collection):
             mappings = deepcopy(default_mapping)
             if self.model_class:
                 mappings['properties'] = build_mapping(self.model_class.fields().values())
-                mappings['properties'][self.datastore.SORT_ID] = {
-                    "store": True,
-                    "doc_values": True,
-                    "type": 'keyword'
-                }
+            else:
+                mappings['dynamic'] = True
+                mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
+
+            mappings['properties'][self.datastore.SORT_ID] = {
+                "store": True,
+                "doc_values": True,
+                "type": 'keyword'
+            }
+
             index['mappings'][self.name] = mappings
             self.datastore.client.indices.create(self.name, index)
         self._check_fields()

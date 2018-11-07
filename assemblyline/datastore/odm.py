@@ -40,6 +40,10 @@ class KeyMaskException(KeyError):
     pass
 
 
+class UndefinedFunction(Exception):
+    pass
+
+
 class _Field:
     def __init__(self, name=None, index=None, store=None, copyto=None, default=None, default_set=None):
         self.index = index
@@ -86,6 +90,7 @@ class _Field:
 
         >>> expiry = Date()
         >>>
+        >>> # noinspection PyUnusedLocal
         >>> @expiry.setter
         >>> def expiry(self, assign, value):
         >>>     assert value
@@ -110,6 +115,10 @@ class _Field:
         """
         return {'': self}
 
+    def check(self, value, **kwargs):
+        raise UndefinedFunction("This function is not defined in the default field. "
+                                "Each fields has to have their own definition")
+
 
 class _DeletedField:
     pass
@@ -118,7 +127,7 @@ class _DeletedField:
 class Date(_Field):
     """A field storing a datetime value."""
 
-    def check(self, value):
+    def check(self, value, **kwargs):
         # Use the arrow library to transform ??? to a datetime
         return arrow.get(value).datetime
 
@@ -126,7 +135,7 @@ class Date(_Field):
 class Boolean(_Field):
     """A field storing a boolean value."""
 
-    def check(self, value):
+    def check(self, value, **kwargs):
         return bool(value)
 
 
@@ -141,7 +150,7 @@ class Keyword(_Field):
         super().__init__(**kwargs)
         self.empty = ''
 
-    def check(self, value):
+    def check(self, value, **kwargs):
         return str(value)
 
 
@@ -152,28 +161,28 @@ class Text(_Field):
         super().__init__(**kwargs)
         self.empty = ''
 
-    def check(self, value):
+    def check(self, value, **kwargs):
         return str(value)
 
 
 class IndexText(_Field):
     """A special field with special processing rules to simplify searching."""
 
-    def check(self, value):
+    def check(self, value, **kwargs):
         return str(value)
 
 
 class Integer(_Field):
     """A field storing an integer value."""
 
-    def check(self, value):
+    def check(self, value, **kwargs):
         return int(value)
 
 
 class Float(_Field):
     """A field storing a floating point value."""
 
-    def check(self, value):
+    def check(self, value, **kwargs):
         return float(value)
 
 
@@ -192,9 +201,9 @@ class Float(_Field):
 
 class TypedList(list):
 
-    def __init__(self, type, *items):
-        super().__init__([type.check(el) for el in items])
-        self.type = type
+    def __init__(self, type_p, *items):
+        super().__init__([type_p.check(el) for el in items])
+        self.type = type_p
 
     def append(self, item):
         super().append(self.type.check(item))
@@ -222,7 +231,7 @@ class List(_Field):
         self.child_type = child_type
         self.empty = []
 
-    def check(self, value):
+    def check(self, value, **kwargs):
         return TypedList(self.child_type, *value)
 
     def apply_defaults(self, index, store):
@@ -290,11 +299,11 @@ class Model:
                     out[(name + '.' + sub_name).strip('.')] = sub_data
         return out
 
-    def __init__(self, data: dict, mask: list = tuple(), id=None):
+    def __init__(self, data: dict, mask: list = tuple(), docid=None):
         if not hasattr(data, 'items'):
             raise TypeError('Model must be constructed with dict like')
         self.odm_py_obj = {}
-        self.id = id
+        self.id = docid
 
         # Parse the field mask for sub models
         mask_map = {}

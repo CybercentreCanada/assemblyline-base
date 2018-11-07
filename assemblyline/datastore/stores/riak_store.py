@@ -23,6 +23,26 @@ def utf8safe_encoder(obj):
 class RiakCollection(SolrCollection):
     MULTIGET_MAX_RETRY = 5
     DEFAULT_SORT = "_yz_id asc"
+    DEFAULT_CATCH_ALL_FIELDS = """
+    <dynamicField name="*_i"  type="int"    indexed="true"  stored="true"  multiValued="false"/>
+    <dynamicField name="*_is" type="int"    indexed="true"  stored="true"  multiValued="true"/>
+    <dynamicField name="*_l"  type="long"   indexed="true"  stored="true"  multiValued="false"/>
+    <dynamicField name="*_ls" type="long"   indexed="true"  stored="true"  multiValued="true"/>
+    <dynamicField name="*_d"  type="double" indexed="true"  stored="true"  multiValued="false"/>
+    <dynamicField name="*_ds" type="double" indexed="true"  stored="true"  multiValued="true"/>
+    <dynamicField name="*_f"  type="float"  indexed="true"  stored="true"  multiValued="false"/>
+    <dynamicField name="*_fs" type="float"  indexed="true"  stored="true"  multiValued="true"/>
+
+    <dynamicField name="*_s"  type="string"  indexed="true"  stored="true" multiValued="false"/>
+    <dynamicField name="*_ss" type="string"  indexed="true"  stored="true" multiValued="true"/>
+
+    <dynamicField name="*_t"  type="text_general" indexed="true"  stored="false" multiValued="false"/>
+
+    <dynamicField name="*_b"  type="boolean" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="*_bs" type="boolean" indexed="true" stored="true"  multiValued="true"/>
+    <dynamicField name="*_dt"  type="date"    indexed="true"  stored="true" multiValued="false"/>
+    <dynamicField name="*_dts" type="date"    indexed="true"  stored="true" multiValued="true"/>
+     """
 
     def __init__(self, datastore, name, model_class=None, solr_port=8093, riak_http_port=8098):
         self.riak_bucket = datastore.client.bucket(name)
@@ -66,7 +86,6 @@ class RiakCollection(SolrCollection):
         while not done:
             for bucket_item in self.riak_bucket.multiget(temp_keys):
                 if not isinstance(bucket_item, tuple):
-                    item_data = None
                     try:
                         item_data = RiakCollection.get_data_from_riak_item(bucket_item)
                     except DataStoreException:
@@ -121,9 +140,7 @@ class RiakCollection(SolrCollection):
     def delete(self, key):
         self.riak_bucket.delete(key)
 
-    def _cleanup_search_result(self, item, fields):
-        # TODO: This could just be validate using the model?
-
+    def _cleanup_search_result(self, item, fields=None):
         if isinstance(item, dict):
             item.pop('_version_', None)
             item.pop('_yz_id', None)
@@ -142,13 +159,7 @@ class RiakCollection(SolrCollection):
                 if name in fields and name not in item:
                     item[name] = field.empty
 
-            if '_source_' in item:
-                return self.model_class(item['_source_'], id=item_id)
-            return self.model_class(item, mask=fields, id=item_id)
-
-        if isinstance(item, dict):
-            item.pop('_yz_rk', None)
-            item.pop('_source_', None)
+            return self.model_class(item, mask=fields, docid=item_id)
 
         return item
 
@@ -179,11 +190,6 @@ class RiakCollection(SolrCollection):
         return {step: count for step, count in ret_val.items() if count >= mincount}
 
     @collection_reconnect(log)
-    def keys(self, access_control=None):
-        for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
-            yield item.id
-
-    @collection_reconnect(log)
     def fields(self, port=8093):
         return super().fields(self.solr_port)
 
@@ -211,6 +217,8 @@ class RiakCollection(SolrCollection):
             if self.model_class:
                 mapping = build_mapping(self.model_class.fields().values())
                 schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', mapping)
+            else:
+                schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', self.DEFAULT_CATCH_ALL_FIELDS)
 
             # TODO: Check if schema, index and bucket already exist before creating them blindly??!
             self.datastore.client.create_search_schema(schema=self.name, content=schema_raw)

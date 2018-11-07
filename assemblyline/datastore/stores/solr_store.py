@@ -37,6 +37,27 @@ class SolrCollection(Collection):
         "_default_": 1000
     }
 
+    DEFAULT_CATCH_ALL_FIELDS = """
+    <dynamicField name="*_i"  type="pint"     indexed="true"  stored="true"/>
+    <dynamicField name="*_is" type="pints"    indexed="true"  stored="true"/>
+    <dynamicField name="*_l"  type="plong"    indexed="true"  stored="true"/>
+    <dynamicField name="*_ls" type="plongs"   indexed="true"  stored="true"/>
+    <dynamicField name="*_d"  type="pdouble"  indexed="true"  stored="true"/>
+    <dynamicField name="*_ds" type="pdoubles" indexed="true"  stored="true"/>
+    <dynamicField name="*_f"  type="pfloat"   indexed="true"  stored="true"/>
+    <dynamicField name="*_fs" type="pfloats"  indexed="true"  stored="true"/>
+
+    <dynamicField name="*_s"  type="string"   indexed="true"  stored="true"/>
+    <dynamicField name="*_ss" type="strings"  indexed="true"  stored="true"/>
+
+    <dynamicField name="*_t"  type="text_general" indexed="true"  stored="false"/>
+
+    <dynamicField name="*_b"   type="boolean"   indexed="true"  stored="true"/>
+    <dynamicField name="*_bs"  type="booleans"  indexed="true"  stored="true"/>
+    <dynamicField name="*_dt"  type="pdate"     indexed="true"  stored="true"/>
+    <dynamicField name="*_dts" type="pdates"    indexed="true"  stored="true"/>
+     """
+
     def __init__(self, datastore, name, model_class=None, api_base="solr", replication_factor=1, num_shards=1):
         self.api_base = api_base
         self.num_shards = replication_factor
@@ -225,8 +246,6 @@ class SolrCollection(Collection):
         return None
 
     def _cleanup_search_result(self, item, fields=None):
-        # TODO: This could just be validate using the model?
-
         if self.model_class:
             item_id = item.pop(self.datastore.ID, None)
             if not fields or '*' in fields:
@@ -241,9 +260,9 @@ class SolrCollection(Collection):
             item.pop('_version_', None)
             if '_source_' in item:
                 data = json.loads(item['_source_'])
-                return self.model_class(data, id=item_id)
+                return self.model_class(data, docid=item_id)
             # item = strip_lists(self.model_class, item)
-            return self.model_class(item, mask=fields, id=item_id)
+            return self.model_class(item, mask=fields, docid=item_id)
 
         if isinstance(item, dict):
             item.pop('_source_', None)
@@ -422,10 +441,6 @@ class SolrCollection(Collection):
                     yield_done = True
                 time.sleep(0.01)
 
-    def keys(self, access_control=None):
-        for item in self.stream_search("*", fl=self.datastore.ID, access_control=access_control):
-            yield item.id  # [self.datastore.ID]
-
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
         """Build a histogram of `query` data over `field`"""
 
@@ -470,6 +485,7 @@ class SolrCollection(Collection):
             ("facet.field", field),
             ("facet.limit", limit),
             ("facet.mincount", min_count),
+            ("facet.missing", "false"),
             ('wt', 'json'),
             ('df', '__text__')
         ]
@@ -496,7 +512,9 @@ class SolrCollection(Collection):
             args.append(('fq', access_control))
 
         result = self._search(args)
-        return dict(chunked_list(result["facet_counts"]["facet_fields"][field], 2))
+        output = dict(chunked_list(result["facet_counts"]["facet_fields"][field], 2))
+        output.pop("", None)
+        return output
 
     def grouped_search(self, field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None):
@@ -555,8 +573,6 @@ class SolrCollection(Collection):
     # noinspection PyBroadException
     @collection_reconnect(log)
     def fields(self, port=8983):
-        # TODO: map fields using the model so they are consistent throughout all datastores?
-
         session, host = self._get_session(port=port)
 
         url = f"http://{host}/{self.api_base}/{self.name}/schema/?wt=json"
@@ -604,14 +620,16 @@ class SolrCollection(Collection):
         cfg = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/solrconfig.xml"))
 
         # Read the schema file, insert the name and field list
-        with open(schema, 'rb') as fh:
+        with open(schema) as fh:
             schema_raw = fh.read()
 
-        schema_raw = schema_raw.replace(b'REPLACE_NAME', self.name.upper().encode())
+        schema_raw = schema_raw.replace('REPLACE_NAME', self.name.upper())
 
         if self.model_class:
             mapping = build_mapping(self.model_class.fields().values())
-            schema_raw = schema_raw.replace(b'<!-- REPLACE_FIELDS -->', mapping.encode())
+            schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', mapping)
+        else:
+            schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', self.DEFAULT_CATCH_ALL_FIELDS)
 
         # Read the config file, add the fields we want to receive by default
         with open(cfg, 'rb') as fh:
@@ -624,15 +642,13 @@ class SolrCollection(Collection):
             field_list = b','.join(field_list)
             cfg_raw = cfg_raw.replace(b'DEFAULT_FIELD_LIST', field_list)
         else:
-            cfg_raw = cfg_raw.replace(b'DEFAULT_FIELD_LIST', self.datastore.ID.encode())
+            cfg_raw = cfg_raw.replace(b'DEFAULT_FIELD_LIST', b"*")
 
         # Zip up the combined configuration data
         zobj = InMemoryZip()
         zobj.append('managed-schema', schema_raw)
         zobj.append('solrconfig.xml', cfg_raw)
         return zobj.read()
-
-        return None
 
     @collection_reconnect(log)
     def _configset_exist(self, session=None, host=None):
@@ -694,8 +710,8 @@ class SolrCollection(Collection):
             log.warning(f"Collection {self.name.upper()} does not exists. "
                         "Creating it now...")
             create_url = f"http://{host}/{self.api_base}/admin/collections?action=CREATE" \
-                         f"&name={self.name}&numShards={self.num_shards}&replicationFactor={self.replication_factor}" \
-                         f"&collection.configName={self.name}"
+                f"&name={self.name}&numShards={self.num_shards}&replicationFactor={self.replication_factor}" \
+                f"&collection.configName={self.name}"
             res = session.get(create_url, headers={"content-type": "application/json"})
 
             if not res.ok:
