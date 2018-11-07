@@ -22,11 +22,12 @@ class BModel(odm.Model):
 
 @odm.model(index=True, store=True)
 class AModel(odm.Model):
-    flavour = odm.Text()
+    flavour = odm.Text(copyto='features')
     height = odm.Integer()
     birthday = odm.Date()
-    tags = odm.List(odm.Keyword(), default=[])
+    tags = odm.List(odm.Keyword(), default=[], copyto='features')
     size = odm.Compound(BModel, default={'depth': 100, 'width': 100})
+    features = odm.List(odm.Text(), default=[])
 
 
 with warnings.catch_warnings():
@@ -34,7 +35,8 @@ with warnings.catch_warnings():
     test_map = {
         'test1': AModel(dict(tags=['silly'], flavour='chocolate', height=100, birthday=dm('now-2d'))),
         'test2': AModel(dict(tags=['cats'], flavour='A little dry', height=180, birthday=dm('now-1d'))),
-        'test3': AModel(dict(tags=['silly'], flavour='Red', height=140, birthday=dm('now'), size={'depth': 1, 'width': 1})),
+        'test3': AModel(dict(tags=['silly'], flavour='Red', height=140, birthday=dm('now'),
+                             size={'depth': 1, 'width': 1})),
         'test4': AModel(dict(tags=['cats'], flavour='Bugs ++', height=30, birthday='2018-10-30T17:48:48+00:00')),
         'dict1': AModel(dict(tags=['cats'], flavour='A--', height=300, birthday='2018-10-30T17:48:48Z')),
         'dict2': AModel(dict(tags=[], flavour='100%', height=90, birthday=datetime.utcnow())),
@@ -148,14 +150,20 @@ def collection_test(collection):
 
     col.search('*:*', sort="%s asc" % col.datastore.ID)
 
+    # reading list fields on a search
     assert len(col.search(f'{col.datastore.ID}: dict3')['items'][0].tags) == 2
     assert len(col.search(f'{col.datastore.ID}: dict4')['items'][0].tags) == 3
 
+    # reading single fields on a search
     assert col.search(f'{col.datastore.ID}: test1')['items'][0].flavour == 'chocolate'
 
+    # Make sure sorting on the ID key works right
     forward = col.search('*', sort=f'{col.datastore.ID} asc')
     reverse = col.search('*', sort=f'{col.datastore.ID} desc')
     assert forward['items'] == list(reversed(reverse['items']))
+
+    # Search on a copyto field
+    assert col.search('features: chocolate')['total'] == 1
 
 
 # noinspection PyShadowingNames

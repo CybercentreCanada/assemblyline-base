@@ -29,6 +29,9 @@ def build_mapping(field_data, prefix=None, mappings=None):
             mappings[name]['enabled'] = False
         if field.store:
             mappings[name]['store'] = True
+        if field.copyto:
+            assert len(field.copyto) == 1
+            mappings[name]['copy_to'] = field.copyto[0]
 
     # Fill in the sections
     for field in field_data:

@@ -40,6 +40,8 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
         index = 'true' if field.index else 'false'
         store = 'true' if field.store else 'false'
         mappings.append(f'<field name="{name}" type="{type}" indexed="{index}" stored="{store}" {fields}/>')
+        for other_field in field.copyto:
+            mappings.append(f'<copyField source="{name}" dest="{other_field}"/>')
 
     # Fill in the sections
     for field in field_data:
