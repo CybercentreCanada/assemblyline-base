@@ -240,6 +240,21 @@ def test_create_list():
     with pytest.raises(ValueError):
         test.values[0] = 'cats'
 
+    test.values += range(5)
+    assert len(test.values) == 8
+
+    test.values.extend(range(2))
+    assert len(test.values) == 10
+
+    test.values.insert(0, -100)
+    assert len(test.values) == 11
+    assert test.values[0] == -100
+
+    test.values[0:5] = range(5)
+    assert len(test.values) == 11
+    for ii in range(5):
+        assert test.values[ii] == ii
+
 
 def test_create_list_compounds():
     @model()

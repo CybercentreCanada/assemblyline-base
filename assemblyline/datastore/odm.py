@@ -214,13 +214,12 @@ class TypedList(list):
     def insert(self, index, item):
         super().insert(index, self.type.check(item))
 
-    def __iconcat__(self, sequence):
-        super().__iconcat__(self.type.check(item) for item in sequence)
-
     def __setitem__(self, index, item):
-        super().__setitem__(index, self.type.check(item))
-
-    # __setslice__
+        if isinstance(index, slice):
+            item = [self.type.check(val) for val in item]
+            super().__setitem__(index, item)
+        else:
+            super().__setitem__(index, self.type.check(item))
 
 
 class List(_Field):
