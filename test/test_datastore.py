@@ -30,7 +30,11 @@ with warnings.catch_warnings():
                   'lvl_i': 400, 'classification_s': 'TS', 'test4_s': 'hello'},
         'string': "A string!",
         'list': ['a', 'list', 'of', 'string', 100],
-        'int': 69
+        'int': 69,
+        'delete1': {'delete_b': True, 'lvl_i': 100},
+        'delete2': {'delete_b': True, 'lvl_i': 300},
+        'delete3': {'delete_b': True, 'lvl_i': 400},
+        'delete4': {'delete_b': True, 'lvl_i': 200}
     }
 
 
@@ -133,6 +137,11 @@ def test_solr(solr_connection: Collection):
             test_keys.remove(k)
         assert len(test_keys) == 0
 
+        key_len = len(list(s_tc.keys()))
+        s_tc.delete_matching("delete_b:true")
+        s_tc.commit()
+        assert key_len - 4 == len(list(s_tc.keys()))
+
 
 # noinspection PyShadowingNames
 def test_es(es_connection: Collection):
@@ -158,6 +167,11 @@ def test_es(es_connection: Collection):
             test_keys.remove(k)
         assert len(test_keys) == 0
 
+        key_len = len(list(s_tc.keys()))
+        s_tc.delete_matching("delete_b:true")
+        s_tc.commit()
+        assert key_len - 4 == len(list(s_tc.keys()))
+
 
 # noinspection PyShadowingNames
 def test_riak(riak_connection: Collection):
@@ -182,6 +196,11 @@ def test_riak(riak_connection: Collection):
         for k in s_tc.keys():
             test_keys.remove(k)
         assert len(test_keys) == 0
+
+        key_len = len(list(s_tc.keys()))
+        s_tc.delete_matching("delete_b:true")
+        s_tc.commit()
+        assert key_len - 4 == len(list(s_tc.keys()))
 
 
 # noinspection PyShadowingNames

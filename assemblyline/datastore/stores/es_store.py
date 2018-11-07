@@ -165,6 +165,11 @@ class ESCollection(Collection):
         except elasticsearch.NotFoundError:
             return True
 
+    @collection_reconnect(log)
+    def delete_matching(self, query):
+        # TODO: use elasticsearch delete by query
+        super().delete_matching(query)
+
     def _format_output(self, result, fields=None):
         source = result.get('fields', {})
 

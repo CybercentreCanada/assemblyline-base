@@ -197,6 +197,19 @@ class SolrCollection(Collection):
         res = session.post(url, data=json.dumps(data), headers={"content-type": "application/json"})
         return res.ok
 
+    @collection_reconnect(log)
+    def delete_matching(self, query):
+        data = {"delete": {"query": query}}
+        commit_within = int(self.COMMIT_WITHIN_MAP.get(self.name, None) or self.COMMIT_WITHIN_MAP["_default_"])
+
+        session, host = self._get_session()
+        url = "http://{host}/{api_base}/{core}/update?commitWithin={cw}&overwrite=true".format(host=host,
+                                                                                               api_base=self.api_base,
+                                                                                               core=self.name,
+                                                                                               cw=commit_within)
+        res = session.post(url, data=json.dumps(data), headers={"content-type": "application/json"})
+        return res.ok
+
     def _valid_solr_param(self, key, value):
         msg = "Invalid parameter (%s=%s). Should be between %d and %d"
 
