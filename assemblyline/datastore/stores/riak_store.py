@@ -135,6 +135,7 @@ class RiakCollection(SolrCollection):
             data = data._json()
         item = self.riak_bucket.new(key=key, data=data, content_type='application/json')
         item.store()
+        return True
 
     @collection_reconnect(log)
     def delete(self, key):

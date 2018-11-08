@@ -184,6 +184,8 @@ class SolrCollection(Collection):
             except Exception:
                 raise DataStoreException(res.text)
 
+        return True
+
     @collection_reconnect(log)
     def delete(self, key):
         data = {"delete": {"id": key}}

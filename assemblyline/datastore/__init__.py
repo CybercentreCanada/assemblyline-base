@@ -8,8 +8,18 @@ from datemath.helpers import DateMathException
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, \
     SearchRetryException
 from assemblyline.datastore.reconnect import collection_reconnect
+from assemblyline.remote.datatypes.lock import Lock
 
 log = logging.getLogger('assemblyline.datastore')
+
+
+def get_object(base, key):
+    splitted = key.split(".", 1)
+    if len(splitted) == 1:
+        return base, key
+    else:
+        current, child = splitted
+        return get_object(base[current], child)
 
 
 class Collection(object):
@@ -19,6 +29,18 @@ class Collection(object):
     DEFAULT_ROW_SIZE = 25
     FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
     MAX_FACET_LIMIT = 100
+    UPDATE_SET = "SET"
+    UPDATE_INC = "INC"
+    UPDATE_DEC = "DEC"
+    UPDATE_APPEND = "APPEND"
+    UPDATE_REMOVE = "REMOVE"
+    UPDATE_OPERATIONS = [
+        UPDATE_APPEND,
+        UPDATE_DEC,
+        UPDATE_INC,
+        UPDATE_REMOVE,
+        UPDATE_SET
+    ]
 
     def __init__(self, datastore, name, model_class=None):
         self.datastore = datastore
@@ -157,6 +179,71 @@ class Collection(object):
         :return: True is delete successful
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
+    @collection_reconnect(log)
+    def update(self, key, operations):
+        """
+        This function performs an atomic update on some fields from the
+        underlying documents referenced by the id using a list of operations.
+
+        Operations supported by the update function are the following:
+        INTEGER ONLY: Increase and decreased value
+        LISTS ONLY: Append and remove items
+        ALL TYPES: Set value
+
+        :param key: ID of the document to modify
+        :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
+        :return: True is update successful
+        """
+        if self.model_class:
+            fields = self.model_class.flat_fields()
+        else:
+            fields = None
+
+        for op, doc_key, value in operations:
+            if op not in self.UPDATE_OPERATIONS:
+                raise DataStoreException(f"Not a valid Update Operation: {op}")
+
+            if fields is not None:
+                if doc_key not in fields:
+                    raise DataStoreException(f"Invalid field for model: {doc_key}")
+
+                field = fields[doc_key]
+                if op in [self.UPDATE_APPEND, self.UPDATE_REMOVE]:
+                    try:
+                        if value != field.child_type.check(value):
+                            raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+                    except (ValueError, TypeError, AttributeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in [self.UPDATE_SET, self.UPDATE_DEC, self.UPDATE_INC]:
+                    try:
+                        if value != field.check(value):
+                            raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+                    except (ValueError, TypeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+        return self._update(key, operations)
+
+    @collection_reconnect(log)
+    def _update(self, key, operations):
+        with Lock(f'collection-{self.name}-update-{key}', 5):
+            data = self.get(key)
+
+            for op, doc_key, value in operations:
+                obj, cur_key = get_object(data, doc_key)
+                if op == self.UPDATE_SET:
+                    obj[cur_key] = value
+                elif op == self.UPDATE_APPEND:
+                    obj[cur_key].append(value)
+                elif op == self.UPDATE_REMOVE:
+                    obj[cur_key].remove(value)
+                elif op == self.UPDATE_INC:
+                    obj[cur_key] += value
+                elif op == self.UPDATE_DEC:
+                    obj[cur_key] -= value
+
+            return self.save(key, data)
 
     @collection_reconnect(log)
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,

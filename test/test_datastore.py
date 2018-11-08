@@ -31,6 +31,7 @@ with warnings.catch_warnings():
         'string': "A string!",
         'list': ['a', 'list', 'of', 'string', 100],
         'int': 69,
+        'to_update': {'counters': {'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
         'delete1': {'delete_b': True, 'lvl_i': 100},
         'delete2': {'delete_b': True, 'lvl_i': 300},
         'delete3': {'delete_b': True, 'lvl_i': 400},
@@ -114,6 +115,7 @@ def riak_connection(request):
 
 
 def _perform_single_datastore_tests(c: Collection):
+    # Test GET
     assert test_map.get('test1') == c.get('test1')
     assert test_map.get('test2') == c.get('test2')
     assert test_map.get('test3') == c.get('test3')
@@ -122,17 +124,31 @@ def _perform_single_datastore_tests(c: Collection):
     assert test_map.get('list') == c.get('list')
     assert test_map.get('int') == c.get('int')
 
+    # TEST Multi-get
     raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
     ds_raw = c.multiget(['test1', 'int', 'test2'])
     for item in ds_raw:
         raw.remove(item)
     assert len(raw) == 0
 
+    # Test KEYS
     test_keys = list(test_map.keys())
     for k in c.keys():
         test_keys.remove(k)
     assert len(test_keys) == 0
 
+    # Test Update
+    operations = [
+        (c.UPDATE_SET, "counters.lvl_i", 666),
+        (c.UPDATE_INC, "counters.inc_i", 50),
+        (c.UPDATE_DEC, "counters.dec_i", 50),
+        (c.UPDATE_APPEND, "list", "world!"),
+        (c.UPDATE_REMOVE, "list", "remove")
+    ]
+    assert c.update('to_update', operations)
+    assert c.get('to_update') == {'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!']}
+
+    # Test Delete Matching
     key_len = len(list(c.keys()))
     c.delete_matching("delete_b:true")
     c.commit()
