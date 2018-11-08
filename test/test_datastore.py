@@ -1,8 +1,8 @@
-
 import pytest
-import warnings
 import random
 import string
+import time
+import warnings
 
 from datemath import dm
 from retrying import retry
@@ -30,7 +30,12 @@ with warnings.catch_warnings():
                   'lvl_i': 400, 'classification_s': 'TS', 'test4_s': 'hello'},
         'string': "A string!",
         'list': ['a', 'list', 'of', 'string', 100],
-        'int': 69
+        'int': 69,
+        'to_update': {'counters': {'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
+        'delete1': {'delete_b': True, 'lvl_i': 100},
+        'delete2': {'delete_b': True, 'lvl_i': 300},
+        'delete3': {'delete_b': True, 'lvl_i': 400},
+        'delete4': {'delete_b': True, 'lvl_i': 200}
     }
 
 
@@ -109,79 +114,71 @@ def riak_connection(request):
     return pytest.skip("Connection to the Riak server failed. This test cannot be performed...")
 
 
+def _perform_single_datastore_tests(c: Collection):
+    # Test GET
+    assert test_map.get('test1') == c.get('test1')
+    assert test_map.get('test2') == c.get('test2')
+    assert test_map.get('test3') == c.get('test3')
+    assert test_map.get('test4') == c.get('test4')
+    assert test_map.get('string') == c.get('string')
+    assert test_map.get('list') == c.get('list')
+    assert test_map.get('int') == c.get('int')
+
+    # TEST Multi-get
+    raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
+    ds_raw = c.multiget(['test1', 'int', 'test2'])
+    for item in ds_raw:
+        raw.remove(item)
+    assert len(raw) == 0
+
+    # Test KEYS
+    test_keys = list(test_map.keys())
+    for k in c.keys():
+        test_keys.remove(k)
+    assert len(test_keys) == 0
+
+    # Test Update
+    operations = [
+        (c.UPDATE_SET, "counters.lvl_i", 666),
+        (c.UPDATE_INC, "counters.inc_i", 50),
+        (c.UPDATE_DEC, "counters.dec_i", 50),
+        (c.UPDATE_APPEND, "list", "world!"),
+        (c.UPDATE_REMOVE, "list", "remove")
+    ]
+    assert c.update('to_update', operations)
+    assert c.get('to_update') == {'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!']}
+
+    # Test Delete Matching
+    key_len = len(list(c.keys()))
+    c.delete_matching("delete_b:true")
+    c.commit()
+    retry_count = 0
+    # Leave time for eventually consistent DBs to be in sync
+    while key_len - 4 != len(list(c.keys())):
+        if retry_count == 5:
+            break
+        retry_count += 1
+        time.sleep(0.5*retry_count)
+        c.commit()
+    assert key_len - 4 == len(list(c.keys()))
+
+
 # noinspection PyShadowingNames
 def test_solr(solr_connection: Collection):
     if solr_connection:
-        s_tc = solr_connection
-
-        assert test_map.get('test1') == s_tc.get('test1')
-        assert test_map.get('test2') == s_tc.get('test2')
-        assert test_map.get('test3') == s_tc.get('test3')
-        assert test_map.get('test4') == s_tc.get('test4')
-        assert test_map.get('string') == s_tc.get('string')
-        assert test_map.get('list') == s_tc.get('list')
-        assert test_map.get('int') == s_tc.get('int')
-
-        raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
-        ds_raw = s_tc.multiget(['test1', 'int', 'test2'])
-        for item in ds_raw:
-            raw.remove(item)
-        assert len(raw) == 0
-
-        test_keys = list(test_map.keys())
-        for k in s_tc.keys():
-            test_keys.remove(k)
-        assert len(test_keys) == 0
+        _perform_single_datastore_tests(solr_connection)
 
 
 # noinspection PyShadowingNames
 def test_es(es_connection: Collection):
     if es_connection:
-        s_tc = es_connection
-
-        assert test_map.get('test1') == s_tc.get('test1')
-        assert test_map.get('test2') == s_tc.get('test2')
-        assert test_map.get('test3') == s_tc.get('test3')
-        assert test_map.get('test4') == s_tc.get('test4')
-        assert test_map.get('string') == s_tc.get('string')
-        assert test_map.get('list') == s_tc.get('list')
-        assert test_map.get('int') == s_tc.get('int')
-
-        raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
-        ds_raw = s_tc.multiget(['test1', 'int', 'test2'])
-        for item in ds_raw:
-            raw.remove(item)
-        assert len(raw) == 0
-
-        test_keys = list(test_map.keys())
-        for k in s_tc.keys():
-            test_keys.remove(k)
-        assert len(test_keys) == 0
+        _perform_single_datastore_tests(es_connection)
 
 
 # noinspection PyShadowingNames
 def test_riak(riak_connection: Collection):
     if riak_connection:
-        s_tc = riak_connection
-
-        assert test_map.get('test1') == s_tc.get('test1')
-        assert test_map.get('test2') == s_tc.get('test2')
-        assert test_map.get('test3') == s_tc.get('test3')
-        assert test_map.get('test4') == s_tc.get('test4')
-        assert test_map.get('string') == s_tc.get('string')
-        assert test_map.get('list') == s_tc.get('list')
-        assert test_map.get('int') == s_tc.get('int')
-
-        raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
-        ds_raw = s_tc.multiget(['test1', 'int', 'test2'])
-        for item in ds_raw:
-            raw.remove(item)
-        assert len(raw) == 0
-
-        test_keys = list(test_map.keys())
-        for k in s_tc.keys():
-            test_keys.remove(k)
-        assert len(test_keys) == 0
+        _perform_single_datastore_tests(riak_connection)
 
 
 # noinspection PyShadowingNames

@@ -135,10 +135,23 @@ class RiakCollection(SolrCollection):
             data = data._json()
         item = self.riak_bucket.new(key=key, data=data, content_type='application/json')
         item.store()
+        return True
 
     @collection_reconnect(log)
     def delete(self, key):
         self.riak_bucket.delete(key)
+
+    @collection_reconnect(log)
+    def delete_matching(self, query):
+        for item in self.stream_search(query, fl=self.datastore.ID):
+            try:
+                key = item.id
+            except AttributeError:
+                key = item[self.datastore.ID]
+
+            self.riak_bucket.delete(key)
+
+        return True
 
     def _cleanup_search_result(self, item, fields=None):
         if isinstance(item, dict):

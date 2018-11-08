@@ -184,9 +184,24 @@ class SolrCollection(Collection):
             except Exception:
                 raise DataStoreException(res.text)
 
+        return True
+
     @collection_reconnect(log)
     def delete(self, key):
         data = {"delete": {"id": key}}
+        commit_within = int(self.COMMIT_WITHIN_MAP.get(self.name, None) or self.COMMIT_WITHIN_MAP["_default_"])
+
+        session, host = self._get_session()
+        url = "http://{host}/{api_base}/{core}/update?commitWithin={cw}&overwrite=true".format(host=host,
+                                                                                               api_base=self.api_base,
+                                                                                               core=self.name,
+                                                                                               cw=commit_within)
+        res = session.post(url, data=json.dumps(data), headers={"content-type": "application/json"})
+        return res.ok
+
+    @collection_reconnect(log)
+    def delete_matching(self, query):
+        data = {"delete": {"query": query}}
         commit_within = int(self.COMMIT_WITHIN_MAP.get(self.name, None) or self.COMMIT_WITHIN_MAP["_default_"])
 
         session, host = self._get_session()

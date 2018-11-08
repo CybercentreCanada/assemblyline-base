@@ -4,6 +4,7 @@ Decorators to help make the datastore more reliable.
 When the decorator is applied to a method, certain errors should result in
 trying to reconnect to the datastore, before retrying the method.
 """
+import elasticsearch
 import requests
 import riak
 import time
@@ -69,7 +70,7 @@ class DatastoreReconnect(object):
             while True:
                 try:
                     return original(*args, **kwargs)
-                except SearchRetryException:
+                except (SearchRetryException, elasticsearch.exceptions.ConflictError):
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     ds.connection_reset()
                     retries += 1

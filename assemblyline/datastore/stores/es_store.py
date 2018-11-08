@@ -157,6 +157,8 @@ class ESCollection(Collection):
             body=json.dumps({'doc': saved_data, 'doc_as_upsert': True})
         )
 
+        return True
+
     @collection_reconnect(log)
     def delete(self, key):
         try:
@@ -164,6 +166,65 @@ class ESCollection(Collection):
             return info['result'] == 'deleted'
         except elasticsearch.NotFoundError:
             return True
+
+    @collection_reconnect(log)
+    def delete_matching(self, query):
+        query_body = {
+            "query": {
+                "bool": {
+                    "must": {
+                        "query_string": {
+                            "query": query
+                        }
+                    }
+                }
+            }
+        }
+        try:
+            info = self.datastore.client.delete_by_query(index=self.name, body=query_body, doc_type=self.name)
+            return info.get('deleted', 0) != 0
+        except elasticsearch.NotFoundError:
+            return False
+
+    @collection_reconnect(log)
+    def _update(self, key, operations):
+        op_sources = []
+        op_params = {}
+        val_id = 0
+        for op, doc_key, value in operations:
+            if op == self.UPDATE_SET:
+                op_sources.append(f"ctx._source.{doc_key} = params.value{val_id}")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_APPEND:
+                op_sources.append(f"ctx._source.{doc_key}.add(params.value{val_id})")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_REMOVE:
+                op_sources.append(f"ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_INC:
+                op_sources.append(f"ctx._source.{doc_key} += params.value{val_id}")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_DEC:
+                op_sources.append(f"ctx._source.{doc_key} -= params.value{val_id}")
+                op_params[f'value{val_id}'] = value
+
+            val_id += 1
+
+        update_body = {
+            "script": {
+                "lang": "painless",
+                "source": """;\n""".join(op_sources),
+                "params": op_params
+            }
+        }
+
+        # noinspection PyBroadException
+        try:
+            res = self.datastore.client.update(index=self.name, doc_type=self.name, id=key, body=update_body)
+        except Exception as e:
+            return False
+
+        return res['result'] == "updated"
 
     def _format_output(self, result, fields=None):
         source = result.get('fields', {})
