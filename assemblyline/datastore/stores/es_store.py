@@ -167,8 +167,22 @@ class ESCollection(Collection):
 
     @collection_reconnect(log)
     def delete_matching(self, query):
-        # TODO: use elasticsearch delete by query
-        super().delete_matching(query)
+        query_body = {
+            "query": {
+                "bool": {
+                    "must": {
+                        "query_string": {
+                            "query": query
+                        }
+                    }
+                }
+            }
+        }
+        try:
+            info = self.datastore.client.delete_by_query(index=self.name, body=query_body, doc_type=self.name)
+            return info.get('deleted', 0) != 0
+        except elasticsearch.NotFoundError:
+            return False
 
     def _format_output(self, result, fields=None):
         source = result.get('fields', {})

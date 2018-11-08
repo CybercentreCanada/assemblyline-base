@@ -156,13 +156,7 @@ class Collection(object):
         :param query: Query of the documents to download
         :return: True is delete successful
         """
-        for item in self.stream_search(query, fl=self.datastore.ID):
-            try:
-                key = item.id
-            except AttributeError:
-                key = item[self.datastore.ID]
-
-            self.delete(key)
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     @collection_reconnect(log)
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
