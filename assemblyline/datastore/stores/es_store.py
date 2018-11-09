@@ -591,6 +591,8 @@ class ESCollection(Collection):
             if not Collection.FIELD_SANITIZER.match(p_name):
                 continue
 
+            # TODO: Type returned here should be an ODM type and not a datastore specific type.
+            # TODO 2: We should get the indexed and stored value from the schema not explicitly set their value
             collection_data[p_name] = {
                 "indexed": True,
                 "stored": True,

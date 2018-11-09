@@ -644,6 +644,7 @@ class SolrCollection(Collection):
                 if not Collection.FIELD_SANITIZER.match(field_name):
                     continue
 
+                # TODO: Type returned here should be an ODM type and not a datastore specific type.
                 collection_data[field_name] = {
                     "indexed": field.get("schema", "").startswith("I"),
                     "stored": field.get("schema", "")[:3].endswith("S"),
