@@ -36,7 +36,8 @@ class RiakCollection(SolrCollection):
     <dynamicField name="*_s"  type="string"  indexed="true"  stored="true" multiValued="false"/>
     <dynamicField name="*_ss" type="string"  indexed="true"  stored="true" multiValued="true"/>
 
-    <dynamicField name="*_t"  type="text_general" indexed="true"  stored="false" multiValued="false"/>
+    <dynamicField name="*_t"  type="text" indexed="true"  stored="true" multiValued="false"/>
+    <dynamicField name="*_ts"  type="text" indexed="true"  stored="true" multiValued="true"/>
 
     <dynamicField name="*_b"  type="boolean" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_bs" type="boolean" indexed="true" stored="true"  multiValued="true"/>

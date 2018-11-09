@@ -11,7 +11,7 @@ from assemblyline.datastore import Collection, collection_reconnect, BaseStore, 
     SearchRetryException, log
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
     default_dynamic_templates
-from assemblyline.datastore.support.elasticsearch.build import build_mapping
+from assemblyline.datastore.support.elasticsearch.build import build_mapping, back_mapping
 from assemblyline.datastore import odm
 
 
@@ -221,7 +221,7 @@ class ESCollection(Collection):
         # noinspection PyBroadException
         try:
             res = self.datastore.client.update(index=self.name, doc_type=self.name, id=key, body=update_body)
-        except Exception as e:
+        except Exception:
             return False
 
         return res['result'] == "updated"
@@ -256,7 +256,7 @@ class ESCollection(Collection):
         # TODO: This should be validated by the model not use val[0] blindly
         return {key: val[0] if isinstance(val, list) else val for key, val in source.items() if key in fields}
 
-    def _cleanup_search_result(self, item, fields=None):
+    def _cleanup_search_result(self, item):
         if isinstance(item, dict):
             item.pop('_source', None)
             item.pop('_version', None)
@@ -396,7 +396,7 @@ class ESCollection(Collection):
             "offset": int(offset),
             "rows": int(rows),
             "total": int(result['hits']['total']),
-            "items": [self._cleanup_search_result(x, field_list) for x in docs]
+            "items": [self._cleanup_search_result(x) for x in docs]
         }
         return output
 
@@ -563,6 +563,13 @@ class ESCollection(Collection):
             } for collapsed in result['hits']['hits']]
         }
 
+    @staticmethod
+    def _get_odm_type(ds_type):
+        try:
+            return back_mapping[ds_type].__name__.lower()
+        except KeyError:
+            return ds_type.lower()
+
     @collection_reconnect(log)
     def fields(self):
         # TODO: map fields using the model so they are consistent throughout all datastores?
@@ -571,10 +578,10 @@ class ESCollection(Collection):
             out = {}
             for name, value in props.items():
                 if 'properties' in value:
-                    for child, ctype in flatten_fields(value['properties']).items():
-                        out[name + '.' + child] = ctype
+                    for child, cprops in flatten_fields(value['properties']).items():
+                        out[name + '.' + child] = cprops
                 elif 'type' in value:
-                    out[name] = value['type']
+                    out[name] = value
                 else:
                     raise ValueError("Unknown field data " + str(props))
             return out
@@ -591,12 +598,11 @@ class ESCollection(Collection):
             if not Collection.FIELD_SANITIZER.match(p_name):
                 continue
 
-            # TODO: Type returned here should be an ODM type and not a datastore specific type.
-            # TODO 2: We should get the indexed and stored value from the schema not explicitly set their value
+            f_type = self._get_odm_type(p_val.get('analyzer', None) or p_val['type'])
             collection_data[p_name] = {
-                "indexed": True,
-                "stored": True,
-                "type": p_val
+                "indexed": p_val.get('index', None) or True,
+                "stored": p_val.get('store', None) or False,
+                "type": f_type
             }
 
         return collection_data

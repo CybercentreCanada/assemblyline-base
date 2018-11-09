@@ -3,16 +3,20 @@
 TODO copyto
 
 """
-from assemblyline.datastore.odm import Keyword, Text, List, Compound
-from assemblyline.datastore.odm import Date, Integer, Float, Boolean
+from assemblyline.datastore.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
     Keyword: 'keyword',
     Boolean: 'boolean',
-    Integer: 'long',
+    Integer: 'integer',
     Float: 'float',
+    Date: 'date',
+    Text: 'text'
 }
+
+back_mapping = {v: k for k, v in __type_mapping.items()}
+
 
 def build_mapping(field_data, prefix=None, mappings=None):
     """
@@ -38,20 +42,14 @@ def build_mapping(field_data, prefix=None, mappings=None):
         path = prefix + ([field.name] if field.name else [])
         name = '.'.join(path)
 
-        if isinstance(field, (Keyword, Boolean, Integer, Float)):
+        if isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
             set_mapping(name, field, {
                 'type': __type_mapping[field.__class__]
             })
 
-        elif isinstance(field, Text):
-            set_mapping(name, field, {
-                'type': 'text',
-                'analyzer': 'text_general'
-            })
-
         elif isinstance(field, Date):
             set_mapping(name, field, {
-                'type': 'date',
+                'type': __type_mapping[field.__class__],
                 'format': 'date_optional_time||epoch_millis',
             })
 

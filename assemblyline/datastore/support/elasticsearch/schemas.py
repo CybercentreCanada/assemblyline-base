@@ -14,11 +14,6 @@ default_index = {
                     'tokenizer': 'keyword',
                     'filter': ['lowercase']
                 },
-                "text_general": {
-                    "type": "custom",
-                    "tokenizer": "standard",
-                    "filter": ["lowercase"]
-                },
                 "text_fuzzy": {
                     "type": "pattern",
                     "pattern": r"\s*:\s*",
@@ -41,7 +36,7 @@ default_index = {
 default_mapping = {
     'dynamic': False,
     'properties': {
-        '__text__': {'type': 'text', 'analyzer': 'text_general'},
+        '__text__': {'type': 'text'},
     }
 }
 
@@ -141,7 +136,15 @@ default_dynamic_templates = [
             "path_match": "*_t",
             "mapping": {
                 'type': 'text',
-                'analyzer': 'text_general',
+                "store": True
+            }
+        }
+    },
+    {
+        "texts": {
+            "path_match": "*_ts",
+            "mapping": {
+                'type': 'text',
                 "store": True
             }
         }
