@@ -585,9 +585,8 @@ class SolrCollection(Collection):
             } for grouping in data['groups']]
         }
 
-    # noinspection PyBroadException
     @collection_reconnect(log)
-    def fields(self, port=8983):
+    def _fields_from_schema(self, port=8983):
         session, host = self._get_session(port=port)
 
         url = f"http://{host}/{self.api_base}/{self.name}/schema/?wt=json"
@@ -598,8 +597,6 @@ class SolrCollection(Collection):
             fields = res.json()['schema']['fields']
             for field in fields:
                 field_name = field['name']
-                # if field_value.get("docs", 0) == 0:
-                #     continue
                 if field_name.startswith("_") or "//" in field_name:
                     continue
                 if not Collection.FIELD_SANITIZER.match(field_name):
@@ -613,6 +610,7 @@ class SolrCollection(Collection):
 
             return collection_data
         else:
+            # noinspection PyBroadException
             try:
                 j = res.json()
                 message = j["error"]["msg"]
@@ -629,6 +627,53 @@ class SolrCollection(Collection):
                     raise SearchRetryException()
                 else:
                     raise SearchException(res.content)
+
+    @collection_reconnect(log)
+    def _field_from_data(self, port=8983):
+        session, host = self._get_session(port=port)
+
+        url = f"http://{host}/{self.api_base}/{self.name}/admin/luke?numTerms=0&wt=json"
+
+        res = session.get(url)
+        if res.ok:
+            collection_data = {}
+            fields = res.json()['fields']
+            for field_name, field in fields.items():
+                if field_name.startswith("_") or "//" in field_name:
+                    continue
+                if not Collection.FIELD_SANITIZER.match(field_name):
+                    continue
+
+                collection_data[field_name] = {
+                    "indexed": field.get("schema", "").startswith("I"),
+                    "stored": field.get("schema", "")[:3].endswith("S"),
+                    "type": field['type'],
+                }
+
+            return collection_data
+        else:
+            # noinspection PyBroadException
+            try:
+                j = res.json()
+                message = j["error"]["msg"]
+                if "IOException" in message or "Server refused" in message:
+                    raise SearchRetryException()
+                else:
+                    raise SearchException(message)
+            except SearchException:
+                raise
+            except Exception:
+                if res.status_code == 404:
+                    return {}
+                elif res.status_code == 500:
+                    raise SearchRetryException()
+                else:
+                    raise SearchException(res.content)
+
+    def fields(self, port=8983):
+        fields = self._field_from_data(port=port)
+        fields.update(self._fields_from_schema(port=port))
+        return fields
 
     def _get_configset(self):
         schema = os.path.abspath(os.path.join(os.path.dirname(__file__), "../support/solr/managed-schema"))

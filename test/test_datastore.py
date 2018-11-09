@@ -162,6 +162,8 @@ def _perform_single_datastore_tests(c: Collection):
         c.commit()
     assert key_len - 4 == len(list(c.keys()))
 
+    assert c.fields() != {}
+
 
 # noinspection PyShadowingNames
 def test_solr(solr_connection: Collection):

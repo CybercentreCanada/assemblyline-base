@@ -594,7 +594,6 @@ class ESCollection(Collection):
             collection_data[p_name] = {
                 "indexed": True,
                 "stored": True,
-                "list": True,
                 "type": p_val
             }
 
