@@ -165,6 +165,13 @@ def collection_test(collection):
     # Search on a copyto field
     assert col.search('features: chocolate')['total'] == 1
 
+    # Make sure we are getting only the expected fields with a field list
+    with pytest.raises(odm.KeyMaskException):
+        result = col.search('features: chocolate', fl='features')
+        assert result['total'] == 1
+        result['items'][0].flavour
+
+
 
 # noinspection PyShadowingNames
 def test_solr(solr_connection):
