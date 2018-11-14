@@ -10,6 +10,7 @@ independent data models in python. This gives us:
 
 """
 
+import re
 import json
 import copy
 import arrow
@@ -243,6 +244,55 @@ class List(_Field):
 
     def check(self, value, **kwargs):
         return TypedList(self.child_type, *value)
+
+    def apply_defaults(self, index, store):
+        """Initialize the default settings for the child field."""
+        # First apply the default to the list itself
+        super().apply_defaults(index, store)
+        # Then pass through the initialized values on the list to the child type
+        self.child_type.apply_defaults(self.index, self.store)
+
+    def fields(self):
+        out = dict()
+        for name, field_data in self.child_type.fields().items():
+            field_data = copy.deepcopy(field_data)
+            field_data.apply_defaults(self.index, self.store)
+            out[name] = field_data
+        return out
+
+
+class TypedMapping(dict):
+    field_sanitizer = re.compile("^[a-z][a-z0-9_\\-]+$")
+
+    def __init__(self, type_p, **items):
+        for key in items.keys():
+            if not self.field_sanitizer.match(key):
+                raise KeyError(f"Illigal key: {key}")
+        super().__init__({key: type_p.check(el) for key, el in items.items()})
+        self.type = type_p
+
+    def __setitem__(self, key, item):
+        if not self.field_sanitizer.match(key):
+            raise KeyError(f"Illigal key: {key}")
+        return super().__setitem__(key, self.type.check(item))
+
+    def update(self, **data):
+        for key in data.keys():
+            if not self.field_sanitizer.match(key):
+                raise KeyError(f"Illigal key: {key}")
+        return super().update({key: self.type.check(item) for key, item in data.items()})
+
+
+class Mapping(_Field):
+    """A field storing a sequence of typed elements."""
+
+    def __init__(self, child_type, **kwargs):
+        super().__init__(**kwargs)
+        self.child_type = child_type
+        self.empty = []
+
+    def check(self, value, **kwargs):
+        return TypedMapping(self.child_type, **value)
 
     def apply_defaults(self, index, store):
         """Initialize the default settings for the child field."""
