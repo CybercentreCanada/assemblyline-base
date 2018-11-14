@@ -22,7 +22,7 @@ class BModel(odm.Model):
 
 @odm.model(index=True, store=True)
 class AModel(odm.Model):
-    flavour = odm.Text(copyto='features')
+    flavour = odm.Text(copyto='features', default="EMPTY")
     height = odm.Integer()
     birthday = odm.Date()
     tags = odm.List(odm.Keyword(), default=[], copyto='features')

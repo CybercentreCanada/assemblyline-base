@@ -162,7 +162,7 @@ class SolrCollection(Collection):
 
     def _save(self, key, source_data):
         try:
-            data = source_data._json()
+            data = source_data.as_primitives()
         except AttributeError:
             data = deepcopy(source_data)
 

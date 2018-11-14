@@ -28,13 +28,13 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
     prefix = prefix or []
     mappings = mappings or []
 
-    def set_mapping(p_name, p_field, p_type, fields=''):
+    def set_mapping(p_name, p_field, p_type):
         p_name = p_name.strip('.')
         index = 'true' if p_field.index else 'false'
         store = 'true' if p_field.store else 'false'
         multi = 'true' if multivalued else 'false'
         mappings.append(f'<field name="{p_name}" type="{p_type}" indexed="{index}" stored="{store}" '
-                        f'multiValued="{multi}" {fields}/>')
+                        f'multiValued="{multi}"/>')
         for other_field in p_field.copyto:
             mappings.append(f'<copyField source="{p_name}" dest="{other_field}"/>')
 
@@ -49,7 +49,7 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
 
         elif isinstance(field, (Keyword, Text)):
             # noinspection PyTypeChecker
-            set_mapping(name, field, __type_mapping[field.__class__], 'required="true" default=""')
+            set_mapping(name, field, __type_mapping[field.__class__])
 
         elif isinstance(field, List):
             build_mapping([field.child_type], prefix=path, mappings=mappings, multivalued=True)

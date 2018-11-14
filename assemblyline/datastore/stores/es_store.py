@@ -139,9 +139,8 @@ class ESCollection(Collection):
         return None
 
     def _save(self, key, data):
-        # TODO: Maybe we should not allow data that is not a dictionary...
         try:
-            saved_data = data._json()
+            saved_data = data.as_primitives()
         except AttributeError:
             if not isinstance(data, dict):
                 saved_data = {'__non_doc_raw__': data}
@@ -250,11 +249,11 @@ class ESCollection(Collection):
             source[self.datastore.ID] = result[self.datastore.ID]
 
         if fields is None or '*' in fields:
-            # TODO: This should be validated by the model not use val[0] blindly
-            return {key: val[0] if isinstance(val, list) else val for key, val in source.items()}
+            return {key: val[0] if isinstance(val, list) and len(val) == 1 else val
+                    for key, val in source.items()}
 
-        # TODO: This should be validated by the model not use val[0] blindly
-        return {key: val[0] if isinstance(val, list) else val for key, val in source.items() if key in fields}
+        return {key: val[0] if isinstance(val, list) and len(val) == 1 else val
+                for key, val in source.items() if key in fields}
 
     def _cleanup_search_result(self, item):
         if isinstance(item, dict):
