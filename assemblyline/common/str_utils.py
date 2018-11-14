@@ -22,7 +22,7 @@ def wrap_bidir_unicode_string(uni_str):
     """
     Wraps str in a LRE (Left-to-Right Embed) unicode control
     Guarantees that str can be concatenated to other strings without
-        affecting their left-to-right direction
+    affecting their left-to-right direction
     """
 
     if len(uni_str) == 0 or isinstance(uni_str, bytes):  # Not str, return it unchanged

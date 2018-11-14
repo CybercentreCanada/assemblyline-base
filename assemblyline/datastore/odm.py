@@ -3,9 +3,9 @@ Assemblyline's built in Object Document Model tool.
 
 The classes in this module can be composed to build database
 independent data models in python. This gives us:
- - single source of truth for our data schemas
- - database independent serialization
- - type checking
+- single source of truth for our data schemas
+- database independent serialization
+- type checking
 
 
 """

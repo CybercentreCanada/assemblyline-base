@@ -250,19 +250,19 @@ class Collection(object):
                filters=(), access_control=None):
         """
         This function should perform a search through the datastore and return a
-        search result object that consist on the following:
+        search result object that consist on the following::
 
-        {
-            "offset": 0,      # Offset in the search index
-            "rows": 25,       # Number of document returned per page
-            "total": 123456,  # Total number of documents matching the query
-            "items": [        # List of dictionary where each keys are one of
-                {             #   the field list parameter specified
-                    fl[0]: value,
-                    ...
-                    fl[x]: value
-                }, ...]
-        }
+            {
+                "offset": 0,      # Offset in the search index
+                "rows": 25,       # Number of document returned per page
+                "total": 123456,  # Total number of documents matching the query
+                "items": [        # List of dictionary where each keys are one of
+                    {             #   the field list parameter specified
+                        fl[0]: value,
+                        ...
+                        fl[x]: value
+                    }, ...]
+            }
 
         :param query: lucene query to search for
         :param offset: offset at which you want the results to start at (paging)
@@ -283,11 +283,11 @@ class Collection(object):
         all related results as a dictionary of key value pair where each keys
         are one of the field specified in the field list parameter.
 
-        {
-            fl[0]: value,
-            ...
-            fl[x]: value
-        }
+        >>> {
+        >>>     fl[0]: value,
+        >>>     ...
+        >>>     fl[x]: value
+        >>> }
 
         :param query: lucene query to search for
         :param fl: list of fields to return from the search
