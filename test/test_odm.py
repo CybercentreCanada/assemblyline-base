@@ -1,5 +1,5 @@
 from assemblyline.datastore.odm import model, Model, KeyMaskException
-from assemblyline.datastore.odm import Compound, List, Keyword, Integer
+from assemblyline.datastore.odm import Compound, List, Keyword, Integer, Mapping
 
 import json
 import pytest
@@ -376,3 +376,35 @@ def test_sub_field_masking():
 
     with pytest.raises(KeyMaskException):
         test.a.b = 100
+
+
+def test_mapping():
+    @model()
+    class Test(Model):
+        a = Mapping(Integer(), default={})
+
+    test = Test({})
+
+    assert len(test.a) == 0
+
+    with pytest.raises(KeyError):
+        test.a['abc']
+
+    with pytest.raises(KeyError):
+        test.a['abc.abc.abc'] = None
+
+    with pytest.raises(KeyError):
+        test.a['4abc.abc.abc'] = None
+
+    test.a['cat'] = 10
+    test.a['dog'] = -100
+
+    assert len(test.a) == 2
+    assert test.a['dog'] == -100
+
+    with pytest.raises(ValueError):
+        test.a['red'] = 'can'
+
+    test = Test({'a': {'walk': 100}})
+    assert len(test.a) == 1
+    assert test.a['walk'] == 100
