@@ -246,14 +246,12 @@ class ESCollection(Collection):
             fields = fields
 
         if fields is None or '*' in fields or self.datastore.ID in fields:
-            source[self.datastore.ID] = result[self.datastore.ID]
+            source[self.datastore.ID] = [result[self.datastore.ID]]
 
         if fields is None or '*' in fields:
-            return {key: val[0] if isinstance(val, list) and len(val) == 1 else val
-                    for key, val in source.items()}
+            return source
 
-        return {key: val[0] if isinstance(val, list) and len(val) == 1 else val
-                for key, val in source.items() if key in fields}
+        return {key: val for key, val in source.items() if key in fields}
 
     def _cleanup_search_result(self, item):
         if isinstance(item, dict):

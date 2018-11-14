@@ -309,7 +309,12 @@ class Collection(object):
             try:
                 yield item.id
             except AttributeError:
-                yield item[self.datastore.ID]
+                value = item[self.datastore.ID]
+                if isinstance(value, list):
+                    for v in value:
+                        yield v
+                else:
+                    yield value
 
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):

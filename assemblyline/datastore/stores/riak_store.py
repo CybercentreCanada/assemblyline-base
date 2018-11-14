@@ -147,10 +147,14 @@ class RiakCollection(SolrCollection):
         for item in self.stream_search(query, fl=self.datastore.ID):
             try:
                 key = item.id
+                self.riak_bucket.delete(key)
             except AttributeError:
                 key = item[self.datastore.ID]
-
-            self.riak_bucket.delete(key)
+                if isinstance(key, list):
+                    for k in key:
+                        self.riak_bucket.delete(k)
+                else:
+                    self.riak_bucket.delete(key)
 
         return True
 
@@ -175,7 +179,7 @@ class RiakCollection(SolrCollection):
 
             return self.model_class(item, mask=fields, docid=item_id)
 
-        return item
+        return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
     @collection_reconnect(log)
     def _search(self, args=None, port=None, api_base=None, search_api='select/'):

@@ -277,7 +277,6 @@ class SolrCollection(Collection):
             if '_source_' in item:
                 data = json.loads(item['_source_'])
                 return self.model_class(data, docid=item_id)
-            # item = strip_lists(self.model_class, item)
             return self.model_class(item, mask=fields, docid=item_id)
 
         if isinstance(item, dict):
@@ -285,7 +284,7 @@ class SolrCollection(Collection):
             item.pop('_version_', None)
             item.pop(self.EXTRA_SEARCH_FIELD, None)
 
-        return item
+        return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
     # noinspection PyBroadException
     @collection_reconnect(log)
