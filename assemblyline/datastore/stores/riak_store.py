@@ -36,7 +36,8 @@ class RiakCollection(SolrCollection):
     <dynamicField name="*_s"  type="string"  indexed="true"  stored="true" multiValued="false"/>
     <dynamicField name="*_ss" type="string"  indexed="true"  stored="true" multiValued="true"/>
 
-    <dynamicField name="*_t"  type="text_general" indexed="true"  stored="false" multiValued="false"/>
+    <dynamicField name="*_t"  type="text" indexed="true"  stored="true" multiValued="false"/>
+    <dynamicField name="*_ts"  type="text" indexed="true"  stored="true" multiValued="true"/>
 
     <dynamicField name="*_b"  type="boolean" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_bs" type="boolean" indexed="true" stored="true"  multiValued="true"/>
@@ -132,7 +133,7 @@ class RiakCollection(SolrCollection):
 
     def _save(self, key, data):
         if self.model_class:
-            data = data._json()
+            data = data.as_primitives()
         item = self.riak_bucket.new(key=key, data=data, content_type='application/json')
         item.store()
         return True
@@ -146,10 +147,14 @@ class RiakCollection(SolrCollection):
         for item in self.stream_search(query, fl=self.datastore.ID):
             try:
                 key = item.id
+                self.riak_bucket.delete(key)
             except AttributeError:
                 key = item[self.datastore.ID]
-
-            self.riak_bucket.delete(key)
+                if isinstance(key, list):
+                    for k in key:
+                        self.riak_bucket.delete(k)
+                else:
+                    self.riak_bucket.delete(key)
 
         return True
 
@@ -174,7 +179,7 @@ class RiakCollection(SolrCollection):
 
             return self.model_class(item, mask=fields, docid=item_id)
 
-        return item
+        return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
     @collection_reconnect(log)
     def _search(self, args=None, port=None, api_base=None, search_api='select/'):

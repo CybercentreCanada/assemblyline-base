@@ -152,6 +152,11 @@ class Keyword(_Field):
         self.empty = ''
 
     def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError("Empty strings are not allow without defaults")
         return str(value)
 
 
@@ -163,6 +168,12 @@ class Text(_Field):
         self.empty = ''
 
     def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError("Empty strings are not allow without defaults")
+
         return str(value)
 
 
@@ -401,31 +412,33 @@ class Model:
                 value = data[name]
             except KeyError:
                 if field_type.default_set:
-                    value = field_type.default
+                    value = copy.copy(field_type.default)
                 else:
                     raise ValueError('{} expected a parameter named {}'.format(self.__class__.__name__, name))
 
             self.odm_py_obj[name] = field_type.check(value, **params)
 
-    def _json(self):
+    def as_primitives(self):
         """Convert the object back into primatives that can be json serialized.
 
         TODO this is probably a major point that needs optimization.
         """
         def read(value):
             if isinstance(value, Model):
-                return value._json()
+                return value.as_primitives()
             elif isinstance(value, datetime):
                 return value.isoformat().replace('+00:00', 'Z')
             return value
 
+        fields = self.fields()
+
         return {
             key: read(value)
-            for key, value in self.odm_py_obj.items()
+            for key, value in self.odm_py_obj.items() if value or (not value and fields[key].default_set)
         }
 
     def json(self):
-        return json.dumps(self._json())
+        return json.dumps(self.as_primitives())
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):

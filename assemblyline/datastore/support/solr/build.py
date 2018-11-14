@@ -3,12 +3,12 @@
 TODO copyto
 
 """
-from assemblyline.datastore.odm import Keyword, Text, List, Compound
-from assemblyline.datastore.odm import Date, Integer, Float, Boolean
+from assemblyline.datastore.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean
+from assemblyline.datastore.support.riak.build import back_mapping as riak_back_mapping
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
-    Text: 'string',
+    Text: 'text',
     Keyword: 'string',
     Boolean: 'boolean',
     Integer: 'pint',
@@ -16,14 +16,8 @@ __type_mapping = {
     Date: 'pdate',
 }
 
-__multi_type_mapping = {
-    Text: 'strings',
-    Keyword: 'strings',
-    Boolean: 'booleans',
-    Integer: 'pints',
-    Float: 'pfloats',
-    Date: 'pdates',
-}
+back_mapping = riak_back_mapping
+back_mapping.update({v: k for k, v in __type_mapping.items()})
 
 
 def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
@@ -31,17 +25,18 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
     The mapping for solr based on a python model object.
     """
 
-    types = __multi_type_mapping if multivalued else __type_mapping
     prefix = prefix or []
     mappings = mappings or []
 
-    def set_mapping(name, field, type, fields=''):
-        name = name.strip('.')
-        index = 'true' if field.index else 'false'
-        store = 'true' if field.store else 'false'
-        mappings.append(f'<field name="{name}" type="{type}" indexed="{index}" stored="{store}" {fields}/>')
-        for other_field in field.copyto:
-            mappings.append(f'<copyField source="{name}" dest="{other_field}"/>')
+    def set_mapping(p_name, p_field, p_type):
+        p_name = p_name.strip('.')
+        index = 'true' if p_field.index else 'false'
+        store = 'true' if p_field.store else 'false'
+        multi = 'true' if multivalued else 'false'
+        mappings.append(f'<field name="{p_name}" type="{p_type}" indexed="{index}" stored="{store}" '
+                        f'multiValued="{multi}"/>')
+        for other_field in p_field.copyto:
+            mappings.append(f'<copyField source="{p_name}" dest="{other_field}"/>')
 
     # Fill in the sections
     for field in field_data:
@@ -49,10 +44,12 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
         name = '.'.join(path)
 
         if isinstance(field, (Boolean, Integer, Float, Date)):
-            set_mapping(name, field, types[field.__class__])
+            # noinspection PyTypeChecker
+            set_mapping(name, field, __type_mapping[field.__class__])
 
         elif isinstance(field, (Keyword, Text)):
-            set_mapping(name, field, types[field.__class__], 'required="true" default=""')
+            # noinspection PyTypeChecker
+            set_mapping(name, field, __type_mapping[field.__class__])
 
         elif isinstance(field, List):
             build_mapping([field.child_type], prefix=path, mappings=mappings, multivalued=True)

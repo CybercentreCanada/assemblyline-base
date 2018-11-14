@@ -309,7 +309,12 @@ class Collection(object):
             try:
                 yield item.id
             except AttributeError:
-                yield item[self.datastore.ID]
+                value = item[self.datastore.ID]
+                if isinstance(value, list):
+                    for v in value:
+                        yield v
+                else:
+                    yield value
 
     # noinspection PyBroadException
     def _validate_steps_count(self, start, end, gap):
@@ -402,6 +407,10 @@ class Collection(object):
                 raise RuntimeError(f"Field {field_name} didn't have the expected indexing value.")
             if fields[field_name]['stored'] != model[field_name].store:
                 raise RuntimeError(f"Field {field_name} didn't have the expected store value.")
+            if fields[field_name]['type'] != model[field_name].__class__.__name__.lower():
+                raise RuntimeError(f"Field {field_name} didn't have the expected store "
+                                   f"type. [{fields[field_name]['type']} != "
+                                   f"{model[field_name].__class__.__name__.lower()}]")
 
     @collection_reconnect(log)
     def wipe(self):

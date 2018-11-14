@@ -14,7 +14,7 @@ from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
 from assemblyline.datastore import BaseStore, log, Collection, DataStoreException, SearchException, SearchRetryException
 from assemblyline.datastore.reconnect import collection_reconnect
-from assemblyline.datastore.support.solr.build import build_mapping
+from assemblyline.datastore.support.solr.build import build_mapping, back_mapping
 
 
 class SolrCollection(Collection):
@@ -39,23 +39,24 @@ class SolrCollection(Collection):
 
     DEFAULT_CATCH_ALL_FIELDS = """
     <dynamicField name="*_i"  type="pint"     indexed="true"  stored="true"/>
-    <dynamicField name="*_is" type="pints"    indexed="true"  stored="true"/>
+    <dynamicField name="*_is" type="pint"    indexed="true"  stored="true" multiValued="true"/>
     <dynamicField name="*_l"  type="plong"    indexed="true"  stored="true"/>
-    <dynamicField name="*_ls" type="plongs"   indexed="true"  stored="true"/>
+    <dynamicField name="*_ls" type="plong"   indexed="true"  stored="true" multiValued="true"/>
     <dynamicField name="*_d"  type="pdouble"  indexed="true"  stored="true"/>
-    <dynamicField name="*_ds" type="pdoubles" indexed="true"  stored="true"/>
+    <dynamicField name="*_ds" type="pdouble" indexed="true"  stored="true" multiValued="true"/>
     <dynamicField name="*_f"  type="pfloat"   indexed="true"  stored="true"/>
-    <dynamicField name="*_fs" type="pfloats"  indexed="true"  stored="true"/>
+    <dynamicField name="*_fs" type="pfloat"  indexed="true"  stored="true" multiValued="true"/>
 
     <dynamicField name="*_s"  type="string"   indexed="true"  stored="true"/>
-    <dynamicField name="*_ss" type="strings"  indexed="true"  stored="true"/>
+    <dynamicField name="*_ss" type="string"  indexed="true"  stored="true" multiValued="true"/>
 
-    <dynamicField name="*_t"  type="text_general" indexed="true"  stored="false"/>
+    <dynamicField name="*_t"  type="text" indexed="true"  stored="true"/>
+    <dynamicField name="*_ts"  type="text" indexed="true"  stored="true" multiValued="true"/>
 
     <dynamicField name="*_b"   type="boolean"   indexed="true"  stored="true"/>
-    <dynamicField name="*_bs"  type="booleans"  indexed="true"  stored="true"/>
+    <dynamicField name="*_bs"  type="boolean"  indexed="true"  stored="true" multiValued="true"/>
     <dynamicField name="*_dt"  type="pdate"     indexed="true"  stored="true"/>
-    <dynamicField name="*_dts" type="pdates"    indexed="true"  stored="true"/>
+    <dynamicField name="*_dts" type="pdate"    indexed="true"  stored="true" multiValued="true"/>
      """
 
     def __init__(self, datastore, name, model_class=None, api_base="solr", replication_factor=1, num_shards=1):
@@ -161,7 +162,7 @@ class SolrCollection(Collection):
 
     def _save(self, key, source_data):
         try:
-            data = source_data._json()
+            data = source_data.as_primitives()
         except AttributeError:
             data = deepcopy(source_data)
 
@@ -276,7 +277,6 @@ class SolrCollection(Collection):
             if '_source_' in item:
                 data = json.loads(item['_source_'])
                 return self.model_class(data, docid=item_id)
-            # item = strip_lists(self.model_class, item)
             return self.model_class(item, mask=fields, docid=item_id)
 
         if isinstance(item, dict):
@@ -284,7 +284,7 @@ class SolrCollection(Collection):
             item.pop('_version_', None)
             item.pop(self.EXTRA_SEARCH_FIELD, None)
 
-        return item
+        return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
     # noinspection PyBroadException
     @collection_reconnect(log)
@@ -605,7 +605,7 @@ class SolrCollection(Collection):
                 collection_data[field_name] = {
                     "indexed": field['indexed'],
                     "stored": field['stored'],
-                    "type": field['type'],
+                    "type": self._get_odm_type(field['type']),
                 }
 
             return collection_data
@@ -628,6 +628,13 @@ class SolrCollection(Collection):
                 else:
                     raise SearchException(res.content)
 
+    @staticmethod
+    def _get_odm_type(ds_type):
+        try:
+            return back_mapping[ds_type].__name__.lower()
+        except KeyError:
+            return ds_type.lower()
+
     @collection_reconnect(log)
     def _field_from_data(self, port=8983):
         session, host = self._get_session(port=port)
@@ -644,11 +651,10 @@ class SolrCollection(Collection):
                 if not Collection.FIELD_SANITIZER.match(field_name):
                     continue
 
-                # TODO: Type returned here should be an ODM type and not a datastore specific type.
                 collection_data[field_name] = {
                     "indexed": field.get("schema", "").startswith("I"),
                     "stored": field.get("schema", "")[:3].endswith("S"),
-                    "type": field['type'],
+                    "type": self._get_odm_type(field['type']),
                 }
 
             return collection_data
