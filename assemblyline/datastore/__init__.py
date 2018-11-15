@@ -395,7 +395,7 @@ class Collection(object):
             return
 
         fields = self.fields()
-        model = self.model_class.flat_fields()
+        model = self.model_class.flat_fields(skip_mappings=True)
 
         missing = set(model.keys()) - set(fields.keys())
         if missing:

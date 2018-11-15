@@ -28,8 +28,10 @@ def _strip_lists(model, data):
             out[key] = value
         elif isinstance(doc_type, odm.Compound):
             out[key] = _strip_lists(doc_type.child_type, value)
-        else:
+        elif isinstance(value, list):
             out[key] = value[0]
+        else:
+            out[key] = value
     return out
 
 
@@ -619,9 +621,8 @@ class ESCollection(Collection):
 
             mappings = deepcopy(default_mapping)
             if self.model_class:
-                mappings['properties'] = build_mapping(self.model_class.fields().values())
+                mappings['properties'], mappings['dynamic_templates'] = build_mapping(self.model_class.fields().values())
             else:
-                mappings['dynamic'] = True
                 mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
             mappings['properties'][self.datastore.SORT_ID] = {

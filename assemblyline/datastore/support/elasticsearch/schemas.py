@@ -34,7 +34,7 @@ default_index = {
 }
 
 default_mapping = {
-    'dynamic': False,
+    'dynamic': True,
     'properties': {
         '__text__': {'type': 'text'},
     }

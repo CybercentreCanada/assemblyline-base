@@ -1,9 +1,4 @@
-"""
-
-TODO copyto
-
-"""
-from assemblyline.datastore.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean
+from assemblyline.datastore.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean, Mapping
 from assemblyline.datastore.support.riak.build import back_mapping as riak_back_mapping
 
 # Simple types can be resolved by a direct mapping
@@ -56,6 +51,15 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
 
         elif isinstance(field, Compound):
             build_mapping(field.fields().values(), prefix=path, mappings=mappings, multivalued=multivalued)
+
+        elif isinstance(field, Mapping):
+            child = field.child_type
+            index = 'true' if child else 'false'
+            store = 'true' if child else 'false'
+            solr_type = __type_mapping[child.__class__]
+            mappings.append(f'<dynamicField name="{name}.*" type="{solr_type}" indexed="{index}" stored="{store}" />')
+            for other_field in field.copyto + child.copyto:
+                mappings.append(f'<copyField source="{name}.*" dest="{other_field}"/>')
 
         else:
             raise NotImplementedError(f"Unknown type for elasticsearch schema: {field.__class__}")

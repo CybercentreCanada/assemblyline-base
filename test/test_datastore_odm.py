@@ -28,18 +28,22 @@ class AModel(odm.Model):
     tags = odm.List(odm.Keyword(), default=[], copyto='features')
     size = odm.Compound(BModel, default={'depth': 100, 'width': 100})
     features = odm.List(odm.Text(), default=[])
+    metadata = odm.Mapping(odm.Text(), default={})
 
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     test_map = {
-        'test1': AModel(dict(tags=['silly'], flavour='chocolate', height=100, birthday=dm('now-2d'))),
-        'test2': AModel(dict(tags=['cats'], flavour='A little dry', height=180, birthday=dm('now-1d'))),
+        'test1': AModel(dict(tags=['silly'], flavour='chocolate', height=100, birthday=dm('now-2d'),
+                             metadata={'url': 'google.com'})),
+        'test2': AModel(dict(tags=['cats'], flavour='A little dry', height=180, birthday=dm('now-1d'),
+                             metadata={'url': 'google.ca'})),
         'test3': AModel(dict(tags=['silly'], flavour='Red', height=140, birthday=dm('now'),
                              size={'depth': 1, 'width': 1})),
         'test4': AModel(dict(tags=['cats'], flavour='Bugs ++', height=30, birthday='2018-10-30T17:48:48+00:00')),
         'dict1': AModel(dict(tags=['cats'], flavour='A--', height=300, birthday='2018-10-30T17:48:48Z')),
-        'dict2': AModel(dict(tags=[], flavour='100%', height=90, birthday=datetime.utcnow())),
+        'dict2': AModel(dict(tags=[], flavour='100%', height=90, birthday=datetime.utcnow(),
+                             metadata={'origin': 'space'})),
         'dict3': AModel(dict(tags=['10', 'cats'], flavour='', height=180, birthday=dm('now-3d'))),
         'dict4': AModel(dict(tags=['10', 'silly', 'cats'], flavour='blue', height=100, birthday=dm('now-1d'))),
     }
@@ -171,6 +175,8 @@ def collection_test(collection):
         assert result['total'] == 1
         result['items'][0].flavour
 
+    # Check that the metadata is searchable
+    assert col.search('metadata.url:*google*')['total'] == 2
 
 
 # noinspection PyShadowingNames
@@ -232,13 +238,13 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
 
             return True
 
-        stores = {}
-        s_tc = stores['solr'] = solr_connection
-        e_tc = stores['elastic'] = es_connection
-        r_tc = stores['riak'] = riak_connection
+        s_tc = solr_connection
+        e_tc = es_connection
+        r_tc = riak_connection
+        stores = [s_tc, e_tc, r_tc]
 
         assert compare_output(s_tc.get('not-a-key'), e_tc.get('not-a-key'), r_tc.get('not-a-key'))
-        assert compare_output(s_tc.get_if_exists('not-a-key'), e_tc.get_if_exists('not-a-key'), r_tc.get_if_exists('not-a-key'))
+        assert compare_output(*(tc.get_if_exists('not-a-key') for tc in stores))
 
         assert compare_output(s_tc.get('test1'), e_tc.get('test1'), r_tc.get('test1'))
         assert compare_output(s_tc.require('test1'), e_tc.require('test1'), r_tc.require('test1'))

@@ -14,6 +14,7 @@ import re
 import json
 import copy
 import arrow
+import typing
 from datetime import datetime
 
 
@@ -289,7 +290,7 @@ class Mapping(_Field):
     def __init__(self, child_type, **kwargs):
         super().__init__(**kwargs)
         self.child_type = child_type
-        self.empty = []
+        self.empty = {}
 
     def check(self, value, **kwargs):
         return TypedMapping(self.child_type, **value)
@@ -300,14 +301,6 @@ class Mapping(_Field):
         super().apply_defaults(index, store)
         # Then pass through the initialized values on the list to the child type
         self.child_type.apply_defaults(self.index, self.store)
-
-    def fields(self):
-        out = dict()
-        for name, field_data in self.child_type.fields().items():
-            field_data = copy.deepcopy(field_data)
-            field_data.apply_defaults(self.index, self.store)
-            out[name] = field_data
-        return out
 
 
 class Compound(_Field):
@@ -333,29 +326,41 @@ class Model:
         return cls.__name__
 
     @classmethod
-    def fields(cls):
+    def fields(cls, skip_mappings=False) -> typing.Mapping[str, _Field]:
         """
-        Describe the elements of the model with a name -> field object mapping.
+        Describe the elements of the model.
 
         For compound fields return the field object.
+
+        Args:
+            skip_mappings (bool): Skip over mappings where the real subfield names are unknown.
         """
         out = dict()
         for name, field_data in cls.__dict__.items():
             if isinstance(field_data, _Field):
+                if skip_mappings and isinstance(field_data, Mapping):
+                    continue
                 out[name] = field_data
         return out
 
     @classmethod
-    def flat_fields(cls):
+    def flat_fields(cls, skip_mappings=False) -> typing.Mapping[str, _Field]:
         """
-        Describe the elements of the model with a name -> field object mapping.
+        Describe the elements of the model.
 
         Recurse into compound fields, concatinating the names with '.' separators.
+
+        Args:
+            skip_mappings (bool): Skip over mappings where the real subfield names are unknown.
         """
         out = dict()
         for name, field_data in cls.__dict__.items():
             if isinstance(field_data, _Field):
+                if skip_mappings and isinstance(field_data, Mapping):
+                    continue
                 for sub_name, sub_data in field_data.fields().items():
+                    if skip_mappings and isinstance(sub_data, Mapping):
+                        continue
                     out[(name + '.' + sub_name).strip('.')] = sub_data
         return out
 
@@ -423,19 +428,22 @@ class Model:
 
         TODO this is probably a major point that needs optimization.
         """
-        def read(value):
-            if isinstance(value, Model):
-                return value.as_primitives()
-            elif isinstance(value, datetime):
-                return value.isoformat().replace('+00:00', 'Z')
-            return value
+        out = {}
 
         fields = self.fields()
-
-        return {
-            key: read(value)
-            for key, value in self.odm_py_obj.items() if value or (not value and fields[key].default_set)
-        }
+        for key, value in self.odm_py_obj.items():
+            field_type = fields[key]
+            if value or (not value and field_type.default_set):
+                if isinstance(value, Model):
+                    out[key] = value.as_primitives()
+                elif isinstance(value, datetime):
+                    out[key] = value.isoformat().replace('+00:00', 'Z')
+                elif isinstance(value, TypedMapping):
+                    for sub_key, sub_value in value.items():
+                        out[key + '.' + sub_key] = sub_value
+                else:
+                    out[key] = value
+        return out
 
     def json(self):
         return json.dumps(self.as_primitives())
