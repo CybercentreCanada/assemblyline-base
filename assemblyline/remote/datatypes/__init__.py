@@ -8,12 +8,12 @@ import uuid
 
 
 from datetime import datetime
-from distutils.version import StrictVersion
+from packaging.version import parse
 
 
 # Add a version warning if redis python client is < 2.10.0. Older versions
 # have a connection bug that can manifest with the dispatcher.
-if StrictVersion(redis.__version__) <= StrictVersion('2.10.0'):
+if parse(redis.__version__) <= parse('2.10.0'):
     import warnings
     warnings.warn("%s works best with redis > 2.10.0. You're running"
                   " redis %s. You should upgrade." %
