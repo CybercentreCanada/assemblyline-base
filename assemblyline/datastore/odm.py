@@ -280,7 +280,7 @@ class TypedMapping(dict):
     def update(self, **data):
         for key in data.keys():
             if not self.field_sanitizer.match(key):
-                raise KeyError(f"Illigal key: {key}")
+                raise KeyError(f"Illegal key: {key}")
         return super().update({key: self.type.check(item) for key, item in data.items()})
 
 
@@ -441,6 +441,8 @@ class Model:
                 elif isinstance(value, TypedMapping):
                     for sub_key, sub_value in value.items():
                         out[key + '.' + sub_key] = sub_value
+                elif isinstance(value, (List, TypedList)):
+                    out[key] = [v.as_primitives() if isinstance(v, Model) else v for v in value]
                 else:
                     out[key] = value
         return out
