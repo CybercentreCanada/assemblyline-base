@@ -625,6 +625,10 @@ class ESCollection(Collection):
             else:
                 mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
+            if not mappings['dynamic_templates']:
+                # Setting dynamic to strict prevents any documents with fields not in the properties to be added
+                mappings['dynamic'] = "strict"
+
             mappings['properties'][self.datastore.SORT_ID] = {
                 "store": True,
                 "doc_values": True,

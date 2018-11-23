@@ -63,37 +63,48 @@ def build_mapping(field_data, prefix=None, mappings=None, dynamic=None):
     # The final template must match everything and disable indexing
     # this effectively disables dynamic indexing EXCEPT for the templates
     # we have defined
-    dynamic.append({'refuse_all_implicit_mappings': {
-        "match_mapping_type": "*",
-        "match": "*",
-        "mapping": {
-            "enabled": False
-        }
-    }})
+    if not dynamic:
+        # We cannot use the dynamic type matching if others are in play because they conflict with each other
+        # TODO: Find a way to make them work together.
+        dynamic.append({'refuse_all_implicit_mappings': {
+            "match_mapping_type": "*",
+            "match": "*",
+            "mapping": {
+                "enabled": False
+            }
+        }})
 
     return mappings, dynamic
 
 
 def build_templates(name, field, dynamic):
     if isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
-        template = {
-            "match_mapping_type": "*",
+        main_template = {
+            f"nested_{name}": {
+                "match": "f{name}",
+                "mapping": {
+                    "type": "nested"
+                }
+            }
+        }
+
+        field_template = {
             "path_match": f"{name}.*",
             "mapping": {
                 "type": __type_mapping[field.__class__],
-                "enabled": True,
             }
         }
 
         if not field.index:
-            template['mapping']['enabled'] = False
+            field_template['mapping']['enabled'] = False
         if field.store:
-            template['mapping']['store'] = True
+            field_template['mapping']['store'] = True
         if field.copyto:
             assert len(field.copyto) == 1
-            template['mapping']['copy_to'] = field.copyto[0]
+            field_template['mapping']['copy_to'] = field.copyto[0]
 
-        dynamic.append({f"{name}_tpl": template})
+        dynamic.append(main_template)
+        dynamic.append({f"{name}_tpl": field_template})
 
     else:
         raise NotImplementedError(f"Unknown type for elasticsearch dynamic mapping: {field.__class__}")

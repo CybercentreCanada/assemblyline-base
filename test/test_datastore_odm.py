@@ -173,7 +173,7 @@ def collection_test(collection):
     with pytest.raises(odm.KeyMaskException):
         result = col.search('features: chocolate', fl='features')
         assert result['total'] == 1
-        result['items'][0].flavour
+        _ = result['items'][0].flavour
 
     # Check that the metadata is searchable
     assert col.search('metadata.url:*google*')['total'] == 2
