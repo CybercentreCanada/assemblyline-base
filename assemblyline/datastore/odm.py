@@ -465,8 +465,8 @@ class Model:
 
     def __repr__(self):
         if self.id:
-            return f"<{self.name()} {self.id} {self.json()}>"
-        return f"<{self.name()} {self.json()}>"
+            return f"<{self.__class__.__name__} [{self.id}] {self.json()}>"
+        return f"<{self.__class__.__name__} {self.json()}>"
 
 
 def model(index=None, store=None):
