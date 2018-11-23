@@ -439,8 +439,7 @@ class Model:
                 elif isinstance(value, datetime):
                     out[key] = value.isoformat().replace('+00:00', 'Z')
                 elif isinstance(value, TypedMapping):
-                    for sub_key, sub_value in value.items():
-                        out[key + '.' + sub_key] = sub_value
+                    out[key] = {k: v.as_primitives() if isinstance(v, Model) else v for k, v in value.items()}
                 elif isinstance(value, (List, TypedList)):
                     out[key] = [v.as_primitives() if isinstance(v, Model) else v for v in value]
                 else:
