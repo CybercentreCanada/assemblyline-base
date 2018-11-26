@@ -1,16 +1,16 @@
 """
 Utilities for benchmarking the datastore modules.
 """
-from assemblyline.datastore import odm
 from assemblyline.datastore import log
 import concurrent.futures
 import logging
-import arrow
 import random
 import time
 from pprint import pprint
 import string
 
+from assemblyline.datastore.bench.data_generator import get_random_submission
+from assemblyline.datastore.bench.model import FakeSubmission
 
 DATASET_SIZE = 1000
 
@@ -42,23 +42,6 @@ def riak_connection(model, use_model=True):
     return setup_collection(RiakStore(['127.0.0.1']), model, use_model)
 
 
-@odm.model(index=True, store=True)
-class BModel(odm.Model):
-    depth = odm.Integer()
-    width = odm.Integer()
-
-
-@odm.model(index=True, store=True)
-class AModel(odm.Model):
-    flavour = odm.Text(copyto='features')
-    height = odm.Integer()
-    birthday = odm.Date()
-    tags = odm.List(odm.Keyword(), default=[], copyto='features')
-    size = odm.Compound(BModel, default={'depth': 100, 'width': 100})
-    features = odm.List(odm.Text(), default=[])
-    counter = odm.Integer()
-
-
 def measure(data, key):
     class _timer:
         def __enter__(self):
@@ -75,35 +58,32 @@ def run(ds, times, dataset):
     # Insert the data
     with measure(times, 'insertion'):
         results = [pool.submit(ds.save, key, value) for key, value in dataset.items()]
-        # results = pool.map(ds, dataset.items())
         concurrent.futures.wait(results)
         ds.commit()
     [res.result() for res in results]
 
+    with measure(times, 'get_all'):
+        results = []
+        for ii in range(DATASET_SIZE):
+            results.append(pool.submit(ds.get, str(ii)))
+        concurrent.futures.wait(results)
+    [res.result() for res in results]
+
     with measure(times, 'range_searches_10'):
         results = []
-        for _ in range(1000):
+        for _ in range(DATASET_SIZE):
             index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'counter: [{index} TO {index + 10}]'))
+            results.append(pool.submit(ds.search, f'max_score: [{index} TO {index + 10}]'))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
     with measure(times, 'range_searches_100'):
         results = []
-        for _ in range(1000):
+        for _ in range(DATASET_SIZE):
             index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'counter: [{index} TO {index + 100}]'))
+            results.append(pool.submit(ds.search, f'max_score: [{index} TO {index + 100}]'))
         concurrent.futures.wait(results)
     [res.result() for res in results]
-
-    # with measure(times, 'delete_10'):
-    #     results = []
-    #     for _ in range(1000):
-    #         index = random.randint(0, DATASET_SIZE)
-    #         results.append(pool.submit(ds.delete, f'counter: [{index} TO {index + 100}]'))
-    #     concurrent.futures.wait(results)
-    #     ds.commit()
-    # [res.result() for res in results]
 
     pool.shutdown()
 
@@ -119,29 +99,20 @@ def main():
         data = {}
 
         for ii in range(DATASET_SIZE):
-            row = {
-                'flavour': random_string(50, 100),
-                'height': random.choice(range(90, 200, 5)),
-                'birthday': arrow.utcnow().isoformat().replace('+00:00', 'Z'),
-                'tags': [random_string(5, 10) for _ in range(random.choice(range(5)))],
-                'size.depth': 1000,
-                'size.width': 5000,
-                'counter': ii
-            }
-
-            data[str(ii)] = row
+            data[str(ii)] = get_random_submission(as_model=False)
 
         datastores = {
-            'riak': riak_connection(AModel, False),
-            'riak_model': riak_connection(AModel),
-            'solr': solr_connection(AModel, False),
-            'solr_model': solr_connection(AModel),
-            'es': es_connection(AModel, False),
-            'es_model': es_connection(AModel),
+            'riak': riak_connection(FakeSubmission, False),
+            'riak_model': riak_connection(FakeSubmission),
+            'solr': solr_connection(FakeSubmission, False),
+            'solr_model': solr_connection(FakeSubmission),
+            'es': es_connection(FakeSubmission, False),
+            'es_model': es_connection(FakeSubmission),
         }
 
         result = {}
         for name, ds in datastores.items():
+            print(f"Performing benchmarks for datastore: {name}")
             result[name] = {}
             run(ds, result[name], data)
 
