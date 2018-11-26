@@ -244,6 +244,17 @@ class List(_Field):
         self.empty = []
 
     def check(self, value, **kwargs):
+        if isinstance(self.child_type, Compound) and isinstance(value, dict):
+            # Search queries of list of compound fields will return dotted paths of list of
+            # values. When processed through the flat_fields function, since this function
+            # has no idea about the data layout, it will transform the dotted paths into
+            # a dictionary of items then contains a list of object instead of a list
+            # of dictionaries with single items.
+
+            # The following piece of code transforms the dictionary of list into a list of
+            # dictionaries so the rest of the model validation can go through.
+            value = [dict(zip(value, t)) for t in zip(*value.values())]
+
         return TypedList(self.child_type, *value)
 
     def apply_defaults(self, index, store):
