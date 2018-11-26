@@ -20,6 +20,7 @@ laboratory to the marketplace For certain cyber security innovations the Cyber C
 authority We evaluate participating companies new technology and provide feedback in order to assist them in bringing 
 their product to market To learn more about selling or testing an innovation visit the BCIP website
 """.split()
+META_KEYS = ["key_a", "key_b", "key_c", "key_d", "key_e", "key_f"]
 EXT = [
     ".jpg",
     ".doc",
@@ -66,9 +67,9 @@ def get_random_submission(as_model=True):
     exec_time = random.randint(10, 2000)
 
     description = get_random_phrase(3, 8)
-    start_time = datetime.datetime.fromtimestamp(now - exec_time)
-    end_time = datetime.datetime.fromtimestamp(now)
-    tags = {random.choice(WORDS).upper() for _ in range(random.randint(1, 15))}
+    start_time = datetime.datetime.fromtimestamp(now - exec_time).isoformat() + "Z"
+    end_time = datetime.datetime.fromtimestamp(now).isoformat() + "Z"
+    tags = list({random.choice(WORDS).upper() for _ in range(random.randint(1, 15))})
     results = [get_random_result_section(False) for _ in range(random.randint(0, 5))]
     files = [get_random_file(False) for _ in range(random.randint(1, 3))]
 
@@ -78,7 +79,7 @@ def get_random_submission(as_model=True):
         if result.score > max_score:
             max_score = result.score
 
-    metadata = {random.choice(WORDS).lower(): random.choice(WORDS) for _ in range(random.randint(0, 5))}
+    metadata = {META_KEYS[i]: random.choice(WORDS) for i in range(random.randint(0, 5))}
 
     out = {
         "description": description,
@@ -111,6 +112,8 @@ def get_random_string(smin=4, smax=24):
 if __name__ == "__main__":
     for x in range(10):
         print(get_random_submission())
+        print(get_random_submission(as_model=False))
+
         break
         print(get_random_file())
         #print(get_random_filename())
