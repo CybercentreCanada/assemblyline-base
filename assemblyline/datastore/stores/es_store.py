@@ -151,11 +151,11 @@ class ESCollection(Collection):
 
         saved_data[self.datastore.SORT_ID] = key
 
-        self.datastore.client.update(
+        self.datastore.client.index(
             index=self.name,
             doc_type=self.name,
             id=key,
-            body=json.dumps({'doc': saved_data, 'doc_as_upsert': True})
+            body=json.dumps(saved_data)
         )
 
         return True
