@@ -113,8 +113,3 @@ if __name__ == "__main__":
     for x in range(10):
         print(get_random_submission())
         print(get_random_submission(as_model=False))
-
-        break
-        print(get_random_file())
-        #print(get_random_filename())
-        #print(get_random_result_section())
