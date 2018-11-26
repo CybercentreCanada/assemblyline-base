@@ -444,7 +444,7 @@ class Model:
         fields = self.fields()
         for key, value in self.odm_py_obj.items():
             field_type = fields[key]
-            if value or (not value and field_type.default_set):
+            if value is not None or (value is None and field_type.default_set):
                 if isinstance(value, Model):
                     out[key] = value.as_primitives()
                 elif isinstance(value, datetime):
