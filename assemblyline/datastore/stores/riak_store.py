@@ -173,10 +173,6 @@ class RiakCollection(SolrCollection):
             elif isinstance(fields, str):
                 fields = fields.split(',')
 
-            for name, field in self.stored_fields.items():
-                if name in fields and name not in item:
-                    item[name] = field.empty
-
             return self.model_class(item, mask=fields, docid=item_id)
 
         return {key: val if isinstance(val, list) else [val] for key, val in item.items()}

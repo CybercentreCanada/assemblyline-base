@@ -148,10 +148,6 @@ class Keyword(_Field):
     Examples: file hashes, service names, document ids
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.empty = ''
-
     def check(self, value, **kwargs):
         if not value:
             if self.default_set:
@@ -163,10 +159,6 @@ class Keyword(_Field):
 
 class Text(_Field):
     """A field storing human readable text data."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.empty = ''
 
     def check(self, value, **kwargs):
         if not value:
@@ -241,7 +233,6 @@ class List(_Field):
     def __init__(self, child_type, **kwargs):
         super().__init__(**kwargs)
         self.child_type = child_type
-        self.empty = []
 
     def check(self, value, **kwargs):
         if isinstance(self.child_type, Compound) and isinstance(value, dict):
@@ -301,7 +292,6 @@ class Mapping(_Field):
     def __init__(self, child_type, **kwargs):
         super().__init__(**kwargs)
         self.child_type = child_type
-        self.empty = {}
 
     def check(self, value, **kwargs):
         return TypedMapping(self.child_type, **value)
@@ -359,7 +349,7 @@ class Model:
         """
         Describe the elements of the model.
 
-        Recurse into compound fields, concatinating the names with '.' separators.
+        Recurse into compound fields, concatenating the names with '.' separators.
 
         Args:
             skip_mappings (bool): Skip over mappings where the real subfield names are unknown.

@@ -269,10 +269,6 @@ class SolrCollection(Collection):
             elif isinstance(fields, str):
                 fields = fields.split(',')
 
-            for name, field in self.stored_fields.items():
-                if name in fields and name not in item:
-                    item[name] = field.empty
-
             item.pop('_version_', None)
             if '_source_' in item:
                 data = json.loads(item['_source_'])

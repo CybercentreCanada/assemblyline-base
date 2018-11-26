@@ -1,4 +1,3 @@
-
 import logging
 import pytest
 import random
@@ -15,37 +14,45 @@ log.setLevel(logging.INFO)
 
 
 @odm.model(index=True, store=True)
-class BModel(odm.Model):
+class ThingsModel(odm.Model):
+    count = odm.Integer()
+    thing = odm.Text()
+
+
+@odm.model(index=True, store=True)
+class MeasurementModel(odm.Model):
     depth = odm.Integer()
     width = odm.Integer()
 
 
 @odm.model(index=True, store=True)
-class AModel(odm.Model):
+class BaseTestModel(odm.Model):
     flavour = odm.Text(copyto='features', default="EMPTY")
     height = odm.Integer()
     birthday = odm.Date()
     tags = odm.List(odm.Keyword(), default=[], copyto='features')
-    size = odm.Compound(BModel, default={'depth': 100, 'width': 100})
+    size = odm.Compound(MeasurementModel, default={'depth': 100, 'width': 100})
     features = odm.List(odm.Text(), default=[])
     metadata = odm.Mapping(odm.Text(), default={})
+    things = odm.List(odm.Compound(ThingsModel), default=[])
 
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     test_map = {
-        'test1': AModel(dict(tags=['silly'], flavour='chocolate', height=100, birthday=dm('now-2d'),
-                             metadata={'url': 'google.com'})),
-        'test2': AModel(dict(tags=['cats'], flavour='A little dry', height=180, birthday=dm('now-1d'),
-                             metadata={'url': 'google.ca'})),
-        'test3': AModel(dict(tags=['silly'], flavour='Red', height=140, birthday=dm('now'),
-                             size={'depth': 1, 'width': 1})),
-        'test4': AModel(dict(tags=['cats'], flavour='Bugs ++', height=30, birthday='2018-10-30T17:48:48+00:00')),
-        'dict1': AModel(dict(tags=['cats'], flavour='A--', height=300, birthday='2018-10-30T17:48:48Z')),
-        'dict2': AModel(dict(tags=[], flavour='100%', height=90, birthday=datetime.utcnow(),
-                             metadata={'origin': 'space'})),
-        'dict3': AModel(dict(tags=['10', 'cats'], flavour='', height=180, birthday=dm('now-3d'))),
-        'dict4': AModel(dict(tags=['10', 'silly', 'cats'], flavour='blue', height=100, birthday=dm('now-1d'))),
+        'test1': BaseTestModel(dict(tags=['silly'], flavour='chocolate', height=100, birthday=dm('now-2d'),
+                                    metadata={'url': 'google.com'}, things=[{'count': 1, 'thing': 'hat'}])),
+        'test2': BaseTestModel(dict(tags=['cats'], flavour='A little dry', height=180, birthday=dm('now-1d'),
+                                    metadata={'url': 'google.ca'})),
+        'test3': BaseTestModel(dict(tags=['silly'], flavour='Red', height=140, birthday=dm('now'),
+                                    size={'depth': 1, 'width': 1}, things=[{'count': 1, 'thing': 'hat'},
+                                                                           {'count': 10, 'thing': 'shoe'}])),
+        'test4': BaseTestModel(dict(tags=['cats'], flavour='Bugs ++', height=30, birthday='2018-10-30T17:48:48+00:00')),
+        'dict1': BaseTestModel(dict(tags=['cats'], flavour='A--', height=300, birthday='2018-10-30T17:48:48Z')),
+        'dict2': BaseTestModel(dict(tags=[], flavour='100%', height=90, birthday=datetime.utcnow(),
+                                    metadata={'origin': 'space'})),
+        'dict3': BaseTestModel(dict(tags=['10', 'cats'], flavour='', height=180, birthday=dm('now-3d'))),
+        'dict4': BaseTestModel(dict(tags=['10', 'silly', 'cats'], flavour='blue', height=100, birthday=dm('now-1d'))),
     }
 
 
@@ -59,8 +66,8 @@ def setup_store(docstore, request):
         ret_val = docstore.ping()
         if ret_val:
             collection_name = ''.join(random.choices(string.ascii_lowercase, k=10))
-            docstore.register(collection_name, AModel)
-            docstore.register(collection_name, AModel)
+            docstore.register(collection_name, BaseTestModel)
+            docstore.register(collection_name, BaseTestModel)
             collection = docstore.__getattr__(collection_name)
             request.addfinalizer(collection.wipe)
 
