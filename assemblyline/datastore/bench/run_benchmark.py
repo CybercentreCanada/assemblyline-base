@@ -1,14 +1,15 @@
 """
 Utilities for benchmarking the datastore modules.
 """
-from assemblyline.datastore import log
 import concurrent.futures
 import logging
 import random
 import time
-from pprint import pprint
 import string
 
+from tabulate import tabulate
+
+from assemblyline.datastore import log
 from assemblyline.datastore.bench.data_generator import get_random_submission
 from assemblyline.datastore.bench.model import FakeSubmission
 
@@ -53,7 +54,7 @@ def measure(data, key):
 
 
 def run(ds, times, dataset):
-    pool = concurrent.futures.ThreadPoolExecutor(20)
+    pool = concurrent.futures.ThreadPoolExecutor(50)
 
     # Insert the data
     with measure(times, 'insertion'):
@@ -85,6 +86,13 @@ def run(ds, times, dataset):
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
+    with measure(times, 'delete_1/10'):
+        results = []
+        for ii in range(int(DATASET_SIZE/10)):
+            results.append(pool.submit(ds.delete, str(ii)))
+        concurrent.futures.wait(results)
+    [res.result() for res in results]
+
     pool.shutdown()
 
 
@@ -101,6 +109,8 @@ def main():
         for ii in range(DATASET_SIZE):
             data[str(ii)] = get_random_submission(as_model=False)
 
+        print("\nCreating indexes...\n")
+        log.setLevel(logging.ERROR)
         datastores = {
             'riak': riak_connection(FakeSubmission, False),
             'riak_model': riak_connection(FakeSubmission),
@@ -109,6 +119,7 @@ def main():
             'es': es_connection(FakeSubmission, False),
             'es_model': es_connection(FakeSubmission),
         }
+        log.setLevel(logging.INFO)
 
         result = {}
         for name, ds in datastores.items():
@@ -116,7 +127,12 @@ def main():
             result[name] = {}
             run(ds, result[name], data)
 
-        pprint(result)
+        data = [[k, v['get_all'], v['insertion'], v['delete_1/10'],
+                 v['range_searches_10'], v['range_searches_100']]
+                for k, v in result.items()]
+
+        print("\n\n")
+        print(tabulate(data, headers=['Datastore', 'GETs', 'PUTs', 'DEL 1/10', 'Search 10', 'Search 100']))
 
     finally:
         log.setLevel(logging.ERROR)
