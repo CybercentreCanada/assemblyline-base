@@ -44,6 +44,31 @@ class RiakCollection(SolrCollection):
     <dynamicField name="*_dt"  type="date"    indexed="true"  stored="true" multiValued="false"/>
     <dynamicField name="*_dts" type="date"    indexed="true"  stored="true" multiValued="true"/>
      """
+    RIAK_RECONNECT_MSGS = [
+        "insufficient_vnodes",
+        "Unknown message code: ",
+        "all_nodes_down",
+        "Socket returned short packet",
+        "Not enough nodes are up to service this request.",
+        "connected host has failed to respond",
+        "target machine actively refused it",
+        "timeout",
+        "Connection refused",
+        "Truncated message",
+        "Truncated string",
+        "Unexpected end-group tag",
+        "unknown msg code",
+        "key must be a string, instead got None",
+        "Tag had invalid wire type",
+        "returned zero bytes unexpectedly",
+        "unexpected message code:",
+        "Client is closed.",
+        "established connection was aborted",
+        "existing connection was forcibly closed"
+    ]
+    RIAK_ABORT_MSGS = [
+        "too_large"
+    ]
 
     def __init__(self, datastore, name, model_class=None, solr_port=8093, riak_http_port=8098):
         self.riak_bucket = datastore.client.bucket(name)
@@ -53,6 +78,38 @@ class RiakCollection(SolrCollection):
         self.riak_api_base = "search/query"
 
         super().__init__(datastore, name, model_class=model_class, api_base="internal_solr")
+
+    def with_retries(self, func, *args, **kwargs):
+        retries = 0
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except OverflowError:
+                self.datastore.connection_reset()
+                retries += 1
+            except riak.RiakError as e:
+                error = str(e)
+                if any(msg in error for msg in self.RIAK_ABORT_MSGS):
+                    raise
+                self.datastore.connection_reset()
+                retries += 1
+            except Exception as e:
+                error = str(e)
+                re_raise = True
+                if any(msg in error for msg in self.RIAK_RECONNECT_MSGS):
+                    if retries < self.MAX_RETRY_BACKOFF:
+                        time.sleep(retries)
+                    else:
+                        time.sleep(self.MAX_RETRY_BACKOFF)
+                    if log and retries % 10 == 0:
+                        log.debug("Reconnecting to riak: %s", error)
+                    self.datastore.connection_reset()
+                    re_raise = False
+
+                if re_raise:
+                    raise
+                else:
+                    retries += 1
 
     def commit(self):
         for host in self.datastore.get_hosts():

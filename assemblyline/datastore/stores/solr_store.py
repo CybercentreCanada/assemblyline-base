@@ -70,6 +70,19 @@ class SolrCollection(Collection):
                 if field.store:
                     self.stored_fields[name] = field
 
+    def with_retries(self, func, *args, **kwargs):
+        retries = 0
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except requests.RequestException:
+                if retries < self.MAX_RETRY_BACKOFF:
+                    time.sleep(retries)
+                else:
+                    time.sleep(self.MAX_RETRY_BACKOFF)
+                self.datastore.connection_reset()
+                retries += 1
+
     def _get_session(self, port=8983):
         session, host = self.datastore.get_or_create_session()
         if ":" not in host:

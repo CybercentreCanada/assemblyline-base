@@ -94,6 +94,16 @@ class ESCollection(Collection):
 
         super().__init__(datastore, name, model_class=model_class)
 
+    def with_retries(self, func, *args, **kwargs):
+        retries = 0
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except (SearchRetryException, elasticsearch.exceptions.ConflictError):
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.datastore.connection_reset()
+                retries += 1
+
     def commit(self):
         self.with_retries(self.datastore.client.indices.refresh, self.name)
         self.with_retries(self.datastore.client.indices.clear_cache, self.name)

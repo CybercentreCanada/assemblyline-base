@@ -7,7 +7,6 @@ from datemath.helpers import DateMathException
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, \
     SearchRetryException
-from assemblyline.datastore.reconnect import collection_reconnect
 from assemblyline.remote.datatypes.lock import Lock
 
 log = logging.getLogger('assemblyline.datastore')
@@ -29,6 +28,7 @@ class Collection(object):
     DEFAULT_ROW_SIZE = 25
     FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
     MAX_FACET_LIMIT = 100
+    MAX_RETRY_BACKOFF = 10
     UPDATE_SET = "SET"
     UPDATE_INC = "INC"
     UPDATE_DEC = "DEC"
@@ -48,9 +48,13 @@ class Collection(object):
         self.model_class = model_class
         self._ensure_collection()
 
-    @collection_reconnect(log)
     def with_retries(self, func, *args, **kwargs):
-        return func(*args, **kwargs)
+        """
+        This function performs the passed function with the given args and kwargs and reconnect if it fails
+
+        :return: return the output of the function passed
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
     def normalize(self, data):
         """
