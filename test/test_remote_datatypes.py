@@ -39,7 +39,7 @@ def test_hash(redis_connection):
 def test_expiring_hash(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.hash import ExpiringHash
-        with ExpiringHash('test-expiring-hashmap', ttl=2) as eh:
+        with ExpiringHash('test-expiring-hashmap', ttl=1) as eh:
             assert eh.add("key", "value") == 1
             assert eh.length() == 1
             time.sleep(2)
