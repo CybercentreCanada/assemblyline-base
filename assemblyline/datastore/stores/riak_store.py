@@ -8,7 +8,7 @@ import time
 
 from copy import copy
 
-from assemblyline.datastore import collection_reconnect, log, DataStoreException
+from assemblyline.datastore import log, DataStoreException
 from assemblyline.datastore.stores.solr_store import SolrCollection, SolrStore
 from assemblyline.datastore.support.riak.build import build_mapping
 
@@ -54,7 +54,6 @@ class RiakCollection(SolrCollection):
 
         super().__init__(datastore, name, model_class=model_class, api_base="internal_solr")
 
-    @collection_reconnect(log)
     def commit(self):
         for host in self.datastore.get_hosts():
             if ":" not in host:
@@ -62,7 +61,7 @@ class RiakCollection(SolrCollection):
             url = "http://{host}/{api_base}/{core}/update/?commit=true" \
                   "&softCommit=true&wt=json".format(host=host, api_base=self.api_base, core=self.name)
 
-            res = requests.get(url)
+            res = self.with_retries(requests.get, url)
             return res.ok
 
     # noinspection PyBroadException
@@ -78,14 +77,13 @@ class RiakCollection(SolrCollection):
                               "decoding method to pull the data." % (item.bucket.name, item.key))
             return item.encoded_data
 
-    @collection_reconnect(log)
     def multiget(self, key_list):
         temp_keys = copy(key_list)
         done = False
         retry = 0
         ret = []
         while not done:
-            for bucket_item in self.riak_bucket.multiget(temp_keys):
+            for bucket_item in self.with_retries(self.riak_bucket.multiget, temp_keys):
                 if not isinstance(bucket_item, tuple):
                     try:
                         item_data = RiakCollection.get_data_from_riak_item(bucket_item)
@@ -107,14 +105,13 @@ class RiakCollection(SolrCollection):
                 raise KeyError(str(temp_keys))
         return ret
 
-    @collection_reconnect(log)
     def _get(self, key, retries):
         if retries is None:
             retries = self.RETRY_NONE
 
         done = False
         while not done:
-            data = self.get_data_from_riak_item(self.riak_bucket.get(key))
+            data = self.get_data_from_riak_item(self.with_retries(self.riak_bucket.get, key))
             if data and isinstance(data, dict):
                 data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
 
@@ -134,27 +131,25 @@ class RiakCollection(SolrCollection):
     def _save(self, key, data):
         if self.model_class:
             data = data.as_primitives()
-        item = self.riak_bucket.new(key=key, data=data, content_type='application/json')
+        item = self.with_retries(self.riak_bucket.new, key=key, data=data, content_type='application/json')
         item.store()
         return True
 
-    @collection_reconnect(log)
     def delete(self, key):
-        self.riak_bucket.delete(key)
+        self.with_retries(self.riak_bucket.delete, key)
 
-    @collection_reconnect(log)
     def delete_matching(self, query):
         for item in self.stream_search(query, fl=self.datastore.ID):
             try:
                 key = item.id
-                self.riak_bucket.delete(key)
+                self.with_retries(self.riak_bucket.delete, key)
             except AttributeError:
                 key = item[self.datastore.ID]
                 if isinstance(key, list):
                     for k in key:
-                        self.riak_bucket.delete(k)
+                        self.with_retries(self.riak_bucket.delete, k)
                 else:
-                    self.riak_bucket.delete(key)
+                    self.with_retries(self.riak_bucket.delete, key)
 
         return True
 
@@ -177,7 +172,6 @@ class RiakCollection(SolrCollection):
 
         return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
-    @collection_reconnect(log)
     def _search(self, args=None, port=None, api_base=None, search_api='select/'):
         if self.query_plan:
             temp_args = args + self.query_plan
@@ -193,7 +187,6 @@ class RiakCollection(SolrCollection):
 
             return ret_val
 
-    @collection_reconnect(log)
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
         ret_val = super().histogram(field, start, end, gap, query=query, mincount=mincount,
                                     filters=filters, access_control=access_control)
@@ -203,11 +196,9 @@ class RiakCollection(SolrCollection):
 
         return {step: count for step, count in ret_val.items() if count >= mincount}
 
-    @collection_reconnect(log)
     def fields(self, port=8093):
         return super().fields(self.solr_port)
 
-    @collection_reconnect(log)
     def _index_exists(self):
         try:
             self.datastore.client.get_search_index('name')
@@ -215,7 +206,6 @@ class RiakCollection(SolrCollection):
         except riak.RiakError:
             return False
 
-    @collection_reconnect(log)
     def _ensure_collection(self):
         # TODO: get schema and nvals from model_class
         if not self._index_exists():
@@ -247,14 +237,13 @@ class RiakCollection(SolrCollection):
             self.datastore.client.set_bucket_props(bucket=self.riak_bucket, props=props)
         self._check_fields()
 
-    @collection_reconnect(log)
     def wipe(self):
         log.warning("Wipe operation started for collection: %s" % self.name.upper())
 
-        for items in self.riak_bucket.stream_index("$bucket", ""):
+        for items in self.with_retries(self.riak_bucket.stream_index, "$bucket", ""):
             for item in items:
                 log.warning("{bucket}: deleting key [{key}]".format(bucket=self.name, key=item))
-                self.riak_bucket.delete(item)
+                self.with_retries(self.riak_bucket.delete, item)
 
         props = {
             'search_index': "_dont_index_"

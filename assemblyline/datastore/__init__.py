@@ -48,6 +48,10 @@ class Collection(object):
         self.model_class = model_class
         self._ensure_collection()
 
+    @collection_reconnect(log)
+    def with_retries(self, func, *args, **kwargs):
+        return func(*args, **kwargs)
+
     def normalize(self, data):
         """
         Normalize the data using the model class
@@ -60,7 +64,6 @@ class Collection(object):
 
         return data
 
-    @collection_reconnect(log)
     def commit(self):
         """
         This function should be overloaded to perform a commit of the index data of all the different hosts
@@ -70,7 +73,6 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def multiget(self, key_list):
         """
         Get a list of documents from the datastore and make sure they are normalized using
@@ -94,7 +96,6 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def get(self, key):
         """
         Get a document from the datastore, retry a few times if not found and normalize the
@@ -107,7 +108,6 @@ class Collection(object):
         """
         return self.normalize(self._get(key, self.RETRY_NORMAL))
 
-    @collection_reconnect(log)
     def get_if_exists(self, key):
         """
         Get a document from the datastore but do not retry if not found.
@@ -120,7 +120,6 @@ class Collection(object):
         """
         return self.normalize(self._get(key, self.RETRY_NONE))
 
-    @collection_reconnect(log)
     def require(self, key):
         """
         Get a document from the datastore and retry forever because we know for sure
@@ -132,7 +131,6 @@ class Collection(object):
         """
         return self.normalize(self._get(key, self.RETRY_INFINITY))
 
-    @collection_reconnect(log)
     def save(self, key, data):
         """
         Save a to document to the datastore using the key as its document id.
@@ -158,7 +156,6 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def delete(self, key):
         """
         This function should delete the underlying document referenced by the key.
@@ -169,7 +166,6 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def delete_matching(self, query):
         """
         This function should delete the underlying documents referenced by the query.
@@ -180,7 +176,6 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def update(self, key, operations):
         """
         This function performs an atomic update on some fields from the
@@ -225,7 +220,6 @@ class Collection(object):
 
         return self._update(key, operations)
 
-    @collection_reconnect(log)
     def _update(self, key, operations):
         with Lock(f'collection-{self.name}-update-{key}', 5):
             data = self.get(key)
@@ -245,7 +239,6 @@ class Collection(object):
 
             return self.save(key, data)
 
-    @collection_reconnect(log)
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
                filters=(), access_control=None):
         """
@@ -276,7 +269,6 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def stream_search(self, query, fl=None, filters=(), access_control=None, buffer_size=200):
         """
         This function should perform a search through the datastore and stream
@@ -355,21 +347,17 @@ class Collection(object):
                                                                                     gaps_count))
             return ret_type
 
-    @collection_reconnect(log)
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
                        min_count=1, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def grouped_search(self, group_field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
                        rows=DEFAULT_ROW_SIZE, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def fields(self):
         """
         This function should return all the fields in the index with their types
@@ -378,7 +366,6 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    @collection_reconnect(log)
     def _ensure_collection(self):
         """
         This function should test if the collection that you are trying to access does indeed exist
@@ -412,7 +399,6 @@ class Collection(object):
                                    f"type. [{fields[field_name]['type']} != "
                                    f"{model[field_name].__class__.__name__.lower()}]")
 
-    @collection_reconnect(log)
     def wipe(self):
         """
         This function should completely delete the collection

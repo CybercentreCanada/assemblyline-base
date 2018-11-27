@@ -7,7 +7,7 @@ import time
 
 from copy import deepcopy
 
-from assemblyline.datastore import Collection, collection_reconnect, BaseStore, SearchException, \
+from assemblyline.datastore import Collection, BaseStore, SearchException, \
     SearchRetryException, log
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
     default_dynamic_templates
@@ -94,15 +94,13 @@ class ESCollection(Collection):
 
         super().__init__(datastore, name, model_class=model_class)
 
-    @collection_reconnect(log)
     def commit(self):
-        self.datastore.client.indices.refresh(self.name)
-        self.datastore.client.indices.clear_cache(self.name)
+        self.with_retries(self.datastore.client.indices.refresh, self.name)
+        self.with_retries(self.datastore.client.indices.clear_cache, self.name)
         return True
 
-    @collection_reconnect(log)
     def multiget(self, key_list):
-        data = self.datastore.client.mget({'ids': key_list}, index=self.name, doc_type='_all')
+        data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name, doc_type='_all')
         out = []
         for row in data.get('docs', []):
             if 'found' in row and not row['found']:
@@ -114,7 +112,6 @@ class ESCollection(Collection):
                 out.append(self.normalize(row['_source']))
         return out
 
-    @collection_reconnect(log)
     def _get(self, key, retries):
         if retries is None:
             retries = self.RETRY_NONE
@@ -123,7 +120,7 @@ class ESCollection(Collection):
         while not done:
 
             try:
-                data = self.datastore.client.get(index=self.name, doc_type='_all', id=key)['_source']
+                data = self.with_retries(self.datastore.client.get, index=self.name, doc_type='_all', id=key)['_source']
                 # TODO: Maybe we should not allow data that is not a dictionary...
                 if "__non_doc_raw__" in data:
                     return data['__non_doc_raw__']
@@ -151,7 +148,8 @@ class ESCollection(Collection):
 
         saved_data[self.datastore.SORT_ID] = key
 
-        self.datastore.client.index(
+        self.with_retries(
+            self.datastore.client.index,
             index=self.name,
             doc_type=self.name,
             id=key,
@@ -160,15 +158,13 @@ class ESCollection(Collection):
 
         return True
 
-    @collection_reconnect(log)
     def delete(self, key):
         try:
-            info = self.datastore.client.delete(id=key, doc_type=self.name, index=self.name)
+            info = self.with_retries(self.datastore.client.delete, id=key, doc_type=self.name, index=self.name)
             return info['result'] == 'deleted'
         except elasticsearch.NotFoundError:
             return True
 
-    @collection_reconnect(log)
     def delete_matching(self, query):
         query_body = {
             "query": {
@@ -182,12 +178,12 @@ class ESCollection(Collection):
             }
         }
         try:
-            info = self.datastore.client.delete_by_query(index=self.name, body=query_body, doc_type=self.name)
+            info = self.with_retries(self.datastore.client.delete_by_query, index=self.name,
+                                     body=query_body, doc_type=self.name)
             return info.get('deleted', 0) != 0
         except elasticsearch.NotFoundError:
             return False
 
-    @collection_reconnect(log)
     def _update(self, key, operations):
         op_sources = []
         op_params = {}
@@ -221,7 +217,8 @@ class ESCollection(Collection):
 
         # noinspection PyBroadException
         try:
-            res = self.datastore.client.update(index=self.name, doc_type=self.name, id=key, body=update_body)
+            res = self.with_retries(self.datastore.client.update, index=self.name,
+                                    doc_type=self.name, id=key, body=update_body)
         except Exception:
             return False
 
@@ -263,7 +260,6 @@ class ESCollection(Collection):
 
         return item
 
-    @collection_reconnect(log)
     def _search(self, args=None):
         parsed_values = deepcopy(self.DEFAULT_SEARCH_VALUES)
 
@@ -339,7 +335,7 @@ class ESCollection(Collection):
 
         try:
             # Run the query
-            result = self.datastore.client.search(index=self.name, body=json.dumps(query_body))
+            result = self.with_retries(self.datastore.client.search, index=self.name, body=json.dumps(query_body))
             return result
 
         except elasticsearch.RequestError:
@@ -433,7 +429,8 @@ class ESCollection(Collection):
             "stored_fields": fl or ['*']
         }
 
-        iterator = elasticsearch.helpers.scan(
+        iterator = self.with_retries(
+            elasticsearch.helpers.scan,
             self.datastore.client,
             query=query_body,
             index=self.name,
@@ -445,7 +442,6 @@ class ESCollection(Collection):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl)
 
-    @collection_reconnect(log)
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
         type_modifier = self._validate_steps_count(start, end, gap)
 
@@ -476,7 +472,6 @@ class ESCollection(Collection):
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    @collection_reconnect(log)
     def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
                        min_count=1, filters=None, access_control=None):
         if not filters:
@@ -505,7 +500,6 @@ class ESCollection(Collection):
         return {row.get('key_as_string', row['key']): row['doc_count']
                 for row in result['aggregations'][field]['buckets']}
 
-    @collection_reconnect(log)
     def grouped_search(self, group_field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None):
 
@@ -569,7 +563,6 @@ class ESCollection(Collection):
         except KeyError:
             return ds_type.lower()
 
-    @collection_reconnect(log)
     def fields(self):
         # TODO: map fields using the model so they are consistent throughout all datastores?
 
@@ -585,7 +578,7 @@ class ESCollection(Collection):
                     raise ValueError("Unknown field data " + str(props))
             return out
 
-        data = self.datastore.client.indices.get(self.name)
+        data = self.with_retries(self.datastore.client.indices.get, self.name)
 
         properties = flatten_fields(data[self.name]['mappings'][self.name].get('properties', {}))
 
@@ -606,9 +599,8 @@ class ESCollection(Collection):
 
         return collection_data
 
-    @collection_reconnect(log)
     def _ensure_collection(self):
-        if not self.datastore.client.indices.exists(self.name):
+        if not self.with_retries(self.datastore.client.indices.exists, self.name):
             log.warning(f"Collection {self.name.upper()} does not exists. "
                         "Creating it now...")
 
@@ -621,7 +613,8 @@ class ESCollection(Collection):
 
             mappings = deepcopy(default_mapping)
             if self.model_class:
-                mappings['properties'], mappings['dynamic_templates'] = build_mapping(self.model_class.fields().values())
+                mappings['properties'], mappings['dynamic_templates'] = \
+                    build_mapping(self.model_class.fields().values())
             else:
                 mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
@@ -636,15 +629,14 @@ class ESCollection(Collection):
             }
 
             index['mappings'][self.name] = mappings
-            self.datastore.client.indices.create(self.name, index)
+            self.with_retries(self.datastore.client.indices.create, self.name, index)
         self._check_fields()
 
-    @collection_reconnect(log)
     def wipe(self):
         log.warning("Wipe operation started for collection: %s" % self.name.upper())
 
-        if self.datastore.client.indices.exists(self.name):
-            self.datastore.client.indices.delete(self.name)
+        if self.with_retries(self.datastore.client.indices.exists, self.name):
+            self.with_retries(self.datastore.client.indices.delete, self.name)
 
 
 class ESStore(BaseStore):

@@ -56,6 +56,7 @@ class DatastoreReconnect(object):
     def __call__(self, original):
         def wrapper(*args, **kw):
             ds = self.get_datastore(args[0])
+
             if ds.is_closed():
                 raise DatastoreClosedError('You are trying to perform an operation on a close datastore')
             if ds.__class__.__name__ == "RiakStore":
