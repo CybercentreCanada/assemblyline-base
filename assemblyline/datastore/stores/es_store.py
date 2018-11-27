@@ -675,7 +675,8 @@ class ESStore(BaseStore):
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
 
-        self.client = elasticsearch.Elasticsearch(hosts=hosts, connection_class=elasticsearch.RequestsHttpConnection,
+        self.client = elasticsearch.Elasticsearch(hosts=hosts,
+                                                  connection_class=elasticsearch.RequestsHttpConnection,
                                                   max_retries=0)
 
         self.url_path = 'elastic'
