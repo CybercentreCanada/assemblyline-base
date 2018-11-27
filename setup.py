@@ -1,5 +1,6 @@
+import os
+
 from setuptools import setup, find_packages
-import os.path
 
 
 def read_requirements(path):
@@ -15,7 +16,7 @@ def read_requirements(path):
 
 setup(
     name="assemblyline",
-    version="0.1",
+    version="4.0.0.dev0",
     packages=find_packages(exclude=['test/*']),
     install_requires=read_requirements('assemblyline/requirements.txt'),
     tests_requires=read_requirements('test/requirements.txt'),
