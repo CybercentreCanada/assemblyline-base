@@ -89,8 +89,9 @@ class ESCollection(Collection):
         'df': None
     }
 
-    def __init__(self, datastore, name, model_class=None, replicas=0):
+    def __init__(self, datastore, name, model_class=None, replicas=0, shards=1):
         self.replicas = replicas
+        self.shards = shards
 
         super().__init__(datastore, name, model_class=model_class)
 
@@ -619,6 +620,7 @@ class ESCollection(Collection):
                 index['settings'] = {}
             if 'index' not in index['settings']:
                 index['settings']['index'] = {}
+            index['settings']['index']['number_of_shards'] = self.shards
             index['settings']['index']['number_of_replicas'] = self.replicas
 
             mappings = deepcopy(default_mapping)
