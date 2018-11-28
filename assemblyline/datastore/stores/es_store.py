@@ -397,14 +397,13 @@ class ESCollection(Collection):
 
         result = self._search(args)
 
-        docs = [self._format_output(doc, field_list) for doc in result['hits']['hits']]
-        output = {
+        return {
             "offset": int(offset),
             "rows": int(rows),
             "total": int(result['hits']['total']),
-            "items": [self._cleanup_search_result(x) for x in docs]
+            "items": [self._cleanup_search_result(self._format_output(doc, field_list))
+                      for doc in result['hits']['hits']]
         }
-        return output
 
     def stream_search(self, query, fl=None, filters=None, access_control=None, item_buffer_size=200):
         if item_buffer_size > 500 or item_buffer_size < 50:
