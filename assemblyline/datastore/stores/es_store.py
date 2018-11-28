@@ -241,8 +241,9 @@ class ESCollection(Collection):
         source_data = result.pop('_source', None)
 
         # Remove extra fields that should not show up in the search results
-        result.pop('_version', None)
-        result.pop(self.DEFAULT_SEARCH_FIELD, None)
+        source.pop('_version', None)
+        source.pop(self.DEFAULT_SEARCH_FIELD, None)
+        source.pop(self.datastore.SORT_ID, None)
 
         if self.model_class:
             item_id = result['_id']
@@ -253,7 +254,6 @@ class ESCollection(Collection):
                 source_data.pop(self.datastore.SORT_ID, None)
                 return self.model_class(source_data, docid=item_id)
 
-            source.pop(self.datastore.SORT_ID, None)
             source = _strip_lists(self.model_class, source)
             return self.model_class(source, mask=fields, docid=item_id)
 

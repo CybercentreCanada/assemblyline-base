@@ -15,7 +15,11 @@ import json
 import copy
 import arrow
 import typing
+
 from datetime import datetime
+from dateutil.tz import tzutc
+
+DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 def flat_to_nested(data: dict):
@@ -131,7 +135,10 @@ class Date(_Field):
 
     def check(self, value, **kwargs):
         # Use the arrow library to transform ??? to a datetime
-        return arrow.get(value).datetime
+        try:
+            return datetime.strptime(value, DATEFORMAT).replace(tzinfo=tzutc())
+        except (TypeError, ValueError):
+            return arrow.get(value).datetime
 
 
 class Boolean(_Field):
@@ -336,12 +343,23 @@ class Model:
         Args:
             skip_mappings (bool): Skip over mappings where the real subfield names are unknown.
         """
+        if skip_mappings and hasattr(cls, 'field_cache_skip'):
+            return cls.field_cache_skip
+
+        if not skip_mappings and hasattr(cls, 'field_cache'):
+            return cls.field_cache
+
         out = dict()
         for name, field_data in cls.__dict__.items():
             if isinstance(field_data, _Field):
                 if skip_mappings and isinstance(field_data, Mapping):
                     continue
                 out[name] = field_data
+
+        if skip_mappings:
+            cls.field_cache_skip = out
+        else:
+            cls.field_cache = out
         return out
 
     @classmethod
@@ -438,7 +456,7 @@ class Model:
                 if isinstance(value, Model):
                     out[key] = value.as_primitives()
                 elif isinstance(value, datetime):
-                    out[key] = value.isoformat().replace('+00:00', 'Z')
+                    out[key] = value.strftime(DATEFORMAT)
                 elif isinstance(value, TypedMapping):
                     out[key] = {k: v.as_primitives() if isinstance(v, Model) else v for k, v in value.items()}
                 elif isinstance(value, (List, TypedList)):
