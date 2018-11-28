@@ -236,17 +236,22 @@ class ESCollection(Collection):
         return res['result'] == "updated"
 
     def _format_output(self, result, fields=None):
+        # Getting search document data
         source = result.get('fields', {})
+        source_data = result.pop('_source', None)
+
+        # Remove extra fields that should not show up in the search results
+        result.pop('_version', None)
+        result.pop(self.DEFAULT_SEARCH_FIELD, None)
 
         if self.model_class:
             item_id = result['_id']
-            source = result.get('fields', {})
             if fields and '*' in fields:
                 fields = None
 
-            if '_source' in source:
-                source['_source'].pop(self.datastore.SORT_ID, None)
-                return self.model_class(source['_source'], docid=item_id)
+            if source_data:
+                source_data.pop(self.datastore.SORT_ID, None)
+                return self.model_class(source_data, docid=item_id)
 
             source.pop(self.datastore.SORT_ID, None)
             source = _strip_lists(self.model_class, source)
@@ -262,14 +267,6 @@ class ESCollection(Collection):
             return source
 
         return {key: val for key, val in source.items() if key in fields}
-
-    def _cleanup_search_result(self, item):
-        if isinstance(item, dict):
-            item.pop('_source', None)
-            item.pop('_version', None)
-            item.pop(self.DEFAULT_SEARCH_FIELD, None)
-
-        return item
 
     def _search(self, args=None):
         parsed_values = deepcopy(self.DEFAULT_SEARCH_VALUES)
@@ -401,8 +398,7 @@ class ESCollection(Collection):
             "offset": int(offset),
             "rows": int(rows),
             "total": int(result['hits']['total']),
-            "items": [self._cleanup_search_result(self._format_output(doc, field_list))
-                      for doc in result['hits']['hits']]
+            "items": [self._format_output(doc, field_list) for doc in result['hits']['hits']]
         }
 
     def stream_search(self, query, fl=None, filters=None, access_control=None, item_buffer_size=200):
@@ -561,7 +557,7 @@ class ESCollection(Collection):
             'items': [{
                 'value': collapsed['fields'][group_field][0],
                 'total': collapsed['inner_hits']['group']['hits']['total'],
-                'items': [self._cleanup_search_result(self._format_output(row, field_list))
+                'items': [self._format_output(row, field_list)
                           for row in collapsed['inner_hits']['group']['hits']['hits']]
             } for collapsed in result['hits']['hits']]
         }
