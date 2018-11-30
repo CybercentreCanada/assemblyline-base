@@ -118,7 +118,7 @@ def test_sets(redis_connection):
 def test_expiring_sets(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.set import ExpiringSet
-        with ExpiringSet('test-expiring-set', ttl=2) as es:
+        with ExpiringSet('test-expiring-set', ttl=1) as es:
             es.delete()
 
             values = ['a', 'b', 1, 2]
