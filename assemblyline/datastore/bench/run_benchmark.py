@@ -74,15 +74,7 @@ def run(ds, times, dataset):
         results = []
         for _ in range(DATASET_SIZE):
             index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'max_score:{index}'))
-        concurrent.futures.wait(results)
-    [res.result() for res in results]
-
-    with measure(times, 'range_searches_10'):
-        results = []
-        for _ in range(DATASET_SIZE):
-            index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'max_score:[{index} TO {index + 10}]'))
+            results.append(pool.submit(ds.search, f'max_score:{index}', rows=1))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
@@ -90,7 +82,32 @@ def run(ds, times, dataset):
         results = []
         for _ in range(DATASET_SIZE):
             index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'max_score:[{index} TO {index + 50}]'))
+            results.append(pool.submit(ds.search, f'max_score:[{index} TO {index + 50}]', rows=50))
+        concurrent.futures.wait(results)
+    [res.result() for res in results]
+
+    with measure(times, 'histogram'):
+        results = []
+        for _ in range(DATASET_SIZE):
+            results.append(pool.submit(ds.histogram,
+                                       "start_time",
+                                       f"{ds.datastore.now}-1{ds.datastore.hour}",
+                                       ds.datastore.now,
+                                       f"+1{ds.datastore.minute}"))
+        concurrent.futures.wait(results)
+    [res.result() for res in results]
+
+    with measure(times, 'facet'):
+        results = []
+        for _ in range(DATASET_SIZE):
+            results.append(pool.submit(ds.field_analysis, "tags"))
+        concurrent.futures.wait(results)
+    [res.result() for res in results]
+
+    with measure(times, 'groups'):
+        results = []
+        for _ in range(DATASET_SIZE):
+            results.append(pool.submit(ds.grouped_search, 'max_score', rows=10))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
@@ -135,13 +152,28 @@ def main():
             result[name] = {}
             run(ds, result[name], data)
 
-        data = [[k, v['get_all'], v['insertion'], v[f'delete_{int(DATASET_SIZE/10)}'],
-                 v['search'], v['range_searches_10'], v['range_searches_50']]
-                for k, v in result.items()]
+        data = [
+            [
+                k, v['get_all'],
+                v['insertion'],
+                v[f'delete_{int(DATASET_SIZE/10)}'],
+                v['search'],
+                v['range_searches_50'],
+                v['histogram'],
+                v['facet'],
+                v['groups']
+            ] for k, v in result.items()]
 
         print("\n\n")
-        print(tabulate(data, headers=['Datastore', f'GETs {DATASET_SIZE}', f'PUTs {DATASET_SIZE}',
-                                      f'DEL {int(DATASET_SIZE/10)}', 'Search 1', 'Search 10', 'Search 50']))
+        print(tabulate(data, headers=['Datastore',
+                                      f'GETs {DATASET_SIZE}',
+                                      f'PUTs {DATASET_SIZE}',
+                                      f'DEL {int(DATASET_SIZE/10)}',
+                                      f'Search {DATASET_SIZE} docs',
+                                      f'Search {50*DATASET_SIZE} docs',
+                                      f'histogram',
+                                      f'facet',
+                                      f'groups']))
 
     finally:
         log.setLevel(logging.ERROR)
