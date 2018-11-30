@@ -13,7 +13,6 @@ from assemblyline.common.chunk import chunked_list
 from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
 from assemblyline.datastore import BaseStore, log, Collection, DataStoreException, SearchException, SearchRetryException
-from assemblyline.datastore.reconnect import collection_reconnect
 from assemblyline.datastore.support.solr.build import build_mapping, back_mapping
 
 
@@ -71,13 +70,25 @@ class SolrCollection(Collection):
                 if field.store:
                     self.stored_fields[name] = field
 
+    def with_retries(self, func, *args, **kwargs):
+        retries = 0
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except requests.RequestException:
+                if retries < self.MAX_RETRY_BACKOFF:
+                    time.sleep(retries)
+                else:
+                    time.sleep(self.MAX_RETRY_BACKOFF)
+                self.datastore.connection_reset()
+                retries += 1
+
     def _get_session(self, port=8983):
         session, host = self.datastore.get_or_create_session()
         if ":" not in host:
             host += ":%s" % port
         return session, host
 
-    @collection_reconnect(log)
     def commit(self):
         for host in self.datastore.get_hosts():
             if ":" not in host:
@@ -88,7 +99,6 @@ class SolrCollection(Collection):
             res = requests.get(url)
             return res.ok
 
-    @collection_reconnect(log)
     def multiget(self, key_list):
         temp_keys = copy(key_list)
         done = False
@@ -102,7 +112,7 @@ class SolrCollection(Collection):
                   "&wt=json&fl=_source_,{id_field}".format(host=host, api_base=self.api_base, core=self.name,
                                                            keys=','.join(temp_keys), id_field=self.datastore.ID)
 
-            res = session.get(url, timeout=self.SOLR_GET_TIMEOUT_SEC)
+            res = self.with_retries(session.get, url, timeout=self.SOLR_GET_TIMEOUT_SEC)
             if res.ok:
                 for doc in res.json().get('response', {}).get('docs', []):
                     if doc:
@@ -137,7 +147,7 @@ class SolrCollection(Collection):
             url = "http://{host}/{api_base}/{core}/get?id={key}&wt=json&fl=_source_".format(
                 host=host, api_base=self.api_base, core=self.name, key=key)
 
-            res = session.get(url, timeout=self.SOLR_GET_TIMEOUT_SEC)
+            res = self.with_retries(session.get, url, timeout=self.SOLR_GET_TIMEOUT_SEC)
             if res.ok:
                 doc = res.json().get('doc', None)
                 if doc:
@@ -178,7 +188,7 @@ class SolrCollection(Collection):
         url = "http://{host}/{api_base}/{core}/update/json" \
               "/docs?commitWithin={cw}&overwrite=true".format(host=host, api_base=self.api_base,
                                                               core=self.name, cw=commit_within)
-        res = session.post(url, data=json.dumps(data), headers={"content-type": "application/json"})
+        res = self.with_retries(session.post, url, data=json.dumps(data), headers={"content-type": "application/json"})
         if not res.ok:
             try:
                 raise DataStoreException(res.json())
@@ -187,7 +197,6 @@ class SolrCollection(Collection):
 
         return True
 
-    @collection_reconnect(log)
     def delete(self, key):
         data = {"delete": {"id": key}}
         commit_within = int(self.COMMIT_WITHIN_MAP.get(self.name, None) or self.COMMIT_WITHIN_MAP["_default_"])
@@ -197,10 +206,9 @@ class SolrCollection(Collection):
                                                                                                api_base=self.api_base,
                                                                                                core=self.name,
                                                                                                cw=commit_within)
-        res = session.post(url, data=json.dumps(data), headers={"content-type": "application/json"})
+        res = self.with_retries(session.post, url, data=json.dumps(data), headers={"content-type": "application/json"})
         return res.ok
 
-    @collection_reconnect(log)
     def delete_matching(self, query):
         data = {"delete": {"query": query}}
         commit_within = int(self.COMMIT_WITHIN_MAP.get(self.name, None) or self.COMMIT_WITHIN_MAP["_default_"])
@@ -210,7 +218,7 @@ class SolrCollection(Collection):
                                                                                                api_base=self.api_base,
                                                                                                core=self.name,
                                                                                                cw=commit_within)
-        res = session.post(url, data=json.dumps(data), headers={"content-type": "application/json"})
+        res = self.with_retries(session.post, url, data=json.dumps(data), headers={"content-type": "application/json"})
         return res.ok
 
     def _valid_solr_param(self, key, value):
@@ -269,10 +277,6 @@ class SolrCollection(Collection):
             elif isinstance(fields, str):
                 fields = fields.split(',')
 
-            for name, field in self.stored_fields.items():
-                if name in fields and name not in item:
-                    item[name] = field.empty
-
             item.pop('_version_', None)
             if '_source_' in item:
                 data = json.loads(item['_source_'])
@@ -287,7 +291,6 @@ class SolrCollection(Collection):
         return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
     # noinspection PyBroadException
-    @collection_reconnect(log)
     def _search(self, args=None, port=8983, api_base=None, search_api='select/'):
         if not isinstance(args, list):
             raise SearchException('args needs to be a list of tuples')
@@ -314,7 +317,7 @@ class SolrCollection(Collection):
         if kw:
             url += kw
 
-        res = session.get(url)
+        res = self.with_retries(session.get, url)
         if res.ok:
             return res.json()
         else:
@@ -585,13 +588,12 @@ class SolrCollection(Collection):
             } for grouping in data['groups']]
         }
 
-    @collection_reconnect(log)
     def _fields_from_schema(self, port=8983):
         session, host = self._get_session(port=port)
 
         url = f"http://{host}/{self.api_base}/{self.name}/schema/?wt=json"
 
-        res = session.get(url)
+        res = self.with_retries(session.get, url)
         if res.ok:
             collection_data = {}
             fields = res.json()['schema']['fields']
@@ -635,13 +637,12 @@ class SolrCollection(Collection):
         except KeyError:
             return ds_type.lower()
 
-    @collection_reconnect(log)
     def _field_from_data(self, port=8983):
         session, host = self._get_session(port=port)
 
         url = f"http://{host}/{self.api_base}/{self.name}/admin/luke?numTerms=0&wt=json"
 
-        res = session.get(url)
+        res = self.with_retries(session.get, url)
         if res.ok:
             collection_data = {}
             fields = res.json()['fields']
@@ -717,13 +718,12 @@ class SolrCollection(Collection):
         zobj.append('solrconfig.xml', cfg_raw)
         return zobj.read()
 
-    @collection_reconnect(log)
     def _configset_exist(self, session=None, host=None):
         if session is None or host is None:
             session, host = self._get_session()
 
         test_url = "http://{host}/{api_base}/admin/configs?action=LIST".format(host=host, api_base=self.api_base)
-        res = session.get(test_url, headers={"content-type": "application/json"})
+        res = self.with_retries(session.get, test_url, headers={"content-type": "application/json"})
         if res.ok:
             data = res.json()
             log.info(f'config sets {data.get("configSets", [])}')
@@ -733,7 +733,6 @@ class SolrCollection(Collection):
         else:
             raise DataStoreException("Cannot get to configset admin page.")
 
-    @collection_reconnect(log)
     def _ensure_configset(self, session=None, host=None):
         if session is None or host is None:
             session, host = self._get_session()
@@ -743,19 +742,19 @@ class SolrCollection(Collection):
                      "Creating it now...".format(collection=self.name.upper()))
             upload_url = "http://{host}/{api_base}/admin/configs?action=UPLOAD" \
                          "&name={collection}".format(host=host, api_base=self.api_base, collection=self.name)
-            res = session.post(upload_url, data=self._get_configset(), headers={"content-type": "application/json"})
+            res = self.with_retries(session.post, upload_url, data=self._get_configset(),
+                                    headers={"content-type": "application/json"})
             if res.ok:
                 log.info("Configset {collection} created!".format(collection=self.name))
             else:
                 raise DataStoreException("Could not create configset {collection}.".format(collection=self.name))
 
-    @collection_reconnect(log)
     def _collection_exist(self, session=None, host=None):
         if session is None or host is None:
             session, host = self._get_session()
 
         test_url = "http://{host}/{api_base}/admin/collections?action=LIST".format(host=host, api_base=self.api_base)
-        res = session.get(test_url, headers={"content-type": "application/json"})
+        res = self.with_retries(session.get, test_url, headers={"content-type": "application/json"})
         if res.ok:
             data = res.json()
             log.info(f'collections {data.get("collections", [])}')
@@ -765,7 +764,6 @@ class SolrCollection(Collection):
         else:
             raise DataStoreException("Cannot get to collection admin page.")
 
-    @collection_reconnect(log)
     def _ensure_collection(self):
         session, host = self._get_session()
 
@@ -779,7 +777,7 @@ class SolrCollection(Collection):
             create_url = f"http://{host}/{self.api_base}/admin/collections?action=CREATE" \
                 f"&name={self.name}&numShards={self.num_shards}&replicationFactor={self.replication_factor}" \
                 f"&collection.configName={self.name}"
-            res = session.get(create_url, headers={"content-type": "application/json"})
+            res = self.with_retries(session.get, create_url, headers={"content-type": "application/json"})
 
             if not res.ok:
                 raise DataStoreException("Could not create collection {collection}.".format(collection=self.name))
@@ -792,7 +790,6 @@ class SolrCollection(Collection):
 
         self._check_fields()
 
-    @collection_reconnect(log)
     def wipe(self):
         log.warning("Wipe operation started for collection: %s" % self.name.upper())
         session, host = self._get_session()
@@ -803,7 +800,7 @@ class SolrCollection(Collection):
             delete_url = "http://{host}/{api_base}/admin/collections?action=DELETE" \
                          "&name={collection}".format(host=host, api_base=self.api_base,
                                                      collection=self.name)
-            res = session.get(delete_url, headers={"content-type": "application/json"})
+            res = self.with_retries(session.get, delete_url, headers={"content-type": "application/json"})
             if res.ok:
                 log.warning("Collection {collection} deleted!".format(collection=self.name))
             else:
@@ -813,7 +810,8 @@ class SolrCollection(Collection):
             log.warning("Removing configset: {collection}".format(collection=self.name.upper()))
             delete_url = "http://{host}/{api_base}/admin/configs?action=DELETE" \
                          "&name={collection}".format(host=host, api_base=self.api_base, collection=self.name)
-            res = session.post(delete_url, data=self._get_configset(), headers={"content-type": "application/json"})
+            res = self.with_retries(session.post, delete_url, data=self._get_configset(),
+                                    headers={"content-type": "application/json"})
             if res.ok:
                 log.warning("Configset {collection} deleted!".format(collection=self.name))
             else:

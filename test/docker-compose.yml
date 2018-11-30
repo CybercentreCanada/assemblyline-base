@@ -4,7 +4,7 @@ services:
   elasticsearch:
     image: sgaroncse/elasticsearch:6.4.2
     environment:
-      ES_JAVA_OPTS: '-Xms128m -Xmx128m'
+      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
       DISCOVERY_TYPE: 'single-node'
     ports:
       - '9200:9200'
@@ -16,7 +16,7 @@ services:
   riak:
     image: sgaroncse/riak-kv:2.1.4
     environment:
-      SOLR_HEAP: '-Xms128m -Xmx128m'
+      SOLR_HEAP: '-Xms512m -Xmx512m'
     ports:
       - '8093:8093'
       - '8098:8098'
@@ -29,7 +29,7 @@ services:
     image: solr:7.5-alpine
     environment:
       ZK_HOST: zookeeper:2181
-      SOLR_JAVA_MEM: '-Xms128m -Xmx128m'
+      SOLR_JAVA_MEM: '-Xms512m -Xmx512m'
     depends_on:
       - zookeeper
     ports:
