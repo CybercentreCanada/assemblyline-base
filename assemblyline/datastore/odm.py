@@ -20,6 +20,7 @@ from datetime import datetime
 from dateutil.tz import tzutc
 
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+UTC_TZ = tzutc()
 
 
 def flat_to_nested(data: dict):
@@ -136,7 +137,7 @@ class Date(_Field):
     def check(self, value, **kwargs):
         # Use the arrow library to transform ??? to a datetime
         try:
-            return datetime.strptime(value, DATEFORMAT).replace(tzinfo=tzutc())
+            return datetime.strptime(value, DATEFORMAT).replace(tzinfo=UTC_TZ)
         except (TypeError, ValueError):
             return arrow.get(value).datetime
 
@@ -251,7 +252,7 @@ class List(_Field):
 
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
-            value = [dict(zip(value, t)) for t in zip(*value.values())]
+            return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())])
 
         return TypedList(self.child_type, *value)
 

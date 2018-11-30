@@ -54,7 +54,7 @@ def measure(data, key):
 
 
 def run(ds, times, dataset):
-    pool = concurrent.futures.ThreadPoolExecutor(50)
+    pool = concurrent.futures.ThreadPoolExecutor(20)
 
     # Insert the data
     with measure(times, 'insertion'):
@@ -70,23 +70,31 @@ def run(ds, times, dataset):
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
+    with measure(times, 'search'):
+        results = []
+        for _ in range(DATASET_SIZE):
+            index = random.randint(0, DATASET_SIZE)
+            results.append(pool.submit(ds.search, f'max_score:{index}'))
+        concurrent.futures.wait(results)
+    [res.result() for res in results]
+
     with measure(times, 'range_searches_10'):
         results = []
         for _ in range(DATASET_SIZE):
             index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'max_score: [{index} TO {index + 10}]'))
+            results.append(pool.submit(ds.search, f'max_score:[{index} TO {index + 10}]'))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
-    with measure(times, 'range_searches_100'):
+    with measure(times, 'range_searches_50'):
         results = []
         for _ in range(DATASET_SIZE):
             index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'max_score: [{index} TO {index + 100}]'))
+            results.append(pool.submit(ds.search, f'max_score:[{index} TO {index + 50}]'))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
-    with measure(times, 'delete_1/10'):
+    with measure(times, f'delete_{int(DATASET_SIZE/10)}'):
         results = []
         for ii in range(int(DATASET_SIZE/10)):
             results.append(pool.submit(ds.delete, str(ii)))
@@ -127,12 +135,13 @@ def main():
             result[name] = {}
             run(ds, result[name], data)
 
-        data = [[k, v['get_all'], v['insertion'], v['delete_1/10'],
-                 v['range_searches_10'], v['range_searches_100']]
+        data = [[k, v['get_all'], v['insertion'], v[f'delete_{int(DATASET_SIZE/10)}'],
+                 v['search'], v['range_searches_10'], v['range_searches_50']]
                 for k, v in result.items()]
 
         print("\n\n")
-        print(tabulate(data, headers=['Datastore', 'GETs', 'PUTs', 'DEL 1/10', 'Search 10', 'Search 100']))
+        print(tabulate(data, headers=['Datastore', f'GETs {DATASET_SIZE}', f'PUTs {DATASET_SIZE}',
+                                      f'DEL {int(DATASET_SIZE/10)}', 'Search 1', 'Search 10', 'Search 50']))
 
     finally:
         log.setLevel(logging.ERROR)
