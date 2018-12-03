@@ -86,13 +86,3 @@ DEFAULT_CONFIG = {
     "datastore": DEFAULT_DATASTORE,
     "logging": DEFAULT_LOGGING
 }
-
-
-def get_config(yml_config="/etc/assemblyline/config.yml"):
-    # Initialize a default config
-    config = Config().as_primitives()
-    # TODO: Load yml config file to bootstrap the current system config
-    # config.update(yml_config)
-    # TODO: Load a datastore object and load the config changes from the datastore
-    # config.update(datastore_changes)
-    return Config(config)

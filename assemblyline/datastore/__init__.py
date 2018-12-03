@@ -5,8 +5,7 @@ import warnings
 from datemath import dm
 from datemath.helpers import DateMathException
 
-from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, \
-    SearchRetryException
+from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
 from assemblyline.remote.datatypes.lock import Lock
 
 log = logging.getLogger('assemblyline.datastore')
@@ -279,6 +278,7 @@ class Collection(object):
         all related results as a dictionary of key value pair where each keys
         are one of the field specified in the field list parameter.
 
+        >>> # noinspection PyUnresolvedReferences
         >>> {
         >>>     fl[0]: value,
         >>>     ...

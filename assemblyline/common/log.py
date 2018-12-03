@@ -4,11 +4,11 @@ import logging.config
 import os
 
 from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT
-from assemblyline.odm.models.config import get_config
+from assemblyline.common import forge
 
 
 def init_logging(name='al'):
-    config = get_config()
+    config = forge.get_config()
     logging.root.setLevel(logging.CRITICAL)
     logger = logging.getLogger('assemblyline')
     logger.setLevel(logging.INFO)
