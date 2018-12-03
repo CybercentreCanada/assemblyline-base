@@ -12,7 +12,8 @@ from urllib.parse import quote
 from assemblyline.common.chunk import chunked_list
 from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
-from assemblyline.datastore import BaseStore, log, Collection, DataStoreException, SearchException, SearchRetryException
+from assemblyline.datastore import BaseStore, log, Collection
+from assemblyline.datastore.exceptions import SearchRetryException, DataStoreException, SearchException
 from assemblyline.datastore.support.solr.build import build_mapping, back_mapping
 
 
