@@ -8,7 +8,8 @@ from datetime import datetime
 from datemath import dm
 from retrying import retry
 
-from assemblyline.datastore import odm, log
+from assemblyline import odm
+from assemblyline.datastore import log
 
 log.setLevel(logging.INFO)
 

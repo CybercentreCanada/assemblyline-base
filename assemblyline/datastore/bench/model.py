@@ -1,4 +1,4 @@
-from assemblyline.datastore import odm
+from assemblyline import odm
 
 
 @odm.model(index=True, store=True)

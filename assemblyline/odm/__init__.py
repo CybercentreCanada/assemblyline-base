@@ -384,7 +384,9 @@ class Model:
                     out[(name + '.' + sub_name).strip('.')] = sub_data
         return out
 
-    def __init__(self, data: dict, mask: list = tuple(), docid=None):
+    def __init__(self, data: dict = None, mask: list = tuple(), docid=None):
+        if data is None:
+            data = {}
         if not hasattr(data, 'items'):
             raise TypeError('Model must be constructed with dict like')
         self.odm_py_obj = {}

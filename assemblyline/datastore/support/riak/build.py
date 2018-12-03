@@ -1,4 +1,4 @@
-from assemblyline.datastore.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean, Mapping
+from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean, Mapping
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {

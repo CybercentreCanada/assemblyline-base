@@ -1,4 +1,4 @@
-from assemblyline.datastore.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean, Mapping
+from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean, Mapping
 from assemblyline.datastore.support.riak.build import back_mapping as riak_back_mapping
 
 # Simple types can be resolved by a direct mapping

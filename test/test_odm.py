@@ -1,5 +1,4 @@
-from assemblyline.datastore.odm import model, Model, KeyMaskException
-from assemblyline.datastore.odm import Compound, List, Keyword, Integer, Mapping
+from assemblyline.odm import model, Model, KeyMaskException, Compound, List, Keyword, Integer, Mapping
 
 import json
 import pytest
