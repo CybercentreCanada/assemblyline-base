@@ -1,4 +1,5 @@
-from assemblyline.odm import model, Model, KeyMaskException, Compound, List, Keyword, Integer, Mapping
+from assemblyline.odm import model, Model, KeyMaskException, Compound, List, Keyword, Integer, Mapping, Classification, \
+    Enum
 
 import json
 import pytest
@@ -407,3 +408,37 @@ def test_mapping():
     test = Test({'a': {'walk': 100}})
     assert len(test.a) == 1
     assert test.a['walk'] == 100
+
+
+def test_classification():
+    @model(index=True, store=True)
+    class ClassificationTest(Model):
+        cl = Classification(default="UNRESTRICTED")
+
+    c = ClassificationTest({"cl": "U"})
+    c2 = ClassificationTest({"cl": "R"})
+
+    print(repr(c))
+    print(c.cl < c2.cl)
+    print(c.cl <= c.cl)
+    print(c.cl >= c.cl)
+    print(c.cl >= c2.cl)
+    print(c.cl > c.cl)
+    print(c.cl == c.cl)
+    print(c.cl != c.cl)
+    print(c2.cl > c.cl)
+    print(c.cl > c2.cl)
+    print(c.cl.min(c2.cl))
+    print(c.cl.max(c2.cl))
+    print(c.cl.intersect(c2.cl))
+    print(c.cl)
+    print(c.cl.small())
+    assert False
+
+
+def test_enum():
+    @model(index=True, store=True)
+    class EnumTest(Model):
+        enum = Enum(values=("riak", "solr", "elasticsearch"))
+
+    assert False
