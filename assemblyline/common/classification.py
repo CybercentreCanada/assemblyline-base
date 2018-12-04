@@ -847,35 +847,3 @@ class Classification(object):
         return self._get_normalized_classification_text(lvl_idx, req, groups, subgroups,
                                                         long_format=long_format,
                                                         skip_auto_select=skip_auto_select)
-
-
-if __name__ == "__main__":
-    #import json
-    import yaml
-    #from assemblyline.common.forge import get_classification
-    #c = get_classification()
-    print(yaml.dump(CLASSIFICATION_DEFINITION_TEMPLATE))
-    from assemblyline import odm
-
-
-    @odm.model(index=True, store=True)
-    class ClassificationTest(odm.Model):
-        cl = odm.Classification(default="UNRESTRICTED")
-
-    c = ClassificationTest({"cl": "U"})
-    c2 = ClassificationTest({"cl": "R"})
-    print(repr(c))
-    print(c.cl < c2.cl)
-    print(c.cl <= c.cl)
-    print(c.cl >= c.cl)
-    print(c.cl >= c2.cl)
-    print(c.cl > c.cl)
-    print(c.cl == c.cl)
-    print(c.cl != c.cl)
-    print(c2.cl > c.cl)
-    print(c.cl > c2.cl)
-    print(c.cl.min(c2.cl))
-    print(c.cl.max(c2.cl))
-    print(c.cl.intersect(c2.cl))
-    print(c.cl)
-    print(c.cl.small())
