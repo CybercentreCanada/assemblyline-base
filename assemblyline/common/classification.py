@@ -222,7 +222,7 @@ class Classification(object):
                 self.levels_map_lts[name] = short_name
                 for a in x.get('aliases', []):
                     self.levels_aliases[a.upper()] = short_name
-                self.params_map[short_name] = {k: v for k, v in x.iteritems() if k not in banned_params_keys}
+                self.params_map[short_name] = {k: v for k, v in x.items() if k not in banned_params_keys}
                 self.params_map[name] = self.params_map[short_name]
                 self.levels_styles_map[short_name] = x.get('css', {'banner': 'alert-default',
                                                                    'label': 'label-default',
@@ -238,7 +238,7 @@ class Classification(object):
                 self.access_req_map_stl[short_name] = name
                 for a in x.get('aliases', []):
                     self.access_req_aliases[a.upper()] = self.access_req_aliases.get(a.upper(), []) + [short_name]
-                self.params_map[short_name] = {k: v for k, v in x.iteritems() if k not in banned_params_keys}
+                self.params_map[short_name] = {k: v for k, v in x.items() if k not in banned_params_keys}
                 self.params_map[name] = self.params_map[short_name]
                 self.description[short_name] = x.get('description', "N/A")
                 self.description[name] = self.description[short_name]
@@ -252,7 +252,7 @@ class Classification(object):
                     self.groups_aliases[a.upper()] = self.groups_aliases.get(a.upper(), []) + [short_name]
                 if x.get('auto_select', False):
                     self.groups_auto_select.append(short_name)
-                self.params_map[short_name] = {k: v for k, v in x.iteritems() if k not in banned_params_keys}
+                self.params_map[short_name] = {k: v for k, v in x.items() if k not in banned_params_keys}
                 self.params_map[name] = self.params_map[short_name]
                 self.description[short_name] = x.get('description', "N/A")
                 self.description[name] = self.description[short_name]
@@ -266,7 +266,7 @@ class Classification(object):
                     self.subgroups_aliases[a.upper()] = self.subgroups_aliases.get(a.upper(), []) + [short_name]
                 if x.get('auto_select', False):
                     self.subgroups_auto_select.append(short_name)
-                self.params_map[short_name] = {k: v for k, v in x.iteritems() if k not in banned_params_keys}
+                self.params_map[short_name] = {k: v for k, v in x.items() if k not in banned_params_keys}
                 self.params_map[name] = self.params_map[short_name]
                 self.description[short_name] = x.get('description', "N/A")
                 self.description[name] = self.description[short_name]
@@ -849,9 +849,33 @@ class Classification(object):
                                                         skip_auto_select=skip_auto_select)
 
 
-#if __name__ == "__main__":
-#    import json
-#    from assemblyline.common import forge
-#    config = forge.get_config(static_seed="assemblyline.al.install.seeds.assemblyline_appliance.seed")
-#    c = Classification(config.system.classification.definition)
-#    print json.dumps(c.get_parsed_classification_definition(), indent=4)
+if __name__ == "__main__":
+    #import json
+    import yaml
+    #from assemblyline.common.forge import get_classification
+    #c = get_classification()
+    print(yaml.dump(CLASSIFICATION_DEFINITION_TEMPLATE))
+    from assemblyline import odm
+
+
+    @odm.model(index=True, store=True)
+    class ClassificationTest(odm.Model):
+        cl = odm.Classification(default="UNRESTRICTED")
+
+    c = ClassificationTest({"cl": "U"})
+    c2 = ClassificationTest({"cl": "R"})
+    print(repr(c))
+    print(c.cl < c2.cl)
+    print(c.cl <= c.cl)
+    print(c.cl >= c.cl)
+    print(c.cl >= c2.cl)
+    print(c.cl > c.cl)
+    print(c.cl == c.cl)
+    print(c.cl != c.cl)
+    print(c2.cl > c.cl)
+    print(c.cl > c2.cl)
+    print(c.cl.min(c2.cl))
+    print(c.cl.max(c2.cl))
+    print(c.cl.intersect(c2.cl))
+    print(c.cl)
+    print(c.cl.small())

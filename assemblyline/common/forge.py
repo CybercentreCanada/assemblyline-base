@@ -1,21 +1,55 @@
 # This file contains the loaders for the different components of the system
+import os
+import yaml
 
 
-def get_config(yml_config="/etc/assemblyline/config.yml"):
+def get_classification(yml_config="/etc/assemblyline/classification.yml"):
+    from assemblyline.common.classification import Classification, InvalidDefinition
+
+    classification_definition = {}
+    default_file = os.path.join(os.path.dirname(__file__), "classification.yml")
+    if os.path.exists(default_file):
+        with open(default_file) as default_fh:
+            default_yml_data = yaml.load(default_fh.read())
+            if default_yml_data:
+                classification_definition.update(default_yml_data)
+
+    # Load modifiers from the yaml config
+    if os.path.exists(yml_config):
+        with open(yml_config) as yml_fh:
+            yml_data = yaml.load(yml_fh.read())
+            if yml_data:
+                classification_definition.update(yml_data)
+
+    if not classification_definition:
+        raise InvalidDefinition('Could not find any classification definition to load.')
+
+    return Classification(classification_definition)
+
+
+def get_config(static=False, yml_config="/etc/assemblyline/config.yml"):
     from assemblyline.odm.models.config import Config
 
     # Initialize a default config
     config = Config().as_primitives()
-    # TODO: Load yml config file to bootstrap the current system config
-    # config.update(yml_config)
-    # TODO: Load a datastore object and load the config changes from the datastore
-    # config.update(datastore_changes)
+
+    # Load modifiers from the yaml config
+    if os.path.exists(yml_config):
+        with open(yml_config) as yml_fh:
+            yml_data = yaml.load(yml_fh.read())
+            if yml_data:
+                config.update(yml_data)
+
+    if not static:
+        # TODO: Load a datastore object and load the config changes from the datastore
+        # config.update(datastore_changes)
+        pass
     return Config(config)
 
 
 def get_datastore(config=None):
     if not config:
-        config = get_config()
+        config = get_config(static=True)
 
     if config.datastore.type == "elasticsearch":
         from assemblyline.datastore.stores.es_store import ESStore

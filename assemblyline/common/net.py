@@ -113,10 +113,9 @@ def get_route_to(dst):
 def get_hostip():
     ip = None
     try:
-        # TODO: Can we do this otherwise?
-        from assemblyline.al.common import forge
-        config = forge.get_config()
-        ip = get_route_to(config.core.nodes[0])
+        from assemblyline.common import forge
+        config = forge.get_config(static=True)
+        ip = get_route_to(config.datastore.hosts[0])
     except Exception:
         pass
 

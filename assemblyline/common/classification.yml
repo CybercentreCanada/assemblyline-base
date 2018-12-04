@@ -1,0 +1,25 @@
+enforce: false
+groups: []
+levels:
+- aliases: []
+  css:
+    banner: alert-default
+    label: label-default
+    text: text-muted
+  description: Non-Restricted data
+  lvl: 100
+  name: UNRESTRICTED
+  short_name: U
+- aliases: []
+  css:
+    banner: alert-info
+    label: label-primary
+    text: text-primary
+  description: Restricted data
+  lvl: 200
+  name: RESTRICTED
+  short_name: R
+required: []
+restricted: R
+subgroups: []
+unrestricted: U

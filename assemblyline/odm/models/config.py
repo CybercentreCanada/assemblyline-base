@@ -35,7 +35,7 @@ DEFAULT_SOLR = {}
 
 @odm.model(index=True, store=True)
 class Datastore(odm.Model):
-    type = odm.Keyword()
+    type = odm.Enum({"elasticsearch", "riak", "solr"})
     hosts = odm.List(odm.Keyword())
     elasticsearch = odm.Compound(Elasticsearch, default=DEFAULT_ELASTICSEARCH)
     riak = odm.Compound(Riak, default=DEFAULT_RIAK)
@@ -63,8 +63,8 @@ class Logging(odm.Model):
 
     # Should logs be sent to a syslog server?
     log_to_syslog = odm.Boolean()
-    # if yes, what is the syslog server IP?
-    syslog_ip = odm.Keyword()
+    # if yes, what is the syslog server hostname/ip?
+    syslog_host = odm.Keyword()
 
 
 DEFAULT_LOGGING = {
@@ -72,7 +72,7 @@ DEFAULT_LOGGING = {
     "log_to_file": False,
     "log_directory": "/var/log/assemblyline/",
     "log_to_syslog": False,
-    "syslog_ip": "127.0.0.1"
+    "syslog_host": "localhost"
 }
 
 

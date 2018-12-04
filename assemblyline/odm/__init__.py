@@ -19,6 +19,8 @@ import typing
 from datetime import datetime
 from dateutil.tz import tzutc
 
+from assemblyline.common import forge
+
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 UTC_TZ = tzutc()
 
@@ -165,6 +167,27 @@ class Keyword(_Field):
         return str(value)
 
 
+class Enum(Keyword):
+    def __init__(self, values, *args, **kwargs):
+        """
+        An expanded classification is one that controls the access to the document
+        which holds it. If a classification field is only meant to store classification
+        information and not enforce it, expand should be false.
+        """
+        super().__init__(*args, **kwargs)
+        self.values = set(values)
+
+    def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError("Empty enums are not allow without defaults")
+        if not value in self.values:
+            raise ValueError(f"{value} not in the possible values: {self.values}")
+        return str(value)
+
+
 class Text(_Field):
     """A field storing human readable text data."""
 
@@ -199,17 +222,68 @@ class Float(_Field):
         return float(value)
 
 
-# class Classification(Keyword):
-#     """A field storing access control classification."""
-#
-#     def __init__(self, expand=True, *args, **kwargs):
-#         """
-#         An expanded classification is one that controls the access to the document
-#         which holds it. If a classification field is only meant to store classification
-#         information and not enforce it, expand should be false.
-#         """
-#         super().__init__(*args, **kwargs)
-#         self.expand = expand
+class ClassificationObject(object):
+    def __init__(self, engine, value, is_uc=False):
+        self.engine = engine
+        self.is_uc = is_uc
+        self.value = engine.normalize_classification(value, skip_auto_select=is_uc)
+
+    def min(self, other):
+        return ClassificationObject(self.engine,
+                                    self.engine.min_classification(self.value, other.value),
+                                    is_uc=self.is_uc)
+
+    def max(self, other):
+        return ClassificationObject(self.engine,
+                                    self.engine.max_classification(self.value, other.value),
+                                    is_uc=self.is_uc)
+
+    def intersect(self, other):
+        return ClassificationObject(self.engine,
+                                    self.engine.intersect_user_classification(self.value, other.value),
+                                    is_uc=self.is_uc)
+
+    def small(self):
+        return self.engine.normalize_classification(self.value, long_format=False, skip_auto_select=self.is_uc)
+
+    def __str__(self):
+        return self.value
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __ne__(self, other):
+        return self.value != other.value
+
+    def __le__(self, other):
+        return self.engine.is_accessible(other.value, self.value)
+
+    def __lt__(self, other):
+        return self.engine.is_accessible(other.value, self.value)
+
+    def __ge__(self, other):
+        return self.engine.is_accessible(self.value, other.value)
+
+    def __gt__(self, other):
+        return not self.engine.is_accessible(other.value, self.value)
+
+
+class Classification(Keyword):
+    """A field storing access control classification."""
+    def __init__(self, *args, is_user_classification=False,
+                 yml_config="/etc/assemblyline/classification.yml", **kwargs):
+        """
+        An expanded classification is one that controls the access to the document
+        which holds it.
+        """
+        super().__init__(*args, **kwargs)
+        self.engine = forge.get_classification(yml_config=yml_config)
+        self.is_uc = is_user_classification
+
+    def check(self, value, **kwargs):
+        if isinstance(value, ClassificationObject):
+            return ClassificationObject(self.engine, value.value, is_uc=self.is_uc)
+        return ClassificationObject(self.engine, value, is_uc=self.is_uc)
 
 
 class TypedList(list):
@@ -464,6 +538,8 @@ class Model:
                     out[key] = {k: v.as_primitives() if isinstance(v, Model) else v for k, v in value.items()}
                 elif isinstance(value, (List, TypedList)):
                     out[key] = [v.as_primitives() if isinstance(v, Model) else v for v in value]
+                elif isinstance(value, ClassificationObject):
+                    out[key] = str(value)
                 else:
                     out[key] = value
         return out
