@@ -183,7 +183,7 @@ class Enum(Keyword):
                 value = self.default
             else:
                 raise ValueError("Empty enums are not allow without defaults")
-        if not value in self.values:
+        if value not in self.values:
             raise ValueError(f"{value} not in the possible values: {self.values}")
         return str(value)
 
