@@ -171,10 +171,12 @@ class Classification(object):
         self.groups_map_stl = {}
         self.groups_aliases = {}
         self.groups_auto_select = []
+        self.groups_auto_select_short = []
         self.subgroups_map_lts = {}
         self.subgroups_map_stl = {}
         self.subgroups_aliases = {}
         self.subgroups_auto_select = []
+        self.subgroups_auto_select_short = []
         self.params_map = {}
         self.description = {}
         self.invalid_mode = False
@@ -251,7 +253,8 @@ class Classification(object):
                 for a in x.get('aliases', []):
                     self.groups_aliases[a.upper()] = self.groups_aliases.get(a.upper(), []) + [short_name]
                 if x.get('auto_select', False):
-                    self.groups_auto_select.append(short_name)
+                    self.groups_auto_select.append(name)
+                    self.groups_auto_select_short.append(short_name)
                 self.params_map[short_name] = {k: v for k, v in x.items() if k not in banned_params_keys}
                 self.params_map[name] = self.params_map[short_name]
                 self.description[short_name] = x.get('description', "N/A")
@@ -265,7 +268,8 @@ class Classification(object):
                 for a in x.get('aliases', []):
                     self.subgroups_aliases[a.upper()] = self.subgroups_aliases.get(a.upper(), []) + [short_name]
                 if x.get('auto_select', False):
-                    self.subgroups_auto_select.append(short_name)
+                    self.subgroups_auto_select.append(name)
+                    self.subgroups_auto_select_short.append(short_name)
                 self.params_map[short_name] = {k: v for k, v in x.items() if k not in banned_params_keys}
                 self.params_map[name] = self.params_map[short_name]
                 self.description[short_name] = x.get('description', "N/A")
@@ -410,25 +414,41 @@ class Classification(object):
             out += "//" + "/".join(sorted(req_grp))
 
         # 3. Add auto-selected subgroups
-        if len(subgroups) > 0 and len(self.subgroups_auto_select) > 0 and not skip_auto_select:
-            subgroups = sorted(list(set(subgroups).union(set(self.subgroups_auto_select))))
+        if long_format:
+            if len(subgroups) > 0 and len(self.subgroups_auto_select) > 0 and not skip_auto_select:
+                subgroups = sorted(list(set(subgroups).union(set(self.subgroups_auto_select))))
+        else:
+            if len(subgroups) > 0 and len(self.subgroups_auto_select_short) > 0 and not skip_auto_select:
+                subgroups = sorted(list(set(subgroups).union(set(self.subgroups_auto_select_short))))
 
-        # 4. For every subgroup, check if the subgroup requires or is limmited to a specific group
+        # 4. For every subgroup, check if the subgroup requires or is limited to a specific group
+        temp_groups = []
         for sg in subgroups:
             required_group = self.params_map.get(sg, {}).get("require_group", None)
             if required_group is not None:
-                groups.append(required_group)
+                temp_groups.append(required_group)
 
             limited_to_group = self.params_map.get(sg, {}).get("limited_to_group", None)
             if limited_to_group is not None:
-                if limited_to_group in groups:
-                    groups = [limited_to_group]
+                if limited_to_group in temp_groups:
+                    temp_groups = [limited_to_group]
                 else:
-                    groups = []
+                    temp_groups = []
+
+        for g in temp_groups:
+            if long_format:
+                groups.append(self.groups_map_stl.get(g, g))
+            else:
+                groups.append(self.groups_map_lts.get(g, g))
+        groups = list(set(groups))
 
         # 5. Add auto-selected groups
-        if len(groups) > 0 and len(self.groups_auto_select) > 0 and not skip_auto_select:
-            groups = sorted(list(set(groups).union(set(self.groups_auto_select))))
+        if long_format:
+            if len(groups) > 0 and len(self.groups_auto_select) > 0 and not skip_auto_select:
+                groups = sorted(list(set(groups).union(set(self.groups_auto_select))))
+        else:
+            if len(groups) > 0 and len(self.groups_auto_select_short) > 0 and not skip_auto_select:
+                groups = sorted(list(set(groups).union(set(self.groups_auto_select_short))))
 
         if groups:
             out += {True: "/", False: "//"}[len(req_grp) > 0]
