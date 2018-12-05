@@ -1,7 +1,6 @@
 enforce: true
 groups:
 - aliases: [DEPTS, ANY]
-  auto_select: true
   description: Users of department 1.
   name: DEPARTMENT 1
   short_name: D1
@@ -33,7 +32,7 @@ required:
   description: Gotta be an administrator to see this!
   name: ADMIN
   short_name: ADM
-restricted: R//GOD//REL TO D1
+restricted: R//GOD//ANY
 subgroups:
 - aliases: []
   description: Users of group 1 (which are part of deparment 1).

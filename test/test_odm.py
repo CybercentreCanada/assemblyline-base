@@ -1,8 +1,11 @@
-from assemblyline.odm import model, Model, KeyMaskException, Compound, List, Keyword, Integer, Mapping, Classification, \
-    Enum
+from assemblyline.common.classification import InvalidClassification
+
+from assemblyline.odm import model, Model, KeyMaskException, Compound, List, \
+    Keyword, Integer, Mapping, Classification, Enum
 
 import json
 import pytest
+import os
 
 
 class CatError(Exception):
@@ -107,7 +110,9 @@ def test_type_validation():
         instance.second = 'cats'
 
 
+# noinspection PyPropertyAccess
 def test_setters():
+    # noinspection PyPropertyDefinition
     @model()
     class Test(Model):
         first = Keyword()
@@ -134,6 +139,8 @@ def test_setters():
 
 def test_setters_side_effects():
     """Test setters that change other field values."""
+
+    # noinspection PyPropertyAccess, PyPropertyDefinition
     @model()
     class Test(Model):
         a = Integer()
@@ -158,7 +165,9 @@ def test_setters_side_effects():
     assert instance.best == -10
 
 
+# noinspection PyPropertyAccess
 def test_getters():
+    # noinspection PyPropertyDefinition
     @model()
     class Test(Model):
         first = Integer()
@@ -219,7 +228,7 @@ def test_create_list():
     class Test(Model):
         values = List(Integer())
 
-    test = Test(dict(values=[]))
+    _ = Test(dict(values=[]))
     test = Test(dict(values=[0, 100]))
 
     with pytest.raises(ValueError):
@@ -271,7 +280,7 @@ def test_create_list_compounds():
     fields = Test.flat_fields()
     assert len(fields) == 2
 
-    test = Test(dict(values=[]))
+    _ = Test(dict(values=[]))
     test = Test({'values': [
         {'key': 'cat', 'value': 0},
         {'key': 'rat', 'value': 100}
@@ -350,7 +359,7 @@ def test_field_masking():
     assert test.a == 10
 
     with pytest.raises(KeyMaskException):
-        test.b
+        _ = test.b
 
     with pytest.raises(KeyMaskException):
         test.b = 100
@@ -372,7 +381,7 @@ def test_sub_field_masking():
     assert test.a.a == 10
 
     with pytest.raises(KeyMaskException):
-        test.b.a
+        _ = test.b.a
 
     with pytest.raises(KeyMaskException):
         test.a.b = 100
@@ -388,7 +397,7 @@ def test_mapping():
     assert len(test.a) == 0
 
     with pytest.raises(KeyError):
-        test.a['abc']
+        _ = test.a['abc']
 
     with pytest.raises(KeyError):
         test.a['abc.abc.abc'] = None
@@ -411,29 +420,40 @@ def test_mapping():
 
 
 def test_classification():
+    yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
+
     @model(index=True, store=True)
     class ClassificationTest(Model):
-        cl = Classification(default="UNRESTRICTED")
+        cl = Classification(default="UNRESTRICTED", yml_config=yml_config)
 
-    c = ClassificationTest({"cl": "U"})
-    c2 = ClassificationTest({"cl": "R"})
+    u = ClassificationTest({"cl": "U//REL TO D1, D2"})
+    r = ClassificationTest({"cl": "R//GOD//REL TO G1"})
 
-    print(repr(c))
-    print(c.cl < c2.cl)
-    print(c.cl <= c.cl)
-    print(c.cl >= c.cl)
-    print(c.cl >= c2.cl)
-    print(c.cl > c.cl)
-    print(c.cl == c.cl)
-    print(c.cl != c.cl)
-    print(c2.cl > c.cl)
-    print(c.cl > c2.cl)
-    print(c.cl.min(c2.cl))
-    print(c.cl.max(c2.cl))
-    print(c.cl.intersect(c2.cl))
-    print(c.cl)
-    print(c.cl.small())
-    assert False
+    assert str(r.cl) == "RESTRICTED//ADMIN//ANY/GROUP 1"
+
+    assert u.cl < r.cl
+    assert u.cl <= u.cl
+    assert u.cl >= u.cl
+    assert not u.cl >= r.cl
+    assert not u.cl > u.cl
+    assert u.cl == u.cl
+    assert not u.cl != u.cl
+    assert r.cl > u.cl
+    assert not u.cl > r.cl
+    assert str(u.cl.min(r.cl)) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
+    assert str(u.cl.max(r.cl)) == "RESTRICTED//ADMIN//ANY/GROUP 1"
+    assert str(u.cl.intersect(r.cl)) == "UNRESTRICTED//ANY"
+    assert str(r.cl.small()) == "R//ADM//ANY/G1"
+
+    with pytest.raises(InvalidClassification):
+        _ = ClassificationTest({"cl": "D//BOB//REL TO SOUP"})
+
+    c1 = ClassificationTest({"cl": "U//REL TO D1"})
+    c2 = ClassificationTest({"cl": "U//REL TO D2"})
+    assert str(c1.cl.min(c2.cl)) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
+    assert str(c1.cl.intersect(c2.cl)) == "UNRESTRICTED"
+    with pytest.raises(InvalidClassification):
+        _ = c1.cl.max(c2.cl)
 
 
 def test_enum():
@@ -441,4 +461,27 @@ def test_enum():
     class EnumTest(Model):
         enum = Enum(values=("riak", "solr", "elasticsearch"))
 
-    assert False
+    et = EnumTest({"enum": "riak"})
+    assert et.enum == "riak"
+
+    et.enum = "riak"
+    assert et.enum == "riak"
+    et.enum = "solr"
+    assert et.enum == "solr"
+    et.enum = "elasticsearch"
+    assert et.enum == "elasticsearch"
+
+    with pytest.raises(ValueError):
+        et.enum = "bob"
+
+    with pytest.raises(ValueError):
+        et.enum = "mysql"
+
+    with pytest.raises(ValueError):
+        et.enum = 1
+
+    with pytest.raises(TypeError):
+        et.enum = ["a"]
+
+    with pytest.raises(ValueError):
+        et.enum = True
