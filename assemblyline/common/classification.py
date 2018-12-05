@@ -1,4 +1,6 @@
 import logging
+import itertools
+from copy import copy
 
 CLASSIFICATION_DEFINITION_TEMPLATE = {
     # This is a demonstration classification definition to showcase all the
@@ -150,7 +152,7 @@ class Classification(object):
     NULL_LVL = 0
     INVALID_LVL = 10001
 
-    def __init__(self, classification_definition=None):
+    def __init__(self, classification_definition):
         """
         Returns the classification class instantiated with the classification_definition
 
@@ -159,6 +161,7 @@ class Classification(object):
                                         see DEFAULT_CLASSIFICATION_DEFINITION for an example.
         """
         banned_params_keys = ['name', 'short_name', 'lvl', 'aliases', 'auto_select', 'css', 'description']
+        self.original_definition = classification_definition
         self.levels_map = {}
         self.levels_map_stl = {}
         self.levels_map_lts = {}
@@ -180,6 +183,8 @@ class Classification(object):
         self.params_map = {}
         self.description = {}
         self.invalid_mode = False
+        self._classification_cache = set()
+        self._classification_cache_short = set()
 
         self.enforce = False
 
@@ -199,8 +204,6 @@ class Classification(object):
         self.levels_map_stl["NULL"] = "NULL"
         self.levels_map_lts["NULL"] = "NULL"
 
-        if classification_definition is None:
-            classification_definition = CLASSIFICATION_DEFINITION_TEMPLATE
         try:
             self.enforce = classification_definition['enforce']
 
@@ -287,6 +290,9 @@ class Classification(object):
             self.UNRESTRICTED = self.normalize_classification(classification_definition['unrestricted'])
             self.RESTRICTED = self.normalize_classification(classification_definition['restricted'])
 
+            self._classification_cache = self.list_all_classification_combinations()
+            self._classification_cache_short = self.list_all_classification_combinations(long_format=False)
+
         except Exception as e:
             self.UNRESTRICTED = self.NULL_CLASSIFICATION
             self.RESTRICTED = self.INVALID_CLASSIFICATION
@@ -298,6 +304,30 @@ class Classification(object):
     ############################
     # Private functions
     ############################
+    @staticmethod
+    def _build_combinations(items, separator="/"):
+        out = {""}
+        for i in items:
+            others = [x for x in items if x != i]
+            for x in range(len(others)+1):
+                for c in itertools.combinations(others, x):
+                     out.add(separator.join(sorted([i]+list(c))))
+
+        return out
+
+    @staticmethod
+    def _list_items_and_aliases(data, long_format=True):
+        items = set()
+        for item in data:
+            temp_items = set()
+            if long_format:
+                temp_items.add(item['name'])
+            else:
+                temp_items.add(item['short_name'])
+            items = items | temp_items
+
+        return items
+
     def _get_c12n_level_index(self, c12n):
         # Parse classifications in uppercase mode only
         c12n = c12n.upper()
@@ -503,6 +533,43 @@ class Classification(object):
     # Public functions
     # ++++++++++++++++++++++++
     # noinspection PyUnusedLocal
+    def list_all_classification_combinations(self, long_format=True):
+        combinations = set()
+
+        levels = self._list_items_and_aliases(self.original_definition['levels'], long_format=long_format)
+        reqs = self._list_items_and_aliases(self.original_definition['required'], long_format=long_format)
+        grps = self._list_items_and_aliases(self.original_definition['groups'], long_format=long_format)
+        sgrps = self._list_items_and_aliases(self.original_definition['subgroups'], long_format=long_format)
+
+        req_cbs = self._build_combinations(reqs)
+        grp_cbs = self._build_combinations(grps, separator=", ")
+        sgrp_cbs = self._build_combinations(sgrps)
+
+        for p in itertools.product(levels, req_cbs):
+            cl = "//".join(p)
+            if cl.endswith("//"):
+                combinations.add(cl[:-2])
+            else:
+                combinations.add(cl)
+
+        temp_combinations = copy(combinations)
+        for p in itertools.product(temp_combinations, grp_cbs):
+            cl = "//REL TO ".join(p)
+            if cl.endswith("//REL TO "):
+                combinations.add(cl[:-9])
+            else:
+                combinations.add(cl)
+
+        temp_combinations = copy(combinations)
+        for p in itertools.product(temp_combinations, sgrp_cbs):
+            cl = "/".join(p)
+            if cl.endswith("/"):
+                combinations.add(cl[:-1])
+            else:
+                combinations.add(cl)
+
+        return combinations
+
     def default_user_classification(self, user=None, long_format=True):
         """
         You can overload this function to specify a way to get the default classification of a user.
@@ -863,7 +930,19 @@ class Classification(object):
         if not self.enforce or self.invalid_mode:
             return self.UNRESTRICTED
 
+        # Has the classification has already been normalized before?
+        if long_format and c12n in self._classification_cache:
+            return c12n
+        if not long_format and c12n in self._classification_cache_short:
+            return c12n
+
         lvl_idx, req, groups, subgroups = self._get_classification_parts(c12n, long_format=long_format)
-        return self._get_normalized_classification_text(lvl_idx, req, groups, subgroups,
-                                                        long_format=long_format,
-                                                        skip_auto_select=skip_auto_select)
+        new_c12n = self._get_normalized_classification_text(lvl_idx, req, groups, subgroups,
+                                                            long_format=long_format,
+                                                            skip_auto_select=skip_auto_select)
+        if long_format:
+            self._classification_cache.add(new_c12n)
+        else:
+            self._classification_cache_short.add(new_c12n)
+
+        return new_c12n
