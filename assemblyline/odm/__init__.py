@@ -70,22 +70,24 @@ class _Field:
         self.default = default
         self.default_set = True if default is not None else default_set
 
+    # noinspection PyProtectedMember
     def __get__(self, obj, objtype=None):
         """Read the value of this field from the model instance (obj)."""
-        if self.name in obj.odm_removed:
+        if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         if self.getter_function:
-            return self.getter_function(obj, obj.odm_py_obj[self.name])
-        return obj.odm_py_obj[self.name]
+            return self.getter_function(obj, obj._odm_py_obj[self.name])
+        return obj._odm_py_obj[self.name]
 
+    # noinspection PyProtectedMember
     def __set__(self, obj, value):
         """Set the value of this field, calling a setter method if available."""
-        if self.name in obj.odm_removed:
+        if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         value = self.check(value)
         if self.setter_function:
             value = self.setter_function(obj, value)
-        obj.odm_py_obj[self.name] = value
+        obj._odm_py_obj[self.name] = value
 
     def getter(self, method):
         """Decorator to create getter method for a field."""
@@ -418,11 +420,11 @@ class Model:
         Args:
             skip_mappings (bool): Skip over mappings where the real subfield names are unknown.
         """
-        if skip_mappings and hasattr(cls, 'field_cache_skip'):
-            return cls.field_cache_skip
+        if skip_mappings and hasattr(cls, '_odm_field_cache_skip'):
+            return cls._odm_field_cache_skip
 
-        if not skip_mappings and hasattr(cls, 'field_cache'):
-            return cls.field_cache
+        if not skip_mappings and hasattr(cls, '_odm_field_cache'):
+            return cls._odm_field_cache
 
         out = dict()
         for name, field_data in cls.__dict__.items():
@@ -432,9 +434,9 @@ class Model:
                 out[name] = field_data
 
         if skip_mappings:
-            cls.field_cache_skip = out
+            cls._odm_field_cache_skip = out
         else:
-            cls.field_cache = out
+            cls._odm_field_cache = out
         return out
 
     @classmethod
@@ -463,7 +465,7 @@ class Model:
             data = {}
         if not hasattr(data, 'items'):
             raise TypeError('Model must be constructed with dict like')
-        self.odm_py_obj = {}
+        self._odm_py_obj = {}
         self.id = docid
 
         # Parse the field mask for sub models
@@ -481,9 +483,9 @@ class Model:
 
         # Get the list of fields we expect this object to have
         fields = self.fields()
-        self.odm_removed = {}
+        self._odm_removed = {}
         if mask:
-            self.odm_removed = {k: v for k, v in fields.items() if k not in mask_map}
+            self._odm_removed = {k: v for k, v in fields.items() if k not in mask_map}
             fields = {k: v for k, v in fields.items() if k in mask_map}
 
         # Trim out keys that actually belong to sub sections
@@ -517,17 +519,14 @@ class Model:
                 else:
                     raise ValueError('{} expected a parameter named {}'.format(self.__class__.__name__, name))
 
-            self.odm_py_obj[name] = field_type.check(value, **params)
+            self._odm_py_obj[name] = field_type.check(value, **params)
 
     def as_primitives(self):
-        """Convert the object back into primatives that can be json serialized.
-
-        TODO this is probably a major point that needs optimization.
-        """
+        """Convert the object back into primatives that can be json serialized."""
         out = {}
 
         fields = self.fields()
-        for key, value in self.odm_py_obj.items():
+        for key, value in self._odm_py_obj.items():
             field_type = fields[key]
             if value is not None or (value is None and field_type.default_set):
                 if isinstance(value, Model):
@@ -551,11 +550,11 @@ class Model:
         if not isinstance(other, self.__class__):
             return False
 
-        if len(self.odm_py_obj) != len(other.odm_py_obj):
+        if len(self._odm_py_obj) != len(other._odm_py_obj):
             return False
 
         for name, field in self.fields().items():
-            if name in self.odm_removed:
+            if name in self._odm_removed:
                 continue
             if field.__get__(self) != field.__get__(other):
                 return False
