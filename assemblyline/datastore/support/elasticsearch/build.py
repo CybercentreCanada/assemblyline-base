@@ -12,6 +12,7 @@ __type_mapping = {
     Classification: 'keyword',
     Enum: 'keyword'
 }
+# TODO: We might want to use custom analyzers for Classification and Enum and not create special backmapping cases
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification]}
 
 

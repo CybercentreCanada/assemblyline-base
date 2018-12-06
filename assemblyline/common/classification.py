@@ -323,12 +323,10 @@ class Classification(object):
     def _list_items_and_aliases(data, long_format=True):
         items = set()
         for item in data:
-            temp_items = set()
             if long_format:
-                temp_items.add(item['name'])
+                items.add(item['name'])
             else:
-                temp_items.add(item['short_name'])
-            items = items | temp_items
+                items.add(item['short_name'])
 
         return items
 
