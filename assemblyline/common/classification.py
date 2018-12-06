@@ -305,13 +305,17 @@ class Classification(object):
     # Private functions
     ############################
     @staticmethod
-    def _build_combinations(items, separator="/"):
+    def _build_combinations(items, separator="/", solitary_display=None):
+        if solitary_display is None:
+            solitary_display = {}
+
         out = {""}
         for i in items:
             others = [x for x in items if x != i]
             for x in range(len(others)+1):
                 for c in itertools.combinations(others, x):
-                    out.add(separator.join(sorted([i]+list(c))))
+                    value = separator.join(sorted([i]+list(c)))
+                    out.add(solitary_display.get(value, value))
 
         return out
 
@@ -542,7 +546,20 @@ class Classification(object):
         sgrps = self._list_items_and_aliases(self.original_definition['subgroups'], long_format=long_format)
 
         req_cbs = self._build_combinations(reqs)
-        grp_cbs = self._build_combinations(grps, separator=", ")
+        if long_format:
+            grp_solitary_display = {
+                x['name']: x['solitary_display_name'] for x in self.original_definition['groups']
+                if 'solitary_display_name' in x
+            }
+        else:
+            grp_solitary_display = {
+                x['short_name']: x['solitary_display_name'] for x in self.original_definition['groups']
+                if 'solitary_display_name' in x
+            }
+        solitary_names = [x['solitary_display_name'] for x in self.original_definition['groups']
+                          if 'solitary_display_name' in x]
+
+        grp_cbs = self._build_combinations(grps, separator=", ", solitary_display=grp_solitary_display)
         sgrp_cbs = self._build_combinations(sgrps)
 
         for p in itertools.product(levels, req_cbs):
@@ -559,6 +576,17 @@ class Classification(object):
                 combinations.add(cl[:-9])
             else:
                 combinations.add(cl)
+
+        for sol_name in solitary_names:
+            to_edit = []
+            to_find = f"REL TO {sol_name}"
+            for c in combinations:
+                if to_find in c:
+                    to_edit.append(c)
+
+            for e in to_edit:
+                combinations.add(e.replace(to_find, sol_name))
+                combinations.remove(e)
 
         temp_combinations = copy(combinations)
         for p in itertools.product(temp_combinations, sgrp_cbs):
