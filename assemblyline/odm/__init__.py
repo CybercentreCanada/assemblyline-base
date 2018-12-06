@@ -23,6 +23,8 @@ from assemblyline.common import forge
 
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 UTC_TZ = tzutc()
+FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
+BANNED_FIELDS = {"id"}
 
 
 def flat_to_nested(data: dict):
@@ -349,23 +351,21 @@ class List(_Field):
 
 
 class TypedMapping(dict):
-    field_sanitizer = re.compile("^[a-z][a-z0-9_\\-]+$")
-
     def __init__(self, type_p, **items):
         for key in items.keys():
-            if not self.field_sanitizer.match(key):
-                raise KeyError(f"Illigal key: {key}")
+            if not FIELD_SANITIZER.match(key):
+                raise KeyError(f"Illegal key: {key}")
         super().__init__({key: type_p.check(el) for key, el in items.items()})
         self.type = type_p
 
     def __setitem__(self, key, item):
-        if not self.field_sanitizer.match(key):
-            raise KeyError(f"Illigal key: {key}")
+        if not FIELD_SANITIZER.match(key):
+            raise KeyError(f"Illegal key: {key}")
         return super().__setitem__(key, self.type.check(item))
 
     def update(self, **data):
         for key in data.keys():
-            if not self.field_sanitizer.match(key):
+            if not FIELD_SANITIZER.match(key):
                 raise KeyError(f"Illegal key: {key}")
         return super().update({key: self.type.check(item) for key, item in data.items()})
 
@@ -571,6 +571,8 @@ def model(index=None, store=None):
     """Decorator to create model objects."""
     def _finish_model(cls):
         for name, field_data in cls.fields().items():
+            if not FIELD_SANITIZER.match(name) or name in BANNED_FIELDS:
+                raise ValueError(f"Illegal variable name: {name}")
             field_data.name = name
             field_data.apply_defaults(index=index, store=store)
         return cls

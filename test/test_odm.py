@@ -485,3 +485,16 @@ def test_enum():
 
     with pytest.raises(ValueError):
         et.enum = True
+
+
+# noinspection PyUnusedLocal
+def test_banned_keys():
+    with pytest.raises(ValueError):
+        @model(index=True, store=True)
+        class BannedTest(Model):
+            _1 = Integer()
+
+    with pytest.raises(ValueError):
+        @model(index=True, store=True)
+        class BannedTest(Model):
+            id = Integer()
