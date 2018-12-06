@@ -312,7 +312,5 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
         assert compare_output(s_tc.grouped_search('height', fl='flavour'),
                               e_tc.grouped_search('height', fl='flavour'),
                               r_tc.grouped_search('height', fl='flavour'))
-        #
-        # # TODO: fields are not of the same type in-between datastores does that matter?
-        # #       will print output for now without failing the test
-        # compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())
+
+        assert compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())
