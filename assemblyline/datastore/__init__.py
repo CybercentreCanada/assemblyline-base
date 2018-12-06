@@ -398,7 +398,8 @@ class Collection(object):
                 raise RuntimeError(f"Field {field_name} didn't have the expected indexing value.")
             if fields[field_name]['stored'] != model[field_name].store:
                 raise RuntimeError(f"Field {field_name} didn't have the expected store value.")
-            if fields[field_name]['type'] != model[field_name].__class__.__name__.lower():
+            if fields[field_name]['type'] != model[field_name].__class__.__name__.lower() and \
+                fields[field_name]['type'] != model[field_name].__class__.__bases__[0].__name__.lower():
                 raise RuntimeError(f"Field {field_name} didn't have the expected store "
                                    f"type. [{fields[field_name]['type']} != "
                                    f"{model[field_name].__class__.__name__.lower()}]")

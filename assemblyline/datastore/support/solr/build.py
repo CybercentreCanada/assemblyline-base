@@ -1,4 +1,5 @@
-from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean, Mapping
+from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
+    Float, Boolean, Mapping, Classification, Enum
 from assemblyline.datastore.support.riak.build import back_mapping as riak_back_mapping
 
 # Simple types can be resolved by a direct mapping
@@ -9,10 +10,12 @@ __type_mapping = {
     Integer: 'pint',
     Float: 'pfloat',
     Date: 'pdate',
+    Classification: 'string',
+    Enum: 'string'
 }
 
 back_mapping = riak_back_mapping
-back_mapping.update({v: k for k, v in __type_mapping.items()})
+back_mapping.update({v: k for k, v in __type_mapping.items() if k not in [Enum, Classification]})
 
 
 def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):

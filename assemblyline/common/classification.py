@@ -206,6 +206,9 @@ class Classification(object):
 
         try:
             self.enforce = classification_definition['enforce']
+            if self.enforce:
+                self._classification_cache = self.list_all_classification_combinations()
+                self._classification_cache_short = self.list_all_classification_combinations(long_format=False)
 
             for x in classification_definition['levels']:
                 short_name = x['short_name'].upper()
@@ -290,9 +293,6 @@ class Classification(object):
             self.UNRESTRICTED = self.normalize_classification(classification_definition['unrestricted'])
             self.RESTRICTED = self.normalize_classification(classification_definition['restricted'])
 
-            self._classification_cache = self.list_all_classification_combinations()
-            self._classification_cache_short = self.list_all_classification_combinations(long_format=False)
-
         except Exception as e:
             self.UNRESTRICTED = self.NULL_CLASSIFICATION
             self.RESTRICTED = self.INVALID_CLASSIFICATION
@@ -311,7 +311,7 @@ class Classification(object):
             others = [x for x in items if x != i]
             for x in range(len(others)+1):
                 for c in itertools.combinations(others, x):
-                     out.add(separator.join(sorted([i]+list(c))))
+                    out.add(separator.join(sorted([i]+list(c))))
 
         return out
 
@@ -570,6 +570,7 @@ class Classification(object):
 
         return combinations
 
+    # noinspection PyUnusedLocal
     def default_user_classification(self, user=None, long_format=True):
         """
         You can overload this function to specify a way to get the default classification of a user.

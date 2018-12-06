@@ -89,7 +89,9 @@ def get_random_submission(as_model=True):
         "results": results,
         "files": files,
         "max_score": max_score,
-        "metadata": metadata
+        "metadata": metadata,
+        "classification": random.choice(["R//ANY", "U", "U//ADM", "R", "R//SU//REL TO D2"]),
+        "submission_type": random.choice(["live", "user", "client"])
     }
 
     if as_model:
