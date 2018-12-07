@@ -498,3 +498,8 @@ def test_banned_keys():
         @model(index=True, store=True)
         class BannedTest(Model):
             id = Integer()
+
+    with pytest.raises(ValueError):
+        @model(index=True, store=True)
+        class BannedTest(Model):
+            ALL = Integer()
