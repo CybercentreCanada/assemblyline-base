@@ -75,6 +75,8 @@ class _Field:
     # noinspection PyProtectedMember
     def __get__(self, obj, objtype=None):
         """Read the value of this field from the model instance (obj)."""
+        if obj is None:
+            return obj
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         if self.getter_function:
