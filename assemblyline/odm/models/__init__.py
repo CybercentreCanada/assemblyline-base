@@ -1,11 +1,13 @@
 import datetime
 import random
 import time
+import uuid
 
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
     Classification
 
 ALPHA = "ABCDEFGHIJKLMNOPQRSTUPVXYZabcdefghijklmnopqrstuvwxyz"
+HASH_ALPHA = "abcdef0123456789"
 WORDS = """The Cyber Centre stays on the cutting edge of technology by working with commercial vendors of cyber security 
 technology to support their development of enhanced cyber defence tools To do this our experts survey the cyber 
 security market and evaluate emerging technologies in order to determine their potential to improve cyber security 
@@ -43,6 +45,14 @@ def get_random_word():
 
 def get_random_phrase(wmin=2, wmax=6):
     return " ".join([get_random_word() for _ in range(random.randint(wmin, wmax))])
+
+
+def get_random_hash(hash_len):
+    return "".join([random.choice(HASH_ALPHA) for _ in range(hash_len)])
+
+
+def get_random_uid():
+    return str(uuid.uuid4())
 
 
 def get_random_filename(smin=1, smax=3):
@@ -87,10 +97,8 @@ def random_data_for_field(field, name):
     elif isinstance(field, Enum):
         return random.choice(list(field.values))
     elif isinstance(field, List):
-        return list(set([random_data_for_field(field.child_type, name)
-                         if not isinstance(field.child_type, Model)
-                         else random_model_obj(field.child_type, as_json=True)
-                         for _ in range(random.randint(1, 4))]))
+        return [random_data_for_field(field.child_type, name) if not isinstance(field.child_type, Model)
+                else random_model_obj(field.child_type, as_json=True) for _ in range(random.randint(1, 4))]
     elif isinstance(field, Compound):
         return random_model_obj(field.child_type, as_json=True)
     elif isinstance(field, Mapping):
@@ -103,7 +111,17 @@ def random_data_for_field(field, name):
         return random.randint(12800, 409600) / 100.0
     elif isinstance(field, Keyword):
         if name:
-            if "host" in name or "node" in name:
+            if "sha256" in name:
+                return get_random_hash(64)
+            elif "sid" in name:
+                return get_random_uid()
+            elif "mac" in name:
+                return get_random_hash(12)
+            elif "sha1" in name:
+                return get_random_hash(40)
+            elif "md5" in name or "scan_key" in name:
+                return get_random_hash(32)
+            elif "host" in name or "node" in name:
                 return get_random_host()
             elif "ip" in name:
                 return get_random_ip()
