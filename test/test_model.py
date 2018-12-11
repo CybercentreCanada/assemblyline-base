@@ -12,6 +12,8 @@ from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tree import SubmissionTree
+from assemblyline.odm.models.user import User
+from assemblyline.odm.models.user_options import UserOptions
 from assemblyline.odm.models.workflow import Workflow
 
 
@@ -88,6 +90,20 @@ def test_submission_tree_model():
         random_model_obj(SubmissionTree).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'SubmissionTree' object and validate it.")
+
+
+def test_user_model():
+    try:
+        random_model_obj(User).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'User' object and validate it.")
+
+
+def test_user_options_model():
+    try:
+        random_model_obj(UserOptions).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'UserOptions' object and validate it.")
 
 
 def test_workflow_model():
