@@ -6,6 +6,7 @@ TAG_USAGE = {"CORRELATION", "IDENTIFICATION", "INFO", "IGNORE"}
 
 @odm.model(index=True, store=True)
 class Section(odm.Model):
+    section_id = odm.Integer()                 # ID of the section to generate the tree
     body = odm.Text()                          # Text body of the result section
     classification = odm.Classification()      # Classification of the section
     links = odm.List(odm.Keyword())            # List of links TODO: are we using this? Remove ?
@@ -13,6 +14,7 @@ class Section(odm.Model):
     finalized = odm.Boolean()                  # is the result section finalized or not
     title_text = odm.Text()                    # Title of the section
     depth = odm.Integer()                      # Depth of the section
+    parent_section_id = odm.Integer()          # ID of the parent section
     score = odm.Integer()                      # Score of the section
     body_format = odm.Enum(values=BODY_TYPES)  # Type of body in this section
 
@@ -67,6 +69,7 @@ class ResponseBody(odm.Model):
 
 @odm.model(index=True, store=True)
 class Result(odm.Model):
+    expiry_ts = odm.Date()                 # Expiry time stamp
     classification = odm.Classification()  # Aggregate classification for the result
     created = odm.Date()                   # Date at which the result objec got created
     sha256 = odm.Keyword()                 # SHA256 of the file the result object relates to

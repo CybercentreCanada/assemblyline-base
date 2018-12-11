@@ -16,15 +16,15 @@ class SubmissionDetail(odm.Model):
     ignore_filtering = odm.Boolean()                     # Should we ignore filtering services
     deep_scan = odm.Boolean()                            # Should a deep scan be performed?
     priority = odm.Integer()                             # Priority of the scan
-    original_selected = odm.List(odm.Keyword())            # original service selection
-    params = odm.Mapping(odm.Keyword())                    # Service specific parameters
+    original_selected = odm.List(odm.Keyword())          # original service selection
+    params = odm.Mapping(odm.Keyword())                  # Service specific parameters
     ignore_cache = odm.Boolean()                         # ignore the service caching or not
-    groups = odm.List(odm.Keyword())                       # List of groups related to this scan
+    groups = odm.List(odm.Keyword())                     # List of groups related to this scan
     ttl = odm.Integer()                                  # Time to live for this submission in days
     submitter = odm.Keyword()                            # User who submitted the file
     max_score = odm.Integer()                            # Maximum score of all the files in the scan
-    resubmit_to = odm.List(odm.Keyword())                  # Add these service when the submission is resubmitted
-    metadata = odm.Mapping(odm.Keyword())                  # Metadata associated to the submission
+    resubmit_to = odm.List(odm.Keyword())                # Add these service when the submission is resubmitted
+    metadata = odm.Mapping(odm.Keyword())                # Metadata associated to the submission
 
 
 @odm.model(index=True, store=True)
@@ -41,13 +41,14 @@ class ServiceSelection(odm.Model):
 
 @odm.model(index=True, store=True)
 class Submission(odm.Model):
-    files = odm.List(odm.Compound(File))                          # List of files that were originally submitted
+    expiry_ts = odm.Date()                          # Expiry time stamp
+    files = odm.List(odm.Compound(File))            # List of files that were originally submitted
     classification = odm.Classification()           # Classification of the submission
     submission = odm.Compound(SubmissionDetail)     # Submission detail blocs
     state = odm.Keyword()                           # Status of the submission
-    results = odm.List(odm.Keyword())                 # List of result keys
+    results = odm.List(odm.Keyword())               # List of result keys
     times = odm.Compound(Times)                     # Timing bloc
-    errors = odm.List(odm.Keyword())                  # List of error keys
+    errors = odm.List(odm.Keyword())                # List of error keys
     file_count = odm.Integer()                      # Total number of files in the submission
     error_count = odm.Integer()                     # Total number of errors in the submission
     services = odm.Compound(ServiceSelection)       # Service selection bloc
