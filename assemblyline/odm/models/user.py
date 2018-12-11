@@ -16,6 +16,7 @@ class User(odm.Model):
     api_quota = odm.Integer()                                         # Max number of concurrent API requests
     apikeys = odm.List(odm.Compound(ApiKey))                          # List of apikeys
     avatar = odm.Keyword(store=False, index=False)                    # Avatar for the user
+    can_impersonate = odm.Boolean(default=False)                      # Is the user allow to query on behalf of others
     classification = odm.Classification(is_user_classification=True)  # Max classification for the user
     dn = odm.Keyword()                                                # User certificate DN
     email = odm.Keyword()                                             # User's email address
