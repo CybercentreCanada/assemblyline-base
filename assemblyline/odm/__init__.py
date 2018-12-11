@@ -19,8 +19,12 @@ import typing
 from datetime import datetime
 from dateutil.tz import tzutc
 
+from assemblyline.common import forge
+
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 UTC_TZ = tzutc()
+FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
+BANNED_FIELDS = {"id"}
 
 
 def flat_to_nested(data: dict):
@@ -68,22 +72,26 @@ class _Field:
         self.default = default
         self.default_set = True if default is not None else default_set
 
+    # noinspection PyProtectedMember
     def __get__(self, obj, objtype=None):
         """Read the value of this field from the model instance (obj)."""
-        if self.name in obj.odm_removed:
+        if obj is None:
+            return obj
+        if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         if self.getter_function:
-            return self.getter_function(obj, obj.odm_py_obj[self.name])
-        return obj.odm_py_obj[self.name]
+            return self.getter_function(obj, obj._odm_py_obj[self.name])
+        return obj._odm_py_obj[self.name]
 
+    # noinspection PyProtectedMember
     def __set__(self, obj, value):
         """Set the value of this field, calling a setter method if available."""
-        if self.name in obj.odm_removed:
+        if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         value = self.check(value)
         if self.setter_function:
             value = self.setter_function(obj, value)
-        obj.odm_py_obj[self.name] = value
+        obj._odm_py_obj[self.name] = value
 
     def getter(self, method):
         """Decorator to create getter method for a field."""
@@ -165,6 +173,27 @@ class Keyword(_Field):
         return str(value)
 
 
+class Enum(Keyword):
+    def __init__(self, values, *args, **kwargs):
+        """
+        An expanded classification is one that controls the access to the document
+        which holds it. If a classification field is only meant to store classification
+        information and not enforce it, expand should be false.
+        """
+        super().__init__(*args, **kwargs)
+        self.values = set(values)
+
+    def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError("Empty enums are not allow without defaults")
+        if value not in self.values:
+            raise ValueError(f"{value} not in the possible values: {self.values}")
+        return str(value)
+
+
 class Text(_Field):
     """A field storing human readable text data."""
 
@@ -199,17 +228,68 @@ class Float(_Field):
         return float(value)
 
 
-# class Classification(Keyword):
-#     """A field storing access control classification."""
-#
-#     def __init__(self, expand=True, *args, **kwargs):
-#         """
-#         An expanded classification is one that controls the access to the document
-#         which holds it. If a classification field is only meant to store classification
-#         information and not enforce it, expand should be false.
-#         """
-#         super().__init__(*args, **kwargs)
-#         self.expand = expand
+class ClassificationObject(object):
+    def __init__(self, engine, value, is_uc=False):
+        self.engine = engine
+        self.is_uc = is_uc
+        self.value = engine.normalize_classification(value, skip_auto_select=is_uc)
+
+    def min(self, other):
+        return ClassificationObject(self.engine,
+                                    self.engine.min_classification(self.value, other.value),
+                                    is_uc=self.is_uc)
+
+    def max(self, other):
+        return ClassificationObject(self.engine,
+                                    self.engine.max_classification(self.value, other.value),
+                                    is_uc=self.is_uc)
+
+    def intersect(self, other):
+        return ClassificationObject(self.engine,
+                                    self.engine.intersect_user_classification(self.value, other.value),
+                                    is_uc=self.is_uc)
+
+    def small(self):
+        return self.engine.normalize_classification(self.value, long_format=False, skip_auto_select=self.is_uc)
+
+    def __str__(self):
+        return self.value
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __ne__(self, other):
+        return self.value != other.value
+
+    def __le__(self, other):
+        return self.engine.is_accessible(other.value, self.value)
+
+    def __lt__(self, other):
+        return self.engine.is_accessible(other.value, self.value)
+
+    def __ge__(self, other):
+        return self.engine.is_accessible(self.value, other.value)
+
+    def __gt__(self, other):
+        return not self.engine.is_accessible(other.value, self.value)
+
+
+class Classification(Keyword):
+    """A field storing access control classification."""
+    def __init__(self, *args, is_user_classification=False,
+                 yml_config="/etc/assemblyline/classification.yml", **kwargs):
+        """
+        An expanded classification is one that controls the access to the document
+        which holds it.
+        """
+        super().__init__(*args, **kwargs)
+        self.engine = forge.get_classification(yml_config=yml_config)
+        self.is_uc = is_user_classification
+
+    def check(self, value, **kwargs):
+        if isinstance(value, ClassificationObject):
+            return ClassificationObject(self.engine, value.value, is_uc=self.is_uc)
+        return ClassificationObject(self.engine, value, is_uc=self.is_uc)
 
 
 class TypedList(list):
@@ -273,23 +353,21 @@ class List(_Field):
 
 
 class TypedMapping(dict):
-    field_sanitizer = re.compile("^[a-z][a-z0-9_\\-]+$")
-
     def __init__(self, type_p, **items):
         for key in items.keys():
-            if not self.field_sanitizer.match(key):
-                raise KeyError(f"Illigal key: {key}")
+            if not FIELD_SANITIZER.match(key):
+                raise KeyError(f"Illegal key: {key}")
         super().__init__({key: type_p.check(el) for key, el in items.items()})
         self.type = type_p
 
     def __setitem__(self, key, item):
-        if not self.field_sanitizer.match(key):
-            raise KeyError(f"Illigal key: {key}")
+        if not FIELD_SANITIZER.match(key):
+            raise KeyError(f"Illegal key: {key}")
         return super().__setitem__(key, self.type.check(item))
 
     def update(self, **data):
         for key in data.keys():
-            if not self.field_sanitizer.match(key):
+            if not FIELD_SANITIZER.match(key):
                 raise KeyError(f"Illegal key: {key}")
         return super().update({key: self.type.check(item) for key, item in data.items()})
 
@@ -344,11 +422,11 @@ class Model:
         Args:
             skip_mappings (bool): Skip over mappings where the real subfield names are unknown.
         """
-        if skip_mappings and hasattr(cls, 'field_cache_skip'):
-            return cls.field_cache_skip
+        if skip_mappings and hasattr(cls, '_odm_field_cache_skip'):
+            return cls._odm_field_cache_skip
 
-        if not skip_mappings and hasattr(cls, 'field_cache'):
-            return cls.field_cache
+        if not skip_mappings and hasattr(cls, '_odm_field_cache'):
+            return cls._odm_field_cache
 
         out = dict()
         for name, field_data in cls.__dict__.items():
@@ -358,9 +436,9 @@ class Model:
                 out[name] = field_data
 
         if skip_mappings:
-            cls.field_cache_skip = out
+            cls._odm_field_cache_skip = out
         else:
-            cls.field_cache = out
+            cls._odm_field_cache = out
         return out
 
     @classmethod
@@ -384,10 +462,12 @@ class Model:
                     out[(name + '.' + sub_name).strip('.')] = sub_data
         return out
 
-    def __init__(self, data: dict, mask: list = tuple(), docid=None):
+    def __init__(self, data: dict = None, mask: list = tuple(), docid=None):
+        if data is None:
+            data = {}
         if not hasattr(data, 'items'):
             raise TypeError('Model must be constructed with dict like')
-        self.odm_py_obj = {}
+        self._odm_py_obj = {}
         self.id = docid
 
         # Parse the field mask for sub models
@@ -405,9 +485,9 @@ class Model:
 
         # Get the list of fields we expect this object to have
         fields = self.fields()
-        self.odm_removed = {}
+        self._odm_removed = {}
         if mask:
-            self.odm_removed = {k: v for k, v in fields.items() if k not in mask_map}
+            self._odm_removed = {k: v for k, v in fields.items() if k not in mask_map}
             fields = {k: v for k, v in fields.items() if k in mask_map}
 
         # Trim out keys that actually belong to sub sections
@@ -441,17 +521,14 @@ class Model:
                 else:
                     raise ValueError('{} expected a parameter named {}'.format(self.__class__.__name__, name))
 
-            self.odm_py_obj[name] = field_type.check(value, **params)
+            self._odm_py_obj[name] = field_type.check(value, **params)
 
     def as_primitives(self):
-        """Convert the object back into primatives that can be json serialized.
-
-        TODO this is probably a major point that needs optimization.
-        """
+        """Convert the object back into primatives that can be json serialized."""
         out = {}
 
         fields = self.fields()
-        for key, value in self.odm_py_obj.items():
+        for key, value in self._odm_py_obj.items():
             field_type = fields[key]
             if value is not None or (value is None and field_type.default_set):
                 if isinstance(value, Model):
@@ -462,6 +539,8 @@ class Model:
                     out[key] = {k: v.as_primitives() if isinstance(v, Model) else v for k, v in value.items()}
                 elif isinstance(value, (List, TypedList)):
                     out[key] = [v.as_primitives() if isinstance(v, Model) else v for v in value]
+                elif isinstance(value, ClassificationObject):
+                    out[key] = str(value)
                 else:
                     out[key] = value
         return out
@@ -473,11 +552,11 @@ class Model:
         if not isinstance(other, self.__class__):
             return False
 
-        if len(self.odm_py_obj) != len(other.odm_py_obj):
+        if len(self._odm_py_obj) != len(other._odm_py_obj):
             return False
 
         for name, field in self.fields().items():
-            if name in self.odm_removed:
+            if name in self._odm_removed:
                 continue
             if field.__get__(self) != field.__get__(other):
                 return False
@@ -494,6 +573,8 @@ def model(index=None, store=None):
     """Decorator to create model objects."""
     def _finish_model(cls):
         for name, field_data in cls.fields().items():
+            if not FIELD_SANITIZER.match(name) or name in BANNED_FIELDS:
+                raise ValueError(f"Illegal variable name: {name}")
             field_data.name = name
             field_data.apply_defaults(index=index, store=store)
         return cls

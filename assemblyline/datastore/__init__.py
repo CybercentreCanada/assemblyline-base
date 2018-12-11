@@ -5,8 +5,7 @@ import warnings
 from datemath import dm
 from datemath.helpers import DateMathException
 
-from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, \
-    SearchRetryException
+from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
 from assemblyline.remote.datatypes.lock import Lock
 
 log = logging.getLogger('assemblyline.datastore')
@@ -279,6 +278,7 @@ class Collection(object):
         all related results as a dictionary of key value pair where each keys
         are one of the field specified in the field list parameter.
 
+        >>> # noinspection PyUnresolvedReferences
         >>> {
         >>>     fl[0]: value,
         >>>     ...
@@ -398,7 +398,8 @@ class Collection(object):
                 raise RuntimeError(f"Field {field_name} didn't have the expected indexing value.")
             if fields[field_name]['stored'] != model[field_name].store:
                 raise RuntimeError(f"Field {field_name} didn't have the expected store value.")
-            if fields[field_name]['type'] != model[field_name].__class__.__name__.lower():
+            if fields[field_name]['type'] != model[field_name].__class__.__name__.lower() and \
+                fields[field_name]['type'] != model[field_name].__class__.__bases__[0].__name__.lower():
                 raise RuntimeError(f"Field {field_name} didn't have the expected store "
                                    f"type. [{fields[field_name]['type']} != "
                                    f"{model[field_name].__class__.__name__.lower()}]")

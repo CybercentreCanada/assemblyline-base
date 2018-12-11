@@ -1,4 +1,5 @@
-from assemblyline.datastore.odm import Keyword, Text, List, Compound, Date, Integer, Float, Boolean, Mapping
+from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
+    Float, Boolean, Mapping, Classification, Enum
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -8,9 +9,11 @@ __type_mapping = {
     Integer: 'int',
     Float: 'float',
     Date: 'date',
+    Classification: 'string',
+    Enum: 'string'
 }
 
-back_mapping = {v: k for k, v in __type_mapping.items()}
+back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification]}
 
 
 def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):

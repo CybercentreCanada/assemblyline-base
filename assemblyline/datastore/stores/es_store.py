@@ -7,12 +7,12 @@ import time
 
 from copy import deepcopy
 
-from assemblyline.datastore import Collection, BaseStore, SearchException, \
-    SearchRetryException, log
+from assemblyline import odm
+from assemblyline.datastore import Collection, BaseStore, log
+from assemblyline.datastore.exceptions import SearchException, SearchRetryException
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
     default_dynamic_templates
 from assemblyline.datastore.support.elasticsearch.build import build_mapping, back_mapping
-from assemblyline.datastore import odm
 
 
 def _strip_lists(model, data):

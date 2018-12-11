@@ -1,4 +1,6 @@
 import logging
+import os
+
 import pytest
 import random
 import string
@@ -8,9 +10,11 @@ from datetime import datetime
 from datemath import dm
 from retrying import retry
 
-from assemblyline.datastore import odm, log
+from assemblyline import odm
+from assemblyline.datastore import log
 
 log.setLevel(logging.INFO)
+yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
 
 
 @odm.model(index=True, store=True)
@@ -27,10 +31,11 @@ class MeasurementModel(odm.Model):
 
 @odm.model(index=True, store=True)
 class BaseTestModel(odm.Model):
+    classification = odm.Classification(default="UNRESTRICTED", yml_config=yml_config)
     flavour = odm.Text(copyto='features', default="EMPTY")
     height = odm.Integer()
     birthday = odm.Date()
-    tags = odm.List(odm.Keyword(), default=[], copyto='features')
+    tags = odm.List(odm.Enum({'silly', 'cats', '10'}), default=[], copyto='features')
     size = odm.Compound(MeasurementModel, default={'depth': 100, 'width': 100})
     features = odm.List(odm.Text(), default=[])
     metadata = odm.Mapping(odm.Text(), default={})
@@ -41,17 +46,20 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     test_map = {
         'test1': BaseTestModel(dict(tags=['silly'], flavour='chocolate', height=100, birthday=dm('now-2d'),
-                                    metadata={'url': 'google.com'}, things=[{'count': 1, 'thing': 'hat'}])),
+                                    metadata={'url': 'google.com'}, things=[{'count': 1, 'thing': 'hat'}],
+                                    classification="RESTRICTED")),
         'test2': BaseTestModel(dict(tags=['cats'], flavour='A little dry', height=180, birthday=dm('now-1d'),
                                     metadata={'url': 'google.ca'})),
         'test3': BaseTestModel(dict(tags=['silly'], flavour='Red', height=140, birthday=dm('now'),
                                     size={'depth': 1, 'width': 1}, things=[{'count': 1, 'thing': 'hat'},
-                                                                           {'count': 10, 'thing': 'shoe'}])),
+                                                                           {'count': 10, 'thing': 'shoe'}],
+                                    classification="RESTRICTED")),
         'test4': BaseTestModel(dict(tags=['cats'], flavour='Bugs ++', height=30, birthday='2018-10-30T17:48:48+00:00')),
         'dict1': BaseTestModel(dict(tags=['cats'], flavour='A--', height=300, birthday='2018-10-30T17:48:48Z')),
         'dict2': BaseTestModel(dict(tags=[], flavour='100%', height=90, birthday=datetime.utcnow(),
                                     metadata={'origin': 'space'})),
-        'dict3': BaseTestModel(dict(tags=['10', 'cats'], flavour='', height=180, birthday=dm('now-3d'))),
+        'dict3': BaseTestModel(dict(tags=['10', 'cats'], flavour='', height=180, birthday=dm('now-3d'),
+                                    classification="RESTRICTED")),
         'dict4': BaseTestModel(dict(tags=['10', 'silly', 'cats'], flavour='blue', height=100, birthday=dm('now-1d'))),
     }
 
@@ -184,6 +192,7 @@ def collection_test(collection):
 
     # Check that the metadata is searchable
     assert col.search('metadata.url:*google*')['total'] == 2
+    assert col.search('classification:RESTRICTED')['total'] == 3
 
 
 # noinspection PyShadowingNames
@@ -303,7 +312,5 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
         assert compare_output(s_tc.grouped_search('height', fl='flavour'),
                               e_tc.grouped_search('height', fl='flavour'),
                               r_tc.grouped_search('height', fl='flavour'))
-        #
-        # # TODO: fields are not of the same type in-between datastores does that matter?
-        # #       will print output for now without failing the test
-        # compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())
+
+        assert compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())

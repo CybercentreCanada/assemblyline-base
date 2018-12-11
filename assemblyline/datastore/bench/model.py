@@ -1,4 +1,6 @@
-from assemblyline.datastore import odm
+import os
+
+from assemblyline import odm
 
 
 @odm.model(index=True, store=True)
@@ -17,6 +19,10 @@ class FakeFileObject(odm.Model):
 
 @odm.model(index=True, store=True)
 class FakeSubmission(odm.Model):
+    yml_config = os.path.join(os.path.dirname(__file__).replace("datastore/bench", "test"), "classification.yml")
+
+    classification = odm.Classification(default="UNRESTRICTED", yml_config=yml_config)
+    submission_type = odm.Enum({"live", "user", "client"})
     description = odm.Text(copyto='text', default="Default scan of a random file!")
     max_score = odm.Integer()
 

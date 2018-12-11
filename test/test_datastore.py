@@ -283,6 +283,9 @@ def test_datastore_consistency(riak_connection: Collection,
                               r_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
                                                   sort="lvl_i desc"))
 
-        # TODO: fields are not of the same type in-between datastores does that matter?
-        #       will print output for now without failing the test
-        compare_output(s_tc.fields(), e_tc.fields(), r_tc.fields())
+        # For some reason, elasticsearch adds the random list key as a field name. Since this is a
+        # specific thing with elasticsearch we will pop that field from the rest and compare the other
+        # fields accordingly.
+        e_fields = e_tc.fields()
+        e_fields.pop('list', None)
+        assert compare_output(s_tc.fields(), e_fields, r_tc.fields())
