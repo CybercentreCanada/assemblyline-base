@@ -1,15 +1,8 @@
 from assemblyline import odm
+from assemblyline.odm.messages import Resources
 
 MSG_TYPES = {"DispHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.dispatcher.DispatcherMessage"
-
-
-@odm.model()
-class Resources(odm.Model):
-    cpu_usage = odm.Float()
-    disk_usage_free = odm.Integer()
-    disk_usage_percent = odm.Float()
-    mem_usage = odm.Float()
 
 
 @odm.model()
