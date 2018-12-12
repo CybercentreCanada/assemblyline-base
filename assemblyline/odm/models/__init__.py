@@ -123,7 +123,7 @@ def random_data_for_field(field, name):
                 return get_random_hash(32)
             elif "host" in name or "node" in name:
                 return get_random_host()
-            elif "ip" in name:
+            elif name.endswith("ip"):
                 return get_random_ip()
             elif "file" in name:
                 return get_random_filename()
