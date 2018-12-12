@@ -64,14 +64,13 @@ class ResponseBody(odm.Model):
     extracted = odm.List(odm.Compound(File))      # List of extracted files
     service_context = odm.Keyword()               # Context about the service that was running
     service_debug_info = odm.Keyword()            # Debug information about where the service was processed
-    message = odm.Text()                          # Dunno what this is for TODO: Remove?
 
 
 @odm.model(index=True, store=True)
 class Result(odm.Model):
-    expiry_ts = odm.Date()                 # Expiry time stamp
     classification = odm.Classification()  # Aggregate classification for the result
     created = odm.Date()                   # Date at which the result objec got created
-    sha256 = odm.Keyword()                 # SHA256 of the file the result object relates to
-    result = odm.Compound(ResultBody)      # The result body
+    expiry_ts = odm.Date()                 # Expiry time stamp
     response = odm.Compound(ResponseBody)  # The body of the response from the service
+    result = odm.Compound(ResultBody)      # The result body
+    sha256 = odm.Keyword()                 # SHA256 of the file the result object relates to

@@ -82,8 +82,8 @@ def get_random_iso_date(epoch=None):
     return datetime.datetime.fromtimestamp(epoch).isoformat() + "Z"
 
 
-def get_random_mapping():
-    return {META_KEYS[i]: get_random_word() for i in range(random.randint(0, 5))}
+def get_random_mapping(field):
+    return {META_KEYS[i]: random_data_for_field(field, META_KEYS[i]) for i in range(random.randint(0, 5))}
 
 
 # noinspection PyProtectedMember
@@ -102,7 +102,7 @@ def random_data_for_field(field, name):
     elif isinstance(field, Compound):
         return random_model_obj(field.child_type, as_json=True)
     elif isinstance(field, Mapping):
-        return get_random_mapping()
+        return get_random_mapping(field.child_type)
     elif isinstance(field, Date):
         return get_random_iso_date()
     elif isinstance(field, Integer):
