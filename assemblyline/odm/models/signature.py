@@ -1,16 +1,17 @@
 from assemblyline import odm
 
-VALID_GROUPS = {"technique", "exploit", "implant", "info", "tool"}
+RULE_STATUSES = {"DEPLOYED", "TESTING", "NOISY", "DISABLED", "STAGING", "INVALID"}
 RULE_TYPES = {"rule", "private rule", "global rule", "global private rule"}
-
-# TODO: Apply proper index and store values
+VALID_GROUPS = {"technique", "exploit", "implant", "info", "tool"}
 
 
 @odm.model(index=True, store=True)
 class RequiredMeta(odm.Model):
+    al_status = odm.Enum(values=RULE_STATUSES)  # Status of the rule in Assemblyline
     classification = odm.Classification()       # Classification of the rule
-    description = odm.Text()                    # Description of the rule
-    organisation = odm.Keyword()                # Organisation acronym which created the rule
+    description = odm.Text(store=False)         # Description of the rule
+    organisation = odm.Keyword(store=False)     # Organisation acronym which created the rule
+    origin = odm.Keyword(store=False)           # Organisation acronym which created the rule
     poc = odm.Keyword()                         # Point of contact for the rule
     rule_group = odm.Enum(values=VALID_GROUPS)  # Group that the rule is part of
     rule_group_value = odm.Keyword()            # Value of the rule group (replaces: tech, info, implant ...)
@@ -19,7 +20,7 @@ class RequiredMeta(odm.Model):
     yara_verion = odm.Keyword()                 # Version of Yara the rule was built for
 
 
-@odm.model(index=True, store=True)
+@odm.model(index=True, store=False)
 class Signature(odm.Model):
     comments = odm.List(odm.Keyword())       # Comments for the signature
     condition = odm.Keyword()                # List of conditions for the signature
@@ -27,7 +28,7 @@ class Signature(odm.Model):
     meta = odm.Compound(RequiredMeta)        # Required metadata
     meta_extra = odm.Mapping(odm.Keyword())  # Optional metadata
     modules = odm.List(odm.Keyword())        # Modules that the signature needs
-    name = odm.Keyword()                     # Name of the signature
+    name = odm.Keyword(store=True)                     # Name of the signature
     strings = odm.Keyword()                  # Search strings for the signature
     tags = odm.List(odm.Keyword())           # Tags associated to the signature
     type = odm.Enum(values=RULE_TYPES)       # Type of rule

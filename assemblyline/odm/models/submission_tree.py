@@ -1,9 +1,7 @@
 from assemblyline import odm
 
-# TODO: Apply proper index and store values
 
-
-@odm.model(index=True, store=True)
+@odm.model(index=False, store=False)
 class File(odm.Model):
     depth = odm.Integer()           # Depth in the tree
     file_id = odm.Integer()         # ID of the file
@@ -14,7 +12,7 @@ class File(odm.Model):
     truncated = odm.Boolean()       # is the file truncated
 
 
-@odm.model(index=True, store=True)
+@odm.model(index=True, store=False)
 class SubmissionTree(odm.Model):
     expiry_ts = odm.Date()               # Expiry date
     sid = odm.Keyword()                  # Submission ID of the tree
