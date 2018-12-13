@@ -5,7 +5,7 @@ from assemblyline.odm.messages.controller import ControllerMessage
 from assemblyline.odm.messages.dispatcher import DispatcherMessage
 from assemblyline.odm.messages.metrics import MetricsMessage
 from assemblyline.odm.messages.submission import SubmissionMessage
-from assemblyline.odm.models import random_model_obj
+from assemblyline.odm.randomizer import random_model_obj
 
 
 def test_alert_message():
