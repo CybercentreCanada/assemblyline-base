@@ -1,6 +1,6 @@
 from assemblyline import odm
 
-MSG_TYPES = {"PublishCounters"}
+MSG_TYPES = {"MetricsCounter"}
 LOADER_CLASS = "assemblyline.odm.messages.metrics.MetricsMessage"
 
 
@@ -14,7 +14,7 @@ class Metrics(odm.Model):
 
 @odm.model()
 class MetricsMessage(odm.Model):
-    body = odm.Compound(Metrics)
-    obj_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
-    msg_type = odm.Enum(values=MSG_TYPES, default="PublishCounters")
+    msg = odm.Compound(Metrics)
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
+    msg_type = odm.Enum(values=MSG_TYPES, default="MetricsCounter")
     sender = odm.Keyword()

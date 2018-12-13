@@ -1,7 +1,7 @@
 from assemblyline import odm
 from assemblyline.odm.common import Resources, HostInfo
 
-MSG_TYPES = {"DispHeartbeat"}
+MSG_TYPES = {"DispatcherHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.dispatcher.DispatcherMessage"
 
 
@@ -40,7 +40,7 @@ class Heartbeat(odm.Model):
 
 @odm.model()
 class DispatcherMessage(odm.Model):
-    body = odm.Compound(Heartbeat)
-    obj_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
-    msg_type = odm.Enum(values=MSG_TYPES, default="DispHeartbeat")
+    msg = odm.Compound(Heartbeat)
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
+    msg_type = odm.Enum(values=MSG_TYPES, default="DispatcherHeartbeat")
     sender = odm.Keyword()

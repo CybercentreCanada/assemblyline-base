@@ -40,7 +40,7 @@ class Heartbeat(odm.Model):
 
 @odm.model()
 class IngestMessage(odm.Model):
-    body = odm.Compound(Heartbeat)
-    obj_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
+    msg = odm.Compound(Heartbeat)
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
     msg_type = odm.Enum(values=MSG_TYPES, default="IngestHeartbeat")
     sender = odm.Keyword()

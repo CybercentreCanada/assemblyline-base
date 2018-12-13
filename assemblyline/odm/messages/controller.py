@@ -1,7 +1,7 @@
 from assemblyline import odm
 from assemblyline.odm.common import Resources
 
-MSG_TYPES = {"CtlHeartbeat"}
+MSG_TYPES = {"ControllerHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.controller.ControllerMessage"
 
 
@@ -14,7 +14,7 @@ class Heartbeat(odm.Model):
 
 @odm.model()
 class ControllerMessage(odm.Model):
-    body = odm.Compound(Heartbeat)
-    obj_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
-    msg_type = odm.Enum(values=MSG_TYPES, default="CtlHeartbeat")
+    msg = odm.Compound(Heartbeat)
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
+    msg_type = odm.Enum(values=MSG_TYPES, default="ControllerHeartbeat")
     sender = odm.Keyword()

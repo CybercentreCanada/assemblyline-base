@@ -31,7 +31,7 @@ class Submission(odm.Model):
 
 @odm.model()
 class SubmissionMessage(odm.Model):
-    body = odm.Compound(Submission)                                     # Body of the message
-    obj_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)  # Class to use to load the message as an object
+    msg = odm.Compound(Submission)                                      # Body of the message
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)  # Class to use to load the message as an object
     msg_type = odm.Enum(values=MSG_TYPES, default="SubmissionQueued")   # Type of message
     sender = odm.Keyword()                                              # Sender of the message

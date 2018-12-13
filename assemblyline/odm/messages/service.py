@@ -2,8 +2,8 @@ from assemblyline import odm
 from assemblyline.odm.common import HostInfo, Resources
 from assemblyline.odm.models.node import Node
 
-MSG_TYPES = {"SvcHeartbeat"}
-LOADER_CLASS = "assemblyline.odm.messages.ingest.ServiceMessage"
+MSG_TYPES = {"ServiceHeartbeat"}
+LOADER_CLASS = "assemblyline.odm.messages.service.ServiceMessage"
 
 
 @odm.model()
@@ -52,7 +52,7 @@ class Heartbeat(odm.Model):
 
 @odm.model()
 class ServiceMessage(odm.Model):
-    body = odm.Compound(Heartbeat)
-    obj_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
-    msg_type = odm.Enum(values=MSG_TYPES, default="SvcHeartbeat")
+    msg = odm.Compound(Heartbeat)
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
+    msg_type = odm.Enum(values=MSG_TYPES, default="ServiceHeartbeat")
     sender = odm.Keyword()
