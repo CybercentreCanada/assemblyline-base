@@ -1,13 +1,59 @@
 import pytest
 
-from assemblyline.odm.models import random_model_obj
-from assemblyline.odm.messages.alert_created import AlertCreatedMessage
+from assemblyline.odm.messages.alert import AlertMessage
+from assemblyline.odm.messages.controller import ControllerMessage
+from assemblyline.odm.messages.dispatcher import DispatcherMessage
+from assemblyline.odm.messages.ingest import IngestMessage
+from assemblyline.odm.messages.metrics import MetricsMessage
+from assemblyline.odm.messages.service import ServiceMessage
+from assemblyline.odm.messages.submission import SubmissionMessage
+from assemblyline.odm.randomizer import random_model_obj
 
 
-def test_alert_created_message():
+def test_alert_message():
     try:
-        random_model_obj(AlertCreatedMessage).as_primitives()
+        random_model_obj(AlertMessage).as_primitives()
     except (ValueError, TypeError, KeyError):
-        pytest.fail("Could not generate 'AlertCreatedMessage' object and validate it.")
+        pytest.fail("Could not generate 'AlertMessage' object and validate it.")
 
 
+def test_controller_message():
+    try:
+        random_model_obj(ControllerMessage).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'ControllerMessage' object and validate it.")
+
+
+def test_dispatcher_message():
+    try:
+        random_model_obj(DispatcherMessage).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'DispatcherMessage' object and validate it.")
+
+
+def test_ingest_message():
+    try:
+        random_model_obj(IngestMessage).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'IngestMessage' object and validate it.")
+
+
+def test_metrics_message():
+    try:
+        random_model_obj(MetricsMessage).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'MetricsMessage' object and validate it.")
+
+
+def test_service_message():
+    try:
+        random_model_obj(ServiceMessage).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'ServiceMessage' object and validate it.")
+
+
+def test_submission_message():
+    try:
+        random_model_obj(SubmissionMessage).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'SubmissionMessage' object and validate it.")

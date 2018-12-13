@@ -1,7 +1,7 @@
 import pytest
 
 from assemblyline.common import forge
-from assemblyline.odm.models import random_model_obj
+from assemblyline.odm.randomizer import random_model_obj
 from assemblyline.odm.models.config import DEFAULT_CONFIG, Config
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.error import Error

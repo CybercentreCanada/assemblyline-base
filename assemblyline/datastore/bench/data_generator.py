@@ -6,7 +6,7 @@ import time
 from assemblyline.datastore.bench.model import FakeFileObject, FakeResultSection, FakeSubmission
 from hashlib import sha256
 
-from assemblyline.odm.models import get_random_filename, get_random_phrase, get_random_iso_date, get_random_word, \
+from assemblyline.odm.randomizer import get_random_filename, get_random_phrase, get_random_iso_date, get_random_word, \
     get_random_mapping
 
 
