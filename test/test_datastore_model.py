@@ -2,7 +2,7 @@ import pytest
 
 from retrying import retry
 
-from assemblyline.datastore import Collection, BaseStore
+from assemblyline.datastore import BaseStore
 from assemblyline.datastore.stores.es_store import ESStore
 from assemblyline.datastore.stores.riak_store import RiakStore
 from assemblyline.datastore.stores.solr_store import SolrStore
@@ -94,7 +94,7 @@ def riak_connection(request):
 
 def _perform_single_datastore_tests(ds: BaseStore):
     for collection_name, document in TEST_DATA.items():
-        ds.register(collection_name, document.__class__)
+        ds.register(collection_name, model_class=document.__class__)
         collection = ds.__getattr__(collection_name)
         try:
             # Save test document
