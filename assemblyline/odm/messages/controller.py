@@ -1,5 +1,5 @@
 from assemblyline import odm
-from assemblyline.odm.messages import Resources
+from assemblyline.odm.common import Resources
 
 MSG_TYPES = {"CtlHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.controller.ControllerMessage"
