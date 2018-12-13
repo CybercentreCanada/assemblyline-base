@@ -3,6 +3,8 @@ from assemblyline import odm
 VALID_GROUPS = {"technique", "exploit", "implant", "info", "tool"}
 RULE_TYPES = {"rule", "private rule", "global rule", "global private rule"}
 
+# TODO: Apply proper index and store values
+
 
 @odm.model(index=True, store=True)
 class RequiredMeta(odm.Model):

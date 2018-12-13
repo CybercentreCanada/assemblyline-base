@@ -2,6 +2,8 @@ from assemblyline import odm
 
 ACL = {"R", "W", "E"}
 
+# TODO: Apply proper index and store values
+
 
 @odm.model(index=True, store=True)
 class ApiKey(odm.Model):

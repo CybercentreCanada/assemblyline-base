@@ -3,6 +3,8 @@ from assemblyline import odm
 ENCODINGS = {"cart", "raw"}
 DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
 
+# TODO: Apply proper index and store values
+
 
 @odm.model(index=True, store=True)
 class UserOptions(odm.Model):  # User's default options

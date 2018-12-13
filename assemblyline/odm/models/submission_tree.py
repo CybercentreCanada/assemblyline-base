@@ -1,5 +1,7 @@
 from assemblyline import odm
 
+# TODO: Apply proper index and store values
+
 
 @odm.model(index=True, store=True)
 class File(odm.Model):
