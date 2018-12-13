@@ -3,10 +3,8 @@ from assemblyline import odm
 ENCODINGS = {"cart", "raw"}
 DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
 
-# TODO: Apply proper index and store values
 
-
-@odm.model(index=True, store=True)
+@odm.model(index=False, store=False)
 class UserOptions(odm.Model):  # User's default options
     classification = odm.Classification()                             # Default submission classification
     deep_scan = odm.Boolean(default=False)                            # Should a deep scan be performed

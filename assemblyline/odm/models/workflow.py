@@ -3,8 +3,6 @@ from assemblyline import odm
 PRIORITIES = {"", "LOW", "MEDIUM", "HIGH", "CRITICAL"}
 STATUSES = {"", "MALICIOUS", "NON-MALICIOUS", "ASSESS"}
 
-# TODO: Apply proper index and store values
-
 
 @odm.model(index=True, store=True)
 class Workflow(odm.Model):
