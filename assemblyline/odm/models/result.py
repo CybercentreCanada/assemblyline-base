@@ -75,3 +75,13 @@ class Result(odm.Model):
     sha256 = odm.Keyword()                 # SHA256 of the file the result object relates to
     result = odm.Compound(ResultBody)      # The result body
     response = odm.Compound(ResponseBody)  # The body of the response from the service
+
+    @staticmethod
+    def build_key(service_name, version, conf_key, file_hash):
+        key_list = [file_hash, service_name.replace('.', '_')]
+        if version:
+            key_list.append('v' + version.replace('.', '_'))
+        if conf_key:
+            key_list.append('c' + conf_key.replace('.', '_'))
+        key = '.'.join(key_list)
+        return key
