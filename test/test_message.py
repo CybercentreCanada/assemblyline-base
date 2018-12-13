@@ -3,7 +3,9 @@ import pytest
 from assemblyline.odm.messages.alert import AlertMessage
 from assemblyline.odm.messages.controller import ControllerMessage
 from assemblyline.odm.messages.dispatcher import DispatcherMessage
+from assemblyline.odm.messages.ingest import IngestMessage
 from assemblyline.odm.messages.metrics import MetricsMessage
+from assemblyline.odm.messages.service import ServiceMessage
 from assemblyline.odm.messages.submission import SubmissionMessage
 from assemblyline.odm.randomizer import random_model_obj
 
@@ -29,11 +31,25 @@ def test_dispatcher_message():
         pytest.fail("Could not generate 'DispatcherMessage' object and validate it.")
 
 
+def test_ingest_message():
+    try:
+        random_model_obj(IngestMessage).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'IngestMessage' object and validate it.")
+
+
 def test_metrics_message():
     try:
         random_model_obj(MetricsMessage).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'MetricsMessage' object and validate it.")
+
+
+def test_service_message():
+    try:
+        random_model_obj(ServiceMessage).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'ServiceMessage' object and validate it.")
 
 
 def test_submission_message():

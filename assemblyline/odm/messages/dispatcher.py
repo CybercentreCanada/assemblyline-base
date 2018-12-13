@@ -1,5 +1,5 @@
 from assemblyline import odm
-from assemblyline.odm.common import Resources
+from assemblyline.odm.common import Resources, HostInfo
 
 MSG_TYPES = {"DispHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.dispatcher.DispatcherMessage"
@@ -11,13 +11,6 @@ class Queues(odm.Model):
     ingest = odm.Integer()
     max_inflight = odm.Integer()
     response = odm.Integer()
-
-
-@odm.model()
-class HostInfo(odm.Model):
-    host = odm.Keyword()
-    ip = odm.Keyword()
-    mac_address = odm.Keyword()
 
 
 @odm.model()
