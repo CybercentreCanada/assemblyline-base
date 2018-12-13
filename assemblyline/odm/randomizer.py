@@ -18,8 +18,8 @@ innovation programs One of our key partnerships is with the Government of Canada
 BCIP The BCIP helps Canadian companies of all sizes transition their state of the art goods and services from the 
 laboratory to the marketplace For certain cyber security innovations the Cyber Centre performs the role of technical 
 authority We evaluate participating companies new technology and provide feedback in order to assist them in bringing 
-their product to market To learn more about selling or testing an innovation visit the BCIP website
-""".split()
+their product to market To learn more about selling or testing an innovation visit the BCIP website""".split()
+WORDS = list(set(WORDS))
 META_KEYS = ["key_a", "key_b", "key_c", "key_d", "key_e", "key_f"]
 EXT = [
     ".jpg",
@@ -116,7 +116,7 @@ def random_data_for_field(field, name):
             elif "sid" in name:
                 return get_random_uid()
             elif "mac" in name:
-                return get_random_hash(12)
+                return get_random_hash(12).upper()
             elif "sha1" in name:
                 return get_random_hash(40)
             elif "md5" in name or "scan_key" in name:
