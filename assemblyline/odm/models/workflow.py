@@ -11,7 +11,7 @@ class Workflow(odm.Model):
     creator = odm.Keyword()                                 # UID of the creator
     edited_by = odm.Keyword()                               # UID of the last edit user
     hit_count = odm.Integer()                               # Number of time workflow hit
-    label = odm.List(odm.Keyword(), copyto="__text__")      # Labels applied by the workflow
+    labels = odm.List(odm.Keyword(), copyto="__text__")      # Labels applied by the workflow
     last_edit = odm.Date()                                  # Last edit date
     last_seen = odm.Date()                                  # Last hit date
     name = odm.Keyword(copyto="__text__")                   # Name of the workflow

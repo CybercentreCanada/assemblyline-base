@@ -41,17 +41,17 @@ class Milestone(odm.Model):
 
 @odm.model(index=True, store=False)
 class File(odm.Model):
-    name = odm.Keyword(copyto="__text__")    # Name of the file
-    sha256 = odm.Keyword(copyto="__text__")  # SHA256 hash of the file
-    description = odm.Text()                 # Description of the file
-    classification = odm.Classification()    # Classification of the file
+    name = odm.Keyword(copyto="__text__")      # Name of the file
+    sha256 = odm.Keyword(copyto="__text__")    # SHA256 hash of the file
+    description = odm.Text(copyto="__text__")  # Description of the file
+    classification = odm.Classification()      # Classification of the file
 
 
 @odm.model(index=True, store=True)
 class ResponseBody(odm.Model):
     milestones = odm.Compound(Milestone)                        # Milestone block
     service_version = odm.Keyword(store=False)                  # Version of the service that ran on the file
-    service_name = odm.Keyword()                                # Name of the service that scan the file
+    service_name = odm.Keyword(copyto="__text__")               # Name of the service that scan the file
     supplementary = odm.List(odm.Compound(File))                # List of supplementary files
     extracted = odm.List(odm.Compound(File))                    # List of extracted files
     service_context = odm.Keyword(index=False, store=False)     # Context about the service that was running
