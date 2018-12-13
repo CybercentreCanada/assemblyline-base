@@ -42,7 +42,7 @@ def test_expiring_hash(redis_connection):
         with ExpiringHash('test-expiring-hashmap', ttl=1) as eh:
             assert eh.add("key", "value") == 1
             assert eh.length() == 1
-            time.sleep(2)
+            time.sleep(1.1)
             assert eh.length() == 0
 
 
@@ -127,7 +127,7 @@ def test_expiring_sets(redis_connection):
             assert es.exist(values[2])
             for x in es.members():
                 assert x in values
-            time.sleep(2)
+            time.sleep(1.1)
             assert es.length() == 0
             assert not es.exist(values[2])
 
@@ -253,7 +253,7 @@ def test_comms_queue(redis_connection):
         from assemblyline.remote.datatypes.queues.comms import CommsQueue
 
         def publish_messages(msg_list):
-            time.sleep(1)
+            time.sleep(0.1)
             with CommsQueue('test-comms-queue') as cq:
                 for msg in msg_list:
                     cq.publish(msg)
