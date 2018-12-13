@@ -276,8 +276,8 @@ class ClassificationObject(object):
 
 class Classification(Keyword):
     """A field storing access control classification."""
-    def __init__(self, *args, is_user_classification=False,
-                 yml_config="/etc/assemblyline/classification.yml", **kwargs):
+
+    def __init__(self, *args, is_user_classification=False, yml_config=None, **kwargs):
         """
         An expanded classification is one that controls the access to the document
         which holds it.
