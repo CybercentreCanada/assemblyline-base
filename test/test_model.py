@@ -1,7 +1,6 @@
 import pytest
 
 from assemblyline.common import forge
-from assemblyline.odm.randomizer import random_model_obj
 from assemblyline.odm.models.config import DEFAULT_CONFIG, Config
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.error import Error
@@ -15,6 +14,7 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_options import UserOptions
 from assemblyline.odm.models.workflow import Workflow
+from assemblyline.odm.randomizer import random_model_obj
 
 
 def test_alert_model():
