@@ -23,13 +23,13 @@ class FakeSubmission(odm.Model):
 
     classification = odm.Classification(default="UNRESTRICTED", yml_config=yml_config)
     submission_type = odm.Enum({"live", "user", "client"})
-    description = odm.Text(copyto='text', default="Default scan of a random file!")
+    description = odm.Text(copyto='__text__', default="Default scan of a random file!")
     max_score = odm.Integer()
 
     start_time = odm.Date()
     end_time = odm.Date()
 
-    tags = odm.List(odm.Keyword(), default=[], copyto='text')
+    tags = odm.List(odm.Keyword(), default=[], copyto='__text__')
 
     results = odm.List(odm.Compound(FakeResultSection), default=[])
 
