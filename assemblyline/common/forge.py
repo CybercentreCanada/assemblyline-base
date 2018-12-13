@@ -3,8 +3,11 @@ import os
 import yaml
 
 
-def get_classification(yml_config="/etc/assemblyline/classification.yml"):
+def get_classification(yml_config=None):
     from assemblyline.common.classification import Classification, InvalidDefinition
+
+    if yml_config is None:
+        yml_config = "/etc/assemblyline/classification.yml"
 
     classification_definition = {}
     default_file = os.path.join(os.path.dirname(__file__), "classification.yml")
@@ -27,8 +30,11 @@ def get_classification(yml_config="/etc/assemblyline/classification.yml"):
     return Classification(classification_definition)
 
 
-def get_config(static=False, yml_config="/etc/assemblyline/config.yml"):
+def get_config(static=False, yml_config=None):
     from assemblyline.odm.models.config import Config
+
+    if yml_config is None:
+        yml_config = "/etc/assemblyline/config.yml"
 
     # Initialize a default config
     config = Config().as_primitives()
