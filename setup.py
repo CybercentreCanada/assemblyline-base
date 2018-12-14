@@ -21,6 +21,6 @@ setup(
     install_requires=read_requirements('assemblyline/requirements.txt'),
     tests_requires=read_requirements('test/requirements.txt'),
     package_data={
-        '': ["*schema.xml", "*managed-schema", "*solrconfig.xml"]
+        '': ["*schema.xml", "*managed-schema", "*solrconfig.xml", "*classification.yml"]
     }
 )
