@@ -441,6 +441,22 @@ class Model:
             cls._odm_field_cache = out
         return out
 
+    @staticmethod
+    def _recurse_fields(name, field, skip_mappings):
+        out = dict()
+        for sub_name, sub_field in field.fields().items():
+            if skip_mappings and isinstance(sub_field, Mapping):
+                continue
+            if isinstance(sub_field, List) and sub_name != "":
+                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings))
+            elif isinstance(sub_field, Compound) and sub_name != "":
+                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings))
+            elif sub_name:
+                out[".".join([name, sub_name])] = sub_field
+            else:
+                out[name] = sub_field
+        return out
+
     @classmethod
     def flat_fields(cls, skip_mappings=False) -> typing.Mapping[str, _Field]:
         """
@@ -452,14 +468,11 @@ class Model:
             skip_mappings (bool): Skip over mappings where the real subfield names are unknown.
         """
         out = dict()
-        for name, field_data in cls.__dict__.items():
-            if isinstance(field_data, _Field):
-                if skip_mappings and isinstance(field_data, Mapping):
+        for name, field in cls.__dict__.items():
+            if isinstance(field, _Field):
+                if skip_mappings and isinstance(field, Mapping):
                     continue
-                for sub_name, sub_data in field_data.fields().items():
-                    if skip_mappings and isinstance(sub_data, Mapping):
-                        continue
-                    out[(name + '.' + sub_name).strip('.')] = sub_data
+                out.update(Model._recurse_fields(name, field, skip_mappings))
         return out
 
     def __init__(self, data: dict = None, mask: list = tuple(), docid=None):

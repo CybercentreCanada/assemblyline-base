@@ -102,8 +102,8 @@ def _setup_collection(ds, name, doc):
         # Commit saved data
         collection.commit()
         return collection
-    except Exception:
-        pytest.fail(f"Failed to register '{name}' collection.")
+    except Exception as e:
+        pytest.fail(f"Failed to register '{name}' collection. [{str(e)}]")
 
 
 def _perform_single_collection_test(ds: BaseStore, name: str, doc: Model):
