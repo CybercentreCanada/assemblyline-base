@@ -6,6 +6,7 @@ from datemath import dm
 from datemath.helpers import DateMathException
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
+from assemblyline.odm import List
 from assemblyline.remote.datatypes.lock import Lock
 
 log = logging.getLogger('assemblyline.datastore')
@@ -398,8 +399,15 @@ class Collection(object):
                 raise RuntimeError(f"Field {field_name} didn't have the expected indexing value.")
             if fields[field_name]['stored'] != model[field_name].store:
                 raise RuntimeError(f"Field {field_name} didn't have the expected store value.")
-            if fields[field_name]['type'] != model[field_name].__class__.__name__.lower() and \
-                fields[field_name]['type'] != model[field_name].__class__.__bases__[0].__name__.lower():
+
+            possible_field_types = [
+                model[field_name].__class__.__name__.lower(),
+                model[field_name].__class__.__bases__[0].__name__.lower(),
+            ]
+            if isinstance(model[field_name], List):
+                possible_field_types.append(model[field_name].child_type.__class__.__name__.lower())
+
+            if fields[field_name]['type'] not in possible_field_types :
                 raise RuntimeError(f"Field {field_name} didn't have the expected store "
                                    f"type. [{fields[field_name]['type']} != "
                                    f"{model[field_name].__class__.__name__.lower()}]")
