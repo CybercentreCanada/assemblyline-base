@@ -30,11 +30,13 @@
         <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
         <fieldType name="int" class="solr.TrieIntField" precisionStep="0" positionIncrementGap="0"/>
         <fieldType name="float" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0"/>
-        <fieldType name="pint" class="solr.TrieIntField" precisionStep="0" positionIncrementGap="0"/>
-        <fieldType name="pfloat" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0"/>
         <fieldType name="long" class="solr.TrieLongField" precisionStep="0" positionIncrementGap="0"/>
         <fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" positionIncrementGap="0"/>
         <fieldType name="date" class="solr.TrieDateField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="pint" class="solr.TrieIntField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="pfloat" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="plong" class="solr.TrieLongField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="pdouble" class="solr.TrieDoubleField" precisionStep="0" positionIncrementGap="0"/>
         <fieldType name="pdate" class="solr.TrieDateField" precisionStep="0" positionIncrementGap="0"/>
         <fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
 

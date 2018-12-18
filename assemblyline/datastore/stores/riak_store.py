@@ -24,14 +24,14 @@ class RiakCollection(SolrCollection):
     MULTIGET_MAX_RETRY = 5
     DEFAULT_SORT = "_yz_id asc"
     DEFAULT_CATCH_ALL_FIELDS = """
-    <dynamicField name="*_i"  type="int"    indexed="true"  stored="true"  multiValued="false"/>
-    <dynamicField name="*_is" type="int"    indexed="true"  stored="true"  multiValued="true"/>
-    <dynamicField name="*_l"  type="long"   indexed="true"  stored="true"  multiValued="false"/>
-    <dynamicField name="*_ls" type="long"   indexed="true"  stored="true"  multiValued="true"/>
-    <dynamicField name="*_d"  type="double" indexed="true"  stored="true"  multiValued="false"/>
-    <dynamicField name="*_ds" type="double" indexed="true"  stored="true"  multiValued="true"/>
-    <dynamicField name="*_f"  type="float"  indexed="true"  stored="true"  multiValued="false"/>
-    <dynamicField name="*_fs" type="float"  indexed="true"  stored="true"  multiValued="true"/>
+    <dynamicField name="*_i"  type="pint"    indexed="true"  stored="true"  multiValued="false"/>
+    <dynamicField name="*_is" type="pint"    indexed="true"  stored="true"  multiValued="true"/>
+    <dynamicField name="*_l"  type="plong"   indexed="true"  stored="true"  multiValued="false"/>
+    <dynamicField name="*_ls" type="plong"   indexed="true"  stored="true"  multiValued="true"/>
+    <dynamicField name="*_d"  type="pdouble" indexed="true"  stored="true"  multiValued="false"/>
+    <dynamicField name="*_ds" type="pdouble" indexed="true"  stored="true"  multiValued="true"/>
+    <dynamicField name="*_f"  type="pfloat"  indexed="true"  stored="true"  multiValued="false"/>
+    <dynamicField name="*_fs" type="pfloat"  indexed="true"  stored="true"  multiValued="true"/>
 
     <dynamicField name="*_s"  type="string"  indexed="true"  stored="true" multiValued="false"/>
     <dynamicField name="*_ss" type="string"  indexed="true"  stored="true" multiValued="true"/>
@@ -41,8 +41,8 @@ class RiakCollection(SolrCollection):
 
     <dynamicField name="*_b"  type="boolean" indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="*_bs" type="boolean" indexed="true" stored="true"  multiValued="true"/>
-    <dynamicField name="*_dt"  type="date"    indexed="true"  stored="true" multiValued="false"/>
-    <dynamicField name="*_dts" type="date"    indexed="true"  stored="true" multiValued="true"/>
+    <dynamicField name="*_dt"  type="pdate"    indexed="true"  stored="true" multiValued="false"/>
+    <dynamicField name="*_dts" type="pdate"    indexed="true"  stored="true" multiValued="true"/>
      """
     RIAK_RECONNECT_MSGS = [
         "insufficient_vnodes",
