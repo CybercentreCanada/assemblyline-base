@@ -475,7 +475,7 @@ class Model:
                 out.update(Model._recurse_fields(name, field, skip_mappings))
         return out
 
-    def __init__(self, data: dict = None, mask: list = tuple(), docid=None):
+    def __init__(self, data: dict = None, mask: list = None, docid=None):
         if data is None:
             data = {}
         if not hasattr(data, 'items'):
@@ -485,7 +485,7 @@ class Model:
 
         # Parse the field mask for sub models
         mask_map = {}
-        if mask:
+        if mask is not None:
             for entry in mask:
                 if '.' in entry:
                     child, sub_key = entry.split('.', 1)
@@ -499,7 +499,7 @@ class Model:
         # Get the list of fields we expect this object to have
         fields = self.fields()
         self._odm_removed = {}
-        if mask:
+        if mask is not None:
             self._odm_removed = {k: v for k, v in fields.items() if k not in mask_map}
             fields = {k: v for k, v in fields.items() if k in mask_map}
 

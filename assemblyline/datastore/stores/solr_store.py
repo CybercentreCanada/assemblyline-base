@@ -274,7 +274,7 @@ class SolrCollection(Collection):
         if self.model_class:
             item_id = item.pop(self.datastore.ID, None)
             if not fields or '*' in fields:
-                fields = self.stored_fields.keys()
+                fields = list(self.stored_fields.keys())
             elif isinstance(fields, str):
                 fields = fields.split(',')
 

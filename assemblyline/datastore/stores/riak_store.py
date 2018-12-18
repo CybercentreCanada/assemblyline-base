@@ -221,7 +221,7 @@ class RiakCollection(SolrCollection):
         if self.model_class:
             item_id = item.pop('_yz_rk', None)
             if not fields or '*' in fields:
-                fields = self.stored_fields.keys()
+                fields = list(self.stored_fields.keys())
             elif isinstance(fields, str):
                 fields = fields.split(',')
 

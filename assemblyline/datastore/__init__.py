@@ -404,9 +404,6 @@ class Collection(object):
                 model[field_name].__class__.__name__.lower(),
                 model[field_name].__class__.__bases__[0].__name__.lower(),
             ]
-            if isinstance(model[field_name], List):
-                possible_field_types.append(model[field_name].child_type.__class__.__name__.lower())
-
             if fields[field_name]['type'] not in possible_field_types :
                 raise RuntimeError(f"Field {field_name} didn't have the expected store "
                                    f"type. [{fields[field_name]['type']} != "
