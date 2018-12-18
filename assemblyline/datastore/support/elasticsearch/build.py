@@ -16,7 +16,7 @@ __type_mapping = {
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification]}
 
 
-def build_mapping(field_data, prefix=None):
+def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
     """
     The mapping for Elasticsearch based on a python model object.
     """
@@ -51,17 +51,19 @@ def build_mapping(field_data, prefix=None):
             })
 
         elif isinstance(field, List):
-            temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=path)
+            temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=path,
+                                                        allow_refuse_implicit=False)
             mappings.update(temp_mappings)
             dynamic.extend(temp_dynamic)
 
         elif isinstance(field, Compound):
-            temp_mappings, temp_dynamic = build_mapping(field.fields().values(), prefix=path)
+            temp_mappings, temp_dynamic = build_mapping(field.fields().values(), prefix=path,
+                                                        allow_refuse_implicit=False)
             mappings.update(temp_mappings)
             dynamic.extend(temp_dynamic)
 
         elif isinstance(field, Mapping):
-            dynamic.extend(build_templates(name, field.child_type))
+            dynamic.append(build_templates(name, field.child_type))
 
         else:
             raise NotImplementedError(f"Unknown type for elasticsearch schema: {field.__class__}")
@@ -69,7 +71,7 @@ def build_mapping(field_data, prefix=None):
     # The final template must match everything and disable indexing
     # this effectively disables dynamic indexing EXCEPT for the templates
     # we have defined
-    if not dynamic:
+    if not dynamic and allow_refuse_implicit:
         # We cannot use the dynamic type matching if others are in play because they conflict with each other
         # TODO: Find a way to make them work together.
         dynamic.append({'refuse_all_implicit_mappings': {
@@ -83,31 +85,43 @@ def build_mapping(field_data, prefix=None):
     return mappings, dynamic
 
 
-def build_templates(name, field):
+def build_templates(name, field, nested_template=False):
     if isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
-        main_template = {
-            f"nested_{name}": {
-                "match": "f{name}",
+        if nested_template:
+            main_template = {
+                "match": f"{name}",
                 "mapping": {
-                    "type": "nested"
+                    "type": "nested",
+                    "index": field.index,
+                    "store": field.store
                 }
             }
-        }
+            if field.copyto:
+                assert len(field.copyto) == 1
+                main_template['mapping']['copy_to'] = field.copyto[0]
 
-        field_template = {
-            "path_match": f"{name}.*",
-            "mapping": {
-                "type": __type_mapping[field.__class__],
+            return {f"nested_{name}": main_template}
+        else:
+            field_template = {
+                "path_match": f"{name}.*",
+                "mapping": {
+                    "type": __type_mapping[field.__class__],
+                }
             }
-        }
 
-        field_template['mapping']['index'] = field.index
-        field_template['mapping']['store'] = field.store
-        if field.copyto:
-            assert len(field.copyto) == 1
-            field_template['mapping']['copy_to'] = field.copyto[0]
+            field_template['mapping']['index'] = field.index
+            field_template['mapping']['store'] = field.store
+            if field.copyto:
+                assert len(field.copyto) == 1
+                field_template['mapping']['copy_to'] = field.copyto[0]
 
-        return [main_template, {f"{name}_tpl": field_template}]
+            return {f"{name}_tpl": field_template}
+
+    elif isinstance(field, Mapping):
+        temp_name = name
+        if field.name:
+            temp_name = f"{name}.{field.name}"
+        return build_templates(temp_name, field.child_type, nested_template=True)
 
     else:
         raise NotImplementedError(f"Unknown type for elasticsearch dynamic mapping: {field.__class__}")
