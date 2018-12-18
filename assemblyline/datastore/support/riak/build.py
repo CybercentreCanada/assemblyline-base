@@ -54,6 +54,7 @@ def build_mapping(field_data, prefix=None, mappings=None, multivalued=False):
             build_mapping(field.fields().values(), prefix=path, mappings=mappings, multivalued=multivalued)
 
         elif isinstance(field, Mapping):
+            # TODO: Does not work for Mappings of List or Mapping
             child = field.child_type
             index = 'true' if child else 'false'
             store = 'true' if child else 'false'
