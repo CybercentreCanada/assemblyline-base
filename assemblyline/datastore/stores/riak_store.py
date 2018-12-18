@@ -10,7 +10,7 @@ from copy import copy
 
 from assemblyline.datastore import log, DataStoreException
 from assemblyline.datastore.stores.solr_store import SolrCollection, SolrStore
-from assemblyline.datastore.support.riak.build import build_mapping
+from assemblyline.datastore.support.solr.build import build_mapping
 
 
 def utf8safe_encoder(obj):
@@ -276,7 +276,7 @@ class RiakCollection(SolrCollection):
             schema_raw = schema_raw.replace('REPLACE_NAME', self.name.upper())
 
             if self.model_class:
-                mapping = build_mapping(self.model_class.fields().values())
+                mapping = "\n".join(build_mapping(self.model_class.fields().values()))
                 schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', mapping)
             else:
                 schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', self.DEFAULT_CATCH_ALL_FIELDS)

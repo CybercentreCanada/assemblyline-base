@@ -695,7 +695,7 @@ class SolrCollection(Collection):
         schema_raw = schema_raw.replace('REPLACE_NAME', self.name.upper())
 
         if self.model_class:
-            mapping = build_mapping(self.model_class.fields().values())
+            mapping = "\n".join(build_mapping(self.model_class.fields().values()))
             schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', mapping)
         else:
             schema_raw = schema_raw.replace('<!-- REPLACE_FIELDS -->', self.DEFAULT_CATCH_ALL_FIELDS)
