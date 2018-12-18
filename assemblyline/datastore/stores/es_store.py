@@ -253,8 +253,6 @@ class ESCollection(Collection):
 
         if self.model_class:
             item_id = result['_id']
-            # if fields and '*' in fields:
-            #     fields = None
             if not fields or '*' in fields:
                 fields = list(self.stored_fields.keys())
             elif isinstance(fields, str):
