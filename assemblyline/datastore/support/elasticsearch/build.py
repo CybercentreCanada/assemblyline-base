@@ -25,16 +25,14 @@ def build_mapping(field_data, prefix=None, mappings=None, dynamic=None):
     mappings = mappings or {}
     dynamic = dynamic or []
 
-    def set_mapping(name, field, body):
-        name = name.strip('.')
-        mappings[name] = body
-        if not field.index:
-            mappings[name]['enabled'] = False
-        if field.store:
-            mappings[name]['store'] = True
-        if field.copyto:
-            assert len(field.copyto) == 1
-            mappings[name]['copy_to'] = field.copyto[0]
+    def set_mapping(temp_name, temp_field, body):
+        temp_name = temp_name.strip('.')
+        mappings[temp_name] = body
+        mappings[temp_name]['index'] = temp_field.index
+        mappings[temp_name]['store'] = temp_field.store
+        if temp_field.copyto:
+            assert len(temp_field.copyto) == 1
+            mappings[temp_name]['copy_to'] = temp_field.copyto[0]
 
     # Fill in the sections
     for field in field_data:

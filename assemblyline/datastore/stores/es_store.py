@@ -95,6 +95,12 @@ class ESCollection(Collection):
 
         super().__init__(datastore, name, model_class=model_class)
 
+        self.stored_fields = {}
+        if model_class:
+            for name, field in model_class.flat_fields().items():
+                if field.store:
+                    self.stored_fields[name] = field
+
     def with_retries(self, func, *args, **kwargs):
         retries = 0
         while True:
@@ -247,8 +253,12 @@ class ESCollection(Collection):
 
         if self.model_class:
             item_id = result['_id']
-            if fields and '*' in fields:
-                fields = None
+            # if fields and '*' in fields:
+            #     fields = None
+            if not fields or '*' in fields:
+                fields = list(self.stored_fields.keys())
+            elif isinstance(fields, str):
+                fields = fields.split(',')
 
             if source_data:
                 source_data.pop(self.datastore.SORT_ID, None)
@@ -598,8 +608,8 @@ class ESCollection(Collection):
 
             f_type = self._get_odm_type(p_val.get('analyzer', None) or p_val['type'])
             collection_data[p_name] = {
-                "indexed": p_val.get('index', None) or True,
-                "stored": p_val.get('store', None) or False,
+                "indexed": p_val.get('index', True),
+                "stored": p_val.get('store', False),
                 "type": f_type
             }
 
