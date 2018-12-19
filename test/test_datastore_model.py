@@ -165,15 +165,11 @@ def _perform_single_collection_test(ds: BaseStore, name: str, doc: Model):
             # Test non-indexed field searches, should fail of return no results
             if isinstance(ds, ESStore):
                 with pytest.raises(RequestError):
-                    c.search(f"{name}:random", rows=0)
+                    c.search(f"{name}:{_get_value(name, doc_data)}", rows=0)
             else:
                 query = f"{name}:{_get_value(name, doc_data)}"
                 if c.search(query, rows=0)["total"] != 0:
-                    if isinstance(ds, SolrStore) and isinstance(field, (Keyword, Integer, Float, Date)):
-                        # The new SOLR field are still searchable even when not indexed... Ignoring this!
-                        pass
-                    else:
-                        pytest.fail(f"Search query ({query}) was able to find documents using a non-indexed field.")
+                    pytest.fail(f"Search query ({query}) was able to find documents using a non-indexed field.")
         else:
             # Test indexed field searches lead to results
             value = _get_value(name, doc_data)

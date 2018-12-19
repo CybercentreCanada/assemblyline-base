@@ -29,8 +29,9 @@ def build_mapping(field_data, prefix=None, multivalued=False):
         index = 'true' if p_field.index else 'false'
         store = 'true' if p_field.store else 'false'
         multi = 'true' if multivalued else 'false'
+        docvalues = 'docValues="false"' if not p_field.index else ''
         temp_mappings.append(f'<field name="{p_name}" type="{p_type}" indexed="{index}" '
-                        f'stored="{store}" multiValued="{multi}" />')
+                             f'stored="{store}" multiValued="{multi}" {docvalues}/>')
 
         for other_field in p_field.copyto:
             temp_mappings.append(f'<copyField source="{p_name}" dest="{other_field}"/>')
