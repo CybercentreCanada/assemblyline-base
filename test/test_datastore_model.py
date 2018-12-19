@@ -1,12 +1,14 @@
+
 import pytest
 
+from elasticsearch import RequestError
 from retrying import retry
 
 from assemblyline.datastore import BaseStore
 from assemblyline.datastore.stores.es_store import ESStore
 from assemblyline.datastore.stores.riak_store import RiakStore
 from assemblyline.datastore.stores.solr_store import SolrStore
-from assemblyline.odm import Model
+from assemblyline.odm import Model, Mapping, Keyword, Integer, Float, Date
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -106,9 +108,88 @@ def _setup_collection(ds, name, doc):
         pytest.fail(f"Failed to register '{name}' collection. [{str(e)}]")
 
 
+def _assert_key_exists(key, data):
+    if "." in key:
+        main, sub = key.split(".", 1)
+        if main not in data:
+            return False
+        return _assert_key_exists(sub, data[main])
+    if key in data:
+        return True
+    return False
+
+
+def _get_value(key, data):
+    while "." in key:
+        main, key = key.split(".", 1)
+        data = data[main]
+
+    if isinstance(data, list):
+        data = data[0]
+
+    value = data[key]
+    if isinstance(value, list):
+        return str(value[0])
+    elif isinstance(value, bool):
+        return str(value).lower()
+    elif isinstance(value, dict):
+        return _get_value(list(value.keys())[0], value)
+    else:
+        value = str(value)
+        if " " in value or (":" in value and value.endswith("Z")):
+            value = f'"{str(value)}"'
+
+        return value
+
+
 def _perform_single_collection_test(ds: BaseStore, name: str, doc: Model):
     c = _setup_collection(ds, name, doc)
-    assert c.search("*:*")["total"] == 1
+    field_list = doc.flat_fields()
+    doc_data = doc.as_primitives()
+
+    # Did the document we created actually exists
+    search_all_result = c.search("*:*")
+    assert search_all_result["total"] == 1
+
+    # Are all stored field returned by default?
+    res_data = search_all_result['items'][0].as_primitives()
+    stored_fields = [name for name, field in field_list.items() if field.store]
+    for stored_key in stored_fields:
+        assert _assert_key_exists(stored_key, res_data)
+
+    for name, field in field_list.items():
+        if isinstance(field, Mapping):
+            continue
+
+        if not field.index:
+            # Test non-indexed field searches, should fail of return no results
+            if isinstance(ds, ESStore):
+                with pytest.raises(RequestError):
+                    c.search(f"{name}:random", rows=0)
+            else:
+                query = f"{name}:{_get_value(name, doc_data)}"
+                if c.search(query, rows=0)["total"] != 0:
+                    if isinstance(ds, SolrStore) and isinstance(field, (Keyword, Integer, Float, Date)):
+                        # The new SOLR field are still searchable even when not indexed... Ignoring this!
+                        pass
+                    else:
+                        pytest.fail(f"Search query ({query}) was able to find documents using a non-indexed field.")
+        else:
+            # Test indexed field searches lead to results
+            value = _get_value(name, doc_data)
+            if not value:
+                # you can't search for empty field, you have to exclude all non empties...
+                query = f"-{name}:['' TO *]"
+            else:
+                query = f"{name}:{value}"
+            if c.search(query, rows=0)["total"] != 1:
+                pytest.fail(f"Search query ({query}) did not yield any results.")
+
+        if field.copyto:
+            # Test copyto field as default search
+            query = _get_value(name, doc_data)
+            if c.search(query, rows=0)["total"] != 1:
+                pytest.fail(f"Search query ({query}) did not yield any results.")
 
 
 @pytest.mark.parametrize("collection_name,document", TEST_DATA, ids=[d[0] for d in TEST_DATA])
