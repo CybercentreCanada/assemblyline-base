@@ -56,7 +56,7 @@ def get_random_submission(as_model=True):
         if result.score > max_score:
             max_score = result.score
 
-    metadata = get_random_mapping()
+    metadata = get_random_mapping(None)
 
     out = {
         "description": description,

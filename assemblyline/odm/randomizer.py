@@ -134,7 +134,7 @@ def random_data_for_field(field, name):
     elif isinstance(field, Text):
         return get_random_phrase(wmin=4, wmax=40)
     else:
-        raise ValueError(f"Unknown field type: {field}")
+        return get_random_word()
 
 
 # noinspection PyProtectedMember
