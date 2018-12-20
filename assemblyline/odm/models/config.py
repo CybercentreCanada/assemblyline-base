@@ -4,6 +4,174 @@ from assemblyline import odm
 
 
 @odm.model(index=True, store=True)
+class PasswordRequirement(odm.Model):
+    lower = odm.Boolean()
+    number = odm.Boolean()
+    special = odm.Boolean()
+    upper = odm.Boolean()
+    min_length = odm.Integer()
+
+
+DEFAULT_PASSWORD_REQUIREMENTS = {
+    "lower": True,
+    "number": False,
+    "special": False,
+    "upper": True,
+    "min_length": 12
+}
+
+
+@odm.model(index=True, store=True)
+class SMTP(odm.Model):
+    from_adr = odm.Keyword()
+    host = odm.Keyword()
+    password = odm.Keyword()
+    port = odm.Integer()
+    tls = odm.Boolean()
+    user = odm.Keyword()
+
+
+DEFAULT_SMTP = {
+    "from_adr": "noreply@assemblyline.local",
+    "host": "localhost",
+    "password": "changeme",
+    "port": 587,
+    "tls": True,
+    "user": "noreply"
+}
+
+
+@odm.model(index=True, store=True)
+class Signup(odm.Model):
+    enabled = odm.Boolean()
+    smtp = odm.Compound(SMTP, default=DEFAULT_SMTP)
+    valid_email_patterns = odm.List(odm.Keyword())
+
+
+DEFAULT_SIGNUP = {
+    "enabled": False,
+    "smtp": DEFAULT_SMTP,
+    "valid_email_patterns": [".*", ".*@assemblyline.local"]
+}
+
+
+@odm.model(index=True, store=True)
+class User(odm.Model):
+    uname = odm.Keyword()
+    name = odm.Keyword()
+    password = odm.Keyword()
+    groups = odm.List(odm.Keyword())
+    is_admin = odm.Boolean()
+    classification = odm.Classification(is_user_classification=True)
+
+
+DEFAULT_USERS = {
+    "admin": {
+        "uname": "admin",
+        "name": "Default admin user",
+        "password": "changeme",
+        "groups": ["ADMIN", "INTERNAL", "USERS"],
+        "is_admin": True,
+        "classification": "U"
+    },
+    "internal": {
+        "uname": "internal",
+        "name": "Internal re-submission user",
+        "password": "Int3rn@lP4s$",
+        "groups": ["INTERNAL"],
+        "is_admin": False,
+        "classification": "U"
+    }
+}
+
+
+@odm.model(index=True, store=True)
+class Internal(odm.Model):
+    enabled = odm.Boolean()
+    failure_ttl = odm.Integer()
+    max_failures = odm.Integer()
+    password_requirements = odm.Compound(PasswordRequirement, default=DEFAULT_PASSWORD_REQUIREMENTS)
+    signup = odm.Compound(Signup, default=DEFAULT_SIGNUP)
+    users = odm.Mapping(odm.Compound(User), default=DEFAULT_USERS)
+
+
+DEFAULT_INTERNAL = {
+    "enabled": True,
+    "failure_ttl": 60,
+    "max_failures": 5,
+    "password_requirements": DEFAULT_PASSWORD_REQUIREMENTS,
+    "signup": DEFAULT_SIGNUP,
+    "users": DEFAULT_USERS
+}
+
+
+@odm.model(index=True, store=True)
+class Auth(odm.Model):
+    allow_2fa = odm.Boolean()
+    allow_apikeys = odm.Boolean()
+    allow_u2f = odm.Boolean()
+    apikey_handler = odm.Keyword()
+    dn_handler = odm.Keyword()
+    encrypted_login = odm.Boolean()
+    internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
+    userpass_handler = odm.Keyword()
+
+
+DEFAULT_AUTH = {
+    "allow_2fa": True,
+    "allow_apikeys": True,
+    "allow_u2f": True,
+    "apikey_handler": 'al_ui.site_specific.validate_apikey',
+    "dn_handler": 'al_ui.site_specific.validate_dn',
+    "encrypted_login": True,
+    "internal": DEFAULT_INTERNAL,
+    "userpass_handler": 'al_ui.site_specific.validate_userpass'
+}
+
+
+@odm.model(index=True, store=True)
+class RedisServer(odm.Model):
+    db = odm.Integer()
+    host = odm.Keyword()
+    port = odm.Integer()
+
+
+DEFAULT_REDIS_NP = {
+    "db": 0,
+    "host": "127.0.0.1",
+    "port": 6379
+}
+
+DEFAULT_REDIS_P = {
+    "db": 0,
+    "host": "127.0.0.1",
+    "port": 6380
+}
+
+
+@odm.model(index=True, store=True)
+class Redis(odm.Model):
+    nonpersistent = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
+    persistent = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
+
+
+DEFAULT_REDIS = {
+    "nonpersistent": DEFAULT_REDIS_NP,
+    "persistent": DEFAULT_REDIS_P
+}
+
+
+@odm.model(index=True, store=True)
+class Core(odm.Model):
+    redis = odm.Compound(Redis, default=DEFAULT_REDIS)
+
+
+DEFAULT_CORE = {
+    "redis": DEFAULT_REDIS
+}
+
+
+@odm.model(index=True, store=True)
 class Elasticsearch(odm.Model):
     heap_min_size = odm.Integer()
     heap_max_size = odm.Integer()
@@ -43,6 +211,7 @@ class Datastore(odm.Model):
     riak = odm.Compound(Riak, default=DEFAULT_RIAK)
     solr = odm.Compound(Solr, default=DEFAULT_SOLR)
 
+
 DEFAULT_DATASTORE = {
     "type": "elasticsearch",
     "hosts": ["localhost"],
@@ -78,13 +247,39 @@ DEFAULT_LOGGING = {
 }
 
 
+# This is the model definition for the logging block
+@odm.model(index=True, store=True)
+class UI(odm.Model):
+    # Should API calls be audited and saved to a seperate log file?
+    audit = odm.Boolean()
+    # Flask secret key to store cookies and stuff
+    secret_key = odm.Keyword()
+
+
+DEFAULT_UI = {
+    "audit": True,
+    "secret_key": "This is the default flask secret key... you should change this!"
+}
+
+
 @odm.model(index=True, store=True)
 class Config(odm.Model):
+    # Authentication module configuration
+    auth = odm.Compound(Auth, default=DEFAULT_AUTH)
+    # Core component configuration
+    core = odm.Compound(Core, default=DEFAULT_CORE)
+    # Datastore configuration
     datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE)
+    # Logging configuration
     logging = odm.Compound(Logging, default=DEFAULT_LOGGING)
+    # UI configuration parameters
+    ui = odm.Compound(UI, default=DEFAULT_UI)
 
 
 DEFAULT_CONFIG = {
+    "auth": DEFAULT_AUTH,
+    "core": DEFAULT_CORE,
     "datastore": DEFAULT_DATASTORE,
-    "logging": DEFAULT_LOGGING
+    "logging": DEFAULT_LOGGING,
+    "ui": DEFAULT_UI
 }

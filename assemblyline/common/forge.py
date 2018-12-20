@@ -1,6 +1,9 @@
 # This file contains the loaders for the different components of the system
+import EasyDict
 import os
 import yaml
+
+from assemblyline.common.importing import load_module_by_path
 
 
 def get_classification(yml_config=None):
@@ -72,3 +75,18 @@ def get_datastore(config=None):
     else:
         from assemblyline.datastore.exceptions import DataStoreException
         raise DataStoreException(f"Invalid datastore type: {config.datastore.type}")
+
+
+def get_dn_parser(config=None):
+    if config is None:
+        config = get_config()
+    try:
+        return load_module_by_path(config.auth.dn_parser)
+    except ImportError:
+        return None
+
+
+def get_ui_context(config=None):
+    if config is None:
+        config = get_config()
+    return EasyDict(load_module_by_path(config.ui.context))

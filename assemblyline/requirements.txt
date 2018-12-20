@@ -11,3 +11,5 @@ arrow
 packaging
 tabulate
 PyYAML
+easydict
+passlib
