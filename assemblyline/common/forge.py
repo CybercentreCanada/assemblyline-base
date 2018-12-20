@@ -1,5 +1,5 @@
 # This file contains the loaders for the different components of the system
-import EasyDict
+from easydict import EasyDict
 import os
 import yaml
 
