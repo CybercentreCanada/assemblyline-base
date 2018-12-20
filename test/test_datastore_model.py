@@ -8,7 +8,7 @@ from assemblyline.datastore import BaseStore
 from assemblyline.datastore.stores.es_store import ESStore
 from assemblyline.datastore.stores.riak_store import RiakStore
 from assemblyline.datastore.stores.solr_store import SolrStore
-from assemblyline.odm import Model, Mapping, Keyword, Integer, Float, Date
+from assemblyline.odm import Model, Mapping
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -94,6 +94,7 @@ TEST_DATA = [
 ]
 
 
+# noinspection PyBroadException
 def _setup_collection(ds, name, doc):
     try:
         ds.register(name, model_class=doc.__class__)
@@ -188,18 +189,21 @@ def _perform_single_collection_test(ds: BaseStore, name: str, doc: Model):
                 pytest.fail(f"Search query ({query}) did not yield any results.")
 
 
+# noinspection PyShadowingNames
 @pytest.mark.parametrize("collection_name,document", TEST_DATA, ids=[d[0] for d in TEST_DATA])
 def test_solr_models(solr_datastore: SolrStore, collection_name: str, document: Model):
     if solr_datastore:
         _perform_single_collection_test(solr_datastore, collection_name, document)
 
 
+# noinspection PyShadowingNames
 @pytest.mark.parametrize("collection_name,document", TEST_DATA, ids=[d[0] for d in TEST_DATA])
 def test_es_models(es_datastore: SolrStore, collection_name: str, document: Model):
     if es_datastore:
         _perform_single_collection_test(es_datastore, collection_name, document)
 
 
+# noinspection PyShadowingNames
 @pytest.mark.parametrize("collection_name,document", TEST_DATA, ids=[d[0] for d in TEST_DATA])
 def test_riak_models(riak_datastore: SolrStore, collection_name: str, document: Model):
     if riak_datastore:
