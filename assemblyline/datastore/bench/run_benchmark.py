@@ -18,6 +18,7 @@ DATASET_SIZE = 1000
 
 def setup_collection(datastore, model, use_model):
     collection_name = ''.join(random.choices(string.ascii_lowercase, k=10))
+    print(f"\t{datastore.__class__.__name__} [{collection_name}] - model:{use_model}")
     datastore.register(collection_name, model)
     col = datastore.__getattr__(collection_name)
     del datastore._collections[collection_name]
@@ -55,14 +56,16 @@ def measure(data, key):
 
 def run(ds, times, dataset):
     pool = concurrent.futures.ThreadPoolExecutor(20)
-
+    start_time = time.time()
     # Insert the data
+    print(f"\tInsert {DATASET_SIZE} documetns benchmark ({int(time.time()-start_time)})")
     with measure(times, 'insertion'):
         results = [pool.submit(ds.save, key, value) for key, value in dataset.items()]
         concurrent.futures.wait(results)
         ds.commit()
     [res.result() for res in results]
 
+    print(f"\tGet {DATASET_SIZE} documents benchmark ({int(time.time()-start_time)})")
     with measure(times, 'get_all'):
         results = []
         for ii in range(DATASET_SIZE):
@@ -70,6 +73,7 @@ def run(ds, times, dataset):
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
+    print(f"\tSearch 1 row benchmark ({int(time.time()-start_time)})")
     with measure(times, 'search'):
         results = []
         for ii in range(DATASET_SIZE):
@@ -77,6 +81,7 @@ def run(ds, times, dataset):
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
+    print(f"\tRange Search 50 rows benchmark ({int(time.time()-start_time)})")
     with measure(times, 'range_searches_50'):
         results = []
         for ii in range(DATASET_SIZE):
@@ -84,6 +89,7 @@ def run(ds, times, dataset):
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
+    print(f"\tHistogram benchmark ({int(time.time()-start_time)})")
     with measure(times, 'histogram'):
         results = []
         for _ in range(DATASET_SIZE):
@@ -95,6 +101,7 @@ def run(ds, times, dataset):
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
+    print(f"\tFacet benchmark ({int(time.time()-start_time)})")
     with measure(times, 'facet'):
         results = []
         for _ in range(DATASET_SIZE):
@@ -102,6 +109,7 @@ def run(ds, times, dataset):
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
+    print(f"\tGrouping benchmark ({int(time.time()-start_time)})")
     with measure(times, 'groups'):
         results = []
         for _ in range(DATASET_SIZE):
@@ -109,6 +117,7 @@ def run(ds, times, dataset):
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
+    print(f"\tDelete {DATASET_SIZE/10} documents benchmark ({int(time.time()-start_time)})")
     with measure(times, f'delete_{int(DATASET_SIZE/10)}'):
         results = []
         for ii in range(int(DATASET_SIZE/10)):
@@ -129,10 +138,11 @@ def main():
     try:
         data = {}
 
+        print(f"\nGenerating random dataset of {DATASET_SIZE} documents...")
         for ii in range(DATASET_SIZE):
             data[str(ii)] = random_model_obj(Submission, as_json=True)
 
-        print("\nCreating indexes...\n")
+        print("Creating indexes...")
         log.setLevel(logging.ERROR)
         datastores = {
             'riak': riak_connection(Submission, False),
@@ -146,7 +156,7 @@ def main():
 
         result = {}
         for name, ds in datastores.items():
-            print(f"Performing benchmarks for datastore: {name}")
+            print(f"\nPerforming benchmarks for datastore: {name}")
             result[name] = {}
             run(ds, result[name], data)
 
@@ -172,9 +182,11 @@ def main():
                                       f'histogram',
                                       f'facet',
                                       f'groups']))
+        print("\n\n")
 
     finally:
         log.setLevel(logging.ERROR)
+        print("Wiping data on all datastores...")
         for store in datastores.values():
             store.wipe()
 
