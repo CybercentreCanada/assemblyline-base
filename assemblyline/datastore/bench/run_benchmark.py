@@ -10,8 +10,8 @@ import string
 from tabulate import tabulate
 
 from assemblyline.datastore import log
-from assemblyline.datastore.bench.data_generator import get_random_submission
-from assemblyline.datastore.bench.model import FakeSubmission
+from assemblyline.odm.models.submission import Submission
+from assemblyline.odm.randomizer import random_model_obj
 
 DATASET_SIZE = 1000
 
@@ -72,17 +72,15 @@ def run(ds, times, dataset):
 
     with measure(times, 'search'):
         results = []
-        for _ in range(DATASET_SIZE):
-            index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'max_score:{index}', rows=1))
+        for ii in range(DATASET_SIZE):
+            results.append(pool.submit(ds.search, f'{ds.datastore.ID}:{str(ii)}', rows=1))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
     with measure(times, 'range_searches_50'):
         results = []
-        for _ in range(DATASET_SIZE):
-            index = random.randint(0, DATASET_SIZE)
-            results.append(pool.submit(ds.search, f'max_score:[{index} TO {index + 50}]', rows=50))
+        for ii in range(DATASET_SIZE):
+            results.append(pool.submit(ds.search, f'max_score:[{str(ii)} TO {str(ii+500)}]', rows=50))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
@@ -90,7 +88,7 @@ def run(ds, times, dataset):
         results = []
         for _ in range(DATASET_SIZE):
             results.append(pool.submit(ds.histogram,
-                                       "start_time",
+                                       "times.submitted",
                                        f"{ds.datastore.now}-1{ds.datastore.hour}",
                                        ds.datastore.now,
                                        f"+1{ds.datastore.minute}"))
@@ -100,14 +98,14 @@ def run(ds, times, dataset):
     with measure(times, 'facet'):
         results = []
         for _ in range(DATASET_SIZE):
-            results.append(pool.submit(ds.field_analysis, "tags"))
+            results.append(pool.submit(ds.field_analysis, "errors"))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
     with measure(times, 'groups'):
         results = []
         for _ in range(DATASET_SIZE):
-            results.append(pool.submit(ds.grouped_search, 'max_score', rows=10))
+            results.append(pool.submit(ds.grouped_search, 'state', rows=10))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
@@ -132,17 +130,17 @@ def main():
         data = {}
 
         for ii in range(DATASET_SIZE):
-            data[str(ii)] = get_random_submission(as_model=False)
+            data[str(ii)] = random_model_obj(Submission, as_json=True)
 
         print("\nCreating indexes...\n")
         log.setLevel(logging.ERROR)
         datastores = {
-            'riak': riak_connection(FakeSubmission, False),
-            'riak_model': riak_connection(FakeSubmission),
-            'solr': solr_connection(FakeSubmission, False),
-            'solr_model': solr_connection(FakeSubmission),
-            'es': es_connection(FakeSubmission, False),
-            'es_model': es_connection(FakeSubmission),
+            'riak': riak_connection(Submission, False),
+            'riak_model': riak_connection(Submission),
+            'solr': solr_connection(Submission, False),
+            'solr_model': solr_connection(Submission),
+            'es': es_connection(Submission, False),
+            'es_model': es_connection(Submission),
         }
         log.setLevel(logging.INFO)
 
