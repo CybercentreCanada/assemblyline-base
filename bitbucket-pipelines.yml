@@ -1,5 +1,5 @@
 
-image: python:3.6.6
+image: python:3.6
 
 pipelines:
   default:
