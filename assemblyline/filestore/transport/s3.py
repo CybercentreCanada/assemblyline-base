@@ -21,7 +21,7 @@ file paths for local/ftp datastores not playing nicely with s3 constraints.
 class TransportS3(Transport):
     DEFAULT_HOST = "s3.amazonaws.com"
 
-    def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket=None,
+    def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket="al-storage",
                  host=None, port=None, use_ssl=None, verify=True):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
@@ -56,6 +56,15 @@ class TransportS3(Transport):
             use_ssl=self.use_ssl,
             verify=verify
         )
+
+        bucket_exist = False
+        for bucket in self.client.list_buckets()["Buckets"]:
+            if bucket.get("Name", None) == self.bucket:
+                bucket_exist = True
+                break
+
+        if not bucket_exist:
+            self.client.create_bucket(Bucket=self.bucket)
 
         def s3_normalize(path):
             # flatten path to just the basename
@@ -114,7 +123,7 @@ class TransportS3(Transport):
         # Does not need to do anything as s3 has a flat layout.
         pass
 
-    def upload(self, path):
-        key = self.normalize(path)
+    def put(self, src_path, dst_path):
+        dst_path = self.normalize(dst_path)
         # if file exists already, it will be overwritten
-        self.client.upload_file(path, self.bucket, key)
+        self.client.upload_file(src_path, self.bucket, dst_path)

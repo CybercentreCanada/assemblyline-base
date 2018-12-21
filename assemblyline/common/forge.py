@@ -4,6 +4,7 @@ import os
 import yaml
 
 from assemblyline.common.importing import load_module_by_path
+from assemblyline.filestore import FileStore
 
 
 def get_classification(yml_config=None):
@@ -90,6 +91,12 @@ def get_dn_parser(config=None):
         return load_module_by_path(config.auth.dn_parser)
     except ImportError:
         return None
+
+
+def get_filestore(config=None):
+    if config is None:
+        config = get_config()
+    return FileStore(*config.filestore.urls)
 
 
 def get_site_specific_apikey_handler(config=None):

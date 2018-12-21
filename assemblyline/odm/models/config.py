@@ -221,6 +221,16 @@ DEFAULT_DATASTORE = {
 }
 
 
+@odm.model(index=True, store=True)
+class Filestore(odm.Model):
+    urls = odm.List(odm.Keyword())
+
+
+DEFAULT_FILESTORE = {
+    "urls": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?use_ssl=False"]
+}
+
+
 # This is the model definition for the logging block
 @odm.model(index=True, store=True)
 class Logging(odm.Model):
@@ -282,6 +292,8 @@ class Config(odm.Model):
     core = odm.Compound(Core, default=DEFAULT_CORE)
     # Datastore configuration
     datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE)
+    # Filestore configuration
+    filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE)
     # Logging configuration
     logging = odm.Compound(Logging, default=DEFAULT_LOGGING)
     # System configuration
@@ -294,6 +306,7 @@ DEFAULT_CONFIG = {
     "auth": DEFAULT_AUTH,
     "core": DEFAULT_CORE,
     "datastore": DEFAULT_DATASTORE,
+    "filestore": DEFAULT_FILESTORE,
     "logging": DEFAULT_LOGGING,
     "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI
