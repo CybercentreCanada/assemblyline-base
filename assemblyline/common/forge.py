@@ -64,6 +64,7 @@ def get_constants(config=None):
 
 
 def get_datastore(config=None):
+    # TODO: Load all the models before returning the datastore.
     if not config:
         config = get_config(static=True)
 
