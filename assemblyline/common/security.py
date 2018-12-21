@@ -15,6 +15,10 @@ UPPERCASE = r'[A-Z]'
 LOWERCASE = r'[a-z]'
 NUMBER = r'[0-9]'
 SPECIAL = r'[ !#$@%&\'()*+,-./[\\\]^_`{|}~"]'
+PASS_BASIC = [chr(x + 65) for x in range(26)] + \
+             [chr(x + 97) for x in range(26)] + \
+             [str(x) for x in range(10)] + \
+             ["!", "@", "$", "%", "^", "?", "&", "*", "(", ")"]
 
 
 def generate_async_keys(key_size=2048):
@@ -111,3 +115,15 @@ def check_password_requirements(password, lower=True, upper=True, number=False, 
         return False
 
     return True
+
+
+def get_random_password(alphabet=PASS_BASIC, length=24):
+    r_bytes = bytearray(os.urandom(length))
+    a_list = []
+
+    for byte in r_bytes:
+        while byte >= (256 - (256 % len(alphabet))):
+            byte = ord(os.urandom(1))
+        a_list.append(alphabet[byte % len(alphabet)])
+
+    return "".join(a_list)
