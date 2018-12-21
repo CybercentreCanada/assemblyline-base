@@ -56,6 +56,12 @@ def get_config(static=False, yml_config=None):
     return Config(config)
 
 
+def get_constants(config=None):
+    if config is None:
+        config = get_config()
+    return load_module_by_path(config.system.constants)
+
+
 def get_datastore(config=None):
     if not config:
         config = get_config(static=True)
@@ -84,6 +90,24 @@ def get_dn_parser(config=None):
         return load_module_by_path(config.auth.dn_parser)
     except ImportError:
         return None
+
+
+def get_site_specific_apikey_handler(config=None):
+    if config is None:
+        config = get_config()
+    return load_module_by_path(config.auth.apikey_handler)
+
+
+def get_site_specific_dn_handler(config=None):
+    if config is None:
+        config = get_config()
+    return load_module_by_path(config.auth.dn_handler)
+
+
+def get_site_specific_userpass_handler(config=None):
+    if config is None:
+        config = get_config()
+    return load_module_by_path(config.auth.userpass_handler)
 
 
 def get_ui_context(config=None):

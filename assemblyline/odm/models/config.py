@@ -247,6 +247,18 @@ DEFAULT_LOGGING = {
 }
 
 
+# This is the model definition for the System block
+@odm.model(index=True, store=True)
+class System(odm.Model):
+    # Module path to the assemblyline constants
+    constants = odm.Keyword()
+
+
+DEFAULT_SYSTEM = {
+    "constants": "assemblyline.common.constants"
+}
+
+
 # This is the model definition for the logging block
 @odm.model(index=True, store=True)
 class UI(odm.Model):
@@ -272,6 +284,8 @@ class Config(odm.Model):
     datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE)
     # Logging configuration
     logging = odm.Compound(Logging, default=DEFAULT_LOGGING)
+    # System configuration
+    system = odm.Compound(System, default=DEFAULT_SYSTEM)
     # UI configuration parameters
     ui = odm.Compound(UI, default=DEFAULT_UI)
 
@@ -281,5 +295,6 @@ DEFAULT_CONFIG = {
     "core": DEFAULT_CORE,
     "datastore": DEFAULT_DATASTORE,
     "logging": DEFAULT_LOGGING,
+    "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI
 }

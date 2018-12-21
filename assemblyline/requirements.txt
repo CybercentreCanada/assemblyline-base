@@ -13,3 +13,6 @@ tabulate
 PyYAML
 easydict
 passlib
+cart
+ssdeep
+python-magic
