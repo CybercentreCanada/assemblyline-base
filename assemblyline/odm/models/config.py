@@ -162,12 +162,26 @@ DEFAULT_REDIS = {
 
 
 @odm.model(index=True, store=True)
+class Dispatcher(odm.Model):
+    stages = odm.List(odm.Keyword())
+    timeout = odm.Float()  # Time between redispatching attempts
+
+
+DEFAULT_DISPATCHER = {
+    "stages": ['setup', 'filter', 'extract', 'core', 'secondary', 'post', 'teardown'],
+    "timeout": 5*60
+}
+
+
+@odm.model(index=True, store=True)
 class Core(odm.Model):
     redis = odm.Compound(Redis, default=DEFAULT_REDIS)
+    dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
 
 
 DEFAULT_CORE = {
-    "redis": DEFAULT_REDIS
+    "redis": DEFAULT_REDIS,
+    "dispatcher": DEFAULT_DISPATCHER
 }
 
 
