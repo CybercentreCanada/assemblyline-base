@@ -6,12 +6,11 @@ from assemblyline.common.net import is_valid_ip, is_valid_domain, is_valid_email
 from assemblyline.common.str_utils import StringTable, NamedConstants, safe_str
 from assemblyline.common.forge import get_constants
 from assemblyline.common import forge
-#from assemblyline.al.common.heuristics import Heuristic
-
-constants = get_constants()
-constants = None
+# from assemblyline.al.common.heuristics import Heuristic
 
 import traceback
+
+constants = get_constants()
 
 Classification = forge.get_classification()
 
@@ -28,7 +27,6 @@ TAG_USAGE = StringTable('TAG_USAGE', [
     ('IGNORE', 2),
 ])
 
-
 SCORE = NamedConstants('SCORE', [
     ('SURE', 1000),  # Malware.
     ('VHIGH', 500),  # This is most likely malware.
@@ -40,7 +38,6 @@ SCORE = NamedConstants('SCORE', [
     ('OK', -100),
     ('NOT', -1000)   # NOT malware.
 ])
-
 
 TAG_WEIGHT = NamedConstants('TAG_WEIGHT', [
     ('SURE', 50),
@@ -103,38 +100,38 @@ def is_tag_valid(tag):
     context = tag.get('context', None)
 
     if tag_type == TAG_TYPE.HEURISTIC:
-        log.warn("Heuristics tags must be reported using the report_heuristic function. [%s]" % value)
+        log.warning("Heuristics tags must be reported using the report_heuristic function. [%s]" % value)
         return False
 
     if not TAG_TYPE.contains_value(tag_type):
-        log.warn("Invalid tag type: %s", tag_type)
+        log.warning("Invalid tag type: %s", tag_type)
         return False
 
     if len(value) <= 0 or len(value) >= 2048:
-        log.warn("Invalid tag value (Incorrect size): %s:'%s'", tag_type, safe_str(value))
+        log.warning("Invalid tag value (Incorrect size): %s:'%s'", tag_type, safe_str(value))
         return False
 
     if not (isinstance(weight, int) and -1000 < weight < 1000):
-        log.warn("Invalid tag weight: %s", weight)
+        log.warning("Invalid tag weight: %s", weight)
         return False
 
     if usage and not TAG_USAGE.contains_value(usage):
-        log.warn("Invalid tag usage: %s", usage)
+        log.warning("Invalid tag usage: %s", usage)
         return False
 
     if not Classification.is_valid(classification):
         tb = traceback.format_stack(limit=5)
-        log.warn("Invalid classification: %s\n%s", str(classification), str(tb))
+        log.warning("Invalid classification: %s\n%s", str(classification), str(tb))
         return False
 
     if context:
         if not Context.verify_context(tag_type, context):
-            log.warn("Invalid tag_type: %s and context: %s combination" % (tag_type, context))
+            log.warning("Invalid tag_type: %s and context: %s combination" % (tag_type, context))
             return False
 
     if tag_type in TAG_VALIDATORS:
         if not TAG_VALIDATORS[tag_type](value):
-            log.warn("Invalid tag value for type %s:'%s'", tag_type, safe_str(value))
+            log.warning("Invalid tag value for type %s:'%s'", tag_type, safe_str(value))
             return False
 
     return True
@@ -203,7 +200,7 @@ class ResultSection(dict):
         self.classification = classification
         self.body = body
         self.body_format = body_format
-        #self.links = []
+        # self.links = []
         self.subsections = []
         self.tags = tags or []
         self.depth = 0
@@ -220,14 +217,14 @@ class ResultSection(dict):
 
     def _warn_on_validation_errors(self):
         if not (isinstance(self.score, int) and 2000 >= self.score >= -1000):
-            log.warn("invalid score: %s", str(self.score))
+            log.warning("invalid score: %s", str(self.score))
         if not Classification.is_valid(self.classification):
             tb = traceback.format_stack(limit=4)
-            log.warn("invalid classification:%s.\n%s", str(self.classification), str(tb))
+            log.warning("invalid classification:%s.\n%s", str(self.classification), str(tb))
         if not isinstance(self.title_text, basestring):
-            log.warn("invalid type for titletext: %s", type(self.title_text))
+            log.warning("invalid type for titletext: %s", type(self.title_text))
         if not isinstance(self.body, basestring) and not (isinstance(self.body, dict) and self.body_format == TEXT_FORMAT.JSON):
-            log.warn("invalid type for body: %s", type(self.body))
+            log.warning("invalid type for body: %s", type(self.body))
 
     def set_body(self, body, body_format=None):
         self.body = body
@@ -236,7 +233,7 @@ class ResultSection(dict):
 
     def add_lines(self, line_list):
         if not isinstance(line_list, list):
-            log.warn("add_lines call with invalid type: %s. ignoring", type(line_list))
+            log.warning("add_lines call with invalid type: %s. ignoring", type(line_list))
             return
 
         segment = '\n'.join(line_list)
@@ -258,7 +255,7 @@ class ResultSection(dict):
 
     def add_tag(self, tag_type, value, weight=0, usage=None,
                 classification=Classification.UNRESTRICTED, context=None):
-        #tag = {'type': tag_type, 'value': safe_str(value), 'weight': weight, 'usage': usage,
+        # tag = {'type': tag_type, 'value': safe_str(value), 'weight': weight, 'usage': usage,
         #       'classification': classification, 'context': context}
         tag = {'type': tag_type, 'value': safe_str(value), 'classification': classification, 'context': context}
 
@@ -361,14 +358,14 @@ class Result(dict):
                  ):
         super(Result, self).__init__()
         self.tags = tags or []
-        #self.tags_score = 0
-        #self.classification = classification
+        # self.tags_score = 0
+        # self.classification = classification
         self.score = score
         self.sections = sections or []
         self.order_by_score = False
-        #self.default_usage = default_usage
+        # self.default_usage = default_usage
         self.truncated = False
-        #self.context = None
+        # self.context = None
 
     def append_tag(self, tag):
         assert(isinstance(tag, Tag))
@@ -378,7 +375,7 @@ class Result(dict):
 
     def add_tag(self, tag_type, value, weight=0, usage=None,
                 classification=Classification.UNRESTRICTED, context=None):
-        #tag = {'type': tag_type, 'value': safe_str(value), 'weight': weight, 'usage': usage,
+        # tag = {'type': tag_type, 'value': safe_str(value), 'weight': weight, 'usage': usage,
         #       'classification': classification, 'context': context}
         tag = {'type': tag_type, 'value': safe_str(value), 'classification': classification, 'context': context}
 
@@ -394,11 +391,11 @@ class Result(dict):
         self.add_section(section, on_top=on_top)
 
     def add_section(self, section, on_top=False):
-        '''try:
+        """try:
             self.classification = Classification.max_classification(section.classification, self.classification)
         except InvalidClassification as e:
             log.error("Failed to add section due to a classification error: %s" % e.message)
-            return'''
+            return"""
 
         if on_top:
             self.sections.insert(0, section)
@@ -406,7 +403,7 @@ class Result(dict):
             self.sections.append(section)
         self.score += section.score
 
-    def report_heuristic(self, heur):
+    '''def report_heuristic(self, heur):
         # type: (Heuristic) -> None
         if isinstance(heur, Heuristic):
             tag = {'type': TAG_TYPE.HEURISTIC,
@@ -423,11 +420,11 @@ class Result(dict):
             if existing_tag['type'] == tag['type'] and existing_tag['value'] == tag['value']:
                 return
 
-        self.tags.append(tag)
+        self.tags.append(tag)'''
 
     def finalize(self):
         self.score = 0
-        #self.classification = Classification.UNRESTRICTED
+        # self.classification = Classification.UNRESTRICTED
         to_delete_sections = []
         to_delete_tags = []
 
@@ -436,7 +433,7 @@ class Result(dict):
             if not section.finalize():
                 to_delete_sections.append(section)
 
-        #TODO: validate tag classification with the aggregate classification for the Result
+        # TODO: validate tag classification with the aggregate classification for the Result
         '''for tag in self.tags:
             try:
                 self.classification = Classification.max_classification(tag['classification'], self.classification)
@@ -467,7 +464,7 @@ class Result(dict):
     def assign_section_id(self, lis):
         section_id = 1
         for item in lis:
-            if type(item) == type([]):
+            if isinstance(item, list):
                 self.assign_section_id(item)
             else:
                 item.section_id = section_id
@@ -476,7 +473,7 @@ class Result(dict):
     def flatten_list(self, lis):
         new_lis = []
         for item in lis:
-            if type(item) == type([]):
+            if isinstance(item, list):
                 new_lis.extend(self.flatten(item))
             else:
                 new_lis.append(item)
