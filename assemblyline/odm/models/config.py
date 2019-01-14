@@ -273,13 +273,55 @@ DEFAULT_LOGGING = {
 
 # This is the model definition for the System block
 @odm.model(index=True, store=True)
+class Limits(odm.Model):
+    # Maximum number of extracted files
+    max_extracted = odm.Integer()
+    # Maximum number of supplementary files
+    max_supplementary = odm.Integer()
+
+
+DEFAULT_LIMITS = {
+    "max_extracted": 500,
+    "max_supplementary": 500
+}
+
+
+# This is the model definition for the System block
+@odm.model(index=True, store=True)
+class Services(odm.Model):
+    # Different possible categories
+    categories = odm.List(odm.Keyword())
+    # Default service timeout time in seconds
+    default_timeout = odm.Integer()
+    # Limits constraints the the service has to work with
+    limits = odm.Compound(Limits, default=DEFAULT_LIMITS)
+    # Different stages of execution in order
+    stages = odm.List(odm.Keyword())
+    # Category for mandatory services (e.g. Sync)
+    system_category = odm.Text()
+
+
+DEFAULT_SERVICES = {
+    "categories": ['Antivirus', 'External', 'Extraction', 'Filtering', 'Networking', 'Static Analysis', 'System'],
+    "default_timeout": 60,
+    "limits": DEFAULT_LIMITS,
+    "stages": ['SETUP', 'FILTER', 'EXTRACT', 'CORE', 'SECONDARY', 'POST', 'TEARDOWN'],
+    "system_category": 'System'
+}
+
+
+# This is the model definition for the System block
+@odm.model(index=True, store=True)
 class System(odm.Model):
     # Module path to the assemblyline constants
     constants = odm.Keyword()
+    # Organisation acronym used for signatures
+    organisation = odm.Text()
 
 
 DEFAULT_SYSTEM = {
-    "constants": "assemblyline.common.constants"
+    "constants": "assemblyline.common.constants",
+    "organisation": "ACME"
 }
 
 
@@ -288,12 +330,24 @@ DEFAULT_SYSTEM = {
 class UI(odm.Model):
     # Should API calls be audited and saved to a seperate log file?
     audit = odm.Boolean()
+    # Allow to user to download raw files
+    allow_raw_downloads = odm.Boolean()
+    # Turn on debugging
+    debug = odm.Boolean()
+    # Which encoding will be used
+    download_encoding = odm.Enum(values=["raw", "cart"])
+    # Fully qualified domain name to use for the 2-factor authentication validation
+    fqdn = odm.Text()
     # Flask secret key to store cookies and stuff
     secret_key = odm.Keyword()
 
 
 DEFAULT_UI = {
     "audit": True,
+    "allow_raw_downloads": True,
+    "debug": False,
+    "download_encoding": "cart",
+    "fqdn": "assemblyline.local",
     "secret_key": "This is the default flask secret key... you should change this!"
 }
 
@@ -310,6 +364,8 @@ class Config(odm.Model):
     filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE)
     # Logging configuration
     logging = odm.Compound(Logging, default=DEFAULT_LOGGING)
+    # Service configuration
+    services = odm.Compound(Services, default=DEFAULT_SERVICES)
     # System configuration
     system = odm.Compound(System, default=DEFAULT_SYSTEM)
     # UI configuration parameters
@@ -322,6 +378,7 @@ DEFAULT_CONFIG = {
     "datastore": DEFAULT_DATASTORE,
     "filestore": DEFAULT_FILESTORE,
     "logging": DEFAULT_LOGGING,
+    "services": DEFAULT_SERVICES,
     "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI
 }
