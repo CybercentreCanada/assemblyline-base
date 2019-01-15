@@ -112,6 +112,7 @@ class Auth(odm.Model):
     allow_u2f = odm.Boolean()
     apikey_handler = odm.Keyword()
     dn_handler = odm.Keyword()
+    dn_parser = odm.Keyword()
     encrypted_login = odm.Boolean()
     internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
     userpass_handler = odm.Keyword()
@@ -123,6 +124,7 @@ DEFAULT_AUTH = {
     "allow_u2f": True,
     "apikey_handler": 'al_ui.site_specific.validate_apikey',
     "dn_handler": 'al_ui.site_specific.validate_dn',
+    "dn_parser": 'al_ui.site_specific.basic_dn_parser',
     "encrypted_login": True,
     "internal": DEFAULT_INTERNAL,
     "userpass_handler": 'al_ui.site_specific.validate_userpass'
@@ -236,6 +238,24 @@ DEFAULT_DATASTORE = {
 
 
 @odm.model(index=True, store=True)
+class Datasource(odm.Model):
+    classpath = odm.Keyword()
+    config = odm.Mapping(odm.Keyword())
+
+
+DEFAULT_DATASOURCES = {
+    "al": {
+        "classpath": 'assemblyline.datasource.al.AL',
+        "config": {}
+    },
+    "alert": {
+        "classpath": 'assemblyline.datasource.alert.Alert',
+        "config": {}
+    }
+}
+
+
+@odm.model(index=True, store=True)
 class Filestore(odm.Model):
     urls = odm.List(odm.Keyword())
 
@@ -328,27 +348,54 @@ DEFAULT_SYSTEM = {
 # This is the model definition for the logging block
 @odm.model(index=True, store=True)
 class UI(odm.Model):
-    # Should API calls be audited and saved to a seperate log file?
-    audit = odm.Boolean()
     # Allow to user to download raw files
     allow_raw_downloads = odm.Boolean()
+    # Allow file submissions via url
+    allow_url_submissions = odm.Boolean()
+    # Should API calls be audited and saved to a seperate log file?
+    audit = odm.Boolean()
+    # UI Context
+    context = odm.Keyword()
     # Turn on debugging
     debug = odm.Boolean()
     # Which encoding will be used
     download_encoding = odm.Enum(values=["raw", "cart"])
+    # Assemblyline admins email address
+    email = odm.Keyword()
+    # Enforce the user's quotas
+    enforce_quota = odm.Boolean()
     # Fully qualified domain name to use for the 2-factor authentication validation
     fqdn = odm.Text()
+    # Turn on read only mode in the UI
+    read_only = odm.Boolean()
+    # Offset of the read only mode for all paging and searches
+    read_only_offset = odm.Keyword(default="")
     # Flask secret key to store cookies and stuff
     secret_key = odm.Keyword()
+    # Duration of the user session before the user has to login again
+    session_duration = odm.Integer()
+    # Terms of service
+    tos = odm.Text(default="")
+    # Lock out user after accepting the terms of service
+    tos_lockout = odm.Boolean()
 
 
 DEFAULT_UI = {
-    "audit": True,
     "allow_raw_downloads": True,
+    "allow_url_submissions": True,
+    "audit": True,
+    "context": 'al_ui.site_specific.context',
     "debug": False,
     "download_encoding": "cart",
+    "email": 'admin@assemblyline.local',
+    "enforce_quota": True,
     "fqdn": "assemblyline.local",
-    "secret_key": "This is the default flask secret key... you should change this!"
+    "read_only": False,
+    "read_only_offset": "",
+    "secret_key": "This is the default flask secret key... you should change this!",
+    "session_duration": 3600,
+    "tos": "",
+    "tos_lockout": False
 }
 
 
@@ -360,6 +407,8 @@ class Config(odm.Model):
     core = odm.Compound(Core, default=DEFAULT_CORE)
     # Datastore configuration
     datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE)
+    # Datasources configuration
+    datasources = odm.Mapping(odm.Compound(Datasource), default=DEFAULT_DATASOURCES)
     # Filestore configuration
     filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE)
     # Logging configuration
@@ -376,6 +425,7 @@ DEFAULT_CONFIG = {
     "auth": DEFAULT_AUTH,
     "core": DEFAULT_CORE,
     "datastore": DEFAULT_DATASTORE,
+    "datasources": DEFAULT_DATASOURCES,
     "filestore": DEFAULT_FILESTORE,
     "logging": DEFAULT_LOGGING,
     "services": DEFAULT_SERVICES,
