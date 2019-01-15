@@ -1,6 +1,5 @@
 from assemblyline import odm
 from assemblyline.odm.common import HostInfo, Resources
-from assemblyline.odm.models.node import Node
 
 MSG_TYPES = {"ServiceHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.service.ServiceMessage"
@@ -43,7 +42,6 @@ class VmDetail(odm.Model):
 class Heartbeat(odm.Model):
     hostinfo = odm.Compound(HostInfo)
     profile_definition = odm.Compound(ProfileDefinition)
-    registration = odm.Compound(Node)
     resources = odm.Compound(Resources)
     service = odm.Compound(Services)
     time = odm.Date()
