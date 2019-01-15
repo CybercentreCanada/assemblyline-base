@@ -1,5 +1,5 @@
 from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
-    Float, Boolean, Mapping, Classification, Enum
+    Float, Boolean, Mapping, Classification, Enum, Any
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -63,7 +63,11 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
             dynamic.extend(temp_dynamic)
 
         elif isinstance(field, Mapping):
-            dynamic.append(build_templates(name, field.child_type))
+            if not isinstance(field.child_type, Any):
+                dynamic.append(build_templates(name, field.child_type))
+
+        elif isinstance(field, Any):
+            continue
 
         else:
             raise NotImplementedError(f"Unknown type for elasticsearch schema: {field.__class__}")
