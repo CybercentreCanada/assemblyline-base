@@ -13,8 +13,8 @@ from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
-from assemblyline.odm.models.node import Node
 from assemblyline.odm.models.result import Result
+from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tree import SubmissionTree
@@ -83,8 +83,8 @@ TEST_DATA = [
     ("error", random_model_obj(Error)),
     ("file", random_model_obj(File)),
     ("filescore", random_model_obj(FileScore)),
-    ("node", random_model_obj(Node)),
     ("result", random_model_obj(Result)),
+    ("service", random_model_obj(Service)),
     ("signature", random_model_obj(Signature)),
     ("submission", random_model_obj(Submission)),
     ("submission_tree", random_model_obj(SubmissionTree)),
