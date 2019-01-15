@@ -113,7 +113,6 @@ class Auth(odm.Model):
     apikey_handler = odm.Keyword()
     dn_handler = odm.Keyword()
     dn_parser = odm.Keyword()
-    encrypted_login = odm.Boolean()
     internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
     userpass_handler = odm.Keyword()
 
@@ -125,7 +124,6 @@ DEFAULT_AUTH = {
     "apikey_handler": 'al_ui.site_specific.validate_apikey',
     "dn_handler": 'al_ui.site_specific.validate_dn',
     "dn_parser": 'al_ui.site_specific.basic_dn_parser',
-    "encrypted_login": True,
     "internal": DEFAULT_INTERNAL,
     "userpass_handler": 'al_ui.site_specific.validate_userpass'
 }
@@ -330,6 +328,21 @@ DEFAULT_SERVICES = {
 }
 
 
+# This is the model definition for the Yara Block
+@odm.model(index=True, store=True)
+class Yara(odm.Model):
+    externals = odm.List(odm.Keyword())
+    importer = odm.Keyword()
+    parser = odm.Keyword()
+
+
+DEFAULT_YARA = {
+    "externals": ['submitter', 'mime', 'tag'],
+    "importer": "assemblyline.common.yara.YaraImporter",
+    "parser": "assemblyline.common.yara.YaraParser"
+}
+
+
 # This is the model definition for the System block
 @odm.model(index=True, store=True)
 class System(odm.Model):
@@ -337,11 +350,14 @@ class System(odm.Model):
     constants = odm.Keyword()
     # Organisation acronym used for signatures
     organisation = odm.Text()
+    # Parameter of the yara engine
+    yara = odm.Compound(Yara)
 
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
-    "organisation": "ACME"
+    "organisation": "ACME",
+    "yara": DEFAULT_YARA
 }
 
 
