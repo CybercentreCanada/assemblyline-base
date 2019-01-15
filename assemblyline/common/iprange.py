@@ -16,7 +16,7 @@ def _next(lower, upper):
     while lower + size - 1 <= upper and _valid(lower, lower + size - 1):
         size *= 2
 
-    return size / 2
+    return int(size / 2)
 
 
 def _valid(lower, upper):
