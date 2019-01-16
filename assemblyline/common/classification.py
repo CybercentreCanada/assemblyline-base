@@ -151,6 +151,8 @@ class Classification(object):
     MAX_LVL = 10000
     NULL_LVL = 0
     INVALID_LVL = 10001
+    NULL_CLASSIFICATION = "NULL"
+    INVALID_CLASSIFICATION = "INVALID"
 
     def __init__(self, classification_definition):
         """
@@ -189,20 +191,16 @@ class Classification(object):
         self.enforce = False
 
         # Add Invalid classification
-        self.INVALID_CLASSIFICATION = "INVALID"
-
         self.levels_map["INV"] = self.INVALID_LVL
         self.levels_map[self.INVALID_LVL] = "INV"
-        self.levels_map_stl["INV"] = "INVALID"
-        self.levels_map_lts["INVALID"] = "INV"
+        self.levels_map_stl["INV"] = self.INVALID_CLASSIFICATION
+        self.levels_map_lts[self.INVALID_CLASSIFICATION] = "INV"
 
         # Add null classification
-        self.NULL_CLASSIFICATION = "NULL"
-
-        self.levels_map["NULL"] = self.NULL_LVL
-        self.levels_map[self.NULL_LVL] = "NULL"
-        self.levels_map_stl["NULL"] = "NULL"
-        self.levels_map_lts["NULL"] = "NULL"
+        self.levels_map[self.NULL_CLASSIFICATION] = self.NULL_LVL
+        self.levels_map[self.NULL_LVL] = self.NULL_CLASSIFICATION
+        self.levels_map_stl[self.NULL_CLASSIFICATION] = self.NULL_CLASSIFICATION
+        self.levels_map_lts[self.NULL_CLASSIFICATION] = self.NULL_CLASSIFICATION
 
         try:
             self.enforce = classification_definition['enforce']
@@ -214,7 +212,7 @@ class Classification(object):
                 short_name = x['short_name'].upper()
                 name = x['name'].upper()
 
-                if short_name in ["INV", "NULL"] or name in ["INVALID", "NULL"]:
+                if short_name in ["INV", "NULL"] or name in [self.INVALID_CLASSIFICATION, self.NULL_CLASSIFICATION]:
                     raise InvalidDefinition("You cannot use reserved words NULL, INVALID or INV in your "
                                             "classification definition.")
 
