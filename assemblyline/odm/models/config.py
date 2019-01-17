@@ -401,7 +401,7 @@ DEFAULT_UI = {
     "allow_url_submissions": True,
     "audit": True,
     "context": 'al_ui.site_specific.context',
-    "debug": True,
+    "debug": False,
     "download_encoding": "cart",
     "email": 'admin@assemblyline.local',
     "enforce_quota": True,
