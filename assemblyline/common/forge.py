@@ -1,4 +1,5 @@
 # This file contains the loaders for the different components of the system
+import collections
 import importlib
 import os
 import yaml
@@ -7,6 +8,16 @@ from easydict import EasyDict
 
 from assemblyline.common.importing import load_module_by_path
 from assemblyline.filestore import FileStore
+
+
+def recursive_update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            d[k] = recursive_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+
+    return d
 
 
 def get_classification(yml_config=None):
@@ -28,7 +39,7 @@ def get_classification(yml_config=None):
         with open(yml_config) as yml_fh:
             yml_data = yaml.load(yml_fh.read())
             if yml_data:
-                classification_definition.update(yml_data)
+                classification_definition = recursive_update(classification_definition, yml_data)
 
     if not classification_definition:
         raise InvalidDefinition('Could not find any classification definition to load.')
@@ -50,7 +61,7 @@ def get_config(static=False, yml_config=None):
         with open(yml_config) as yml_fh:
             yml_data = yaml.load(yml_fh.read())
             if yml_data:
-                config.update(yml_data)
+                config = recursive_update(config, yml_data)
 
     if not static:
         # TODO: Load a datastore object and load the config changes from the datastore
