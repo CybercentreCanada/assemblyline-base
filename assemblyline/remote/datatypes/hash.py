@@ -1,3 +1,4 @@
+import redis
 import json
 
 from assemblyline.remote.datatypes import get_client, retry_call
@@ -11,7 +12,10 @@ return result
 
 class Hash(object):
     def __init__(self, name, host=None, port=None, db=None):
-        self.c = get_client(host, port, db, False)
+        if isinstance(host, redis.Redis):
+            self.c = host
+        else:
+            self.c = get_client(host, port, db, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
 

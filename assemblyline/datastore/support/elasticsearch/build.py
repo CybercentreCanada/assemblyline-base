@@ -68,7 +68,6 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
 
         elif isinstance(field, Any):
             continue
-
         else:
             raise NotImplementedError(f"Unknown type for elasticsearch schema: {field.__class__}")
 
@@ -104,7 +103,7 @@ def build_templates(name, field, nested_template=False):
                 assert len(field.copyto) == 1
                 main_template['mapping']['copy_to'] = field.copyto[0]
 
-            return {f"nested_{name}": main_template}
+            return [{f"nested_{name}": main_template}]
         else:
             field_template = {
                 "path_match": f"{name}.*",
@@ -119,13 +118,25 @@ def build_templates(name, field, nested_template=False):
                 assert len(field.copyto) == 1
                 field_template['mapping']['copy_to'] = field.copyto[0]
 
-            return {f"{name}_tpl": field_template}
+            return [{f"{name}_tpl": field_template}]
 
-    elif isinstance(field, Mapping):
+    elif isinstance(field, (Mapping, List)):
         temp_name = name
         if field.name:
             temp_name = f"{name}.{field.name}"
         return build_templates(temp_name, field.child_type, nested_template=True)
+
+    elif isinstance(field, Compound):
+        temp_name = name
+        if field.name:
+            temp_name = f"{name}.{field.name}"
+
+        out = []
+        for sub_name, sub_field in field.fields().items():
+            sub_name = f"{temp_name}.{sub_name}"
+            out.append(build_templates(sub_name, sub_field, nested_template=True))
+
+        return out
 
     else:
         raise NotImplementedError(f"Unknown type for elasticsearch dynamic mapping: {field.__class__}")

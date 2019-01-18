@@ -169,7 +169,7 @@ class Dispatcher(odm.Model):
 
 DEFAULT_DISPATCHER = {
     "stages": ['setup', 'filter', 'extract', 'core', 'secondary', 'post', 'teardown'],
-    "timeout": 5*60
+    "timeout": 5*60,
 }
 
 

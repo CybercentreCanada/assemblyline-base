@@ -1,11 +1,21 @@
 import os
 from assemblyline.common.path import modulepath
 
+# Queue priority values for each bucket in the middleman
 PRIORITIES = {
     'low': 100,
     'medium': 200,
     'high': 300,
     'critical': 400,
+}
+
+# Score thresholds for determining which queue priority a reingested item
+# gets based on its previous score.
+# eg.: item with a previous score of 99 will get 'low' priority
+#      item with a previous score of 300 will get a 'high' priority
+PRIORITY_THRESHOLDS = {
+    'critical': 500,
+    'high': 100,
 }
 
 RECOGNIZED_TAGS = {
