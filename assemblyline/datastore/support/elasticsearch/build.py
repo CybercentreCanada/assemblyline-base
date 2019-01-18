@@ -64,7 +64,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
 
         elif isinstance(field, Mapping):
             if not isinstance(field.child_type, Any):
-                dynamic.append(build_templates(name, field.child_type))
+                dynamic.extend(build_templates(name, field.child_type))
 
         elif isinstance(field, Any):
             continue
@@ -88,7 +88,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
     return mappings, dynamic
 
 
-def build_templates(name, field, nested_template=False):
+def build_templates(name, field, nested_template=False) -> list:
     if isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
         if nested_template:
             main_template = {
@@ -134,7 +134,7 @@ def build_templates(name, field, nested_template=False):
         out = []
         for sub_name, sub_field in field.fields().items():
             sub_name = f"{temp_name}.{sub_name}"
-            out.append(build_templates(sub_name, sub_field, nested_template=True))
+            out.extend(build_templates(sub_name, sub_field, nested_template=True))
 
         return out
 
