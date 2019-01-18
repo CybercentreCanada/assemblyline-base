@@ -85,6 +85,6 @@ class AssemblylineDatastore(object):
     def list_services(self, as_obj=True):
         out = []
         for item in self.ds.service.stream_search(f"{self.ds.ID}:*"):
-            out.append(self.ds.service.get(item.name, as_obj=as_obj))
+            out.append(self.ds.service.get(item.id, as_obj=as_obj))
 
         return out
