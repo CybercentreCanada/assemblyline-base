@@ -63,16 +63,11 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
             dynamic.extend(temp_dynamic)
 
         elif isinstance(field, Mapping):
-<<<<<<< HEAD
-            dynamic.extend(build_templates(name, field.child_type))
-=======
             if not isinstance(field.child_type, Any):
                 dynamic.append(build_templates(name, field.child_type))
 
         elif isinstance(field, Any):
             continue
->>>>>>> a7dc0315654bf0432735057b8990e3b476933a6b
-
         else:
             raise NotImplementedError(f"Unknown type for elasticsearch schema: {field.__class__}")
 
