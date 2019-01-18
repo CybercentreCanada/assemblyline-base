@@ -1,4 +1,5 @@
 import json
+import redis
 
 from assemblyline.remote.datatypes import get_client, retry_call, decode
 
@@ -31,7 +32,7 @@ return result
 
 class PriorityQueue(object):
     def __init__(self, name, host=None, port=None, db=None, private=False):
-        self.c = get_client(host, port, db, private)
+        self.c = host if isinstance(host, redis.Redis) else get_client(host, port, db, private)
         self.r = self.c.register_script(pq_pop_script)
         self.s = self.c.register_script(pq_push_script)
         self.t = self.c.register_script(pq_unpush_script)

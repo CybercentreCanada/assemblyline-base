@@ -2,11 +2,20 @@ import json
 
 from assemblyline.remote.datatypes import get_client, retry_call
 
+drop_card_script = """
+local set_name = ARGV[1]
+local key = ARGV[2]
+
+redis.call('srem', set_name, key)
+return redis.call('scard', set_name)
+"""
+
 
 class Set(object):
     def __init__(self, name, host=None, port=None, db=None):
         self.c = get_client(host, port, db, False)
         self.name = name
+        self._drop_card = self.c.register_script(drop_card_script)
 
     def __enter__(self):
         return self
@@ -30,6 +39,9 @@ class Set(object):
     def remove(self, *values):
         return retry_call(self.c.srem, self.name,
                           *[json.dumps(v) for v in values])
+
+    def drop(self, value):
+        return retry_call(self._drop_card, args=[value])
 
     def random(self, num=None):
         ret_val = retry_call(self.c.srandmember, self.name, num)
