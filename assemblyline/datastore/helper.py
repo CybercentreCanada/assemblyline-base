@@ -9,6 +9,7 @@ from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
+from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_options import UserOptions
 from assemblyline.odm.models.workflow import Workflow
 
@@ -27,6 +28,8 @@ class AssemblylineDatastore(object):
         self.ds.register('submission', Submission)
         self.ds.register('submission_tree', SubmissionTree)
         self.ds.register('user', User)
+        self.ds.register('user_avatar')
+        self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_options', UserOptions)
         self.ds.register('workflow', Workflow)
 
@@ -73,6 +76,14 @@ class AssemblylineDatastore(object):
     @property
     def user(self):
         return self.ds.user
+
+    @property
+    def user_avatar(self):
+        return self.ds.user_avatar
+
+    @property
+    def user_favorites(self):
+        return self.ds.user_favorites
 
     @property
     def user_options(self):
