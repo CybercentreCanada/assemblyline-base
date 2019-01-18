@@ -116,7 +116,7 @@ class ESCollection(Collection):
         self.with_retries(self.datastore.client.indices.clear_cache, self.name)
         return True
 
-    def multiget(self, key_list):
+    def multiget(self, key_list, as_obj=True):
         data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name, doc_type='_all')
         out = []
         for row in data.get('docs', []):
@@ -126,7 +126,7 @@ class ESCollection(Collection):
                 out.append(row['_source']['__non_doc_raw__'])
             else:
                 row['_source'].pop(self.datastore.SORT_ID, None)
-                out.append(self.normalize(row['_source']))
+                out.append(self.normalize(row['_source'], as_obj=as_obj))
         return out
 
     def _get(self, key, retries):
@@ -241,7 +241,7 @@ class ESCollection(Collection):
 
         return res['result'] == "updated"
 
-    def _format_output(self, result, fields=None):
+    def _format_output(self, result, fields=None, as_obj=True):
         # Getting search document data
         source = result.get('fields', {})
         source_data = result.pop('_source', None)
@@ -263,7 +263,10 @@ class ESCollection(Collection):
                 return self.model_class(source_data, docid=item_id)
 
             source = _strip_lists(self.model_class, source)
-            return self.model_class(source, mask=fields, docid=item_id)
+            if as_obj:
+                return self.model_class(source, mask=fields, docid=item_id)
+            else:
+                return {key: val for key, val in source.items() if key in fields}
 
         if isinstance(fields, str):
             fields = fields
@@ -364,7 +367,7 @@ class ESCollection(Collection):
             raise SearchException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
 
     def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None):
+               fl=None, timeout=None, filters=None, access_control=None, as_obj=True):
 
         if not rows:
             rows = self.DEFAULT_ROW_SIZE
@@ -406,10 +409,10 @@ class ESCollection(Collection):
             "offset": int(offset),
             "rows": int(rows),
             "total": int(result['hits']['total']),
-            "items": [self._format_output(doc, field_list) for doc in result['hits']['hits']]
+            "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
         }
 
-    def stream_search(self, query, fl=None, filters=None, access_control=None, item_buffer_size=200):
+    def stream_search(self, query, fl=None, filters=None, access_control=None, item_buffer_size=200, as_obj=True):
         if item_buffer_size > 500 or item_buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
 
@@ -454,7 +457,7 @@ class ESCollection(Collection):
 
         for value in iterator:
             # Unpack the results, ensure the id is always set
-            yield self._format_output(value, fl)
+            yield self._format_output(value, fl, as_obj=as_obj)
 
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
         type_modifier = self._validate_steps_count(start, end, gap)
@@ -515,7 +518,7 @@ class ESCollection(Collection):
                 for row in result['aggregations'][field]['buckets']}
 
     def grouped_search(self, group_field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
-                       rows=None, filters=None, access_control=None):
+                       rows=None, filters=None, access_control=None, as_obj=True):
 
         if not rows:
             rows = self.DEFAULT_ROW_SIZE
@@ -565,7 +568,7 @@ class ESCollection(Collection):
             'items': [{
                 'value': collapsed['fields'][group_field][0],
                 'total': collapsed['inner_hits']['group']['hits']['total'],
-                'items': [self._format_output(row, field_list)
+                'items': [self._format_output(row, field_list, as_obj=as_obj)
                           for row in collapsed['inner_hits']['group']['hits']['hits']]
             } for collapsed in result['hits']['hits']]
         }

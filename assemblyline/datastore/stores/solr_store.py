@@ -100,7 +100,7 @@ class SolrCollection(Collection):
             res = requests.get(url)
             return res.ok
 
-    def multiget(self, key_list):
+    def multiget(self, key_list, as_obj=True):
         temp_keys = copy(key_list)
         done = False
         retry = 0
@@ -122,9 +122,9 @@ class SolrCollection(Collection):
                             data = json.loads(data)
                             if isinstance(data, dict):
                                 data.pop(self.EXTRA_SEARCH_FIELD, None)
-                            ret.append(self.normalize(data))
+                            ret.append(self.normalize(data, as_obj=as_obj))
                         except ValueError:
-                            ret.append(self.normalize(data))
+                            ret.append(self.normalize(data, as_obj=as_obj))
                         temp_keys.remove(doc.get(self.datastore.ID, None))
 
             if len(temp_keys) == 0:
@@ -270,7 +270,7 @@ class SolrCollection(Collection):
 
         return None
 
-    def _cleanup_search_result(self, item, fields=None):
+    def _cleanup_search_result(self, item, fields=None, as_obj=True):
         if self.model_class:
             item_id = item.pop(self.datastore.ID, None)
             if not fields or '*' in fields:
@@ -281,8 +281,13 @@ class SolrCollection(Collection):
             item.pop('_version_', None)
             if '_source_' in item:
                 data = json.loads(item['_source_'])
-                return self.model_class(data, docid=item_id)
-            return self.model_class(item, mask=fields, docid=item_id)
+                item = self.model_class(data, docid=item_id)
+            item = self.model_class(item, mask=fields, docid=item_id)
+
+            if as_obj:
+                return item
+            else:
+                return item.as_primitives()
 
         if isinstance(item, dict):
             item.pop('_source_', None)
@@ -344,7 +349,7 @@ class SolrCollection(Collection):
                                           (self.name, query, args, res.content))
 
     def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None):
+               fl=None, timeout=None, filters=None, access_control=None, as_obj=True):
 
         if not rows:
             rows = self.DEFAULT_ROW_SIZE
