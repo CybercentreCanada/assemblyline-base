@@ -1,4 +1,5 @@
 from assemblyline import odm
+from assemblyline.common.classification import Classification
 
 ENCODINGS = {"cart", "raw"}
 DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
@@ -6,7 +7,8 @@ DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
 
 @odm.model(index=False, store=False)
 class UserOptions(odm.Model):  # User's default options
-    classification = odm.Classification()                             # Default submission classification
+    classification = odm.Classification(
+        default=Classification.NULL_CLASSIFICATION)                   # Default submission classification
     deep_scan = odm.Boolean(default=False)                            # Should a deep scan be performed
     description = odm.Keyword(default="")                             # Default description
     download_encoding = odm.Enum(values=ENCODINGS, default="cart")    # Default download encoding when downloading files

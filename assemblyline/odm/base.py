@@ -21,10 +21,12 @@ from dateutil.tz import tzutc
 
 from assemblyline.common import forge
 
-DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-UTC_TZ = tzutc()
-FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
 BANNED_FIELDS = {"id"}
+DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
+UTC_TZ = tzutc()
+
+DEFAULT_DATE = datetime.strptime("1990-01-01T00:00:00.000Z", DATEFORMAT).replace(tzinfo=UTC_TZ)
 
 
 def flat_to_nested(data: dict):
