@@ -34,6 +34,8 @@ class SubmissionParams(odm.Model):
     submitter = odm.Keyword(store=True)                                 # User who submitted the file
     ttl = odm.Integer(default=15)                                       # Time to live for this submission in days
     type = odm.Keyword(default="USER")                                  # Type of submission
+    quota_item = odm.Boolean(default=False)                             # Does this submission count against quota
+    completed_queue = odm.Keyword(default="")                           # Which queue to notify on completion
 
 
 @odm.model(index=True, store=True)
