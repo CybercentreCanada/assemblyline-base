@@ -108,29 +108,32 @@ class Collection(object):
 
         This is the normal way to get data of the system.
 
+        :param as_obj:
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
         return self.normalize(self._get(key, self.RETRY_NORMAL), as_obj=as_obj)
 
-    def get_if_exists(self, key):
+    def get_if_exists(self, key, as_obj=True):
         """
         Get a document from the datastore but do not retry if not found.
 
         Use this more in caching scenarios because eventually consistent database may lead
         to have document reported has missing even if they exist.
 
+        :param as_obj:
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
         return self.normalize(self._get(key, self.RETRY_NONE), as_obj=as_obj)
 
-    def require(self, key):
+    def require(self, key, as_obj=True):
         """
         Get a document from the datastore and retry forever because we know for sure
         that this document should exist. If it does not right now, this will wait for the
         document to show up in the datastore.
 
+        :param as_obj:
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """

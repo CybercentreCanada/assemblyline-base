@@ -386,11 +386,11 @@ class SolrCollection(Collection):
             "offset": int(data['response']['start']),
             "rows": int(rows),
             "total": int(data['response']['numFound']),
-            "items": [self._cleanup_search_result(x, fl) for x in data['response']['docs']]
+            "items": [self._cleanup_search_result(x, fl, as_obj=as_obj) for x in data['response']['docs']]
         }
         return output
 
-    def stream_search(self, query, fl=None, filters=None, access_control=None, buffer_size=200):
+    def stream_search(self, query, fl=None, filters=None, access_control=None, buffer_size=200, as_obj=True):
 
         def _auto_fill(_items, _lock, _args):
             page_size = self._get_value('rows', args)
@@ -414,7 +414,7 @@ class SolrCollection(Collection):
                 _args.append(('cursorMark', data.get('nextCursorMark', '*')))
 
                 with _lock:
-                    _items.extend([self._cleanup_search_result(x, fl) for x in data['response']['docs']])
+                    _items.extend([self._cleanup_search_result(x, fl, as_obj=as_obj) for x in data['response']['docs']])
 
                 done = int(page_size) - len(data['response']['docs'])
 
@@ -541,7 +541,7 @@ class SolrCollection(Collection):
         return output
 
     def grouped_search(self, field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
-                       rows=None, filters=None, access_control=None):
+                       rows=None, filters=None, access_control=None, as_obj=True):
 
         if not sort:
             sort = self.DEFAULT_SORT
@@ -590,7 +590,7 @@ class SolrCollection(Collection):
             'items': [{
                 'value': grouping['groupValue'],
                 'total': grouping['doclist']['numFound'],
-                'items': [self._cleanup_search_result(x, fl) for x in grouping['doclist']['docs']]
+                'items': [self._cleanup_search_result(x, fl, as_obj=as_obj) for x in grouping['doclist']['docs']]
             } for grouping in data['groups']]
         }
 

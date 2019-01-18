@@ -152,6 +152,8 @@ def collection_test(collection):
     assert col.get('list') is None
     assert col.get('int') is None
 
+    assert col.get('test1', as_obj=False) == col.get('test1').as_primitives()
+
     raw = [test_map.get('test1'), test_map.get('dict1'), test_map.get('test2')]
     ds_raw = col.multiget(['test1', 'dict1', 'test2'])
     for item in ds_raw:
@@ -189,6 +191,11 @@ def collection_test(collection):
         result = col.search('features: chocolate', fl='features')
         assert result['total'] == 1
         _ = result['items'][0].flavour
+
+    # Make sure as_obj=False produces the same result then obj.as_primitives()
+    obj_item = col.search('features: chocolate', fl='features')['items'][0]
+    dict_item = col.search('features: chocolate', fl='features', as_obj=False)['items'][0]
+    assert obj_item.as_primitives() == dict_item
 
     # Check that the metadata is searchable
     assert col.search('metadata.url:*google*')['total'] == 2
