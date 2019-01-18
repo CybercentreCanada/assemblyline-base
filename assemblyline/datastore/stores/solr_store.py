@@ -279,15 +279,13 @@ class SolrCollection(Collection):
                 fields = fields.split(',')
 
             item.pop('_version_', None)
-            if '_source_' in item:
-                data = json.loads(item['_source_'])
-                item = self.model_class(data, docid=item_id)
-            item = self.model_class(item, mask=fields, docid=item_id)
-
             if as_obj:
-                return item
-            else:
-                return item.as_primitives()
+                if '_source_' in item:
+                    data = json.loads(item['_source_'])
+                    return self.model_class(data, docid=item_id)
+                return self.model_class(item, mask=fields, docid=item_id)
+
+            return item
 
         if isinstance(item, dict):
             item.pop('_source_', None)

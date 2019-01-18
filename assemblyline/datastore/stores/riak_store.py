@@ -225,11 +225,10 @@ class RiakCollection(SolrCollection):
             elif isinstance(fields, str):
                 fields = fields.split(',')
 
-            item = self.model_class(item, mask=fields, docid=item_id)
             if as_obj:
-                return item
+                return self.model_class(item, mask=fields, docid=item_id)
             else:
-                return item.as_primitives()
+                return item
 
         return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
