@@ -6,8 +6,8 @@ from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
-from assemblyline.odm.models.node import Node
 from assemblyline.odm.models.result import Result
+from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tree import SubmissionTree
@@ -57,18 +57,18 @@ def test_filescore_model():
         pytest.fail("Could not generate 'FileScore' object and validate it.")
 
 
-def test_node_model():
-    try:
-        random_model_obj(Node).as_primitives()
-    except (ValueError, TypeError, KeyError):
-        pytest.fail("Could not generate 'Node' object and validate it.")
-
-
 def test_result_model():
     try:
         random_model_obj(Result).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'Result' object and validate it.")
+
+
+def test_service_model():
+    try:
+        random_model_obj(Service).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'Service' object and validate it.")
 
 
 def test_signature_model():

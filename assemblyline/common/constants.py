@@ -372,27 +372,6 @@ STANDARD_TAG_TYPES = [
     # Last idx used == 287
 ]
 
-SERVICE_STAGES = [
-    'SETUP',
-    'FILTER',
-    'EXTRACT',
-    'CORE',
-    'SECONDARY',
-    'POST',
-    'TEARDOWN'
-]
-
-SERVICE_CATEGORIES = [
-    'Antivirus',
-    'Extraction',
-    'Filtering',
-    'Metadata',
-    'Networking',
-    'Static Analysis',
-    'System',
-    'Test'
-]
-
 FILE_SUMMARY = []
 
 custom_rules = os.path.join(modulepath(__name__), 'custom.magic')

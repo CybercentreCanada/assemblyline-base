@@ -1,10 +1,23 @@
 # This file contains the loaders for the different components of the system
-from easydict import EasyDict
+import collections
+import importlib
 import os
 import yaml
 
+from easydict import EasyDict
+
 from assemblyline.common.importing import load_module_by_path
 from assemblyline.filestore import FileStore
+
+
+def recursive_update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            d[k] = recursive_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+
+    return d
 
 
 def get_classification(yml_config=None):
@@ -26,7 +39,7 @@ def get_classification(yml_config=None):
         with open(yml_config) as yml_fh:
             yml_data = yaml.load(yml_fh.read())
             if yml_data:
-                classification_definition.update(yml_data)
+                classification_definition = recursive_update(classification_definition, yml_data)
 
     if not classification_definition:
         raise InvalidDefinition('Could not find any classification definition to load.')
@@ -48,7 +61,7 @@ def get_config(static=False, yml_config=None):
         with open(yml_config) as yml_fh:
             yml_data = yaml.load(yml_fh.read())
             if yml_data:
-                config.update(yml_data)
+                config = recursive_update(config, yml_data)
 
     if not static:
         # TODO: Load a datastore object and load the config changes from the datastore
@@ -60,26 +73,26 @@ def get_config(static=False, yml_config=None):
 def get_constants(config=None):
     if config is None:
         config = get_config()
-    return load_module_by_path(config.system.constants)
+    return importlib.import_module(config.system.constants)
 
 
 def get_datastore(config=None):
-    # TODO: Load all the models before returning the datastore.
+    from assemblyline.datastore.helper import AssemblylineDatastore
     if not config:
         config = get_config(static=True)
 
     if config.datastore.type == "elasticsearch":
         from assemblyline.datastore.stores.es_store import ESStore
-        return ESStore(config.datastore.hosts)
+        return AssemblylineDatastore(ESStore(config.datastore.hosts))
     elif config.datastore.type == "riak":
         from assemblyline.datastore.stores.riak_store import RiakStore
-        return RiakStore(config.datastore.hosts,
-                         solr_port=config.datastore.riak.solr_port,
-                         riak_http_port=config.datastore.riak.riak_http_port,
-                         riak_pb_port=config.datastore.riak.riak_pb_port)
+        return AssemblylineDatastore(RiakStore(config.datastore.hosts,
+                                               solr_port=config.datastore.riak.solr_port,
+                                               riak_http_port=config.datastore.riak.riak_http_port,
+                                               riak_pb_port=config.datastore.riak.riak_pb_port))
     elif config.datastore.type == "solr":
         from assemblyline.datastore.stores.solr_store import SolrStore
-        return SolrStore(config.datastore.hosts, port=config.datastore.solr.port)
+        return AssemblylineDatastore(SolrStore(config.datastore.hosts, port=config.datastore.solr.port))
     else:
         from assemblyline.datastore.exceptions import DataStoreException
         raise DataStoreException(f"Invalid datastore type: {config.datastore.type}")

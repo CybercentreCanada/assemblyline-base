@@ -105,7 +105,7 @@ class _Field:
 
         >>> expiry = Date()
         >>>
-        >>> # noinspection PyUnusedLocal
+        >>> # noinspection PyUnusedLocal,PyUnresolvedReferences
         >>> @expiry.setter
         >>> def expiry(self, assign, value):
         >>>     assert value
@@ -137,6 +137,16 @@ class _Field:
 
 class _DeletedField:
     pass
+
+
+class Any(_Field):
+    def __init__(self, *args, **kwargs):
+        kwargs['index'] = False
+        kwargs['store'] = False
+        super().__init__(*args, **kwargs)
+
+    def check(self, value, **kwargs):
+        return value
 
 
 class Date(_Field):
@@ -447,7 +457,9 @@ class Model:
         for sub_name, sub_field in field.fields().items():
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
-            if isinstance(sub_field, List) and sub_name != "":
+            elif isinstance(sub_field, Any):
+                continue
+            elif isinstance(sub_field, List) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings))
             elif isinstance(sub_field, Compound) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings))
@@ -471,6 +483,8 @@ class Model:
         for name, field in cls.__dict__.items():
             if isinstance(field, _Field):
                 if skip_mappings and isinstance(field, Mapping):
+                    continue
+                if isinstance(field, Any):
                     continue
                 out.update(Model._recurse_fields(name, field, skip_mappings))
         return out

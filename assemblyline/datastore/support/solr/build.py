@@ -1,4 +1,5 @@
-from assemblyline.odm import Keyword, Text, Date, Integer, Float, Boolean, Classification, Enum, List, Compound, Mapping
+from assemblyline.odm import Keyword, Text, Date, Integer, Float, Boolean, Classification, Enum, List, Compound, \
+    Mapping, Any
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -66,6 +67,8 @@ def build_mapping(field_data, prefix=None, multivalued=False):
             elif isinstance(child, Mapping):
                 path.append("*")
                 mappings.extend(build_mapping(child.fields().values(), prefix=path, multivalued=multivalued))
+            elif isinstance(child, Any):
+                continue
             else:
                 index = 'true' if child.index else 'false'
                 store = 'true' if child.store else 'false'
@@ -75,6 +78,9 @@ def build_mapping(field_data, prefix=None, multivalued=False):
                 mappings.append(f'<dynamicField name="{name}" type="{solr_type}" indexed="{index}" stored="{store}" />')
                 for other_field in field.copyto + child.copyto:
                     mappings.append(f'<copyField source="{name}" dest="{other_field}"/>')
+
+        elif isinstance(field, Any):
+            continue
 
         else:
             raise NotImplementedError(f"Unknown type for solr schema: {field.__class__}")

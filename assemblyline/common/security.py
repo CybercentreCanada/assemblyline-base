@@ -6,9 +6,6 @@ import re
 import struct
 import time
 
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_v1_5
-from Crypto import Random
 from passlib.hash import bcrypt
 
 UPPERCASE = r'[A-Z]'
@@ -21,27 +18,11 @@ PASS_BASIC = [chr(x + 65) for x in range(26)] + \
              ["!", "@", "$", "%", "^", "?", "&", "*", "(", ")"]
 
 
-def generate_async_keys(key_size=2048):
-    random_generator = Random.new().read
-    key = RSA.generate(key_size, random_generator)
-    return key.publickey().exportKey(), key.exportKey()
-
-
-def load_async_key(key_def, use_pkcs=False):
-    key = RSA.importKey(key_def)
-
-    if use_pkcs:
-        Random.atfork()
-        return PKCS1_v1_5.new(key)
-
-    return key
-
-
 def get_hotp_token(secret, intervals_no):
     key = base64.b32decode(secret, True)
     msg = struct.pack(">Q", intervals_no)
     h = hmac.new(key, msg, hashlib.sha1).digest()
-    o = ord(h[19]) & 15
+    o = h[19] & 15
     h = (struct.unpack(">I", h[o:o+4])[0] & 0x7fffffff) % 1000000
     return h
 
@@ -51,7 +32,7 @@ def get_totp_token(secret):
 
 
 def generate_random_secret():
-    return base64.b32encode(os.urandom(25))
+    return base64.b32encode(os.urandom(25)).decode("UTF-8")
 
 
 def get_password_hash(password):
@@ -117,7 +98,9 @@ def check_password_requirements(password, lower=True, upper=True, number=False, 
     return True
 
 
-def get_random_password(alphabet=PASS_BASIC, length=24):
+def get_random_password(alphabet=None, length=24):
+    if alphabet is None:
+        alphabet = PASS_BASIC
     r_bytes = bytearray(os.urandom(length))
     a_list = []
 

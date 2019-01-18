@@ -112,7 +112,7 @@ class Auth(odm.Model):
     allow_u2f = odm.Boolean()
     apikey_handler = odm.Keyword()
     dn_handler = odm.Keyword()
-    encrypted_login = odm.Boolean()
+    dn_parser = odm.Keyword()
     internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
     userpass_handler = odm.Keyword()
 
@@ -123,7 +123,7 @@ DEFAULT_AUTH = {
     "allow_u2f": True,
     "apikey_handler": 'al_ui.site_specific.validate_apikey',
     "dn_handler": 'al_ui.site_specific.validate_dn',
-    "encrypted_login": True,
+    "dn_parser": 'al_ui.site_specific.basic_dn_parser',
     "internal": DEFAULT_INTERNAL,
     "userpass_handler": 'al_ui.site_specific.validate_userpass'
 }
@@ -236,6 +236,24 @@ DEFAULT_DATASTORE = {
 
 
 @odm.model(index=True, store=True)
+class Datasource(odm.Model):
+    classpath = odm.Keyword()
+    config = odm.Mapping(odm.Keyword())
+
+
+DEFAULT_DATASOURCES = {
+    "al": {
+        "classpath": 'assemblyline.datasource.al.AL',
+        "config": {}
+    },
+    "alert": {
+        "classpath": 'assemblyline.datasource.alert.Alert',
+        "config": {}
+    }
+}
+
+
+@odm.model(index=True, store=True)
 class Filestore(odm.Model):
     urls = odm.List(odm.Keyword())
 
@@ -273,28 +291,127 @@ DEFAULT_LOGGING = {
 
 # This is the model definition for the System block
 @odm.model(index=True, store=True)
+class Limits(odm.Model):
+    # Maximum number of extracted files
+    max_extracted = odm.Integer()
+    # Maximum number of supplementary files
+    max_supplementary = odm.Integer()
+
+
+DEFAULT_LIMITS = {
+    "max_extracted": 500,
+    "max_supplementary": 500
+}
+
+
+# This is the model definition for the System block
+@odm.model(index=True, store=True)
+class Services(odm.Model):
+    # Different possible categories
+    categories = odm.List(odm.Keyword())
+    # Default service timeout time in seconds
+    default_timeout = odm.Integer()
+    # Limits constraints the the service has to work with
+    limits = odm.Compound(Limits, default=DEFAULT_LIMITS)
+    # Different stages of execution in order
+    stages = odm.List(odm.Keyword())
+    # Category for mandatory services (e.g. Sync)
+    system_category = odm.Text()
+
+
+DEFAULT_SERVICES = {
+    "categories": ['Antivirus', 'External', 'Extraction', 'Filtering', 'Networking', 'Static Analysis', 'System'],
+    "default_timeout": 60,
+    "limits": DEFAULT_LIMITS,
+    "stages": ['SETUP', 'FILTER', 'EXTRACT', 'CORE', 'SECONDARY', 'POST', 'TEARDOWN'],
+    "system_category": 'System'
+}
+
+
+# This is the model definition for the Yara Block
+@odm.model(index=True, store=True)
+class Yara(odm.Model):
+    externals = odm.List(odm.Keyword())
+    importer = odm.Keyword()
+    parser = odm.Keyword()
+
+
+DEFAULT_YARA = {
+    "externals": ['submitter', 'mime', 'tag'],
+    "importer": "assemblyline.common.yara.YaraImporter",
+    "parser": "assemblyline.common.yara.YaraParser"
+}
+
+
+# This is the model definition for the System block
+@odm.model(index=True, store=True)
 class System(odm.Model):
     # Module path to the assemblyline constants
     constants = odm.Keyword()
+    # Organisation acronym used for signatures
+    organisation = odm.Text()
+    # Parameter of the yara engine
+    yara = odm.Compound(Yara)
 
 
 DEFAULT_SYSTEM = {
-    "constants": "assemblyline.common.constants"
+    "constants": "assemblyline.common.constants",
+    "organisation": "ACME",
+    "yara": DEFAULT_YARA
 }
 
 
 # This is the model definition for the logging block
 @odm.model(index=True, store=True)
 class UI(odm.Model):
+    # Allow to user to download raw files
+    allow_raw_downloads = odm.Boolean()
+    # Allow file submissions via url
+    allow_url_submissions = odm.Boolean()
     # Should API calls be audited and saved to a seperate log file?
     audit = odm.Boolean()
+    # UI Context
+    context = odm.Keyword()
+    # Turn on debugging
+    debug = odm.Boolean()
+    # Which encoding will be used
+    download_encoding = odm.Enum(values=["raw", "cart"])
+    # Assemblyline admins email address
+    email = odm.Keyword()
+    # Enforce the user's quotas
+    enforce_quota = odm.Boolean()
+    # Fully qualified domain name to use for the 2-factor authentication validation
+    fqdn = odm.Text()
+    # Turn on read only mode in the UI
+    read_only = odm.Boolean()
+    # Offset of the read only mode for all paging and searches
+    read_only_offset = odm.Keyword(default="")
     # Flask secret key to store cookies and stuff
     secret_key = odm.Keyword()
+    # Duration of the user session before the user has to login again
+    session_duration = odm.Integer()
+    # Terms of service
+    tos = odm.Text(default="")
+    # Lock out user after accepting the terms of service
+    tos_lockout = odm.Boolean()
 
 
 DEFAULT_UI = {
+    "allow_raw_downloads": True,
+    "allow_url_submissions": True,
     "audit": True,
-    "secret_key": "This is the default flask secret key... you should change this!"
+    "context": 'al_ui.site_specific.context',
+    "debug": False,
+    "download_encoding": "cart",
+    "email": 'admin@assemblyline.local',
+    "enforce_quota": True,
+    "fqdn": "assemblyline.local",
+    "read_only": False,
+    "read_only_offset": "",
+    "secret_key": "This is the default flask secret key... you should change this!",
+    "session_duration": 3600,
+    "tos": "",
+    "tos_lockout": False
 }
 
 
@@ -306,10 +423,14 @@ class Config(odm.Model):
     core = odm.Compound(Core, default=DEFAULT_CORE)
     # Datastore configuration
     datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE)
+    # Datasources configuration
+    datasources = odm.Mapping(odm.Compound(Datasource), default=DEFAULT_DATASOURCES)
     # Filestore configuration
     filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE)
     # Logging configuration
     logging = odm.Compound(Logging, default=DEFAULT_LOGGING)
+    # Service configuration
+    services = odm.Compound(Services, default=DEFAULT_SERVICES)
     # System configuration
     system = odm.Compound(System, default=DEFAULT_SYSTEM)
     # UI configuration parameters
@@ -320,8 +441,10 @@ DEFAULT_CONFIG = {
     "auth": DEFAULT_AUTH,
     "core": DEFAULT_CORE,
     "datastore": DEFAULT_DATASTORE,
+    "datasources": DEFAULT_DATASOURCES,
     "filestore": DEFAULT_FILESTORE,
     "logging": DEFAULT_LOGGING,
+    "services": DEFAULT_SERVICES,
     "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI
 }
