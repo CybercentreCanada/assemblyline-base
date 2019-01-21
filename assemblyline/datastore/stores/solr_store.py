@@ -172,9 +172,9 @@ class SolrCollection(Collection):
         return None
 
     def _save(self, key, source_data):
-        try:
-            data = source_data.as_primitives()
-        except AttributeError:
+        if self.model_class:
+            data = source_data.as_primitives(hidden_fields=True)
+        else:
             data = deepcopy(source_data)
 
         if not isinstance(data, dict):

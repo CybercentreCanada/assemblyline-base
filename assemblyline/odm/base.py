@@ -10,23 +10,24 @@ independent data models in python. This gives us:
 
 """
 
-import re
-import json
-import copy
 import arrow
+import copy
+import json
+import re
 import typing
+import uuid
 
 from datetime import datetime
+
 from dateutil.tz import tzutc
 
 from assemblyline.common import forge
+from assemblyline.common.isotime import now_as_iso
 
-BANNED_FIELDS = {"id"}
+BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "__access_grp2__"}
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
 UTC_TZ = tzutc()
-
-DEFAULT_DATE = datetime.strptime("1990-01-01T00:00:00.000Z", DATEFORMAT).replace(tzinfo=UTC_TZ)
 
 
 def flat_to_nested(data: dict):
@@ -155,7 +156,12 @@ class Date(_Field):
     """A field storing a datetime value."""
 
     def check(self, value, **kwargs):
-        # Use the arrow library to transform ??? to a datetime
+        if value is None:
+            return None
+
+        if value == "NOW":
+            value = now_as_iso()
+
         try:
             return datetime.strptime(value, DATEFORMAT).replace(tzinfo=UTC_TZ)
         except (TypeError, ValueError):
@@ -186,12 +192,10 @@ class Keyword(_Field):
 
 
 class Enum(Keyword):
+    """
+    A field storing a short string that has predefined list of possible values
+    """
     def __init__(self, values, *args, **kwargs):
-        """
-        An expanded classification is one that controls the access to the document
-        which holds it. If a classification field is only meant to store classification
-        information and not enforce it, expand should be false.
-        """
         super().__init__(*args, **kwargs)
         self.values = set(values)
 
@@ -201,8 +205,23 @@ class Enum(Keyword):
                 value = self.default
             else:
                 raise ValueError("Empty enums are not allow without defaults")
+
         if value not in self.values:
             raise ValueError(f"{value} not in the possible values: {self.values}")
+
+        if value is None:
+            return value
+
+        return str(value)
+
+
+class UUID(Keyword):
+    """
+    A field storing an auto-generated unique ID is None is provided
+    """
+    def check(self, value, **kwargs):
+        if value is None:
+            value = str(uuid.uuid4())
         return str(value)
 
 
@@ -245,6 +264,9 @@ class ClassificationObject(object):
         self.engine = engine
         self.is_uc = is_uc
         self.value = engine.normalize_classification(value, skip_auto_select=is_uc)
+
+    def get_access_control_parts(self):
+        return self.engine.get_access_control_parts(self.value, user_classification=self.is_uc)
 
     def min(self, other):
         return ClassificationObject(self.engine,
@@ -532,7 +554,7 @@ class Model:
         data.update(sub_data)
 
         # Check to make sure we can use all the data we are given
-        unused_keys = set(data.keys()) - set(fields.keys())
+        unused_keys = set(data.keys()) - set(fields.keys()) - BANNED_FIELDS
         if unused_keys:
             raise ValueError(f"'{self.__class__.__name__}' object was created with invalid parameters: "
                              f"{', '.join(unused_keys)}")
@@ -553,7 +575,7 @@ class Model:
 
             self._odm_py_obj[name] = field_type.check(value, **params)
 
-    def as_primitives(self):
+    def as_primitives(self, hidden_fields=False):
         """Convert the object back into primatives that can be json serialized."""
         out = {}
 
@@ -571,6 +593,8 @@ class Model:
                     out[key] = [v.as_primitives() if isinstance(v, Model) else v for v in value]
                 elif isinstance(value, ClassificationObject):
                     out[key] = str(value)
+                    if hidden_fields:
+                        out.update(value.get_access_control_parts())
                 else:
                     out[key] = value
         return out

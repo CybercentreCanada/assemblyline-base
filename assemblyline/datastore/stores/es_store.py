@@ -155,9 +155,9 @@ class ESCollection(Collection):
         return None
 
     def _save(self, key, data):
-        try:
-            saved_data = data.as_primitives()
-        except AttributeError:
+        if self.model_class:
+            saved_data = data.as_primitives(hidden_fields=True)
+        else:
             if not isinstance(data, dict):
                 saved_data = {'__non_doc_raw__': data}
             else:

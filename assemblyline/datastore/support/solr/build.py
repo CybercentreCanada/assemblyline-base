@@ -1,5 +1,5 @@
 from assemblyline.odm import Keyword, Text, Date, Integer, Float, Boolean, Classification, Enum, List, Compound, \
-    Mapping, Any
+    Mapping, Any, UUID
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -10,10 +10,11 @@ __type_mapping = {
     Float: 'pfloat',
     Date: 'pdate',
     Classification: 'string',
-    Enum: 'string'
+    Enum: 'string',
+    UUID: 'string'
 }
 
-back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification]}
+back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID]}
 
 
 def build_mapping(field_data, prefix=None, multivalued=False):
