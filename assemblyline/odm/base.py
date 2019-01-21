@@ -534,7 +534,7 @@ class Model:
         # Check to make sure we can use all the data we are given
         unused_keys = set(data.keys()) - set(fields.keys())
         if unused_keys:
-            raise ValueError(f"{self.__class__.__name__} object was created with invalid parameters: "
+            raise ValueError(f"'{self.__class__.__name__}' object was created with invalid parameters: "
                              f"{', '.join(unused_keys)}")
 
         # Pass each value through it's respective validator, and store it
@@ -549,7 +549,7 @@ class Model:
                 if field_type.default_set:
                     value = copy.copy(field_type.default)
                 else:
-                    raise ValueError('Object {self.__class__.__name__} expected a parameter named: {name}')
+                    raise ValueError(f"Object '{self.__class__.__name__}' expected a parameter named: {name}")
 
             self._odm_py_obj[name] = field_type.check(value, **params)
 

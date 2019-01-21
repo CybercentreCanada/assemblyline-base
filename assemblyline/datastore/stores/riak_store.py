@@ -194,6 +194,7 @@ class RiakCollection(SolrCollection):
 
     def delete(self, key):
         self.with_retries(self.riak_bucket.delete, key)
+        return True
 
     def delete_matching(self, query):
         for item in self.stream_search(query, fl=self.datastore.ID):
