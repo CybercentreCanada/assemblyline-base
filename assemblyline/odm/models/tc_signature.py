@@ -19,10 +19,11 @@ STATUSES = DEPLOYED_STATUSES + DRAFT_STATUSES
 @odm.model(index=True, store=True)
 class TCSignature(odm.Model):
     al_score = odm.Enum(values=SCORES, default="HIGH")
-    al_status = odm.Enum(values=STATUSES, default="DEPLOYED")
+    al_status = odm.Enum(values=STATUSES, default="TESTING")
     callback = odm.Keyword(default_set=True)
     classification = odm.Classification(default=Classification.NULL_CLASSIFICATION)
     comment = odm.Keyword(default_set=True)
     implant_family = odm.Keyword(default_set=True)
+    name = odm.Keyword()
     threat_actor = odm.Keyword(default_set=True)
-    values = odm.List(odm.Keyword(), default=[])
+    values = odm.List(odm.Keyword())
