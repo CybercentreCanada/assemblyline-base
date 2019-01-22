@@ -8,9 +8,11 @@ from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tree import SubmissionTree
+from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_options import UserOptions
+from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 
 
@@ -27,10 +29,12 @@ class AssemblylineDatastore(object):
         self.ds.register('signature', Signature)
         self.ds.register('submission', Submission)
         self.ds.register('submission_tree', SubmissionTree)
+        self.ds.register('tc_signature', TCSignature)
         self.ds.register('user', User)
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_options', UserOptions)
+        self.ds.register('vm', VM)
         self.ds.register('workflow', Workflow)
 
     @property
@@ -74,6 +78,10 @@ class AssemblylineDatastore(object):
         return self.ds.submission_tree
 
     @property
+    def tc_signature(self):
+        return self.ds.tc_signature
+
+    @property
     def user(self):
         return self.ds.user
 
@@ -90,12 +98,12 @@ class AssemblylineDatastore(object):
         return self.ds.user_options
 
     @property
+    def vm(self):
+        return self.ds.vm
+
+    @property
     def workflow(self):
         return self.ds.workflow
 
-    def list_services(self, as_obj=True):
-        out = []
-        for item in self.ds.service.stream_search(f"{self.ds.ID}:*"):
-            out.append(self.ds.service.get(item.id, as_obj=as_obj))
-
-        return out
+    def list_all_services(self, as_obj=True):
+        return [item for item in self.ds.service.stream_search(f"{self.ds.ID}:*", as_obj=as_obj)]

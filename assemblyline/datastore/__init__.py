@@ -6,7 +6,7 @@ from datemath import dm
 from datemath.helpers import DateMathException
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
-from assemblyline.odm import List
+from assemblyline.odm import BANNED_FIELDS
 from assemblyline.remote.datatypes.lock import Lock
 
 log = logging.getLogger('assemblyline.datastore')
@@ -67,6 +67,9 @@ class Collection(object):
         if as_obj and data is not None and self.model_class and not isinstance(data, self.model_class):
             return self.model_class(data)
 
+        if isinstance(data, dict):
+            data = {k: v for k, v in data.items() if k not in BANNED_FIELDS}
+
         return data
 
     def commit(self):
@@ -83,6 +86,7 @@ class Collection(object):
         Get a list of documents from the datastore and make sure they are normalized using
         the model class
 
+        :param as_obj:
         :param key_list: list of keys of documents to get
         :return: list of instances of the model class
         """
@@ -410,7 +414,7 @@ class Collection(object):
                 model[field_name].__class__.__name__.lower(),
                 model[field_name].__class__.__bases__[0].__name__.lower(),
             ]
-            if fields[field_name]['type'] not in possible_field_types :
+            if fields[field_name]['type'] not in possible_field_types:
                 raise RuntimeError(f"Field {field_name} didn't have the expected store "
                                    f"type. [{fields[field_name]['type']} != "
                                    f"{model[field_name].__class__.__name__.lower()}]")

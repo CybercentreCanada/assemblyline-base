@@ -95,7 +95,7 @@ def random_data_for_field(field, name):
         possible_classifications.extend([field.engine.UNRESTRICTED, field.engine.RESTRICTED])
         return random.choice(possible_classifications)
     elif isinstance(field, Enum):
-        return random.choice(list(field.values))
+        return random.choice([x for x in field.values if x is not None])
     elif isinstance(field, List):
         return [random_data_for_field(field.child_type, name) if not isinstance(field.child_type, Model)
                 else random_model_obj(field.child_type, as_json=True) for _ in range(random.randint(1, 4))]

@@ -187,7 +187,7 @@ class RiakCollection(SolrCollection):
 
     def _save(self, key, data):
         if self.model_class:
-            data = data.as_primitives()
+            data = data.as_primitives(hidden_fields=True)
         item = self.with_retries(self.riak_bucket.new, key=key, data=data, content_type='application/json')
         item.store()
         return True

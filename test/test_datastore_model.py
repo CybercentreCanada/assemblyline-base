@@ -18,9 +18,11 @@ from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tree import SubmissionTree
+from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_options import UserOptions
+from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj
 
@@ -89,9 +91,11 @@ TEST_DATA = [
     ("signature", random_model_obj(Signature)),
     ("submission", random_model_obj(Submission)),
     ("submission_tree", random_model_obj(SubmissionTree)),
+    ("tc_signature", random_model_obj(TCSignature)),
     ("user", random_model_obj(User)),
     ("user_favorites", random_model_obj(UserFavorites)),
     ("user_options", random_model_obj(UserOptions)),
+    ("vm", random_model_obj(VM)),
     ("workflow", random_model_obj(Workflow))
 ]
 

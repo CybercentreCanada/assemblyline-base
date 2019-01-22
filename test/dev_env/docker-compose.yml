@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ACCESS_KEY: al_storage_key
+      MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
+    ports:
+      - '9000:9000'
+    command: server /data
+  elasticsearch:
+    image: sgaroncse/elasticsearch:6.4.2
+    environment:
+      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+      DISCOVERY_TYPE: 'single-node'
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+  redis:
+    image: redis
+    ports:
+      - '6379:6379'
+  nginx:
+    image: sgaroncse/nginx-ssl
+    ports:
+      - '443:443'
+    environment:
+      - UI_HOST=172.17.0.1
+    command: /bin/bash -c "envsubst < /tmp/default.template > /etc/nginx/conf.d/default.conf && cat /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
