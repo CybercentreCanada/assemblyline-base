@@ -6,7 +6,7 @@ from assemblyline.remote.datatypes import get_client, retry_call, log, decode
 
 class CommsQueue(object):
     def __init__(self, names, host=None, port=None, db=None, private=False):
-        self.c = get_client(host, port, db, private)
+        self.c = host if isinstance(host, redis.Redis) else get_client(host, port, db, private)
         self.p = retry_call(self.c.pubsub)
         if not isinstance(names, list):
             names = [names]

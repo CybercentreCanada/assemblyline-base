@@ -1,6 +1,7 @@
 # This file contains the loaders for the different components of the system
 import collections
 import importlib
+import time
 import os
 import yaml
 
@@ -135,3 +136,33 @@ def get_ui_context(config=None):
     if config is None:
         config = get_config()
     return EasyDict(load_module_by_path(config.ui.context))
+
+
+def get_metrics_sink():
+    from assemblyline.remote.datatypes.queues.comms import CommsQueue
+    return CommsQueue('ALMetrics')
+
+
+class CachedObject:
+    """An object proxy that automatically refreshes its target periodically."""
+
+    def __init__(self, factory, refresh=5):
+        """
+        Args:
+            factory: Factory that takes no arguments and returns only the object to be wrapped.
+            refresh: Refresh rate in seconds.
+        """
+        self._factory = factory
+        self._refresh = refresh
+        self._cached = None
+        self._update_time = 0
+
+    def __getattr__(self, key):
+        """Forward all attribute requests to the underlying object.
+
+        Refresh the object every `_update_time` seconds.
+        """
+        if time.time() - self._update_time > self._refresh:
+            self._cached = self._factory()
+            self._update_time = time.time()
+        return getattr(self._cached, key)

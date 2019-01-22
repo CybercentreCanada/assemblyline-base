@@ -21,6 +21,10 @@ services:
     image: redis
     ports:
       - '6379:6379'
+  redis_persist:
+    image: redis
+    ports:
+      - '6380:6379'
   riak:
     image: sgaroncse/riak-kv:2.1.4
     environment:

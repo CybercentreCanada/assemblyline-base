@@ -173,15 +173,60 @@ DEFAULT_DISPATCHER = {
 }
 
 
+# Options regarding all submissions, regardless of their input method
+@odm.model(index=True, store=True)
+class Submission(odm.Model):
+    max_file_size = odm.Integer()
+
+    # Default values for parameters that may be overridden on a per submission basis
+    # How many extracted files may be added to a Submission
+    default_max_extracted = odm.Integer()
+    # How many supplementary files may be added to a submission
+    default_max_supplementary = odm.Integer()
+    # What classification is a file at, if none is provided?
+    default_classification = odm.Keyword()
+
+
+DEFAULT_SUBMISSION = {
+    'max_file_size': 104857600,
+    'default_max_extracted': 100,
+    'default_max_supplementary': 100,
+    'default_classification': 'UNRESTRICTED',
+}
+
+
+# Configuration options regarding bulk ingestion and unattended submissions
+@odm.model(index=True, store=True)
+class Ingestion(odm.Model):
+    default_user = odm.Keyword()
+    default_services = odm.List(odm.Keyword())
+    default_resubmit_services = odm.List(odm.Keyword())
+    # When a description is automatically generated, it will be the
+    # hash prefixed by this string
+    description_prefix = odm.Keyword()
+
+
+DEFAULT_INGESTION = {
+    'default_user': 'internal',
+    'default_services': [],
+    'default_resubmit_services': [],
+    'description_prefix': 'Bulk',
+}
+
+
 @odm.model(index=True, store=True)
 class Core(odm.Model):
     redis = odm.Compound(Redis, default=DEFAULT_REDIS)
     dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
+    ingestion = odm.Compound(Ingestion, default=DEFAULT_INGESTION)
+    submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION)
 
 
 DEFAULT_CORE = {
     "redis": DEFAULT_REDIS,
-    "dispatcher": DEFAULT_DISPATCHER
+    "dispatcher": DEFAULT_DISPATCHER,
+    "ingestion": DEFAULT_INGESTION,
+    "submission": DEFAULT_SUBMISSION
 }
 
 
@@ -278,6 +323,9 @@ class Logging(odm.Model):
     log_to_syslog = odm.Boolean()
     # if yes, what is the syslog server hostname/ip?
     syslog_host = odm.Keyword()
+
+    # How often should counters log their values (seconds)
+    export_interval = odm.Float(default=5)
 
 
 DEFAULT_LOGGING = {
