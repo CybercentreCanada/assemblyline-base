@@ -105,6 +105,5 @@ class AssemblylineDatastore(object):
     def workflow(self):
         return self.ds.workflow
 
-    def list_all_services(self, access_control=None, as_obj=True):
-        return [item for item in self.ds.service.stream_search(f"{self.ds.ID}:*",
-                                                               access_control=access_control, as_obj=as_obj)]
+    def list_all_services(self, as_obj=True):
+        return [item for item in self.ds.service.stream_search(f"{self.ds.ID}:*", as_obj=as_obj)]
