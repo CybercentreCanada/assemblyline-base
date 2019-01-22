@@ -325,7 +325,7 @@ class Logging(odm.Model):
     syslog_host = odm.Keyword()
 
     # How often should counters log their values (seconds)
-    export_interval = odm.Float(default=5)
+    export_interval = odm.Float()
 
 
 DEFAULT_LOGGING = {
@@ -333,7 +333,8 @@ DEFAULT_LOGGING = {
     "log_to_file": False,
     "log_directory": "/var/log/assemblyline/",
     "log_to_syslog": False,
-    "syslog_host": "localhost"
+    "syslog_host": "localhost",
+    "export_interval": 5
 }
 
 
