@@ -8,6 +8,7 @@ from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tree import SubmissionTree
+from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_options import UserOptions
@@ -28,6 +29,7 @@ class AssemblylineDatastore(object):
         self.ds.register('signature', Signature)
         self.ds.register('submission', Submission)
         self.ds.register('submission_tree', SubmissionTree)
+        self.ds.register('tc_signature', TCSignature)
         self.ds.register('user', User)
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
@@ -74,6 +76,10 @@ class AssemblylineDatastore(object):
     @property
     def submission_tree(self):
         return self.ds.submission_tree
+
+    @property
+    def tc_signature(self):
+        return self.ds.tc_signature
 
     @property
     def user(self):
