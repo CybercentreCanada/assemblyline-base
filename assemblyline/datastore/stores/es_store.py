@@ -156,7 +156,7 @@ class ESCollection(Collection):
 
     def _save(self, key, data):
         if self.model_class:
-            saved_data = data.as_primitives(hidden_fields=True)
+            saved_data = data.as_primitives(hidden_fields=True, strip_null=True)
         else:
             if not isinstance(data, dict):
                 saved_data = {'__non_doc_raw__': data}

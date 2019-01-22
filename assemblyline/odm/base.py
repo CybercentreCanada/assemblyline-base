@@ -188,6 +188,10 @@ class Keyword(_Field):
                 value = self.default
             else:
                 raise ValueError("Empty strings are not allow without defaults")
+
+        if value is None:
+            return None
+
         return str(value)
 
 
@@ -575,7 +579,7 @@ class Model:
 
             self._odm_py_obj[name] = field_type.check(value, **params)
 
-    def as_primitives(self, hidden_fields=False):
+    def as_primitives(self, hidden_fields=False, strip_null=False):
         """Convert the object back into primatives that can be json serialized."""
         out = {}
 
@@ -583,14 +587,19 @@ class Model:
         for key, value in self._odm_py_obj.items():
             field_type = fields[key]
             if value is not None or (value is None and field_type.default_set):
+                if strip_null and value is None:
+                    continue
+
                 if isinstance(value, Model):
-                    out[key] = value.as_primitives()
+                    out[key] = value.as_primitives(hidden_fields=hidden_fields, strip_null=strip_null)
                 elif isinstance(value, datetime):
                     out[key] = value.strftime(DATEFORMAT)
                 elif isinstance(value, TypedMapping):
-                    out[key] = {k: v.as_primitives() if isinstance(v, Model) else v for k, v in value.items()}
+                    out[key] = {k: v.as_primitives(hidden_fields=hidden_fields, strip_null=strip_null)
+                                if isinstance(v, Model) else v for k, v in value.items()}
                 elif isinstance(value, (List, TypedList)):
-                    out[key] = [v.as_primitives() if isinstance(v, Model) else v for v in value]
+                    out[key] = [v.as_primitives(hidden_fields=hidden_fields, strip_null=strip_null)
+                                if isinstance(v, Model) else v for v in value]
                 elif isinstance(value, ClassificationObject):
                     out[key] = str(value)
                     if hidden_fields:
