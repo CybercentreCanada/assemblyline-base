@@ -1,13 +1,26 @@
 import os
 from assemblyline.common.path import modulepath
 
+
 # Queue priority values for each bucket in the middleman
 PRIORITIES = {
-    'low': 100,
-    'medium': 200,
+    'low': 100,  # 0 -> 100
+    'medium': 200,  # 101 -> 200
     'high': 300,
     'critical': 400,
+    'user-low': 500,
+    'user-medium': 1000,
+    'user-high': 1500
 }
+MAX_PRIORITY = 2000
+
+# The above priority values presented as a range for consistency
+PRIORITY_RANGES = {}
+_start = -1
+for _end, _level in sorted((val, key) for key, val in PRIORITIES.items()):
+    PRIORITY_RANGES[_level] = (_start + 1, _end)
+    _start = _end
+
 
 # Score thresholds for determining which queue priority a reingested item
 # gets based on its previous score.

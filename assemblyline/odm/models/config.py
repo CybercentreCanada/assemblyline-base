@@ -185,12 +185,24 @@ class Middleman(odm.Model):
     # Path to a callback fuction filtering ingestion tasks that should have their
     # priority forcefully reset to low
     is_low_priority = odm.Keyword()
+    get_whitelist_verdict = odm.Keyword()
+    whitelist = odm.Keyword()
 
     # Default values for parameters that may be overridden on a per submission basis
     # How many extracted files may be added to a Submission
     default_max_extracted = odm.Integer()
     # How many supplementary files may be added to a submission
     default_max_supplementary = odm.Integer()
+
+    # Drop a task altogeather after this many seconds
+    expire_after = odm.Float()
+
+    # TODO ????
+    incomplete_expire_after_seconds = odm.Float()
+    incomplete_stale_after_seconds = odm.Float()
+
+    # How long can a queue get before we start dropping files
+    sampling_at = odm.Mapping(odm.Float())
 
 
 DEFAULT_MIDDLEMAN = {
@@ -199,8 +211,19 @@ DEFAULT_MIDDLEMAN = {
     'default_resubmit_services': [],
     'description_prefix': 'Bulk',
     'is_low_priority': 'assemblyline.common.null.always_false',
+    'get_whitelist_verdict': 'assemblyline.common.signaturing.drop',
+    'whitelist': 'assemblyline.common.null.whitelist',
     'default_max_extracted': 100,
     'default_max_supplementary': 100,
+    'expire_after': 15 * 24 * 60 * 60,
+    'incomplete_expire_after_seconds': 3600,
+    'incomplete_stale_after_seconds': 1800,
+    'sampling_at': {
+        'low':    10000000,
+        'medium':  2000000,
+        'high':    1000000,
+        'critical': 500000,
+    }
 }
 
 
