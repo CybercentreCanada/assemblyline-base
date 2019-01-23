@@ -173,44 +173,34 @@ DEFAULT_DISPATCHER = {
 }
 
 
-# Options regarding all submissions, regardless of their input method
-@odm.model(index=True, store=True)
-class Submission(odm.Model):
-    max_file_size = odm.Integer()
-
-    # Default values for parameters that may be overridden on a per submission basis
-    # How many extracted files may be added to a Submission
-    default_max_extracted = odm.Integer()
-    # How many supplementary files may be added to a submission
-    default_max_supplementary = odm.Integer()
-    # What classification is a file at, if none is provided?
-    default_classification = odm.Keyword()
-
-
-DEFAULT_SUBMISSION = {
-    'max_file_size': 104857600,
-    'default_max_extracted': 100,
-    'default_max_supplementary': 100,
-    'default_classification': 'UNRESTRICTED',
-}
-
-
 # Configuration options regarding bulk ingestion and unattended submissions
 @odm.model(index=True, store=True)
-class Ingestion(odm.Model):
+class Middleman(odm.Model):
     default_user = odm.Keyword()
     default_services = odm.List(odm.Keyword())
     default_resubmit_services = odm.List(odm.Keyword())
     # When a description is automatically generated, it will be the
     # hash prefixed by this string
     description_prefix = odm.Keyword()
+    # Path to a callback fuction filtering ingestion tasks that should have their
+    # priority forcefully reset to low
+    is_low_priority = odm.Keyword()
+
+    # Default values for parameters that may be overridden on a per submission basis
+    # How many extracted files may be added to a Submission
+    default_max_extracted = odm.Integer()
+    # How many supplementary files may be added to a submission
+    default_max_supplementary = odm.Integer()
 
 
-DEFAULT_INGESTION = {
+DEFAULT_MIDDLEMAN = {
     'default_user': 'internal',
     'default_services': [],
     'default_resubmit_services': [],
     'description_prefix': 'Bulk',
+    'is_low_priority': 'assemblyline.common.null.always_false',
+    'default_max_extracted': 100,
+    'default_max_supplementary': 100,
 }
 
 
@@ -218,15 +208,13 @@ DEFAULT_INGESTION = {
 class Core(odm.Model):
     redis = odm.Compound(Redis, default=DEFAULT_REDIS)
     dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
-    ingestion = odm.Compound(Ingestion, default=DEFAULT_INGESTION)
-    submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION)
+    middleman = odm.Compound(Middleman, default=DEFAULT_MIDDLEMAN)
 
 
 DEFAULT_CORE = {
     "redis": DEFAULT_REDIS,
     "dispatcher": DEFAULT_DISPATCHER,
-    "ingestion": DEFAULT_INGESTION,
-    "submission": DEFAULT_SUBMISSION
+    "middleman": DEFAULT_MIDDLEMAN,
 }
 
 
@@ -340,28 +328,11 @@ DEFAULT_LOGGING = {
 
 # This is the model definition for the System block
 @odm.model(index=True, store=True)
-class Limits(odm.Model):
-    # Maximum number of extracted files
-    max_extracted = odm.Integer()
-    # Maximum number of supplementary files
-    max_supplementary = odm.Integer()
-
-
-DEFAULT_LIMITS = {
-    "max_extracted": 500,
-    "max_supplementary": 500
-}
-
-
-# This is the model definition for the System block
-@odm.model(index=True, store=True)
 class Services(odm.Model):
     # Different possible categories
     categories = odm.List(odm.Keyword())
     # Default service timeout time in seconds
     default_timeout = odm.Integer()
-    # Limits constraints the the service has to work with
-    limits = odm.Compound(Limits, default=DEFAULT_LIMITS)
     # Different stages of execution in order
     stages = odm.List(odm.Keyword())
     # Category for mandatory services (e.g. Sync)
@@ -371,7 +342,6 @@ class Services(odm.Model):
 DEFAULT_SERVICES = {
     "categories": ['Antivirus', 'External', 'Extraction', 'Filtering', 'Networking', 'Static Analysis', 'System'],
     "default_timeout": 60,
-    "limits": DEFAULT_LIMITS,
     "stages": ['SETUP', 'FILTER', 'EXTRACT', 'CORE', 'SECONDARY', 'POST', 'TEARDOWN'],
     "system_category": 'System'
 }
@@ -464,6 +434,25 @@ DEFAULT_UI = {
 }
 
 
+# Options regarding all submissions, regardless of their input method
+@odm.model(index=True, store=True)
+class Submission(odm.Model):
+    max_file_size = odm.Integer()
+
+    # Default values for parameters that may be overridden on a per submission basis
+    # How many extracted files may be added to a Submission
+    default_max_extracted = odm.Integer()
+    # How many supplementary files may be added to a submission
+    default_max_supplementary = odm.Integer()
+
+
+DEFAULT_SUBMISSION = {
+    'max_file_size': 104857600,
+    'default_max_extracted': 500,
+    'default_max_supplementary': 500,
+}
+
+
 @odm.model(index=True, store=True)
 class Config(odm.Model):
     # Authentication module configuration
@@ -484,6 +473,8 @@ class Config(odm.Model):
     system = odm.Compound(System, default=DEFAULT_SYSTEM)
     # UI configuration parameters
     ui = odm.Compound(UI, default=DEFAULT_UI)
+    # Options for how submissions will be processed
+    submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION)
 
 
 DEFAULT_CONFIG = {
@@ -495,5 +486,6 @@ DEFAULT_CONFIG = {
     "logging": DEFAULT_LOGGING,
     "services": DEFAULT_SERVICES,
     "system": DEFAULT_SYSTEM,
-    "ui": DEFAULT_UI
+    "ui": DEFAULT_UI,
+    "submission": DEFAULT_SUBMISSION,
 }
