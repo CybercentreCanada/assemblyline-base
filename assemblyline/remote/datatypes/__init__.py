@@ -50,6 +50,10 @@ def retry_call(func, *args, **kw):
 
 
 def get_client(host, port, db, private):
+    # In case a structure is passed a client as host
+    if isinstance(host, (redis.Redis, redis.StrictRedis)):
+        return host
+
     host = host or '127.0.0.1'
     port = int(port or 6379)
     db = int(db or 0)

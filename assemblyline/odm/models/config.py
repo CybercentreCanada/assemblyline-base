@@ -461,6 +461,7 @@ DEFAULT_UI = {
 @odm.model(index=True, store=True)
 class Submission(odm.Model):
     max_file_size = odm.Integer()
+    max_metadata_length = odm.Integer()
 
     # Default values for parameters that may be overridden on a per submission basis
     # How many extracted files may be added to a Submission
@@ -471,6 +472,7 @@ class Submission(odm.Model):
 
 DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
+    'max_metadata_length': 4096,
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
 }
