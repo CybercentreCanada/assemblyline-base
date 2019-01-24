@@ -266,7 +266,7 @@ class ESCollection(Collection):
             if as_obj:
                 return self.model_class(source, mask=fields, docid=item_id)
             else:
-                return {key: val for key, val in source.items() if key in fields}
+                return source
 
         if isinstance(fields, str):
             fields = fields
