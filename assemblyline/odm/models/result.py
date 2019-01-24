@@ -61,18 +61,22 @@ class ResponseBody(odm.Model):
 @odm.model(index=True, store=True)
 class Result(odm.Model):
     classification = odm.Classification()  # Aggregate classification for the result
-    created = odm.Date()                   # Date at which the result object got created
+    created = odm.Date(default="NOW")      # Date at which the result object got created
     expiry_ts = odm.Date(store=False)      # Expiry time stamp
     response = odm.Compound(ResponseBody)  # The body of the response from the service
     result = odm.Compound(ResultBody)      # The result body
     sha256 = odm.Keyword(store=False)      # SHA256 of the file the result object relates to
 
-    @staticmethod
-    def build_key(service_name, version, conf_key, file_hash):
-        key_list = [file_hash, service_name.replace('.', '_')]
-        if version:
-            key_list.append('v' + version.replace('.', '_'))
+    def build_key(self, conf_key=None):
+        key_list = [
+            self.sha256,
+            self.response.service_name.replace('.', '_'),
+            f"v{self.response.service_version.replace('.', '_')}"
+        ]
+
         if conf_key:
             key_list.append('c' + conf_key.replace('.', '_'))
-        key = '.'.join(key_list)
-        return key
+        else:
+            key_list.append("c0")
+
+        return '.'.join(key_list)

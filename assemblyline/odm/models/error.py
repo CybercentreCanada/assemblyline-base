@@ -17,3 +17,19 @@ class Error(odm.Model):
     created = odm.Date(store=False, default="NOW")   # Date at which the error was created
     response = odm.Compound(Response)                # Response from the service
     sha256 = odm.Keyword(store=False)                # Hash of the file the error is related to
+
+    def build_key(self, conf_key=None):
+        key_list = [
+            self.sha256,
+            self.response.service_name.replace('.', '_'),
+            f"v{self.response.service_version.replace('.', '_')}"
+        ]
+
+        if conf_key:
+            key_list.append('c' + conf_key.replace('.', '_'))
+        else:
+            key_list.append("c0")
+
+        key_list.append("e")
+
+        return '.'.join(key_list)

@@ -37,7 +37,18 @@ DOM = [
     ".biz",
     ".edu"
 ]
-
+SERVICES = [
+    "PEFile",
+    "Extract",
+    "TagCheck",
+    "PDFiD",
+    "PeePDF",
+    "Characterize",
+    "Frankenstrings",
+    "APKaye",
+    "McAfee",
+    "Metadefender"
+]
 
 def get_random_word():
     return random.choice(WORDS)
@@ -69,6 +80,14 @@ def get_random_string(smin=4, smax=24):
 
 def get_random_host():
     return get_random_word().lower() + random.choice(DOM)
+
+
+def get_random_service_name():
+    return random.choice(SERVICES)
+
+
+def get_random_service_version():
+    return f"4.0.0.{get_random_hash(7)}"
 
 
 def get_random_ip():
@@ -113,6 +132,10 @@ def random_data_for_field(field, name):
         if name:
             if "sha256" in name:
                 return get_random_hash(64)
+            elif "service_name" in name:
+                return get_random_service_name()
+            elif "service_version" in name:
+                return get_random_service_version()
             elif "sid" in name:
                 return get_random_uid()
             elif "mac" in name:
@@ -126,6 +149,8 @@ def random_data_for_field(field, name):
             elif name.endswith("ip"):
                 return get_random_ip()
             elif "file" in name:
+                return get_random_filename()
+            elif "name" in name:
                 return get_random_filename()
             elif "directory" in name:
                 return get_random_directory()
