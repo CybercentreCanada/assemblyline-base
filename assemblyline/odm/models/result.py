@@ -60,12 +60,13 @@ class ResponseBody(odm.Model):
 
 @odm.model(index=True, store=True)
 class Result(odm.Model):
-    classification = odm.Classification()  # Aggregate classification for the result
-    created = odm.Date(default="NOW")      # Date at which the result object got created
-    expiry_ts = odm.Date(store=False)      # Expiry time stamp
-    response = odm.Compound(ResponseBody)  # The body of the response from the service
-    result = odm.Compound(ResultBody)      # The result body
-    sha256 = odm.Keyword(store=False)      # SHA256 of the file the result object relates to
+    classification = odm.Classification()   # Aggregate classification for the result
+    created = odm.Date(default="NOW")       # Date at which the result object got created
+    expiry_ts = odm.Date(store=False)       # Expiry time stamp
+    oversized = odm.Boolean(default=False)  # Is an oversized record
+    response = odm.Compound(ResponseBody)   # The body of the response from the service
+    result = odm.Compound(ResultBody)       # The result body
+    sha256 = odm.Keyword(store=False)       # SHA256 of the file the result object relates to
 
     def build_key(self, conf_key=None):
         key_list = [
