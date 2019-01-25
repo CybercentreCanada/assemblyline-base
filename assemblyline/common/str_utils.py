@@ -155,7 +155,7 @@ class NamedConstants(object):
 
         # we also import the list as attributes so things like
         # tab completion and introspection still work.
-        for s, v in self._value_map.iteritems():
+        for s, v in self._value_map.items():
             setattr(self, s, v)
 
     def name_for_value(self, v):
