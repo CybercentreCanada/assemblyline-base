@@ -165,11 +165,13 @@ DEFAULT_REDIS = {
 class Dispatcher(odm.Model):
     stages = odm.List(odm.Keyword())
     timeout = odm.Float()  # Time between redispatching attempts
+    max_inflight = odm.Integer()
 
 
 DEFAULT_DISPATCHER = {
     "stages": ['setup', 'filter', 'extract', 'core', 'secondary', 'post', 'teardown'],
     "timeout": 5*60,
+    "max_inflight": 1000
 }
 
 

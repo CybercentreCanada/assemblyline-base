@@ -25,7 +25,14 @@ class Hash(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.delete()
 
-    def add(self, key, value):
+    def add(self, key: str, value):
+        """Add the (key, value) pair to the hash for new keys.
+
+        If a key already exists this operation doesn't add it.
+
+        Returns:
+            True if key has been added to the table, False otherwise.
+        """
         if isinstance(key, bytes):
             raise ValueError("Cannot use bytes for hashmap keys")
         return retry_call(self.c.hsetnx, self.name, key, json.dumps(value))
