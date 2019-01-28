@@ -30,6 +30,4 @@ class Error(odm.Model):
         else:
             key_list.append("c0")
 
-        key_list.append("e")
-
         return '.'.join(key_list)
