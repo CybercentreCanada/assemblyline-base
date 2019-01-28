@@ -109,40 +109,41 @@ class SolrCollection(Collection):
         else:
             ret = []
 
-        while not done:
-            session, host = self._get_session()
+        if key_list:
+            while not done:
+                session, host = self._get_session()
 
-            url = "http://{host}/{api_base}/{core}/get?ids={keys}" \
-                  "&wt=json&fl=_source_,{id_field}".format(host=host, api_base=self.api_base, core=self.name,
-                                                           keys=','.join(temp_keys), id_field=self.datastore.ID)
+                url = "http://{host}/{api_base}/{core}/get?ids={keys}" \
+                      "&wt=json&fl=_source_,{id_field}".format(host=host, api_base=self.api_base, core=self.name,
+                                                               keys=','.join(temp_keys), id_field=self.datastore.ID)
 
-            res = self.with_retries(session.get, url, timeout=self.SOLR_GET_TIMEOUT_SEC)
-            if res.ok:
-                for doc in res.json().get('response', {}).get('docs', []):
-                    if doc:
-                        data = doc.get("_source_", None)
-                        try:
-                            data = json.loads(data)
-                            if isinstance(data, dict):
-                                data.pop(self.EXTRA_SEARCH_FIELD, None)
-                            if as_dictionary:
-                                ret[doc[self.datastore.ID]] = self.normalize(data, as_obj=as_obj)
-                            else:
-                                ret.append(self.normalize(data, as_obj=as_obj))
-                        except ValueError:
-                            if as_dictionary:
-                                ret[doc[self.datastore.ID]] = self.normalize(data, as_obj=as_obj)
-                            else:
-                                ret.append(self.normalize(data, as_obj=as_obj))
-                        temp_keys.remove(doc.get(self.datastore.ID, None))
+                res = self.with_retries(session.get, url, timeout=self.SOLR_GET_TIMEOUT_SEC)
+                if res.ok:
+                    for doc in res.json().get('response', {}).get('docs', []):
+                        if doc:
+                            data = doc.get("_source_", None)
+                            try:
+                                data = json.loads(data)
+                                if isinstance(data, dict):
+                                    data.pop(self.EXTRA_SEARCH_FIELD, None)
+                                if as_dictionary:
+                                    ret[doc[self.datastore.ID]] = self.normalize(data, as_obj=as_obj)
+                                else:
+                                    ret.append(self.normalize(data, as_obj=as_obj))
+                            except ValueError:
+                                if as_dictionary:
+                                    ret[doc[self.datastore.ID]] = self.normalize(data, as_obj=as_obj)
+                                else:
+                                    ret.append(self.normalize(data, as_obj=as_obj))
+                            temp_keys.remove(doc.get(self.datastore.ID, None))
 
-            if len(temp_keys) == 0:
-                done = True
-            else:
-                retry += 1
+                if len(temp_keys) == 0:
+                    done = True
+                else:
+                    retry += 1
 
-            if retry >= SolrCollection.MULTIGET_MAX_RETRY:
-                raise KeyError(str(temp_keys))
+                if retry >= SolrCollection.MULTIGET_MAX_RETRY:
+                    raise KeyError(str(temp_keys))
 
         return ret
 

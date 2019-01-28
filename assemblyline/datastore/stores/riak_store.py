@@ -142,30 +142,31 @@ class RiakCollection(SolrCollection):
             ret = {}
         else:
             ret = []
-        while not done:
-            for bucket_item in self.with_retries(self.riak_bucket.multiget, temp_keys):
-                if not isinstance(bucket_item, tuple):
-                    try:
-                        item_data = RiakCollection.get_data_from_riak_item(bucket_item)
-                    except DataStoreException:
-                        continue
+        if key_list:
+            while not done:
+                for bucket_item in self.with_retries(self.riak_bucket.multiget, temp_keys):
+                    if not isinstance(bucket_item, tuple):
+                        try:
+                            item_data = RiakCollection.get_data_from_riak_item(bucket_item)
+                        except DataStoreException:
+                            continue
 
-                    if item_data is not None:
-                        if isinstance(item_data, dict):
-                            item_data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
-                        if as_dictionary:
-                            ret[bucket_item.key] = self.normalize(item_data, as_obj=as_obj)
-                        else:
-                            ret.append(self.normalize(item_data, as_obj=as_obj))
-                        temp_keys.remove(bucket_item.key)
+                        if item_data is not None:
+                            if isinstance(item_data, dict):
+                                item_data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
+                            if as_dictionary:
+                                ret[bucket_item.key] = self.normalize(item_data, as_obj=as_obj)
+                            else:
+                                ret.append(self.normalize(item_data, as_obj=as_obj))
+                            temp_keys.remove(bucket_item.key)
 
-            if len(temp_keys) == 0:
-                done = True
-            else:
-                retry += 1
+                if len(temp_keys) == 0:
+                    done = True
+                else:
+                    retry += 1
 
-            if retry >= self.MULTIGET_MAX_RETRY:
-                raise KeyError(str(temp_keys))
+                if retry >= self.MULTIGET_MAX_RETRY:
+                    raise KeyError(str(temp_keys))
         return ret
 
     def _get(self, key, retries):
