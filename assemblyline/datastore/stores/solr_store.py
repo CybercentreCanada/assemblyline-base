@@ -100,11 +100,14 @@ class SolrCollection(Collection):
             res = requests.get(url)
             return res.ok
 
-    def multiget(self, key_list, as_obj=True):
+    def multiget(self, key_list, as_dictionary=True, as_obj=True):
         temp_keys = copy(key_list)
         done = False
         retry = 0
-        ret = []
+        if as_dictionary:
+            ret = {}
+        else:
+            ret = []
 
         while not done:
             session, host = self._get_session()
@@ -122,9 +125,15 @@ class SolrCollection(Collection):
                             data = json.loads(data)
                             if isinstance(data, dict):
                                 data.pop(self.EXTRA_SEARCH_FIELD, None)
-                            ret.append(self.normalize(data, as_obj=as_obj))
+                            if as_dictionary:
+                                ret[doc[self.datastore.ID]] = self.normalize(data, as_obj=as_obj)
+                            else:
+                                ret.append(self.normalize(data, as_obj=as_obj))
                         except ValueError:
-                            ret.append(self.normalize(data, as_obj=as_obj))
+                            if as_dictionary:
+                                ret[doc[self.datastore.ID]] = self.normalize(data, as_obj=as_obj)
+                            else:
+                                ret.append(self.normalize(data, as_obj=as_obj))
                         temp_keys.remove(doc.get(self.datastore.ID, None))
 
             if len(temp_keys) == 0:

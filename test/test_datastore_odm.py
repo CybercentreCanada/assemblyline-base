@@ -155,10 +155,13 @@ def collection_test(collection):
     assert col.get('test1', as_obj=False) == col.get('test1').as_primitives()
 
     raw = [test_map.get('test1'), test_map.get('dict1'), test_map.get('test2')]
-    ds_raw = col.multiget(['test1', 'dict1', 'test2'])
+    ds_raw = col.multiget(['test1', 'dict1', 'test2'], as_dictionary=False)
     for item in ds_raw:
         raw.remove(item)
     assert len(raw) == 0
+
+    for k, v in col.multiget(['test1', 'dict1', 'test2']).items():
+        assert test_map[k] == v
 
     test_keys = list(test_map.keys())
     for k in col.keys():

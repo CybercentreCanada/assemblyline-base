@@ -134,11 +134,14 @@ class RiakCollection(SolrCollection):
                               "decoding method to pull the data." % (item.bucket.name, item.key))
             return item.encoded_data
 
-    def multiget(self, key_list, as_obj=True):
+    def multiget(self, key_list, as_dictionary=True, as_obj=True):
         temp_keys = copy(key_list)
         done = False
         retry = 0
-        ret = []
+        if as_dictionary:
+            ret = {}
+        else:
+            ret = []
         while not done:
             for bucket_item in self.with_retries(self.riak_bucket.multiget, temp_keys):
                 if not isinstance(bucket_item, tuple):
@@ -150,7 +153,10 @@ class RiakCollection(SolrCollection):
                     if item_data is not None:
                         if isinstance(item_data, dict):
                             item_data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
-                        ret.append(self.normalize(item_data, as_obj=as_obj))
+                        if as_dictionary:
+                            ret[bucket_item.key] = self.normalize(item_data, as_obj=as_obj)
+                        else:
+                            ret.append(self.normalize(item_data, as_obj=as_obj))
                         temp_keys.remove(bucket_item.key)
 
             if len(temp_keys) == 0:

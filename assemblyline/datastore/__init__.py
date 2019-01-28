@@ -81,7 +81,7 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
-    def multiget(self, key_list, as_obj=True):
+    def multiget(self, key_list, as_dictionary=True, as_obj=True):
         """
         Get a list of documents from the datastore and make sure they are normalized using
         the model class
@@ -90,7 +90,10 @@ class Collection(object):
         :param key_list: list of keys of documents to get
         :return: list of instances of the model class
         """
-        return [self.get(x, as_obj=as_obj) for x in key_list]
+        if as_dictionary:
+            return {x: self.get(x, as_obj=as_obj) for x in key_list}
+        else:
+            return [self.get(x, as_obj=as_obj) for x in key_list]
 
     def _get(self, key, retries):
         """

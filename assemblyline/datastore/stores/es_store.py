@@ -116,17 +116,26 @@ class ESCollection(Collection):
         self.with_retries(self.datastore.client.indices.clear_cache, self.name)
         return True
 
-    def multiget(self, key_list, as_obj=True):
+    def multiget(self, key_list, as_dictionary=True, as_obj=True):
         data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name, doc_type='_all')
-        out = []
+        if as_dictionary:
+            out = {}
+        else:
+            out = []
         for row in data.get('docs', []):
             if 'found' in row and not row['found']:
                 raise KeyError(row['_id'])
             if '__non_doc_raw__' in row['_source']:
-                out.append(row['_source']['__non_doc_raw__'])
+                if as_dictionary:
+                    out[row['_id']] = row['_source']['__non_doc_raw__']
+                else:
+                    out.append(row['_source']['__non_doc_raw__'])
             else:
                 row['_source'].pop(self.datastore.SORT_ID, None)
-                out.append(self.normalize(row['_source'], as_obj=as_obj))
+                if as_dictionary:
+                    out[row['_id']] = self.normalize(row['_source'], as_obj=as_obj)
+                else:
+                    out.append(self.normalize(row['_source'], as_obj=as_obj))
         return out
 
     def _get(self, key, retries):
