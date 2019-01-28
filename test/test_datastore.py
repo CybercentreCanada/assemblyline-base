@@ -126,10 +126,13 @@ def _perform_single_datastore_tests(c: Collection):
 
     # TEST Multi-get
     raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
-    ds_raw = c.multiget(['test1', 'int', 'test2'])
+    ds_raw = c.multiget(['test1', 'int', 'test2'], as_dictionary=False)
     for item in ds_raw:
         raw.remove(item)
     assert len(raw) == 0
+
+    for k, v in c.multiget(['test1', 'int', 'test2'], as_dictionary=True).items():
+        assert test_map[k] == v
 
     # Test KEYS
     test_keys = list(test_map.keys())
