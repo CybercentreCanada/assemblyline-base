@@ -111,5 +111,39 @@ class AssemblylineDatastore(object):
     def workflow(self):
         return self.ds.workflow
 
+    @staticmethod
+    def create_empty_result_from_key(key, Classification, as_obj=True):
+        sha256, svc_name, svc_version, _ = key.split(".", 3)
+        svc_version = svc_version[1:]
+
+        data = Result({
+            "classification": Classification.UNRESTRICTED,
+            "response": {
+                "service_name": svc_name,
+                "service_version": svc_version,
+            },
+            "sha256": sha256
+        })
+        if as_obj:
+            return data
+        else:
+            return data.as_primitives()
+
+    def get_multiple_results(self, keys, Classification, as_obj=False):
+        empties = {k: self.create_empty_result_from_key(k, Classification, as_obj=as_obj)
+                   for k in keys if k.endswith(".e")}
+        keys = [k for k in keys if not k.endswith(".e")]
+        results = self.result.multiget(keys, as_dictionary=True, as_obj=as_obj)
+        results.update(empties)
+        return results
+
+    def get_single_result(self, key, Classification, as_obj=False):
+        if key.endswith(".e"):
+            data = self.create_empty_result_from_key(key, Classification, as_obj=as_obj)
+        else:
+            data = self.result.get(key, as_obj=False)
+
+        return data
+
     def list_all_services(self, as_obj=True):
         return [item for item in self.ds.service.stream_search(f"{self.ds.ID}:*", as_obj=as_obj)]
