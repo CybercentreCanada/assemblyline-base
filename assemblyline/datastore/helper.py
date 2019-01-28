@@ -1,5 +1,6 @@
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.config import Config
+from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
@@ -21,6 +22,7 @@ class AssemblylineDatastore(object):
         self.ds = datastore_object
         self.ds.register('alert', Alert)
         self.ds.register('config', Config)
+        self.ds.register('emptyresult', EmptyResult)
         self.ds.register('error', Error)
         self.ds.register('file', File)
         self.ds.register('filescore', FileScore)
@@ -44,6 +46,10 @@ class AssemblylineDatastore(object):
     @property
     def config(self):
         return self.ds.config
+
+    @property
+    def emptyresult(self):
+        return self.ds.emptyresult
 
     @property
     def error(self):
