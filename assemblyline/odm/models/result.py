@@ -86,3 +86,12 @@ class Result(odm.Model):
             key_list.append("c0")
 
         return '.'.join(key_list)
+
+    def is_empty(self):
+        if len(self.response.extracted) == 0 and \
+                len(self.response.supplementary) == 0 and \
+                len(self.result.tags) == 0 and \
+                len(self.result.sections) == 0 and \
+                self.result.score == 0:
+            return True
+        return False
