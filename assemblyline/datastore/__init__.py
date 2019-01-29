@@ -221,7 +221,7 @@ class Collection(object):
                 field = fields[doc_key]
                 if op in [self.UPDATE_APPEND, self.UPDATE_REMOVE]:
                     try:
-                        if value != field.child_type.check(value):
+                        if value != field.check(value):
                             raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")

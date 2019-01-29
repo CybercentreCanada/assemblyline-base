@@ -359,7 +359,7 @@ class ESCollection(Collection):
                     "name": "group",
                     "stored_fields": parsed_values['field_list'] or ['*'],
                     "size": parsed_values['group_limit'],
-                    "sort": parsed_values['group_sort'] or [{parsed_values['group_field']: 'asc'}]
+                    "sort": parse_sort(parsed_values['group_sort']) or [{parsed_values['group_field']: 'asc'}]
                 }
             }
 

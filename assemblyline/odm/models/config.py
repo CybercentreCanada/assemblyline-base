@@ -282,6 +282,7 @@ class Datastore(odm.Model):
     elasticsearch = odm.Compound(Elasticsearch, default=DEFAULT_ELASTICSEARCH)
     riak = odm.Compound(Riak, default=DEFAULT_RIAK)
     solr = odm.Compound(Solr, default=DEFAULT_SOLR)
+    use_datastore_update = odm.Boolean()
 
 
 DEFAULT_DATASTORE = {
@@ -289,7 +290,8 @@ DEFAULT_DATASTORE = {
     "hosts": ["localhost"],
     "elasticsearch": DEFAULT_ELASTICSEARCH,
     "riak": DEFAULT_RIAK,
-    "solr": DEFAULT_SOLR
+    "solr": DEFAULT_SOLR,
+    "use_datastore_update": True
 }
 
 
@@ -405,6 +407,33 @@ DEFAULT_SYSTEM = {
 }
 
 
+# This is the model definition for the System block
+@odm.model(index=True, store=True)
+class Statistics(odm.Model):
+    # fields to generated statistics from in the alert page
+    alert = odm.List(odm.Keyword())
+    # fields to generate statistics from in the submission page
+    submission = odm.List(odm.Keyword())
+
+
+DEFAULT_STATISTICS = {
+    "alert": [
+        'al.attrib',
+        'al.av',
+        'al.domain',
+        'al.ip',
+        'al.summary',
+        'al.yara',
+        'file.name',
+        'file.md5',
+        'owner'
+    ],
+    "submission": [
+        'submitter'
+    ]
+}
+
+
 # This is the model definition for the logging block
 @odm.model(index=True, store=True)
 class UI(odm.Model):
@@ -434,6 +463,8 @@ class UI(odm.Model):
     secret_key = odm.Keyword()
     # Duration of the user session before the user has to login again
     session_duration = odm.Integer()
+    # Statistics configuration
+    statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS)
     # Terms of service
     tos = odm.Text(default="")
     # Lock out user after accepting the terms of service
@@ -454,6 +485,7 @@ DEFAULT_UI = {
     "read_only_offset": "",
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
+    "statistics": DEFAULT_STATISTICS,
     "tos": "",
     "tos_lockout": False
 }

@@ -50,6 +50,24 @@ SERVICES = [
     "Metadefender"
 ]
 
+LABELS = [
+    "CAMPAIGN_1",
+    "CAMPAIGN_2",
+    "CAMPAIGN_3",
+    "CAMPAIGN_4",
+    "CAMPAIGN_5",
+    "PHISHING",
+    "SMTP",
+    "HTTP",
+    "COMPROMISED"
+]
+
+USERS = [
+    "admin",
+    "user"
+]
+
+
 def get_random_word():
     return random.choice(WORDS)
 
@@ -64,6 +82,14 @@ def get_random_hash(hash_len):
 
 def get_random_uid():
     return str(uuid.uuid4())
+
+
+def get_random_label():
+    return random.choice(LABELS)
+
+
+def get_random_user():
+    return random.choice(USERS)
 
 
 def get_random_filename(smin=1, smax=3):
@@ -132,6 +158,10 @@ def random_data_for_field(field, name):
         if name:
             if "sha256" in name:
                 return get_random_hash(64)
+            elif "label" in name:
+                return get_random_label()
+            elif "owner" in name or "uname" in name:
+                return get_random_user()
             elif "service_name" in name:
                 return get_random_service_name()
             elif "service_version" in name:
