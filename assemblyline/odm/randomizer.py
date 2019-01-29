@@ -142,11 +142,11 @@ def random_data_for_field(field, name):
                 return get_random_hash(12).upper()
             elif "sha1" in name:
                 return get_random_hash(40)
-            elif "md5" in name or "scan_key" in name or "alert_id":
+            elif "md5" in name or "scan_key" in name or "alert_id" in name:
                 return get_random_hash(32)
-            elif "host" in name or "node" in name:
+            elif "host" in name or "node" in name or "domain" in name:
                 return get_random_host()
-            elif name.endswith("ip"):
+            elif name.endswith("ip") or name.startswith("ip_"):
                 return get_random_ip()
             elif "file" in name:
                 return get_random_filename()
