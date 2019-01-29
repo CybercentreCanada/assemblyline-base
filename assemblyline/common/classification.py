@@ -192,13 +192,13 @@ class Classification(object):
 
         # Add Invalid classification
         self.levels_map["INV"] = self.INVALID_LVL
-        self.levels_map[self.INVALID_LVL] = "INV"
+        self.levels_map[str(self.INVALID_LVL)] = "INV"
         self.levels_map_stl["INV"] = self.INVALID_CLASSIFICATION
         self.levels_map_lts[self.INVALID_CLASSIFICATION] = "INV"
 
         # Add null classification
         self.levels_map[self.NULL_CLASSIFICATION] = self.NULL_LVL
-        self.levels_map[self.NULL_LVL] = self.NULL_CLASSIFICATION
+        self.levels_map[str(self.NULL_LVL)] = self.NULL_CLASSIFICATION
         self.levels_map_stl[self.NULL_CLASSIFICATION] = self.NULL_CLASSIFICATION
         self.levels_map_lts[self.NULL_CLASSIFICATION] = self.NULL_CLASSIFICATION
 
@@ -223,7 +223,7 @@ class Classification(object):
                     raise InvalidDefinition("Level under minimum classification level of %s." % self.MIN_LVL)
 
                 self.levels_map[short_name] = lvl
-                self.levels_map[lvl] = short_name
+                self.levels_map[str(lvl)] = short_name
                 self.levels_map_stl[short_name] = name
                 self.levels_map_lts[name] = short_name
                 for a in x.get('aliases', []):
@@ -344,7 +344,7 @@ class Classification(object):
                                         "your classification definition." % lvl)
 
     def _get_c12n_level_text(self, lvl_idx, long_format=True):
-        text = self.levels_map.get(lvl_idx, None)
+        text = self.levels_map.get(str(lvl_idx), None)
         if not text:
             raise InvalidClassification("Classification level number '%s' was not "
                                         "found in your classification definition." % lvl_idx)
@@ -617,13 +617,15 @@ class Classification(object):
         from copy import deepcopy
         out = deepcopy(self.__dict__)
         out['levels_map'].pop("INV", None)
-        out['levels_map'].pop(self.INVALID_LVL, None)
+        out['levels_map'].pop(str(self.INVALID_LVL), None)
         out['levels_map_stl'].pop("INV", None)
         out['levels_map_lts'].pop("INVALID", None)
         out['levels_map'].pop("NULL", None)
-        out['levels_map'].pop(self.NULL_LVL, None)
+        out['levels_map'].pop(str(self.NULL_LVL), None)
         out['levels_map_stl'].pop("NULL", None)
         out['levels_map_lts'].pop("NULL", None)
+        out.pop('_classification_cache', None)
+        out.pop('_classification_cache_short', None)
         return out
 
     def get_access_control_parts(self, c12n, user_classification=False):
