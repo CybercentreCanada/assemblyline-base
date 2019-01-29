@@ -1,4 +1,5 @@
 from assemblyline import odm
+from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVICE_REJECTS
 
 
 @odm.model(index=False, store=False)
@@ -11,7 +12,7 @@ class SubmissionParams(odm.Model):
 
 @odm.model(index=True, store=False)
 class Service(odm.Model):
-    accepts = odm.Keyword(store=True, default=".*")
+    accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS)
     category = odm.Keyword(store=True, default="Static Analysis")
     class_name = odm.Keyword()
     classpath = odm.Keyword(store=True)
@@ -25,7 +26,7 @@ class Service(odm.Model):
     name = odm.Keyword(store=True)
     ram_mb = odm.Integer(default=1024)
     realm = odm.Keyword()
-    rejects = odm.Keyword(store=True, default="empty")
+    rejects = odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS)
     repo = odm.Keyword()
     stage = odm.Keyword(store=True, default="CORE")
     submission_params = odm.List(odm.Compound(SubmissionParams), index=False, default=[])

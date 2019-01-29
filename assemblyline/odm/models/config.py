@@ -462,21 +462,27 @@ DEFAULT_UI = {
 # Options regarding all submissions, regardless of their input method
 @odm.model(index=True, store=True)
 class Submission(odm.Model):
-    max_file_size = odm.Integer()
-    max_metadata_length = odm.Integer()
-
     # Default values for parameters that may be overridden on a per submission basis
     # How many extracted files may be added to a Submission
     default_max_extracted = odm.Integer()
     # How many supplementary files may be added to a submission
     default_max_supplementary = odm.Integer()
 
+    # Number of days submissions will remain in the system by default
+    dtl = odm.Integer()
+
+    # Maximum size for files submitted in the system
+    max_file_size = odm.Integer()
+    # Maximum length for each metadata keys
+    max_metadata_length = odm.Integer()
+
 
 DEFAULT_SUBMISSION = {
-    'max_file_size': 104857600,
-    'max_metadata_length': 4096,
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
+    'dtl': 15,
+    'max_file_size': 104857600,
+    'max_metadata_length': 4096,
 }
 
 

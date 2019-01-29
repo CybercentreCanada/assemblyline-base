@@ -2,6 +2,9 @@ import os
 from assemblyline.common.path import modulepath
 
 
+DEFAULT_SERVICE_ACCEPTS = ".*"
+DEFAULT_SERVICE_REJECTS = "empty"
+
 # Queue priority values for each bucket in the middleman
 PRIORITIES = {
     'low': 100,  # 0 -> 100
