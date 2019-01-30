@@ -212,7 +212,7 @@ class ESCollection(Collection):
         except elasticsearch.NotFoundError:
             return False
 
-    def _update(self, key, operations):
+    def _create_scripts_from_operations(self, operations):
         op_sources = []
         op_params = {}
         val_id = 0
@@ -235,12 +235,18 @@ class ESCollection(Collection):
 
             val_id += 1
 
+        script = {
+            "lang": "painless",
+            "source": """;\n""".join(op_sources),
+            "params": op_params
+        }
+        return script
+
+    def _update(self, key, operations):
+        script = self._create_scripts_from_operations(operations)
+
         update_body = {
-            "script": {
-                "lang": "painless",
-                "source": """;\n""".join(op_sources),
-                "params": op_params
-            }
+            "script": script
         }
 
         # noinspection PyBroadException
@@ -251,6 +257,35 @@ class ESCollection(Collection):
             return False
 
         return res['result'] == "updated"
+
+    def _update_by_query(self, query, operations, filters):
+        if filters is None:
+            filters = []
+
+        script = self._create_scripts_from_operations(operations)
+
+        query_body = {
+            "script": script,
+            "query": {
+                "bool": {
+                    "must": {
+                        "query_string": {
+                            "query": query
+                        }
+                    },
+                    'filter': [{'query_string': {'query': ff}} for ff in filters]
+                }
+            }
+        }
+
+        # noinspection PyBroadException
+        try:
+            res = self.with_retries(self.datastore.client.update_by_query, index=self.name,
+                                    doc_type=self.name, body=query_body)
+        except Exception:
+            return False
+
+        return len(res['failures']) == 0
 
     def _format_output(self, result, fields=None, as_obj=True):
         # Getting search document data

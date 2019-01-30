@@ -1,3 +1,4 @@
+import concurrent.futures
 import logging
 import re
 import warnings
@@ -86,6 +87,7 @@ class Collection(object):
         Get a list of documents from the datastore and make sure they are normalized using
         the model class
 
+        :param as_dictionary:
         :param as_obj:
         :param key_list: list of keys of documents to get
         :return: list of instances of the model class
@@ -191,19 +193,12 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def update(self, key, operations):
+    def _validate_operations(self, operations):
         """
-        This function performs an atomic update on some fields from the
-        underlying documents referenced by the id using a list of operations.
+        Validate the different operations received for a partial update
 
-        Operations supported by the update function are the following:
-        INTEGER ONLY: Increase and decreased value
-        LISTS ONLY: Append and remove items
-        ALL TYPES: Set value
-
-        :param key: ID of the document to modify
-        :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
-        :return: True is update successful
+        :param operations: list of operation tuples
+        :raises: DatastoreException if operation not valid
         """
         if self.model_class:
             fields = self.model_class.flat_fields()
@@ -233,7 +228,49 @@ class Collection(object):
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
+    def update(self, key, operations):
+        """
+        This function performs an atomic update on some fields from the
+        underlying documents referenced by the id using a list of operations.
+
+        Operations supported by the update function are the following:
+        INTEGER ONLY: Increase and decreased value
+        LISTS ONLY: Append and remove items
+        ALL TYPES: Set value
+
+        :param key: ID of the document to modify
+        :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
+        :return: True is update successful
+        """
+        self._validate_operations(operations)
         return self._update(key, operations)
+
+    def update_by_query(self, query, operations, filters=None):
+        """
+        This function performs an atomic update on some fields from the
+        underlying documents matching the query and the filters using a list of operations.
+
+        Operations supported by the update function are the following:
+        INTEGER ONLY: Increase and decreased value
+        LISTS ONLY: Append and remove items
+        ALL TYPES: Set value
+
+        :param filters: Filter queries to reduce the data
+        :param query: Query to find the matching documents
+        :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
+        :return: True is update successful
+        """
+        self._validate_operations(operations)
+        return self._update_by_query(query, operations, filters=filters)
+
+    def _update_by_query(self, query, operations, filters):
+        with concurrent.futures.ThreadPoolExecutor(20) as executor:
+            res = {item[self.datastore.ID][0]: executor.submit(self._update, item[self.datastore.ID][0], operations)
+                   for item in self.stream_search(query, fl=self.datastore.ID, filters=filters, as_obj=False)}
+        for k, v in res.items():
+            if not v.result():
+                return False
+        return True
 
     def _update(self, key, operations):
         with Lock(f'collection-{self.name}-update-{key}', 5):

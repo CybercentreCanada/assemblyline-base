@@ -32,6 +32,10 @@ with warnings.catch_warnings():
         'list': ['a', 'list', 'of', 'string', 100],
         'int': 69,
         'to_update': {'counters': {'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
+        'bulk_update': {'bulk_b': True, 'counters': {
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
+        'bulk_update2': {'bulk_b': True, 'counters': {
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
         'delete1': {'delete_b': True, 'lvl_i': 100},
         'delete2': {'delete_b': True, 'lvl_i': 300},
         'delete3': {'delete_b': True, 'lvl_i': 400},
@@ -141,6 +145,7 @@ def _perform_single_datastore_tests(c: Collection):
     assert len(test_keys) == 0
 
     # Test Update
+    expected = {'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!']}
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
         (c.UPDATE_INC, "counters.inc_i", 50),
@@ -149,7 +154,13 @@ def _perform_single_datastore_tests(c: Collection):
         (c.UPDATE_REMOVE, "list", "remove")
     ]
     assert c.update('to_update', operations)
-    assert c.get('to_update') == {'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!']}
+    assert c.get('to_update') == expected
+
+    # Test update_by_query
+    assert c.update_by_query("bulk_b:true", operations)
+    expected.update({"bulk_b": True})
+    assert c.get('bulk_update') == expected
+    assert c.get('bulk_update2') == expected
 
     # Test Delete Matching
     key_len = len(list(c.keys()))
