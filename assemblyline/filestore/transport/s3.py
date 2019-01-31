@@ -113,7 +113,7 @@ class TransportS3(Transport):
 
         self.download(path, dst_path)
         try:
-            with open(dst_path) as downloaded:
+            with open(dst_path, "rb") as downloaded:
                 return downloaded.read()
         finally:
             if os.path.exists(dst_path):

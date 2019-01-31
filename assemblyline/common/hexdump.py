@@ -1,12 +1,12 @@
 import binascii
 from assemblyline.common.chunk import chunk
 
-FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or chr(x) == '\\' and chr(x) or '.' for x in range(256)])
+FILTER = b''.join([bytes([x]) if x in range(32, 127) else b'.' for x in range(256)])
 
 
-def dump(binary, size=2, sep=" "):
+def dump(binary, size=2, sep=b" "):
     hexstr = binascii.hexlify(binary)
-    return sep.join(chunk(hexstr.upper(), size))
+    return sep.join(chunk(hexstr, size))
 
 
 def hexdump(binary, length=16, indent="", indent_size=0, newline='\n', prefix_offset=0):
@@ -27,6 +27,7 @@ def hexdump(binary, length=16, indent="", indent_size=0, newline='\n', prefix_of
     generator = chunk(binary, length)
     line_frmt = "%%s%%08X:  %%-%ss   %%s" % ((length * 3) - 1)
 
-    out = [line_frmt % (indent * indent_size, prefix_offset + (addr * length), dump(d), d.translate(FILTER))
+    out = [line_frmt % (indent * indent_size, prefix_offset + (addr * length), dump(d).decode(),
+                        d.translate(FILTER).decode())
            for addr, d in enumerate(generator)]
     return newline.join(out)

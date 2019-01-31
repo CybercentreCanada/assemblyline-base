@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from cart import pack_stream, unpack_stream
-from io import StringIO
+from io import BytesIO
 
 from assemblyline.common import identify
 
@@ -47,7 +47,7 @@ def decode_file(original_path, fileinfo):
 
 
 # noinspection PyUnusedLocal
-def encode_file(data, file_format, name, password=None):
+def encode_file(data, file_format, name):
     error = {}
     already_encoded = False
 
@@ -56,8 +56,8 @@ def encode_file(data, file_format, name, password=None):
     if file_info['tag'] in NEUTERED_FORMAT:
         already_encoded = True
     elif file_format == 'cart':
-        ostream = StringIO()
-        pack_stream(StringIO(data), ostream, {"name": name})
+        ostream = BytesIO()
+        pack_stream(BytesIO(data), ostream, {"name": name})
         data = ostream.getvalue()
     elif file_format != 'raw':
         error['code'] = 500
