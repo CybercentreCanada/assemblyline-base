@@ -145,5 +145,8 @@ class AssemblylineDatastore(object):
 
         return data
 
-    def list_all_services(self, as_obj=True):
+    def list_all_services(self, as_obj=True, full=False):
+        if full:
+            return [self.ds.service.get(item.id, as_obj=as_obj)
+                    for item in self.ds.service.stream_search(f"{self.ds.ID}:*", fl=self.ds.ID)]
         return [item for item in self.ds.service.stream_search(f"{self.ds.ID}:*", as_obj=as_obj)]
