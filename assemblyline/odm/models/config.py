@@ -282,7 +282,6 @@ class Datastore(odm.Model):
     elasticsearch = odm.Compound(Elasticsearch, default=DEFAULT_ELASTICSEARCH)
     riak = odm.Compound(Riak, default=DEFAULT_RIAK)
     solr = odm.Compound(Solr, default=DEFAULT_SOLR)
-    use_datastore_update = odm.Boolean()
 
 
 DEFAULT_DATASTORE = {
@@ -290,8 +289,7 @@ DEFAULT_DATASTORE = {
     "hosts": ["localhost"],
     "elasticsearch": DEFAULT_ELASTICSEARCH,
     "riak": DEFAULT_RIAK,
-    "solr": DEFAULT_SOLR,
-    "use_datastore_update": True
+    "solr": DEFAULT_SOLR
 }
 
 

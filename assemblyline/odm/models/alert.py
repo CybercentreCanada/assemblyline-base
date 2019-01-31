@@ -40,10 +40,10 @@ class Alert(odm.Model):
     file = odm.Compound(File)                                           # File block
     label = odm.List(odm.Keyword(), copyto="__text__")                  # List of labels applied to the alert
     metadata = odm.Mapping(odm.Keyword(), store=False)                  # Metadata submitted with the file
-    owner = odm.Keyword()                                               # Owner of the alert
-    priority = odm.Enum(values=PRIORITIES, default="")                  # Priority applied to the alert
+    owner = odm.Keyword(default_set=True)                               # Owner of the alert
+    priority = odm.Enum(values=PRIORITIES, default_set=True)            # Priority applied to the alert
     reporting_ts = odm.Date()                                           # Time at which the alert was created
     sid = odm.Keyword(index=False, store=False)                         # ID of the submission related to this alert
-    status = odm.Enum(values=STATUSES, default="")                      # Status applied to the alert
+    status = odm.Enum(values=STATUSES, default_set=True)                # Status applied to the alert
     ts = odm.Date()                                                     # Timestamp at which the file was submitted
     type = odm.Keyword()                                                # Type of alert

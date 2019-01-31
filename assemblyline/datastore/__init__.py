@@ -245,7 +245,7 @@ class Collection(object):
         self._validate_operations(operations)
         return self._update(key, operations)
 
-    def update_by_query(self, query, operations, filters=None):
+    def update_by_query(self, query, operations, filters=None, access_control=None):
         """
         This function performs an atomic update on some fields from the
         underlying documents matching the query and the filters using a list of operations.
@@ -261,6 +261,10 @@ class Collection(object):
         :return: True is update successful
         """
         self._validate_operations(operations)
+        if access_control:
+            if filters is None:
+                filters = []
+            filters.append(access_control)
         return self._update_by_query(query, operations, filters=filters)
 
     def _update_by_query(self, query, operations, filters):
