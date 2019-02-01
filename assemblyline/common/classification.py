@@ -575,7 +575,7 @@ class Classification(object):
 
         for sol_name in solitary_names:
             to_edit = []
-            to_find = f"REL TO {sol_name}"
+            to_find = "REL TO {sol_name}".format(sol_name=sol_name)
             for c in combinations:
                 if to_find in c:
                     to_edit.append(c)
