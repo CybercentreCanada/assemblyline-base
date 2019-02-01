@@ -427,7 +427,7 @@ DEFAULT_STATISTICS = {
         'owner'
     ],
     "submission": [
-        'submitter'
+        'params.submitter'
     ]
 }
 

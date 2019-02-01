@@ -133,7 +133,7 @@ class ESCollection(Collection):
                     else:
                         out.append(row['_source']['__non_doc_raw__'])
                 else:
-                    row['_source'].pop(self.datastore.SORT_ID, None)
+                    row['_source'].pop(self.datastore.ID, None)
                     if as_dictionary:
                         out[row['_id']] = self.normalize(row['_source'], as_obj=as_obj)
                     else:
@@ -152,7 +152,7 @@ class ESCollection(Collection):
                 # TODO: Maybe we should not allow data that is not a dictionary...
                 if "__non_doc_raw__" in data:
                     return data['__non_doc_raw__']
-                data.pop(self.datastore.SORT_ID, None)
+                data.pop(self.datastore.ID, None)
                 return data
             except elasticsearch.exceptions.NotFoundError:
                 if retries > 0:
@@ -174,7 +174,7 @@ class ESCollection(Collection):
             else:
                 saved_data = deepcopy(data)
 
-        saved_data[self.datastore.SORT_ID] = key
+        saved_data[self.datastore.ID] = key
 
         self.with_retries(
             self.datastore.client.index,
@@ -291,34 +291,38 @@ class ESCollection(Collection):
         # Getting search document data
         source = result.get('fields', {})
         source_data = result.pop('_source', None)
+        item_id = result['_id']
 
         # Remove extra fields that should not show up in the search results
         source.pop('_version', None)
         source.pop(self.DEFAULT_SEARCH_FIELD, None)
-        source.pop(self.datastore.SORT_ID, None)
+        source.pop(self.datastore.ID, None)
 
         if self.model_class:
-            item_id = result['_id']
             if not fields or '*' in fields:
                 fields = list(self.stored_fields.keys())
+                fields.append(self.datastore.ID)
             elif isinstance(fields, str):
                 fields = fields.split(',')
 
             if source_data:
-                source_data.pop(self.datastore.SORT_ID, None)
+                source_data.pop(self.datastore.ID, None)
                 return self.model_class(source_data, docid=item_id)
 
             source = _strip_lists(self.model_class, source)
             if as_obj:
                 return self.model_class(source, mask=fields, docid=item_id)
             else:
+                if fields is None or '*' in fields or self.datastore.ID in fields:
+                    source[self.datastore.ID] = item_id
+
                 return source
 
         if isinstance(fields, str):
             fields = fields
 
         if fields is None or '*' in fields or self.datastore.ID in fields:
-            source[self.datastore.ID] = [result[self.datastore.ID]]
+            source[self.datastore.ID] = [item_id]
 
         if fields is None or '*' in fields:
             return source
@@ -686,7 +690,7 @@ class ESCollection(Collection):
                 # Setting dynamic to strict prevents any documents with fields not in the properties to be added
                 mappings['dynamic'] = "strict"
 
-            mappings['properties'][self.datastore.SORT_ID] = {
+            mappings['properties'][self.datastore.ID] = {
                 "store": True,
                 "doc_values": True,
                 "type": 'keyword'
@@ -705,9 +709,8 @@ class ESCollection(Collection):
 
 class ESStore(BaseStore):
     """ Elasticsearch implementation of the ResultStore interface."""
-    ID = '_id'
-    SORT_ID = '_id_'
-    DEFAULT_SORT = "_id asc"
+    ID = '_id_'
+    DEFAULT_SORT = f"{ID} asc"
     DATE_FORMAT = {
         'NOW': 'now',
         'YEAR': 'y',
