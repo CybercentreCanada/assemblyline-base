@@ -207,13 +207,6 @@ def test_datastore_consistency(riak_connection: Collection,
             # making date precision all the same throughout the datastores so we can compared them
             return {k.replace(".000", ""): v for k, v in data.items()}
 
-        def fix_ids(data):
-            # We're remapping all id fields to a default value so we can compare outputs
-            data['items'] = [{'ID' if k in ["_id", '_yz_rk', '_id_'] else k: v
-                              for k, v in item.items()}
-                             for item in data['items']]
-            return data
-
         def compare_output(solr, elastic, riak):
             errors = []
 
@@ -250,15 +243,15 @@ def test_datastore_consistency(riak_connection: Collection,
         assert compare_output(s_tc.multiget(['int', 'int']),
                               e_tc.multiget(['int', 'int']),
                               r_tc.multiget(['int', 'int']))
-        assert compare_output(fix_ids(s_tc.search('*:*', sort="%s asc" % s_tc.datastore.ID)),
-                              fix_ids(e_tc.search('*:*', sort="%s asc" % e_tc.datastore.ID)),
-                              fix_ids(r_tc.search('*:*', sort="%s asc" % r_tc.datastore.ID)))
+        assert compare_output(s_tc.search('*:*', sort="id asc"),
+                              e_tc.search('*:*', sort="id asc"),
+                              r_tc.search('*:*', sort="id asc"))
         assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
-                                          sort="%s asc" % s_tc.datastore.ID, fl='classification_s'),
+                                          sort="id asc", fl='classification_s'),
                               e_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
-                                          sort="%s asc" % e_tc.datastore.ID, fl='classification_s'),
+                                          sort="id asc", fl='classification_s'),
                               r_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
-                                          sort="%s asc" % r_tc.datastore.ID, fl='classification_s'))
+                                          sort="id asc", fl='classification_s'))
         ss_s_list = list(s_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
         ss_e_list = list(e_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
         ss_r_list = list(r_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))

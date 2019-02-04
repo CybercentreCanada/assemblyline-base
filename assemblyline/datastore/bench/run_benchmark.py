@@ -77,7 +77,7 @@ def run(ds, times, dataset):
     with measure(times, 'search'):
         results = []
         for ii in range(DATASET_SIZE):
-            results.append(pool.submit(ds.search, f'{ds.datastore.ID}:{str(ii)}', rows=1))
+            results.append(pool.submit(ds.search, f'id:{str(ii)}', rows=1))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 

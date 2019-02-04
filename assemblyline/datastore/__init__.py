@@ -269,8 +269,8 @@ class Collection(object):
 
     def _update_by_query(self, query, operations, filters):
         with concurrent.futures.ThreadPoolExecutor(20) as executor:
-            res = {item[self.datastore.ID][0]: executor.submit(self._update, item[self.datastore.ID][0], operations)
-                   for item in self.stream_search(query, fl=self.datastore.ID, filters=filters, as_obj=False)}
+            res = {item['id'][0]: executor.submit(self._update, item['id'][0], operations)
+                   for item in self.stream_search(query, fl='id', filters=filters, as_obj=False)}
         for k, v in res.items():
             if not v.result():
                 return False
@@ -356,11 +356,11 @@ class Collection(object):
         :param access_control: access control parameter to limit the scope of the key scan
         :return: a generator of keys
         """
-        for item in self.stream_search("%s:*" % self.datastore.ID, fl=self.datastore.ID, access_control=access_control):
+        for item in self.stream_search("id:*", fl='id', access_control=access_control):
             try:
                 yield item.id
             except AttributeError:
-                value = item[self.datastore.ID]
+                value = item['id']
                 if isinstance(value, list):
                     for v in value:
                         yield v
@@ -475,7 +475,7 @@ class Collection(object):
 
 
 class BaseStore(object):
-    ID = None
+    ID = 'id'
     DEFAULT_SORT = None
     DATE_FORMAT = {
         'NOW': None,

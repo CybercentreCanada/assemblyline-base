@@ -24,7 +24,7 @@ class SolrCollection(Collection):
     MAX_GROUP_LIMIT = 10
     MAX_FACET_LIMIT = 100
     EXTRA_SEARCH_FIELD = '__text__'
-    DEFAULT_SORT = "_id_ asc"
+    DEFAULT_SORT = "id asc"
 
     COMMIT_WITHIN_MAP = {
         "alert": 60000,
@@ -115,7 +115,7 @@ class SolrCollection(Collection):
 
                 url = "http://{host}/{api_base}/{core}/get?ids={keys}" \
                       "&wt=json&fl=_source_,{id_field}".format(host=host, api_base=self.api_base, core=self.name,
-                                                               keys=','.join(temp_keys), id_field=self.datastore.ID)
+                                                               keys=','.join(temp_keys), id_field='id')
 
                 res = self.with_retries(session.get, url, timeout=self.SOLR_GET_TIMEOUT_SEC)
                 if res.ok:
@@ -127,15 +127,15 @@ class SolrCollection(Collection):
                                 if isinstance(data, dict):
                                     data.pop(self.EXTRA_SEARCH_FIELD, None)
                                 if as_dictionary:
-                                    ret[doc[self.datastore.ID]] = self.normalize(data, as_obj=as_obj)
+                                    ret[doc['id']] = self.normalize(data, as_obj=as_obj)
                                 else:
                                     ret.append(self.normalize(data, as_obj=as_obj))
                             except ValueError:
                                 if as_dictionary:
-                                    ret[doc[self.datastore.ID]] = self.normalize(data, as_obj=as_obj)
+                                    ret[doc['id']] = self.normalize(data, as_obj=as_obj)
                                 else:
                                     ret.append(self.normalize(data, as_obj=as_obj))
-                            temp_keys.remove(doc.get(self.datastore.ID, None))
+                            temp_keys.remove(doc.get('id', None))
 
                 if len(temp_keys) == 0:
                     done = True
@@ -192,7 +192,7 @@ class SolrCollection(Collection):
         else:
             data["_source_"] = json.dumps(data)
 
-        data[self.datastore.ID] = key
+        data['id'] = key
         commit_within = int(self.COMMIT_WITHIN_MAP.get(self.name, None) or self.COMMIT_WITHIN_MAP["_default_"])
 
         session, host = self._get_session()
@@ -282,7 +282,7 @@ class SolrCollection(Collection):
 
     def _cleanup_search_result(self, item, fields=None, as_obj=True):
         if self.model_class:
-            item_id = item.pop(self.datastore.ID, None)
+            item_id = item.pop('id', None)
             if not fields or '*' in fields:
                 fields = list(self.stored_fields.keys())
             elif isinstance(fields, str):
@@ -429,7 +429,7 @@ class SolrCollection(Collection):
         if buffer_size > 500 or buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
 
-        if query in ["*", "*:*"] and fl != self.datastore.ID:
+        if query in ["*", "*:*"] and fl != 'id':
             raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
 
         args = [
@@ -720,7 +720,7 @@ class SolrCollection(Collection):
         if self.model_class:
             field_list = self.model_class.flat_fields()
             field_list = [name.encode() for name, field in field_list.items() if field.store]
-            field_list.append(self.datastore.ID.encode())
+            field_list.append(b'id')
             field_list = b','.join(field_list)
             cfg_raw = cfg_raw.replace(b'DEFAULT_FIELD_LIST', field_list)
         else:
@@ -834,7 +834,6 @@ class SolrCollection(Collection):
 
 class SolrStore(BaseStore):
     """ SOLR implementation of the ResultStore interface."""
-    ID = "_id_"
     DATE_FORMAT = {
         'NOW': 'NOW',
         'YEAR': 'YEAR',

@@ -6,6 +6,7 @@
         <!-- REPLACE_FIELDS -->
 
         <!-- Default fields -->
+        <field name="id" type="string" indexed="true" stored="true"/>
         <field name="__text__" type="text" indexed="true" stored="false" multiValued="true" />
         <field name="_version_" type="long" indexed="true" stored="true"/>
         <field name="_yz_id" type="_yz_str" indexed="true" stored="true" multiValued="false" required="true"/>
@@ -18,6 +19,7 @@
         <field name="_yz_rb" type="_yz_str" indexed="true" stored="true" multiValued="false"/>
         <field name="_yz_err" type="_yz_str" indexed="true" stored="false" multiValued="false"/>
 
+        <copyField source="_yz_rk" dest="id"/>
         <!-- catch-all field -->
         <dynamicField name="*" type="ignored"/>
     </fields>

@@ -204,12 +204,12 @@ class RiakCollection(SolrCollection):
         return True
 
     def delete_matching(self, query):
-        for item in self.stream_search(query, fl=self.datastore.ID):
+        for item in self.stream_search(query, fl='id'):
             try:
                 key = item.id
                 self.with_retries(self.riak_bucket.delete, key)
             except AttributeError:
-                key = item[self.datastore.ID]
+                key = item['id']
                 if isinstance(key, list):
                     for k in key:
                         self.with_retries(self.riak_bucket.delete, k)
@@ -219,7 +219,12 @@ class RiakCollection(SolrCollection):
         return True
 
     def _cleanup_search_result(self, item, fields=None, as_obj=True):
+        item_id = None
         if isinstance(item, dict):
+            # Get current ID
+            item_id = item.pop('_yz_rk', item.pop('id', None))
+
+            # Cleanup unused fields
             item.pop('_version_', None)
             item.pop('_yz_id', None)
             item.pop('_yz_rt', None)
@@ -227,7 +232,6 @@ class RiakCollection(SolrCollection):
             item.pop(self.EXTRA_SEARCH_FIELD, None)
 
         if self.model_class:
-            item_id = item.pop('_yz_rk', None)
             if not fields or '*' in fields:
                 fields = list(self.stored_fields.keys())
             elif isinstance(fields, str):
@@ -238,6 +242,8 @@ class RiakCollection(SolrCollection):
             else:
                 return item
 
+        if item_id is not None:
+            item['id'] = item_id
         return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
     def _search(self, args=None, port=None, api_base=None, search_api='select/'):
@@ -322,7 +328,6 @@ class RiakCollection(SolrCollection):
 
 class RiakStore(SolrStore):
     """ Riak implementation of the ResultStore interface."""
-    ID = "_yz_rk"
 
     # noinspection PyUnresolvedReferences
     def __init__(self, hosts=None, collection_class=RiakCollection, protocol_used='pbc',

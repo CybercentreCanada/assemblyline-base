@@ -172,18 +172,18 @@ def collection_test(collection):
         print(col.multiget(['not-a-key-1', 'not-a-key-2']))
     assert 'not-a-key' in str(error_info.value)
 
-    col.search('*:*', sort="%s asc" % col.datastore.ID)
+    col.search('*:*', sort="id asc")
 
     # reading list fields on a search
-    assert len(col.search(f'{col.datastore.ID}: dict3')['items'][0].tags) == 2
-    assert len(col.search(f'{col.datastore.ID}: dict4')['items'][0].tags) == 3
+    assert len(col.search('id:dict3')['items'][0].tags) == 2
+    assert len(col.search('id:dict4')['items'][0].tags) == 3
 
     # reading single fields on a search
-    assert col.search(f'{col.datastore.ID}: test1')['items'][0].flavour == 'chocolate'
+    assert col.search('id:test1')['items'][0].flavour == 'chocolate'
 
     # Make sure sorting on the ID key works right
-    forward = col.search('*', sort=f'{col.datastore.ID} asc')
-    reverse = col.search('*', sort=f'{col.datastore.ID} desc')
+    forward = col.search('*', sort='id asc')
+    reverse = col.search('*', sort='id desc')
     assert forward['items'] == list(reversed(reverse['items']))
 
     # Search on a copyto field
@@ -283,15 +283,15 @@ def test_datastore_consistency(riak_connection, solr_connection, es_connection):
         assert compare_output(s_tc.multiget(['test1', 'test1']),
                               e_tc.multiget(['test1', 'test1']),
                               r_tc.multiget(['test1', 'test1']))
-        assert compare_output(fix_ids(s_tc.search('*:*', sort="%s asc" % s_tc.datastore.ID)),
-                              fix_ids(e_tc.search('*:*', sort="%s asc" % e_tc.datastore.ID)),
-                              fix_ids(r_tc.search('*:*', sort="%s asc" % r_tc.datastore.ID)))
+        assert compare_output(fix_ids(s_tc.search('*:*', sort="id asc")),
+                              fix_ids(e_tc.search('*:*', sort="id asc")),
+                              fix_ids(r_tc.search('*:*', sort="id asc")))
         assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="height:100",
-                                          sort="%s asc" % s_tc.datastore.ID, fl='flavour'),
+                                          sort="id asc", fl='flavour'),
                               e_tc.search('*:*', offset=1, rows=1, filters="height:100",
-                                          sort="%s asc" % e_tc.datastore.ID, fl='flavour'),
+                                          sort="id asc", fl='flavour'),
                               r_tc.search('*:*', offset=1, rows=1, filters="height:100",
-                                          sort="%s asc" % r_tc.datastore.ID, fl='flavour'))
+                                          sort="id asc", fl='flavour'))
         ss_s_list = list(s_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour'))
         ss_e_list = list(e_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour'))
         ss_r_list = list(r_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour'))

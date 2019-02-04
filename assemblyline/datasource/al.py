@@ -27,13 +27,13 @@ class AL(Datasource):
             score = 0
             score_map = {}
 
-            res = self.datastore.results.group("%s:%s*" % (self.datastore.ID, r['sha256']), ["response.service_name"],
-                                               fields="result.score,%s" % self.datastore.ID, rows=100,
+            res = self.datastore.results.group(f"id:{r['sha256']}*", ["response.service_name"],
+                                               fields="result.score,id", rows=100,
                                                sort="created desc", access_control=kw["access_control"])
 
             for group in res['response.service_name']:
                 for doc in group['items']:
-                    service_name = doc[self.datastore.ID][65:].split(".", 1)[0]
+                    service_name = doc['id'][65:].split(".", 1)[0]
                     if service_name != "HashSearch":
                         score_map[service_name] = doc['result.score']
                         score += doc['result.score']

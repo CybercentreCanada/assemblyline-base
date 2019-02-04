@@ -6,8 +6,8 @@
         <!-- REPLACE_FIELDS -->
 
         <!-- Default fields -->
+        <field name="id" type="string" indexed="true" stored="true" required="true"/>
         <field name="__text__" type="text" indexed="true" stored="false" multiValued="true" />
-        <field name="_id_" type="string" indexed="true" stored="true" required="true"/>
         <field name="_version_" type="plong" indexed="true" stored="true"/>
         <field name="_source_" type="string" docValues="false" indexed="false" stored="true" required="true"/>
 
@@ -15,7 +15,7 @@
         <dynamicField name="*" type="ignored"/>
     </fields>
 
-    <uniqueKey>_id_</uniqueKey>
+    <uniqueKey>id</uniqueKey>
 
     <types>
         <fieldType name="string" class="solr.StrField" sortMissingLast="true" docValues="true" />
