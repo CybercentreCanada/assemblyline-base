@@ -68,6 +68,9 @@ def build_mapping(field_data, prefix=None, multivalued=False):
             elif isinstance(child, Mapping):
                 path.append("*")
                 mappings.extend(build_mapping(child.fields().values(), prefix=path, multivalued=multivalued))
+            elif isinstance(child, Compound):
+                path.append("*")
+                mappings.extend(build_mapping(child.fields().values(), prefix=path, multivalued=multivalued))
             elif isinstance(child, Any):
                 continue
             else:

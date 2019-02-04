@@ -23,10 +23,10 @@ def _strip_lists(model, data):
     fields = model.fields()
     out = {}
     for key, value in odm.flat_to_nested(data).items():
-        doc_type = fields[key]
+        doc_type = fields.get(key, fields.get('', None))
         if isinstance(doc_type, odm.List):
             out[key] = value
-        elif isinstance(doc_type, odm.Compound):
+        elif isinstance(doc_type, odm.Compound) or isinstance(doc_type, odm.Mapping):
             out[key] = _strip_lists(doc_type.child_type, value)
         elif isinstance(value, list):
             out[key] = value[0]
@@ -313,7 +313,7 @@ class ESCollection(Collection):
             if as_obj:
                 return self.model_class(source, mask=fields, docid=item_id)
             else:
-                if fields is None or '*' in fields or 'id' in fields:
+                if 'id' in fields:
                     source['id'] = item_id
 
                 return source
