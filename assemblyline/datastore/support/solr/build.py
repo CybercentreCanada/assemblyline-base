@@ -17,7 +17,7 @@ __type_mapping = {
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID]}
 
 
-def build_mapping(field_data, prefix=None, multivalued=False):
+def build_mapping(field_data, prefix=None, multivalued=False, dynamic=False):
     """
     The mapping for riak based on a python model object.
     """
@@ -25,15 +25,19 @@ def build_mapping(field_data, prefix=None, multivalued=False):
     prefix = prefix or []
     mappings = []
 
-    def set_mapping(p_name, p_field, p_type):
+    def set_mapping(p_name, p_field, p_type, dynamic):
         temp_mappings = []
+
         p_name = p_name.strip('.')
+        if "*" in p_name and not p_name.endswith("*"):
+            p_name = f"*{p_name.split('*')[-1]}"
+
         index = 'true' if p_field.index else 'false'
         store = 'true' if p_field.store else 'false'
         multi = 'true' if multivalued else 'false'
         docvalues = 'docValues="false"' if not p_field.index else ''
-        temp_mappings.append(f'<field name="{p_name}" type="{p_type}" indexed="{index}" '
-                             f'stored="{store}" multiValued="{multi}" {docvalues}/>')
+        temp_mappings.append(f'<{"dynamicField" if dynamic else "field"} name="{p_name}" type="{p_type}" '
+                             f'indexed="{index}" stored="{store}" multiValued="{multi}" {docvalues}/>')
 
         for other_field in p_field.copyto:
             temp_mappings.append(f'<copyField source="{p_name}" dest="{other_field}"/>')
@@ -47,11 +51,11 @@ def build_mapping(field_data, prefix=None, multivalued=False):
 
         if isinstance(field, (Boolean, Integer, Float, Date)):
             # noinspection PyTypeChecker
-            mappings.extend(set_mapping(name, field, __type_mapping[field.__class__]))
+            mappings.extend(set_mapping(name, field, __type_mapping[field.__class__], dynamic))
 
         elif isinstance(field, (Keyword, Text)):
             # noinspection PyTypeChecker
-            mappings.extend(set_mapping(name, field, __type_mapping[field.__class__]))
+            mappings.extend(set_mapping(name, field, __type_mapping[field.__class__], dynamic))
 
         elif isinstance(field, List):
             mappings.extend(build_mapping([field.child_type], prefix=path, multivalued=True))
@@ -64,21 +68,21 @@ def build_mapping(field_data, prefix=None, multivalued=False):
             child = field.child_type
             if isinstance(child, List):
                 path.append("*")
-                mappings.extend(build_mapping(child, prefix=path, multivalued=True))
+                mappings.extend(build_mapping(child, prefix=path, multivalued=True, dynamic=True))
             elif isinstance(child, Mapping):
                 path.append("*")
-                mappings.extend(build_mapping(child.fields().values(), prefix=path, multivalued=multivalued))
+                mappings.extend(build_mapping(child.fields().values(), prefix=path,
+                                              multivalued=multivalued, dynamic=True))
+            elif isinstance(child, Compound):
+                path.append("*")
+                mappings.extend(build_mapping(child.fields().values(), prefix=path,
+                                              multivalued=multivalued, dynamic=True))
             elif isinstance(child, Any):
                 continue
             else:
-                index = 'true' if child.index else 'false'
-                store = 'true' if child.store else 'false'
-                solr_type = __type_mapping[child.__class__]
                 if ".*" not in name:
                     name = f"{name}.*"
-                mappings.append(f'<dynamicField name="{name}" type="{solr_type}" indexed="{index}" stored="{store}" />')
-                for other_field in field.copyto + child.copyto:
-                    mappings.append(f'<copyField source="{name}" dest="{other_field}"/>')
+                mappings.extend(set_mapping(name, child, __type_mapping[child.__class__], True))
 
         elif isinstance(field, Any):
             continue

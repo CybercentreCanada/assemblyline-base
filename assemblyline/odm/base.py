@@ -546,16 +546,7 @@ class Model:
             fields = {k: v for k, v in fields.items() if k in mask_map}
 
         # Trim out keys that actually belong to sub sections
-        sub_data = {}
-        for key, value in list(data.items()):
-            if '.' in key:
-                del data[key]
-                child, sub_key = key.split('.', 1)
-                try:
-                    sub_data[child][sub_key] = value
-                except KeyError:
-                    sub_data[child] = {sub_key: value}
-        data.update(sub_data)
+        data = flat_to_nested(data)
 
         # Check to make sure we can use all the data we are given
         unused_keys = set(data.keys()) - set(fields.keys()) - BANNED_FIELDS

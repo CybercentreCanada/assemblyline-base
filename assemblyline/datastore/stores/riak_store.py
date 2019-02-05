@@ -11,6 +11,7 @@ from copy import copy
 from assemblyline.datastore import log, DataStoreException
 from assemblyline.datastore.stores.solr_store import SolrCollection, SolrStore
 from assemblyline.datastore.support.solr.build import build_mapping
+from assemblyline.odm import flat_to_nested
 
 
 def utf8safe_encoder(obj):
@@ -78,6 +79,8 @@ class RiakCollection(SolrCollection):
         self.riak_api_base = "search/query"
 
         super().__init__(datastore, name, model_class=model_class, api_base="internal_solr")
+        if "_source_" in self.default_fl:
+            self.default_fl = "*,id"
 
     def with_retries(self, func, *args, **kwargs):
         retries = 0
@@ -234,13 +237,17 @@ class RiakCollection(SolrCollection):
         if self.model_class:
             if not fields or '*' in fields:
                 fields = list(self.stored_fields.keys())
+                fields.append('id')
             elif isinstance(fields, str):
                 fields = fields.split(',')
 
             if as_obj:
                 return self.model_class(item, mask=fields, docid=item_id)
             else:
-                return item
+                if 'id' in fields:
+                    item['id'] = item_id
+
+                return flat_to_nested(item)
 
         if item_id is not None:
             item['id'] = item_id
