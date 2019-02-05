@@ -6,7 +6,6 @@ import random
 import string
 import warnings
 
-from datetime import datetime
 from datemath import dm
 from retrying import retry
 
