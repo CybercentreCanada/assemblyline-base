@@ -24,7 +24,6 @@ def utf8safe_encoder(obj):
 class RiakCollection(SolrCollection):
     MULTIGET_MAX_RETRY = 5
     DEFAULT_SORT = "_yz_id asc"
-    DEFAULT_FL = "*"
     DEFAULT_CATCH_ALL_FIELDS = """
     <dynamicField name="*_i"  type="pint"    indexed="true"  stored="true"  multiValued="false"/>
     <dynamicField name="*_is" type="pint"    indexed="true"  stored="true"  multiValued="true"/>

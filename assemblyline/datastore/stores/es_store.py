@@ -23,7 +23,7 @@ def _strip_lists(model, data):
     fields = model.fields()
     out = {}
     for key, value in odm.flat_to_nested(data).items():
-        doc_type = fields.get(key, fields.get('', None))
+        doc_type = fields.get(key, fields.get('', model))
         if isinstance(doc_type, odm.List):
             out[key] = value
         elif isinstance(doc_type, odm.Compound) or isinstance(doc_type, odm.Mapping):
@@ -148,7 +148,8 @@ class ESCollection(Collection):
         while not done:
 
             try:
-                data = self.with_retries(self.datastore.client.get, index=self.name, doc_type='_all', id=key)['_source']
+                data = self.with_retries(self.datastore.client.get, index=self.name,
+                                         doc_type=self.name, id=key)['_source']
                 # TODO: Maybe we should not allow data that is not a dictionary...
                 if "__non_doc_raw__" in data:
                     return data['__non_doc_raw__']
@@ -167,7 +168,7 @@ class ESCollection(Collection):
 
     def _save(self, key, data):
         if self.model_class:
-            saved_data = data.as_primitives(hidden_fields=True, strip_null=True)
+            saved_data = data.as_primitives(hidden_fields=True)
         else:
             if not isinstance(data, dict):
                 saved_data = {'__non_doc_raw__': data}

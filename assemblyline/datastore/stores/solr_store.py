@@ -15,7 +15,7 @@ from assemblyline.common.str_utils import safe_str
 from assemblyline.datastore import BaseStore, log, Collection
 from assemblyline.datastore.exceptions import SearchRetryException, DataStoreException, SearchException
 from assemblyline.datastore.support.solr.build import build_mapping, back_mapping
-from assemblyline.odm import flat_to_nested
+from assemblyline.odm import flat_to_nested, Mapping
 
 
 class SolrCollection(Collection):
@@ -26,7 +26,6 @@ class SolrCollection(Collection):
     MAX_FACET_LIMIT = 100
     EXTRA_SEARCH_FIELD = '__text__'
     DEFAULT_SORT = "id asc"
-    DEFAULT_FL = '*,_source_:[value v=""]'
 
     COMMIT_WITHIN_MAP = {
         "alert": 60000,
@@ -69,9 +68,15 @@ class SolrCollection(Collection):
 
         self.stored_fields = {}
         if model_class:
+            default_fields = ['id']
             for name, field in model_class.flat_fields().items():
                 if field.store:
+                    default_fields.append(f"{name}.*" if isinstance(field, Mapping) else name)
                     self.stored_fields[name] = field
+
+            self.default_fl = ",".join(default_fields)
+        else:
+            self.default_fl = "*,id,_source_:[value v=""]"
 
     def with_retries(self, func, *args, **kwargs):
         retries = 0
@@ -294,7 +299,7 @@ class SolrCollection(Collection):
             item.pop('_version_', None)
             source = item.pop('_source_', None) or None
             if as_obj:
-                if source is not None :
+                if source is not None:
                     data = json.loads(item['_source_'])
                     return self.model_class(data, docid=item_id)
                 return self.model_class(item, mask=fields, docid=item_id)
@@ -384,7 +389,7 @@ class SolrCollection(Collection):
         if fl:
             args.append(('fl', fl))
         else:
-            args.append(('fl', self.DEFAULT_FL))
+            args.append(('fl', self.default_fl))
 
         if timeout:
             args.append(('timeAllowed', timeout))

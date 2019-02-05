@@ -65,7 +65,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
 
         elif isinstance(field, Mapping):
             if not isinstance(field.child_type, Any):
-                dynamic.extend(build_templates(name, field.child_type))
+                dynamic.extend(build_templates(f'{name}.*', field.child_type))
 
         elif isinstance(field, Any):
             continue
@@ -107,7 +107,7 @@ def build_templates(name, field, nested_template=False) -> list:
             return [{f"nested_{name}": main_template}]
         else:
             field_template = {
-                "path_match": f"{name}.*",
+                "path_match": name,
                 "mapping": {
                     "type": __type_mapping[field.__class__],
                 }
@@ -135,7 +135,7 @@ def build_templates(name, field, nested_template=False) -> list:
         out = []
         for sub_name, sub_field in field.fields().items():
             sub_name = f"{temp_name}.{sub_name}"
-            out.extend(build_templates(sub_name, sub_field, nested_template=True))
+            out.extend(build_templates(sub_name, sub_field))
 
         return out
 

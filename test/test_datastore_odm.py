@@ -51,33 +51,38 @@ class BaseTestModel(odm.Model):
     things = odm.List(odm.Compound(ThingsModel), default=[])
 
 
+def safe_date(pattern):
+    return dm(f'{pattern}/m').isoformat().replace('+00:00', '.001Z')
+
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     test_map = {
-        'test1': BaseTestModel(dict(tags=['silly'], flavour='chocolate', height=100, birthday=dm('now-2d'),
+        'test1': BaseTestModel(dict(tags=['silly'], flavour='chocolate', height=100, birthday=safe_date('now-2d'),
                                     metadata={'url': 'google.com'}, things=[{'count': 1, 'thing': 'hat'}],
                                     classification="RESTRICTED")),
-        'test2': BaseTestModel(dict(tags=['cats'], flavour='A little dry', height=180, birthday=dm('now-1d'),
+        'test2': BaseTestModel(dict(tags=['cats'], flavour='A little dry', height=180, birthday=safe_date('now-1d'),
                                     metadata={'url': 'google.ca'})),
-        'test3': BaseTestModel(dict(tags=['silly'], flavour='Red', height=140, birthday=dm('now'),
+        'test3': BaseTestModel(dict(tags=['silly'], flavour='Red', height=140, birthday=safe_date('now'),
                                     size={'depth': 1, 'width': 1}, things=[{'count': 1, 'thing': 'hat'},
                                                                            {'count': 10, 'thing': 'shoe'}],
                                     classification="RESTRICTED")),
         'test4': BaseTestModel(dict(tags=['cats'], flavour='Bugs ++', height=30, birthday='2018-10-30T17:48:48.123Z')),
         'dict1': BaseTestModel(dict(tags=['cats'], flavour='A--', height=300, birthday='2018-10-30T17:48:48.123Z')),
-        'dict2': BaseTestModel(dict(tags=[], flavour='100%', height=90, birthday=datetime.utcnow(),
+        'dict2': BaseTestModel(dict(tags=[], flavour='100%', height=90, birthday=safe_date('now'),
                                     metadata={'origin': 'space'})),
-        'dict3': BaseTestModel(dict(tags=['10', 'cats'], flavour='', height=180, birthday=dm('now-3d'),
+        'dict3': BaseTestModel(dict(tags=['10', 'cats'], flavour='', height=180, birthday=safe_date('now-3d'),
                                     classification="RESTRICTED")),
-        'dict4': BaseTestModel(dict(tags=['10', 'silly', 'cats'], flavour='blue', height=100, birthday=dm('now-1d'))),
-        'extra1': BaseTestModel(dict(tags=['10'], flavour="delicious", height=300, birthday=dm('now-1h'),
+        'dict4': BaseTestModel(dict(tags=['10', 'silly', 'cats'], flavour='blue', height=100,
+                                    birthday=safe_date('now-1d'))),
+        'extra1': BaseTestModel(dict(tags=['10'], flavour="delicious", height=300, birthday=safe_date('now-1h'),
                                      no_index="nidx1", no_store="nsto1", dots={'first': {"x": 111, "y": 222}})),
-        'extra2': BaseTestModel(dict(tags=['silly', '10'], flavour="delicious", height=400, birthday=dm('now-2h'),
-                                     no_index="nidx2", no_store="nsto2")),
+        'extra2': BaseTestModel(dict(tags=['silly', '10'], flavour="delicious", height=400,
+                                     birthday=safe_date('now-2h'), no_index="nidx2", no_store="nsto2")),
         'extra3': BaseTestModel(dict(tags=['10', 'silly', 'cats'], flavour="delicious", height=500,
-                                     birthday=dm('now-3h'), no_index="nidx3", no_store="nsto3",
+                                     birthday=safe_date('now-3h'), no_index="nidx3", no_store="nsto3",
                                      dots={'first': {"x": 123, "y": 456}, 'second': {"x": 222, "y": 333}})),
-        'extra4': BaseTestModel(dict(tags=['cats'], flavour="delicious", height=600, birthday=dm('now-4h'),
+        'extra4': BaseTestModel(dict(tags=['cats'], flavour="delicious", height=600, birthday=safe_date('now-4h'),
                                      no_index="nidx4", no_store="nsto4"))
     }
 
@@ -172,7 +177,6 @@ def _test_get(col, as_obj):
     for x in range(1, 4):
         assert get_obj(test_map, f'dict{x}', as_obj) == col.get(f'dict{x}', as_obj=as_obj)
 
-
     for x in range(1, 4):
         assert get_obj(test_map, f'extra{x}', as_obj) == col.get(f'extra{x}', as_obj=as_obj)
 
@@ -259,6 +263,7 @@ def _test_search(col, as_obj):
     # Testing non indexed and non stored fields
     assert col.search('no_index:nidx*', as_obj=as_obj)['total'] == 0
     assert col.search('no_store:nsto*', as_obj=as_obj)['total'] == 4
+
 
 def _test_search_primitives(col, _):
     # Make sure as_obj=False produces the same result then obj.as_primitives()
