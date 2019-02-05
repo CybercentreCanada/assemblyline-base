@@ -517,6 +517,9 @@ class Model:
                 out.update(Model._recurse_fields(name, field, skip_mappings))
         return out
 
+    # Allow attribute assignment by default in the constructor until it is removed
+    __frozen = False
+
     def __init__(self, data: dict = None, mask: list = None, docid=None):
         if data is None:
             data = {}
@@ -570,6 +573,10 @@ class Model:
 
             self._odm_py_obj[name] = field_type.check(value, **params)
 
+        # Since the layout of model objects should be fixed, don't allow any further
+        # attribute assignment
+        self.__frozen = True
+
     def as_primitives(self, hidden_fields=False, strip_null=False):
         """Convert the object back into primatives that can be json serialized."""
         out = {}
@@ -621,6 +628,16 @@ class Model:
         if self.id:
             return f"<{self.__class__.__name__} [{self.id}] {self.json()}>"
         return f"<{self.__class__.__name__} {self.json()}>"
+
+    def __getattr__(self, name):
+        # Any attribute that hasn't been explicity declared is forbidden
+        raise KeyError(name)
+
+    def __setattr__(self, name, value):
+        # Any attribute that hasn't been explicity declared is forbidden
+        if self.__frozen and name not in self.fields():
+            raise KeyError(name)
+        object.__setattr__(self, name, value)
 
 
 def model(index=None, store=None):
