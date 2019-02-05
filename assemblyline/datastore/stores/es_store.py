@@ -697,6 +697,11 @@ class ESCollection(Collection):
                 "type": 'keyword'
             }
 
+            mappings['properties']['__text__'] = {
+                "store": False,
+                "type": 'keyword'
+            }
+
             index['mappings'][self.name] = mappings
             self.with_retries(self.datastore.client.indices.create, self.name, index)
         self._check_fields()

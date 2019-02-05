@@ -202,3 +202,16 @@ def random_model_obj(model, as_json=False):
         return data
     else:
         return model(data)
+
+
+# noinspection PyProtectedMember
+def random_minimal_obj(model, as_json=False):
+    data = {}
+    for f_name, f_value in model._odm_field_cache.items():
+        if not f_value.default_set:
+            data[f_name] = random_data_for_field(f_value, f_name)
+
+    if as_json:
+        return data
+    else:
+        return model(data)

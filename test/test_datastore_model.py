@@ -25,7 +25,7 @@ from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_options import UserOptions
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.odm.randomizer import random_model_obj
+from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
 
 
 class SetupException(Exception):
@@ -98,7 +98,23 @@ TEST_DATA = [
     ("user_favorites", random_model_obj(UserFavorites)),
     ("user_options", random_model_obj(UserOptions)),
     ("vm", random_model_obj(VM)),
-    ("workflow", random_model_obj(Workflow))
+    ("workflow", random_model_obj(Workflow)),
+    ("alert_min", random_minimal_obj(Alert)),
+    ("emptyresult_min", random_minimal_obj(EmptyResult)),
+    ("error_min", random_minimal_obj(Error)),
+    ("file_min", random_minimal_obj(File)),
+    ("filescore_min", random_minimal_obj(FileScore)),
+    ("result_min", random_minimal_obj(Result)),
+    ("service_min", random_minimal_obj(Service)),
+    ("signature_min", random_minimal_obj(Signature)),
+    ("submission_min", random_minimal_obj(Submission)),
+    ("submission_tree_min", random_minimal_obj(SubmissionTree)),
+    ("tc_signature_min", random_minimal_obj(TCSignature)),
+    ("user_min", random_minimal_obj(User)),
+    ("user_favorites_min", random_minimal_obj(UserFavorites)),
+    ("user_options_min", random_minimal_obj(UserOptions)),
+    ("vm_min", random_minimal_obj(VM)),
+    ("workflow_min", random_minimal_obj(Workflow))
 ]
 
 
@@ -134,11 +150,18 @@ def _get_value(key, data):
         data = data[main]
 
     if isinstance(data, list):
+        if len(data) == 0:
+            return None
         data = data[0]
 
     value = data[key]
-    if isinstance(value, list):
-        return str(value[0])
+    if value is None:
+        return value
+    elif isinstance(value, list):
+        if len(value) > 0:
+            return str(value[0])
+        else:
+            return None
     elif isinstance(value, bool):
         return str(value).lower()
     elif isinstance(value, dict):
@@ -151,13 +174,13 @@ def _get_value(key, data):
         return value
 
 
-def _perform_single_collection_test(ds: BaseStore, name: str, doc: Model):
-    c = _setup_collection(ds, name, doc)
+def _perform_single_collection_test(ds: BaseStore, idx_name: str, doc: Model):
+    c = _setup_collection(ds, idx_name, doc)
     field_list = doc.flat_fields()
     doc_data = doc.as_primitives()
 
     # Did the document we created actually exists
-    search_all_result = c.search("*:*")
+    search_all_result = c.search("id:*")
     assert search_all_result["total"] == 1
 
     # Are all stored field returned by default?
@@ -176,25 +199,28 @@ def _perform_single_collection_test(ds: BaseStore, name: str, doc: Model):
                 with pytest.raises(RequestError):
                     c.search(f"{name}:{_get_value(name, doc_data)}", rows=0)
             else:
-                query = f"{name}:{_get_value(name, doc_data)}"
-                if c.search(query, rows=0)["total"] != 0:
-                    pytest.fail(f"Search query ({query}) was able to find documents using a non-indexed field.")
+                value = _get_value(name, doc_data)
+                if value:
+                    query = f"{name}:{value}"
+                    if c.search(query, rows=0)["total"] != 0:
+                        pytest.fail(f"Search query ({query}) was able to find documents using a non-indexed field.")
         else:
             # Test indexed field searches lead to results
             value = _get_value(name, doc_data)
             if not value:
                 # you can't search for empty field, you have to exclude all non empties...
-                query = f"-{name}:['' TO *]"
+                query = f"-{name}:*"
             else:
-                query = f"{name}:{value}"
+                query = f'{name}:{value}'
             if c.search(query, rows=0)["total"] != 1:
                 pytest.fail(f"Search query ({query}) did not yield any results.")
 
         if field.copyto:
             # Test copyto field as default search
             query = _get_value(name, doc_data)
-            if c.search(query, rows=0)["total"] != 1:
-                pytest.fail(f"Search query ({query}) did not yield any results.")
+            if query:
+                if c.search(query, rows=0)["total"] != 1:
+                    pytest.fail(f"Search query ({query}) did not yield any results.")
 
 
 # noinspection PyShadowingNames

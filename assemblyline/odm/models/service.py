@@ -18,7 +18,7 @@ class Service(odm.Model):
     classpath = odm.Keyword(store=True)
     config = odm.Mapping(odm.Any(), default={})
     cpu_cores = odm.Float(default=1.0)
-    description = odm.Text(store=True, default="N/A")
+    description = odm.Text(store=True, default="NA")
     enabled = odm.Boolean(store=True, default=False)
     install_by_default = odm.Boolean(default=False)
     is_external = odm.Boolean(default=False)
