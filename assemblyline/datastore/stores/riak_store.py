@@ -79,6 +79,8 @@ class RiakCollection(SolrCollection):
         self.riak_api_base = "search/query"
 
         super().__init__(datastore, name, model_class=model_class, api_base="internal_solr")
+        if "_source_" in self.default_fl:
+            self.default_fl = "*,id"
 
     def with_retries(self, func, *args, **kwargs):
         retries = 0
