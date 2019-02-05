@@ -198,6 +198,7 @@ class Middleman(odm.Model):
 
     # Drop a task altogeather after this many seconds
     expire_after = odm.Float()
+    stale_after_seconds = odm.Float()
 
     # TODO ????
     incomplete_expire_after_seconds = odm.Float()
@@ -218,6 +219,7 @@ DEFAULT_MIDDLEMAN = {
     'default_max_extracted': 100,
     'default_max_supplementary': 100,
     'expire_after': 15 * 24 * 60 * 60,
+    'stale_after_seconds': 1 * 24 * 60 * 60,
     'incomplete_expire_after_seconds': 3600,
     'incomplete_stale_after_seconds': 1800,
     'sampling_at': {
@@ -506,6 +508,9 @@ class Submission(odm.Model):
     # Maximum length for each metadata keys
     max_metadata_length = odm.Integer()
 
+    # Path to the routine used to
+    decode_file = odm.Keyword()
+
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -513,6 +518,7 @@ DEFAULT_SUBMISSION = {
     'dtl': 15,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
+    'decode_file': 'assemblyline.common.codec.decode_file',
 }
 
 
