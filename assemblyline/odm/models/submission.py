@@ -1,7 +1,14 @@
 import hashlib
 from assemblyline import odm
 
-SUBMISSION_STATUSES = ['submitted', 'completed']
+INGEST_SUBMISSION_DEFAULTS = {
+    # Alternative defaults to the submission params used by the middleman client
+    'generate_alert': True,
+    'groups': [],    # TODO: Ideally this should not be empty
+    'priority': -1,  # -1 tells middleman to figure out priority on its own
+    'type': "BULK",
+}
+SUBMISSION_STATES = ['serviced', 'submitted', 'completed']
 
 
 @odm.model(index=True, store=False)
@@ -70,15 +77,6 @@ class SubmissionParams(odm.Model):
         return 'v'.join([str(hashlib.md5(s.encode()).hexdigest()), str(version)])
 
 
-# Alternative defaults to the submission params used by the middleman client
-INGEST_SUBMISSION_DEFAULTS = {
-    'generate_alert': True,
-    'groups': [],
-    'priority': -1,  # -1 tells middleman to figure out priority on its own
-    'type': "BULK",
-}
-
-
 @odm.model(index=True, store=True)
 class Times(odm.Model):
     completed = odm.Date(store=False, default=0)  # Date at which the submission finished scanning
@@ -98,11 +96,14 @@ class Submission(odm.Model):
     params = odm.Compound(SubmissionParams)             # Submission detail blocs
     results = odm.List(odm.Keyword(), store=False)      # List of result keys
     sid = odm.Keyword(copyto="__text__")                # Submission ID
-    state = odm.Enum(values=SUBMISSION_STATUSES)        # Status of the submission
+    state = odm.Enum(values=SUBMISSION_STATES)          # Status of the submission
     times = odm.Compound(Times)                         # Timing bloc
 
     def is_submit(self):
         return self.state == 'submitted'
+
+    def is_complete(self):
+        return self.state == 'completed'
 
     def is_initial(self):
         return self.is_submit() and not self.params.psid

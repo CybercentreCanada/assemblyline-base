@@ -494,6 +494,9 @@ DEFAULT_UI = {
 # Options regarding all submissions, regardless of their input method
 @odm.model(index=True, store=True)
 class Submission(odm.Model):
+    # Path to the routine used to
+    decode_file = odm.Keyword()
+
     # Default values for parameters that may be overridden on a per submission basis
     # How many extracted files may be added to a Submission
     default_max_extracted = odm.Integer()
@@ -513,18 +516,15 @@ class Submission(odm.Model):
     # Summary tag types
     summary_tag_types = odm.List(odm.Keyword())
 
-    # Path to the routine used to
-    decode_file = odm.Keyword()
-
 
 DEFAULT_SUBMISSION = {
+    'decode_file': 'assemblyline.common.codec.decode_file',
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
     'dtl': 15,
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
-    'decode_file': 'assemblyline.common.codec.decode_file',
     'summary_tag_types': [
         'NET_IP',
         'NET_DOMAIN_NAME',
