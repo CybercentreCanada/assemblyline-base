@@ -34,7 +34,7 @@ STRONG_INDICATORS = {
         re.compile(r'\beval[ \t]*\('),
         re.compile(r'new[ \t]+ActiveXObject\('),
         re.compile(r'xfa\.((resolve|create)Node|datasets|form)'),
-        re.compile('\.oneOfChild'),
+        re.compile(r'\.oneOfChild'),
     ],
     'code/csharp': [
         re.compile(r'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
@@ -84,7 +84,7 @@ STRONG_INDICATORS = {
     ],
     'code/css': [
         re.compile(r'(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{'
-                   '[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}'),
+                   r'[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}'),
     ],
     'text/markdown': [
         re.compile(r'\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+'),
@@ -113,10 +113,10 @@ WEAK_INDICATORS = {
     'code/javascript': ['var ',
                         r'String\.(fromCharCode|raw)\(',
                         r'Math\.(round|pow|sin|cos)\(',
-                        '(isNaN|isFinite|parseInt|parseFloat)\(',
+                        r'(isNaN|isFinite|parseInt|parseFloat)\(',
                         ],
-    'code/jscript': [r'new[ \t]+ActiveXObject\(', 'Scripting\.Dictionary'],
-    'code/pdfjs': [r'xfa\.((resolve|create)Node|datasets|form)', '\.oneOfChild'],
+    'code/jscript': [r'new[ \t]+ActiveXObject\(', r'Scripting\.Dictionary'],
+    'code/pdfjs': [r'xfa\.((resolve|create)Node|datasets|form)', r'\.oneOfChild'],
     'code/vbs': [r'(^|\n)[ \t]*(Dim |Sub |Loop |Attribute )', 'CreateObject', 'WScript'],
     'code/csharp': [r'(^|\n)(protected)?[ \t]*override'],
     'code/sql': [r'(^|\n)(create |drop |select |returns |declare )'],
