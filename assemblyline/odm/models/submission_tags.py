@@ -2,6 +2,6 @@ from assemblyline import odm
 
 
 @odm.model(index=True, store=False)
-class SubmissionTree(odm.Model):
+class SubmissionTags(odm.Model):
     expiry_ts = odm.Date()  # Expiry date
-    tree = odm.Keyword()    # Tree cache
+    tags = odm.Keyword()    # Tags cache

@@ -67,6 +67,8 @@ USERS = [
     "user"
 ]
 
+GROUPS = ["USERS", "ADMINS", "ANALYSTS"]
+
 
 def get_random_word():
     return random.choice(WORDS)
@@ -90,6 +92,10 @@ def get_random_label():
 
 def get_random_user():
     return random.choice(USERS)
+
+
+def get_random_groups():
+    return random.choice(GROUPS)
 
 
 def get_random_filename(smin=1, smax=3):
@@ -160,7 +166,9 @@ def random_data_for_field(field, name):
                 return get_random_hash(64)
             elif "label" in name:
                 return get_random_label()
-            elif "owner" in name or "uname" in name:
+            elif "groups" in name:
+                return get_random_groups()
+            elif "owner" in name or "uname" in name or "submitter" in name:
                 return get_random_user()
             elif "service_name" in name:
                 return get_random_service_name()

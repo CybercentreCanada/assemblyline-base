@@ -420,13 +420,13 @@ class ESCollection(Collection):
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None, as_obj=True):
 
-        if not rows:
+        if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
-        if not sort:
+        if sort is None:
             sort = self.DEFAULT_SORT
 
-        if not filters:
+        if filters is None:
             filters = []
         elif isinstance(filters, str):
             filters = [filters]
@@ -470,7 +470,7 @@ class ESCollection(Collection):
         if query in ["*", "*:*"] and fl != 'id':
             raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
 
-        if not filters:
+        if filters is None:
             filters = []
         elif isinstance(filters, str):
             filters = [filters]
@@ -513,7 +513,7 @@ class ESCollection(Collection):
     def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
         type_modifier = self._validate_steps_count(start, end, gap)
 
-        if not filters:
+        if filters is None:
             filters = []
         elif isinstance(filters, str):
             filters = [filters]
@@ -542,7 +542,7 @@ class ESCollection(Collection):
 
     def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
                        min_count=1, filters=None, access_control=None):
-        if not filters:
+        if filters is None:
             filters = []
         elif isinstance(filters, str):
             filters = [filters]
@@ -571,16 +571,16 @@ class ESCollection(Collection):
     def grouped_search(self, group_field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True):
 
-        if not rows:
+        if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
-        if not sort:
+        if sort is None:
             sort = self.DEFAULT_SORT
 
-        if not group_sort:
+        if group_sort is None:
             group_sort = self.DEFAULT_SORT
 
-        if not filters:
+        if filters is None:
             filters = []
         elif isinstance(filters, str):
             filters = [filters]

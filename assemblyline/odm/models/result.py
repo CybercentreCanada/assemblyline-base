@@ -1,6 +1,10 @@
+from assemblyline.common import forge
+
 from assemblyline import odm
 
 BODY_TYPES = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON"}
+constants = forge.get_constants()
+TAG_TYPES = sorted([x[0] for x in constants.STANDARD_TAG_TYPES])
 
 
 @odm.model(index=True, store=False)
@@ -22,7 +26,7 @@ class Tag(odm.Model):
     classification = odm.Classification()   # Classification of the tag
     value = odm.Keyword(copyto="__text__")  # Value of the tag
     context = odm.Keyword()                 # Context of the tag
-    type = odm.Keyword()                    # Type of tag TODO: Enum?
+    type = odm.Enum(values=TAG_TYPES)       # Type of tag
 
 
 @odm.model(index=True, store=True)

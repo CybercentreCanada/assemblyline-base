@@ -501,18 +501,38 @@ class Submission(odm.Model):
     # Number of days submissions will remain in the system by default
     dtl = odm.Integer()
 
+    # Maximum files extraction depth
+    max_extraction_depth = odm.Integer()
     # Maximum size for files submitted in the system
     max_file_size = odm.Integer()
     # Maximum length for each metadata keys
     max_metadata_length = odm.Integer()
+
+    # Summary tag types
+    summary_tag_types = odm.List(odm.Keyword())
 
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
     'dtl': 15,
+    'max_extraction_depth': 6,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
+    'summary_tag_types': [
+        'NET_IP',
+        'NET_DOMAIN_NAME',
+        'NET_FULL_URI',
+        'AV_VIRUS_NAME',
+        'IMPLANT_NAME',
+        'IMPLANT_FAMILY',
+        'TECHNIQUE_OBFUSCATION',
+        'THREAT_ACTOR',
+        'FILE_CONFIG',
+        'FILE_OBFUSCATION',
+        'EXPLOIT_NAME',
+        'FILE_SUMMARY'
+    ]
 }
 
 

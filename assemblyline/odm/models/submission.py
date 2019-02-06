@@ -1,5 +1,7 @@
 from assemblyline import odm
 
+SUBMISSION_STATUSES = ['submitted', 'completed']
+
 
 @odm.model(index=True, store=False)
 class File(odm.Model):
@@ -57,5 +59,5 @@ class Submission(odm.Model):
     params = odm.Compound(SubmissionParams)             # Submission detail blocs
     results = odm.List(odm.Keyword(), store=False)      # List of result keys
     sid = odm.Keyword(copyto="__text__")                # Submission ID
-    state = odm.Keyword()                               # Status of the submission
+    state = odm.Enum(values=SUBMISSION_STATUSES)        # Status of the submission
     times = odm.Compound(Times)                         # Timing bloc

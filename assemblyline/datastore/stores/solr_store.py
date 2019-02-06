@@ -330,7 +330,7 @@ class SolrCollection(Collection):
 
         rows = self._get_value('rows', args)
 
-        if not rows:
+        if rows is None:
             rows = self.DEFAULT_ROW_SIZE
             args.append(('rows', rows))
 
@@ -371,10 +371,10 @@ class SolrCollection(Collection):
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None, as_obj=True):
 
-        if not rows:
+        if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
-        if not sort:
+        if sort is None:
             sort = self.DEFAULT_SORT
 
         args = [
@@ -521,7 +521,7 @@ class SolrCollection(Collection):
     def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None,
                        limit=10, min_count=1, filters=None, access_control=None):
 
-        if not sort:
+        if sort is None:
             sort = self.DEFAULT_SORT
 
         args = [
@@ -565,13 +565,13 @@ class SolrCollection(Collection):
     def grouped_search(self, field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True):
 
-        if not sort:
+        if sort is None:
             sort = self.DEFAULT_SORT
 
-        if not group_sort:
+        if group_sort is None:
             group_sort = self.DEFAULT_SORT
 
-        if not rows:
+        if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
         args = [
