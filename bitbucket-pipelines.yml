@@ -1,6 +1,8 @@
 
 image: python:3.6
 
+options:
+  max-time: 10
 pipelines:
   default:
     - step:
