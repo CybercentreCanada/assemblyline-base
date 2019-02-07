@@ -21,22 +21,21 @@ class AL(Datasource):
             hash_type, value.lower(), hash_type, value.upper()
         )
 
-        res = self.datastore.files.search(query, rows=5, access_control=kw['access_control'])
+        res = self.datastore.file.search(query, rows=5, access_control=kw['access_control'], as_obj=False)
 
         for r in res['items']:
             score = 0
             score_map = {}
 
-            res = self.datastore.results.group(f"id:{r['sha256']}*", ["response.service_name"],
-                                               fields="result.score,id", rows=100,
-                                               sort="created desc", access_control=kw["access_control"])
+            res = self.datastore.result.grouped_search("response.service_name", f"id:{r['sha256']}*",
+                                                       fl="result.score,id", rows=100, sort="created desc",
+                                                       access_control=kw["access_control"], as_obj=False)
 
-            for group in res['response.service_name']:
+            for group in res['items']:
+                service_name = group['value']
                 for doc in group['items']:
-                    service_name = doc['id'][65:].split(".", 1)[0]
-                    if service_name != "HashSearch":
-                        score_map[service_name] = doc['result.score']
-                        score += doc['result.score']
+                    score_map[service_name] = doc['result']['score']
+                    score += doc['result']['score']
 
             result = {
                 "classification": r['classification'],
@@ -47,9 +46,11 @@ class AL(Datasource):
                     "sha1": r['sha1'],
                     "sha256": r['sha256'],
                     "size": r['size'],
-                    "tag": r['tag'],
-                    "seen_count": r['seen_count'],
-                    "seen_last": r['seen_last'],
+                    "type": r['type'],
+                    "seen": {
+                        "count": r['seen']['count'],
+                        "last": r['seen']['last']
+                    },
                     "score": score,
                     "score_map": score_map
                 },

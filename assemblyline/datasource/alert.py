@@ -15,14 +15,14 @@ class Alert(Datasource):
     def query(self, value, **kw):
         hash_type = self.hash_type(value)
 
-        query = "%s:%s OR %s:%s" % (
+        query = "file.%s:%s OR file.%s:%s" % (
             hash_type, value.lower(), hash_type, value.upper()
         )
 
-        res = self.datastore.alerts.search(query, rows=5, sort="al_score desc",
-                                           access_control=kw['access_control'])
+        res = self.datastore.alert.search(query, rows=5, sort="al.score desc",
+                                           access_control=kw['access_control'], as_obj=False)
 
-        count = res['count']
+        count = res['total']
         if count <= 0:
             return []
 
@@ -35,7 +35,7 @@ class Alert(Datasource):
         }
 
         for r in res['items']:
-            score = r['al_score']
+            score = r['al']['score']
             if score >= 500:
                 item['malicious'] = True
             if score >= 2000 or score <= -100:
@@ -44,8 +44,8 @@ class Alert(Datasource):
             data.append({
                 "classification": r['classification'],
                 "date": r['reporting_ts'],
-                "event_id": r['event_id'],
-                "score": r['al_score'],
+                "id": r['id'],
+                "score": r['al']['score'],
             })
 
         return [item]
