@@ -26,7 +26,7 @@ class YaraImporter(object):
         if org in self._id_cache:
             self._id_cache[org] += 1
         else:
-            self._id_cache[org] = self.ds.signature.get_last_signature_id(org) + 1
+            self._id_cache[org] = self.ds.signature.get_signature_last_id(org) + 1
 
         return self._id_cache[org]
 
@@ -52,11 +52,11 @@ class YaraImporter(object):
                 rule['meta']['rule_id'] = "%s_%06d" % (rule['meta']['organisation'],
                                                        self._get_next_id(rule['meta']['organisation']))
             if rule['meta']['rule_version'] == "<AUTO_INCREMENT>":
-                rule['meta']['rule_version'] = self.ds.signature.get_last_revision_for_signature_id(rule['meta']['id'])
+                rule['meta']['rule_version'] = self.ds.signature.get_signature_last_revision_for_id(rule['meta']['id'])
 
             if rule.get('is_new_revision', False):
                 del rule['is_new_revision']
-                new_id, new_rev = self.ds.signature.get_next_revision_for_signature_name(rule['meta']['organisation'],
+                new_id, new_rev = self.ds.signature.get_signature_next_revision_for_name(rule['meta']['organisation'],
                                                                                          rule['name'])
                 if new_id is not None and new_rev is not None:
                     rule['meta']['id'], rule['meta']['rule_version'] = new_id, new_rev

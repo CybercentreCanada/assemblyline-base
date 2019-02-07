@@ -280,7 +280,14 @@ class AssemblylineDatastore(object):
 
         return scores
 
-    def get_next_revision_for_signature_name(self, org, name):
+    def get_signature_last_modified(self):
+        res = self.signature.search("id:*", fl="meta.last_modified",
+                                    sort="meta.last_modified desc", rows=1, as_obj=False)
+        if res['total'] > 0:
+            return res['items'][0]['meta']['last_modified']
+        return '1970-01-01T00:00:00.000000Z'
+
+    def get_signature_next_revision_for_name(self, org, name):
         query = "meta.rule_id:%s_* AND name:%s" % (org, name)
         results = self.signature.search(query, start=0, rows=1, sort="id desc")["items"]
         if len(results) == 0:
@@ -291,7 +298,7 @@ class AssemblylineDatastore(object):
             except (ValueError, KeyError):
                 return None, None
 
-    def get_last_signature_id(self, org):
+    def get_signature_last_id(self, org):
         query = "meta.rule_id:%s_0*" % org
         results = self.signature.search(query, start=0, rows=1, sort="id desc")["items"]
         if len(results) == 0:
@@ -302,7 +309,7 @@ class AssemblylineDatastore(object):
             except (ValueError, KeyError):
                 return 0
 
-    def get_last_revision_for_signature_id(self, sid):
+    def get_signature_last_revision_for_id(self, sid):
         query = "meta.rule_id:%s" % sid
         results = self.signature.search(query, start=0, rows=1, sort="id desc")["items"]
         if len(results) == 0:
