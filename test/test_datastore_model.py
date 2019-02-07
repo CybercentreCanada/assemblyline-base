@@ -1,10 +1,9 @@
 
 import pytest
 
-from elasticsearch import RequestError
 from retrying import retry
 
-from assemblyline.datastore import BaseStore
+from assemblyline.datastore import BaseStore, SearchException
 from assemblyline.datastore.stores.es_store import ESStore
 from assemblyline.datastore.stores.riak_store import RiakStore
 from assemblyline.datastore.stores.solr_store import SolrStore
@@ -199,7 +198,7 @@ def _perform_single_collection_test(ds: BaseStore, idx_name: str, doc: Model):
         if not field.index:
             # Test non-indexed field searches, should fail of return no results
             if isinstance(ds, ESStore):
-                with pytest.raises(RequestError):
+                with pytest.raises(SearchException):
                     c.search(f"{name}:{_get_value(name, doc_data)}", rows=0)
             else:
                 value = _get_value(name, doc_data)
