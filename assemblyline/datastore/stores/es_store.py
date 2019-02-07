@@ -514,8 +514,7 @@ class ESCollection(Collection):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl, as_obj=as_obj)
 
-    def histogram(self, field, start="now-1d", end="now", gap="+1h", query="id:*", mincount=1,
-                  filters=None, access_control=None):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
