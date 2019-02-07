@@ -280,6 +280,39 @@ class AssemblylineDatastore(object):
 
         return scores
 
+    def get_next_revision_for_signature_name(self, org, name):
+        query = "meta.rule_id:%s_* AND name:%s" % (org, name)
+        results = self.signature.search(query, start=0, rows=1, sort="id desc")["items"]
+        if len(results) == 0:
+            return None, None
+        else:
+            try:
+                return results[0]["meta.rule_id"], int(results[0]["meta.rule_version"]) + 1
+            except (ValueError, KeyError):
+                return None, None
+
+    def get_last_signature_id(self, org):
+        query = "meta.rule_id:%s_0*" % org
+        results = self.signature.search(query, start=0, rows=1, sort="id desc")["items"]
+        if len(results) == 0:
+            return 0
+        else:
+            try:
+                return int(results[0]["meta.rule_id"].split("_")[1])
+            except (ValueError, KeyError):
+                return 0
+
+    def get_last_revision_for_signature_id(self, sid):
+        query = "meta.rule_id:%s" % sid
+        results = self.signature.search(query, start=0, rows=1, sort="id desc")["items"]
+        if len(results) == 0:
+            return 0
+        else:
+            try:
+                return int(results[0]["meta.rule_version"])
+            except (ValueError, KeyError):
+                return 0
+
     def get_or_create_file_tree(self, submission, max_depth):
         if isinstance(submission, Model):
             submission = submission.as_primitives()

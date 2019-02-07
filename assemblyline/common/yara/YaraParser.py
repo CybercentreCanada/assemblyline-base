@@ -4,9 +4,12 @@ import re
 
 from assemblyline.common.str_utils import is_safe_str, safe_str
 from assemblyline.common import forge
+from assemblyline.odm.models.signature import RequiredMeta
 
 config = forge.get_config()
-yara_externals = {"al_%s" % i: i for i in config.system.yara.externals}
+yara_externals = {f"al_{i}": i for i in config.system.yara.externals}
+
+REQUIRED_META = list(RequiredMeta.fields().keys())
 
 
 class YaraCharsetValidationException(Exception):
@@ -21,7 +24,7 @@ class YaraParser(object):
     RULE_TYPE = ["rule", "private rule", "global private rule", "global rule"]
     RULE_GROUPS = ['exploit', 'implant', 'info', 'technique', 'tool']
     RULE_IMPORTANT = ['description', 'id', 'organisation', 'poc', 'rule_version', 'yara_version']
-    RULE_DEFAULT = {"depends": [], "comments": [], "meta": {"al_status": "TESTING"}, "strings": [],
+    RULE_DEFAULT = {"depends": [], "comments": [], "meta": {"al_status": "TESTING"}, "meta_extra": {}, "strings": [],
                     "condition": [], "type": None, "name": None, "tags": []}
     YARA_RESERVED_KW = ["all", "and", "any", "ascii", "at", "condition", "contains", "entrypoint", "false",
                         "filesize", "fullword", "for", "global", "in", "import", "include", "index", "indexes",
@@ -142,8 +145,8 @@ class YaraParser(object):
         if cls.custom_bump_rules(rule, old_rule):
             return True
         
-        new_keys = rule['meta'].keys() 
-        old_keys = old_rule['meta'].keys()
+        new_keys = rule['meta'].keys() + rule['meta_extra'].keys()
+        old_keys = old_rule['meta'].keys() + old_rule['meta_extra'].keys()
         
         if new_keys != old_keys:
             return True
@@ -161,7 +164,7 @@ class YaraParser(object):
         if not root:
             return new
         else:
-            return "%s.%s" % (root, new)
+            return f"{root}.{new}"
 
     @classmethod
     def recurse_validate_charset(cls, item, path=None):
@@ -172,12 +175,12 @@ class YaraParser(object):
             for i in item:
                 cls.recurse_validate_charset(i, path)
 
-        elif isinstance(item, basestring):
+        elif isinstance(item, str):
             if not is_safe_str(item):
                 raise YaraCharsetValidationException({
                     "valid": False,
                     "field": path,
-                    "message": "Invalid char in string [%s]" % repr(item)
+                    "message": f"Invalid char in string [{repr(item)}]"
                 })
 
     @classmethod
@@ -215,9 +218,9 @@ class YaraParser(object):
         if not meta:
             return {"valid": False, "field": "meta", "message": "No meta section"}
         rule_group = meta.get('rule_group', None)
-        section = meta.get(rule_group, None)
+        section = meta.get('rule_group_value', None)
         description = meta.get('description', None)
-        s_id = meta.get('id', None)
+        s_id = meta.get('rule_id', None)
         organisation = meta.get('organisation', None)
         poc = meta.get('poc', None)
         rule_version = meta.get('rule_version', None)
@@ -228,13 +231,13 @@ class YaraParser(object):
             return {"valid": False, "field": "meta.rule_group", "message": "Rule group not valid."}
         
         if section is None or section == "":
-            return {"valid": False, "field": "meta.%s" % rule_group, "message": "Missing field %s" % rule_group}
+            return {"valid": False, "field": "meta.rule_group_value", "message": "Missing field meta.rule_group_value" }
         
         if description is None or description == "":
             return {"valid": False, "field": "meta.description", "message": "No description provided"}
         
         if s_id is None or s_id == "":
-            return {"valid": False, "field": "meta.id", "message": "No signature ID provided"}
+            return {"valid": False, "field": "meta.rule_id", "message": "No signature ID provided"}
         
         if organisation is None or organisation == "":
             return {"valid": False, "field": "meta.organisation", "message": "No organisation provided"}
@@ -242,9 +245,9 @@ class YaraParser(object):
         if poc is None or poc == "":
             return {"valid": False, "field": "meta.poc", "message": "No point of contact provided"}
         
-        if not poc.endswith("@%s" % organisation.lower()):
+        if not poc.endswith(f"@{organisation.lower()}"):
             return {"valid": False, "field": "meta.poc",
-                    "message": "Invalid point of contact. Format is userid@%s" % organisation.lower()}
+                    "message": f"Invalid point of contact. Format is userid@{organisation.lower()}"}
         
         if rule_version is None or rule_version == "":
             return {"valid": False, "field": "meta.rule_version", "message": "No rule version provided"}
@@ -259,7 +262,7 @@ class YaraParser(object):
             return {"valid": False, "field": "meta.al_status", "message": "No status provided"}
         
         if al_rule and al_status not in YaraParser.STATUSES:
-            return {"valid": False, "field": "meta.al_status", "message": "Invalid status %s" % al_status}
+            return {"valid": False, "field": "meta.al_status", "message": f"Invalid status {al_status}"}
 
         # noinspection PyNoneFunctionAssignment
         custom_return = cls.custom_validation_rules(rule, al_rule=True)
@@ -453,7 +456,14 @@ class YaraParser(object):
                     val = val.strip().strip('"')
                     if force_safe_str:
                         val = safe_str(val)
-                    self.cur_rule['meta'][key] = val
+                    if key in REQUIRED_META:
+                        self.cur_rule['meta'][key] = val
+                    elif key in self.RULE_GROUPS:
+                        self.cur_rule['meta']['rule_group_value'] = val
+                    elif key == 'id':
+                        self.cur_rule['meta']['rule_id'] = val
+                    else:
+                        self.cur_rule['meta_extra'][key] = val
                 elif self.in_strings and line != "":
                     if force_safe_str:
                         line = safe_str(line)
@@ -484,13 +494,13 @@ class YaraParser(object):
     @staticmethod
     def dump_rule_file(rule_list, fake_dependencies=False, show_header=True):
         if show_header:
-            out = ["//\t%s rule(s)" % len(rule_list), "", ""]
+            out = [f"//\t{len(rule_list)} rule(s)", "", ""]
         else:
             out = []
 
         modules = list(set([m for rule in rule_list for m in rule.get('modules', [])]))
         for m in modules:
-            out.append('import "%s"' % m)
+            out.append(f'import "{m}"')
             out.append("")
 
         if fake_dependencies:
@@ -502,43 +512,44 @@ class YaraParser(object):
         for rule in rule_list:
             if rule is None:
                 continue
-            
-            out.append("%s %s%s {" % (rule['type'], rule['name'],
-                                      {True: ": %s" % " ".join(rule['tags']), False: ""}[len(rule["tags"]) > 0]))
+
+            if len(rule["tags"]) > 0:
+                tags = f': {" ".join(rule["tags"])}'
+            else:
+                tags = ""
+
+            out.append(f'{rule["type"]} {rule["name"]}{tags} {{')
             
             # Do comments
             for c in rule['comments']:
-                out.append("    // %s" % c)
+                out.append(f"    // {c}")
             
             # Do meta. Try to preserve ordering
-            if rule['meta']:
+            metadata = rule.get('meta', {})
+            metadata.update(rule.get('meta_extra', {}))
+            if metadata:
                 out.append("    meta:")
-                keys = rule['meta'].keys()
+                keys = metadata.keys()
                 if "rule_group" in keys:
-                    out.append('        rule_group = "%s"' % rule['meta']['rule_group'])
+                    out.append(f'        rule_group = "{metadata["rule_group"]}"')
                     keys.remove('rule_group')
-                    if rule['meta']['rule_group'] in keys:
-                        out.append('        %s = "%s"' % (rule['meta']['rule_group'],
-                                                          rule['meta'][rule['meta']['rule_group']]))
-                        keys.remove(rule['meta']['rule_group'])
-                    for x in YaraParser.RULE_GROUPS:
-                        if x in keys:
-                            out.append('        %s = "%s"' % (x, rule['meta'][x]))
-                            keys.remove(x)
+                    if 'rule_group_value' in keys:
+                        out.append(f'        rule_group_value = "{metadata["rule_group_value"]}"')
+                        keys.remove('rule_group_value')
                     out.append("        ")
                     
                 do_space = False
                 for i in YaraParser.RULE_IMPORTANT:
                     if i in keys:
                         do_space = True
-                        out.append('        %s = "%s"' % (i, rule['meta'][i]))
+                        out.append(f'        {i} = "{metadata[i]}"')
                         keys.remove(i)
                 if do_space:
                     out.append("        ")
                     
                 keys.sort()
                 for k in keys:
-                    out.append('        %s = "%s"' % (k, rule['meta'][k]))
+                    out.append(f'        {k} = "{metadata[k]}"')
                     
                 out.append("    ")
             
@@ -547,14 +558,14 @@ class YaraParser(object):
                 if len(set(rule['strings'])) > 1 or rule['strings'][0] != "":
                     out.append("    strings:")
                     for s in rule['strings']:
-                        out.append('        %s' % s)
+                        out.append(f'        {s}')
                     out.append("    ")
                     
             # Do conditions
             if rule['condition']:
                 out.append("    condition:")
                 for c in rule['condition']:
-                    out.append('        %s' % c)
+                    out.append(f'        {c}')
                 
                 out.append("    ")
                             

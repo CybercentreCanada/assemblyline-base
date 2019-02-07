@@ -11,14 +11,12 @@ class RequiredMeta(odm.Model):
     classification = odm.Classification()                       # Classification of the rule
     description = odm.Text(store=False, copyto="__text__")      # Description of the rule
     organisation = odm.Keyword(store=False, copyto="__text__")  # Organisation acronym which created the rule
-    origin = odm.Keyword(store=False, copyto="__text__")        # Organisation acronym which created the rule
     poc = odm.Keyword()                                         # Point of contact for the rule
     rule_group = odm.Enum(values=VALID_GROUPS)                  # Group that the rule is part of
     rule_group_value = odm.Keyword(copyto="__text__")           # Value of the rule group (replaces: tech, info, ...)
     rule_id = odm.Keyword()                                     # ID of the rule
     rule_version = odm.Integer()                                # Version of the rule
-    used_by = odm.Keyword(copyto="__text__")                    # Field used for attribution
-    yara_verion = odm.Keyword()                                 # Version of Yara the rule was built for
+    yara_version = odm.Keyword()                                # Version of Yara the rule was built for
 
 
 @odm.model(index=True, store=False)

@@ -27,7 +27,7 @@ class YaraImporter(object):
         if org in self._id_cache:
             self._id_cache[org] += 1
         else:
-            self._id_cache[org] = self.ds.signatures.get_last_id(org) + 1
+            self._id_cache[org] = self.ds.signature.get_last_signature_id(org) + 1
 
         return self._id_cache[org]
 
@@ -49,31 +49,32 @@ class YaraImporter(object):
                 failed_list.append((rule['name'], "Previously failed rule validation (%s)" % validation_error))
                 continue
 
-            if rule['meta']['id'] == "<AUTO_INCREMENT>":
-                rule['meta']['id'] = "%s_%06d" % (rule['meta']['organisation'],
+            if rule['meta']['rule_id'] == "<AUTO_INCREMENT>":
+                rule['meta']['rule_id'] = "%s_%06d" % (rule['meta']['organisation'],
                                                   self._get_next_id(rule['meta']['organisation']))
             if rule['meta']['rule_version'] == "<AUTO_INCREMENT>":
-                rule['meta']['rule_version'] = self.ds.signatures.get_last_rev_for_id(rule['meta']['id'])
+                rule['meta']['rule_version'] = self.ds.signature.get_last_revision_for_signature_id(rule['meta']['id'])
 
             if rule.get('is_new_revision', False):
                 del rule['is_new_revision']
-                new_id, new_rev = self.ds.signatures.get_next_rev_for_name(rule['meta']['organisation'], rule['name'])
+                new_id, new_rev = self.ds.signature.get_next_revision_for_signature_name(rule['meta']['organisation'], rule['name'])
                 if new_id is not None and new_rev is not None:
                     rule['meta']['id'], rule['meta']['rule_version'] = new_id, new_rev
                 else:
                     failed_list.append((rule['name'], "Could not find matching rule to increment revision number."))
                     continue
 
-            key = "%sr.%s" % (rule['meta']['id'], rule['meta']['rule_version'])
+            key = "%sr.%s" % (rule['meta']['rule_id'], rule['meta']['rule_version'])
             yara_version = rule['meta'].get('yara_version', None)
-            rule['meta']['creation_date'] = isotime.now_as_iso()
-            rule['meta']['last_saved_by'] = rule['meta']['al_imported_by']
+            rule['meta_extra']['creation_date'] = isotime.now_as_iso()
+            if "al_imported_by" in rule['meta_extra']:
+                rule['meta_extra']['last_saved_by'] = rule['meta_extra']['al_imported_by']
             rule['depends'], rule['modules'] = self.yp.parse_dependencies(rule['condition'],
                                                                           self.yp.YARA_MODULES.get(yara_version, None))
             res = self.yp.validate_rule(rule)
             if res['valid']:
                 rule['warning'] = res.get('warning', None)
-                self.ds.signatures.save(key, rule)
+                self.ds.signature.save(key, rule)
                 self.log.info("Added signature %s" % rule['name'])
             else:
                 failed_list.append((rule['name'], "Failed rule validation (%s)" % res['message']['error']))
@@ -128,7 +129,7 @@ class YaraImporter(object):
             return False
 
         key = "%sr.%s" % (rid, rev)
-        id_lookup = self.ds.signatures.get(key)
+        id_lookup = self.ds.signature.get(key)
         if id_lookup:
             return True
 
@@ -136,7 +137,7 @@ class YaraImporter(object):
 
     def check_for_name_conflicts(self, name):
         try:
-            name_lookup = self.ds.signatures.search(query="name:%s" % name, rows=0)
+            name_lookup = self.ds.signature.search("name:%s" % name, rows=0)
             if name_lookup['total'] > 0:
                 return True
 
@@ -169,7 +170,7 @@ class YaraImporter(object):
     def parse_file(self, cur_file, force_safe_str=False):
         cur_file = os.path.expanduser(cur_file)
         if os.path.exists(cur_file):
-            with open(cur_file, "rb") as yara_file:
+            with open(cur_file, "r") as yara_file:
                 yara_bin = yara_file.read()
                 return self.parse_data(yara_bin, force_safe_str=force_safe_str)
         else:
