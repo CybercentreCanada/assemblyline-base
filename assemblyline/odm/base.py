@@ -434,6 +434,8 @@ class Compound(_Field):
         self.child_type = field_type
 
     def check(self, value, mask=None):
+        if isinstance(value, self.child_type):
+            return value
         return self.child_type(value, mask=mask)
 
     def fields(self):
@@ -443,6 +445,28 @@ class Compound(_Field):
             field_data.apply_defaults(self.index, self.store)
             out[name] = field_data
         return out
+
+
+class Optional(_Field):
+    """A wrapper field to allow simple types (int, float, bool) to take None values."""
+    def __init__(self, child_type, default_set=True, **kwargs):
+        if child_type.default_set:
+            kwargs['default_set'] = True
+            kwargs['default'] = child_type.default
+        super().__init__(default_set=default_set, **kwargs)
+        self.child_type = child_type
+
+    def check(self, value, *args, **kwargs):
+        if value is None:
+            return None
+        return self.child_type.check(value, *args, **kwargs)
+
+    def fields(self):
+        return self.child_type.fields()
+
+    def apply_defaults(self, index, store):
+        super().apply_defaults(index, store)
+        self.child_type.apply_defaults(self.index, self.store)
 
 
 class Model:
