@@ -408,10 +408,14 @@ class ESCollection(Collection):
             result = self.with_retries(self.datastore.client.search, index=self.name, body=json.dumps(query_body))
             return result
 
-        except elasticsearch.RequestError:
-            raise
+        except (elasticsearch.TransportError, elasticsearch.RequestError) as e:
+            try:
+                err_msg = e.info['error']['root_cause'][0]['reason']
+            except (ValueError, KeyError):
+                err_msg = str(e)
+            raise SearchException(err_msg)
 
-        except (elasticsearch.TransportError, elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
+        except (elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
             raise SearchRetryException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
 
         except Exception as error:
@@ -510,7 +514,7 @@ class ESCollection(Collection):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl, as_obj=as_obj)
 
-    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None):
         type_modifier = self._validate_steps_count(start, end, gap)
 
         if filters is None:
@@ -540,7 +544,7 @@ class ESCollection(Collection):
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
+    def field_analysis(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
                        min_count=1, filters=None, access_control=None):
         if filters is None:
             filters = []
@@ -568,7 +572,7 @@ class ESCollection(Collection):
         return {row.get('key_as_string', row['key']): row['doc_count']
                 for row in result['aggregations'][field]['buckets']}
 
-    def grouped_search(self, group_field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
+    def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True):
 
         if rows is None:

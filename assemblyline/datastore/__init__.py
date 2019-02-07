@@ -406,14 +406,14 @@ class Collection(object):
                                                                                     gaps_count))
             return ret_type
 
-    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=(), access_control=None):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
+    def field_analysis(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
                        min_count=1, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def grouped_search(self, group_field, query="*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
+    def grouped_search(self, group_field, query="id:*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
                        rows=DEFAULT_ROW_SIZE, filters=(), access_control=None, as_obj=True):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
