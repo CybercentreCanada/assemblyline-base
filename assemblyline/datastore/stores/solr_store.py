@@ -487,7 +487,8 @@ class SolrCollection(Collection):
                     yield_done = True
                 time.sleep(0.01)
 
-    def histogram(self, field, start, end, gap, query="*", mincount=1, filters=None, access_control=None):
+    def histogram(self, field, start="NOW-1DAY", end="NOW", gap="+1HOUR", query="id:*", mincount=1,
+                  filters=None, access_control=None):
         """Build a histogram of `query` data over `field`"""
 
         type_modifier = self._validate_steps_count(start, end, gap)
@@ -518,8 +519,8 @@ class SolrCollection(Collection):
         return {type_modifier(x[0]): x[1]
                 for x in chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2)}
 
-    def field_analysis(self, field, query="*", prefix=None, contains=None, ignore_case=False, sort=None,
-                       limit=10, min_count=1, filters=None, access_control=None):
+    def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None,
+                       limit=10, mincount=1, filters=None, access_control=None):
 
         if sort is None:
             sort = self.DEFAULT_SORT
@@ -530,7 +531,7 @@ class SolrCollection(Collection):
             ("facet", "on"),
             ("facet.field", field),
             ("facet.limit", limit),
-            ("facet.mincount", min_count),
+            ("facet.mincount", mincount),
             ("facet.missing", "false"),
             ('wt', 'json'),
             ('df', '__text__')
@@ -562,7 +563,7 @@ class SolrCollection(Collection):
         output.pop("", None)
         return output
 
-    def grouped_search(self, field, query="*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
+    def grouped_search(self, field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True):
 
         if sort is None:

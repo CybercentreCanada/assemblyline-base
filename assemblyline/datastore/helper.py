@@ -239,7 +239,7 @@ class AssemblylineDatastore(object):
     def get_file_submission_meta(self, sha256, fields, access_control=None):
         query = f"files.sha256:{sha256} OR results:{sha256}*"
         with concurrent.futures.ThreadPoolExecutor(len(fields)) as executor:
-            res = {field: executor.submit(self.submission.field_analysis,
+            res = {field: executor.submit(self.submission.facet,
                                           field,
                                           query=query,
                                           limit=100,

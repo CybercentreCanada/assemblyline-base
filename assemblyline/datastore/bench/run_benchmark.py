@@ -105,7 +105,7 @@ def run(ds, times, dataset):
     with measure(times, 'facet'):
         results = []
         for _ in range(DATASET_SIZE):
-            results.append(pool.submit(ds.field_analysis, "errors"))
+            results.append(pool.submit(ds.facet, "errors"))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
