@@ -23,7 +23,7 @@ class YaraParser(object):
     VALID_YARA_VERSION = ["1.6", "1.7", "2.0", "2.1", "3.0", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7"]
     RULE_TYPE = ["rule", "private rule", "global private rule", "global rule"]
     RULE_GROUPS = ['exploit', 'implant', 'info', 'technique', 'tool']
-    RULE_IMPORTANT = ['description', 'id', 'organisation', 'poc', 'rule_version', 'yara_version']
+    RULE_IMPORTANT = ['description', 'organisation', 'poc', 'rule_id', 'rule_version', 'yara_version']
     RULE_DEFAULT = {"depends": [], "comments": [], "meta": {"al_status": "TESTING"}, "meta_extra": {}, "strings": [],
                     "condition": [], "type": None, "name": None, "tags": []}
     YARA_RESERVED_KW = ["all", "and", "any", "ascii", "at", "condition", "contains", "entrypoint", "false",
@@ -231,7 +231,7 @@ class YaraParser(object):
             return {"valid": False, "field": "meta.rule_group", "message": "Rule group not valid."}
         
         if section is None or section == "":
-            return {"valid": False, "field": "meta.rule_group_value", "message": "Missing field meta.rule_group_value" }
+            return {"valid": False, "field": "meta.rule_group_value", "message": "Missing field meta.rule_group_value"}
         
         if description is None or description == "":
             return {"valid": False, "field": "meta.description", "message": "No description provided"}
@@ -530,12 +530,16 @@ class YaraParser(object):
             if metadata:
                 out.append("    meta:")
                 keys = metadata.keys()
+                do_space = False
                 if "rule_group" in keys:
                     out.append(f'        rule_group = "{metadata["rule_group"]}"')
                     keys.remove('rule_group')
-                    if 'rule_group_value' in keys:
-                        out.append(f'        rule_group_value = "{metadata["rule_group_value"]}"')
-                        keys.remove('rule_group_value')
+                    do_space = True
+                if 'rule_group_value' in keys:
+                    out.append(f'        rule_group_value = "{metadata["rule_group_value"]}"')
+                    keys.remove('rule_group_value')
+                    do_space = True
+                if do_space:
                     out.append("        ")
                     
                 do_space = False
