@@ -323,10 +323,10 @@ def _test_c_histogram(r_tc: Collection, s_tc: Collection, e_tc: Collection):
     assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_r))
 
 
-def _test_c_field_analysis(r_tc: Collection, s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.field_analysis('classification_s'),
-                          e_tc.field_analysis('classification_s'),
-                          r_tc.field_analysis('classification_s'))
+def _test_c_facet(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+    assert compare_output(s_tc.facet('classification_s'),
+                          e_tc.facet('classification_s'),
+                          r_tc.facet('classification_s'))
 
 
 def _test_c_group_search(r_tc: Collection, s_tc: Collection, e_tc: Collection):
@@ -360,7 +360,7 @@ TEST_CONSISTENCY_FUNCS = [
     (_test_c_streamsearch, "stream_search"),
     (_test_c_keys, "keys"),
     (_test_c_histogram, "histogram"),
-    (_test_c_field_analysis, "field_analysis"),
+    (_test_c_facet, "facet"),
     (_test_c_group_search, "group_search"),
     (_test_c_fields, "fields"),
 

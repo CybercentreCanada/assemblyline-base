@@ -518,8 +518,8 @@ class SolrCollection(Collection):
         return {type_modifier(x[0]): x[1]
                 for x in chunked_list(result["facet_counts"]["facet_ranges"][field]["counts"], 2)}
 
-    def field_analysis(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None,
-                       limit=10, min_count=1, filters=None, access_control=None):
+    def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None,
+                       limit=10, mincount=1, filters=None, access_control=None):
 
         if sort is None:
             sort = self.DEFAULT_SORT
@@ -530,7 +530,7 @@ class SolrCollection(Collection):
             ("facet", "on"),
             ("facet.field", field),
             ("facet.limit", limit),
-            ("facet.mincount", min_count),
+            ("facet.mincount", mincount),
             ("facet.missing", "false"),
             ('wt', 'json'),
             ('df', '__text__')

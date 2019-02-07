@@ -544,8 +544,8 @@ class ESCollection(Collection):
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def field_analysis(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-                       min_count=1, filters=None, access_control=None):
+    def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
+              mincount=1, filters=None, access_control=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -555,7 +555,7 @@ class ESCollection(Collection):
             ('query', query),
             ('facet_active', True),
             ('facet_fields', [field]),
-            ('facet_mincount', min_count)
+            ('facet_mincount', mincount)
         ]
 
         # TODO: prefix, contains, ignore_case, sort

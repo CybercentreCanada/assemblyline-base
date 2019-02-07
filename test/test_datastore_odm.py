@@ -418,10 +418,10 @@ def _test_c_histogram(s_tc, e_tc, r_tc, _):
     assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_r))
 
 
-def _test_c_field_analysis(s_tc, e_tc, r_tc, _):
-    assert compare_output(s_tc.field_analysis('tags'),
-                          e_tc.field_analysis('tags'),
-                          r_tc.field_analysis('tags'))
+def _test_c_facet(s_tc, e_tc, r_tc, _):
+    assert compare_output(s_tc.facet('tags'),
+                          e_tc.facet('tags'),
+                          r_tc.facet('tags'))
 
 
 def _test_c_groupsearch(s_tc, e_tc, r_tc, as_obj):
@@ -445,7 +445,7 @@ TEST_CONSISTENCY_FUNC = [
     (_test_c_streamsearch, False, "streamsearch - dict"),
     (_test_c_keys, None, "keys"),
     (_test_c_histogram, None, "histogram"),
-    (_test_c_field_analysis, None, "field_analysis"),
+    (_test_c_facet, None, "facet"),
     (_test_c_groupsearch, True, "groupsearch - object"),
     (_test_c_groupsearch, False, "groupsearch - dict"),
     (_test_c_fields, None, "fields"),

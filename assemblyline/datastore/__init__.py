@@ -409,8 +409,8 @@ class Collection(object):
     def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def field_analysis(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-                       min_count=1, filters=(), access_control=None):
+    def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
+                       mincount=1, filters=(), access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def grouped_search(self, group_field, query="id:*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
