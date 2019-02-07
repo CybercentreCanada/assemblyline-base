@@ -24,13 +24,13 @@ definitions:
   services:
     elasticsearch:
       image: sgaroncse/elasticsearch:6.4.2
-      memory: 512
+      memory: 768
       environment:
         ES_JAVA_OPTS: '-Xms256m -Xmx256m'
         DISCOVERY_TYPE: 'single-node'
     redis:
       image: redis
-      memory: 512
+      memory: 256
     riak:
       image: sgaroncse/riak-kv:2.1.4
       memory: 512
@@ -41,7 +41,7 @@ definitions:
       memory: 512
     solr:
       image: solr:7.5-alpine
-      memory: 512
+      memory: 768
       environment:
         ZK_HOST: 'localhost:2181'
         SOLR_JAVA_MEM: '-Xms256m -Xmx256m'
