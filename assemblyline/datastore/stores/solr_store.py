@@ -487,7 +487,8 @@ class SolrCollection(Collection):
                     yield_done = True
                 time.sleep(0.01)
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None):
+    def histogram(self, field, start="NOW-1DAY", end="NOW", gap="+1HOUR", query="id:*", mincount=1,
+                  filters=None, access_control=None):
         """Build a histogram of `query` data over `field`"""
 
         type_modifier = self._validate_steps_count(start, end, gap)

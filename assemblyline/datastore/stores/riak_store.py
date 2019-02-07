@@ -268,8 +268,9 @@ class RiakCollection(SolrCollection):
 
             return ret_val
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=(), access_control=None):
-        ret_val = super().histogram(field, start, end, gap, query=query, mincount=mincount,
+    def histogram(self, field, start="NOW-1DAY", end="NOW", gap="+1HOUR", query="id:*", mincount=1,
+                  filters=None, access_control=None):
+        ret_val = super().histogram(field, start=start, end=end, gap=gap, query=query, mincount=mincount,
                                     filters=filters, access_control=access_control)
 
         # NOTE: mincount does not seem to be applied correctly in the solr instance provided by riak

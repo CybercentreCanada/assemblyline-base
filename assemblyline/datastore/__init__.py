@@ -406,7 +406,8 @@ class Collection(object):
                                                                                     gaps_count))
             return ret_type
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=(), access_control=None):
+    def histogram(self, field, start="NOW-1DAY", end="NOW", gap="+1HOUR", query="id:*", mincount=1,
+                  filters=None, access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
