@@ -124,8 +124,14 @@ TEST_DATA = [
 # noinspection PyBroadException
 def _setup_collection(ds, name, doc):
     try:
+        # Reuse default collection for minimal objects
+        name = name.replace('_min', '')
+
         ds.register(name, model_class=doc.__class__)
         collection = ds.__getattr__(name)
+        # Cleanup the collection
+        collection.wipe()
+
         # Save test document
         collection.save("document_id", doc)
 
