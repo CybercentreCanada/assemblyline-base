@@ -152,7 +152,7 @@ class YaraParser(object):
             return True
         
         for item in new_keys:
-            if item not in ['description', 'poc', 'yara_version', 'modification_date', 'creation_date',
+            if item not in ['description', 'poc', 'yara_version', 'creation_date', 'last_modified',
                             'al_state_change_user', 'al_state_change_date', 'last_saved_by']:
                 if rule['meta'][item] != old_rule['meta'][item]:
                     return True

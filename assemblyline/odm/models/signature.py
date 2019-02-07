@@ -8,9 +8,11 @@ VALID_GROUPS = {"technique", "exploit", "implant", "info", "tool"}
 @odm.model(index=True, store=True)
 class RequiredMeta(odm.Model):
     al_status = odm.Enum(values=RULE_STATUSES)                  # Status of the rule in Assemblyline
+    creation_date = odm.Date(default="NOW")                     # Date at which the signature was created
     classification = odm.Classification()                       # Classification of the rule
     description = odm.Text(store=False, copyto="__text__")      # Description of the rule
     organisation = odm.Keyword(store=False, copyto="__text__")  # Organisation acronym which created the rule
+    last_modified = odm.Date(default="NOW")                     # Last time signature was modified
     poc = odm.Keyword()                                         # Point of contact for the rule
     rule_group = odm.Enum(values=VALID_GROUPS)                  # Group that the rule is part of
     rule_group_value = odm.Keyword(copyto="__text__")           # Value of the rule group (replaces: tech, info, ...)

@@ -2,13 +2,12 @@
 import os
 import logging
 
-from assemblyline.common import isotime
 from assemblyline.common import forge
 from assemblyline.common.yara import YaraParser
 
 
 class YaraImporter(object):
-    REQUIRED_META = ['description', 'id', 'organisation', 'poc', 'rule_version', 'yara_version', 'rule_group']
+    REQUIRED_META = ['description', 'organisation', 'poc', 'rule_id', 'rule_version', 'yara_version', 'rule_group']
 
     def __init__(self, logger=None):
         if not logger:
@@ -51,13 +50,14 @@ class YaraImporter(object):
 
             if rule['meta']['rule_id'] == "<AUTO_INCREMENT>":
                 rule['meta']['rule_id'] = "%s_%06d" % (rule['meta']['organisation'],
-                                                  self._get_next_id(rule['meta']['organisation']))
+                                                       self._get_next_id(rule['meta']['organisation']))
             if rule['meta']['rule_version'] == "<AUTO_INCREMENT>":
                 rule['meta']['rule_version'] = self.ds.signature.get_last_revision_for_signature_id(rule['meta']['id'])
 
             if rule.get('is_new_revision', False):
                 del rule['is_new_revision']
-                new_id, new_rev = self.ds.signature.get_next_revision_for_signature_name(rule['meta']['organisation'], rule['name'])
+                new_id, new_rev = self.ds.signature.get_next_revision_for_signature_name(rule['meta']['organisation'],
+                                                                                         rule['name'])
                 if new_id is not None and new_rev is not None:
                     rule['meta']['id'], rule['meta']['rule_version'] = new_id, new_rev
                 else:
@@ -66,7 +66,8 @@ class YaraImporter(object):
 
             key = "%sr.%s" % (rule['meta']['rule_id'], rule['meta']['rule_version'])
             yara_version = rule['meta'].get('yara_version', None)
-            rule['meta_extra']['creation_date'] = isotime.now_as_iso()
+            if 'last_modified' in rule['meta']:
+                del rule['meta']['last_modified']
             if "al_imported_by" in rule['meta_extra']:
                 rule['meta_extra']['last_saved_by'] = rule['meta_extra']['al_imported_by']
             rule['depends'], rule['modules'] = self.yp.parse_dependencies(rule['condition'],
@@ -97,7 +98,7 @@ class YaraImporter(object):
         elif field == "rule_version":
             try:
                 int(value)
-            except:
+            except ValueError:
                 return False, "rule_version should be a simple integer value"
         elif field == "rule_group":
             if value not in self.yp.RULE_GROUPS:
@@ -116,7 +117,7 @@ class YaraImporter(object):
                     else:
                         int(num)
                         error = False
-                except:
+                except (ValueError, KeyError):
                     error = True
 
                 if error:

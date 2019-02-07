@@ -1,7 +1,9 @@
-import datetime
+
 import logging
 import re
 import subprocess
+
+from assemblyline.common.isotime import now_as_iso
 
 
 class YaraValidator(object):
@@ -125,7 +127,7 @@ class YaraValidator(object):
                             except KeyError:
                                 pass
                             sigdata['meta']['al_status'] = 'INVALID'
-                            today = datetime.date.today().isoformat()
+                            today = now_as_iso()
                             sigdata['meta']['al_state_change_date'] = today
                             sigdata['meta']['al_state_change_user'] = signature_user
                             sigdata['comments'].append("AL ERROR MSG:{0}. Line:{1}".format(e_message.rstrip().strip(),
