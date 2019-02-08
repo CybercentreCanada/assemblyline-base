@@ -218,7 +218,7 @@ class YaraParser(object):
         if not meta:
             return {"valid": False, "field": "meta", "message": "No meta section"}
         rule_group = meta.get('rule_group', None)
-        section = meta.get('rule_group_value', None)
+        section = meta.get(rule_group, None)
         description = meta.get('description', None)
         s_id = meta.get('rule_id', None)
         organisation = meta.get('organisation', None)
@@ -231,7 +231,7 @@ class YaraParser(object):
             return {"valid": False, "field": "meta.rule_group", "message": "Rule group not valid."}
         
         if section is None or section == "":
-            return {"valid": False, "field": "meta.rule_group_value", "message": "Missing field meta.rule_group_value"}
+            return {"valid": False, "field": f"meta.{rule_group}", "message": f"Missing field meta.{rule_group}"}
         
         if description is None or description == "":
             return {"valid": False, "field": "meta.description", "message": "No description provided"}
@@ -456,10 +456,10 @@ class YaraParser(object):
                     val = val.strip().strip('"')
                     if force_safe_str:
                         val = safe_str(val)
-                    if key in REQUIRED_META:
+                    if key == 'classification':
+                        self.cur_rule['classification'] = val
+                    elif key in REQUIRED_META:
                         self.cur_rule['meta'][key] = val
-                    elif key in self.RULE_GROUPS:
-                        self.cur_rule['meta']['rule_group_value'] = val
                     elif key == 'id':
                         self.cur_rule['meta']['rule_id'] = val
                     else:
@@ -527,7 +527,8 @@ class YaraParser(object):
             # Do meta. Try to preserve ordering
             metadata = rule.get('meta', {})
             metadata.update(rule.get('meta_extra', {}))
-            if metadata:
+            classification = rule.get('classification', None)
+            if metadata or classification:
                 out.append("    meta:")
                 keys = metadata.keys()
                 do_space = False
@@ -535,14 +536,18 @@ class YaraParser(object):
                     out.append(f'        rule_group = "{metadata["rule_group"]}"')
                     keys.remove('rule_group')
                     do_space = True
-                if 'rule_group_value' in keys:
-                    out.append(f'        rule_group_value = "{metadata["rule_group_value"]}"')
-                    keys.remove('rule_group_value')
-                    do_space = True
+                for i in YaraParser.RULE_GROUPS:
+                    if i in keys:
+                        out.append(f'        {i} = "{metadata[i]}"')
+                        keys.remove(i)
+                        do_space = True
                 if do_space:
                     out.append("        ")
                     
                 do_space = False
+                if classification:
+                    out.append(f'        classification = "{classification}"')
+                    do_space = True
                 for i in YaraParser.RULE_IMPORTANT:
                     if i in keys:
                         do_space = True

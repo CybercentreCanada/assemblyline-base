@@ -255,6 +255,7 @@ class Collection(object):
         LISTS ONLY: Append and remove items
         ALL TYPES: Set value
 
+        :param access_control:
         :param filters: Filter queries to reduce the data
         :param query: Query to find the matching documents
         :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]

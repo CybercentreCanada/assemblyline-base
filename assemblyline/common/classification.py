@@ -137,7 +137,6 @@ CLASSIFICATION_DEFINITION_TEMPLATE = {
 
 log = logging.getLogger('assemblyline.classification')
 
-
 class InvalidClassification(Exception):
     pass
 
