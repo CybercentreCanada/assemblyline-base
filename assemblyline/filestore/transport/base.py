@@ -87,3 +87,9 @@ class Transport(object):
             except Exception as e:
                 failed_tuples.append((src_path, dst_path, str(e)))
         return failed_tuples
+
+    def save(self, dst_path, content):
+        """
+        Save the content of the file in memory directly to the filestore
+        """
+        raise TransportException("Not Implemented")

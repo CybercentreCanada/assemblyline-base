@@ -1,6 +1,7 @@
 import logging
 import os
 import tempfile
+from io import StringIO, BytesIO
 
 import boto3
 from botocore.exceptions import ClientError
@@ -127,3 +128,11 @@ class TransportS3(Transport):
         dst_path = self.normalize(dst_path)
         # if file exists already, it will be overwritten
         self.client.upload_file(src_path, self.bucket, dst_path)
+
+    def save(self, dst_path, content):
+        dst_path = self.normalize(dst_path)
+        if isinstance(content, str):
+            content = content.encode('utf-8')
+
+        with BytesIO(content) as file_io:
+            self.client.upload_fileobj(file_io, self.bucket, dst_path)

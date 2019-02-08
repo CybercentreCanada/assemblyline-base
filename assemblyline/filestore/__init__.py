@@ -243,6 +243,17 @@ class FileStore(object):
                 failed_tuples.append((src_path, dst_path, trace))
         return failed_tuples
 
+    def save(self, dst_path, content, location='all',force=False):
+        transports = []
+        for t in self.slice(location):
+            if force or not t.exists(dst_path):
+                transports.append(t)
+                t.save(dst_path, content)
+                if not t.exists(dst_path):
+                    raise FileStoreException('File transfer failed. Remote file does not '
+                                             'exist for %s on %s (%s)' % (dst_path, location, t))
+        return transports
+
     def slice(self, location):
         start, end = {
             'all': (0, len(self.transports)),

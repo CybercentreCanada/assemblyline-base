@@ -191,3 +191,26 @@ class TransportFTP(Transport):
     @reconnect_retry_on_fail
     def put_batch(self, local_remote_tuples):
         return super(TransportFTP, self).put_batch(local_remote_tuples)
+
+    @reconnect_retry_on_fail
+    def save(self, dst_path, content):
+        dst_path = self.normalize(dst_path)
+        dirname = posixpath.dirname(dst_path)
+        filename = posixpath.basename(dst_path)
+        tempname = uuid.uuid4().get_hex()
+        temppath = posixpath.join(dirname, tempname)
+        finalpath = posixpath.join(dirname, filename)
+        assert (finalpath == dst_path)
+        self.makedirs(dirname)
+
+        if isinstance(content, str):
+            content = content.encode('utf-8')
+
+        with BytesIO(content) as file_io:
+            self.log.debug("Storing: %s", temppath)
+            self.ftp.storbinary('STOR ' + temppath, file_io)
+
+            self.log.debug("Rename: %s -> %s", temppath, finalpath)
+            self.ftp.rename(temppath, finalpath)
+            assert (self.exists(dst_path))
+

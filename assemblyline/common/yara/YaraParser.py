@@ -145,8 +145,8 @@ class YaraParser(object):
         if cls.custom_bump_rules(rule, old_rule):
             return True
         
-        new_keys = rule['meta'].keys() + rule['meta_extra'].keys()
-        old_keys = old_rule['meta'].keys() + old_rule['meta_extra'].keys()
+        new_keys = list(rule['meta'].keys()) + list(rule['meta_extra'].keys())
+        old_keys = list(old_rule['meta'].keys()) + list(old_rule['meta_extra'].keys())
         
         if new_keys != old_keys:
             return True
@@ -530,7 +530,7 @@ class YaraParser(object):
             classification = rule.get('classification', None)
             if metadata or classification:
                 out.append("    meta:")
-                keys = metadata.keys()
+                keys = list(metadata.keys())
                 do_space = False
                 if "rule_group" in keys:
                     out.append(f'        rule_group = "{metadata["rule_group"]}"')
@@ -538,6 +538,9 @@ class YaraParser(object):
                     do_space = True
                 for i in YaraParser.RULE_GROUPS:
                     if i in keys:
+                        if metadata[i] is None:
+                            continue
+
                         out.append(f'        {i} = "{metadata[i]}"')
                         keys.remove(i)
                         do_space = True
@@ -550,6 +553,9 @@ class YaraParser(object):
                     do_space = True
                 for i in YaraParser.RULE_IMPORTANT:
                     if i in keys:
+                        if metadata[i] is None:
+                            continue
+
                         do_space = True
                         out.append(f'        {i} = "{metadata[i]}"')
                         keys.remove(i)
@@ -558,6 +564,9 @@ class YaraParser(object):
                     
                 keys.sort()
                 for k in keys:
+                    if metadata[k] is None:
+                        continue
+
                     out.append(f'        {k} = "{metadata[k]}"')
                     
                 out.append("    ")

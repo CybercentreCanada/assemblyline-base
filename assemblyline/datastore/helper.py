@@ -5,7 +5,7 @@ import json
 from assemblyline.datastore import Collection
 from assemblyline.odm import Model
 from assemblyline.odm.models.alert import Alert
-from assemblyline.odm.models.config import Config
+from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -28,7 +28,7 @@ class AssemblylineDatastore(object):
     def __init__(self, datastore_object):
         self.ds = datastore_object
         self.ds.register('alert', Alert)
-        self.ds.register('config', Config)
+        self.ds.register('cached_file', CachedFile)
         self.ds.register('emptyresult', EmptyResult)
         self.ds.register('error', Error)
         self.ds.register('file', File)
@@ -52,8 +52,8 @@ class AssemblylineDatastore(object):
         return self.ds.alert
 
     @property
-    def config(self):
-        return self.ds.config
+    def cached_file(self):
+        return self.ds.cached_file
 
     @property
     def emptyresult(self):

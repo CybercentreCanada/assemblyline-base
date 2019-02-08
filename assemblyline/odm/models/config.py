@@ -315,11 +315,13 @@ DEFAULT_DATASOURCES = {
 
 @odm.model(index=True, store=True)
 class Filestore(odm.Model):
-    urls = odm.List(odm.Keyword())
+    cache = odm.List(odm.Keyword())
+    storage = odm.List(odm.Keyword())
 
 
 DEFAULT_FILESTORE = {
-    "urls": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?use_ssl=False"]
+    "cache": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-cache&use_ssl=False"],
+    "storage": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-storage&use_ssl=False"]
 }
 
 

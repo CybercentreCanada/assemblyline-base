@@ -103,3 +103,7 @@ class TransportHTTP(Transport):
 
     def put_batch(self, local_remote_tuples):
         return super(TransportHTTP, self).put_batch(local_remote_tuples)
+
+    def save(self, dst_path, content):
+        raise TransportException("READ ONLY TRANSPORT: Method not implemented")
+

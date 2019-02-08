@@ -108,10 +108,16 @@ def get_dn_parser(config=None):
         return None
 
 
+def get_cachestore(config=None):
+    if config is None:
+        config = get_config()
+    return FileStore(*config.filestore.cache)
+
+
 def get_filestore(config=None):
     if config is None:
         config = get_config()
-    return FileStore(*config.filestore.urls)
+    return FileStore(*config.filestore.storage)
 
 
 def get_site_specific_apikey_handler(config=None):

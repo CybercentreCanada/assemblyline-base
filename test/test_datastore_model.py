@@ -9,6 +9,7 @@ from assemblyline.datastore.stores.riak_store import RiakStore
 from assemblyline.datastore.stores.solr_store import SolrStore
 from assemblyline.odm import Model, Mapping
 from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -84,6 +85,7 @@ def riak_datastore():
 
 TEST_DATA = [
     ("alert", random_model_obj(Alert)),
+    ("cached_file", random_model_obj(CachedFile)),
     ("emptyresult", random_model_obj(EmptyResult)),
     ("error", random_model_obj(Error)),
     ("file", random_model_obj(File)),
@@ -101,6 +103,7 @@ TEST_DATA = [
     ("vm", random_model_obj(VM)),
     ("workflow", random_model_obj(Workflow)),
     ("alert_min", random_minimal_obj(Alert)),
+    ("cached_file_min", random_model_obj(CachedFile)),
     ("emptyresult_min", random_minimal_obj(EmptyResult)),
     ("error_min", random_minimal_obj(Error)),
     ("file_min", random_minimal_obj(File)),
