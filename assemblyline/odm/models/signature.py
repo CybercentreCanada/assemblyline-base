@@ -1,7 +1,11 @@
 from assemblyline import odm
 from assemblyline.common.classification import Classification
 
-RULE_STATUSES = {"DEPLOYED", "TESTING", "NOISY", "DISABLED", "STAGING", "INVALID"}
+DEPLOYED_STATUSES = ['DEPLOYED', 'NOISY', 'DISABLED']
+DRAFT_STATUSES = ['STAGING', 'TESTING']
+STALE_STATUSES = ['INVALID']
+
+RULE_STATUSES = DEPLOYED_STATUSES + DRAFT_STATUSES + STALE_STATUSES
 RULE_TYPES = {"rule", "private rule", "global rule", "global private rule"}
 VALID_GROUPS = {"technique", "exploit", "implant", "info", "tool"}
 
