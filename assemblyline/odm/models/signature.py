@@ -32,13 +32,13 @@ class Signature(odm.Model):
         default=Classification.NULL_CLASSIFICATION)        # Classification of the rule
     comments = odm.List(odm.Keyword(), default=[],
                         copyto="__text__")                 # Comments for the signature
-    condition = odm.Keyword()                              # List of conditions for the signature
+    condition = odm.List(odm.Keyword(), default=[])        # List of conditions for the signature
     depends = odm.List(odm.Keyword(), default=[])          # other signature names that the signature depends on
     meta = odm.Compound(RequiredMeta)                      # Required metadata
     meta_extra = odm.Mapping(odm.Keyword(), default={})    # Optional metadata
     modules = odm.List(odm.Keyword(), default=[])          # Modules that the signature needs
     name = odm.Keyword(store=True, copyto="__text__")      # Name of the signature
-    strings = odm.Keyword()                                # Search strings for the signature
+    strings = odm.List(odm.Keyword(), default=[])          # Search strings for the signature
     tags = odm.List(odm.Keyword(), default=[])             # Tags associated to the signature
     type = odm.Enum(values=RULE_TYPES)                     # Type of rule
     warning = odm.Keyword()                                # Optimization warnings thrown when the rule was tested

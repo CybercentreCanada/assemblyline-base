@@ -14,9 +14,10 @@ class Response(odm.Model):
 
 @odm.model(index=True, store=True)
 class Error(odm.Model):
-    created = odm.Date(default="NOW")  # Date at which the error was created
-    response = odm.Compound(Response)  # Response from the service
-    sha256 = odm.Keyword()             # Hash of the file the error is related to
+    created = odm.Date(default="NOW")                 # Date at which the error was created
+    expiry_ts = odm.Date(store=False, default="NOW")  # Expiry time stamp
+    response = odm.Compound(Response)                 # Response from the service
+    sha256 = odm.Keyword()                            # Hash of the file the error is related to
 
     def build_key(self, conf_key=None):
         key_list = [
