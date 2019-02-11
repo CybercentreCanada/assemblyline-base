@@ -424,6 +424,12 @@ def _test_c_facet(s_tc, e_tc, r_tc, _):
                           r_tc.facet('tags'))
 
 
+def _test_c_stats(s_tc, e_tc, r_tc, _):
+    assert compare_output(s_tc.stats('height'),
+                          e_tc.stats('height'),
+                          r_tc.stats('height'))
+
+
 def _test_c_groupsearch(s_tc, e_tc, r_tc, as_obj):
     assert compare_output(s_tc.grouped_search('height', fl='flavour', as_obj=as_obj),
                           e_tc.grouped_search('height', fl='flavour', as_obj=as_obj),
@@ -446,6 +452,7 @@ TEST_CONSISTENCY_FUNC = [
     (_test_c_keys, None, "keys"),
     (_test_c_histogram, None, "histogram"),
     (_test_c_facet, None, "facet"),
+    (_test_c_stats, None, "stats"),
     (_test_c_groupsearch, True, "groupsearch - object"),
     (_test_c_groupsearch, False, "groupsearch - dict"),
     (_test_c_fields, None, "fields"),

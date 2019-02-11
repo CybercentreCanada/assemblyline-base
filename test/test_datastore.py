@@ -329,6 +329,12 @@ def _test_c_facet(r_tc: Collection, s_tc: Collection, e_tc: Collection):
                           r_tc.facet('classification_s'))
 
 
+def _test_c_stats(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+    assert compare_output(s_tc.stats('lvl_i'),
+                          e_tc.stats('lvl_i'),
+                          r_tc.stats('lvl_i'))
+
+
 def _test_c_group_search(r_tc: Collection, s_tc: Collection, e_tc: Collection):
     assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s'),
                           e_tc.grouped_search('lvl_i', fl='classification_s'),
@@ -361,6 +367,7 @@ TEST_CONSISTENCY_FUNCS = [
     (_test_c_keys, "keys"),
     (_test_c_histogram, "histogram"),
     (_test_c_facet, "facet"),
+    (_test_c_stats, "stats"),
     (_test_c_group_search, "group_search"),
     (_test_c_fields, "fields"),
 

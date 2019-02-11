@@ -411,7 +411,10 @@ class Collection(object):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-                       mincount=1, filters=(), access_control=None):
+              mincount=1, filters=None, access_control=None):
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
+    def stats(self, field, query="id:*", filters=None, access_control=None):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def grouped_search(self, group_field, query="id:*", offset=None, sort=None, group_sort=None, fl=None, limit=None,

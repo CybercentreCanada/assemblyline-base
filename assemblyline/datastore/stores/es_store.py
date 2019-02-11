@@ -72,6 +72,8 @@ class ESCollection(Collection):
         'facet_active': False,
         'facet_mincount': 1,
         'facet_fields': [],
+        'stats_active': False,
+        'stats_fields': [],
         'filters': [],
         'group_active': False,
         'group_field': None,
@@ -391,6 +393,17 @@ class ESCollection(Collection):
                     }
                 }
 
+        # Add a facet aggregation
+        # TODO: Should we turn off normal queries when facet is active?
+        if parsed_values['stats_active']:
+            query_body["aggregations"] = query_body.get("aggregations", {})
+            for field in parsed_values['stats_fields']:
+                query_body["aggregations"][f"{field}_stats"] = {
+                    "stats": {
+                        "field": field
+                    }
+                }
+
         # Add a group aggregation
         if parsed_values['group_active']:
             query_body["collapse"] = {
@@ -558,7 +571,8 @@ class ESCollection(Collection):
             ('query', query),
             ('facet_active', True),
             ('facet_fields', [field]),
-            ('facet_mincount', mincount)
+            ('facet_mincount', mincount),
+            ('rows', 0)
         ]
 
         # TODO: prefix, contains, ignore_case, sort
@@ -574,6 +588,28 @@ class ESCollection(Collection):
         # Convert the histogram into a dictionary
         return {row.get('key_as_string', row['key']): row['doc_count']
                 for row in result['aggregations'][field]['buckets']}
+
+    def stats(self, field, query="id:*", filters=None, access_control=None):
+        if filters is None:
+            filters = []
+        elif isinstance(filters, str):
+            filters = [filters]
+
+        args = [
+            ('query', query),
+            ('stats_active', True),
+            ('stats_fields', [field]),
+            ('rows', 0)
+        ]
+
+        if access_control:
+            filters.append(access_control)
+
+        if filters:
+            args.append(('filters', filters))
+
+        result = self._search(args)
+        return result['aggregations'][f"{field}_stats"]
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True):

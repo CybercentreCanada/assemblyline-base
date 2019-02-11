@@ -562,6 +562,32 @@ class SolrCollection(Collection):
         output.pop("", None)
         return output
 
+    def stats(self, field, query="id:*", filters=None, access_control=None):
+
+        args = [
+            ("q", query),
+            ("rows", "0"),
+            ("stats", "on"),
+            ("stats.field", field),
+            ('wt', 'json'),
+            ('df', '__text__')
+        ]
+
+        if filters:
+            if isinstance(filters, list):
+                args.extend(('fq', ff) for ff in filters)
+            else:
+                args.append(('fq', filters))
+
+        if access_control:
+            args.append(('fq', access_control))
+
+        result = self._search(args)
+        stat_fields = ['min', 'max', 'count', 'sum', 'mean']
+        stats = {k: v for k, v in result["stats"]["stats_fields"][field].items() if k in stat_fields}
+        stats['avg'] = stats.pop('mean')
+        return stats
+
     def grouped_search(self, field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True):
 
