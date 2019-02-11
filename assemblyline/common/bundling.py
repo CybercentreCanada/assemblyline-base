@@ -55,7 +55,7 @@ def get_results(keys, file_infos_p, storage_p):
     while keys and retry < MAX_RETRY:
         if retry:
             time.sleep(2 ** (retry - 7))
-        res.update(storage_p.results.get_dict(keys))
+        res.update(storage_p.get_multiple_results(keys, Classification, as_obj=False))
         keys = [x for x in keys if x not in res]
         retry += 1
 
@@ -80,7 +80,7 @@ def get_errors(keys, storage_p):
     while keys and retry < MAX_RETRY:
         if retry:
             time.sleep(2 ** (retry - 7))
-        err.update(storage_p.errors.get_dict(keys))
+        err.update(storage_p.error.multiget(keys, as_obj=False))
         keys = [x for x in keys if x not in err]
         retry += 1
 
@@ -96,7 +96,7 @@ def get_file_infos(keys, storage_p):
     while keys and retry < MAX_RETRY:
         if retry:
             time.sleep(2 ** (retry - 7))
-        infos.update(storage_p.files.get_dict(keys))
+        infos.update(storage_p.file.multiget(keys, as_obj=False))
         keys = [x for x in keys if x not in infos]
         retry += 1
 
@@ -106,7 +106,7 @@ def get_file_infos(keys, storage_p):
 def recursive_flatten_tree(tree):
     srls = []
 
-    for key, val in tree.iteritems():
+    for key, val in tree.items():
         srls.extend(recursive_flatten_tree(val.get('children', {})))
         if key not in srls:
             srls.append(key)
@@ -117,13 +117,14 @@ def recursive_flatten_tree(tree):
 # noinspection PyBroadException
 def create_bundle(sid, working_dir=WORK_DIR):
     with forge.get_datastore() as datastore:
-        current_working_dir = os.path.join(working_dir, sid)
+        temp_bundle_file = f"bundle_{uuid.uuid4()}"
+        current_working_dir = os.path.join(working_dir, temp_bundle_file)
         try:
-            submission = datastore.submissions.get(sid)
+            submission = datastore.submission.get(sid, as_obj=False)
             if submission is None:
                 raise SubmissionNotFound("Can't find submission %s, skipping." % sid)
             else:
-                target_file = os.path.join(working_dir, "%s.tgz" % sid)
+                target_file = os.path.join(working_dir, f"{temp_bundle_file}.tgz")
 
                 try:
                     os.makedirs(current_working_dir)
@@ -131,14 +132,15 @@ def create_bundle(sid, working_dir=WORK_DIR):
                     pass
 
                 # Create file information data
-                file_tree = datastore.submissions.create_file_tree(submission)
-                flatten_tree = recursive_flatten_tree(file_tree)
+                file_tree = datastore.get_or_create_file_tree(submission, config.submission.max_extraction_depth)
+                flatten_tree = list(set(recursive_flatten_tree(file_tree) +
+                                        [r[:64] for r in submission.get("results", [])]))
                 file_infos = get_file_infos(flatten_tree, datastore)
 
                 # Add bundling metadata
-                if 'al_originate_from' not in submission['submission']['metadata']:
-                    submission['submission']['metadata']['al_originate_from'] = config.ui.fqdn
-                    submission['submission']['metadata']['al_original_classification'] = submission['classification']
+                if 'al_originate_from' not in submission['metadata']:
+                    submission['metadata']['al_originate_from'] = config.ui.fqdn
+                    submission['metadata']['al_original_classification'] = submission['classification']
 
                 data = {
                     'submission': submission,
@@ -148,7 +150,7 @@ def create_bundle(sid, working_dir=WORK_DIR):
                 }
 
                 # Save result files
-                with open(os.path.join(current_working_dir, "results.json"), "wb") as fp:
+                with open(os.path.join(current_working_dir, "results.json"), "w") as fp:
                     json.dump(data, fp)
 
                 # Download all related files
@@ -182,7 +184,11 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
             pass
 
         # Extract  the bundle
-        subprocess.check_call(["tar", "-zxf", path, "-C", current_working_dir])
+        try:
+            subprocess.check_call(["tar", "-zxf", path, "-C", current_working_dir])
+        except subprocess.CalledProcessError:
+            raise BundlingException("Bundle decompression failed. Not a valid bundle...")
+
         with open(res_file, 'rb') as fh:
             data = json.load(fh)
 
@@ -192,7 +198,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
         errors = data['errors']
 
         try:
-            sid = submission['submission']['sid']
+            sid = submission['sid']
             # Check if we have all the service results
             for res_key in submission['results']:
                 if res_key not in results['results'].keys():
@@ -208,36 +214,37 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                 if err_key not in errors['errors'].keys():
                     raise IncompleteBundle("Incomplete errors in bundle. Skipping %s..." % sid)
 
-            if datastore.submissions.get(sid):
+            if datastore.submission.get(sid, as_obj=False):
                 raise SubmissionAlreadyExist("Submission %s already exists." % sid)
 
             # Make sure bundle's submission meets minimum classification and save the submission
             submission['classification'] = Classification.max_classification(submission['classification'],
                                                                              min_classification)
             submission.update(Classification.get_access_control_parts(submission['classification']))
-            datastore.submissions.save(sid, submission)
+            datastore.submission.save(sid, submission)
 
             # Make sure files meet minimum classification and save the files
             with forge.get_filestore() as filestore:
-                for f, f_data in files['infos'].iteritems():
+                for f, f_data in files['infos'].items():
                     f_classification = Classification.max_classification(f_data['classification'], min_classification)
-                    datastore.files.save_or_freshen(f, f_data, f_data['__expiry_ts__'], f_classification)
+                    datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_classification,
+                                                   cl_engine=Classification)
                     try:
                         filestore.put(os.path.join(current_working_dir, f), f)
                     except IOError:
                         pass
 
             # Make sure results meet minimum classification and save the results
-            for key, res in results['results'].iteritems():
+            for key, res in results['results'].items():
                 if key.endswith(".e"):
-                    key = key[:-2]
-                srl, service_name, version, srv_config = key.split('.')
-                res_classification = Classification.max_classification(res['classification'], min_classification)
-                datastore.results.create(service_name, version[1:], srv_config[1:], srl, res_classification, res)
+                    datastore.emptyresult.save(key, {"expiry_ts": res['expiry_ts']})
+                else:
+                    res['classification'] = Classification.max_classification(res['classification'], min_classification)
+                    datastore.result.save(key, res)
 
             # Make sure errors meet minimum classification and save the errors
-            for ekey, err in errors['errors'].iteritems():
-                datastore.errors.save(ekey, err)
+            for ekey, err in errors['errors'].items():
+                datastore.error.save(ekey, err)
 
         finally:
             # Perform working dir cleanup

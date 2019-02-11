@@ -2,6 +2,8 @@
 import concurrent.futures
 import json
 
+from assemblyline.common import forge
+from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore import Collection
 from assemblyline.odm import Model
 from assemblyline.odm.models.alert import Alert
@@ -22,6 +24,7 @@ from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_options import UserOptions
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
+from assemblyline.remote.datatypes.lock import Lock
 
 
 class AssemblylineDatastore(object):
@@ -46,6 +49,12 @@ class AssemblylineDatastore(object):
         self.ds.register('user_options', UserOptions)
         self.ds.register('vm', VM)
         self.ds.register('workflow', Workflow)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.ds.close()
 
     @property
     def alert(self):
@@ -124,7 +133,7 @@ class AssemblylineDatastore(object):
         return self.ds.workflow
 
     @staticmethod
-    def create_empty_result_from_key(key, cl_engine, as_obj=True):
+    def create_empty_result_from_key(key, cl_engine=forge.get_classification(), as_obj=True):
         sha256, svc_name, svc_version, _ = key.split(".", 3)
         svc_version = svc_version[1:]
 
@@ -141,7 +150,7 @@ class AssemblylineDatastore(object):
         else:
             return data.as_primitives()
 
-    def delete_submission_tree(self, sid, cl_engine, cleanup=True, transport=None):
+    def delete_submission_tree(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
         submission = self.submission.get(sid, as_obj=False)
         errors = submission['errors']
         results = submission["results"]
@@ -220,7 +229,7 @@ class AssemblylineDatastore(object):
         self.submission_tree.delete(sid)
         self.submission_tags.delete(sid)
 
-    def get_multiple_results(self, keys, cl_engine, as_obj=False):
+    def get_multiple_results(self, keys, cl_engine=forge.get_classification(), as_obj=False):
         empties = {k: self.create_empty_result_from_key(k, cl_engine, as_obj=as_obj)
                    for k in keys if k.endswith(".e")}
         keys = [k for k in keys if not k.endswith(".e")]
@@ -228,7 +237,7 @@ class AssemblylineDatastore(object):
         results.update(empties)
         return results
 
-    def get_single_result(self, key, cl_engine, as_obj=False):
+    def get_single_result(self, key, cl_engine=forge.get_classification(), as_obj=False):
         if key.endswith(".e"):
             data = self.create_empty_result_from_key(key, cl_engine, as_obj=as_obj)
         else:
@@ -453,3 +462,30 @@ class AssemblylineDatastore(object):
             return [self.ds.service.get(item.id, as_obj=as_obj)
                     for item in self.ds.service.stream_search("id:*", fl='id')]
         return [item for item in self.ds.service.stream_search("id:*", as_obj=as_obj)]
+
+    def save_or_freshen_file(self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification()):
+        with Lock(f'save-or-freshen-file-{sha256}', 5):
+            current_fileinfo = self.ds.file.get(sha256, as_obj=False) or {}
+
+            # Remove control fields from file info and update current file info
+            for x in ['classification', 'expiry_ts', 'seen']:
+                fileinfo.pop(x, None)
+            current_fileinfo.update(fileinfo)
+
+            # Update expiry time
+            current_fileinfo['expiry_ts'] = max(current_fileinfo.get('expiry_ts', expiry), expiry)
+
+            # Update seen counters
+            now = now_as_iso()
+            current_fileinfo['seen'] = seen = current_fileinfo.get('seen', {})
+            seen['count'] = seen.get('count', 0) + 1
+            seen['last'] = now
+            seen['first'] = seen.get('first', now)
+
+            # Update Classification
+            classification = cl_engine.min_classification(
+                current_fileinfo.get('classification', classification),
+                classification
+            )
+            current_fileinfo['classification'] = classification
+            self.ds.file.save(sha256, current_fileinfo)
