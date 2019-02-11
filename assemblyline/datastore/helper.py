@@ -173,11 +173,15 @@ class AssemblylineDatastore(object):
         for e in errors:
             self.error.delete(e)
         for r in results:
-            self.result.delete(r)
+            if r.endswith(".e"):
+                self.emptyresult.delete(r)
+            else:
+                self.result.delete(r)
         for f in files:
             self.file.delete(f)
             if transport:
                 transport.delete(f)
+
         if fix_classification_files and cleanup:
             # Fix classification for the files that remain in the system
             for f in fix_classification_files:
