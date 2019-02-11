@@ -3,40 +3,22 @@ import json
 from assemblyline.remote.datatypes import get_client, retry_call, decode
 
 # Work around for inconsistency between ZRANGEBYSCORE and ZREMRANGEBYSCORE
-#   https://github.com/antirez/redis/issues/180
+#   (No limit option available or we would just be using that directly)
 #
 # args:
 #   minimum score to pop
 #   maximum score to pop
 #   number of elements to skip before popping any
 #   max element count to pop
-pq_pop_by_score_script = """
-function table.slice(tbl, first, last, step) 
-    --courtesy https://stackoverflow.com/a/24823383 
-    local sliced = {} 
-  
-    for i = first or 1, last or #tbl, step or 1 do
-        sliced[#sliced+1] = tbl[i] 
-    end 
-    
-    return sliced 
-end 
+pq_dequeue_range_script = """
+local min_score = ARGV[1]; 
+local max_score = ARGV[2]; 
+local rem_offset = tonumber(ARGV[3]); 
+local rem_limit = tonumber(ARGV[4]); 
 
-local min_score = tonumber(ARGV[1]); 
-local max_score = tonumber(ARGV[2]); 
-local rem_offset = tonumber(ARGV[3]) + 1; 
-local rem_limit = tonumber(ARGV[4]) - 1; 
-
-local entries = redis.call("zrangebyscore", KEYS[1], min_score,max_score); 
-local lim_entries = table.slice(entries, rem_offset, rem_offset + rem_limit); 
-local popped = {}; 
-
-for index,value in ipairs(lim_entries) do 
-    popped[#popped+1] = value; 
-    redis.call("zrem",KEYS[1],value); 
-end 
-
-return popped
+local entries = redis.call("zrangebyscore", KEYS[1], -max_score, -min_score, "limit", rem_offset, rem_limit);
+if #entries > 0 then redis.call("zrem", KEYS[1], unpack(entries)) end
+return entries 
 """
 
 
@@ -73,7 +55,7 @@ class PriorityQueue(object):
         self.r = self.c.register_script(pq_pop_script)
         self.s = self.c.register_script(pq_push_script)
         self.t = self.c.register_script(pq_unpush_script)
-        self.pop_by_score = self.c.register_script(pq_pop_by_score_script)
+        self._deque_range = self.c.register_script(pq_dequeue_range_script)
         self.name = name
 
     def __enter__(self):
@@ -103,9 +85,21 @@ class PriorityQueue(object):
                 return decode(ret_val[0][21:])
             return None
 
-    def limited_pop(self, lower_limit=float('-inf'), upper_limit=float('inf'), num=None):
-        raise NotImplementedError()
-        print(retry_call(self.pop_by_score, keys=[self.name], args=[lower_limit, upper_limit, 0, num]))
+    def dequeue_range(self, lower_limit='-inf', upper_limit='inf', skip=0, num=1):
+        """Dequeue a number of elements, within a specified range of scores.
+
+        Limits given are inclusive, can be made exclusive, see redis docs on how to format limits for that.
+
+        NOTE: lower/upper limit is negated+swapped in the lua script, no need to do it here
+
+        :param lower_limit: The score of all dequeued elements must be higher or equal to this.
+        :param upper_limit: The score of all dequeued elements must be lower or equal to this.
+        :param skip: In the range of available items to dequeue skip over this many.
+        :param num: Maximum number of elements to dequeue.
+        :return: list
+        """
+        results = retry_call(self._deque_range, keys=[self.name], args=[lower_limit, upper_limit, skip, num])
+        return [decode(res[21:]) for res in results]
 
     def push(self, priority, data, vip=None):
         vip = 0 if vip else 9

@@ -12,7 +12,7 @@ def redis_connection():
     try:
         ret_val = c.ping()
         if ret_val:
-            return True
+            return c
     except ConnectionError:
         pass
 
@@ -179,7 +179,18 @@ def test_priority_queue(redis_connection):
             assert pq.length() == 8
             assert pq.pop(4) == [1, 2, 3, 4]
             assert pq.unpush(3) == [6, 7, 8]
-            assert pq.length() == 1
+            assert pq.length() == 1  # Should be [<100, 5>] at this point
+
+            for x in range(5):
+                pq.push(100 + x, x)
+
+            assert pq.length() == 6
+            assert pq.dequeue_range(lower_limit=106) == []
+            assert pq.length() == 6
+            assert pq.dequeue_range(lower_limit=103) == [4]  # 3 and 4 are both options, 4 has higher score
+            assert pq.dequeue_range(lower_limit=102, skip=1) == [2]  # 2 and 3 are both options, 3 has higher score, skip it
+            assert pq.dequeue_range(upper_limit=100, num=10) == [5, 0]  # Take some off the other end
+            assert pq.length() == 2
 
 
 # noinspection PyShadowingNames
