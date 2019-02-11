@@ -45,4 +45,4 @@ class Signature(odm.Model):
     strings = odm.List(odm.Keyword(), default=[])          # Search strings for the signature
     tags = odm.List(odm.Keyword(), default=[])             # Tags associated to the signature
     type = odm.Enum(values=RULE_TYPES)                     # Type of rule
-    warning = odm.Keyword()                                # Optimization warnings thrown when the rule was tested
+    warning = odm.Keyword(default_set=True)                # Optimization warnings thrown when the rule was tested

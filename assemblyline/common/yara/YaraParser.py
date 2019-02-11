@@ -145,8 +145,8 @@ class YaraParser(object):
         if cls.custom_bump_rules(rule, old_rule):
             return True
         
-        new_keys = list(rule['meta'].keys()) + list(rule['meta_extra'].keys())
-        old_keys = list(old_rule['meta'].keys()) + list(old_rule['meta_extra'].keys())
+        new_keys = list(rule['meta'].keys()) + list(rule.get('meta_extra', {}).keys())
+        old_keys = list(old_rule['meta'].keys()) + list(old_rule.get('meta_extra', {}).keys())
         
         if new_keys != old_keys:
             return True
