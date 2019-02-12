@@ -13,8 +13,8 @@ class SubmissionParams(odm.Model):
 @odm.model(index=True, store=False)
 class Service(odm.Model):
     # Regexes applied to assemblyline style file type string
-    accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS)
-    rejects = odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS)
+    accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS, default_set=True)
+    rejects = odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS, default_set=True)
 
     category = odm.Keyword(store=True, default="Static Analysis")
     config = odm.Mapping(odm.Any(), default={})
