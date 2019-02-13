@@ -239,6 +239,9 @@ class Text(_Field):
             else:
                 raise ValueError("Empty strings are not allow without defaults")
 
+        if value is None:
+            return None
+
         return str(value)
 
 

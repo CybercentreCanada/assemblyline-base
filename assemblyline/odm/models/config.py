@@ -468,7 +468,7 @@ class UI(odm.Model):
     # Statistics configuration
     statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS)
     # Terms of service
-    tos = odm.Text(default="")
+    tos = odm.Text(default_set=True)
     # Lock out user after accepting the terms of service
     tos_lockout = odm.Boolean()
 
@@ -488,7 +488,7 @@ DEFAULT_UI = {
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
     "statistics": DEFAULT_STATISTICS,
-    "tos": "",
+    "tos": None,
     "tos_lockout": False
 }
 
