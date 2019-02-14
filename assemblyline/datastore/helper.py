@@ -21,7 +21,7 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
-from assemblyline.odm.models.user_options import UserOptions
+from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
@@ -46,7 +46,7 @@ class AssemblylineDatastore(object):
         self.ds.register('user', User)
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
-        self.ds.register('user_options', UserOptions)
+        self.ds.register('user_settings', UserSettings)
         self.ds.register('vm', VM)
         self.ds.register('workflow', Workflow)
 
@@ -121,8 +121,8 @@ class AssemblylineDatastore(object):
         return self.ds.user_favorites
 
     @property
-    def user_options(self):
-        return self.ds.user_options
+    def user_settings(self):
+        return self.ds.user_settings
 
     @property
     def vm(self):

@@ -12,7 +12,7 @@ from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
-from assemblyline.odm.models.user_options import UserOptions
+from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj
 
@@ -99,11 +99,11 @@ def test_user_model():
         pytest.fail("Could not generate 'User' object and validate it.")
 
 
-def test_user_options_model():
+def test_user_settings_model():
     try:
-        random_model_obj(UserOptions).as_primitives()
+        random_model_obj(UserSettings).as_primitives()
     except (ValueError, TypeError, KeyError):
-        pytest.fail("Could not generate 'UserOptions' object and validate it.")
+        pytest.fail("Could not generate 'UserSettings' object and validate it.")
 
 
 def test_workflow_model():
