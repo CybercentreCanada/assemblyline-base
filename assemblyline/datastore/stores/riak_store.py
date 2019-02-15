@@ -156,7 +156,7 @@ class RiakCollection(SolrCollection):
 
                         if item_data is not None:
                             if isinstance(item_data, dict):
-                                item_data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
+                                item_data.pop(self.DEFAULT_SEARCH_FIELD, None)
                             if as_dictionary:
                                 ret[bucket_item.key] = self.normalize(item_data, as_obj=as_obj)
                             else:
@@ -180,7 +180,7 @@ class RiakCollection(SolrCollection):
         while not done:
             data = self.get_data_from_riak_item(self.with_retries(self.riak_bucket.get, key))
             if data and isinstance(data, dict):
-                data.pop(SolrCollection.EXTRA_SEARCH_FIELD, None)
+                data.pop(self.DEFAULT_SEARCH_FIELD, None)
 
             if data:
                 return data
@@ -232,7 +232,7 @@ class RiakCollection(SolrCollection):
             item.pop('_yz_id', None)
             item.pop('_yz_rt', None)
             item.pop('_yz_rb', None)
-            item.pop(self.EXTRA_SEARCH_FIELD, None)
+            item.pop(self.DEFAULT_SEARCH_FIELD, None)
 
         if self.model_class:
             if not fields or '*' in fields:
