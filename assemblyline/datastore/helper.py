@@ -259,7 +259,7 @@ class AssemblylineDatastore(object):
                                           access_control=access_control)
                    for field in fields}
 
-        return {k: v.result() for k, v in res.items()}
+        return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
     def get_file_list_from_keys(self, keys):
         # TODO: needed?
