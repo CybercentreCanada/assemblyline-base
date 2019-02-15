@@ -23,13 +23,14 @@ def get_object(base, key):
 
 
 class Collection(object):
-    RETRY_NORMAL = 1
-    RETRY_NONE = 0
-    RETRY_INFINITY = -1
     DEFAULT_ROW_SIZE = 25
+    DEFAULT_SEARCH_FIELD = '__text__'
     FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
     MAX_FACET_LIMIT = 100
     MAX_RETRY_BACKOFF = 10
+    RETRY_NORMAL = 1
+    RETRY_NONE = 0
+    RETRY_INFINITY = -1
     UPDATE_SET = "SET"
     UPDATE_INC = "INC"
     UPDATE_DEC = "DEC"

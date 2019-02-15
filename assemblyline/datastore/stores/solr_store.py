@@ -19,13 +19,12 @@ from assemblyline.odm import flat_to_nested, Mapping
 
 
 class SolrCollection(Collection):
-    SOLR_GET_TIMEOUT_SEC = 5
+    DEFAULT_SORT = "id asc"
     MULTIGET_MAX_RETRY = 5
     MAX_SEARCH_ROWS = 500
     MAX_GROUP_LIMIT = 10
     MAX_FACET_LIMIT = 100
-    EXTRA_SEARCH_FIELD = '__text__'
-    DEFAULT_SORT = "id asc"
+    SOLR_GET_TIMEOUT_SEC = 5
 
     COMMIT_WITHIN_MAP = {
         "alert": 60000,
@@ -132,7 +131,7 @@ class SolrCollection(Collection):
                             try:
                                 data = json.loads(data)
                                 if isinstance(data, dict):
-                                    data.pop(self.EXTRA_SEARCH_FIELD, None)
+                                    data.pop(self.DEFAULT_SEARCH_FIELD, None)
                                 if as_dictionary:
                                     ret[doc['id']] = self.normalize(data, as_obj=as_obj)
                                 else:
@@ -173,7 +172,7 @@ class SolrCollection(Collection):
                     try:
                         data = json.loads(data)
                         if isinstance(data, dict):
-                            data.pop(self.EXTRA_SEARCH_FIELD, None)
+                            data.pop(self.DEFAULT_SEARCH_FIELD, None)
                         return data
                     except ValueError:
                         return data
@@ -312,7 +311,7 @@ class SolrCollection(Collection):
         if isinstance(item, dict):
             item.pop('_source_', None)
             item.pop('_version_', None)
-            item.pop(self.EXTRA_SEARCH_FIELD, None)
+            item.pop(self.DEFAULT_SEARCH_FIELD, None)
 
         return {key: val if isinstance(val, list) else [val] for key, val in item.items()}
 
@@ -383,7 +382,7 @@ class SolrCollection(Collection):
             ('rows', rows),
             ('sort', sort),
             ('wt', 'json'),
-            ('df', '__text__')
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if fl:
@@ -451,7 +450,7 @@ class SolrCollection(Collection):
             ('sort', self.DEFAULT_SORT),
             ("rows", str(buffer_size)),
             ('wt', 'json'),
-            ('df', '__text__')
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if fl:
@@ -502,7 +501,7 @@ class SolrCollection(Collection):
             ("facet.mincount", mincount),
             ("q", query),
             ('wt', 'json'),
-            ('df', '__text__')
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if filters:
@@ -533,7 +532,7 @@ class SolrCollection(Collection):
             ("facet.mincount", mincount),
             ("facet.missing", "false"),
             ('wt', 'json'),
-            ('df', '__text__')
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if prefix:
@@ -570,7 +569,7 @@ class SolrCollection(Collection):
             ("stats", "on"),
             ("stats.field", field),
             ('wt', 'json'),
-            ('df', '__text__')
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if filters:
@@ -606,7 +605,7 @@ class SolrCollection(Collection):
             ('rows', rows),
             ('q', query),
             ('wt', 'json'),
-            ('df', '__text__'),
+            ('df', self.DEFAULT_SEARCH_FIELD),
             ("group.sort", group_sort),
             ("sort", sort),
             ("start", offset)

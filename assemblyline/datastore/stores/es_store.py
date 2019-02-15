@@ -62,7 +62,6 @@ def parse_sort(sort):
 
 class ESCollection(Collection):
     DEFAULT_SORT = [{'_id': 'asc'}]
-    DEFAULT_SEARCH_FIELD = '__text__'
     MAX_SEARCH_ROWS = 500
     MAX_GROUP_LIMIT = 10
     MAX_FACET_LIMIT = 100
