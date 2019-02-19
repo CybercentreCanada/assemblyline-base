@@ -172,3 +172,9 @@ class CachedObject:
             self._cached = self._factory()
             self._update_time = time.time()
         return getattr(self._cached, key)
+
+    def __getitem__(self, item):
+        if time.time() - self._update_time > self._refresh:
+            self._cached = self._factory()
+            self._update_time = time.time()
+        return self._cached[item]

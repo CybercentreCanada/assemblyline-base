@@ -366,13 +366,17 @@ class Services(odm.Model):
     stages = odm.List(odm.Keyword())
     # Category for mandatory services (e.g. Sync)
     system_category = odm.Text()
+    # How many instances of a service should be kept in reserve running even
+    # when there doesn't seem to be any work for them to do
+    min_service_workers = odm.Integer()
 
 
 DEFAULT_SERVICES = {
     "categories": ['Antivirus', 'External', 'Extraction', 'Filtering', 'Networking', 'Static Analysis', 'System'],
     "default_timeout": 60,
     "stages": ['SETUP', 'FILTER', 'EXTRACT', 'CORE', 'SECONDARY', 'POST', 'TEARDOWN'],
-    "system_category": 'System'
+    "system_category": 'System',
+    "min_service_workers": 0
 }
 
 
