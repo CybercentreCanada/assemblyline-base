@@ -7,6 +7,7 @@ from assemblyline.common import forge
 from assemblyline.odm.models.signature import RequiredMeta
 
 config = forge.get_config()
+cl_engine = forge.get_classification()
 yara_externals = {f"al_{i}": i for i in config.system.yara.externals}
 
 REQUIRED_META = list(RequiredMeta.fields().keys())
@@ -548,7 +549,7 @@ class YaraParser(object):
                     out.append("        ")
                     
                 do_space = False
-                if classification:
+                if classification and cl_engine.enforce:
                     out.append(f'        classification = "{classification}"')
                     do_space = True
                 for i in YaraParser.RULE_IMPORTANT:
