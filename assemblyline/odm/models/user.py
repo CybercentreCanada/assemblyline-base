@@ -1,5 +1,6 @@
 from assemblyline import odm
-from assemblyline.common.classification import Classification
+from assemblyline.common import forge
+Classification = forge.get_classification()
 
 ACL = {"R", "W", "E"}
 
@@ -20,7 +21,7 @@ class User(odm.Model):
                                   store=False)                              # Allowed to query on behalf of others
     classification = odm.Classification(
         is_user_classification=True, copyto="__text__",
-        default=Classification.NULL_CLASSIFICATION)                         # Max classification for the user
+        default=Classification.UNRESTRICTED)                                # Max classification for the user
     dn = odm.Keyword(store=False, copyto="__text__", default_set=True)      # User certificate DN
     email = odm.Keyword(copyto="__text__", default_set=True)                # User's email address
     groups = odm.List(odm.Keyword(), copyto="__text__",

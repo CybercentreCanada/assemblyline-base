@@ -1,5 +1,6 @@
 from assemblyline import odm
-from assemblyline.common.classification import Classification
+from assemblyline.common import forge
+Classification = forge.get_classification()
 
 DEPLOYED_STATUSES = ['DEPLOYED', 'NOISY', 'DISABLED']
 DRAFT_STATUSES = ['STAGING', 'TESTING']
@@ -33,7 +34,7 @@ class RequiredMeta(odm.Model):
 @odm.model(index=True, store=False)
 class Signature(odm.Model):
     classification = odm.Classification(store=True,
-        default=Classification.NULL_CLASSIFICATION)        # Classification of the rule
+        default=Classification.UNRESTRICTED)               # Classification of the rule
     comments = odm.List(odm.Keyword(), default=[],
                         copyto="__text__")                 # Comments for the signature
     condition = odm.List(odm.Keyword(), default=[])        # List of conditions for the signature

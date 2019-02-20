@@ -1,5 +1,7 @@
 from assemblyline import odm
-from assemblyline.common.classification import Classification
+from assemblyline.common import forge
+Classification = forge.get_classification()
+
 
 PRIORITIES = {None, "LOW", "MEDIUM", "HIGH", "CRITICAL"}
 STATUSES = {None, "MALICIOUS", "NON-MALICIOUS", "ASSESS"}
@@ -9,7 +11,7 @@ STATUSES = {None, "MALICIOUS", "NON-MALICIOUS", "ASSESS"}
 class Workflow(odm.Model):
     classification = odm.Classification(
         copyto="__text__",
-        default=Classification.NULL_CLASSIFICATION)                  # Classification of the workflow
+        default=Classification.UNRESTRICTED)                         # Classification of the workflow
     creation_date = odm.Date(default="NOW")                          # Creation date of the workflow
     creator = odm.Keyword()                                          # UID of the creator
     edited_by = odm.Keyword()                                        # UID of the last edit user

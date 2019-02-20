@@ -1,5 +1,6 @@
 from assemblyline import odm
-from assemblyline.common.classification import Classification
+from assemblyline.common import forge
+Classification = forge.get_classification()
 
 DEPLOYED_STATUSES = ['DEPLOYED', 'DISABLED']
 DRAFT_STATUSES = ['STAGING', 'TESTING']
@@ -21,7 +22,7 @@ class TCSignature(odm.Model):
     al_score = odm.Enum(values=SCORES, default="HIGH")
     al_status = odm.Enum(values=STATUSES, default="TESTING")
     callback = odm.Keyword(default_set=True)
-    classification = odm.Classification(default=Classification.NULL_CLASSIFICATION)
+    classification = odm.Classification(default=Classification.UNRESTRICTED)
     comment = odm.Keyword(default_set=True)
     implant_family = odm.Keyword(default_set=True)
     name = odm.Keyword()
