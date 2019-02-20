@@ -1,3 +1,4 @@
+import uuid
 import hashlib
 from assemblyline import odm
 
@@ -24,6 +25,18 @@ class ServiceSelection(odm.Model):
     resubmit = odm.List(odm.Keyword())              # Add to service selection when resubmitting
 
 
+# Fields in the parameters used to calculate hashes used for result caching
+_KEY_HASHED_FIELDS = {
+    'deep_scan',
+    'eligible_parents',
+    'ignore_filtering',
+    'ignore_size',
+    'max_extracted',
+    'max_supplementary',
+    'classification',
+    'ignore_cache',
+}
+
 @odm.model(index=True, store=False)
 class SubmissionParams(odm.Model):
     classification = odm.Classification()                               # Original classification of the submission
@@ -49,25 +62,23 @@ class SubmissionParams(odm.Model):
     quota_item = odm.Boolean(default=False)                             # Does this submission count against quota
     completed_queue = odm.Keyword(default="")                           # Which queue to notify on completion
 
+    def get_hashing_keys(self):
+        """Get the sections of the submission parameters that should be used in result hashes."""
+        data = self.as_primitives()
+        return {k: v for k, v in data.items() if k in _KEY_HASHED_FIELDS}
+
     def create_filescore_key(self, sha256, services: list):
+        """This is the key used to store the final score of a submission for fast lookup.
+
+        This lookup is one of the methods used to check for duplication in ingestion process,
+        so this key is fairly sensitive.
+        """
         # TODO do we need this version thing still be here?
         # One up this if the cache is ever messed up and we
         # need to quickly invalidate all old cache entries.
         version = 0
 
-        hashed_keys = {
-            'deep_scan',
-            'eligible_parents',
-            'ignore_filtering',
-            'ignore_size',
-            'max_extracted',
-            'max_supplementary',
-            'classification',
-            'ignore_cache',
-        }
-        data = self.as_primitives()
-        data = {k: v for k, v in data.items() if k in hashed_keys}
-
+        data = self.get_hashing_keys()
         data['service_spec'] = sorted(sorted(row.items()) for row in self.service_spec.items())
         data['sha256'] = sha256
         data['services'] = [str(x) for x in services]

@@ -24,8 +24,14 @@ class Service(odm.Model):
     install_by_default = odm.Boolean(default=False)
     is_external = odm.Boolean(default=False)
     licence_count = odm.Integer(default=0)
+
     name = odm.Keyword(store=True)
+    version = odm.Keyword()
+
     ram_mb = odm.Integer(default=1024)
+
+    # Should the result cache be disabled for this service
+    disable_cache = odm.Boolean(default=False)
 
     # The region or resource code where the repo should be found
     realm = odm.Keyword()
