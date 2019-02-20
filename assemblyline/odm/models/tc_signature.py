@@ -25,6 +25,7 @@ class TCSignature(odm.Model):
     classification = odm.Classification(default=Classification.UNRESTRICTED)
     comment = odm.Keyword(default_set=True)
     implant_family = odm.Keyword(default_set=True)
+    last_modified = odm.Date(default="NOW")
     name = odm.Keyword()
     threat_actor = odm.Keyword(default_set=True)
     values = odm.List(odm.Keyword())
