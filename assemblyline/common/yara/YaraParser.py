@@ -21,7 +21,7 @@ class YaraCharsetValidationException(Exception):
 # noinspection PyUnresolvedReferences
 class YaraParser(object):
     STATUSES = ["DEPLOYED", "TESTING", "NOISY", "DISABLED", "STAGING", "INVALID"]
-    VALID_YARA_VERSION = ["1.6", "1.7", "2.0", "2.1", "3.0", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7"]
+    VALID_YARA_VERSION = ["1.6", "1.7", "2.0", "2.1", "3.0", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8"]
     RULE_TYPE = ["rule", "private rule", "global private rule", "global rule"]
     RULE_GROUPS = ['exploit', 'implant', 'info', 'technique', 'tool']
     RULE_IMPORTANT = ['description', 'organisation', 'poc', 'rule_id', 'rule_version', 'yara_version']
@@ -44,11 +44,26 @@ class YaraParser(object):
                     "3.4": ["pe", "cuckoo", "magic", "math", "hash", "elf"],
                     "3.5": ["pe", "cuckoo", "magic", "math", "hash", "elf", "dotnet"],
                     "3.6": ["pe", "cuckoo", "magic", "math", "hash", "elf", "dotnet"],
-                    "3.7": ["pe", "cuckoo", "magic", "math", "hash", "elf", "dotnet"]}
+                    "3.7": ["pe", "cuckoo", "magic", "math", "hash", "elf", "dotnet"],
+                    "3.8": ["pe", "cuckoo", "magic", "math", "hash", "elf", "dotnet"]}
 
-    CURRENT_YARA_VERSION = "3.7"
+    CURRENT_YARA_VERSION = "3.8"
 
     FAKE_RULE = "rule %s { condition: \"THIS IS A FAKE RULE TO PASS VALIDATION TESTS. IGNORE!\"}"
+
+    BUMP_REQ_FIELDS = [
+        'rule_group',
+        'implant',
+        'exploit',
+        'info',
+        'technique',
+        'tool',
+        'organisation',
+        'rule_id',
+        'rule_version',
+        'al_configdumper',
+        'al_configparser'
+    ]
         
     def __init__(self):
         
@@ -130,33 +145,40 @@ class YaraParser(object):
     def require_bump(cls, rule, old_rule):
         if old_rule['meta']['al_status'] in ['TESTING', 'STAGING', 'INVALID']:
             return False
-        
+
+        # Test a name change
         if rule['name'] != old_rule['name']:
             return True
+        # Test strings changes
         if rule['strings'] != old_rule['strings']:
             return True
+        # Test condition changes
         if rule['condition'] != old_rule['condition']:
             return True
+        # Test tag changes
         if rule['tags'] != old_rule['tags']:
             return True
+        # Test type changes
         if rule['type'] != old_rule['type']:
             return True
-        if rule['meta']['rule_group'] != old_rule['meta']['rule_group']:
-            return True
+        # Test custom rules for validating rule bump
         if cls.custom_bump_rules(rule, old_rule):
             return True
-        
-        new_keys = list(rule['meta'].keys()) + list(rule.get('meta_extra', {}).keys())
-        old_keys = list(old_rule['meta'].keys()) + list(old_rule.get('meta_extra', {}).keys())
-        
-        if new_keys != old_keys:
-            return True
-        
-        for item in new_keys:
-            if item not in ['description', 'poc', 'yara_version', 'creation_date', 'last_modified',
-                            'al_state_change_user', 'al_state_change_date', 'last_saved_by']:
-                if rule['meta'][item] != old_rule['meta'][item]:
-                    return True
+
+        rule_meta = rule.get('meta', {})
+        rule_extra = rule.get('meta_extra', {})
+        old_rule_meta = old_rule.get('meta', {})
+        old_rule_extra = old_rule.get('meta_extra', {})
+
+        # Check the values of the different fields that warrant a rule bump
+        for item in cls.BUMP_REQ_FIELDS:
+            # Test field in the meta section
+            if rule_meta.get(item, None) != old_rule_meta.get(item, None):
+                return True
+
+            # Test field in the extra section
+            if rule_extra.get(item, None) != old_rule_extra.get(item, None):
+                return True
          
         return False
 
