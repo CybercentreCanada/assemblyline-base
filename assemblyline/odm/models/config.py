@@ -263,9 +263,10 @@ class Core(odm.Model):
 
 
 DEFAULT_CORE = {
-    "redis": DEFAULT_REDIS,
+    "alerter": DEFAULT_ALERTER,
     "dispatcher": DEFAULT_DISPATCHER,
     "middleman": DEFAULT_MIDDLEMAN,
+    "redis": DEFAULT_REDIS,
 }
 
 
