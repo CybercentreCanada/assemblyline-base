@@ -1,10 +1,16 @@
 from assemblyline import odm
+from assemblyline.common import forge
+Classification = forge.get_classification()
 
 
 @odm.model(index=False, store=False)
 class Favorite(odm.Model):
-    name = odm.Keyword()     # Name of the favorite
-    query = odm.Keyword()    # Query for the favorite
+    created_by = odm.Keyword()                           # Who created the favorite
+    classification = odm.Classification(
+        is_user_classification=True, copyto="__text__",
+        default=Classification.UNRESTRICTED)             # Classification of the favorite
+    name = odm.Keyword()                                 # Name of the favorite
+    query = odm.Keyword()                                # Query for the favorite
 
 
 @odm.model(index=False, store=False)

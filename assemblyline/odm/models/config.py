@@ -130,34 +130,25 @@ DEFAULT_AUTH = {
 
 
 @odm.model(index=True, store=True)
-class RedisServer(odm.Model):
-    db = odm.Integer()
-    host = odm.Keyword()
-    port = odm.Integer()
+class Alerter(odm.Model):
+    default_group_field = odm.Keyword()
+    filtering_group_fields = odm.List(odm.Keyword())
+    non_filtering_group_fields = odm.List(odm.Keyword())
 
 
-DEFAULT_REDIS_NP = {
-    "db": 0,
-    "host": "127.0.0.1",
-    "port": 6379
-}
+DEFAULT_ALERTER = {
+    "default_group_field": "file.sha256",
+    "filtering_group_fields": [
+        "file.name",
+        "status",
+        "priority"
+    ],
+    "non_filtering_group_fields": [
+        "file.md5",
+        "file.sha1",
+        "file.sha256"
+    ]
 
-DEFAULT_REDIS_P = {
-    "db": 0,
-    "host": "127.0.0.1",
-    "port": 6380
-}
-
-
-@odm.model(index=True, store=True)
-class Redis(odm.Model):
-    nonpersistent = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
-    persistent = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
-
-
-DEFAULT_REDIS = {
-    "nonpersistent": DEFAULT_REDIS_NP,
-    "persistent": DEFAULT_REDIS_P
 }
 
 
@@ -232,10 +223,43 @@ DEFAULT_MIDDLEMAN = {
 
 
 @odm.model(index=True, store=True)
+class RedisServer(odm.Model):
+    db = odm.Integer()
+    host = odm.Keyword()
+    port = odm.Integer()
+
+
+DEFAULT_REDIS_NP = {
+    "db": 0,
+    "host": "127.0.0.1",
+    "port": 6379
+}
+
+DEFAULT_REDIS_P = {
+    "db": 0,
+    "host": "127.0.0.1",
+    "port": 6380
+}
+
+
+@odm.model(index=True, store=True)
+class Redis(odm.Model):
+    nonpersistent = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
+    persistent = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
+
+
+DEFAULT_REDIS = {
+    "nonpersistent": DEFAULT_REDIS_NP,
+    "persistent": DEFAULT_REDIS_P
+}
+
+
+@odm.model(index=True, store=True)
 class Core(odm.Model):
-    redis = odm.Compound(Redis, default=DEFAULT_REDIS)
+    alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
     dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
     middleman = odm.Compound(Middleman, default=DEFAULT_MIDDLEMAN)
+    redis = odm.Compound(Redis, default=DEFAULT_REDIS)
 
 
 DEFAULT_CORE = {
