@@ -101,7 +101,7 @@ class PriorityQueue(object):
         results = retry_call(self._deque_range, keys=[self.name], args=[lower_limit, upper_limit, skip, num])
         return [decode(res[21:]) for res in results]
 
-    def push(self, priority, data, vip=None):
+    def push(self, priority: int, data, vip=None):
         vip = 0 if vip else 9
         retry_call(self.s, args=[self.name, priority, vip, json.dumps(data)])
 
@@ -116,3 +116,26 @@ class PriorityQueue(object):
             if ret_val:
                 return decode(ret_val[0][21:])
             return None
+
+
+class UniquePriorityQueue(PriorityQueue):
+    """A priority queue where duplicate entries will be merged."""
+
+    def __init__(self, name, host=None, port=None, db=None, private=False):
+        super().__init__(name, host, port, db, private)
+        del self.s
+
+    def remove(self, data: str):
+        """Remove a value from the priority  queue."""
+        retry_call(self.c.zrem, self.name, data)
+
+    def push(self, priority: int, data) -> int:
+        """Add or update elements in the priority queue.
+
+        Existing elements will have their priority updated.
+
+        Returns:
+            Number of _NEW_ elements in the queue after the operation.
+        """
+        return retry_call(self.c.zadd, self.name, {json.dumps(data): priority})
+
