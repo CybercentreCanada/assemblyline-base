@@ -2,7 +2,7 @@ from assemblyline import odm
 from assemblyline.odm.common import Resources, HostInfo
 
 MSG_TYPES = {"DispatcherHeartbeat"}
-LOADER_CLASS = "assemblyline.odm.messages.dispatcher.DispatcherMessage"
+LOADER_CLASS = "assemblyline.odm.messages.old.dispatcher.DispatcherMessage"
 
 
 @odm.model()

@@ -4,11 +4,11 @@ import time
 from threading import Thread
 
 from assemblyline.common.importing import load_module_by_path
-from assemblyline.odm.messages.old.alert import AlertMessage
+from assemblyline.odm.messages.alert import AlertMessage
 from assemblyline.odm.messages.old.controller import ControllerMessage
 from assemblyline.odm.messages.old.dispatcher import DispatcherMessage
 from assemblyline.odm.messages.old.ingest import IngestMessage
-from assemblyline.odm.messages.old.metrics import MetricsMessage
+from assemblyline.odm.messages.metrics import MetricsMessage
 from assemblyline.odm.messages.old.service import ServiceMessage
 from assemblyline.odm.messages.submission import SubmissionMessage
 from assemblyline.odm.randomizer import random_model_obj
