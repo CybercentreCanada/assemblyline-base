@@ -11,6 +11,7 @@ from assemblyline.odm.messages.old.ingest import IngestMessage
 from assemblyline.odm.messages.old.metrics import MetricsMessage
 from assemblyline.odm.messages.old.service import ServiceMessage
 from assemblyline.odm.messages.submission import SubmissionMessage
+from assemblyline.odm.messages.old.task import TaskMessage
 from assemblyline.odm.randomizer import random_model_obj
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 
@@ -95,3 +96,10 @@ def test_submission_message(redis_connection):
         _test_message_through_queue('submissions', random_model_obj(SubmissionMessage), redis_connection)
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'SubmissionMessage' object and validate it.")
+
+
+def test_task_message(redis_connection):
+    try:
+        _test_message_through_queue('submissions', random_model_obj(TaskMessage), redis_connection)
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'TaskMessage' object and validate it.")
