@@ -1,7 +1,6 @@
 import hashlib
 
 from assemblyline.common import entropy
-from assemblyline.common.str_utils import safe_str
 
 DEFAULT_BLOCKSIZE = 65536
 
@@ -18,7 +17,7 @@ def get_digests_for_file(path, blocksize=DEFAULT_BLOCKSIZE,
         except Exception:
             calculate_entropy = False
 
-    result = {'path': safe_str(path)}
+    result = {}
 
     md5 = hashlib.md5()
     sha1 = hashlib.sha1()

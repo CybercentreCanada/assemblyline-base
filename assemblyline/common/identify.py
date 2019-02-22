@@ -25,113 +25,113 @@ constants = get_constants()
 
 STRONG_INDICATORS = {
     'code/vbs': [
-        re.compile(r'(^|\n)On Error Resume Next'),
-        re.compile(r'(^|\n)(?:Private)?[ \t]*Sub[ \t]+\w+\('),
-        re.compile(r'(^|\n)End Module'),
+        re.compile(rb'(^|\n)On Error Resume Next'),
+        re.compile(rb'(^|\n)(?:Private)?[ \t]*Sub[ \t]+\w+\('),
+        re.compile(rb'(^|\n)End Module'),
     ],
     'code/javascript': [
-        re.compile(r'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
-        re.compile(r'\beval[ \t]*\('),
-        re.compile(r'new[ \t]+ActiveXObject\('),
-        re.compile(r'xfa\.((resolve|create)Node|datasets|form)'),
-        re.compile(r'\.oneOfChild'),
+        re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
+        re.compile(rb'\beval[ \t]*\('),
+        re.compile(rb'new[ \t]+ActiveXObject\('),
+        re.compile(rb'xfa\.((resolve|create)Node|datasets|form)'),
+        re.compile(rb'\.oneOfChild'),
     ],
     'code/csharp': [
-        re.compile(r'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
-        re.compile(r'(^|\n)[ \t]*using[ \t]+[\w.]+;'),
-        re.compile(r'(^|\n)[ \t]*internal class '),
+        re.compile(rb'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
+        re.compile(rb'(^|\n)[ \t]*using[ \t]+[\w.]+;'),
+        re.compile(rb'(^|\n)[ \t]*internal class '),
     ],
     'code/php': [
-        re.compile(r'(^|\n)<\?php'),
-        re.compile(r'namespace[ \t]+[\w.]+'),
-        re.compile(r'function[ \t]*\w+[ \t]*\(\$[^)]+\)[ \t]*{'),
-        re.compile(r'\beval[ \t]*\('),
+        re.compile(rb'(^|\n)<\?php'),
+        re.compile(rb'namespace[ \t]+[\w.]+'),
+        re.compile(rb'function[ \t]*\w+[ \t]*\(\$[^)]+\)[ \t]*{'),
+        re.compile(rb'\beval[ \t]*\('),
     ],
     'code/c': [
-        re.compile(r'(^|\n)(static|typedef)?[ \t]*struct '),
-        re.compile(r'(^|\n)#include[ \t]*([<"])[\w./]+([>"])'),
-        re.compile(r'(^|\n)#(ifndef |define |endif |pragma )'),
+        re.compile(rb'(^|\n)(static|typedef)?[ \t]*struct '),
+        re.compile(rb'(^|\n)#include[ \t]*([<"])[\w./]+([>"])'),
+        re.compile(rb'(^|\n)#(ifndef |define |endif |pragma )'),
     ],
     'code/python': [
-        re.compile(r'(^|\n)[ \t]*if __name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:'),
-        re.compile(r'(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?'),
-        re.compile(r'(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:'),
+        re.compile(rb'(^|\n)[ \t]*if __name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:'),
+        re.compile(rb'(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?'),
+        re.compile(rb'(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:'),
     ],
     'code/rust': [
-        re.compile(r'(^|\n)(pub|priv)[ \t]*(struct |enum |impl |const )'),
-        re.compile(r'(^|\n)[ \t]*fn[ \t]*\w+[ \t]*\(&self'),
-        re.compile(r'(println!|panic!)'),
+        re.compile(rb'(^|\n)(pub|priv)[ \t]*(struct |enum |impl |const )'),
+        re.compile(rb'(^|\n)[ \t]*fn[ \t]*\w+[ \t]*\(&self'),
+        re.compile(rb'(println!|panic!)'),
     ],
     'code/lisp': [
-        re.compile(r'(^|\n)[ \t]*\((defmacro|defun|eval-when|in-package|list|export|defvar) '),
+        re.compile(rb'(^|\n)[ \t]*\((defmacro|defun|eval-when|in-package|list|export|defvar) '),
     ],
     'code/java': [
-        re.compile(r'(^|\n)[ \t]*public[ \t]+class[ \t]+\w+[ \t]+(extends[ \t]+\w+[ \t]+)?{'),
-        re.compile(r'(^|\n)[\w \t]+\([^)]+\)[ \t]+throws[ \t]+[\w, \t]+[ \t]+{'),
-        re.compile(r'(^|\n)[ \t]*(private|public)[ \t]*static[ \t]*\w+'),
+        re.compile(rb'(^|\n)[ \t]*public[ \t]+class[ \t]+\w+[ \t]+(extends[ \t]+\w+[ \t]+)?{'),
+        re.compile(rb'(^|\n)[\w \t]+\([^)]+\)[ \t]+throws[ \t]+[\w, \t]+[ \t]+{'),
+        re.compile(rb'(^|\n)[ \t]*(private|public)[ \t]*static[ \t]*\w+'),
     ],
     'code/perl': [
-        re.compile(r'(^|\n)[ \t]*my[ \t]*\$\w+[ \t]*='),
-        re.compile(r'(^|\n)[ \t]*sub[ \t]*\w+[ \t]*{'),
+        re.compile(rb'(^|\n)[ \t]*my[ \t]*\$\w+[ \t]*='),
+        re.compile(rb'(^|\n)[ \t]*sub[ \t]*\w+[ \t]*{'),
     ],
     'code/ruby': [
-        re.compile(r'(^|\n)[ \t]*require(_all)?[ \t]*\'[\w/]+\''),
-        re.compile(r'rescue[ \t]+\w+[ \t]+=>'),
+        re.compile(rb'(^|\n)[ \t]*require(_all)?[ \t]*\'[\w/]+\''),
+        re.compile(rb'rescue[ \t]+\w+[ \t]+=>'),
     ],
     'code/go': [
-        re.compile(r'(^|\n)[ \t]*import[ \t]+\('),
-        re.compile(r'(^|\n)[ \t]*func[ \t]+\w+\('),
+        re.compile(rb'(^|\n)[ \t]*import[ \t]+\('),
+        re.compile(rb'(^|\n)[ \t]*func[ \t]+\w+\('),
     ],
     'code/css': [
-        re.compile(r'(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{'
-                   r'[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}'),
+        re.compile(rb'(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{'
+                   rb'[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}'),
     ],
     'text/markdown': [
-        re.compile(r'\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+'),
+        re.compile(rb'\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+'),
     ],
     'document/email': [
-        re.compile(r'^Content-Type: ', re.MULTILINE),
-        re.compile(r'^Subject: ', re.MULTILINE),
-        re.compile(r'^MIME-Version: ', re.MULTILINE),
-        re.compile(r'^Message-ID: ', re.MULTILINE),
-        re.compile(r'^To: ', re.MULTILINE),
-        re.compile(r'^From: ', re.MULTILINE),
+        re.compile(rb'^Content-Type: ', re.MULTILINE),
+        re.compile(rb'^Subject: ', re.MULTILINE),
+        re.compile(rb'^MIME-Version: ', re.MULTILINE),
+        re.compile(rb'^Message-ID: ', re.MULTILINE),
+        re.compile(rb'^To: ', re.MULTILINE),
+        re.compile(rb'^From: ', re.MULTILINE),
     ],
     'code/xml': [
         # Check if it has an xml declaration header
-        re.compile(r'^\s*<\?xml[^>]+\?>', re.DOTALL | re.MULTILINE),
+        re.compile(rb'^\s*<\?xml[^>]+\?>', re.DOTALL | re.MULTILINE),
         # Check if it begins and ends with <tag ... and </tag ...> (for informal xml usages)
-        re.compile(r'^\s*<(?P<open>[\w:]+) .+</(?P=open)[^>]+>\s*$', re.DOTALL),
+        re.compile(rb'^\s*<(?P<open>[\w:]+) .+</(?P=open)[^>]+>\s*$', re.DOTALL),
         # Check if a tag has an xmlns attribute
-        re.compile(r'<[^>]+xmlns[:=][^>]+>', re.MULTILINE),
+        re.compile(rb'<[^>]+xmlns[:=][^>]+>', re.MULTILINE),
     ],
 }
 STRONG_SCORE = 15
 MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
-    'code/javascript': ['var ',
-                        r'String\.(fromCharCode|raw)\(',
-                        r'Math\.(round|pow|sin|cos)\(',
-                        r'(isNaN|isFinite|parseInt|parseFloat)\(',
+    'code/javascript': [b'var ',
+                        rb'String\.(fromCharCode|raw)\(',
+                        rb'Math\.(round|pow|sin|cos)\(',
+                        rb'(isNaN|isFinite|parseInt|parseFloat)\(',
                         ],
-    'code/jscript': [r'new[ \t]+ActiveXObject\(', r'Scripting\.Dictionary'],
-    'code/pdfjs': [r'xfa\.((resolve|create)Node|datasets|form)', r'\.oneOfChild'],
-    'code/vbs': [r'(^|\n)[ \t]*(Dim |Sub |Loop |Attribute )', 'CreateObject', 'WScript'],
-    'code/csharp': [r'(^|\n)(protected)?[ \t]*override'],
-    'code/sql': [r'(^|\n)(create |drop |select |returns |declare )'],
-    'code/php': [r'\$this\->'],
-    'code/c': [r'(^|\n)(const char \w+;|extern |uint(8|16|32)_t )'],
-    'code/python': ['try:', 'except:', 'else:'],
-    'code/java': [r'(^|\n)[ \t]*package[ \t]+[\w\.]+;'],
-    'code/perl': [r'(^|\n)[ \t]*package[ \t]+[\w\.]+;', '@_'],
-    'text/markdown': [r'\[[\w]+\]:[ \t]*http:'],
+    'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
+    'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
+    'code/vbs': [rb'(^|\n)[ \t]*(Dim |Sub |Loop |Attribute )', b'CreateObject', b'WScript'],
+    'code/csharp': [rb'(^|\n)(protected)?[ \t]*override'],
+    'code/sql': [rb'(^|\n)(create |drop |select |returns |declare )'],
+    'code/php': [rb'\$this\->'],
+    'code/c': [rb'(^|\n)(const char \w+;|extern |uint(8|16|32)_t )'],
+    'code/python': [b'try:', b'except:', b'else:'],
+    'code/java': [rb'(^|\n)[ \t]*package[ \t]+[\w\.]+;'],
+    'code/perl': [rb'(^|\n)[ \t]*package[ \t]+[\w\.]+;', b'@_'],
+    'text/markdown': [rb'\[[\w]+\]:[ \t]*http:'],
 }
 WEAK_SCORE = 1
 
-WEAK_INDICATORS = {k: re.compile('|'.join(v)) for k, v in WEAK_INDICATORS.items()}
+WEAK_INDICATORS = {k: re.compile(b'|'.join(v)) for k, v in WEAK_INDICATORS.items()}
 
-SHEBANG = re.compile(r'^#![\w./]+/(?:env[ \t]*)?(\w+)[ \t]*\n')
+SHEBANG = re.compile(rb'^#![\w./]+/(?:env[ \t]*)?(\w+)[ \t]*\n')
 
 EXECUTABLES = {
     'escript': 'erlang',
@@ -381,14 +381,14 @@ def subtype(label):
 
 
 def ident(buf, length):
-    data = {'ascii': '', 'hex': '', 'magic': '', 'mime': '', 'tag': 'unknown'}
+    data = {'ascii': '', 'hex': '', 'magic': '', 'mime': '', 'type': 'unknown'}
 
     if length <= 0:
         return data
 
     header = buf[:min(64, length)]
     data['ascii'] = dotdump(header)
-    data['hex'] = hexlify(header)
+    data['hex'] = safe_str(hexlify(header))
 
     # noinspection PyBroadException
     try:
@@ -420,7 +420,7 @@ def ident(buf, length):
             label = dotdump(label)
 
             if custom.match(label):
-                data['tag'] = label.split('custom: ')[1].strip()
+                data['type'] = label.split('custom: ')[1].strip()
                 tagged = True
                 break
 
@@ -430,7 +430,7 @@ def ident(buf, length):
                 mime = dotdump(mime)
 
                 if mime in trusted_mimes:
-                    data['tag'] = trusted_mimes[mime]
+                    data['type'] = trusted_mimes[mime]
                     tagged = True
                     break
 
@@ -471,15 +471,15 @@ def ident(buf, length):
 
             # Based on the sub tag we found, figure out the top level tag to use
             tl_tag = sl_to_tl.get(sl_tag, tl_patterns[minimum][0])
-            data['tag'] = '/'.join((tl_tag, sl_tag))
+            data['type'] = '/'.join((tl_tag, sl_tag))
 
     except Exception:
         pass
 
-    if not recognized.get(data['tag'], False):
-        data['tag'] = 'unknown'
+    if not recognized.get(data['type'], False):
+        data['type'] = 'unknown'
 
-    if data['tag'] == 'document/office/unknown':
+    if data['type'] == 'document/office/unknown':
         # noinspection PyBroadException
         try:
             root_entry_property_offset = buf.find(u"Root Entry".encode("utf-16-le"))
@@ -492,7 +492,7 @@ def ident(buf, length):
                         clsid_str = uuid.UUID(bytes_le=clsid)
                         clsid_str = clsid_str.urn.rsplit(':', 1)[-1].upper()
                         if clsid_str in OLE_CLSID_GUIDs:
-                            data['tag'] = OLE_CLSID_GUIDs[clsid_str]
+                            data['type'] = OLE_CLSID_GUIDs[clsid_str]
         except Exception:
             pass
 
@@ -520,7 +520,7 @@ def _differentiate(lang, scores_map):
 # Pass a filepath and this will return the guessed language in the AL tag format.
 def guess_language(path):
     file_length = os.path.getsize(path)
-    with open(path, 'r') as fh:
+    with open(path, 'rb') as fh:
         if file_length > 131070:
             buf = fh.read(65535)
             fh.seek(file_length - 65535)
@@ -532,7 +532,7 @@ def guess_language(path):
     shebang_lang = re.match(SHEBANG, buf)
     if shebang_lang:
         lang = shebang_lang.group(1)
-        lang = 'code/' + EXECUTABLES.get(lang, lang)
+        lang = 'code/' + EXECUTABLES.get(safe_str(lang), safe_str(lang))
         scores[lang] = STRONG_SCORE * 3
 
     for lang, patterns in STRONG_INDICATORS.items():
@@ -544,7 +544,7 @@ def guess_language(path):
         for _ in re.findall(pattern, buf):
             scores[lang] += WEAK_SCORE
 
-    for lang in scores.keys():
+    for lang in list(scores.keys()):
         if scores[lang] < MINIMUM_GUESS_SCORE:
             scores.pop(lang)
 
@@ -647,7 +647,7 @@ def cart_ident(path):
         metadata = get_metadata_only(path)
     except Exception:
         return 'corrupted/cart'
-    return metadata.get('al', {}).get('tag', 'archive/cart')
+    return metadata.get('al', {}).get('type', 'archive/cart')
 
 
 def dos_ident(path):
@@ -692,7 +692,7 @@ def fileinfo(path):
     # block magic can't figure out any more than that. To handle that case we will read the
     # entire file, and identify again.
     if data['mime'].lower() in ['application/cdfv2-corrupt', 'application/cdfv2-unknown']:
-        with open(path, 'r') as fh:
+        with open(path, 'rb') as fh:
             buf = fh.read()
             buflen = len(buf)
             data.update(ident(buf, buflen))
@@ -702,27 +702,27 @@ def fileinfo(path):
     cart_metadata_set = False
 
     if not int(data.get('size', -1)):
-        data['tag'] = 'empty'
-    elif data['tag'] in ['archive/zip', 'java/jar']:
+        data['type'] = 'empty'
+    elif data['type'] in ['archive/zip', 'java/jar']:
         # In addition to explicit zip files, we also want to run zip_ident when
         # a file is a jar as there is a high rate of false positive (magic
         # matching eclipse and other java related files as jars)
-        data['tag'] = zip_ident(path)
-    elif data['tag'] == 'document/office/unknown':
+        data['type'] = zip_ident(path)
+    elif data['type'] == 'document/office/unknown':
         # For unknown document files try identifying them by unziping,
         # but don't commit to it being a zip if it can't be extracted
-        data['tag'] = zip_ident(path, data['tag'])
-    elif data['tag'] == 'unknown':
-        data['tag'], _ = guess_language(path)
-    elif data['tag'] == 'archive/cart':
-        data['tag'] = cart_ident(path)
+        data['type'] = zip_ident(path, data['type'])
+    elif data['type'] == 'unknown':
+        data['type'], _ = guess_language(path)
+    elif data['type'] == 'archive/cart':
+        data['type'] = cart_ident(path)
         cart_metadata_set = True
-    elif data['tag'] == 'executable/windows/dos':
+    elif data['type'] == 'executable/windows/dos':
         # The default magic file misidentifies PE files with a munged DOS header
-        data['tag'] = dos_ident(path)
+        data['type'] = dos_ident(path)
 
-    if not recognized.get(data['tag'], False) and not cart_metadata_set:
-        data['tag'] = 'unknown'
+    if not recognized.get(data['type'], False) and not cart_metadata_set:
+        data['type'] = 'unknown'
 
     return data
 
@@ -737,7 +737,7 @@ if __name__ == '__main__':
         name = sys.stdin.readline().strip()
         while name:
             a = fileinfo(name)
-            print('\t'.join(dotdump(str(a[k])) for k in ('path', 'tag', 'ascii',
+            print('\t'.join(dotdump(str(a[k])) for k in ('type', 'ascii',
                                                          'entropy', 'hex', 'magic',
                                                          'mime', 'md5', 'sha1', 'sha256',
                                                          'ssdeep', 'size')))
