@@ -486,6 +486,8 @@ class UI(odm.Model):
     enforce_quota = odm.Boolean()
     # Fully qualified domain name to use for the 2-factor authentication validation
     fqdn = odm.Text()
+    # Maximum priority for ingest API
+    ingest_max_priority = odm.Integer()
     # Turn on read only mode in the UI
     read_only = odm.Boolean()
     # Offset of the read only mode for all paging and searches
@@ -516,6 +518,7 @@ DEFAULT_UI = {
     "email": 'admin@assemblyline.local',
     "enforce_quota": True,
     "fqdn": "assemblyline.local",
+    "ingest_max_priority": 250,
     "read_only": False,
     "read_only_offset": "",
     "secret_key": "This is the default flask secret key... you should change this!",

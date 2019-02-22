@@ -13,17 +13,17 @@ class File(odm.Model):
 
 @odm.model(index=True, store=True)
 class Notification(odm.Model):
-    queue = odm.Keyword(default_set=True)  # Queue to publish the completion message
-    threshold = odm.Integer(default=0)     # Notify only if this score threshold is met
+    queue = odm.Keyword(default_set=True)      # Queue to publish the completion message
+    threshold = odm.Integer(default_set=True)  # Notify only if this score threshold is met
 
 
 @odm.model()
 class Submission(odm.Model):
-    sid = odm.UUID(default_set=True)                       # Submission ID to use
-    files = odm.List(odm.Compound(File))                   # File block
-    metadata = odm.Mapping(odm.Keyword(), default={})      # Metadata submitted with the file
-    notification = odm.Compound(Notification, default={})  # Notification queue parameters
-    params = odm.Compound(SubmissionParams)                # Parameters of the submission
+    sid = odm.UUID(default_set=True)                             # Submission ID to use
+    files = odm.List(odm.Compound(File), default=[])             # File block
+    metadata = odm.Mapping(odm.Keyword(), default={})            # Metadata submitted with the file
+    notification = odm.Compound(Notification, default={})        # Notification queue parameters
+    params = odm.Compound(SubmissionParams)                      # Parameters of the submission
 
 
 @odm.model()

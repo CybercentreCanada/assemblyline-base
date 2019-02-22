@@ -256,6 +256,9 @@ class Integer(_Field):
     """A field storing an integer value."""
 
     def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                return self.default
         return int(value)
 
 
@@ -263,6 +266,9 @@ class Float(_Field):
     """A field storing a floating point value."""
 
     def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                return self.default
         return float(value)
 
 

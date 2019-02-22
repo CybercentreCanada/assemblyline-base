@@ -1,6 +1,7 @@
-import uuid
 import hashlib
 from assemblyline import odm
+from assemblyline.common import forge
+Classification = forge.get_classification()
 
 INGEST_SUBMISSION_DEFAULTS = {
     # Alternative defaults to the submission params used by the middleman client
@@ -42,7 +43,8 @@ _KEY_HASHED_FIELDS = {
 @odm.model(index=True, store=False)
 class SubmissionParams(odm.Model):
     completed_queue = odm.Keyword(default_set=True)                     # Which queue to notify on completion
-    classification = odm.Classification()                               # Original classification of the submission
+    classification = odm.Classification(
+        default=Classification.UNRESTRICTED)                            # Original classification of the submission
     deep_scan = odm.Boolean(default=False)                              # Should a deep scan be performed?
     description = odm.Text(default="", store=True, copyto="__text__")   # Description of the submission
     generate_alert = odm.Boolean(default=False)                         # Should this submission generate an alert
@@ -58,7 +60,7 @@ class SubmissionParams(odm.Model):
     profile = odm.Boolean(default=False)                                # Should the submission do extra profiling
     psid = odm.Keyword(default_set=True)                                # Parent submission ID
     quota_item = odm.Boolean(default=False)                             # Does this submission count against quota
-    services = odm.Compound(ServiceSelection)                           # Service selection bloc
+    services = odm.Compound(ServiceSelection, default={})               # Service selection bloc
     service_spec = odm.Mapping(odm.Mapping(odm.Keyword()), default={})  # Service specific parameters
     submitter = odm.Keyword(store=True)                                 # User who submitted the file
     ttl = odm.Integer(default=15)                                       # Time to live for this submission in days
