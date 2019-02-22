@@ -2,7 +2,7 @@ from assemblyline import odm
 from assemblyline.odm.common import HostInfo
 
 MSG_TYPES = {"IngestHeartbeat"}
-LOADER_CLASS = "assemblyline.odm.messages.ingest.IngestMessage"
+LOADER_CLASS = "assemblyline.odm.messages.old.ingest.IngestMessage"
 
 
 @odm.model()

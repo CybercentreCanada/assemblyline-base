@@ -2,7 +2,7 @@ from assemblyline import odm
 from assemblyline.odm.common import Resources
 
 MSG_TYPES = {"ControllerHeartbeat"}
-LOADER_CLASS = "assemblyline.odm.messages.controller.ControllerMessage"
+LOADER_CLASS = "assemblyline.odm.messages.old.controller.ControllerMessage"
 
 
 @odm.model()

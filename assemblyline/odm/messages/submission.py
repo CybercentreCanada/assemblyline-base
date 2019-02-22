@@ -1,7 +1,7 @@
 from assemblyline import odm
 from assemblyline.odm.models.submission import SubmissionParams
 
-MSG_TYPES = {"SubmissionQueued", "SubmissionStarted"}
+MSG_TYPES = {"SubmissionReceived", "SubmissionQueued", "SubmissionStarted"}
 LOADER_CLASS = "assemblyline.odm.messages.submission.SubmissionMessage"
 
 
@@ -30,5 +30,5 @@ class Submission(odm.Model):
 class SubmissionMessage(odm.Model):
     msg = odm.Compound(Submission)                                       # Body of the message
     msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)   # Class to use to load the message as an object
-    msg_type = odm.Enum(values=MSG_TYPES, default="SubmissionQueued")  # Type of message
+    msg_type = odm.Enum(values=MSG_TYPES, default="SubmissionReceived")  # Type of message
     sender = odm.Keyword()                                               # Sender of the message
