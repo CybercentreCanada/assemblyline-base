@@ -500,6 +500,10 @@ class UI(odm.Model):
     tos = odm.Text(default_set=True)
     # Lock out user after accepting the terms of service
     tos_lockout = odm.Boolean()
+    # Headers that will be used by the url_download method
+    url_submission_headers = odm.Mapping(odm.Keyword(), default_set=True)
+    # Proxy that will be used by the url_download method
+    url_submission_proxies = odm.Mapping(odm.Keyword(), default_set=True)
 
 
 DEFAULT_UI = {
@@ -518,7 +522,9 @@ DEFAULT_UI = {
     "session_duration": 3600,
     "statistics": DEFAULT_STATISTICS,
     "tos": None,
-    "tos_lockout": False
+    "tos_lockout": False,
+    "url_submission_headers": {},
+    "url_submission_proxies": {}
 }
 
 
