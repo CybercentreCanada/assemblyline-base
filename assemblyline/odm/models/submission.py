@@ -10,6 +10,7 @@ INGEST_SUBMISSION_DEFAULTS = {
     'type': "BULK",
 }
 SUBMISSION_STATES = ['serviced', 'submitted', 'completed']
+DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
 
 
 @odm.model(index=True, store=False)
@@ -20,9 +21,9 @@ class File(odm.Model):
 
 @odm.model(index=False, store=False)
 class ServiceSelection(odm.Model):
-    selected = odm.List(odm.Keyword())              # List of selected services for the submission
-    excluded = odm.List(odm.Keyword(), default=[])  # List of excluded services for the submission
-    resubmit = odm.List(odm.Keyword())              # Add to service selection when resubmitting
+    selected = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL)  # List of selected services for the submission
+    excluded = odm.List(odm.Keyword(), default=[])               # List of excluded services for the submission
+    resubmit = odm.List(odm.Keyword(), default=[])               # Add to service selection when resubmitting
 
 
 # Fields in the parameters used to calculate hashes used for result caching
@@ -37,30 +38,31 @@ _KEY_HASHED_FIELDS = {
     'ignore_cache',
 }
 
+
 @odm.model(index=True, store=False)
 class SubmissionParams(odm.Model):
+    completed_queue = odm.Keyword(default_set=True)                     # Which queue to notify on completion
     classification = odm.Classification()                               # Original classification of the submission
     deep_scan = odm.Boolean(default=False)                              # Should a deep scan be performed?
     description = odm.Text(default="", store=True, copyto="__text__")   # Description of the submission
     generate_alert = odm.Boolean(default=False)                         # Should this submission generate an alert
     groups = odm.List(odm.Keyword(), default=["USERS"])                 # List of groups related to this scan
-    never_drop = odm.Boolean(default=False)
-    ignore_size = odm.Boolean(default=False)                            # ignore the file size limits
     ignore_cache = odm.Boolean(default=False)                           # ignore the service caching or not
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False)    # Should we ignore dynamic recursion prevention
     ignore_filtering = odm.Boolean(default=False)                       # Should we ignore filtering services
+    ignore_size = odm.Boolean(default=False)                            # ignore the file size limits
     max_extracted = odm.Integer(default=500)                            # Max number of extracted files
     max_supplementary = odm.Integer(default=500)                        # Max number of supplementary files
+    never_drop = odm.Boolean(default=False)
     priority = odm.Integer(default=1000)                                # Priority of the scan
     profile = odm.Boolean(default=False)                                # Should the submission do extra profiling
-    psid = odm.Keyword(default="")                                      # Parent submission ID
+    psid = odm.Keyword(default_set=True)                                # Parent submission ID
+    quota_item = odm.Boolean(default=False)                             # Does this submission count against quota
     services = odm.Compound(ServiceSelection)                           # Service selection bloc
     service_spec = odm.Mapping(odm.Mapping(odm.Keyword()), default={})  # Service specific parameters
     submitter = odm.Keyword(store=True)                                 # User who submitted the file
     ttl = odm.Integer(default=15)                                       # Time to live for this submission in days
     type = odm.Keyword(default="USER")                                  # Type of submission
-    quota_item = odm.Boolean(default=False)                             # Does this submission count against quota
-    completed_queue = odm.Keyword(default="")                           # Which queue to notify on completion
 
     def get_hashing_keys(self):
         """Get the sections of the submission parameters that should be used in result hashes."""

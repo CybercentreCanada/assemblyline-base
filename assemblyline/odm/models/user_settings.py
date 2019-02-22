@@ -1,9 +1,10 @@
 from assemblyline import odm
 from assemblyline.common import forge
+from assemblyline.odm.models.submission import ServiceSelection, DEFAULT_SRV_SEL
+
 Classification = forge.get_classification()
 
 ENCODINGS = {"cart", "raw"}
-DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
 
 
 @odm.model(index=False, store=False)
@@ -21,5 +22,5 @@ class UserSettings(odm.Model):                                      # User's def
     priority = odm.Integer(default=1000)                              # Default priority for the submissions
     profile = odm.Boolean(default=False)                              # Should the submission do extra profiling
     service_spec = odm.Mapping(odm.Keyword(), default={})             # Default service specific settings
-    services = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL)       # Default service selection
+    services = odm.Compound(ServiceSelection, default={})             # Default service selection
     ttl = odm.Integer(default=15)                                     # Default submission Time to Live (days)

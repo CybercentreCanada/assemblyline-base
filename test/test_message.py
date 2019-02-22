@@ -4,17 +4,18 @@ import time
 from threading import Thread
 
 from assemblyline.common.importing import load_module_by_path
-from assemblyline.odm.messages.alert import AlertMessage
-from assemblyline.odm.messages.controller import ControllerMessage
-from assemblyline.odm.messages.dispatcher import DispatcherMessage
-from assemblyline.odm.messages.ingest import IngestMessage
-from assemblyline.odm.messages.metrics import MetricsMessage
-from assemblyline.odm.messages.service import ServiceMessage
+from assemblyline.odm.messages.old.alert import AlertMessage
+from assemblyline.odm.messages.old.controller import ControllerMessage
+from assemblyline.odm.messages.old.dispatcher import DispatcherMessage
+from assemblyline.odm.messages.old.ingest import IngestMessage
+from assemblyline.odm.messages.old.metrics import MetricsMessage
+from assemblyline.odm.messages.old.service import ServiceMessage
 from assemblyline.odm.messages.submission import SubmissionMessage
 from assemblyline.odm.randomizer import random_model_obj
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 
-from .test_remote_datatypes import redis_connection
+# noinspection PyUnresolvedReferences
+from test.test_remote_datatypes import redis_connection
 
 
 def publish_message(queue_name, test_message, redis):
