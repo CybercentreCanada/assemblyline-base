@@ -243,7 +243,7 @@ class FileStore(object):
                 failed_tuples.append((src_path, dst_path, trace))
         return failed_tuples
 
-    def save(self, dst_path, content, location='all',force=False):
+    def save(self, dst_path, content, location='all', force=False):
         transports = []
         for t in self.slice(location):
             if force or not t.exists(dst_path):
