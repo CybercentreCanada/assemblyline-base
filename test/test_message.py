@@ -11,7 +11,7 @@ from assemblyline.odm.messages.old.ingest import IngestMessage
 from assemblyline.odm.messages.metrics import MetricsMessage
 from assemblyline.odm.messages.old.service import ServiceMessage
 from assemblyline.odm.messages.submission import SubmissionMessage
-from assemblyline.odm.messages.old.task import TaskMessage
+from assemblyline.odm.messages.task import TaskMessage
 from assemblyline.odm.randomizer import random_model_obj
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 
