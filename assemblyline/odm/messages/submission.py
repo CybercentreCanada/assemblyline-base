@@ -1,14 +1,8 @@
 from assemblyline import odm
-from assemblyline.odm.models.submission import SubmissionParams
+from assemblyline.odm.models.submission import SubmissionParams, File
 
 MSG_TYPES = {"SubmissionReceived", "SubmissionQueued", "SubmissionStarted"}
 LOADER_CLASS = "assemblyline.odm.messages.submission.SubmissionMessage"
-
-
-@odm.model(index=True, store=True)
-class File(odm.Model):
-    name = odm.Keyword()    # Name of the file
-    sha256 = odm.Keyword()  # SHA256 hash of the file
 
 
 @odm.model(index=True, store=True)

@@ -94,8 +94,8 @@ class SubmissionParams(odm.Model):
 
 @odm.model(index=True, store=True)
 class Times(odm.Model):
-    completed = odm.Date(store=False, default=0)  # Date at which the submission finished scanning
-    submitted = odm.Date()             # Date at which the submission started scanning
+    completed = odm.Date(store=False, default_set=True)  # Date at which the submission finished scanning
+    submitted = odm.Date()                               # Date at which the submission started scanning
 
 
 @odm.model(index=True, store=True)
