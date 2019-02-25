@@ -396,14 +396,14 @@ def ident(buf, length):
         labels = []
         if file_type:
             with magic_lock:
-                labels = magic.magic_buffer(file_type, buf).split('\n')
-                labels = [label[2:] if label.startswith('- ') else label for label in labels]
+                labels = magic.magic_buffer(file_type, buf).split(b'\n')
+                labels = [label[2:] if label.startswith(b'- ') else label for label in labels]
 
         mimes = []
         if mime_type:
             with magic_lock:
-                mimes = magic.magic_buffer(mime_type, buf).split('\n')
-                mimes = [mime[2:] if mime.startswith('- ') else mime for mime in mimes]
+                mimes = magic.magic_buffer(mime_type, buf).split(b'\n')
+                mimes = [mime[2:] if mime.startswith(b'- ') else mime for mime in mimes]
 
         # For user feedback set the mime and magic meta data to always be the primary
         # libmagic responses
@@ -411,7 +411,7 @@ def ident(buf, length):
             data['magic'] = safe_str(labels[0])
 
         if len(mimes) > 0:
-            data['mime'] = mimes[0]
+            data['mime'] = safe_str(mimes[0])
 
         # Highest priority is given to mime type matching something
         tagged = False
@@ -473,7 +473,8 @@ def ident(buf, length):
             tl_tag = sl_to_tl.get(sl_tag, tl_patterns[minimum][0])
             data['type'] = '/'.join((tl_tag, sl_tag))
 
-    except Exception:
+    except Exception as e:
+        print(str(e))
         pass
 
     if not recognized.get(data['type'], False):
