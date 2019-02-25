@@ -16,7 +16,7 @@ def decode_file(original_path, fileinfo):
     extracted_path = None
     original_name = None
     al_meta = {}
-    if fileinfo['tag'] in NEUTERED_FORMAT:
+    if fileinfo['type'] in NEUTERED_FORMAT:
         extracted_fd, extracted_path = tempfile.mkstemp()
         extracted_file = os.fdopen(extracted_fd, 'wb')
 
@@ -32,7 +32,7 @@ def decode_file(original_path, fileinfo):
             extracted_path = None
             original_name = None
             al_meta = {}
-            fileinfo['tag'] = 'corrupted/cart'
+            fileinfo['type'] = 'corrupted/cart'
 
         finally:
             extracted_file.close()
@@ -40,8 +40,6 @@ def decode_file(original_path, fileinfo):
 
         if cart_extracted:
             fileinfo = identify.fileinfo(extracted_path)
-            if original_name:
-                fileinfo['path'] = original_name
 
     return extracted_path, original_name, fileinfo, al_meta
 
@@ -53,7 +51,7 @@ def encode_file(data, file_format, name):
 
     file_info = identify.ident(data, len(data))
 
-    if file_info['tag'] in NEUTERED_FORMAT:
+    if file_info['type'] in NEUTERED_FORMAT:
         already_encoded = True
     elif file_format == 'cart':
         ostream = BytesIO()
