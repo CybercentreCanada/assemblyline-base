@@ -48,7 +48,7 @@ def get_classification(yml_config=None):
     return Classification(classification_definition)
 
 
-def get_config(static=False, yml_config=None):
+def _get_config(static=False, yml_config=None):
     from assemblyline.odm.models.config import Config
 
     if yml_config is None:
@@ -69,6 +69,10 @@ def get_config(static=False, yml_config=None):
         # config.update(datastore_changes)
         pass
     return Config(config)
+
+
+def get_config(static=False, yml_config=None):
+    return CachedObject(_get_config, kwargs={'static': static, 'yml_config': yml_config})
 
 
 def get_constants(config=None):
@@ -152,7 +156,7 @@ def get_metrics_sink():
 class CachedObject:
     """An object proxy that automatically refreshes its target periodically."""
 
-    def __init__(self, factory, refresh=5):
+    def __init__(self, factory, refresh=5, args=None, kwargs=None):
         """
         Args:
             factory: Factory that takes no arguments and returns only the object to be wrapped.
@@ -162,6 +166,8 @@ class CachedObject:
         self._refresh = refresh
         self._cached = None
         self._update_time = 0
+        self._args = args or []
+        self._kwargs = kwargs or {}
 
     def __getattr__(self, key):
         """Forward all attribute requests to the underlying object.
@@ -169,7 +175,7 @@ class CachedObject:
         Refresh the object every `_update_time` seconds.
         """
         if time.time() - self._update_time > self._refresh:
-            self._cached = self._factory()
+            self._cached = self._factory(*self._args, **self._kwargs)
             self._update_time = time.time()
         return getattr(self._cached, key)
 
