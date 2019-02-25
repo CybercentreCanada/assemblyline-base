@@ -71,7 +71,7 @@ class SubmissionParams(odm.Model):
         data = self.as_primitives()
         return {k: v for k, v in data.items() if k in _KEY_HASHED_FIELDS}
 
-    def create_filescore_key(self, sha256, services: list):
+    def create_filescore_key(self, sha256, services: list=None):
         """This is the key used to store the final score of a submission for fast lookup.
 
         This lookup is one of the methods used to check for duplication in ingestion process,
@@ -82,8 +82,11 @@ class SubmissionParams(odm.Model):
         # need to quickly invalidate all old cache entries.
         version = 0
 
+        if services is None:
+            services = self.services.selected
+
         data = self.get_hashing_keys()
-        data['service_spec'] = sorted(sorted(row.items()) for row in self.service_spec.items())
+        data['service_spec'] = sorted((key, sorted(values.items())) for key, values in self.service_spec.items())
         data['sha256'] = sha256
         data['services'] = [str(x) for x in services]
 
