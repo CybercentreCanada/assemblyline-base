@@ -29,11 +29,18 @@ def now_as_iso():
     return ''.join((s, 'Z'))
 
 
-def reply_queue_name(suffix=None):
-    components = [now_as_iso(), str(uuid.uuid4())]
+def reply_queue_name(prefix=None, suffix=None):
+    if prefix:
+        components = [prefix]
+    else:
+        components = []
+
+    components.extend([now_as_iso(), str(uuid.uuid4())])
+
     if suffix:
         components.append(str(suffix))
-    return '.'.join(components)
+
+    return '-'.join(components)
 
 
 def retry_call(func, *args, **kw):
