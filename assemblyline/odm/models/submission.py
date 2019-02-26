@@ -42,7 +42,6 @@ _KEY_HASHED_FIELDS = {
 
 @odm.model(index=True, store=False)
 class SubmissionParams(odm.Model):
-    completed_queue = odm.Keyword(default_set=True)                     # Which queue to notify on completion
     classification = odm.Classification(
         default=Classification.UNRESTRICTED)                            # Original classification of the submission
     deep_scan = odm.Boolean(default=False)                              # Should a deep scan be performed?
@@ -53,9 +52,9 @@ class SubmissionParams(odm.Model):
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False)    # Should we ignore dynamic recursion prevention
     ignore_filtering = odm.Boolean(default=False)                       # Should we ignore filtering services
     ignore_size = odm.Boolean(default=False)                            # ignore the file size limits
+    never_drop = odm.Boolean(default=False)                             # Exempt from being dropped by middleman
     max_extracted = odm.Integer(default=500)                            # Max number of extracted files
     max_supplementary = odm.Integer(default=500)                        # Max number of supplementary files
-    never_drop = odm.Boolean(default=False)
     priority = odm.Integer(default=1000)                                # Priority of the scan
     profile = odm.Boolean(default=False)                                # Should the submission do extra profiling
     psid = odm.Keyword(default_set=True)                                # Parent submission ID
