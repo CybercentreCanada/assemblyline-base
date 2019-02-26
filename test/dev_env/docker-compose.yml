@@ -23,9 +23,12 @@ services:
       - '6379:6379'
       - '6380:6379'
   nginx:
-    image: sgaroncse/nginx-ssl
+    image: sgaroncse/nginx-ssl-dev
     ports:
       - '443:443'
+      - '80:80'
     environment:
       - UI_HOST=172.17.0.1
+      - FQDN=assemblyline.local
+      - MAX_BODY_SIZE=100M
     command: /bin/bash -c "envsubst < /tmp/default.template > /etc/nginx/conf.d/default.conf && cat /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
