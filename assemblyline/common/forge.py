@@ -148,9 +148,9 @@ def get_ui_context(config=None):
     return EasyDict(load_module_by_path(config.ui.context))
 
 
-def get_metrics_sink():
+def get_metrics_sink(redis=None):
     from assemblyline.remote.datatypes.queues.comms import CommsQueue
-    return CommsQueue('ALMetrics')
+    return CommsQueue('ALMetrics', host=redis)
 
 
 class CachedObject:

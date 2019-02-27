@@ -35,7 +35,7 @@ def reply_queue_name(prefix=None, suffix=None):
     else:
         components = []
 
-    components.extend([now_as_iso(), str(uuid.uuid4())])
+    components.append(str(uuid.uuid4()))
 
     if suffix:
         components.append(str(suffix))

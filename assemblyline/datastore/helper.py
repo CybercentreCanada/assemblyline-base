@@ -467,8 +467,8 @@ class AssemblylineDatastore(object):
                     for item in self.ds.service.stream_search("id:*", fl='id')]
         return [item for item in self.ds.service.stream_search("id:*", as_obj=as_obj)]
 
-    def save_or_freshen_file(self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification()):
-        with Lock(f'save-or-freshen-file-{sha256}', 5):
+    def save_or_freshen_file(self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(), redis=None):
+        with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
             current_fileinfo = self.ds.file.get(sha256, as_obj=False) or {}
 
             # Remove control fields from file info and update current file info
