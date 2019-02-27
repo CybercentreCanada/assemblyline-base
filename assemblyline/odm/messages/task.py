@@ -12,15 +12,16 @@ class FileInfo(odm.Model):
     sha1 = odm.Keyword()    # SHA1 hash of the file
     sha256 = odm.Keyword()  # SHA256 hash of the file
     size = odm.Integer()    # Size of the file
-    type = odm.Keyword()     # The file type
+    type = odm.Keyword()    # The file type
 
 
 @odm.model()
 class Task(odm.Model):
     sid = odm.Keyword()
-    fileinfo = odm.Compound(FileInfo)   # File info block
+    fileinfo: FileInfo = odm.Compound(FileInfo)   # File info block
     service_name = odm.Keyword()
     service_config = odm.Keyword()      # Service specific parameters
+    depth = odm.Integer(default=0)
 
 
 @odm.model()
