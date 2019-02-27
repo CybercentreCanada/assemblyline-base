@@ -11,8 +11,10 @@ from assemblyline.remote.datatypes import get_client, retry_call, decode
 #   number of elements to skip before popping any
 #   max element count to pop
 pq_dequeue_range_script = """
-local min_score = ARGV[1]; 
-local max_score = ARGV[2]; 
+local min_score = tonumber(ARGV[1]); 
+if min_score == nil then min_score = -math.huge end
+local max_score = tonumber(ARGV[2]);
+if max_score == nil then min_score = math.huge end 
 local rem_offset = tonumber(ARGV[3]); 
 local rem_limit = tonumber(ARGV[4]); 
 
@@ -85,7 +87,7 @@ class PriorityQueue(object):
                 return decode(ret_val[0][21:])
             return None
 
-    def dequeue_range(self, lower_limit='-inf', upper_limit='inf', skip=0, num=1):
+    def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1):
         """Dequeue a number of elements, within a specified range of scores.
 
         Limits given are inclusive, can be made exclusive, see redis docs on how to format limits for that.
