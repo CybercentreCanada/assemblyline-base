@@ -75,12 +75,22 @@ class Result(odm.Model):
     result: ResultBody = odm.Compound(ResultBody,
                                       default={})         # The result body
     sha256 = odm.Keyword(store=False)                     # SHA256 of the file the result object relates to
+    drop_file = odm.Boolean(default=False)                # After this service is done, further stages don't need to run
 
     def build_key(self, conf_key=None):
-        key_list = [
+        return self.help_build_key(
             self.sha256,
-            self.response.service_name.replace('.', '_'),
-            f"v{self.response.service_version.replace('.', '_')}"
+            self.response.service_name,
+            self.response.service_version,
+            conf_key
+        )
+
+    @staticmethod
+    def help_build_key(sha256, service_name, service_version, conf_key=None):
+        key_list = [
+            sha256,
+            service_name.replace('.', '_'),
+            f"v{service_version.replace('.', '_')}"
         ]
 
         if conf_key:

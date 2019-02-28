@@ -3,7 +3,7 @@ from assemblyline import odm
 
 @odm.model(index=False, store=False)
 class FileScore(odm.Model):
-    psid = odm.Keyword()                 # ID of the parent submission to the associated submission
+    psid = odm.Optional(odm.Keyword())   # ID of the parent submission to the associated submission
     expiry_ts = odm.Date(index=True,
                          default="NOW")  # Expiry timestamp
     score = odm.Integer()                # Maximum score for the associated submission

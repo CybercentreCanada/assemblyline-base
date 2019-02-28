@@ -187,7 +187,7 @@ class Keyword(_Field):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError("Empty strings are not allow without defaults")
+                raise ValueError("Empty strings are not allow without defaults for " + self.name)
 
         if value is None:
             return None
