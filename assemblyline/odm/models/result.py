@@ -25,7 +25,7 @@ class Section(odm.Model):
 class Tag(odm.Model):
     classification = odm.Classification()   # Classification of the tag
     value = odm.Keyword(copyto="__text__")  # Value of the tag
-    context = odm.Keyword()                 # Context of the tag
+    context = odm.Optional(odm.Keyword())   # Context of the tag
     type = odm.Enum(values=TAG_TYPES)       # Type of tag
 
 
