@@ -14,7 +14,7 @@ pq_dequeue_range_script = """
 local min_score = tonumber(ARGV[1]); 
 if min_score == nil then min_score = -math.huge end
 local max_score = tonumber(ARGV[2]);
-if max_score == nil then min_score = math.huge end 
+if max_score == nil then max_score = math.huge end 
 local rem_offset = tonumber(ARGV[3]); 
 local rem_limit = tonumber(ARGV[4]); 
 
