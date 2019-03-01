@@ -1,3 +1,4 @@
+from typing import List
 import hashlib
 from assemblyline import odm
 from assemblyline.common import forge
@@ -107,10 +108,10 @@ class Submission(odm.Model):
     errors = odm.List(odm.Keyword(), store=False)       # List of error keys
     expiry_ts = odm.Date(store=False)                   # Expiry time stamp
     file_count = odm.Integer()                          # Total number of files in the submission
-    files = odm.List(odm.Compound(File))                # List of files that were originally submitted
+    files: List[File] = odm.List(odm.Compound(File))                # List of files that were originally submitted
     max_score = odm.Integer()                           # Maximum score of all the files in the scan
     metadata = odm.Mapping(odm.Keyword(), store=False)  # Metadata associated to the submission
-    params = odm.Compound(SubmissionParams)             # Submission detail blocs
+    params: SubmissionParams = odm.Compound(SubmissionParams)             # Submission detail blocs
     results = odm.List(odm.Keyword(), store=False)      # List of result keys
     sid = odm.Keyword(copyto="__text__")                # Submission ID
     state = odm.Enum(values=SUBMISSION_STATES)          # Status of the submission

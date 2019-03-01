@@ -1,3 +1,4 @@
+from typing import Dict, List
 from assemblyline import odm
 
 # TODO: Apply proper index and store values
@@ -5,11 +6,11 @@ from assemblyline import odm
 
 @odm.model(index=True, store=True)
 class PasswordRequirement(odm.Model):
-    lower = odm.Boolean()
-    number = odm.Boolean()
-    special = odm.Boolean()
-    upper = odm.Boolean()
-    min_length = odm.Integer()
+    lower: bool = odm.Boolean()
+    number: bool = odm.Boolean()
+    special: bool = odm.Boolean()
+    upper: bool = odm.Boolean()
+    min_length: int = odm.Integer()
 
 
 DEFAULT_PASSWORD_REQUIREMENTS = {
@@ -23,12 +24,12 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
 
 @odm.model(index=True, store=True)
 class SMTP(odm.Model):
-    from_adr = odm.Keyword()
-    host = odm.Keyword()
-    password = odm.Keyword()
-    port = odm.Integer()
-    tls = odm.Boolean()
-    user = odm.Keyword()
+    from_adr: str = odm.Keyword()
+    host: str = odm.Keyword()
+    password: str = odm.Keyword()
+    port: int = odm.Integer()
+    tls: bool = odm.Boolean()
+    user: str = odm.Keyword()
 
 
 DEFAULT_SMTP = {
@@ -43,9 +44,9 @@ DEFAULT_SMTP = {
 
 @odm.model(index=True, store=True)
 class Signup(odm.Model):
-    enabled = odm.Boolean()
-    smtp = odm.Compound(SMTP, default=DEFAULT_SMTP)
-    valid_email_patterns = odm.List(odm.Keyword())
+    enabled: bool = odm.Boolean()
+    smtp: SMTP = odm.Compound(SMTP, default=DEFAULT_SMTP)
+    valid_email_patterns: List[str] = odm.List(odm.Keyword())
 
 
 DEFAULT_SIGNUP = {
@@ -57,11 +58,11 @@ DEFAULT_SIGNUP = {
 
 @odm.model(index=True, store=True)
 class User(odm.Model):
-    uname = odm.Keyword()
-    name = odm.Keyword()
-    password = odm.Keyword()
-    groups = odm.List(odm.Keyword())
-    is_admin = odm.Boolean()
+    uname: str = odm.Keyword()
+    name: str = odm.Keyword()
+    password: str = odm.Keyword()
+    groups: List[str] = odm.List(odm.Keyword())
+    is_admin: bool = odm.Boolean()
     classification = odm.Classification(is_user_classification=True)
 
 
@@ -87,12 +88,13 @@ DEFAULT_USERS = {
 
 @odm.model(index=True, store=True)
 class Internal(odm.Model):
-    enabled = odm.Boolean()
-    failure_ttl = odm.Integer()
-    max_failures = odm.Integer()
-    password_requirements = odm.Compound(PasswordRequirement, default=DEFAULT_PASSWORD_REQUIREMENTS)
-    signup = odm.Compound(Signup, default=DEFAULT_SIGNUP)
-    users = odm.Mapping(odm.Compound(User), default=DEFAULT_USERS)
+    enabled: bool = odm.Boolean()
+    failure_ttl: int = odm.Integer()
+    max_failures: int = odm.Integer()
+    password_requirements: PasswordRequirement = odm.Compound(PasswordRequirement,
+                                                              default=DEFAULT_PASSWORD_REQUIREMENTS)
+    signup: Signup = odm.Compound(Signup, default=DEFAULT_SIGNUP)
+    users: Dict[str, User] = odm.Mapping(odm.Compound(User), default=DEFAULT_USERS)
 
 
 DEFAULT_INTERNAL = {
@@ -107,14 +109,14 @@ DEFAULT_INTERNAL = {
 
 @odm.model(index=True, store=True)
 class Auth(odm.Model):
-    allow_2fa = odm.Boolean()
-    allow_apikeys = odm.Boolean()
-    allow_u2f = odm.Boolean()
-    apikey_handler = odm.Keyword()
-    dn_handler = odm.Keyword()
-    dn_parser = odm.Keyword()
-    internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
-    userpass_handler = odm.Keyword()
+    allow_2fa: bool = odm.Boolean()
+    allow_apikeys: bool = odm.Boolean()
+    allow_u2f: bool = odm.Boolean()
+    apikey_handler: str = odm.Keyword()
+    dn_handler: str = odm.Keyword()
+    dn_parser: str = odm.Keyword()
+    internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
+    userpass_handler: str = odm.Keyword()
 
 
 DEFAULT_AUTH = {
@@ -131,9 +133,9 @@ DEFAULT_AUTH = {
 
 @odm.model(index=True, store=True)
 class Alerter(odm.Model):
-    default_group_field = odm.Keyword()
-    filtering_group_fields = odm.List(odm.Keyword())
-    non_filtering_group_fields = odm.List(odm.Keyword())
+    default_group_field: str = odm.Keyword()
+    filtering_group_fields: List[str] = odm.List(odm.Keyword())
+    non_filtering_group_fields: List[str] = odm.List(odm.Keyword())
 
 
 DEFAULT_ALERTER = {
@@ -154,9 +156,9 @@ DEFAULT_ALERTER = {
 
 @odm.model(index=True, store=True)
 class Dispatcher(odm.Model):
-    stages = odm.List(odm.Keyword())
-    timeout = odm.Float()  # Time between redispatching attempts
-    max_inflight = odm.Integer()
+    stages: List[str] = odm.List(odm.Keyword())
+    timeout: float = odm.Float()  # Time between redispatching attempts
+    max_inflight: int = odm.Integer()
 
 
 DEFAULT_DISPATCHER = {
@@ -169,34 +171,34 @@ DEFAULT_DISPATCHER = {
 # Configuration options regarding bulk ingestion and unattended submissions
 @odm.model(index=True, store=True)
 class Middleman(odm.Model):
-    default_user = odm.Keyword()
-    default_services = odm.List(odm.Keyword())
-    default_resubmit_services = odm.List(odm.Keyword())
+    default_user: str = odm.Keyword()
+    default_services: List[str] = odm.List(odm.Keyword())
+    default_resubmit_services: List[str] = odm.List(odm.Keyword())
     # When a description is automatically generated, it will be the
     # hash prefixed by this string
-    description_prefix = odm.Keyword()
-    # Path to a callback fuction filtering ingestion tasks that should have their
+    description_prefix: str = odm.Keyword()
+    # Path to a callback function filtering ingestion tasks that should have their
     # priority forcefully reset to low
-    is_low_priority = odm.Keyword()
-    get_whitelist_verdict = odm.Keyword()
-    whitelist = odm.Keyword()
+    is_low_priority: str = odm.Keyword()
+    get_whitelist_verdict: str = odm.Keyword()
+    whitelist: str = odm.Keyword()
 
     # Default values for parameters that may be overridden on a per submission basis
     # How many extracted files may be added to a Submission
-    default_max_extracted = odm.Integer()
+    default_max_extracted: int = odm.Integer()
     # How many supplementary files may be added to a submission
-    default_max_supplementary = odm.Integer()
+    default_max_supplementary: int = odm.Integer()
 
     # Drop a task altogeather after this many seconds
-    expire_after = odm.Float()
-    stale_after_seconds = odm.Float()
+    expire_after: float = odm.Float()
+    stale_after_seconds: float = odm.Float()
 
     # TODO ????
-    incomplete_expire_after_seconds = odm.Float()
-    incomplete_stale_after_seconds = odm.Float()
+    incomplete_expire_after_seconds: float = odm.Float()
+    incomplete_stale_after_seconds: float = odm.Float()
 
     # How long can a queue get before we start dropping files
-    sampling_at = odm.Mapping(odm.Float())
+    sampling_at: Dict[str, float] = odm.Mapping(odm.Float())
 
 
 DEFAULT_MIDDLEMAN = {
@@ -224,9 +226,9 @@ DEFAULT_MIDDLEMAN = {
 
 @odm.model(index=True, store=True)
 class RedisServer(odm.Model):
-    db = odm.Integer()
-    host = odm.Keyword()
-    port = odm.Integer()
+    db: int = odm.Integer()
+    host: str = odm.Keyword()
+    port: int = odm.Integer()
 
 
 DEFAULT_REDIS_NP = {
@@ -244,8 +246,8 @@ DEFAULT_REDIS_P = {
 
 @odm.model(index=True, store=True)
 class Redis(odm.Model):
-    nonpersistent = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
-    persistent = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
+    nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
+    persistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
 
 
 DEFAULT_REDIS = {
@@ -256,10 +258,10 @@ DEFAULT_REDIS = {
 
 @odm.model(index=True, store=True)
 class Core(odm.Model):
-    alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
-    dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
-    middleman = odm.Compound(Middleman, default=DEFAULT_MIDDLEMAN)
-    redis = odm.Compound(Redis, default=DEFAULT_REDIS)
+    alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
+    dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
+    middleman: Middleman = odm.Compound(Middleman, default=DEFAULT_MIDDLEMAN)
+    redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS)
 
 
 DEFAULT_CORE = {
@@ -272,9 +274,9 @@ DEFAULT_CORE = {
 
 @odm.model(index=True, store=True)
 class Elasticsearch(odm.Model):
-    heap_min_size = odm.Integer()
-    heap_max_size = odm.Integer()
-    nodes = odm.List(odm.Keyword())
+    heap_min_size: int = odm.Integer()
+    heap_max_size: int = odm.Integer()
+    nodes: List[str] = odm.List(odm.Keyword())
 
 
 DEFAULT_ELASTICSEARCH = {
@@ -305,10 +307,10 @@ DEFAULT_SOLR = {}
 @odm.model(index=True, store=True)
 class Datastore(odm.Model):
     type = odm.Enum({"elasticsearch", "riak", "solr"})
-    hosts = odm.List(odm.Keyword())
-    elasticsearch = odm.Compound(Elasticsearch, default=DEFAULT_ELASTICSEARCH)
-    riak = odm.Compound(Riak, default=DEFAULT_RIAK)
-    solr = odm.Compound(Solr, default=DEFAULT_SOLR)
+    hosts: List[str] = odm.List(odm.Keyword())
+    elasticsearch: Elasticsearch = odm.Compound(Elasticsearch, default=DEFAULT_ELASTICSEARCH)
+    riak: Riak = odm.Compound(Riak, default=DEFAULT_RIAK)
+    solr: Solr = odm.Compound(Solr, default=DEFAULT_SOLR)
 
 
 DEFAULT_DATASTORE = {
@@ -322,8 +324,8 @@ DEFAULT_DATASTORE = {
 
 @odm.model(index=True, store=True)
 class Datasource(odm.Model):
-    classpath = odm.Keyword()
-    config = odm.Mapping(odm.Keyword())
+    classpath: str = odm.Keyword()
+    config: Dict[str, str] = odm.Mapping(odm.Keyword())
 
 
 DEFAULT_DATASOURCES = {
@@ -340,8 +342,8 @@ DEFAULT_DATASOURCES = {
 
 @odm.model(index=True, store=True)
 class Filestore(odm.Model):
-    cache = odm.List(odm.Keyword())
-    storage = odm.List(odm.Keyword())
+    cache: List[str] = odm.List(odm.Keyword())
+    storage: List[str] = odm.List(odm.Keyword())
 
 
 DEFAULT_FILESTORE = {
@@ -354,20 +356,20 @@ DEFAULT_FILESTORE = {
 @odm.model(index=True, store=True)
 class Logging(odm.Model):
     # Should we log to console?
-    log_to_console = odm.Boolean()
+    log_to_console: bool = odm.Boolean()
 
     # Should we log to files on the server?
-    log_to_file = odm.Boolean()
+    log_to_file: bool = odm.Boolean()
     # if yes, what is the log directory
-    log_directory = odm.Keyword()
+    log_directory: str = odm.Keyword()
 
     # Should logs be sent to a syslog server?
-    log_to_syslog = odm.Boolean()
+    log_to_syslog: bool = odm.Boolean()
     # if yes, what is the syslog server hostname/ip?
-    syslog_host = odm.Keyword()
+    syslog_host: str = odm.Keyword()
 
     # How often should counters log their values (seconds)
-    export_interval = odm.Float()
+    export_interval: float = odm.Float()
 
 
 DEFAULT_LOGGING = {
@@ -384,16 +386,16 @@ DEFAULT_LOGGING = {
 @odm.model(index=True, store=True)
 class Services(odm.Model):
     # Different possible categories
-    categories = odm.List(odm.Keyword())
+    categories: List[str] = odm.List(odm.Keyword())
     # Default service timeout time in seconds
-    default_timeout = odm.Integer()
+    default_timeout: int = odm.Integer()
     # Different stages of execution in order
-    stages = odm.List(odm.Keyword())
+    stages: List[str] = odm.List(odm.Keyword())
     # Category for mandatory services (e.g. Sync)
-    system_category = odm.Text()
+    system_category: str = odm.Text()
     # How many instances of a service should be kept in reserve running even
     # when there doesn't seem to be any work for them to do
-    min_service_workers = odm.Integer()
+    min_service_workers: int = odm.Integer()
 
 
 DEFAULT_SERVICES = {
@@ -408,9 +410,9 @@ DEFAULT_SERVICES = {
 # This is the model definition for the Yara Block
 @odm.model(index=True, store=True)
 class Yara(odm.Model):
-    externals = odm.List(odm.Keyword())
-    importer = odm.Keyword()
-    parser = odm.Keyword()
+    externals: List[str] = odm.List(odm.Keyword())
+    importer: str = odm.Keyword()
+    parser: str = odm.Keyword()
 
 
 DEFAULT_YARA = {
@@ -424,11 +426,11 @@ DEFAULT_YARA = {
 @odm.model(index=True, store=True)
 class System(odm.Model):
     # Module path to the assemblyline constants
-    constants = odm.Keyword()
+    constants: str = odm.Keyword()
     # Organisation acronym used for signatures
-    organisation = odm.Text()
+    organisation: str = odm.Text()
     # Parameter of the yara engine
-    yara = odm.Compound(Yara)
+    yara: Yara = odm.Compound(Yara)
 
 
 DEFAULT_SYSTEM = {
@@ -442,9 +444,9 @@ DEFAULT_SYSTEM = {
 @odm.model(index=True, store=True)
 class Statistics(odm.Model):
     # fields to generated statistics from in the alert page
-    alert = odm.List(odm.Keyword())
+    alert: List[str] = odm.List(odm.Keyword())
     # fields to generate statistics from in the submission page
-    submission = odm.List(odm.Keyword())
+    submission: List[str] = odm.List(odm.Keyword())
 
 
 DEFAULT_STATISTICS = {
@@ -469,43 +471,43 @@ DEFAULT_STATISTICS = {
 @odm.model(index=True, store=True)
 class UI(odm.Model):
     # Allow to user to download raw files
-    allow_raw_downloads = odm.Boolean()
+    allow_raw_downloads: bool = odm.Boolean()
     # Allow file submissions via url
-    allow_url_submissions = odm.Boolean()
+    allow_url_submissions: bool = odm.Boolean()
     # Should API calls be audited and saved to a seperate log file?
-    audit = odm.Boolean()
+    audit: bool = odm.Boolean()
     # UI Context
-    context = odm.Keyword()
+    context: str = odm.Keyword()
     # Turn on debugging
-    debug = odm.Boolean()
+    debug: bool = odm.Boolean()
     # Which encoding will be used
     download_encoding = odm.Enum(values=["raw", "cart"])
     # Assemblyline admins email address
-    email = odm.Keyword()
+    email: str = odm.Keyword()
     # Enforce the user's quotas
-    enforce_quota = odm.Boolean()
+    enforce_quota: bool = odm.Boolean()
     # Fully qualified domain name to use for the 2-factor authentication validation
-    fqdn = odm.Text()
+    fqdn: str = odm.Text()
     # Maximum priority for ingest API
-    ingest_max_priority = odm.Integer()
+    ingest_max_priority: int = odm.Integer()
     # Turn on read only mode in the UI
-    read_only = odm.Boolean()
+    read_only: bool = odm.Boolean()
     # Offset of the read only mode for all paging and searches
-    read_only_offset = odm.Keyword(default="")
+    read_only_offset: str = odm.Keyword(default="")
     # Flask secret key to store cookies and stuff
-    secret_key = odm.Keyword()
+    secret_key: str = odm.Keyword()
     # Duration of the user session before the user has to login again
-    session_duration = odm.Integer()
+    session_duration: int = odm.Integer()
     # Statistics configuration
-    statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS)
+    statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS)
     # Terms of service
-    tos = odm.Text(default_set=True)
+    tos: str = odm.Text(default_set=True)
     # Lock out user after accepting the terms of service
-    tos_lockout = odm.Boolean()
+    tos_lockout: bool = odm.Boolean()
     # Headers that will be used by the url_download method
-    url_submission_headers = odm.Mapping(odm.Keyword(), default_set=True)
+    url_submission_headers: Dict[str, str] = odm.Mapping(odm.Keyword(), default_set=True)
     # Proxy that will be used by the url_download method
-    url_submission_proxies = odm.Mapping(odm.Keyword(), default_set=True)
+    url_submission_proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default_set=True)
 
 
 DEFAULT_UI = {
@@ -535,26 +537,26 @@ DEFAULT_UI = {
 @odm.model(index=True, store=True)
 class Submission(odm.Model):
     # Path to the routine used to
-    decode_file = odm.Keyword()
+    decode_file: str = odm.Keyword()
 
     # Default values for parameters that may be overridden on a per submission basis
     # How many extracted files may be added to a Submission
-    default_max_extracted = odm.Integer()
+    default_max_extracted: int = odm.Integer()
     # How many supplementary files may be added to a submission
-    default_max_supplementary = odm.Integer()
+    default_max_supplementary: int = odm.Integer()
 
     # Number of days submissions will remain in the system by default
-    dtl = odm.Integer()
+    dtl: int = odm.Integer()
 
     # Maximum files extraction depth
-    max_extraction_depth = odm.Integer()
+    max_extraction_depth: int = odm.Integer()
     # Maximum size for files submitted in the system
-    max_file_size = odm.Integer()
+    max_file_size: int = odm.Integer()
     # Maximum length for each metadata keys
-    max_metadata_length = odm.Integer()
+    max_metadata_length: int = odm.Integer()
 
     # Summary tag types
-    summary_tag_types = odm.List(odm.Keyword())
+    summary_tag_types: List[str] = odm.List(odm.Keyword())
 
 
 DEFAULT_SUBMISSION = {
@@ -585,25 +587,25 @@ DEFAULT_SUBMISSION = {
 @odm.model(index=True, store=True)
 class Config(odm.Model):
     # Authentication module configuration
-    auth = odm.Compound(Auth, default=DEFAULT_AUTH)
+    auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH)
     # Core component configuration
-    core = odm.Compound(Core, default=DEFAULT_CORE)
+    core: Core = odm.Compound(Core, default=DEFAULT_CORE)
     # Datastore configuration
-    datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE)
+    datastore: Datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE)
     # Datasources configuration
-    datasources = odm.Mapping(odm.Compound(Datasource), default=DEFAULT_DATASOURCES)
+    datasources: Dict[str, Datasource] = odm.Mapping(odm.Compound(Datasource), default=DEFAULT_DATASOURCES)
     # Filestore configuration
-    filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE)
+    filestore: Filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE)
     # Logging configuration
-    logging = odm.Compound(Logging, default=DEFAULT_LOGGING)
+    logging: Logging = odm.Compound(Logging, default=DEFAULT_LOGGING)
     # Service configuration
-    services = odm.Compound(Services, default=DEFAULT_SERVICES)
+    services: Services = odm.Compound(Services, default=DEFAULT_SERVICES)
     # System configuration
-    system = odm.Compound(System, default=DEFAULT_SYSTEM)
+    system: System = odm.Compound(System, default=DEFAULT_SYSTEM)
     # UI configuration parameters
-    ui = odm.Compound(UI, default=DEFAULT_UI)
+    ui: UI = odm.Compound(UI, default=DEFAULT_UI)
     # Options for how submissions will be processed
-    submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION)
+    submission: Submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION)
 
 
 DEFAULT_CONFIG = {
