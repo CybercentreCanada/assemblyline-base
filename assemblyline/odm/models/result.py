@@ -10,7 +10,7 @@ TAG_TYPES = sorted([x[0] for x in constants.STANDARD_TAG_TYPES])
 @odm.model(index=True, store=False)
 class Section(odm.Model):
     section_id = odm.Integer(index=False)                   # ID of the section to generate the tree
-    body = odm.Text(copyto="__text__")                      # Text body of the result section
+    body = odm.Optional(odm.Text(copyto="__text__"))        # Text body of the result section
     classification = odm.Classification()                   # Classification of the section
     truncated = odm.Boolean(index=False)                    # is the result section truncated of not
     finalized = odm.Boolean(index=False)                    # is the result section finalized or not
