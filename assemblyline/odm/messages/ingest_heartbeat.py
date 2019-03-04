@@ -1,5 +1,4 @@
 from assemblyline import odm
-from assemblyline.odm.common import HostInfo
 
 MSG_TYPES = {"IngestHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.old.ingest.IngestMessage"
@@ -15,27 +14,39 @@ class Queues(odm.Model):
 
 
 @odm.model()
-class Metrics(odm.Model):
-    byted_completed = odm.Integer()        # Number of bytes completed
+class Counters(odm.Model):
+    bytes_completed = odm.Integer()        # Number of bytes completed
     bytes_ingested = odm.Integer()         # Number of bytes ingested
     duplicates = odm.Integer()             # Number of duplicate submissions
     files_completed = odm.Integer()        # Number of completed files
-    inflight = odm.Integer()               # Number of inflight submissions
     skipped = odm.Integer()                # Number of skipped files
     submissions_completed = odm.Integer()  # Number of completed submissions
     submissions_ingested = odm.Integer()   # Number of ingested submissions
     timed_out = odm.Integer()              # Number of timed_out submissions
-    waiting = odm.Integer()                # Number of submissions waiting to start processing
     whitelisted = odm.Integer()            # Number of whitelisted submissions
 
 
 @odm.model()
+class Processing(odm.Model):
+    inflight = odm.Integer()               # Number of inflight submissions
+    waiting = odm.Integer()                # Number of submissions waiting to start processing
+
+
+@odm.model()
+class ProcessingChance(odm.Model):
+    critical = odm.Integer()  # Chance of processing critical items
+    high = odm.Integer()      # Chance of processing high items
+    low = odm.Integer()       # Chance of processing low items
+    medium = odm.Integer()    # Chance of processing medium items
+
+
+@odm.model()
 class Heartbeat(odm.Model):
-    hostinfo = odm.Compound(HostInfo)  # Host Information block
-    metrics = odm.Compound(Metrics)  # Ingesting metrics
-    queues = odm.Compound(Queues)      # Queue lengths block
-    shard = odm.Integer()              # Shard number
-    up_hours = odm.Float()             # Number of hours ingester has been running
+    count = odm.Integer()                               # Number of ingest process
+    counters = odm.Compound(Counters)                   # Counters
+    processing = odm.Compound(Processing)               # Inflight queue sizes
+    processing_chance = odm.Compound(ProcessingChance)  # Chance of processing items
+    queues = odm.Compound(Queues)                       # Queue lengths block
 
 
 @odm.model()
