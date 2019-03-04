@@ -5,10 +5,10 @@ from assemblyline.common import forge
 Classification = forge.get_classification()
 
 INGEST_SUBMISSION_DEFAULTS = {
-    # Alternative defaults to the submission params used by the middleman client
+    # Alternative defaults to the submission params used by the ingester client
     'generate_alert': True,
     'groups': [],    # TODO: Ideally this should not be empty
-    'priority': -1,  # -1 tells middleman to figure out priority on its own
+    'priority': -1,  # -1 tells ingester to figure out priority on its own
     'type': "BULK",
 }
 SUBMISSION_STATES = ['serviced', 'submitted', 'completed']
@@ -53,7 +53,7 @@ class SubmissionParams(odm.Model):
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False)    # Should we ignore dynamic recursion prevention
     ignore_filtering = odm.Boolean(default=False)                       # Should we ignore filtering services
     ignore_size = odm.Boolean(default=False)                            # ignore the file size limits
-    never_drop = odm.Boolean(default=False)                             # Exempt from being dropped by middleman
+    never_drop = odm.Boolean(default=False)                             # Exempt from being dropped by ingester
     max_extracted = odm.Integer(default=500)                            # Max number of extracted files
     max_supplementary = odm.Integer(default=500)                        # Max number of supplementary files
     priority = odm.Integer(default=1000)                                # Priority of the scan

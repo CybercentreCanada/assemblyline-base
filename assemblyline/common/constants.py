@@ -5,7 +5,7 @@ from assemblyline.common.path import modulepath
 DEFAULT_SERVICE_ACCEPTS = ".*"
 DEFAULT_SERVICE_REJECTS = None
 
-# Queue priority values for each bucket in the middleman
+# Queue priority values for each bucket in the ingester
 PRIORITIES = {
     'low': 100,  # 0 -> 100
     'medium': 200,  # 101 -> 200

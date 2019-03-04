@@ -170,7 +170,7 @@ DEFAULT_DISPATCHER = {
 
 # Configuration options regarding bulk ingestion and unattended submissions
 @odm.model(index=True, store=True)
-class Middleman(odm.Model):
+class Ingester(odm.Model):
     default_user: str = odm.Keyword()
     default_services: List[str] = odm.List(odm.Keyword())
     default_resubmit_services: List[str] = odm.List(odm.Keyword())
@@ -201,7 +201,7 @@ class Middleman(odm.Model):
     sampling_at: Dict[str, float] = odm.Mapping(odm.Float())
 
 
-DEFAULT_MIDDLEMAN = {
+DEFAULT_INGESTER = {
     'default_user': 'internal',
     'default_services': [],
     'default_resubmit_services': [],
@@ -260,14 +260,14 @@ DEFAULT_REDIS = {
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
     dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
-    middleman: Middleman = odm.Compound(Middleman, default=DEFAULT_MIDDLEMAN)
+    ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER)
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS)
 
 
 DEFAULT_CORE = {
     "alerter": DEFAULT_ALERTER,
     "dispatcher": DEFAULT_DISPATCHER,
-    "middleman": DEFAULT_MIDDLEMAN,
+    "ingester": DEFAULT_INGESTER,
     "redis": DEFAULT_REDIS,
 }
 
