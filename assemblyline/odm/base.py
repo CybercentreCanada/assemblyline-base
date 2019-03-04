@@ -537,9 +537,7 @@ class Model:
                 continue
             elif isinstance(sub_field, Any):
                 continue
-            elif isinstance(sub_field, List) and sub_name != "":
-                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings))
-            elif isinstance(sub_field, Compound) and sub_name != "":
+            elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings))
             elif sub_name:
                 out[".".join([name, sub_name])] = sub_field

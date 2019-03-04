@@ -1,5 +1,5 @@
 from assemblyline.odm import Keyword, Text, Date, Integer, Float, Boolean, Classification, Enum, List, Compound, \
-    Mapping, Any, UUID
+    Mapping, Any, UUID, Optional
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -60,6 +60,9 @@ def build_mapping(field_data, prefix=None, multivalued=False, dynamic=False):
         elif isinstance(field, List):
             mappings.extend(build_mapping([field.child_type], prefix=path, multivalued=True))
 
+        elif isinstance(field, Optional):
+            mappings.extend(build_mapping([field.child_type], prefix=path, multivalued=multivalued))
+
         elif isinstance(field, Compound):
             mappings.extend(build_mapping(field.fields().values(), prefix=path, multivalued=multivalued))
 
@@ -69,6 +72,9 @@ def build_mapping(field_data, prefix=None, multivalued=False, dynamic=False):
             if isinstance(child, List):
                 path.append("*")
                 mappings.extend(build_mapping(child, prefix=path, multivalued=True, dynamic=True))
+            elif isinstance(child, Optional):
+                path.append("*")
+                mappings.extend(build_mapping(child, prefix=path, multivalued=multivalued, dynamic=True))
             elif isinstance(child, Mapping):
                 path.append("*")
                 mappings.extend(build_mapping(child.fields().values(), prefix=path,

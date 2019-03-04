@@ -1,5 +1,5 @@
 from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
-    Float, Boolean, Mapping, Classification, Enum, Any, UUID
+    Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -51,7 +51,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 'format': 'date_optional_time||epoch_millis',
             })
 
-        elif isinstance(field, List):
+        elif isinstance(field, (List, Optional)):
             temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=path,
                                                         allow_refuse_implicit=False)
             mappings.update(temp_mappings)
