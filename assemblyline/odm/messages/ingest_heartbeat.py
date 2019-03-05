@@ -1,7 +1,7 @@
 from assemblyline import odm
 
 MSG_TYPES = {"IngestHeartbeat"}
-LOADER_CLASS = "assemblyline.odm.messages.old.ingest.IngestMessage"
+LOADER_CLASS = "assemblyline.odm.messages.ingest_heartbeat.IngestMessage"
 
 
 @odm.model()

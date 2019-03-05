@@ -1,7 +1,7 @@
 from assemblyline import odm
 
 MSG_TYPES = {"DispatcherHeartbeat"}
-LOADER_CLASS = "assemblyline.odm.messages.old.dispatcher.DispatcherMessage"
+LOADER_CLASS = "assemblyline.odm.messages.dispatcher_heartbeat.DispatcherMessage"
 
 
 @odm.model()
