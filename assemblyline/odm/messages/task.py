@@ -21,7 +21,6 @@ class Task(odm.Model):
     fileinfo: FileInfo = odm.Compound(FileInfo)   # File info block
     service_name = odm.Keyword()
     service_config = odm.Keyword()      # Service specific parameters
-    config_key = odm.Keyword()
     depth = odm.Integer(default=0)
 
 
