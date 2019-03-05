@@ -88,7 +88,7 @@ class TransportLocal(Transport):
 
         dirname = os.path.dirname(dst_path)
         filename = os.path.basename(dst_path)
-        tempname = uuid.uuid4().get_hex()
+        tempname = str(uuid.uuid4())
         temppath = _join(dirname, tempname)
         finalpath = _join(dirname, filename)
         assert(finalpath == dst_path)
@@ -103,7 +103,7 @@ class TransportLocal(Transport):
         dirname = os.path.dirname(path)
         filename = os.path.basename(path)
 
-        tempname = uuid.uuid4().get_hex()
+        tempname = str(uuid.uuid4())
         temppath = _join(dirname, tempname)
 
         finalpath = _join(dirname, filename)

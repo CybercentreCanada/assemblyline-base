@@ -131,7 +131,7 @@ class TransportSFTP(Transport):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
-        tempname = uuid.uuid4().get_hex()
+        tempname = str(uuid.uuid4())
         temppath = posixpath.join(dirname, tempname)
         finalpath = posixpath.join(dirname, filename)
         assert(finalpath == dst_path)
