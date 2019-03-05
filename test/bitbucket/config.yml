@@ -1,0 +1,3 @@
+filestore:
+  cache:
+    - file:///var/cache/assemblyline/
