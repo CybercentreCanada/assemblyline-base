@@ -1,3 +1,4 @@
+import concurrent.futures
 import json
 import os
 
@@ -207,18 +208,12 @@ class RiakCollection(SolrCollection):
         return True
 
     def delete_matching(self, query):
-        for item in self.stream_search(query, fl='id'):
-            try:
-                key = item.id
-                self.with_retries(self.riak_bucket.delete, key)
-            except AttributeError:
-                key = item['id']
-                if isinstance(key, list):
-                    for k in key:
-                        self.with_retries(self.riak_bucket.delete, k)
-                else:
-                    self.with_retries(self.riak_bucket.delete, key)
-
+        with concurrent.futures.ThreadPoolExecutor(20) as executor:
+            res = {self._get_obj_value(item, 'id'): executor.submit(self.delete, self._get_obj_value(item, 'id'))
+                   for item in self.stream_search(query, fl='id', as_obj=False)}
+        for k, v in res.items():
+            if not v.result():
+                return False
         return True
 
     def _cleanup_search_result(self, item, fields=None, as_obj=True):

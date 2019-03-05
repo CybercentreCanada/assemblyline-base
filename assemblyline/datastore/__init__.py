@@ -50,6 +50,13 @@ class Collection(object):
         self.model_class = model_class
         self._ensure_collection()
 
+    @staticmethod
+    def _get_obj_value(obj, field):
+        value = obj[field]
+        if isinstance(value, list):
+            return value[0]
+        return value
+
     def with_retries(self, func, *args, **kwargs):
         """
         This function performs the passed function with the given args and kwargs and reconnect if it fails
@@ -271,7 +278,8 @@ class Collection(object):
 
     def _update_by_query(self, query, operations, filters):
         with concurrent.futures.ThreadPoolExecutor(20) as executor:
-            res = {item['id'][0]: executor.submit(self._update, item['id'][0], operations)
+            res = {self._get_obj_value(item, 'id'): executor.submit(self._update, self._get_obj_value(item, 'id'),
+                                                                    operations)
                    for item in self.stream_search(query, fl='id', filters=filters, as_obj=False)}
         for k, v in res.items():
             if not v.result():
@@ -533,6 +541,9 @@ class BaseStore(object):
             self._collections[name] = self._collection_class(self, name, model_class=model_class)
 
         return self._collections[name]
+
+    def get_models(self):
+        return self._models
 
     def to_pydatemath(self, value):
         replace_list = [
