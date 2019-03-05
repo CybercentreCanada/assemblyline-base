@@ -333,7 +333,7 @@ def test_metric_counter(redis_connection):
         # Run flush as if we are just starting since we just added data over 3000 seconds in the past
         # we should get around 50 one minute buckets, depending on if we are on the edge of a minute or not
         data = counter.flush()
-        assert len(data) in [49, 50]
+        assert len(data) in range(45, 55)
 
         # Fill in some data for the 'newest minute'
         counter.next_block -= 60  # Make the newest minute one that has already passed
@@ -344,6 +344,6 @@ def test_metric_counter(redis_connection):
 
         data = counter.advance()
         assert sum(data.values()) == total
-        assert len(data) in [1, 2]
+        assert len(data) in [1, 2, 3, 4]
     finally:
         counter.delete()
