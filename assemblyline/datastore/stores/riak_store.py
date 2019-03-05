@@ -207,8 +207,8 @@ class RiakCollection(SolrCollection):
         self.with_retries(self.riak_bucket.delete, key)
         return True
 
-    def delete_matching(self, query):
-        with concurrent.futures.ThreadPoolExecutor(20) as executor:
+    def delete_matching(self, query, workers=20):
+        with concurrent.futures.ThreadPoolExecutor(workers) as executor:
             res = {self._get_obj_value(item, 'id'): executor.submit(self.delete, self._get_obj_value(item, 'id'))
                    for item in self.stream_search(query, fl='id', as_obj=False)}
         for k, v in res.items():

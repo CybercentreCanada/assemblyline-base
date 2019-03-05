@@ -195,7 +195,7 @@ class ESCollection(Collection):
         except elasticsearch.NotFoundError:
             return True
 
-    def delete_matching(self, query):
+    def delete_matching(self, query, workers=20):
         query_body = {
             "query": {
                 "bool": {

@@ -226,7 +226,7 @@ class SolrCollection(Collection):
         res = self.with_retries(session.post, url, data=json.dumps(data), headers={"content-type": "application/json"})
         return res.ok
 
-    def delete_matching(self, query):
+    def delete_matching(self, query, workers=20):
         data = {"delete": {"query": query}}
         commit_within = int(self.COMMIT_WITHIN_MAP.get(self.name, None) or self.COMMIT_WITHIN_MAP["_default_"])
 

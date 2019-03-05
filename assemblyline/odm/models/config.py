@@ -168,6 +168,29 @@ DEFAULT_DISPATCHER = {
 }
 
 
+# Configuration options regarding data expiry
+@odm.model(index=True, store=True)
+class Expiry(odm.Model):
+    # By turning on batch delete, delete queries are rounded by day therefor
+    # all delete operation happen at the same time at midnight
+    batch_delete = odm.Boolean()
+    # Delay in hours that will be applied to the expiry query so we can keep
+    # data longer then previously set or we can offset deletion during non busy hours
+    delay = odm.Integer()
+    # Should we also cleanup the file storage?
+    delete_storage = odm.Boolean()
+    # Number of concurrent workers for linear operations
+    workers = odm.Integer()
+
+
+DEFAULT_EXPIRY = {
+    'batch_delete': False,
+    'delay': 0,
+    'delete_storage': True,
+    'workers': 20
+}
+
+
 # Configuration options regarding bulk ingestion and unattended submissions
 @odm.model(index=True, store=True)
 class Ingester(odm.Model):
@@ -260,6 +283,7 @@ DEFAULT_REDIS = {
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
     dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
+    expiry: Expiry = odm.Compound(Expiry, default=DEFAULT_EXPIRY)
     ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER)
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS)
 
@@ -267,6 +291,7 @@ class Core(odm.Model):
 DEFAULT_CORE = {
     "alerter": DEFAULT_ALERTER,
     "dispatcher": DEFAULT_DISPATCHER,
+    "expiry": DEFAULT_EXPIRY,
     "ingester": DEFAULT_INGESTER,
     "redis": DEFAULT_REDIS,
 }

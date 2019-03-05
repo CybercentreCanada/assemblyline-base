@@ -191,12 +191,13 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def delete_matching(self, query):
+    def delete_matching(self, query, workers=20):
         """
         This function should delete the underlying documents referenced by the query.
         It should return true if the documents were in fact properly deleted.
 
         :param query: Query of the documents to download
+        :param workers: Number of workers used for deletion if basic currency delete is used
         :return: True is delete successful
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
