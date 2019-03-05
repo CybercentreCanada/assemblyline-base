@@ -214,3 +214,13 @@ class MetricCounter:
         Returns the value of the (per second) counter.
         """
         return retry_call(self._inc_script, keys=[self.path], args=[increment_by])
+
+    @classmethod
+    def list_counters(cls, redis):
+        """List all active counters on a redis server.
+
+        Note: active means they have some count values CURRENTLY.
+        """
+        data = retry_call(redis.keys, cls.PREFIX + '*')
+        pre = len(cls.PREFIX)
+        return [key[pre:].decode() for key in data]

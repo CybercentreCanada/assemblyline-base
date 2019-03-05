@@ -1,3 +1,4 @@
+import uuid
 import time
 from threading import Thread
 
@@ -291,48 +292,58 @@ def test_comms_queue(redis_connection):
 
 def test_metric_counter(redis_connection):
     # Flush the counter before starting the test
-    counter = MetricCounter('scratch', redis_connection)
+    test_counter_id = uuid.uuid4().hex
+    counter = MetricCounter(test_counter_id, redis_connection)
     counter.delete()
-    local_start = int(time.time())
-    redis_start = counter.client.time()[0]
+    try:
+        local_start = int(time.time())
+        redis_start = counter.client.time()[0]
 
-    def server_time(offset: float = 0):
-        return int(time.time() - local_start + redis_start + offset)
 
-    # initialize on an empty set, should do nothing, return empty dict
-    data = counter.flush()
-    assert not data
-    assert counter.next_block is not None
+        def server_time(offset: float = 0):
+            return int(time.time() - local_start + redis_start + offset)
 
-    # Add a bunch of data, but not enough to flush any out
-    counter.increment(5)  # Call increment properly
-    total = 5
-    # Fill in the rest of the data directly
-    for offset in range(60):
-        total += 5
-        counter.client.hincrby(counter.path, server_time(-offset/2), 5)
 
-    assert counter.read() == total
-    assert not counter.advance()
-    assert counter.next_block is not None
+        # initialize on an empty set, should do nothing, return empty dict
+        data = counter.flush()
+        assert not data
+        assert counter.next_block is not None
 
-    # Fill in some old data to simulate backlog
-    for offset in range(6000):
-        total += 5
-        counter.client.hincrby(counter.path, server_time(-offset/2), 5)
+        # Call increment properly
+        counter.increment(5)
 
-    # Run flush as if we are just starting since we just added data over 3000 seconds in the past
-    # we should get around 50 one minute buckets, depending on if we are on the edge of a minute or not
-    data = counter.flush()
-    assert len(data) in [49, 50]
+        # Now that there is some data in the counter, we should
+        assert test_counter_id in MetricCounter.list_counters(redis_connection)
 
-    # Fill in some data for the 'newest minute'
-    counter.next_block -= 60  # Make the newest minute one that has already passed
-    total = 0
-    for offset in range(30):
-        total += 5
-        counter.client.hincrby(counter.path, counter.next_block + offset, 5)
+        # Add a bunch of data directly, but not enough to flush any out
+        total = 5
+        for offset in range(60):
+            total += 5
+            counter.client.hincrby(counter.path, server_time(-offset / 2), 5)
 
-    data = counter.advance()
-    assert sum(data.values()) == total
-    assert len(data) in [1, 2]
+        assert counter.read() == total
+        assert not counter.advance()
+        assert counter.next_block is not None
+
+        # Fill in some old data to simulate backlog
+        for offset in range(6000):
+            total += 5
+            counter.client.hincrby(counter.path, server_time(-offset / 2), 5)
+
+        # Run flush as if we are just starting since we just added data over 3000 seconds in the past
+        # we should get around 50 one minute buckets, depending on if we are on the edge of a minute or not
+        data = counter.flush()
+        assert len(data) in [49, 50]
+
+        # Fill in some data for the 'newest minute'
+        counter.next_block -= 60  # Make the newest minute one that has already passed
+        total = 0
+        for offset in range(30):
+            total += 5
+            counter.client.hincrby(counter.path, counter.next_block + offset, 5)
+
+        data = counter.advance()
+        assert sum(data.values()) == total
+        assert len(data) in [1, 2]
+    finally:
+        counter.delete()
