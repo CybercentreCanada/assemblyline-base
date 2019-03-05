@@ -32,7 +32,7 @@ def test_config_model():
 
 
 def test_default_config_model():
-    config = forge.get_config()
+    config = forge.get_config(yml_config="/etc/assemblyline/default.yml")
     assert config.as_primitives() == DEFAULT_CONFIG
 
 
