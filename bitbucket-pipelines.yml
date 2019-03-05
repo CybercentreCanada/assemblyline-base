@@ -17,7 +17,3 @@ pipelines:
           - pytest -rsx --error-for-skips
         services:
           - docker
-
-definitions:
-  services:
-    - docker
