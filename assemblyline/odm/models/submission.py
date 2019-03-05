@@ -71,7 +71,7 @@ class SubmissionParams(odm.Model):
         data = self.as_primitives()
         return {k: v for k, v in data.items() if k in _KEY_HASHED_FIELDS}
 
-    def create_filescore_key(self, sha256, services: list=None):
+    def create_filescore_key(self, sha256, services: list = None):
         """This is the key used to store the final score of a submission for fast lookup.
 
         This lookup is one of the methods used to check for duplication in ingestion process,
@@ -112,7 +112,7 @@ class Submission(odm.Model):
     max_score = odm.Integer()                           # Maximum score of all the files in the scan
     metadata = odm.Mapping(odm.Keyword(), store=False)  # Metadata associated to the submission
     params: SubmissionParams = odm.Compound(SubmissionParams)             # Submission detail blocs
-    results = odm.List(odm.Keyword(), store=False)      # List of result keys
+    results: List[str] = odm.List(odm.Keyword(), store=False)      # List of result keys
     sid = odm.Keyword(copyto="__text__")                # Submission ID
     state = odm.Enum(values=SUBMISSION_STATES)          # Status of the submission
     times = odm.Compound(Times)                         # Timing bloc
