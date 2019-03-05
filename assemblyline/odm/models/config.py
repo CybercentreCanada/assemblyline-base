@@ -179,6 +179,8 @@ class Expiry(odm.Model):
     delay = odm.Integer()
     # Should we also cleanup the file storage?
     delete_storage = odm.Boolean()
+    # Time to sleep in between each expiry run (seconds)
+    sleep_time = odm.Integer()
     # Number of concurrent workers for linear operations
     workers = odm.Integer()
 
@@ -187,6 +189,7 @@ DEFAULT_EXPIRY = {
     'batch_delete': False,
     'delay': 0,
     'delete_storage': True,
+    'sleep_time': 15,
     'workers': 20
 }
 

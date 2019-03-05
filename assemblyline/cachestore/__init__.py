@@ -7,6 +7,9 @@ DEFAULT_CACHE_LEN = 60 * 60  # 1 hour
 
 class CacheStore(object):
     def __init__(self, component, config=None, datastore=None):
+        if not component:
+            raise ValueError("Cannot instanciate a cachestore without providing a component name.")
+
         if config is None:
             config = forge.get_config()
 

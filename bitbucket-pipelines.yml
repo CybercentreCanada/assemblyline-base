@@ -15,6 +15,7 @@ pipelines:
           - pip install pytest-error-for-skips  # Special for the pipeline where we know none should skip
           - pytest -rsx --error-for-skips
         services:
+          - minio
           - zookeeper
           - riak
           - redis
@@ -23,6 +24,15 @@ pipelines:
 
 definitions:
   services:
+    minio:
+      image: minio/minio
+      memory: 256
+      environment:
+        MINIO_ACCESS_KEY: al_storage_key
+        MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
+      ports:
+        - '9000:9000'
+      command: server /data
     elasticsearch:
       image: sgaroncse/elasticsearch:6.4.2
       memory: 768
