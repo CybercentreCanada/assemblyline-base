@@ -11,6 +11,7 @@ from assemblyline.remote.datatypes import get_client, retry_call, decode
 #   number of elements to skip before popping any
 #   max element count to pop
 pq_dequeue_range_script = """
+local unpack = table.unpack or unpack
 local min_score = tonumber(ARGV[1]); 
 if min_score == nil then min_score = -math.huge end
 local max_score = tonumber(ARGV[2]);
@@ -87,7 +88,7 @@ class PriorityQueue(object):
                 return decode(ret_val[0][21:])
             return None
 
-    def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1):
+    def dequeue_range(self, lower_limit=None, upper_limit=None, skip=0, num=1):
         """Dequeue a number of elements, within a specified range of scores.
 
         Limits given are inclusive, can be made exclusive, see redis docs on how to format limits for that.
@@ -139,5 +140,44 @@ class UniquePriorityQueue(PriorityQueue):
         Returns:
             Number of _NEW_ elements in the queue after the operation.
         """
-        return retry_call(self.c.zadd, self.name, {json.dumps(data): priority})
+        return retry_call(self.c.zadd, self.name, -priority, json.dumps(data))
 
+    def pop(self, num=None):
+        if num is not None and num <= 0:
+            return []
+
+        if num:
+            return [decode(s) for s in retry_call(self.r, args=[self.name, num-1])]
+        else:
+            ret_val = retry_call(self.r, args=[self.name, 0])
+            if ret_val:
+                return decode(ret_val[0])
+            return None
+
+    def unpush(self, num=None):
+        if num is not None and num <= 0:
+            return []
+
+        if num:
+            return [decode(s) for s in retry_call(self.t, args=[self.name, num])]
+        else:
+            ret_val = retry_call(self.t, args=[self.name, 1])
+            if ret_val:
+                return decode(ret_val[0])
+            return None
+
+    def dequeue_range(self, lower_limit=None, upper_limit=None, skip=0, num=1):
+        """Dequeue a number of elements, within a specified range of scores.
+
+        Limits given are inclusive, can be made exclusive, see redis docs on how to format limits for that.
+
+        NOTE: lower/upper limit is negated+swapped in the lua script, no need to do it here
+
+        :param lower_limit: The score of all dequeued elements must be higher or equal to this.
+        :param upper_limit: The score of all dequeued elements must be lower or equal to this.
+        :param skip: In the range of available items to dequeue skip over this many.
+        :param num: Maximum number of elements to dequeue.
+        :return: list
+        """
+        results = retry_call(self._deque_range, keys=[self.name], args=[lower_limit, upper_limit, skip, num])
+        return [decode(res) for res in results]
