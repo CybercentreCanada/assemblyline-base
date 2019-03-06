@@ -4,7 +4,7 @@ import time
 import uuid
 
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
-    Classification, Optional
+    Classification, Optional, Any
 
 ALPHA = "ABCDEFGHIJKLMNOPQRSTUPVXYZabcdefghijklmnopqrstuvwxyz"
 HASH_ALPHA = "abcdef0123456789"
@@ -198,6 +198,8 @@ def random_data_for_field(field, name):
         return get_random_word()
     elif isinstance(field, Text):
         return get_random_phrase(wmin=4, wmax=40)
+    elif isinstance(field, Any):
+        return get_random_word()
     else:
         raise ValueError(f"Unknown field type {field.__class__}")
 
