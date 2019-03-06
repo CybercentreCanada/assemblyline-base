@@ -163,37 +163,90 @@ def test_lock(redis_connection):
 
 # noinspection PyShadowingNames
 def test_priority_queue(redis_connection):
-    if redis_connection:
-        from assemblyline.remote.datatypes.queues.priority import PriorityQueue
-        with PriorityQueue('test-priority-queue') as pq:
-            pq.delete()
+    from assemblyline.remote.datatypes.queues.priority import PriorityQueue
+    with PriorityQueue('test-priority-queue') as pq:
+        pq.delete()
 
-            for x in range(10):
-                pq.push(100, x)
+        for x in range(10):
+            pq.push(100, x)
 
-            pq.push(101, 'a')
-            pq.push(99, 'z')
+        pq.push(101, 'a')
+        pq.push(99, 'z')
 
-            assert pq.pop() == 'a'
-            assert pq.unpush() == 'z'
-            assert pq.count(100, 100) == 10
-            assert pq.pop() == 0
-            assert pq.unpush() == 9
-            assert pq.length() == 8
-            assert pq.pop(4) == [1, 2, 3, 4]
-            assert pq.unpush(3) == [6, 7, 8]
-            assert pq.length() == 1  # Should be [<100, 5>] at this point
+        assert pq.pop() == 'a'
+        assert pq.unpush() == 'z'
+        assert pq.count(100, 100) == 10
+        assert pq.pop() == 0
+        assert pq.unpush() == 9
+        assert pq.length() == 8
+        assert pq.pop(4) == [1, 2, 3, 4]
+        assert pq.unpush(3) == [6, 7, 8]
+        assert pq.length() == 1  # Should be [<100, 5>] at this point
 
-            for x in range(5):
-                pq.push(100 + x, x)
+        for x in range(5):
+            pq.push(100 + x, x)
 
-            assert pq.length() == 6
-            assert pq.dequeue_range(lower_limit=106) == []
-            assert pq.length() == 6
-            assert pq.dequeue_range(lower_limit=103) == [4]  # 3 and 4 are both options, 4 has higher score
-            assert pq.dequeue_range(lower_limit=102, skip=1) == [2]  # 2 and 3 are both options, 3 has higher score, skip it
-            assert pq.dequeue_range(upper_limit=100, num=10) == [5, 0]  # Take some off the other end
-            assert pq.length() == 2
+        assert pq.length() == 6
+        assert pq.dequeue_range(lower_limit=106) == []
+        assert pq.length() == 6
+        assert pq.dequeue_range(lower_limit=103) == [4]  # 3 and 4 are both options, 4 has higher score
+        assert pq.dequeue_range(lower_limit=102, skip=1) == [2]  # 2 and 3 are both options, 3 has higher score, skip it
+        assert pq.dequeue_range(upper_limit=100, num=10) == [5, 0]  # Take some off the other end
+        assert pq.length() == 2
+        pq.pop(2)
+
+        pq.push(50, 'first')
+        pq.push(-50, 'second')
+
+        assert pq.dequeue_range(0, 100) == ['first']
+        assert pq.dequeue_range(-100, 0) == ['second']
+
+
+# noinspection PyShadowingNames
+def test_unique_priority_queue(redis_connection):
+    from assemblyline.remote.datatypes.queues.priority import UniquePriorityQueue
+    with UniquePriorityQueue('test-priority-queue') as pq:
+        pq.delete()
+
+        for x in range(10):
+            pq.push(100, x)
+        assert pq.length() == 10
+
+        # Values should be unique, this should have no effect on the length
+        for x in range(10):
+            pq.push(100, x)
+        assert pq.length() == 10
+
+        pq.push(101, 'a')
+        pq.push(99, 'z')
+
+        assert pq.pop() == 'a'
+        assert pq.unpush() == 'z'
+        assert pq.count(100, 100) == 10
+        assert pq.pop() == 0
+        assert pq.unpush() == 9
+        assert pq.length() == 8
+        assert pq.pop(4) == [1, 2, 3, 4]
+        assert pq.unpush(3) == [6, 7, 8]
+        assert pq.length() == 1  # Should be [<100, 5>] at this point
+
+        for x in range(5):
+            pq.push(100 + x, x)
+
+        assert pq.length() == 6
+        assert pq.dequeue_range(lower_limit=106) == []
+        assert pq.length() == 6
+        assert pq.dequeue_range(lower_limit=103) == [4]  # 3 and 4 are both options, 4 has higher score
+        assert pq.dequeue_range(lower_limit=102, skip=1) == [2]  # 2 and 3 are both options, 3 has higher score, skip it
+        assert sorted(pq.dequeue_range(upper_limit=100, num=10)) == [0, 5]  # Take some off the other end
+        assert pq.length() == 2
+        pq.pop(2)
+
+        pq.push(50, 'first')
+        pq.push(-50, 'second')
+
+        assert pq.dequeue_range(0, 100) == ['first']
+        assert pq.dequeue_range(-100, 0) == ['second']
 
 
 # noinspection PyShadowingNames
