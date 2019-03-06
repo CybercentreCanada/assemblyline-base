@@ -88,7 +88,7 @@ class PriorityQueue(object):
                 return decode(ret_val[0][21:])
             return None
 
-    def dequeue_range(self, lower_limit=None, upper_limit=None, skip=0, num=1):
+    def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1):
         """Dequeue a number of elements, within a specified range of scores.
 
         Limits given are inclusive, can be made exclusive, see redis docs on how to format limits for that.
@@ -140,7 +140,7 @@ class UniquePriorityQueue(PriorityQueue):
         Returns:
             Number of _NEW_ elements in the queue after the operation.
         """
-        return retry_call(self.c.zadd, self.name, -priority, json.dumps(data))
+        return retry_call(self.c.zadd, self.name, {json.dumps(data): -priority})
 
     def pop(self, num=None):
         if num is not None and num <= 0:
@@ -166,7 +166,7 @@ class UniquePriorityQueue(PriorityQueue):
                 return decode(ret_val[0])
             return None
 
-    def dequeue_range(self, lower_limit=None, upper_limit=None, skip=0, num=1):
+    def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1):
         """Dequeue a number of elements, within a specified range of scores.
 
         Limits given are inclusive, can be made exclusive, see redis docs on how to format limits for that.
