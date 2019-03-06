@@ -1,5 +1,4 @@
 # This file contains the loaders for the different components of the system
-import collections
 import importlib
 import time
 import os
@@ -8,18 +7,9 @@ import yaml
 from easydict import EasyDict
 
 from assemblyline.cachestore import CacheStore
+from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
 from assemblyline.filestore import FileStore
-
-
-def recursive_update(d, u):
-    for k, v in u.items():
-        if isinstance(v, collections.Mapping):
-            d[k] = recursive_update(d.get(k, {}), v)
-        else:
-            d[k] = v
-
-    return d
 
 
 def get_classification(yml_config=None):

@@ -38,7 +38,7 @@ class Alert(odm.Model):
     expiry_ts = odm.Date(store=False)                                   # Expiry timestamp
     extended_scan = odm.Enum(values=EXTENDED_SCAN_VALUES, store=False)  # Status of the extended scan
     file = odm.Compound(File)                                           # File block
-    label = odm.List(odm.Keyword(), copyto="__text__")                  # List of labels applied to the alert
+    label = odm.List(odm.Keyword(), copyto="__text__", default=[])      # List of labels applied to the alert
     metadata = odm.Mapping(odm.Keyword(), store=False)                  # Metadata submitted with the file
     owner = odm.Keyword(default_set=True)                               # Owner of the alert
     priority = odm.Enum(values=PRIORITIES, default_set=True)            # Priority applied to the alert

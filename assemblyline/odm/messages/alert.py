@@ -1,7 +1,7 @@
 from assemblyline import odm
 from assemblyline.odm.models.alert import Alert
 
-MSG_TYPES = {"AlertCreated", "AlertModified"}
+MSG_TYPES = {"AlertCreated", "AlertUpdated"}
 LOADER_CLASS = "assemblyline.odm.messages.alert.AlertMessage"
 
 

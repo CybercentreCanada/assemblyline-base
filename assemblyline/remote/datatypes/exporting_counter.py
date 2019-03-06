@@ -77,7 +77,7 @@ class AutoExportingCounters(object):
             # To avoid blocking increments on the redis operation
             # we only hold the long to do a copy.
             with self.lock:
-                thread_copy = copy.deepcopy(self.counts)
+                thread_copy = dict(copy.deepcopy(self.counts).items())
                 if self.auto_flush:
                     self.counts = Counters()
                     self.counts['type'] = self.type

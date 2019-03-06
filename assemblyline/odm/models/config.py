@@ -133,12 +133,17 @@ DEFAULT_AUTH = {
 
 @odm.model(index=True, store=True)
 class Alerter(odm.Model):
+    alert_ttl: int = odm.Integer()
+    constant_alert_fields: List[str] = odm.List(odm.Keyword())
     default_group_field: str = odm.Keyword()
     filtering_group_fields: List[str] = odm.List(odm.Keyword())
     non_filtering_group_fields: List[str] = odm.List(odm.Keyword())
     process_alert_message: str = odm.Keyword()
 
+
 DEFAULT_ALERTER = {
+    "alert_ttl": 90,
+    "constant_alert_fields": ["alert_id", "file", "ts"],
     "default_group_field": "file.sha256",
     "filtering_group_fields": [
         "file.name",
@@ -150,7 +155,8 @@ DEFAULT_ALERTER = {
         "file.sha1",
         "file.sha256"
     ],
-    "process_alert_message": "al_core.alerter.processing.process_alert_message"
+    "process_alert_message": "al_core.alerter.processing.process_alert_message",
+
 }
 
 
