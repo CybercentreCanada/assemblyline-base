@@ -123,6 +123,11 @@ def get_filestore(config=None):
     return FileStore(*config.filestore.storage)
 
 
+def get_process_alert_message():
+    config = get_config()
+    return load_module_by_path(config.core.alerter.process_alert_message)
+
+
 def get_site_specific_apikey_handler(config=None):
     if config is None:
         config = get_config()
@@ -149,7 +154,7 @@ def get_ui_context(config=None):
 
 def get_metrics_sink(redis=None):
     from assemblyline.remote.datatypes.queues.comms import CommsQueue
-    return CommsQueue('ALMetrics', host=redis)
+    return CommsQueue('assemblyline_metrics', host=redis)
 
 
 class CachedObject:

@@ -4,7 +4,7 @@ import time
 import uuid
 
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
-    Classification
+    Classification, Optional
 
 ALPHA = "ABCDEFGHIJKLMNOPQRSTUPVXYZabcdefghijklmnopqrstuvwxyz"
 HASH_ALPHA = "abcdef0123456789"
@@ -154,6 +154,8 @@ def random_data_for_field(field, name):
         return random_model_obj(field.child_type, as_json=True)
     elif isinstance(field, Mapping):
         return get_random_mapping(field.child_type)
+    elif isinstance(field, Optional):
+        return random_data_for_field(field.child_type, name)
     elif isinstance(field, Date):
         return get_random_iso_date()
     elif isinstance(field, Integer):
@@ -197,7 +199,7 @@ def random_data_for_field(field, name):
     elif isinstance(field, Text):
         return get_random_phrase(wmin=4, wmax=40)
     else:
-        return get_random_word()
+        raise ValueError(f"Unknown field type {field.__class__}")
 
 
 # noinspection PyProtectedMember

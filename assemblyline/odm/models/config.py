@@ -136,7 +136,7 @@ class Alerter(odm.Model):
     default_group_field: str = odm.Keyword()
     filtering_group_fields: List[str] = odm.List(odm.Keyword())
     non_filtering_group_fields: List[str] = odm.List(odm.Keyword())
-
+    process_alert_message: str = odm.Keyword()
 
 DEFAULT_ALERTER = {
     "default_group_field": "file.sha256",
@@ -149,8 +149,8 @@ DEFAULT_ALERTER = {
         "file.md5",
         "file.sha1",
         "file.sha256"
-    ]
-
+    ],
+    "process_alert_message": "al_core.alerter.processing.process_alert_message"
 }
 
 

@@ -57,12 +57,11 @@ class AutoExportingCounters(object):
 
     # noinspection PyUnresolvedReferences
     def start(self):
-        import apscheduler
-        import apscheduler.scheduler
+        from apscheduler.schedulers.background import BackgroundScheduler
         import atexit
 
-        self.scheduler = apscheduler.scheduler.Scheduler(daemon=True)
-        self.scheduler.add_interval_job(self.export, seconds=self.export_interval)
+        self.scheduler = BackgroundScheduler(daemon=True)
+        self.scheduler.add_job(self.export, 'interval', seconds=self.export_interval)
         self.scheduler.start()
 
         atexit.register(lambda: self.stop())

@@ -16,4 +16,4 @@ passlib
 cart
 ssdeep
 python-magic
-apscheduler==2.*
+apscheduler
