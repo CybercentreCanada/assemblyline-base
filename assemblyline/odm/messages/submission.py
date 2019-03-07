@@ -2,7 +2,7 @@ from typing import List, Dict
 from assemblyline import odm
 from assemblyline.odm.models.submission import SubmissionParams, File
 
-MSG_TYPES = {"Ingested", "SubmissionReceived", "SubmissionQueued", "SubmissionStarted"}
+MSG_TYPES = {"SubmissionIngested", "SubmissionReceived", "SubmissionQueued", "SubmissionStarted"}
 LOADER_CLASS = "assemblyline.odm.messages.submission.SubmissionMessage"
 
 
