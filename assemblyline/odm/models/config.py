@@ -162,7 +162,6 @@ DEFAULT_ALERTER = {
 
 @odm.model(index=True, store=True)
 class Dispatcher(odm.Model):
-    stages: List[str] = odm.List(odm.Keyword())
     # Time between re-dispatching attempts, as long as some action (submission or any task completion)
     # happens before this timeout ends, the timeout resets.
     timeout: float = odm.Float()
@@ -170,7 +169,6 @@ class Dispatcher(odm.Model):
 
 
 DEFAULT_DISPATCHER = {
-    "stages": ['setup', 'filter', 'extract', 'core', 'secondary', 'post', 'teardown'],
     "timeout": 5*60,
     "max_inflight": 1000
 }
