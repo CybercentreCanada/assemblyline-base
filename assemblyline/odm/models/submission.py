@@ -4,13 +4,6 @@ from assemblyline import odm
 from assemblyline.common import forge
 Classification = forge.get_classification()
 
-INGEST_SUBMISSION_DEFAULTS = {
-    # Alternative defaults to the submission params used by the ingester client
-    'generate_alert': True,
-    'groups': [],    # TODO: Ideally this should not be empty
-    'priority': -1,  # -1 tells ingester to figure out priority on its own
-    'type': "BULK",
-}
 SUBMISSION_STATES = ['serviced', 'submitted', 'completed']
 DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
 
@@ -18,6 +11,7 @@ DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
 @odm.model(index=True, store=False)
 class File(odm.Model):
     name = odm.Keyword(copyto="__text__")    # Name of the file
+    size = odm.Optional(odm.Integer())       # Size of the file
     sha256 = odm.Keyword(copyto="__text__")  # SHA256 hash of the file
 
 
@@ -98,24 +92,24 @@ class SubmissionParams(odm.Model):
 @odm.model(index=True, store=True)
 class Times(odm.Model):
     completed = odm.Date(store=False, default_set=True)  # Date at which the submission finished scanning
-    submitted = odm.Date()                               # Date at which the submission started scanning
+    submitted = odm.Date(default="NOW")                  # Date at which the submission started scanning
 
 
 @odm.model(index=True, store=True)
 class Submission(odm.Model):
-    classification = odm.Classification()               # Classification of the submission
-    error_count = odm.Integer()                         # Total number of errors in the submission
-    errors = odm.List(odm.Keyword(), store=False)       # List of error keys
-    expiry_ts = odm.Date(store=False)                   # Expiry time stamp
-    file_count = odm.Integer()                          # Total number of files in the submission
-    files: List[File] = odm.List(odm.Compound(File))                # List of files that were originally submitted
-    max_score = odm.Integer()                           # Maximum score of all the files in the scan
-    metadata = odm.Mapping(odm.Keyword(), store=False)  # Metadata associated to the submission
-    params: SubmissionParams = odm.Compound(SubmissionParams)             # Submission detail blocs
-    results: List[str] = odm.List(odm.Keyword(), store=False)      # List of result keys
-    sid = odm.Keyword(copyto="__text__")                # Submission ID
-    state = odm.Enum(values=SUBMISSION_STATES)          # Status of the submission
-    times = odm.Compound(Times)                         # Timing bloc
+    classification = odm.Classification()                      # Classification of the submission
+    error_count = odm.Integer()                                # Total number of errors in the submission
+    errors = odm.List(odm.Keyword(), store=False)              # List of error keys
+    expiry_ts = odm.Date(store=False)                          # Expiry time stamp
+    file_count = odm.Integer()                                 # Total number of files in the submission
+    files: List[File] = odm.List(odm.Compound(File))           # List of files that were originally submitted
+    max_score = odm.Integer()                                  # Maximum score of all the files in the scan
+    metadata = odm.Mapping(odm.Keyword(), store=False)         # Metadata associated to the submission
+    params: SubmissionParams = odm.Compound(SubmissionParams)  # Submission detail blocs
+    results: List[str] = odm.List(odm.Keyword(), store=False)  # List of result keys
+    sid = odm.Keyword(copyto="__text__")                       # Submission ID
+    state = odm.Enum(values=SUBMISSION_STATES)                 # Status of the submission
+    times = odm.Compound(Times, default={})                    # Timing bloc
 
     def is_submit(self):
         return self.state == 'submitted'

@@ -14,6 +14,7 @@ class Notification(odm.Model):
 @odm.model()
 class Submission(odm.Model):
     sid = odm.UUID(default_set=True)                             # Submission ID to use
+    time = odm.Date(default="NOW")
     files = odm.List(odm.Compound(File), default=[])             # File block
     metadata = odm.Mapping(odm.Keyword(), default={})            # Metadata submitted with the file
     notification = odm.Compound(Notification, default={})        # Notification queue parameters
