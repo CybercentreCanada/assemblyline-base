@@ -1,7 +1,7 @@
 from assemblyline import odm
 from assemblyline.odm.models.workflow import PRIORITIES, STATUSES
 
-EXTENDED_SCAN_VALUES = {"unknown", "submitted", "skipped", "incomplete", "completed"}
+EXTENDED_SCAN_VALUES = {"submitted", "skipped", "incomplete", "completed"}
 
 
 @odm.model(index=True, store=True)

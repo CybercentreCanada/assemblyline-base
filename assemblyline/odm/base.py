@@ -682,7 +682,7 @@ class Model:
         raise KeyError(name)
 
     def __setattr__(self, name, value):
-        # Any attribute that hasn't been explicity declared is forbidden
+        # Any attribute that hasn't been explicitly declared is forbidden
         if self.__frozen and name not in self.fields():
             raise KeyError(name)
         object.__setattr__(self, name, value)
