@@ -116,6 +116,12 @@ def test_sets(redis_connection):
             assert not s.exist(pop_val)
             assert s.length() == 2
 
+            assert s.limited_add('dog', 3)
+            assert not s.limited_add('cat', 3)
+            assert s.exist('dog')
+            assert not s.exist('cat')
+            assert s.length() == 3
+
 
 # noinspection PyShadowingNames
 def test_expiring_sets(redis_connection):

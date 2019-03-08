@@ -2,7 +2,7 @@ import json
 
 from assemblyline.remote.datatypes import get_client, retry_call
 
-drop_card_script = """
+_drop_card_script = """
 local set_name = ARGV[1]
 local key = ARGV[2]
 
@@ -10,12 +10,25 @@ redis.call('srem', set_name, key)
 return redis.call('scard', set_name)
 """
 
+_limited_add = """
+local set_name = KEYS[1]
+local key = ARGV[1]
+local limit = tonumber(ARGV[2])
+
+if redis.call('scard', set_name) < limit then
+    redis.call('sadd', set_name, key)
+    return true
+end
+return false
+"""
+
 
 class Set(object):
     def __init__(self, name, host=None, port=None, db=None):
         self.c = get_client(host, port, db, False)
         self.name = name
-        self._drop_card = self.c.register_script(drop_card_script)
+        self._drop_card = self.c.register_script(_drop_card_script)
+        self._limited_add = self.c.register_script(_limited_add)
 
     def __enter__(self):
         return self
@@ -26,6 +39,10 @@ class Set(object):
     def add(self, *values):
         return retry_call(self.c.sadd, self.name,
                           *[json.dumps(v) for v in values])
+
+    def limited_add(self, value, size_limit):
+        """Add a single value to the set, but only if that wouldn't make the set grow past a given size."""
+        return retry_call(self._limited_add, keys=[self.name], args=[json.dumps(value), size_limit])
 
     def exist(self, value):
         return retry_call(self.c.sismember, self.name, json.dumps(value))

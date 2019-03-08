@@ -22,6 +22,7 @@ class Task(odm.Model):
     service_name = odm.Keyword()
     service_config = odm.Keyword()      # Service specific parameters
     depth = odm.Integer(default=0)
+    max_files = odm.Integer()
 
 
 @odm.model()

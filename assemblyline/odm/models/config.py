@@ -166,11 +166,13 @@ class Dispatcher(odm.Model):
     # happens before this timeout ends, the timeout resets.
     timeout: float = odm.Float()
     max_inflight: int = odm.Integer()
+    debug_logging: bool = odm.Boolean()
 
 
 DEFAULT_DISPATCHER = {
     "timeout": 5*60,
-    "max_inflight": 1000
+    "max_inflight": 1000,
+    "debug_logging": False
 }
 
 
