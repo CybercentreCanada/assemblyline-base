@@ -47,12 +47,10 @@ def init_logging(name, log_level=logging.INFO):
  
     if config.logging.log_to_console:
         console = logging.StreamHandler()
-        console.setLevel(log_level)
         console.setFormatter(logging.Formatter(AL_LOG_FORMAT))
         logger.addHandler(console)
 
     if config.logging.log_to_syslog and config.logging.syslog_host:
         syslog_handler = logging.handlers.SysLogHandler(address=(config.logging.syslog_host, 514))
-        syslog_handler.setLevel(log_level)
         syslog_handler.formatter = logging.Formatter(AL_SYSLOG_FORMAT)
         logger.addHandler(syslog_handler)
