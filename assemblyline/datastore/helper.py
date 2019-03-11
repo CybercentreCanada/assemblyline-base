@@ -351,19 +351,20 @@ class AssemblylineDatastore(object):
 
         for key, item in self.result.multiget([x for x in submission['results'] if not x.endswith(".e")],
                                               as_obj=False).items():
+            sha256 = key[:64]
+
+            # Get scores
+            if sha256 not in scores:
+                scores[sha256] = 0
+            scores[sha256] += item["result"]["score"]
+
             # Get files
             extracted = item['response']['extracted']
             if len(extracted) == 0:
                 continue
-            if key[:64] not in files:
-                files[key[:64]] = []
-            files[key[:64]].extend(extracted)
-
-            # Get scores
-            if key[:64] not in scores:
-                scores[key[:64]] = 0
-
-            scores[key[:64]] += item["result"]["score"]
+            if sha256 not in files:
+                files[sha256] = []
+            files[sha256].extend(extracted)
 
         tree_cache = []
 
