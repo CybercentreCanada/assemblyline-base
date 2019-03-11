@@ -1,6 +1,16 @@
 from assemblyline import odm
 
 STATUSES = {"FAIL_NONRECOVERABLE", "FAIL_RECOVERABLE"}
+ERROR_TYPES = {
+    "UNKNOWN": 0,
+    "EXCEPTION": 1,
+    "MAX DEPTH REACHED": 10,
+    "MAX FILES REACHED": 11,
+    "MAX RETRY REACHED": 12,
+    "SERVICE BUSY": 20,
+    "SERVICE DOWN": 21,
+    "TASK PRE-EMPTED": 30
+}
 
 
 @odm.model(index=True, store=True)
@@ -14,10 +24,11 @@ class Response(odm.Model):
 
 @odm.model(index=True, store=True)
 class Error(odm.Model):
-    created = odm.Date(default="NOW")                 # Date at which the error was created
-    expiry_ts = odm.Date(store=False, default="NOW")  # Expiry time stamp
-    response = odm.Compound(Response)                 # Response from the service
-    sha256 = odm.Keyword()                            # Hash of the file the error is related to
+    created = odm.Date(default="NOW")                                      # Date at which the error was created
+    expiry_ts = odm.Date(store=False, default="NOW")                       # Expiry time stamp
+    response = odm.Compound(Response)                                      # Response from the service
+    sha256 = odm.Keyword()                                                 # Hash of the file the error is related to
+    type = odm.Enum(values=list(ERROR_TYPES.keys()), default="EXCEPTION")  # Type of error
 
     def build_key(self, conf_key=None):
         key_list = [
@@ -30,5 +41,7 @@ class Error(odm.Model):
             key_list.append('c' + conf_key.replace('.', '_'))
         else:
             key_list.append("c0")
+
+        key_list.append(f"e{ERROR_TYPES.get(self.type, 0)}")
 
         return '.'.join(key_list)
