@@ -37,6 +37,22 @@ def test_hash(redis_connection):
             assert h.pop("key") == "new-value"
             assert h.length() == 0
 
+            # Make sure we can limit the size of a hash table
+            assert h.limited_add("a", 1, 2) == 1
+            assert h.limited_add("a", 1, 2) == 0
+            assert h.length() == 1
+            assert h.limited_add("b", 10, 2) == 1
+            assert h.length() == 2
+            assert h.limited_add("c", 1, 2) is None
+            assert h.length() == 2
+            assert h.pop("a")
+
+            # Can we increment integer values in the hash
+            assert h.increment("a") == 1
+            assert h.increment("a") == 2
+            assert h.increment("a", 10) == 12
+            assert h.increment("a", -22) == -10
+
 
 # noinspection PyShadowingNames
 def test_expiring_hash(redis_connection):

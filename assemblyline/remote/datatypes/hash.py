@@ -10,6 +10,19 @@ return result
 """
 
 
+_limited_add = """
+local set_name = KEYS[1]
+local key = ARGV[1]
+local value = ARGV[2]
+local limit = tonumber(ARGV[3])
+
+if redis.call('hlen', set_name) < limit then
+    return redis.call('hsetnx', set_name, key, value)
+end
+return nil
+"""
+
+
 class Hash(object):
     def __init__(self, name, host=None, port=None, db=None):
         if isinstance(host, redis.Redis):
@@ -18,6 +31,7 @@ class Hash(object):
             self.c = get_client(host, port, db, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
+        self._limited_add = self.c.register_script(_limited_add)
 
     def __enter__(self):
         return self
@@ -36,6 +50,13 @@ class Hash(object):
         if isinstance(key, bytes):
             raise ValueError("Cannot use bytes for hashmap keys")
         return retry_call(self.c.hsetnx, self.name, key, json.dumps(value))
+
+    def increment(self, key, increment=1):
+        return int(retry_call(self.c.hincrby, self.name, key, increment))
+
+    def limited_add(self, key, value, size_limit):
+        """Add a single value to the set, but only if that wouldn't make the set grow past a given size."""
+        return retry_call(self._limited_add, keys=[self.name], args=[key, json.dumps(value), size_limit])
 
     def exists(self, key):
         return retry_call(self.c.hexists, self.name, key)
@@ -87,5 +108,15 @@ class ExpiringHash(Hash):
 
     def set(self, key, value):
         rval = super(ExpiringHash, self).set(key, value)
+        retry_call(self.c.expire, self.name, self.ttl)
+        return rval
+
+    def increment(self, key, increment=1):
+        rval = super(ExpiringHash, self).increment(key, increment)
+        retry_call(self.c.expire, self.name, self.ttl)
+        return rval
+
+    def limited_add(self, key, value, size_limit):
+        rval = super(ExpiringHash, self).limited_add(key, value, size_limit)
         retry_call(self.c.expire, self.name, self.ttl)
         return rval
