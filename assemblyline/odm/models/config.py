@@ -419,6 +419,25 @@ DEFAULT_LOGGING = {
     "export_interval": 5
 }
 
+SERVICE_CATEGORIES = [
+    'Antivirus',
+    'Dynamic Analysis',
+    'External',
+    'Extraction',
+    'Filtering',
+    'Networking',
+    'Static Analysis',
+    'System'
+]
+SERVICE_STAGES = [
+    'SETUP',
+    'FILTER',
+    'EXTRACT',
+    'CORE',
+    'SECONDARY',
+    'POST',
+    'TEARDOWN'
+]
 
 # This is the model definition for the System block
 @odm.model(index=True, store=True)
@@ -427,21 +446,21 @@ class Services(odm.Model):
     categories: List[str] = odm.List(odm.Keyword())
     # Default service timeout time in seconds
     default_timeout: int = odm.Integer()
+    # How many instances of a service should be kept in reserve running even
+    # when there doesn't seem to be any work for them to do
+    min_service_workers: int = odm.Integer()
     # Different stages of execution in order
     stages: List[str] = odm.List(odm.Keyword())
     # Category for mandatory services (e.g. Sync)
     system_category: str = odm.Text()
-    # How many instances of a service should be kept in reserve running even
-    # when there doesn't seem to be any work for them to do
-    min_service_workers: int = odm.Integer()
 
 
 DEFAULT_SERVICES = {
-    "categories": ['Antivirus', 'External', 'Extraction', 'Filtering', 'Networking', 'Static Analysis', 'System'],
+    "categories": SERVICE_CATEGORIES,
     "default_timeout": 60,
-    "stages": ['SETUP', 'FILTER', 'EXTRACT', 'CORE', 'SECONDARY', 'POST', 'TEARDOWN'],
-    "system_category": 'System',
-    "min_service_workers": 0
+    "min_service_workers": 0,
+    "stages": SERVICE_STAGES,
+    "system_category": 'System'
 }
 
 

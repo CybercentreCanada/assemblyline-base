@@ -26,17 +26,12 @@ class Service(odm.Model):
     licence_count = odm.Integer(default=0)
 
     name = odm.Keyword(store=True)
-    version = odm.Keyword()
+    version = odm.Keyword(store=True)
 
     ram_mb = odm.Integer(default=1024)
 
     # Should the result cache be disabled for this service
     disable_cache = odm.Boolean(default=False)
-
-    # The region or resource code where the repo should be found
-    realm = odm.Keyword()
-    # URL for the repo where the service code is stored
-    repo = odm.Keyword()
 
     stage = odm.Keyword(store=True, default="CORE")
     submission_params = odm.List(odm.Compound(SubmissionParams), index=False, default=[])
