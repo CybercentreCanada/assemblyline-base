@@ -229,7 +229,7 @@ class Ingester(odm.Model):
     expire_after: float = odm.Float()
     stale_after_seconds: float = odm.Float()
 
-    # TODO ????
+    # How long should scores be cached in the ingester
     incomplete_expire_after_seconds: float = odm.Float()
     incomplete_stale_after_seconds: float = odm.Float()
 
