@@ -55,7 +55,11 @@ class Hash(object):
         return int(retry_call(self.c.hincrby, self.name, key, increment))
 
     def limited_add(self, key, value, size_limit):
-        """Add a single value to the set, but only if that wouldn't make the set grow past a given size."""
+        """Add a single value to the set, but only if that wouldn't make the set grow past a given size.
+
+        If the hash has hit the size limit returns None
+        Otherwise, returns the result of hsetnx (same as `add`)
+        """
         return retry_call(self._limited_add, keys=[self.name], args=[key, json.dumps(value), size_limit])
 
     def exists(self, key):
