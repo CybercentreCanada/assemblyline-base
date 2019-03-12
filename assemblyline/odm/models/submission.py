@@ -6,7 +6,7 @@ Classification = forge.get_classification()
 
 SUBMISSION_STATES = ['serviced', 'submitted', 'completed']
 DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
-
+DEFAULT_RESUBMIT = ["Dynamic Analysis"]
 
 @odm.model(index=True, store=False)
 class File(odm.Model):
@@ -17,9 +17,9 @@ class File(odm.Model):
 
 @odm.model(index=False, store=False)
 class ServiceSelection(odm.Model):
-    selected = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL)  # List of selected services for the submission
-    excluded = odm.List(odm.Keyword(), default=[])               # List of excluded services for the submission
-    resubmit = odm.List(odm.Keyword(), default=[])               # Add to service selection when resubmitting
+    selected = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL)   # List of selected services for the submission
+    excluded = odm.List(odm.Keyword(), default=[])                # List of excluded services for the submission
+    resubmit = odm.List(odm.Keyword(), default=DEFAULT_RESUBMIT)  # Add to service selection when resubmitting
 
 
 # Fields in the parameters used to calculate hashes used for result caching
