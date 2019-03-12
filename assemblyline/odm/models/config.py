@@ -136,6 +136,7 @@ class Alerter(odm.Model):
     alert_ttl: int = odm.Integer()
     constant_alert_fields: List[str] = odm.List(odm.Keyword())
     default_group_field: str = odm.Keyword()
+    delay: int = odm.Integer()
     filtering_group_fields: List[str] = odm.List(odm.Keyword())
     non_filtering_group_fields: List[str] = odm.List(odm.Keyword())
     process_alert_message: str = odm.Keyword()
@@ -145,6 +146,7 @@ DEFAULT_ALERTER = {
     "alert_ttl": 90,
     "constant_alert_fields": ["alert_id", "file", "ts"],
     "default_group_field": "file.sha256",
+    "delay": 300,
     "filtering_group_fields": [
         "file.name",
         "status",
