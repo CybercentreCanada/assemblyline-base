@@ -24,6 +24,13 @@ class Task(odm.Model):
     depth = odm.Integer(default=0)
     max_files = odm.Integer()
 
+    @staticmethod
+    def make_key(sid, service_name, sha):
+        return f"{sid}_{service_name}_{sha}"
+
+    def key(self):
+        return Task.make_key(self.sid, self.service_name, self.fileinfo.sha256)
+
 
 @odm.model()
 class TaskMessage(odm.Model):
