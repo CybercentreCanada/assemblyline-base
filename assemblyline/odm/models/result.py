@@ -69,7 +69,7 @@ class ResponseBody(odm.Model):
 class Result(odm.Model):
     classification = odm.Classification()                 # Aggregate classification for the result
     created = odm.Date(default="NOW")                     # Date at which the result object got created
-    expiry_ts = odm.Date(store=False, default="NOW")      # Expiry time stamp
+    expiry_ts = odm.Date(store=False)                     # Expiry time stamp
     oversized = odm.Boolean(default=False)                # Is an oversized record
     response: ResponseBody = odm.Compound(ResponseBody)   # The body of the response from the service
     result: ResultBody = odm.Compound(ResultBody,

@@ -13,7 +13,7 @@ class File(odm.Model):
     ascii = odm.Keyword(index=False, store=False)     # Dotted ascii representation of the first 64 bytes of the file
     classification = odm.Classification()             # Classification of the file
     entropy = odm.Float()                             # Entropy of the file
-    expiry_ts = odm.Date(store=False, default="NOW")  # Expiry time stamp
+    expiry_ts = odm.Date(store=False)                 # Expiry time stamp
     hex = odm.Keyword(index=False, store=False)       # Hex dump of the first 64 bytes of the file
     md5 = odm.Keyword(copyto="__text__")              # MD5 of the top level file
     magic = odm.Keyword(store=False)                  # Output from libmagic related to that file
