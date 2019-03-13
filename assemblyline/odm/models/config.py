@@ -73,7 +73,7 @@ DEFAULT_USERS = {
         "password": "changeme",
         "groups": ["ADMIN", "INTERNAL", "USERS"],
         "is_admin": True,
-        "classification": "U"
+        "classification": "UNRESTRICTED"
     },
     "internal": {
         "uname": "internal",
@@ -81,7 +81,7 @@ DEFAULT_USERS = {
         "password": "Int3rn@lP4s$",
         "groups": ["INTERNAL"],
         "is_admin": False,
-        "classification": "U"
+        "classification": "UNRESTRICTED"
     }
 }
 
@@ -166,7 +166,7 @@ DEFAULT_ALERTER = {
 class Dispatcher(odm.Model):
     # Time between re-dispatching attempts, as long as some action (submission or any task completion)
     # happens before this timeout ends, the timeout resets.
-    timeout: float = odm.Float()
+    timeout: float = odm.Integer()
     max_inflight: int = odm.Integer()
     debug_logging: bool = odm.Boolean()
 
@@ -226,15 +226,15 @@ class Ingester(odm.Model):
     default_max_supplementary: int = odm.Integer()
 
     # Drop a task altogeather after this many seconds
-    expire_after: float = odm.Float()
-    stale_after_seconds: float = odm.Float()
+    expire_after: int = odm.Integer()
+    stale_after_seconds: int = odm.Integer()
 
     # How long should scores be cached in the ingester
-    incomplete_expire_after_seconds: float = odm.Float()
-    incomplete_stale_after_seconds: float = odm.Float()
+    incomplete_expire_after_seconds: int = odm.Integer()
+    incomplete_stale_after_seconds: int = odm.Integer()
 
     # How long can a queue get before we start dropping files
-    sampling_at: Dict[str, float] = odm.Mapping(odm.Float())
+    sampling_at: Dict[str, int] = odm.Mapping(odm.Integer())
 
 
 DEFAULT_INGESTER = {
@@ -407,7 +407,7 @@ class Logging(odm.Model):
     syslog_host: str = odm.Keyword()
 
     # How often should counters log their values (seconds)
-    export_interval: float = odm.Float()
+    export_interval: int = odm.Integer()
 
 
 DEFAULT_LOGGING = {
