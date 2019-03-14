@@ -57,6 +57,7 @@ class ResponseBody(odm.Model):
     milestones = odm.Compound(Milestone, default={})            # Milestone block
     service_version = odm.Keyword(store=False)                  # Version of the service that ran on the file
     service_name = odm.Keyword(copyto="__text__")               # Name of the service that scan the file
+    service_tool_version = odm.Keyword(copyto="__text__")       # Tool version of the service that ran on the file
     supplementary = odm.List(odm.Compound(File), default=[])    # List of supplementary files
     extracted = odm.List(odm.Compound(File), default=[])        # List of extracted files
     service_context = odm.Keyword(index=False, store=False,
