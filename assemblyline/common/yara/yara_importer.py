@@ -175,7 +175,7 @@ class YaraImporter(object):
                 yara_bin = yara_file.read()
                 return self.parse_data(yara_bin, force_safe_str=force_safe_str)
         else:
-            raise Exception("File '%s' does not exists.")
+            raise Exception(f"File {cur_file} does not exists.")
 
     def parse_files(self, files, force_safe_str=False):
         output = {}

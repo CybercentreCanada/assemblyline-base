@@ -1,6 +1,17 @@
 version: '3'
 
 services:
+  # Create test data
+  create_test_data:
+    image: sgaroncse/assemblyline_dev
+    volumes:
+      - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/alv4/alv4_ui/test/
+    command: python3 create_test_data.py
+    networks:
+      - assemblyline_bridge
+
   # UI
   assemblyline_ui:
     image: sgaroncse/assemblyline_dev
