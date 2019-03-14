@@ -13,6 +13,8 @@ from packaging.version import parse
 
 # Add a version warning if redis python client is < 2.10.0. Older versions
 # have a connection bug that can manifest with the dispatcher.
+from assemblyline.common import forge
+
 if parse(redis.__version__) <= parse('2.10.0'):
     import warnings
     warnings.warn("%s works best with redis > 2.10.0. You're running"
@@ -50,8 +52,8 @@ def retry_call(func, *args, **kw):
     while True:
         try:
             return func(*args, **kw)
-        except redis.ConnectionError:
-            log.warning('No connection to Redis, reconnecting...')
+        except redis.ConnectionError as ce:
+            log.warning(f'No connection to Redis, reconnecting... {ce}')
             time.sleep(2 ** exponent)
             exponent = exponent + 1 if exponent < maximum else exponent
 
@@ -61,9 +63,12 @@ def get_client(host, port, db, private):
     if isinstance(host, (redis.Redis, redis.StrictRedis)):
         return host
 
-    host = host or '127.0.0.1'
-    port = int(port or 6379)
-    db = int(db or 0)
+    if not host or not port or not db:
+        config = forge.get_config(static=True)
+
+        host = host or config.core.redis.nonpersistent.host
+        port = int(port or config.core.redis.nonpersistent.port)
+        db = int(db or config.core.redis.nonpersistent.db)
 
     if private:
         return redis.StrictRedis(host=host, port=port, db=db)

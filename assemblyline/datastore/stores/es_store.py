@@ -107,7 +107,10 @@ class ESCollection(Collection):
         while True:
             try:
                 return func(*args, **kwargs)
-            except (SearchRetryException, elasticsearch.exceptions.ConflictError):
+            except (SearchRetryException, elasticsearch.exceptions.ConflictError,
+                    elasticsearch.exceptions.ConnectionError, elasticsearch.exceptions.ConnectionTimeout) as e:
+                if not isinstance(e, SearchRetryException):
+                    log.warning("No connection to elasticsearch, retying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
