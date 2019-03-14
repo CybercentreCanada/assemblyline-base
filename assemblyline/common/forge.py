@@ -22,14 +22,14 @@ def get_classification(yml_config=None):
     default_file = os.path.join(os.path.dirname(__file__), "classification.yml")
     if os.path.exists(default_file):
         with open(default_file) as default_fh:
-            default_yml_data = yaml.load(default_fh.read())
+            default_yml_data = yaml.safe_load(default_fh.read())
             if default_yml_data:
                 classification_definition.update(default_yml_data)
 
     # Load modifiers from the yaml config
     if os.path.exists(yml_config):
         with open(yml_config) as yml_fh:
-            yml_data = yaml.load(yml_fh.read())
+            yml_data = yaml.safe_load(yml_fh.read())
             if yml_data:
                 classification_definition = recursive_update(classification_definition, yml_data)
 
@@ -51,7 +51,7 @@ def _get_config(static=False, yml_config=None):
     # Load modifiers from the yaml config
     if os.path.exists(yml_config):
         with open(yml_config) as yml_fh:
-            yml_data = yaml.load(yml_fh.read())
+            yml_data = yaml.safe_load(yml_fh.read())
             if yml_data:
                 config = recursive_update(config, yml_data)
 
