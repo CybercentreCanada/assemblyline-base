@@ -1,8 +1,30 @@
 version: '3'
 
 services:
+  # UI
+  assemblyline_ui:
+    image: sgaroncse/assemblyline_dev
+    ports:
+      - '5000:5000'
+    volumes:
+      - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/alv4/alv4_ui/al_ui/
+    command: python3 app.py
+
+  # SocketIO Server
+  assemblyline_socketio:
+    image: sgaroncse/assemblyline_dev
+    ports:
+      - '5002:5002'
+    volumes:
+      - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/alv4/alv4_ui/al_ui/
+    command: python3 socketsrv.py
+
   # Alerter
-  assemblyline-alerter:
+  assemblyline_alerter:
     image: sgaroncse/assemblyline_dev
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -12,7 +34,7 @@ services:
       - assemblyline_bridge
 
   # Expiry
-  assemblyline-expiry:
+  assemblyline_expiry:
     image: sgaroncse/assemblyline_dev
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -22,7 +44,7 @@ services:
       - assemblyline_bridge
 
   # Dispatcher processes
-  assemblyline-dispatcher-files:
+  assemblyline_dispatcher_files:
     image: sgaroncse/assemblyline_dev
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -31,7 +53,7 @@ services:
     networks:
       - assemblyline_bridge
 
-  assemblyline-dispatcher-submissions:
+  assemblyline_dispatcher_submissions:
     image: sgaroncse/assemblyline_dev
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -41,7 +63,7 @@ services:
       - assemblyline_bridge
 
   # Ingester Processes
-  assemblyline-ingester-ingest:
+  assemblyline_ingester_ingest:
     image: sgaroncse/assemblyline_dev
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -50,7 +72,7 @@ services:
     networks:
       - assemblyline_bridge
 
-  assemblyline-ingester-internal:
+  assemblyline_ingester_internal:
     image: sgaroncse/assemblyline_dev
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -59,7 +81,7 @@ services:
     networks:
       - assemblyline_bridge
 
-  assemblyline-ingester-submit:
+  assemblyline_ingester_submit:
     image: sgaroncse/assemblyline_dev
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -109,7 +131,7 @@ services:
       - '80:80'
     environment:
       - UI_HOST=172.17.0.1
-      - FQDN=assemblyline.local
+      - FQDN=localhost
       - MAX_BODY_SIZE=100M
     command: /bin/bash -c "envsubst < /tmp/default.template > /etc/nginx/conf.d/default.conf && cat /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
 
