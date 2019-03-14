@@ -748,7 +748,13 @@ class ESCollection(Collection):
             }
 
             index['mappings'][self.name] = mappings
-            self.with_retries(self.datastore.client.indices.create, self.name, index)
+            try:
+                self.with_retries(self.datastore.client.indices.create, self.name, index)
+            except elasticsearch.exceptions.RequestError as e:
+                if not "resource_already_exists_exception" in str(e):
+                    raise
+                log.warning(f"Tried to create a collection that already exists: {self.name.upper()}")
+
         self._check_fields()
 
     def wipe(self):
