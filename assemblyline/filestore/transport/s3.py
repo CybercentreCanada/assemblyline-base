@@ -88,15 +88,6 @@ class TransportS3(Transport):
         key = self.normalize(path)
         self.client.delete_object(Bucket=self.bucket, Key=key)
 
-    def download(self, src_path, dst_path):
-        key = self.normalize(src_path)
-        dir_path = os.path.dirname(dst_path)
-        # create dst_path if it doesn't exist
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-        # download the key from s3
-        self.client.download_file(self.bucket, key, dst_path)
-
     def exists(self, path):
         # checks to see if KEY exists
         key = self.normalize(path)
@@ -108,6 +99,26 @@ class TransportS3(Transport):
 
         return True
 
+    def makedirs(self, path):
+        # Does not need to do anything as s3 has a flat layout.
+        pass
+
+    # File based functions
+    def download(self, src_path, dst_path):
+        key = self.normalize(src_path)
+        dir_path = os.path.dirname(dst_path)
+        # create dst_path if it doesn't exist
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        # download the key from s3
+        self.client.download_file(self.bucket, key, dst_path)
+
+    def upload(self, src_path, dst_path):
+        dst_path = self.normalize(dst_path)
+        # if file exists already, it will be overwritten
+        self.client.upload_file(src_path, self.bucket, dst_path)
+
+    # Buffer based functions
     def get(self, path):
         fd, dst_path = tempfile.mkstemp(prefix="s3_transport.", suffix=".download")
         os.close(fd)  # We don't need the file descriptor open
@@ -120,16 +131,7 @@ class TransportS3(Transport):
             if os.path.exists(dst_path):
                 os.remove(dst_path)
 
-    def makedirs(self, path):
-        # Does not need to do anything as s3 has a flat layout.
-        pass
-
-    def put(self, src_path, dst_path):
-        dst_path = self.normalize(dst_path)
-        # if file exists already, it will be overwritten
-        self.client.upload_file(src_path, self.bucket, dst_path)
-
-    def save(self, dst_path, content):
+    def put(self, dst_path, content):
         dst_path = self.normalize(dst_path)
         if isinstance(content, str):
             content = content.encode('utf-8')

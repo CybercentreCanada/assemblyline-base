@@ -37,7 +37,7 @@ class CacheStore(object):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
 
         self.datastore.cached_file.save(new_key, {'expiry_ts': now_as_iso(ttl), 'component': self.component})
-        self.filestore.save(new_key, data)
+        self.filestore.put(new_key, data)
 
     def get(self, cache_key):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key

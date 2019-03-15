@@ -230,7 +230,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                     datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_classification,
                                                    cl_engine=Classification)
                     try:
-                        filestore.put(os.path.join(current_working_dir, f), f)
+                        filestore.upload(os.path.join(current_working_dir, f), f)
                     except IOError:
                         pass
 

@@ -198,57 +198,33 @@ class FileStore(object):
                 trace = get_stacktrace_info(ex)
                 self.log.warning('Transport problem: %s', trace)
 
-    def local_path(self, path):
-        if not self.local_transports:
-            return None
-
-        for t in self.local_transports:
-            if t.exists(path):
-                return t.normalize(path)
-
-        fd, temporary_path = tempfile.mkstemp(prefix="filestore.local_path")
-        os.close(fd)  # We don't need the file descriptor open
-
-        try:
-            self.download(path, temporary_path)
-            self.put(temporary_path, path)
-        finally:
-            if os.path.exists(temporary_path):
-                os.remove(temporary_path)
-
-        for t in self.local_transports:
-            if t.exists(path):
-                return t.normalize(path)
-
-        return None
-
-    def put(self, src_path, dst_path, location='all', force=False):
+    def upload(self, src_path, dst_path, location='all', force=False):
         transports = []
         for t in self.slice(location):
             if force or not t.exists(dst_path):
                 transports.append(t)
-                t.put(src_path, dst_path)
+                t.upload(src_path, dst_path)
                 if not t.exists(dst_path):
                     raise FileStoreException('File transfer failed. Remote file does not '
                                              'exist for %s on %s (%s)' % (dst_path, location, t))
         return transports
 
-    def put_batch(self, local_remote_tuples, location='all'):
+    def upload_batch(self, local_remote_tuples, location='all'):
         failed_tuples = []
         for (src_path, dst_path) in local_remote_tuples:
             try:
-                self.put(src_path, dst_path, location)
+                self.upload(src_path, dst_path, location)
             except Exception as ex:
                 trace = get_stacktrace_info(ex)
                 failed_tuples.append((src_path, dst_path, trace))
         return failed_tuples
 
-    def save(self, dst_path, content, location='all', force=False):
+    def put(self, dst_path, content, location='all', force=False):
         transports = []
         for t in self.slice(location):
             if force or not t.exists(dst_path):
                 transports.append(t)
-                t.save(dst_path, content)
+                t.put(dst_path, content)
                 if not t.exists(dst_path):
                     raise FileStoreException('File transfer failed. Remote file does not '
                                              'exist for %s on %s (%s)' % (dst_path, location, t))

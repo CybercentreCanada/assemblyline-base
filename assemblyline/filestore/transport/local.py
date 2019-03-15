@@ -39,29 +39,9 @@ class TransportLocal(Transport):
         path = self.normalize(path)
         os.unlink(path)
 
-    def download(self, src_path, dst_path):
-        if src_path == dst_path:
-            return
-
-        src_path = self.normalize(src_path)
-        dir_path = os.path.dirname(dst_path)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-        shutil.copy(src_path, dst_path)
-
     def exists(self, path):
         path = self.normalize(path)
         return os.path.exists(path)
-
-    def get(self, path):
-        path = self.normalize(path)
-        fh = None
-        try:
-            fh = open(path, "rb")
-            return fh.read()
-        finally:
-            if fh:
-                fh.close()
 
     def getmtime(self, path):
         path = self.normalize(path)
@@ -81,7 +61,18 @@ class TransportLocal(Transport):
             else:
                 raise e
 
-    def put(self, src_path, dst_path):
+    # File based functions
+    def download(self, src_path, dst_path):
+        if src_path == dst_path:
+            return
+
+        src_path = self.normalize(src_path)
+        dir_path = os.path.dirname(dst_path)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        shutil.copy(src_path, dst_path)
+
+    def upload(self, src_path, dst_path):
         dst_path = self.normalize(dst_path)
         if src_path == dst_path:
             return
@@ -91,13 +82,24 @@ class TransportLocal(Transport):
         tempname = str(uuid.uuid4())
         temppath = _join(dirname, tempname)
         finalpath = _join(dirname, filename)
-        assert(finalpath == dst_path)
+        assert (finalpath == dst_path)
         self.makedirs(dirname)
         shutil.copy(src_path, temppath)
         shutil.move(temppath, finalpath)
-        assert(self.exists(dst_path))
+        assert (self.exists(dst_path))
 
-    def save(self, path, content):
+    # Buffer based functions
+    def get(self, path):
+        path = self.normalize(path)
+        fh = None
+        try:
+            fh = open(path, "rb")
+            return fh.read()
+        finally:
+            if fh:
+                fh.close()
+
+    def put(self, path, content):
         path = self.normalize(path)
 
         dirname = os.path.dirname(path)

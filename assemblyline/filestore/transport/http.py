@@ -68,6 +68,15 @@ class TransportHTTP(Transport):
     def delete(self, path):
         raise TransportException("READ ONLY TRANSPORT: Method not implemented")
 
+    def exists(self, path):
+        path = self.normalize(path)
+        resp = self.session.head(path, auth=self.auth, cert=self.pki, verify=self.verify)
+        return resp.ok
+
+    def makedirs(self, path):
+        raise TransportException("READ ONLY TRANSPORT: Method not implemented")
+
+    # File based functions
     def download(self, src_path, dst_path):
         dir_path = os.path.dirname(dst_path)
         if not os.path.exists(dir_path):
@@ -81,12 +90,14 @@ class TransportHTTP(Transport):
                         localfile.write(chunk)
             else:
                 raise TransportException("[%s] %s: %s" % (resp.status_code, resp.reason, src_path))
-        
-    def exists(self, path):
-        path = self.normalize(path)
-        resp = self.session.head(path, auth=self.auth, cert=self.pki, verify=self.verify)
-        return resp.ok
 
+    def upload(self, src_path, dst_path):
+        raise TransportException("READ ONLY TRANSPORT: Method not implemented")
+
+    def upload_batch(self, local_remote_tuples):
+        raise TransportException("READ ONLY TRANSPORT: Method not implemented")
+
+    # Buffer based functions
     def get(self, path):
         path = self.normalize(path)
         resp = self.session.get(path, auth=self.auth, cert=self.pki, verify=self.verify)
@@ -95,15 +106,6 @@ class TransportHTTP(Transport):
         else:
             raise TransportException("[%s] %s: %s" % (resp.status_code, resp.reason, path))
 
-    def makedirs(self, path):
-        raise TransportException("READ ONLY TRANSPORT: Method not implemented")
-
-    def put(self, src_path, dst_path):
-        raise TransportException("READ ONLY TRANSPORT: Method not implemented")
-
-    def put_batch(self, local_remote_tuples):
-        return super(TransportHTTP, self).put_batch(local_remote_tuples)
-
-    def save(self, dst_path, content):
+    def put(self, dst_path, content):
         raise TransportException("READ ONLY TRANSPORT: Method not implemented")
 

@@ -132,15 +132,6 @@ class TransportFTP(Transport):
         self.ftp.delete(path)
 
     @reconnect_retry_on_fail
-    def download(self, src_path, dst_path):
-        dir_path = os.path.dirname(dst_path)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-        with open(dst_path, 'wb') as localfile:
-            src_path = self.normalize(src_path)
-            self.ftp.retrbinary('RETR ' + src_path, localfile.write)
-
-    @reconnect_retry_on_fail
     def exists(self, path):
         path = self.normalize(path)
         self.log.debug('Checking for existence of %s', path)
@@ -154,6 +145,49 @@ class TransportFTP(Transport):
         return size is not None
 
     @reconnect_retry_on_fail
+    def makedirs(self, path):
+        self.log.debug("making dirs: %s", path)
+        subdirs = splitpath(path, '/')
+        for i in range(len(subdirs)):
+            try:
+                d = posixpath.sep + posixpath.join(*subdirs[:i + 1])
+                self.ftp.mkd(d)
+            except ftplib.Error:
+                pass
+
+    # File based functions
+    @reconnect_retry_on_fail
+    def download(self, src_path, dst_path):
+        dir_path = os.path.dirname(dst_path)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        with open(dst_path, 'wb') as localfile:
+            src_path = self.normalize(src_path)
+            self.ftp.retrbinary('RETR ' + src_path, localfile.write)
+
+    @reconnect_retry_on_fail
+    def upload(self, src_path, dst_path):
+        dst_path = self.normalize(dst_path)
+        dirname = posixpath.dirname(dst_path)
+        filename = posixpath.basename(dst_path)
+        tempname = str(uuid.uuid4())
+        temppath = posixpath.join(dirname, tempname)
+        finalpath = posixpath.join(dirname, filename)
+        assert (finalpath == dst_path)
+        self.makedirs(dirname)
+        with open(src_path, 'rb') as localfile:
+            self.log.debug("Storing: %s", temppath)
+            self.ftp.storbinary('STOR ' + temppath, localfile)
+        self.log.debug("Rename: %s -> %s", temppath, finalpath)
+        self.ftp.rename(temppath, finalpath)
+        assert (self.exists(dst_path))
+
+    @reconnect_retry_on_fail
+    def upload_batch(self, local_remote_tuples):
+        return super(TransportFTP, self).upload_batch(local_remote_tuples)
+
+    # Buffer based functions
+    @reconnect_retry_on_fail
     def get(self, path):
         path = self.normalize(path)
         bio = BytesIO()
@@ -161,39 +195,7 @@ class TransportFTP(Transport):
         return bio.getvalue()
 
     @reconnect_retry_on_fail
-    def makedirs(self, path):
-        self.log.debug("making dirs: %s", path)
-        subdirs = splitpath(path, '/')
-        for i in range(len(subdirs)):
-            try:
-                d = posixpath.sep + posixpath.join(*subdirs[:i+1])
-                self.ftp.mkd(d)
-            except ftplib.Error:
-                pass
-
-    @reconnect_retry_on_fail
-    def put(self, src_path, dst_path):
-        dst_path = self.normalize(dst_path)
-        dirname = posixpath.dirname(dst_path)
-        filename = posixpath.basename(dst_path)
-        tempname = str(uuid.uuid4())
-        temppath = posixpath.join(dirname, tempname)
-        finalpath = posixpath.join(dirname, filename)
-        assert(finalpath == dst_path)
-        self.makedirs(dirname)
-        with open(src_path, 'rb') as localfile:
-            self.log.debug("Storing: %s", temppath)
-            self.ftp.storbinary('STOR ' + temppath, localfile)
-        self.log.debug("Rename: %s -> %s", temppath, finalpath)
-        self.ftp.rename(temppath, finalpath)
-        assert(self.exists(dst_path))
-
-    @reconnect_retry_on_fail
-    def put_batch(self, local_remote_tuples):
-        return super(TransportFTP, self).put_batch(local_remote_tuples)
-
-    @reconnect_retry_on_fail
-    def save(self, dst_path, content):
+    def put(self, dst_path, content):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)

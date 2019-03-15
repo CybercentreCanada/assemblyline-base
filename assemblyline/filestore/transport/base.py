@@ -42,54 +42,56 @@ class Transport(object):
         Deletes the file.
         """
         raise TransportException("Not Implemented")
-    
-    def download(self, src_path, dst_path):
-        """
-        Copies the content of src_path to the (likely) local file dst_path.
-        """
-        raise TransportException("Not Implemented")
-    
+
     def exists(self, path):
         """
         Returns True if the path exists, False otherwise.
         Should work with both files and directories.
         """
         raise TransportException("Not Implemented")
-    
-    def get(self, path):
-        """
-        Returns the content of the file.
-        """
-        raise TransportException("Not Implemented")
-        
+
     def makedirs(self, path):
         """
         Like os.makedirs the super-mkdir, create the leaf directory path and
         any intermediate path segments.
         """
         raise TransportException("Not Implemented")
-    
-    def put(self, src_path, dst_path):
+
+    # File based functions
+    def download(self, src_path, dst_path):
         """
-        Save src to dst, overwriting dst if it already exists.
+        Copies the content of the filestore src_path to the local dst_path.
         """
         raise TransportException("Not Implemented")
 
-    def put_batch(self, local_remote_tuples):
+    def upload(self, src_path, dst_path):
         """
-        Transfer multiple files specified by list of (local, remote) tuples.
-        Transports that can optimize batch file transfers should write a custom put_batch. 
+        Save upload source file src_path to to the filesotre dst_path, overwriting dst_path if it already exists.
+        """
+        raise TransportException("Not Implemented")
+
+    def upload_batch(self, local_remote_tuples):
+        """
+        Upload multiple files specified by list of (local, remote) tuples.
+        Transports that can optimize batch file transfers should write a custom upload_batch.
         """
         failed_tuples = []
         for (src_path, dst_path) in local_remote_tuples:
             try:
-                self.put(src_path, dst_path)
+                self.upload(src_path, dst_path)
             except Exception as e:
                 failed_tuples.append((src_path, dst_path, str(e)))
         return failed_tuples
 
-    def save(self, dst_path, content):
+    # Buffer based functions
+    def get(self, path):
         """
-        Save the content of the file in memory directly to the filestore
+        Returns the content of the file.
+        """
+        raise TransportException("Not Implemented")
+        
+    def put(self, dst_path, content):
+        """
+        Put the content of the file in memory directly to the filestore dst_path
         """
         raise TransportException("Not Implemented")

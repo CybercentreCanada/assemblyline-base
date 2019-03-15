@@ -1,6 +1,8 @@
 import logging
 import os
 import posixpath
+import tempfile
+
 import pysftp
 import uuid
 import warnings
@@ -99,6 +101,17 @@ class TransportSFTP(Transport):
         self.sftp.remove(path)
 
     @reconnect_retry_on_fail
+    def exists(self, path):
+        path = self.normalize(path)
+        return self.sftp.exists(path)
+
+    @reconnect_retry_on_fail
+    def makedirs(self, path):
+        path = self.normalize(path)
+        self.sftp.makedirs(path)
+
+    # File based functions
+    @reconnect_retry_on_fail
     def download(self, src_path, dst_path):
         dir_path = os.path.dirname(dst_path)
 
@@ -107,12 +120,26 @@ class TransportSFTP(Transport):
 
         src_path = self.normalize(src_path)
         self.sftp.get(src_path, dst_path)
-        
+
     @reconnect_retry_on_fail
-    def exists(self, path):
-        path = self.normalize(path)
-        return self.sftp.exists(path)
-        
+    def upload(self, src_path, dst_path):
+        dst_path = self.normalize(dst_path)
+        dirname = posixpath.dirname(dst_path)
+        filename = posixpath.basename(dst_path)
+        tempname = str(uuid.uuid4())
+        temppath = posixpath.join(dirname, tempname)
+        finalpath = posixpath.join(dirname, filename)
+        assert (finalpath == dst_path)
+        self.makedirs(dirname)
+        self.sftp.put(src_path, temppath)
+        self.sftp.rename(temppath, finalpath)
+        assert (self.exists(dst_path))
+
+    @reconnect_retry_on_fail
+    def upload_batch(self, local_remote_tuples):
+        return super(TransportSFTP, self).upload_batch(local_remote_tuples)
+
+    # Buffer based functions
     @reconnect_retry_on_fail
     def get(self, path):
         path = self.normalize(path)
@@ -120,26 +147,27 @@ class TransportSFTP(Transport):
         with self.sftp.open(path) as sftp_handle:
             bio.write(sftp_handle.read())
         return bio.getvalue()
-    
-    @reconnect_retry_on_fail
-    def makedirs(self, path):
-        path = self.normalize(path)
-        self.sftp.makedirs(path)
 
     @reconnect_retry_on_fail
-    def put(self, src_path, dst_path):
+    def put(self, dst_path, content):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
         tempname = str(uuid.uuid4())
         temppath = posixpath.join(dirname, tempname)
         finalpath = posixpath.join(dirname, filename)
-        assert(finalpath == dst_path)
+        assert (finalpath == dst_path)
+
+        # Write content to a tempfile
+        fd, src_path = tempfile.mkstemp(prefix="filestore.local_path")
+        with open(fd, "wb") as f:
+            f.write(content)
+
+        # Upload the tempfile
         self.makedirs(dirname)
         self.sftp.put(src_path, temppath)
         self.sftp.rename(temppath, finalpath)
-        assert(self.exists(dst_path))
+        assert (self.exists(dst_path))
 
-    @reconnect_retry_on_fail
-    def put_batch(self, local_remote_tuples):
-        return super(TransportSFTP, self).put_batch(local_remote_tuples)
+        # Cleanup
+        os.unlink(src_path)
