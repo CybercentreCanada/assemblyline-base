@@ -3,7 +3,7 @@ version: '3'
 services:
   # Create test data
   create_test_data:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -14,7 +14,7 @@ services:
 
   # UI
   assemblyline_ui:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     ports:
       - '5000:5000'
     volumes:
@@ -25,7 +25,7 @@ services:
 
   # SocketIO Server
   assemblyline_socketio:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     ports:
       - '5002:5002'
     volumes:
@@ -36,7 +36,7 @@ services:
 
   # Alerter
   assemblyline_alerter:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -46,7 +46,7 @@ services:
 
   # Expiry
   assemblyline_expiry:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -56,7 +56,7 @@ services:
 
   # Dispatcher processes
   assemblyline_dispatcher_files:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -65,7 +65,7 @@ services:
       - assemblyline_bridge
 
   assemblyline_dispatcher_submissions:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -75,7 +75,7 @@ services:
 
   # Ingester Processes
   assemblyline_ingester_ingest:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -84,7 +84,7 @@ services:
       - assemblyline_bridge
 
   assemblyline_ingester_internal:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -93,7 +93,7 @@ services:
       - assemblyline_bridge
 
   assemblyline_ingester_submit:
-    image: sgaroncse/assemblyline_dev
+    image: sgaroncse/assemblyline_dev:4.0.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/

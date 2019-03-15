@@ -7,7 +7,7 @@ from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT
 from assemblyline.common import forge
 
 
-def init_logging(name, log_level=logging.INFO):
+def init_logging(name, config=None, log_level=logging.INFO):
     logger = logging.getLogger('assemblyline')
 
     # Test if we've initialized the log handler already.
@@ -17,7 +17,9 @@ def init_logging(name, log_level=logging.INFO):
     if name.startswith("assemblyline."):
         name = name[13:]
 
-    config = forge.get_config()
+    if config is None:
+        config = forge.get_config()
+
     logging.root.setLevel(logging.CRITICAL)
     logger.setLevel(log_level)
 
