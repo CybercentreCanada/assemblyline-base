@@ -1,6 +1,27 @@
 version: '3'
 
 services:
+  # Remote DBG
+  py3_dbg:
+    image: sgaroncse/assemblyline_dev:4.0.0
+    volumes:
+      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\:/opt/alv4/
+    working_dir: /opt/alv4/
+    command: python3
+    networks:
+      - assemblyline_bridge
+
+  py2_dbg:
+    image: sgaroncse/assemblyline_dev_py2:4.0.0
+    volumes:
+      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\:/opt/alv4/
+    working_dir: /opt/alv4/
+    command: python2
+    networks:
+      - assemblyline_bridge
+
   # Create test data
   create_test_data:
     image: sgaroncse/assemblyline_dev:4.0.0
