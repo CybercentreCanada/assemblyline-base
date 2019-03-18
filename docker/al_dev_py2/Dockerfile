@@ -10,14 +10,14 @@ RUN apt-get update
 RUN apt-get install -yy build-essential libffi-dev python3 python3-dev python3-pip libfuzzy-dev
 
 # Pipy packages requirements
-COPY  alv4/assemblyline/requirements.txt /tmp
+COPY alv4/assemblyline/requirements.txt /tmp
 RUN pip install -r /tmp/requirements.txt
 
-COPY  alv4_ui/al_ui/requirements.txt /tmp
+COPY alv4_ui/al_ui/requirements.txt /tmp
 RUN sed -i.old -e "s/assemblyline-core//g" -e "s/assemblyline//g" /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
-COPY  alv4_service_api/service/requirements.txt /tmp
+COPY alv4_service_api/service/requirements.txt /tmp
 RUN sed -i.old -e "s/assemblyline-core//g" -e "s/assemblyline//g" /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
