@@ -4,7 +4,7 @@ import logging
 import os
 import tempfile
 
-from botocore.exceptions import ClientError, EndpointConnectionError
+from botocore.exceptions import ClientError, EndpointConnectionError, ConnectionClosedError
 from botocore.vendored.requests.packages.urllib3 import disable_warnings
 from io import BytesIO
 
@@ -105,7 +105,7 @@ class TransportS3(Transport):
 
                 return ret_val
 
-            except EndpointConnectionError:
+            except (EndpointConnectionError, ConnectionClosedError):
                 self.log.warning(f"No connection to S3 transport {self.endpoint_url}, retrying...")
                 retries += 1
 
