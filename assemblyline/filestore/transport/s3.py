@@ -1,11 +1,12 @@
+
+import boto3
 import logging
 import os
 import tempfile
-from io import BytesIO
 
-import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.vendored.requests.packages.urllib3 import disable_warnings
+from io import BytesIO
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
@@ -59,7 +60,9 @@ class TransportS3(Transport):
         )
 
         bucket_exist = False
-        for bucket in self.client.list_buckets()["Buckets"]:
+        resp = self.with_retries(self.client.list_buckets)
+
+        for bucket in resp["Buckets"]:
             if bucket.get("Name", None) == self.bucket:
                 bucket_exist = True
                 break
@@ -91,16 +94,31 @@ class TransportS3(Transport):
             out += self.base
         return out
 
+    def with_retries(self, func, *args, **kwargs):
+        retries = 0
+        while True:
+            try:
+                ret_val = func(*args, **kwargs)
+
+                if retries:
+                    self.log.info('Reconnected to S3 transport!')
+
+                return ret_val
+
+            except EndpointConnectionError:
+                self.log.warning(f"No connection to S3 transport {self.endpoint_url}, retrying...")
+                retries += 1
+
     def delete(self, path):
         key = self.normalize(path)
-        self.client.delete_object(Bucket=self.bucket, Key=key)
+        self.with_retries(self.client.delete_object, Bucket=self.bucket, Key=key)
 
     def exists(self, path):
         # checks to see if KEY exists
         key = self.normalize(path)
         self.log.debug('Checking for existence of %s', key)
         try:
-            self.client.head_object(Bucket=self.bucket, Key=key)
+            self.with_retries(self.client.head_object, Bucket=self.bucket, Key=key)
         except ClientError:
             return False
 
@@ -118,19 +136,19 @@ class TransportS3(Transport):
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         # download the key from s3
-        self.client.download_file(self.bucket, key, dst_path)
+        self.with_retries(self.client.download_file, self.bucket, key, dst_path)
 
     def upload(self, src_path, dst_path):
         dst_path = self.normalize(dst_path)
         # if file exists already, it will be overwritten
-        self.client.upload_file(src_path, self.bucket, dst_path)
+        self.with_retries(self.client.upload_file, src_path, self.bucket, dst_path)
 
     # Buffer based functions
     def get(self, path):
         fd, dst_path = tempfile.mkstemp(prefix="s3_transport.", suffix=".download")
         os.close(fd)  # We don't need the file descriptor open
 
-        self.download(path, dst_path)
+        self.with_retries(self.download, path, dst_path)
         try:
             with open(dst_path, "rb") as downloaded:
                 return downloaded.read()
@@ -144,4 +162,4 @@ class TransportS3(Transport):
             content = content.encode('utf-8')
 
         with BytesIO(content) as file_io:
-            self.client.upload_fileobj(file_io, self.bucket, dst_path)
+            self.with_retries(self.client.upload_fileobj, file_io, self.bucket, dst_path)
