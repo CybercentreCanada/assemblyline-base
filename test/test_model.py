@@ -6,6 +6,7 @@ from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
+from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.signature import Signature
@@ -55,6 +56,13 @@ def test_filescore_model():
         random_model_obj(FileScore).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'FileScore' object and validate it.")
+
+
+def test_heuristic_model():
+    try:
+        random_model_obj(Heuristic).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'Heuristic' object and validate it.")
 
 
 def test_result_model():

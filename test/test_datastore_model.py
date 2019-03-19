@@ -14,6 +14,7 @@ from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
+from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.signature import Signature
@@ -90,6 +91,7 @@ TEST_DATA = [
     ("error", random_model_obj(Error)),
     ("file", random_model_obj(File)),
     ("filescore", random_model_obj(FileScore)),
+    ("heuristic", random_model_obj(Heuristic)),
     ("result", random_model_obj(Result)),
     ("service", random_model_obj(Service)),
     ("signature", random_model_obj(Signature)),
@@ -108,6 +110,7 @@ TEST_DATA = [
     ("error_min", random_minimal_obj(Error)),
     ("file_min", random_minimal_obj(File)),
     ("filescore_min", random_minimal_obj(FileScore)),
+    ("heuristic_min", random_model_obj(Heuristic)),
     ("result_min", random_minimal_obj(Result)),
     ("service_min", random_minimal_obj(Service)),
     ("signature_min", random_minimal_obj(Signature)),

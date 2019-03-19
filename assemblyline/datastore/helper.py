@@ -12,6 +12,7 @@ from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
+from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.signature import Signature
@@ -36,6 +37,7 @@ class AssemblylineDatastore(object):
         self.ds.register('error', Error)
         self.ds.register('file', File)
         self.ds.register('filescore', FileScore)
+        self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
         self.ds.register('service', Service)
         self.ds.register('signature', Signature)
@@ -79,6 +81,10 @@ class AssemblylineDatastore(object):
     @property
     def filescore(self):
         return self.ds.filescore
+
+    @property
+    def heuristic(self):
+        return self.ds.heuristic
 
     @property
     def result(self):
