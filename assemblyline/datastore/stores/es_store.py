@@ -107,8 +107,13 @@ class ESCollection(Collection):
         while True:
             try:
                 return func(*args, **kwargs)
-            except (SearchRetryException, elasticsearch.exceptions.ConflictError,
-                    elasticsearch.exceptions.ConnectionError, elasticsearch.exceptions.ConnectionTimeout) as e:
+            except elasticsearch.exceptions.ConflictError:
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.datastore.connection_reset()
+                retries += 1
+            except (SearchRetryException,
+                    elasticsearch.exceptions.ConnectionError,
+                    elasticsearch.exceptions.ConnectionTimeout) as e:
                 if not isinstance(e, SearchRetryException):
                     log.warning("No connection to elasticsearch, retying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
@@ -290,7 +295,7 @@ class ESCollection(Collection):
         except Exception:
             return False
 
-        return len(res['failures']) == 0
+        return res['updated']
 
     def _format_output(self, result, fields=None, as_obj=True):
         # Getting search document data

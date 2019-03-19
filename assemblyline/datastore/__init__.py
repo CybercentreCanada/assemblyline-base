@@ -214,6 +214,7 @@ class Collection(object):
         else:
             fields = None
 
+        ret_ops = []
         for op, doc_key, value in operations:
             if op not in self.UPDATE_OPERATIONS:
                 raise DataStoreException(f"Not a valid Update Operation: {op}")
@@ -225,17 +226,19 @@ class Collection(object):
                 field = fields[doc_key]
                 if op in [self.UPDATE_APPEND, self.UPDATE_REMOVE]:
                     try:
-                        if value != field.check(value):
-                            raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+                        value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
                 elif op in [self.UPDATE_SET, self.UPDATE_DEC, self.UPDATE_INC]:
                     try:
-                        if value != field.check(value):
-                            raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+                        value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+            ret_ops.append((op, doc_key, value))
+
+        return ret_ops
 
     def update(self, key, operations):
         """
@@ -251,7 +254,7 @@ class Collection(object):
         :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
         :return: True is update successful
         """
-        self._validate_operations(operations)
+        operations = self._validate_operations(operations)
         return self._update(key, operations)
 
     def update_by_query(self, query, operations, filters=None, access_control=None):
@@ -270,7 +273,7 @@ class Collection(object):
         :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
         :return: True is update successful
         """
-        self._validate_operations(operations)
+        operations = self._validate_operations(operations)
         if access_control:
             if filters is None:
                 filters = []
@@ -282,10 +285,12 @@ class Collection(object):
             res = {self._get_obj_value(item, 'id'): executor.submit(self._update, self._get_obj_value(item, 'id'),
                                                                     operations)
                    for item in self.stream_search(query, fl='id', filters=filters, as_obj=False)}
+        count = 0
         for k, v in res.items():
-            if not v.result():
-                return False
-        return True
+            count += 1
+            v.result()
+
+        return count
 
     def _update(self, key, operations):
         with Lock(f'collection-{self.name}-update-{key}', 5):

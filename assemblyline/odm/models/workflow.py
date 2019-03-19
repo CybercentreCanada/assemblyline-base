@@ -4,7 +4,7 @@ Classification = forge.get_classification()
 
 
 PRIORITIES = {None, "LOW", "MEDIUM", "HIGH", "CRITICAL"}
-STATUSES = {None, "MALICIOUS", "NON-MALICIOUS", "ASSESS"}
+STATUSES = {None, "MALICIOUS", "NON-MALICIOUS", "ASSESS", "TRIAGE"}
 
 
 @odm.model(index=True, store=True)

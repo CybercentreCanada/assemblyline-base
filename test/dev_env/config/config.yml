@@ -1,4 +1,6 @@
 core:
+  alerter:
+    delay: 0
   redis:
     nonpersistent:
       host: redis
