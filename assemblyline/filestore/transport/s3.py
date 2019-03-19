@@ -1,7 +1,7 @@
 import logging
 import os
 import tempfile
-from io import StringIO, BytesIO
+from io import BytesIO
 
 import boto3
 from botocore.exceptions import ClientError
@@ -65,7 +65,14 @@ class TransportS3(Transport):
                 break
 
         if not bucket_exist:
-            self.client.create_bucket(Bucket=self.bucket)
+            try:
+                self.client.create_bucket(Bucket=self.bucket)
+            except ClientError as e:
+                if "BucketAlreadyOwnedByYou" in str(e):
+                    # By the time that we listed the bucket an found it didn't exist, someone else created it.
+                    pass
+                else:
+                    raise
 
         def s3_normalize(path):
             # flatten path to just the basename
