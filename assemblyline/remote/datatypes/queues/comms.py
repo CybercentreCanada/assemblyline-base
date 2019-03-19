@@ -28,6 +28,7 @@ class CommsQueue(object):
         retry_call(self.p.close)
 
     def listen(self):
+        retried = False
         while True:
             self._connect()
             try:
@@ -39,6 +40,11 @@ class CommsQueue(object):
             except redis.ConnectionError:
                 log.warning('No connection to Redis, reconnecting...')
                 self._connected = False
+                retried = True
+            finally:
+                if self._connected and retried:
+                    log.info('Reconnected to Redis!')
+                    retried = False
 
     def publish(self, message):
         for name in self.names:
