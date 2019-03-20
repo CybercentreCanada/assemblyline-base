@@ -23,6 +23,7 @@ class Task(odm.Model):
     service_config = odm.Keyword()      # Service specific parameters
     depth = odm.Integer(default=0)
     max_files = odm.Integer()
+    ttl = odm.Integer()
 
     @staticmethod
     def make_key(sid, service_name, sha):
