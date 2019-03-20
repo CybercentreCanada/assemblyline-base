@@ -1,4 +1,3 @@
-from assemblyline.common.importing import load_module_by_path
 from assemblyline.common import forge
 
 Classification = forge.get_classification()
@@ -9,8 +8,8 @@ class InvalidClassificationException(Exception):
 
 
 class Heuristic(object):
-    def __init__(self, hid, name, filetype, description, classification=Classification.UNRESTRICTED):
-        self.id = hid
+    def __init__(self, heur_id, name, filetype, description, classification=Classification.UNRESTRICTED):
+        self.heur_id = heur_id
         self.name = name
         self.filetype = filetype
         self.description = description
@@ -20,13 +19,13 @@ class Heuristic(object):
 
     def __repr__(self):
         return "Heuristic('{id}', '{name}', '{filetype}', " \
-               "'{description}', '{classification}')".format(id=self.id, name=self.name,
+               "'{description}', '{classification}')".format(id=self.heur_id, name=self.name,
                                                              filetype=self.filetype, description=self.description,
                                                              classification=self.classification)
 
     def to_dict(self):
         return {
-            "id": self.id,
+            "heur_id": self.heur_id,
             "name": self.name,
             "filetype": self.filetype,
             "description": self.description.strip(),
@@ -43,17 +42,3 @@ def get_heuristics_form_class(cls):
         pass
 
     return sorted(out, key=lambda k: k.id)
-
-
-def list_all_heuristics(srv_list):
-    # TODO: It might be good not to load service classes for heuristics
-    out = []
-    for srv in srv_list:
-        cls_path = srv.get('classpath', None)
-        if cls_path:
-            try:
-                cls = load_module_by_path(cls_path)
-            except ImportError:
-                continue
-            out.extend(cls.list_heuristics())
-    return out, {x['id']: x for x in out}

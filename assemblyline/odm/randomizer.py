@@ -69,6 +69,19 @@ USERS = [
 
 GROUPS = ["USERS", "ADMINS", "ANALYSTS"]
 
+F_TYPES = [
+    "image/png",
+    "executable/windows",
+    "document/pdf",
+    "document/office",
+    "document/xml",
+    "code/javascript",
+    "code/vb"
+]
+
+def get_random_file_type():
+    return random.choice(F_TYPES)
+
 
 def get_random_word():
     return random.choice(WORDS)
@@ -80,6 +93,10 @@ def get_random_phrase(wmin=2, wmax=6):
 
 def get_random_hash(hash_len):
     return "".join([random.choice(HASH_ALPHA) for _ in range(hash_len)])
+
+
+def get_random_heuristic_id():
+    return f"AL_{get_random_service_name().upper()}_00{random.randint(1, 9)}"
 
 
 def get_random_uid():
@@ -166,6 +183,10 @@ def random_data_for_field(field, name):
         if name:
             if "sha256" in name:
                 return get_random_hash(64)
+            elif "filetype" in name:
+                return get_random_file_type()
+            elif "heur_id" in name:
+                return get_random_heuristic_id()
             elif "label" in name:
                 return get_random_label()
             elif "groups" in name:
