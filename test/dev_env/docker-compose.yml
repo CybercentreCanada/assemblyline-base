@@ -1,24 +1,27 @@
 version: '3'
 
 services:
-  # Remote DBG
-  py3_dbg:
-    image: sgaroncse/assemblyline_dev:4.0.1
+  # Characterize service
+  alsvc_characterize:
+    image: sgaroncse/alsvc_characterize:3.3.0
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    working_dir: /opt/alv4/
-    command: python3
+    working_dir: /opt/al/al_services/alsvc_characterize
+    command: python /opt/alv4/alv4_service_client/common/run_service.py
     networks:
       - assemblyline_bridge
 
-  py2_dbg:
-    image: sgaroncse/assemblyline_dev_py2:4.0.1
+  # Service server
+  service_server:
+    image: sgaroncse/assemblyline_dev:4.0.1
+    ports:
+      - '5003:5003'
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/alv4/
-    command: python2
+    command: python3 alv4_service_api/service/app.py
     networks:
       - assemblyline_bridge
 
