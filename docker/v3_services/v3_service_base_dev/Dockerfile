@@ -2,7 +2,7 @@ FROM ubuntu:18.04
 
 # Setup environment varibles
 ENV PYTHONPATH /opt/alv4/alv4:/opt/alv4/alv4_core:/opt/alv4/alv4_service_api:/opt/alv4/alv4_service_client:/opt/al/al_services:/opt/alv4/alv4_ui
-ENV SERVICE_API_HOST http://service_server:5003
+ENV SERVICE_API_HOST http://localhost:5003
 
 RUN apt-get update && apt-get install -y \
   git \
