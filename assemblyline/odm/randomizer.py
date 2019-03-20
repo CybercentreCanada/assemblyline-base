@@ -31,24 +31,30 @@ EXT = [
     ".gif",
     ".ppt"
 ]
+
 DOM = [
     ".com",
     ".ca",
     ".biz",
     ".edu"
 ]
-SERVICES = [
-    "PEFile",
-    "Extract",
-    "TagCheck",
-    "PDFiD",
-    "PeePDF",
-    "Characterize",
-    "Frankenstrings",
-    "APKaye",
-    "McAfee",
-    "Metadefender"
-]
+
+SERVICES = {
+    "Beaver": ("External", "FILTER"),
+    "NSRL": ("Filtering", "FILTER"),
+    "PEFile": ("Static Analysis", "CORE"),
+    "Extract": ("Extraction", "EXTRACT"),
+    "TagCheck": ("Static Analysis", "POST"),
+    "PDFiD": ("Static Analysis", "CORE"),
+    "PeePDF": ("Static Analysis", "CORE"),
+    "Characterize": ("Static Analysis", "CORE"),
+    "Frankenstrings": ("Static Analysis", "SECONDARY"),
+    "APKaye": ("Static Analysis", "CORE"),
+    "Cuckoo": ("Dynamic Analysis", "CORE"),
+    "McAfee": ("Antivirus", "CORE"),
+    "Metadefender": ("Antivirus", "CORE"),
+    "Suricata": ("Networking", "SECONDARY")
+}
 
 LABELS = [
     "CAMPAIGN_1",
@@ -132,7 +138,7 @@ def get_random_host():
 
 
 def get_random_service_name():
-    return random.choice(SERVICES)
+    return random.choice(list(SERVICES.keys()))
 
 
 def get_random_service_version():
