@@ -438,7 +438,7 @@ class ESCollection(Collection):
         except (elasticsearch.TransportError, elasticsearch.RequestError) as e:
             try:
                 err_msg = e.info['error']['root_cause'][0]['reason']
-            except (ValueError, KeyError):
+            except (ValueError, KeyError, IndexError):
                 err_msg = str(e)
             raise SearchException(err_msg)
 
