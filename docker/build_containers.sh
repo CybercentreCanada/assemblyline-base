@@ -15,5 +15,6 @@ fi
 (cd ../.. && docker build -f alv4/docker/al_dev_py2/Dockerfile -t sgaroncse/assemblyline_dev_py2:latest -t sgaroncse/assemblyline_dev_py2:4.0.1 .)
 
 # Build services containers
-(cd ../.. && docker build -f alv4/docker/v3_services/v3_service_base_dev/Dockerfile -t sgaroncse/v3_service_base_dev:latest -t sgaroncse/v3_service_base_dev:3.3.1 .)
+(cd ../.. && docker build -f alv4/docker/v3_services/v3_service_base_dev/Dockerfile -t sgaroncse/v3_service_base_dev:latest -t sgaroncse/v3_service_base_dev:3.3.2 .)
 (cd ../.. && docker build -f alv4/docker/v3_services/alsvc_characterize/Dockerfile -t sgaroncse/alsvc_characterize:latest -t sgaroncse/alsvc_characterize:3.3.1 .)
+(cd ../.. && docker build -f alv4/docker/v3_services/alsvc_extract/Dockerfile -t sgaroncse/alsvc_extract:latest -t sgaroncse/alsvc_characterize:3.3.0 .)
