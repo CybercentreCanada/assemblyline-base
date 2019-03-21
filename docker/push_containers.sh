@@ -18,4 +18,5 @@ docker push sgaroncse/assemblyline_dev_py2
 docker push sgaroncse/v3_service_base_dev
 docker push sgaroncse/alsvc_characterize
 docker push sgaroncse/alsvc_extract
+docker push sgaroncse/alsvc_pdfid
 

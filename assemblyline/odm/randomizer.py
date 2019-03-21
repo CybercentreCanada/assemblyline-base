@@ -45,7 +45,7 @@ SERVICES = {
     "PEFile": ("Static Analysis", "CORE"),
     "Extract": ("Extraction", "EXTRACT"),
     "TagCheck": ("Static Analysis", "POST"),
-    "PDFiD": ("Static Analysis", "CORE"),
+    "PDFId": ("Static Analysis", "CORE"),
     "PeePDF": ("Static Analysis", "CORE"),
     "Characterize": ("Static Analysis", "CORE"),
     "Frankenstrings": ("Static Analysis", "SECONDARY"),

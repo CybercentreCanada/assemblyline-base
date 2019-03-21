@@ -27,6 +27,19 @@ services:
     networks:
       - service_bridge
 
+  # PDFId service
+  alsvc_pdfid:
+    image: sgaroncse/alsvc_pdfid:3.3.0
+    environment:
+      - SERVICE_API_HOST=http://assemblyline_service_server:5003
+    volumes:
+      - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/al/al_services/alsvc_pdfid
+    command: python /opt/alv4/alv4_service_client/common/run_service.py
+    networks:
+      - service_bridge
+
   # Service server
   assemblyline_service_server:
     image: sgaroncse/assemblyline_dev:4.0.1
