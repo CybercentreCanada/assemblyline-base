@@ -17,6 +17,7 @@ from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
+from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tags import SubmissionTags
@@ -94,6 +95,7 @@ TEST_DATA = [
     ("heuristic", random_model_obj(Heuristic)),
     ("result", random_model_obj(Result)),
     ("service", random_model_obj(Service)),
+    ("service_delta", random_model_obj(ServiceDelta)),
     ("signature", random_model_obj(Signature)),
     ("submission", random_model_obj(Submission)),
     ("submission_tags", random_model_obj(SubmissionTags)),
@@ -113,6 +115,7 @@ TEST_DATA = [
     ("heuristic_min", random_model_obj(Heuristic)),
     ("result_min", random_minimal_obj(Result)),
     ("service_min", random_minimal_obj(Service)),
+    ("service_delta_min", random_model_obj(ServiceDelta)),
     ("signature_min", random_minimal_obj(Signature)),
     ("submission_min", random_minimal_obj(Submission)),
     ("submission_tags_min", random_model_obj(SubmissionTags)),

@@ -3,6 +3,7 @@ import concurrent.futures
 import json
 
 from assemblyline.common import forge
+from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore import Collection
 from assemblyline.odm import Model
@@ -15,6 +16,7 @@ from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
+from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_tags import SubmissionTags
@@ -40,6 +42,7 @@ class AssemblylineDatastore(object):
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
         self.ds.register('service', Service)
+        self.ds.register('service_delta', ServiceDelta)
         self.ds.register('signature', Signature)
         self.ds.register('submission', Submission)
         self.ds.register('submission_tree', SubmissionTree)
@@ -93,6 +96,10 @@ class AssemblylineDatastore(object):
     @property
     def service(self):
         return self.ds.service
+
+    @property
+    def service_delta(self):
+        return self.ds.service_delta
 
     @property
     def signature(self):
@@ -468,11 +475,42 @@ class AssemblylineDatastore(object):
 
         return out
 
+    def get_service_with_delta(self, service_name, version=None, as_obj=True):
+        svc = self.ds.service_delta.get(service_name)
+        if svc is None:
+            return svc
+
+        if version is not None:
+            svc.version = version
+
+        svc_version_data = self.ds.service.get(f"{service_name}_{svc.version}", as_obj=False)
+        if svc_version_data is None:
+            return svc_version_data
+
+        svc_version_data = recursive_update(svc_version_data, svc.as_primitives(strip_null=True))
+        if as_obj:
+            return Service(svc_version_data)
+        else:
+            return svc_version_data
+
     def list_all_services(self, as_obj=True, full=False):
         if full:
-            return [self.ds.service.get(item.id, as_obj=as_obj)
-                    for item in self.ds.service.stream_search("id:*", fl='id')]
-        return [item for item in self.ds.service.stream_search("id:*", as_obj=as_obj)]
+            services = [recursive_update(self.ds.service.get(f"{item['id']}_{item['version']}", as_obj=False),
+                                         self.ds.service_delta.get(item['id']).as_primitives(strip_null=True))
+                        for item in self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False)]
+            if as_obj:
+                return [Service(s) for s in services]
+            else:
+                return services
+        else:
+            services_versions = {item['id']: item for item in self.ds.service.stream_search("id:*", as_obj=False)}
+            services = [recursive_update(services_versions[f"{item['id']}_{item['version']}"], item)
+                        for item in self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False)
+                        if f"{item['id']}_{item['version']}" in services_versions]
+            if as_obj:
+                return [Service(s) for s in services]
+            else:
+                return services
 
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(), redis=None):
         with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
