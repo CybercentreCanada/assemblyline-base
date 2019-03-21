@@ -36,7 +36,5 @@ RUN make -j RELEASE=1
 
 # Clone Characterize service code
 WORKDIR /opt/al/al_services
-RUN git config --global http.proxy http://proxy.dmz.ava.local:3128
-RUN git config --global https.proxy https://proxy.dmz.ava.local:3128
 
 RUN git clone https://bitbucket.org/cse-assemblyline/alsvc_extract.git
