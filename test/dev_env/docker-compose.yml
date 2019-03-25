@@ -177,6 +177,14 @@ services:
       - default
       - assemblyline_core_bridge
 
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.4.2
+    environment:
+      SERVER_NAME: kibana.assemblyline.local
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - '80:5601'
+
   elasticsearch:
     image: sgaroncse/elasticsearch:6.4.2
     environment:
@@ -202,7 +210,6 @@ services:
     image: sgaroncse/nginx-ssl-dev
     ports:
       - '443:443'
-      - '80:80'
     environment:
       - UI_HOST=172.17.0.1
       - FQDN=localhost

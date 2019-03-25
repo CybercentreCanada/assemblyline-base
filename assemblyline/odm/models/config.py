@@ -4,7 +4,7 @@ from assemblyline import odm
 # TODO: Apply proper index and store values
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class PasswordRequirement(odm.Model):
     lower: bool = odm.Boolean()
     number: bool = odm.Boolean()
@@ -22,7 +22,7 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class SMTP(odm.Model):
     from_adr: str = odm.Keyword()
     host: str = odm.Keyword()
@@ -42,7 +42,7 @@ DEFAULT_SMTP = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Signup(odm.Model):
     enabled: bool = odm.Boolean()
     smtp: SMTP = odm.Compound(SMTP, default=DEFAULT_SMTP)
@@ -56,7 +56,7 @@ DEFAULT_SIGNUP = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class User(odm.Model):
     uname: str = odm.Keyword()
     name: str = odm.Keyword()
@@ -86,7 +86,7 @@ DEFAULT_USERS = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Internal(odm.Model):
     enabled: bool = odm.Boolean()
     failure_ttl: int = odm.Integer()
@@ -107,7 +107,7 @@ DEFAULT_INTERNAL = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Auth(odm.Model):
     allow_2fa: bool = odm.Boolean()
     allow_apikeys: bool = odm.Boolean()
@@ -131,7 +131,7 @@ DEFAULT_AUTH = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Alerter(odm.Model):
     alert_ttl: int = odm.Integer()
     constant_alert_fields: List[str] = odm.List(odm.Keyword())
@@ -162,7 +162,7 @@ DEFAULT_ALERTER = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Dispatcher(odm.Model):
     # Time between re-dispatching attempts, as long as some action (submission or any task completion)
     # happens before this timeout ends, the timeout resets.
@@ -179,7 +179,7 @@ DEFAULT_DISPATCHER = {
 
 
 # Configuration options regarding data expiry
-@odm.model(index=True, store=True)
+@odm.model()
 class Expiry(odm.Model):
     # By turning on batch delete, delete queries are rounded by day therefor
     # all delete operation happen at the same time at midnight
@@ -205,7 +205,7 @@ DEFAULT_EXPIRY = {
 
 
 # Configuration options regarding bulk ingestion and unattended submissions
-@odm.model(index=True, store=True)
+@odm.model()
 class Ingester(odm.Model):
     default_user: str = odm.Keyword()
     default_services: List[str] = odm.List(odm.Keyword())
@@ -260,7 +260,60 @@ DEFAULT_INGESTER = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
+class ESMetrics(odm.Model):
+    host: str = odm.Optional(odm.Keyword())
+    port: int = odm.Integer()
+
+DEFAULT_ES_METRICS = {
+    'host': None,
+    'port': 9200
+}
+
+
+@odm.model()
+class KBMetrics(odm.Model):
+    host: str = odm.Optional(odm.Keyword())
+    password: str = odm.Keyword()
+    port: int = odm.Integer()
+
+DEFAULT_KB_METRICS = {
+    'host': None,
+    'password': 'kibana',
+    'port': 5601
+}
+
+# @odm.model()
+# class ExtraMetrics(odm.Model):
+#     alerter: list = odm.List(odm.Keyword())
+#     dispatcher: list = odm.List(odm.Keyword())
+#     expiry: list = odm.List(odm.Keyword())
+#     ingester: list = odm.List(odm.Keyword())
+#     services: list = odm.List(odm.Keyword())
+
+# DEFAULT_EXTRA_METRICS = {
+#     'alerter': [],
+#     'dispatcher': [],
+#     'expiry': [],
+#     'ingester': [],
+#     'services': []
+# }
+
+@odm.model()
+class Metrics(odm.Model):
+    elasticsearch: ESMetrics = odm.Compound(ESMetrics, default=DEFAULT_ES_METRICS)
+#     extra_metrics: ExtraMetrics = odm.Compound(ExtraMetrics, default=DEFAULT_EXTRA_METRICS)
+    kibana: KBMetrics = odm.Compound(KBMetrics, default=DEFAULT_KB_METRICS)
+
+
+DEFAULT_METRICS = {
+    'elasticsearch': DEFAULT_ES_METRICS,
+#     'extra_metrics': DEFAULT_EXTRA_METRICS,
+    'kibana': DEFAULT_KB_METRICS,
+}
+
+
+@odm.model()
 class RedisServer(odm.Model):
     db: int = odm.Integer()
     host: str = odm.Keyword()
@@ -280,7 +333,7 @@ DEFAULT_REDIS_P = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Redis(odm.Model):
     nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
     persistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
@@ -292,12 +345,13 @@ DEFAULT_REDIS = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
     dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
     expiry: Expiry = odm.Compound(Expiry, default=DEFAULT_EXPIRY)
     ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER)
+    metrics: Metrics = odm.Compound(Metrics, default=DEFAULT_METRICS)
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS)
 
 
@@ -306,11 +360,12 @@ DEFAULT_CORE = {
     "dispatcher": DEFAULT_DISPATCHER,
     "expiry": DEFAULT_EXPIRY,
     "ingester": DEFAULT_INGESTER,
+    "metrics": DEFAULT_METRICS,
     "redis": DEFAULT_REDIS,
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Elasticsearch(odm.Model):
     heap_min_size: int = odm.Integer()
     heap_max_size: int = odm.Integer()
@@ -324,7 +379,7 @@ DEFAULT_ELASTICSEARCH = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Riak(odm.Model):
     # TODO: Model definition for Riak needs to be done
     pass
@@ -333,7 +388,7 @@ class Riak(odm.Model):
 DEFAULT_RIAK = {}
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Solr(odm.Model):
     # TODO: Model definition for Solr needs to be done
     pass
@@ -342,7 +397,7 @@ class Solr(odm.Model):
 DEFAULT_SOLR = {}
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Datastore(odm.Model):
     type = odm.Enum({"elasticsearch", "riak", "solr"})
     hosts: List[str] = odm.List(odm.Keyword())
@@ -360,7 +415,7 @@ DEFAULT_DATASTORE = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Datasource(odm.Model):
     classpath: str = odm.Keyword()
     config: Dict[str, str] = odm.Mapping(odm.Keyword())
@@ -378,7 +433,7 @@ DEFAULT_DATASOURCES = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Filestore(odm.Model):
     cache: List[str] = odm.List(odm.Keyword())
     storage: List[str] = odm.List(odm.Keyword())
@@ -391,7 +446,7 @@ DEFAULT_FILESTORE = {
 
 
 # This is the model definition for the logging block
-@odm.model(index=True, store=True)
+@odm.model()
 class Logging(odm.Model):
     # Should we log to console?
     log_to_console: bool = odm.Boolean()
@@ -440,7 +495,7 @@ SERVICE_STAGES = [
 ]
 
 # This is the model definition for the System block
-@odm.model(index=True, store=True)
+@odm.model()
 class Services(odm.Model):
     # Different possible categories
     categories: List[str] = odm.List(odm.Keyword())
@@ -465,7 +520,7 @@ DEFAULT_SERVICES = {
 
 
 # This is the model definition for the Yara Block
-@odm.model(index=True, store=True)
+@odm.model()
 class Yara(odm.Model):
     externals: List[str] = odm.List(odm.Keyword())
     importer: str = odm.Keyword()
@@ -480,7 +535,7 @@ DEFAULT_YARA = {
 
 
 # This is the model definition for the System block
-@odm.model(index=True, store=True)
+@odm.model()
 class System(odm.Model):
     # Module path to the assemblyline constants
     constants: str = odm.Keyword()
@@ -498,7 +553,7 @@ DEFAULT_SYSTEM = {
 
 
 # This is the model definition for the System block
-@odm.model(index=True, store=True)
+@odm.model()
 class Statistics(odm.Model):
     # fields to generated statistics from in the alert page
     alert: List[str] = odm.List(odm.Keyword())
@@ -525,7 +580,7 @@ DEFAULT_STATISTICS = {
 
 
 # This is the model definition for the logging block
-@odm.model(index=True, store=True)
+@odm.model()
 class UI(odm.Model):
     # Allow to user to download raw files
     allow_raw_downloads: bool = odm.Boolean()
@@ -591,7 +646,7 @@ DEFAULT_UI = {
 
 
 # Options regarding all submissions, regardless of their input method
-@odm.model(index=True, store=True)
+@odm.model()
 class Submission(odm.Model):
     # Path to the routine used to
     decode_file: str = odm.Keyword()
@@ -641,7 +696,7 @@ DEFAULT_SUBMISSION = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model()
 class Config(odm.Model):
     # Authentication module configuration
     auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH)
