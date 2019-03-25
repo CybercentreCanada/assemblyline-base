@@ -629,7 +629,7 @@ class Model:
         self.__frozen = True
 
     def as_primitives(self, hidden_fields=False, strip_null=False):
-        """Convert the object back into primatives that can be json serialized."""
+        """Convert the object back into primitives that can be json serialized."""
         out = {}
 
         fields = self.fields()
@@ -650,7 +650,7 @@ class Model:
                     out[key] = [v.as_primitives(strip_null=strip_null)
                                 if isinstance(v, Model) else v for v in value]
                 elif isinstance(value, ClassificationObject):
-                    out[key] = value.long()
+                    out[key] = str(value)
                     if hidden_fields:
                         out.update(value.get_access_control_parts())
                 else:

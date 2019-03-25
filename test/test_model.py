@@ -35,7 +35,7 @@ def test_config_model():
 
 def test_default_config_model():
     config = forge.get_config(yml_config="/etc/assemblyline/default.yml")
-    assert config.as_primitives() == DEFAULT_CONFIG
+    assert config.as_primitives() == Config(DEFAULT_CONFIG).as_primitives()
 
 
 def test_error_model():
