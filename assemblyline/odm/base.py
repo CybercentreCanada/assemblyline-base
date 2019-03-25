@@ -296,6 +296,9 @@ class ClassificationObject(object):
                                     self.engine.intersect_user_classification(self.value, other.value),
                                     is_uc=self.is_uc)
 
+    def long(self):
+        return self.engine.normalize_classification(self.value, skip_auto_select=self.is_uc)
+
     def small(self):
         return self.engine.normalize_classification(self.value, long_format=False, skip_auto_select=self.is_uc)
 
@@ -647,7 +650,7 @@ class Model:
                     out[key] = [v.as_primitives(strip_null=strip_null)
                                 if isinstance(v, Model) else v for v in value]
                 elif isinstance(value, ClassificationObject):
-                    out[key] = str(value)
+                    out[key] = value.small()
                     if hidden_fields:
                         out.update(value.get_access_control_parts())
                 else:
