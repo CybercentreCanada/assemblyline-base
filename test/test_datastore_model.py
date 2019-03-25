@@ -186,6 +186,9 @@ def _get_value(key, data):
         if " " in value or (":" in value and value.endswith("Z")):
             value = f'"{str(value)}"'
 
+        if "/" in value:
+            value = f'"{value}"'
+
         return value
 
 
