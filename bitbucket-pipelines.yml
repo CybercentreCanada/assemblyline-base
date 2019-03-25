@@ -16,7 +16,7 @@ pipelines:
           - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
           - pip install -r assemblyline/requirements.txt -r test/requirements.txt
           - pip install pytest-error-for-skips  # Special for the pipeline where we know none should skip
-          - pytest -rsxvv --error-for-skips
+          - pytest -rsx -vv --error-for-skips
         services:
           - zookeeper
           - riak
