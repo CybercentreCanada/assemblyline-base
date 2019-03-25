@@ -650,7 +650,7 @@ class Model:
                     out[key] = [v.as_primitives(strip_null=strip_null)
                                 if isinstance(v, Model) else v for v in value]
                 elif isinstance(value, ClassificationObject):
-                    out[key] = value.small()
+                    out[key] = value.long()
                     if hidden_fields:
                         out.update(value.get_access_control_parts())
                 else:
