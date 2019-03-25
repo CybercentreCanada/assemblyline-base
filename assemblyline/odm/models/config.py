@@ -73,7 +73,7 @@ DEFAULT_USERS = {
         "password": "changeme",
         "groups": ["ADMIN", "INTERNAL", "USERS"],
         "is_admin": True,
-        "classification": "UNRESTRICTED"
+        "classification": "U"
     },
     "internal": {
         "uname": "internal",
@@ -81,7 +81,7 @@ DEFAULT_USERS = {
         "password": "Int3rn@lP4s$",
         "groups": ["INTERNAL"],
         "is_admin": False,
-        "classification": "UNRESTRICTED"
+        "classification": "U"
     }
 }
 
