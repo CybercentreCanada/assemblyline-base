@@ -182,8 +182,6 @@ services:
     environment:
       SERVER_NAME: kibana.assemblyline.local
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-    ports:
-      - '80:5601'
 
   elasticsearch:
     image: sgaroncse/elasticsearch:6.4.2
@@ -207,7 +205,7 @@ services:
       - assemblyline_core_bridge
 
   nginx:
-    image: sgaroncse/nginx-ssl-dev
+    image: sgaroncse/nginx-ssl-dev:4.0.0
     ports:
       - '443:443'
       - '80:80'

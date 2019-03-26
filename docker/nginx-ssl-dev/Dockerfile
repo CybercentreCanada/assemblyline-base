@@ -2,7 +2,7 @@ FROM nginx:latest
 
 ENV DOLLAR $
 
-COPY http_redirect.conf /etc/nginx/conf.d/
+COPY kibana.conf /etc/nginx/conf.d/
 COPY default.template /tmp/
 COPY nginx.crt /etc/ssl/
 COPY nginx.key /etc/ssl/
