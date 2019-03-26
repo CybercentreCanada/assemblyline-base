@@ -1,6 +1,12 @@
 core:
   alerter:
     delay: 0
+  metrics:
+    elasticsearch:
+      host: es_metrics
+      port: 9201
+    kibana:
+      host: kibana
   redis:
     nonpersistent:
       host: redis
