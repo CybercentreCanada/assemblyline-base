@@ -1,7 +1,8 @@
-from typing import Dict
+from math import floor
 
 from redis.exceptions import ConnectionError
 
+from assemblyline.common.chunk import chunked_list
 from assemblyline.remote.datatypes import get_client, retry_call, now_as_iso
 from assemblyline.remote.datatypes.hash import Hash
 
@@ -63,95 +64,36 @@ class Counters(object):
             retry_call(self.c.delete, queue)
 
 
-# Flush out any values past a certain age
-_M_COUNTER_FLUSH = f"""
--- Calculate the first second of the current minute, and previous minute
--- By starting the buffer at the first second of the previous minute, 
--- the buffer should always have 60-120 seconds of data at any given time,
--- letting us take a rolling minute value on demand
+_M_COUNTER_POP_OLD = """
 local now = redis.call("time")[1]
-local current_minute_start = math.floor(now / 60) * 60 
-local buffer_start = current_minute_start - 60  
+local cur_minute = (math.floor(now / 60) * 60)
+local window = cur_minute - 60
+local values = redis.call('hgetall' , KEYS[1])
+if values == nil then
+    values = {{}}
+end
 
--- Get the full list of data in the table, sort it
-local keys = redis.call("hkeys", KEYS[1])
-table.sort(keys)
+redis.call('del', KEYS[1])
 
--- Build up the  
-local totals = {{}}
-local del_keys = {{}}
-for _, key in ipairs(keys) do
-    key = tonumber(key)
-    if key >= buffer_start then
-        break
+for idx = 1, #values, 2 do 
+    if tonumber(values[idx]) >= window then
+        redis.call("hset", KEYS[1], values[idx], values[idx + 1])
     end
-    local minute = math.floor(key/60)*60 
-    totals[minute] = (totals[minute] or 0) + (redis.call("hget", KEYS[1], key) or 0)
-    table.insert(del_keys, key)
 end
 
--- Clear out the values we have read
-if #del_keys > 0 then redis.call("hdel", KEYS[1], unpack(del_keys)) end
-
--- flatten the table for redis transfer
-local out = {{}}
-for k, v in pairs(totals) do
-    table.insert(out, k)
-    table.insert(out, v)
-end
-
-return {{out, buffer_start}}
-"""
-
-_M_COUNTER_ADVANCE = f"""
-local now = redis.call("time")[1]
-local current_minute_start = math.floor(now / 60) * 60 
-local buffer_start = current_minute_start - 60  
-local read_head = tonumber(ARGV[1])
-
--- A new second isn't available yet
-if read_head >= buffer_start then
-    return {{{{}}, buffer_start}} 
-end
-
--- Count up the keys we want to read
-local keys = {{}}
-for value=read_head,buffer_start-1 do
-    table.insert(keys, value)
-end
-
-local values = redis.call("hmget", KEYS[1], unpack(keys))
-
--- Build up the totals per minute
-local totals = {{}}
-for index, key in ipairs(keys) do
-    local minute = math.floor(key/60)*60 
-    totals[minute] = (totals[minute] or 0) + (values[index] or 0)
-end
-
--- Clear out the values we have read
-redis.call("hdel", KEYS[1], unpack(keys))
-
--- flatten the table for redis transfer
-local out = {{}}
-for k, v in pairs(totals) do
-    table.insert(out, k)
-    table.insert(out, v)
-end
-
-return {{out, buffer_start}}
+return {window, values}
 """
 
 # Increment the counter, use server side seconds-since-epoch as the key
 _M_COUNTER_INCREMENT = """
 local second = redis.call("time")[1]
-return redis.call("hincrby", KEYS[1], second, ARGV[1])
+return redis.call("hincrby", KEYS[1], second, 1)
 """
 
 # Read the values for the last 60 seconds
-_M_COUNTER_READ = f"""
+_M_COUNTER_READ = """
 local now = redis.call("time")[1]
-local keys = {{}}
+local keys = {}
 
 for offset = 0,59 do
     table.insert(keys, now-offset)
@@ -160,11 +102,11 @@ end
 local values = redis.call("hmget", KEYS[1], unpack(keys))
 
 local out = 0
-for _, val in pairs(values) do
-    out = out + (val or 0)
+for idx = 1, #values do
+    out = out + (values[idx] or 0)
 end
 
-return out 
+return out
 """
 
 
@@ -179,30 +121,28 @@ class MetricCounter:
         self.client = get_client(host, port, db, False)
         self.path = self.PREFIX + name
         self._inc_script = self.client.register_script(_M_COUNTER_INCREMENT)
-        self._flush_script = self.client.register_script(_M_COUNTER_FLUSH)
-        self._flush_advance = self.client.register_script(_M_COUNTER_ADVANCE)
+        self._pop_old = self.client.register_script(_M_COUNTER_POP_OLD)
         self._read_script = self.client.register_script(_M_COUNTER_READ)
-        self.next_block = None
 
     def delete(self):
         retry_call(self.client.delete, self.path)
-        self.next_block = None
 
-    def flush(self) -> Dict[int, int]:
-        """"If a reader is starting, flush out values further back than the window size.
-
-        Returns: Mapping from timestamp to count value
+    def pop_expired(self):
         """
-        data, self.next_block = retry_call(self._flush_script, keys=[self.path])
-        return dict(zip(data[::2], data[1::2]))
-
-    def advance(self) -> Dict[int, int]:
-        """Pop out calendar aligned minute(s) worth of data if available.
-
-        Should follow a previous call to flush or advance by a few seconds.
+        Pop out calendar aligned minute(s) worth of data that is outside the runnning window
         """
-        data, self.next_block = retry_call(self._flush_advance, keys=[self.path], args=[self.next_block])
-        return dict(zip(data[::2], data[1::2]))
+
+        time_window, data = retry_call(self._pop_old, keys=[self.path])
+        filtered = [(int(x[0]), int(x[1])) for x in chunked_list(data, 2) if int(x[0]) < time_window]
+        out = {}
+        for ts, count in filtered:
+            c_ts = floor(ts / 60) * 60
+            if c_ts not in out:
+                out[c_ts] = count
+            else:
+                out[c_ts] += count
+
+        return out
 
     def read(self) -> int:
         """A Non-destructive read of the last minute."""
@@ -224,3 +164,13 @@ class MetricCounter:
         data = retry_call(redis.keys, cls.PREFIX + '*')
         pre = len(cls.PREFIX)
         return [key[pre:].decode() for key in data]
+
+if __name__ == "__main__":
+    import time
+    mc = MetricCounter('dispatch.files_complete', 'localhost', db=0, port=6379)
+    while True:
+        cur_time = time.time()
+        if int(cur_time) % 60 == 0:
+            print(mc.pop_expired())
+        print(cur_time, mc.read())
+        time.sleep(1)
