@@ -211,14 +211,3 @@ class MetricsCounterAggregator(object):
             self._init_counter(name)
 
         self.counter_cache[name].increment(execution_time)
-
-
-if __name__ == "__main__":
-    import time
-    mc = MetricCounter('dispatch.files_complete', 'localhost', db=0, port=6379)
-    while True:
-        cur_time = time.time()
-        if int(cur_time) % 60 == 0:
-            print(mc.pop_expired())
-        print(cur_time, mc.read())
-        time.sleep(1)
