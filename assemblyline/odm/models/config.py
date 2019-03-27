@@ -2,6 +2,7 @@ from typing import Dict, List
 from assemblyline import odm
 
 # TODO: Apply proper index and store values
+from assemblyline.common import metrics
 
 
 @odm.model()
@@ -261,59 +262,6 @@ DEFAULT_INGESTER = {
 
 
 @odm.model()
-class ESMetrics(odm.Model):
-    host: str = odm.Optional(odm.Keyword())
-    port: int = odm.Integer()
-
-DEFAULT_ES_METRICS = {
-    'host': None,
-    'port': 9200
-}
-
-
-@odm.model()
-class KBMetrics(odm.Model):
-    host: str = odm.Optional(odm.Keyword())
-    password: str = odm.Keyword()
-    port: int = odm.Integer()
-
-DEFAULT_KB_METRICS = {
-    'host': None,
-    'password': 'kibana',
-    'port': 5601
-}
-
-# @odm.model()
-# class ExtraMetrics(odm.Model):
-#     alerter: list = odm.List(odm.Keyword())
-#     dispatcher: list = odm.List(odm.Keyword())
-#     expiry: list = odm.List(odm.Keyword())
-#     ingester: list = odm.List(odm.Keyword())
-#     services: list = odm.List(odm.Keyword())
-
-# DEFAULT_EXTRA_METRICS = {
-#     'alerter': [],
-#     'dispatcher': [],
-#     'expiry': [],
-#     'ingester': [],
-#     'services': []
-# }
-
-@odm.model()
-class Metrics(odm.Model):
-    elasticsearch: ESMetrics = odm.Compound(ESMetrics, default=DEFAULT_ES_METRICS)
-#     extra_metrics: ExtraMetrics = odm.Compound(ExtraMetrics, default=DEFAULT_EXTRA_METRICS)
-    kibana: KBMetrics = odm.Compound(KBMetrics, default=DEFAULT_KB_METRICS)
-
-
-DEFAULT_METRICS = {
-    'elasticsearch': DEFAULT_ES_METRICS,
-#     'extra_metrics': DEFAULT_EXTRA_METRICS,
-    'kibana': DEFAULT_KB_METRICS,
-}
-
-
-@odm.model()
 class RedisServer(odm.Model):
     db: int = odm.Integer()
     host: str = odm.Keyword()
@@ -330,6 +278,50 @@ DEFAULT_REDIS_P = {
     "db": 0,
     "host": "127.0.0.1",
     "port": 6380
+}
+
+
+@odm.model()
+class ESMetrics(odm.Model):
+    host: str = odm.Optional(odm.Keyword())
+    port: int = odm.Integer()
+
+DEFAULT_ES_METRICS = {
+    'host': None,
+    'port': 9200
+}
+
+
+@odm.model()
+class KBMetrics(odm.Model):
+    host: str = odm.Optional(odm.Keyword())
+    password: str = odm.Keyword()
+    port: int = odm.Integer()
+
+
+DEFAULT_KB_METRICS = {
+    'host': None,
+    'password': 'kibana',
+    'port': 5601
+}
+
+METRICS_TYPES = [metrics.LEGACY, metrics.REMOTE_HASH]
+
+@odm.model()
+class Metrics(odm.Model):
+    elasticsearch: ESMetrics = odm.Compound(ESMetrics, default=DEFAULT_ES_METRICS)
+    export_interval: int = odm.Integer()
+    kibana: KBMetrics = odm.Compound(KBMetrics, default=DEFAULT_KB_METRICS)
+    redis: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
+    type: str = odm.Enum(values=METRICS_TYPES)
+
+
+DEFAULT_METRICS = {
+    'elasticsearch': DEFAULT_ES_METRICS,
+    'export_interval': 5,
+    'kibana': DEFAULT_KB_METRICS,
+    'redis': DEFAULT_REDIS_NP,
+    'type': metrics.LEGACY
 }
 
 

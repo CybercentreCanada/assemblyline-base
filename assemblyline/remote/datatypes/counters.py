@@ -2,6 +2,7 @@ from math import floor
 
 from redis.exceptions import ConnectionError
 
+from assemblyline.common import forge
 from assemblyline.common.chunk import chunked_list
 from assemblyline.remote.datatypes import get_client, retry_call, now_as_iso
 from assemblyline.remote.datatypes.hash import Hash
@@ -63,8 +64,7 @@ class Counters(object):
         for queue in retry_call(self.c.keys, "%s-*" % self.prefix):
             retry_call(self.c.delete, queue)
 
-
-_M_COUNTER_POP_OLD = """
+_M_COUNTER_POP_EXPIRED = """
 local now = redis.call("time")[1]
 local cur_minute = (math.floor(now / 60) * 60)
 local window = cur_minute - 60
@@ -87,7 +87,7 @@ return {window, values}
 # Increment the counter, use server side seconds-since-epoch as the key
 _M_COUNTER_INCREMENT = """
 local second = redis.call("time")[1]
-return redis.call("hincrby", KEYS[1], second, 1)
+return redis.call("hincrby", KEYS[1], second, ARGV[1])
 """
 
 # Read the values for the last 60 seconds
@@ -115,21 +115,28 @@ class MetricCounter:
 
     This class may not be efficient enough yet. But should do for now.
     """
-    PREFIX = 'metric-counter-'
+    PREFIX = 'metrics.counter.'
 
-    def __init__(self, name, host, db=None, port=None):
+    def __init__(self, name, host=None, db=None, port=None):
         self.client = get_client(host, port, db, False)
         self.path = self.PREFIX + name
         self._inc_script = self.client.register_script(_M_COUNTER_INCREMENT)
-        self._pop_old = self.client.register_script(_M_COUNTER_POP_OLD)
+        self._pop_old = self.client.register_script(_M_COUNTER_POP_EXPIRED)
         self._read_script = self.client.register_script(_M_COUNTER_READ)
 
-    def delete(self):
+    def get_server_time(self):
+        return self.client.time()[0]
+
+    def get_current_minute(self):
+        return floor(self.client.time()[0] / 60) * 60
+
+    def reset(self):
         retry_call(self.client.delete, self.path)
 
     def pop_expired(self):
         """
-        Pop out calendar aligned minute(s) worth of data that is outside the runnning window
+        Pop out calendar aligned minute(s) worth of data that is outside the runnning window to move it to the metrics
+        elasticsearch instance
         """
 
         time_window, data = retry_call(self._pop_old, keys=[self.path])
@@ -155,6 +162,15 @@ class MetricCounter:
         """
         return retry_call(self._inc_script, keys=[self.path], args=[increment_by])
 
+    def increment_execution_time(self, execution_time) -> int:
+        """Add a quantity to the counter.
+
+        Returns the value of the (per second) counter.
+        """
+        retry_call(self._inc_script, keys=[f"{self.path}.c"], args=[1])
+        return retry_call(self._inc_script, keys=[f"{self.path}.t"], args=[execution_time])
+
+
     @classmethod
     def list_counters(cls, redis):
         """List all active counters on a redis server.
@@ -164,6 +180,38 @@ class MetricCounter:
         data = retry_call(redis.keys, cls.PREFIX + '*')
         pre = len(cls.PREFIX)
         return [key[pre:].decode() for key in data]
+
+class MetricsCounterAggregator(object):
+    def __init__(self, metrics_type, name=None, config=None, redis=None):
+        self.config = config or forge.get_config()
+        self.redis = redis or get_client(
+            self.config.core.metrics.redis.host,
+            self.config.core.metrics.redis.port,
+            self.config.core.metrics.redis.db,
+            False
+        )
+        self.counter_cache = {}
+        self.metrics_type = metrics_type
+        self.name = name or metrics_type
+
+    def _init_counter(self, name):
+        self.counter_cache[name] = MetricCounter(f"{self.metrics_type}.{self.name}.{name}", self.redis)
+
+    def stop(self):
+        self.counter_cache = {}
+
+    def increment(self, name, increment_by=1):
+        if name not in self.counter_cache:
+            self._init_counter(name)
+
+        self.counter_cache[name].increment(increment_by)
+
+    def increment_execution_time(self, name, execution_time):
+        if name not in self.counter_cache:
+            self._init_counter(name)
+
+        self.counter_cache[name].increment(execution_time)
+
 
 if __name__ == "__main__":
     import time

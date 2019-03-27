@@ -7,6 +7,8 @@ core:
       port: 9201
     kibana:
       host: kibana
+    redis:
+      host: redis
   redis:
     nonpersistent:
       host: redis
