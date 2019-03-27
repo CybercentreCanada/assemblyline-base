@@ -14,7 +14,7 @@ ALERT_METRICS = [
 
 DISPATCH_METRICS = [
     'files_completed',
-    'submission_completed'
+    'submissions_completed'
 ]
 
 EXPIRY_METRICS = [
@@ -31,6 +31,11 @@ EXPIRY_METRICS = [
 ]
 
 INGEST_METRICS = [
+    'cache_miss',
+    'cache_expired',
+    'cache_stale',
+    'cache_hit_local',
+    'cache_hit',
     'bytes_completed',
     'bytes_ingested',
     'duplicates',
@@ -59,17 +64,18 @@ SRV_TIMING_METRICS = {
 }
 
 DATASTORE_METRICS = {
+    'commit',
     'get',
-    'save',
     'mget',
+    'save',
     'search',
-    'commit'
 }
 
 FILESTORE_METRICS = {
+    'delete',
     'download',
+    'exist',
     'upload',
-    'exist'
 }
 
 # Types of metrics
