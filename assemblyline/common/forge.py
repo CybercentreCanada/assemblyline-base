@@ -6,10 +6,8 @@ import yaml
 
 from easydict import EasyDict
 
-from assemblyline.cachestore import CacheStore
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
-from assemblyline.filestore import FileStore
 
 
 def get_classification(yml_config=None):
@@ -104,10 +102,12 @@ def get_dn_parser(config=None):
 
 
 def get_cachestore(component, config=None, datastore=None):
+    from assemblyline.cachestore import CacheStore
     return CacheStore(component, config=config, datastore=datastore)
 
 
 def get_filestore(config=None):
+    from assemblyline.filestore import FileStore
     if config is None:
         config = get_config()
     return FileStore(*config.filestore.storage)
