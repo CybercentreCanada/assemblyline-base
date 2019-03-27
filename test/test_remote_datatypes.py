@@ -1,3 +1,4 @@
+import random
 import uuid
 import time
 from threading import Thread
@@ -369,56 +370,53 @@ def test_metric_counter(redis_connection):
     # Flush the counter before starting the test
     test_counter_id = uuid.uuid4().hex
     counter = MetricCounter(test_counter_id, redis_connection)
-    counter.delete()
+    counter.reset()
     try:
-        local_start = int(time.time())
-        redis_start = counter.client.time()[0]
-
-
-        def server_time(offset: float = 0):
-            return int(time.time() - local_start + redis_start + offset)
-
-
         # initialize on an empty set, should do nothing, return empty dict
-        data = counter.flush()
+        data = counter.pop_expired()
         assert not data
-        assert counter.next_block is not None
+        assert counter.read() == 0
 
         # Call increment properly
-        counter.increment(5)
+        to_add = random.randint(1, 10)
+        total = counter.increment(to_add)
+        assert total == to_add
 
         # Now that there is some data in the counter, we should
         assert test_counter_id in MetricCounter.list_counters(redis_connection)
 
         # Add a bunch of data directly, but not enough to flush any out
-        total = 5
-        for offset in range(60):
-            total += 5
-            counter.client.hincrby(counter.path, server_time(-offset / 2), 5)
+        for offset in range(30):
+            to_add = random.randint(1, 10)
+            total += to_add
+            counter.client.hincrby(counter.path, counter.get_server_time()-offset, to_add)
 
         assert counter.read() == total
-        assert not counter.advance()
-        assert counter.next_block is not None
+        assert not counter.pop_expired()
 
         # Fill in some old data to simulate backlog
-        for offset in range(6000):
-            total += 5
-            counter.client.hincrby(counter.path, server_time(-offset / 2), 5)
+        for offset in range(3000):
+            counter.client.hincrby(counter.path, counter.get_server_time()-offset, 1)
 
         # Run flush as if we are just starting since we just added data over 3000 seconds in the past
         # we should get around 50 one minute buckets, depending on if we are on the edge of a minute or not
-        data = counter.flush()
-        assert len(data) in range(45, 55)
+        data = counter.pop_expired()
+        assert len(data) in [49, 50]
 
-        # Fill in some data for the 'newest minute'
-        counter.next_block -= 60  # Make the newest minute one that has already passed
+        # Pop again to see if the pop method actually works
+        data = counter.pop_expired()
+        assert len(data) in [0, 1]
+
+        # Fill in some old data and compare the sum of those counters
+        counter.reset()
         total = 0
         for offset in range(30):
-            total += 5
-            counter.client.hincrby(counter.path, counter.next_block + offset, 5)
+            to_add = random.randint(1,10)
+            total += to_add
+            counter.client.hincrby(counter.path, counter.get_server_time() - (3 * 60) + offset, to_add)
 
-        data = counter.advance()
+        data = counter.pop_expired()
         assert sum(data.values()) == total
-        assert len(data) in [1, 2, 3, 4]
+        assert len(data) in [1, 2]
     finally:
-        counter.delete()
+        counter.reset()
