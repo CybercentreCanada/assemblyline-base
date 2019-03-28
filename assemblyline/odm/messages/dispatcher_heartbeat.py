@@ -6,9 +6,7 @@ LOADER_CLASS = "assemblyline.odm.messages.dispatcher_heartbeat.DispatcherMessage
 
 @odm.model()
 class Queues(odm.Model):
-    control = odm.Integer()
     ingest = odm.Integer()
-    response = odm.Integer()
 
 
 @odm.model()
@@ -18,9 +16,16 @@ class Inflight(odm.Model):
 
 
 @odm.model()
+class Metrics(odm.Model):
+    files_completed = odm.Integer()
+    submissions_completed = odm.Integer()
+
+
+@odm.model()
 class Heartbeat(odm.Model):
-    count = odm.Integer()
     inflight = odm.Compound(Inflight)
+    instances = odm.Integer()
+    metrics = odm.Compound(Metrics)
     queues = odm.Compound(Queues)
 
 

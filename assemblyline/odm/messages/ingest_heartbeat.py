@@ -14,10 +14,16 @@ class Queues(odm.Model):
 
 
 @odm.model()
-class Counters(odm.Model):
+class Metrics(odm.Model):
+    cache_miss = odm.Integer()
+    cache_expired = odm.Integer()
+    cache_stale = odm.Integer()
+    cache_hit_local = odm.Integer()
+    cache_hit = odm.Integer()
     bytes_completed = odm.Integer()        # Number of bytes completed
     bytes_ingested = odm.Integer()         # Number of bytes ingested
     duplicates = odm.Integer()             # Number of duplicate submissions
+    error = odm.Integer()
     files_completed = odm.Integer()        # Number of completed files
     skipped = odm.Integer()                # Number of skipped files
     submissions_completed = odm.Integer()  # Number of completed submissions
@@ -29,7 +35,6 @@ class Counters(odm.Model):
 @odm.model()
 class Processing(odm.Model):
     inflight = odm.Integer()               # Number of inflight submissions
-    waiting = odm.Integer()                # Number of submissions waiting to start processing
 
 
 @odm.model()
@@ -42,8 +47,8 @@ class ProcessingChance(odm.Model):
 
 @odm.model()
 class Heartbeat(odm.Model):
-    count = odm.Integer()                               # Number of ingest process
-    counters = odm.Compound(Counters)                   # Counters
+    instances = odm.Integer()                           # Number of ingest processes
+    metrics = odm.Compound(Metrics)                     # Metrics
     processing = odm.Compound(Processing)               # Inflight queue sizes
     processing_chance = odm.Compound(ProcessingChance)  # Chance of processing items
     queues = odm.Compound(Queues)                       # Queue lengths block
