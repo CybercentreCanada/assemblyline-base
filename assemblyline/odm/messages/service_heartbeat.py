@@ -5,7 +5,7 @@ LOADER_CLASS = "assemblyline.odm.messages.service_heartbeat.ServiceMessage"
 
 
 @odm.model()
-class Counters(odm.Model):
+class Metrics(odm.Model):
     cache_hit = odm.Integer()
     cache_miss = odm.Integer()
     cache_skipped = odm.Integer()
@@ -19,7 +19,7 @@ class Counters(odm.Model):
 @odm.model()
 class Heartbeat(odm.Model):
     instances = odm.Integer()
-    metrics = odm.Compound(Counters)
+    metrics = odm.Compound(Metrics)
     queue = odm.Integer()
     service_name = odm.Keyword()
 
