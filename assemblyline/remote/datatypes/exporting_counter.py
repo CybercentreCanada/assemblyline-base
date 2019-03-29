@@ -3,8 +3,9 @@ import copy
 import logging
 import pprint
 import threading
+import uuid
 
-from assemblyline.common import forge, net
+from assemblyline.common import forge
 
 log = logging.getLogger('assemblyline.counters')
 
@@ -39,7 +40,7 @@ class AutoExportingCounters(object):
         self.channel = forge.get_metrics_sink(redis)
         self.export_interval = export_interval_secs or config.core.metrics.export_interval
         self.name = name
-        self.host = host or net.get_hostname()
+        self.host = host or uuid.uuid4().hex
         self.type = counter_type or name
 
         self.counts = Counters()

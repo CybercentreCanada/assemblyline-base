@@ -58,25 +58,25 @@ SRV_METRICS = [
     'not_scored'
 ]
 
-SRV_TIMING_METRICS = {
+SRV_TIMING_METRICS = [
     'execution',
     'idle'
-}
+]
 
-DATASTORE_METRICS = {
+DATASTORE_METRICS = [
     'commit',
     'get',
     'mget',
     'save',
     'search',
-}
+]
 
-FILESTORE_METRICS = {
+FILESTORE_METRICS = [
     'delete',
     'download',
     'exist',
     'upload',
-}
+]
 
 # Types of metrics
 METRIC_TYPES = {

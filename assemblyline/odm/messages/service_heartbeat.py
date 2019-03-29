@@ -1,5 +1,4 @@
 from assemblyline import odm
-from assemblyline.odm.common import HostInfo, Resources
 
 MSG_TYPES = {"ServiceHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.service_heartbeat.ServiceMessage"
@@ -7,16 +6,22 @@ LOADER_CLASS = "assemblyline.odm.messages.service_heartbeat.ServiceMessage"
 
 @odm.model()
 class Counters(odm.Model):
-    cached = odm.Integer()
-    failed = odm.Integer()
-    processed = odm.Integer()
+    cache_hit = odm.Integer()
+    cache_miss = odm.Integer()
+    cache_skipped = odm.Integer()
+    execute = odm.Integer()
+    fail_recoverable = odm.Integer()
+    fail_nonrecoverable = odm.Integer()
+    scored = odm.Integer()
+    not_scored = odm.Integer()
 
 
 @odm.model()
 class Heartbeat(odm.Model):
-    counters = odm.Compound(Counters)
-    service_name = odm.Keyword()
+    instances = odm.Integer()
+    metrics = odm.Compound(Counters)
     queue = odm.Integer()
+    service_name = odm.Keyword()
 
 
 @odm.model()
