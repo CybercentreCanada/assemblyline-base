@@ -112,6 +112,27 @@ services:
     networks:
       - assemblyline_core_bridge
 
+  # Metrics aggregator
+  assemblyline_metrics_aggregator:
+    image: sgaroncse/assemblyline_dev:4.0.2
+    volumes:
+      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/metrics/run_metrics_aggregator.py
+    networks:
+      - assemblyline_core_bridge
+      - metrics_bridge
+
+  # Hearbeat manager
+  assemblyline_metrics_heartbeat_manager:
+    image: sgaroncse/assemblyline_dev:4.0.2
+    volumes:
+      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/metrics/run_heartbeat_manager.py
+    networks:
+      - assemblyline_core_bridge
+
   # Workflow
   assemblyline_workflow:
     image: sgaroncse/assemblyline_dev:4.0.2
