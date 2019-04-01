@@ -307,8 +307,22 @@ DEFAULT_KB_METRICS = {
 
 METRICS_TYPES = [metrics.LEGACY, metrics.REMOTE_HASH]
 
+
+@odm.model()
+class APMServer(odm.Model):
+    server_url: str = odm.Optional(odm.Keyword())
+    token: str = odm.Optional(odm.Keyword())
+
+
+DEFAULT_APM_SERVER = {
+    'server_url': None,
+    'token': None
+}
+
+
 @odm.model()
 class Metrics(odm.Model):
+    apm_server: APMServer = odm.Compound(APMServer, default=DEFAULT_APM_SERVER)
     elasticsearch: ESMetrics = odm.Compound(ESMetrics, default=DEFAULT_ES_METRICS)
     export_interval: int = odm.Integer()
     kibana: KBMetrics = odm.Compound(KBMetrics, default=DEFAULT_KB_METRICS)
@@ -317,6 +331,7 @@ class Metrics(odm.Model):
 
 
 DEFAULT_METRICS = {
+    'apm_server': DEFAULT_APM_SERVER,
     'elasticsearch': DEFAULT_ES_METRICS,
     'export_interval': 5,
     'kibana': DEFAULT_KB_METRICS,

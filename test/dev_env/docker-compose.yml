@@ -42,7 +42,7 @@ services:
 
   # Service server
   assemblyline_service_server:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     ports:
       - '5003:5003'
     volumes:
@@ -56,7 +56,7 @@ services:
 
   # Create test data
   create_test_data:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -67,7 +67,7 @@ services:
 
   # UI
   assemblyline_ui:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     ports:
       - '5000:5000'
     volumes:
@@ -77,10 +77,11 @@ services:
     command: python3 app.py
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   # SocketIO Server
   assemblyline_socketio:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     ports:
       - '5002:5002'
     volumes:
@@ -93,7 +94,7 @@ services:
 
   # Alerter
   assemblyline_alerter:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -103,7 +104,7 @@ services:
 
   # Expiry
   assemblyline_expiry:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -113,7 +114,7 @@ services:
 
   # Workflow
   assemblyline_workflow:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -123,7 +124,7 @@ services:
 
   # Dispatcher processes
   assemblyline_dispatcher_files:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -132,7 +133,7 @@ services:
       - assemblyline_core_bridge
 
   assemblyline_dispatcher_submissions:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -142,7 +143,7 @@ services:
 
   # Ingester Processes
   assemblyline_ingester_ingest:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -151,7 +152,7 @@ services:
       - assemblyline_core_bridge
 
   assemblyline_ingester_internal:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -160,7 +161,7 @@ services:
       - assemblyline_core_bridge
 
   assemblyline_ingester_submit:
-    image: sgaroncse/assemblyline_dev:4.0.1
+    image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -181,26 +182,26 @@ services:
       - assemblyline_core_bridge
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.4.2
+    image: docker.elastic.co/kibana/kibana:6.7.0
     environment:
       SERVER_NAME: localhost
-      ELASTICSEARCH_URL: http://es_metrics:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - '5601:5601'
     networks:
       - metrics_bridge
 
-  es_metrics:
-    image: sgaroncse/elasticsearch:6.4.2
+  apm_server:
+    image: sgaroncse/apm-server:6.7.0
     environment:
-      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
-      DISCOVERY_TYPE: 'single-node'
+      ES_HOSTS: elasticsearch:9200
     ports:
-      - '9201:9200'
+      - '8200:8200'
     networks:
-      - assemblyline_core_bridge
       - metrics_bridge
 
   elasticsearch:
-    image: sgaroncse/elasticsearch:6.4.2
+    image: sgaroncse/elasticsearch:6.7.0
     environment:
       ES_JAVA_OPTS: '-Xms512m -Xmx512m'
       DISCOVERY_TYPE: 'single-node'
@@ -209,6 +210,7 @@ services:
       - '9300:9300'
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   redis:
     image: redis
