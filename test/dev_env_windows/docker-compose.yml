@@ -76,8 +76,8 @@ services:
     working_dir: /opt/alv4/alv4_ui/al_ui/
     command: python3 app.py
     networks:
-      - apm_bridge
       - assemblyline_core_bridge
+      - metrics_bridge
 
   # SocketIO Server
   assemblyline_socketio:
@@ -182,36 +182,24 @@ services:
       - assemblyline_core_bridge
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.4.2
+    image: docker.elastic.co/kibana/kibana:6.7.0
     environment:
       SERVER_NAME: localhost
-      ELASTICSEARCH_URL: http://es_metrics:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     networks:
       - metrics_bridge
 
   apm_server:
-    image: sgaroncse/apm-server:6.4.2
+    image: sgaroncse/apm-server:6.7.0
     environment:
-      ES_HOSTS: es_metrics:9200
+      ES_HOSTS: elasticsearch:9200
     ports:
       - '8200:8200'
     networks:
-      - apm_bridge
-      - metrics_bridge
-
-  es_metrics:
-    image: sgaroncse/elasticsearch:6.4.2
-    environment:
-      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
-      DISCOVERY_TYPE: 'single-node'
-    ports:
-      - '9201:9200'
-    networks:
-      - assemblyline_core_bridge
       - metrics_bridge
 
   elasticsearch:
-    image: sgaroncse/elasticsearch:6.4.2
+    image: sgaroncse/elasticsearch:6.7.0
     environment:
       ES_JAVA_OPTS: '-Xms512m -Xmx512m'
       DISCOVERY_TYPE: 'single-node'
@@ -220,6 +208,7 @@ services:
       - '9300:9300'
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   redis:
     image: redis
@@ -248,6 +237,4 @@ networks:
   service_bridge:
     driver: bridge
   metrics_bridge:
-    driver: bridge
-  apm_bridge:
     driver: bridge
