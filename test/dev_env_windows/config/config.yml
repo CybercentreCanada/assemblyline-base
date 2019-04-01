@@ -5,7 +5,7 @@ core:
     apm_server:
       server_url: http://apm_server:8200/
     elasticsearch:
-      host: elasticsearch
+      hosts: [elasticsearch]
     kibana:
       host: kibana
     redis:

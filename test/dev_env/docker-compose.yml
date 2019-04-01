@@ -207,8 +207,6 @@ services:
     environment:
       SERVER_NAME: localhost
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-    ports:
-      - '5601:5601'
     networks:
       - metrics_bridge
 
@@ -228,7 +226,6 @@ services:
       DISCOVERY_TYPE: 'single-node'
     ports:
       - '9200:9200'
-      - '9300:9300'
     networks:
       - assemblyline_core_bridge
       - metrics_bridge

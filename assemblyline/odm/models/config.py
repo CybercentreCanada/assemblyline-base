@@ -283,12 +283,10 @@ DEFAULT_REDIS_P = {
 
 @odm.model()
 class ESMetrics(odm.Model):
-    host: str = odm.Optional(odm.Keyword())
-    port: int = odm.Integer()
+    hosts: str = odm.Optional(odm.List(odm.Keyword()))
 
 DEFAULT_ES_METRICS = {
-    'host': None,
-    'port': 9200
+    'hosts': None
 }
 
 

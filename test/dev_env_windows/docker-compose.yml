@@ -226,7 +226,6 @@ services:
       DISCOVERY_TYPE: 'single-node'
     ports:
       - '9200:9200'
-      - '9300:9300'
     networks:
       - assemblyline_core_bridge
       - metrics_bridge
