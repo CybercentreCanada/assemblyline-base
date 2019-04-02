@@ -207,7 +207,12 @@ class MetricsCounterAggregator(object):
         self.counter_cache[name].increment(increment_by)
 
     def increment_execution_time(self, name, execution_time):
-        if name not in self.counter_cache:
-            self._init_counter(name)
+        if f"{name}.c" not in self.counter_cache:
+            self._init_counter(f"{name}.c")
 
-        self.counter_cache[name].increment(execution_time)
+        self.counter_cache[f"{name}.c"].increment()
+
+        if f"{name}.t" not in self.counter_cache:
+            self._init_counter(f"{name}.t")
+
+        self.counter_cache[f"{name}.t"].increment(execution_time)
