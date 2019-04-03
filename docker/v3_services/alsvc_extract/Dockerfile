@@ -1,4 +1,4 @@
-FROM sgaroncse/v3_service_base_dev:3.3.2
+FROM sgaroncse/v3_service_base_dev:3.3.3
 
 ENV SERVICE_PATH alsvc_extract.Extract
 
@@ -36,5 +36,4 @@ RUN make -j RELEASE=1
 
 # Clone Characterize service code
 WORKDIR /opt/al/al_services
-
 RUN git clone https://bitbucket.org/cse-assemblyline/alsvc_extract.git

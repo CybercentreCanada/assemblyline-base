@@ -1,4 +1,4 @@
-FROM sgaroncse/v3_service_base_dev:3.3.2
+FROM sgaroncse/v3_service_base_dev:3.3.3
 
 ENV SERVICE_PATH alsvc_pdfid.PDFId
 
