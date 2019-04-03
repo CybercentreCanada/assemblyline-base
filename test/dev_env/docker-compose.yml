@@ -41,7 +41,7 @@ services:
       - service_bridge
 
   # Service server
-  assemblyline_service_server:
+  al_service_server:
     image: sgaroncse/assemblyline_dev:4.0.2
     ports:
       - '5003:5003'
@@ -66,7 +66,7 @@ services:
       - assemblyline_core_bridge
 
   # UI
-  assemblyline_ui:
+  al_ui:
     image: sgaroncse/assemblyline_dev:4.0.2
     ports:
       - '5000:5000'
@@ -80,7 +80,7 @@ services:
       - metrics_bridge
 
   # SocketIO Server
-  assemblyline_socketio:
+  al_socketio:
     image: sgaroncse/assemblyline_dev:4.0.2
     ports:
       - '5002:5002'
@@ -93,7 +93,7 @@ services:
       - assemblyline_core_bridge
 
   # Alerter
-  assemblyline_alerter:
+  al_alerter:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -103,7 +103,7 @@ services:
       - assemblyline_core_bridge
 
   # Expiry
-  assemblyline_expiry:
+  al_expiry:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -113,7 +113,7 @@ services:
       - assemblyline_core_bridge
 
   # Metrics aggregator
-  assemblyline_metrics_aggregator:
+  al_metrics:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -124,7 +124,7 @@ services:
       - metrics_bridge
 
   # Hearbeat manager
-  assemblyline_metrics_heartbeat_manager:
+  al_heartbeat:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -134,7 +134,7 @@ services:
       - assemblyline_core_bridge
 
   # Workflow
-  assemblyline_workflow:
+  al_workflow:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -144,7 +144,7 @@ services:
       - assemblyline_core_bridge
 
   # Dispatcher processes
-  assemblyline_dispatcher_files:
+  al_dispatcher_files:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -153,7 +153,7 @@ services:
     networks:
       - assemblyline_core_bridge
 
-  assemblyline_dispatcher_submissions:
+  al_dispatcher_submissions:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -163,7 +163,7 @@ services:
       - assemblyline_core_bridge
 
   # Ingester Processes
-  assemblyline_ingester_ingest:
+  al_ingester_ingest:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -172,7 +172,7 @@ services:
     networks:
       - assemblyline_core_bridge
 
-  assemblyline_ingester_internal:
+  al_ingester_internal:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -181,7 +181,7 @@ services:
     networks:
       - assemblyline_core_bridge
 
-  assemblyline_ingester_submit:
+  al_ingester_submit:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
       - /opt/alv4/alv4/test/dev_env/config/:/etc/assemblyline/
@@ -230,6 +230,16 @@ services:
       - assemblyline_core_bridge
       - metrics_bridge
 
+  metricbeat:
+    image: sgaroncse/metricbeat:6.7.0
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/alv4/alv4/test/dev_env/config/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
+    command: ['/usr/share/metricbeat/wait-for-it.sh', '--timeout=0', 'elasticsearch:9200', '--', '/bin/sh', '-c', "sleep 10 ; /usr/local/bin/docker-entrypoint -e --strict.perms=false"]
+    networks:
+      - metrics_bridge
+
   redis:
     image: redis
     ports:
@@ -237,6 +247,7 @@ services:
       - '6380:6379'
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   nginx:
     image: sgaroncse/nginx-ssl-dev:4.0.0

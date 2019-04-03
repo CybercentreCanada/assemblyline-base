@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root"
    exit 1
@@ -7,6 +7,7 @@ fi
 # Build core containers
 (cd elasticsearch && docker build -t sgaroncse/elasticsearch:6.7.0 .)
 (cd apm-server && docker build -t sgaroncse/apm-server:6.7.0 .)
+(cd ../.. && docker build -f alv4/docker/metricbeat/Dockerfile -t sgaroncse/metricbeat:6.7.0 .)
 (cd nginx-ssl && docker build -t sgaroncse/nginx-ssl:4.0.0 -t sgaroncse/nginx-ssl:latest .)
 (cd nginx-ssl-dev && docker build -t sgaroncse/nginx-ssl-dev:4.0.0 -t sgaroncse/nginx-ssl-dev:latest .)
 (cd riak && docker build -t sgaroncse/riak-kv:2.1.4 .)
