@@ -230,6 +230,17 @@ services:
       - assemblyline_core_bridge
       - metrics_bridge
 
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:6.7.0
+    user: root
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/alv4/alv4/test/dev_env/config/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+    command: filebeat -e -strict.perms=false
+    networks:
+      - metrics_bridge
+
   metricbeat:
     image: sgaroncse/metricbeat:6.7.0
     user: root

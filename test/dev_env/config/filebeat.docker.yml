@@ -1,0 +1,17 @@
+filebeat.inputs:
+  - type: docker
+    combine_partial: true
+    containers:
+      path: "/var/lib/docker/containers"
+      stream: "all"
+      ids:
+        - "*"
+    processors:
+      - add_docker_metadata: ~
+
+
+processors:
+- add_cloud_metadata: ~
+
+output.elasticsearch:
+  hosts: 'elasticsearch:9200'
