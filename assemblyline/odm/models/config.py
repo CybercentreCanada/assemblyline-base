@@ -334,7 +334,7 @@ DEFAULT_METRICS = {
     'export_interval': 5,
     'kibana': DEFAULT_KB_METRICS,
     'redis': DEFAULT_REDIS_NP,
-    'type': metrics.LEGACY
+    'type': metrics.REMOTE_HASH
 }
 
 

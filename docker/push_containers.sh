@@ -7,6 +7,7 @@ fi
 # Push core containers
 docker push sgaroncse/elasticsearch
 docker push sgaroncse/apm-server
+docker push sgaroncse/metricbeat
 docker push sgaroncse/nginx-ssl
 docker push sgaroncse/nginx-ssl-dev
 docker push sgaroncse/riak-kv

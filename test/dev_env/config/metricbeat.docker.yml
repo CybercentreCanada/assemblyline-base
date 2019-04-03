@@ -1,0 +1,53 @@
+metricbeat.modules:
+  - module: redis
+    metricsets:
+      - "info"
+      - "keyspace"
+    period: 10s
+    hosts: ["redis:6379"]
+  - module: docker
+    metricsets:
+      - "container"
+      - "cpu"
+      - "diskio"
+      - "event"
+      - "healthcheck"
+      - "info"
+      - "memory"
+      - "network"
+    hosts: ["unix:///var/run/docker.sock"]
+    period: 10s
+    enabled: true
+  - module: kibana
+    metricsets: ["status"]
+    period: 10s
+    hosts: ["kibana:5601"]
+    basepath: ""
+    enabled: true
+    xpack.enabled: true
+  - module: elasticsearch
+    metricsets:
+      - node
+      - node_stats
+      - index
+      - index_recovery
+      - index_summary
+      - shard
+      - ml_job
+    period: 10s
+    hosts: ["elasticsearch:9200"]
+    enabled: true
+    xpack.enabled: true
+
+processors:
+  - add_cloud_metadata: ~
+
+output.elasticsearch:
+  hosts: 'elasticsearch:9200'
+
+setup.kibana.host: "http://kibana:5601"
+setup.dashboards.enabled: true
+setup.dashboards.retry.enabled: true
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
