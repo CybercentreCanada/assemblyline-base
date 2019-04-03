@@ -7,7 +7,7 @@ services:
     environment:
       - SERVICE_API_HOST=http://assemblyline_service_server:5003
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_characterize
     command: python /opt/alv4/alv4_service_client/common/run_service.py
@@ -20,7 +20,7 @@ services:
     environment:
       - SERVICE_API_HOST=http://assemblyline_service_server:5003
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_extract
     command: python /opt/alv4/alv4_service_client/common/run_service.py
@@ -33,7 +33,7 @@ services:
     environment:
       - SERVICE_API_HOST=http://assemblyline_service_server:5003
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_pdfid
     command: python /opt/alv4/alv4_service_client/common/run_service.py
@@ -46,7 +46,7 @@ services:
     ports:
       - '5003:5003'
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/alv4/
     command: python3 alv4_service_api/service/app.py
@@ -58,7 +58,7 @@ services:
   create_test_data:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/alv4/alv4_ui/test/
     command: python3 create_test_data.py
@@ -71,7 +71,7 @@ services:
     ports:
       - '5000:5000'
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/alv4/alv4_ui/al_ui/
     command: python3 app.py
@@ -85,7 +85,7 @@ services:
     ports:
       - '5002:5002'
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/alv4/alv4_ui/al_ui/
     command: python3 socketsrv.py
@@ -96,7 +96,7 @@ services:
   al_alerter:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/alerter/run_alerter.py
     networks:
@@ -106,7 +106,7 @@ services:
   al_expiry:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/expiry/run_expiry.py
     networks:
@@ -116,7 +116,7 @@ services:
   al_metrics:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/metrics/run_metrics_aggregator.py
     networks:
@@ -127,7 +127,7 @@ services:
   al_heartbeat:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/metrics/run_heartbeat_manager.py
     networks:
@@ -137,7 +137,7 @@ services:
   al_workflow:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/workflow/run_workflow.py
     networks:
@@ -147,7 +147,7 @@ services:
   al_dispatcher_files:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/dispatching/run_files.py
     networks:
@@ -156,7 +156,7 @@ services:
   al_dispatcher_submissions:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/dispatching/run_submissions.py
     networks:
@@ -166,7 +166,7 @@ services:
   al_ingester_ingest:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/ingester/run_ingest.py
     networks:
@@ -175,7 +175,7 @@ services:
   assemblyline_ingester_internal:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/ingester/run_internal.py
     networks:
@@ -184,7 +184,7 @@ services:
   al_ingester_submit:
     image: sgaroncse/assemblyline_dev:4.0.2
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/al_core/ingester/run_submit.py
     networks:
@@ -230,6 +230,15 @@ services:
       - assemblyline_core_bridge
       - metrics_bridge
 
+  metricbeat:
+    image: sgaroncse/metricbeat:6.7.0
+    user: root
+    volumes:
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
+    command: ['/usr/share/metricbeat/wait-for-it.sh', '--timeout=0', 'elasticsearch:9200', '--', '/bin/sh', '-c', "sleep 10 ; /usr/local/bin/docker-entrypoint -e --strict.perms=false"]
+    networks:
+      - metrics_bridge
+
   redis:
     image: redis
     ports:
@@ -237,6 +246,7 @@ services:
       - '6380:6379'
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   nginx:
     image: sgaroncse/nginx-ssl-dev:4.0.0
