@@ -127,6 +127,15 @@ class ESCollection(Collection):
                 self.datastore.connection_reset()
                 retries += 1
 
+            except elasticsearch.exceptions.TransportError as e:
+                if 'search_phase_execution_exception' in str(e):
+                    log.warning("Looks like index is not ready yet, retying...")
+                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                    self.datastore.connection_reset()
+                    retries += 1
+                else:
+                    raise
+
     def commit(self):
         self.with_retries(self.datastore.client.indices.refresh, self.name)
         self.with_retries(self.datastore.client.indices.clear_cache, self.name)
