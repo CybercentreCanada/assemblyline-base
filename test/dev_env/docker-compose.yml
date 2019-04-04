@@ -95,6 +95,7 @@ services:
     command: python3 /opt/alv4/alv4_core/al_core/alerter/run_alerter.py
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   # Expiry
   al_expiry:
@@ -105,6 +106,7 @@ services:
     command: python3 /opt/alv4/alv4_core/al_core/expiry/run_expiry.py
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   # Metrics aggregator
   al_metrics:
@@ -136,6 +138,7 @@ services:
     command: python3 /opt/alv4/alv4_core/al_core/workflow/run_workflow.py
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   # Dispatcher processes
   al_dispatcher_files:
