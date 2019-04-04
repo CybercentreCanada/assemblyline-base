@@ -3,40 +3,34 @@ version: '3'
 services:
   # Characterize service
   alsvc_characterize:
-    image: sgaroncse/alsvc_characterize:3.3.1
+    image: sgaroncse/alsvc_characterize:3.3.3
     environment:
-      - SERVICE_API_HOST=http://assemblyline_service_server:5003
+      - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_characterize
-    command: python /opt/alv4/alv4_service_client/common/run_service.py
     networks:
       - service_bridge
 
   # Extract service
   alsvc_extract:
-    image: sgaroncse/alsvc_extract:3.3.0
+    image: sgaroncse/alsvc_extract:3.3.3
     environment:
-      - SERVICE_API_HOST=http://assemblyline_service_server:5003
+      - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_extract
-    command: python /opt/alv4/alv4_service_client/common/run_service.py
     networks:
       - service_bridge
 
   # PDFId service
   alsvc_pdfid:
-    image: sgaroncse/alsvc_pdfid:3.3.0
+    image: sgaroncse/alsvc_pdfid:3.3.3
     environment:
-      - SERVICE_API_HOST=http://assemblyline_service_server:5003
+      - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
-      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_pdfid
-    command: python /opt/alv4/alv4_service_client/common/run_service.py
     networks:
       - service_bridge
 

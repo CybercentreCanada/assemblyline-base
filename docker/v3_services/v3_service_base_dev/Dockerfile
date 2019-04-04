@@ -42,4 +42,4 @@ WORKDIR /opt/al
 # Supervisor
 RUN mkdir -p /var/log/supervisor
 COPY alv4/docker/v3_services/v3_service_base_dev/supervisord.conf /etc/supervisor/conf.d/
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
