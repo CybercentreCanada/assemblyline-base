@@ -129,7 +129,7 @@ class ESCollection(Collection):
 
             except elasticsearch.exceptions.TransportError as e:
                 err_code, msg, cause = e.args
-                if err_code == 503 and msg == 'search_phase_execution_exception':
+                if err_code == 503 or err_code == '503':
                     log.warning("Looks like index is not ready yet, retying...")
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.datastore.connection_reset()
