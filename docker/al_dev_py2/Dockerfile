@@ -14,7 +14,7 @@ COPY alv4/assemblyline/requirements.txt /tmp
 RUN pip install -r /tmp/requirements.txt
 
 COPY alv4_ui/al_ui/requirements.txt /tmp
-RUN sed -i.old -e "s/assemblyline-core//g" -e "s/assemblyline//g" /tmp/requirements.txt
+RUN sed -i.old -e "s/assemblyline-core//g" -e "s/assemblyline//g" -e "s/contextvars//g" /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
 COPY alv4_service_api/service/requirements.txt /tmp

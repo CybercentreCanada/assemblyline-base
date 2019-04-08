@@ -36,7 +36,7 @@ services:
 
   # Service server
   al_service_server:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     ports:
       - '5003:5003'
     volumes:
@@ -50,7 +50,7 @@ services:
 
   # Create test data
   create_test_data:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -61,7 +61,7 @@ services:
 
   # UI
   al_ui:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     ports:
       - '5000:5000'
     volumes:
@@ -75,7 +75,7 @@ services:
 
   # SocketIO Server
   al_socketio:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     ports:
       - '5002:5002'
     volumes:
@@ -88,7 +88,7 @@ services:
 
   # Alerter
   al_alerter:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -98,7 +98,7 @@ services:
 
   # Expiry
   al_expiry:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -108,7 +108,7 @@ services:
 
   # Metrics aggregator
   al_metrics:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -119,7 +119,7 @@ services:
 
   # Hearbeat manager
   al_heartbeat:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -129,7 +129,7 @@ services:
 
   # Workflow
   al_workflow:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -139,7 +139,7 @@ services:
 
   # Dispatcher processes
   al_dispatcher_files:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -148,7 +148,7 @@ services:
       - assemblyline_core_bridge
 
   al_dispatcher_submissions:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -158,7 +158,7 @@ services:
 
   # Ingester Processes
   al_ingester_ingest:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -167,7 +167,7 @@ services:
       - assemblyline_core_bridge
 
   assemblyline_ingester_internal:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -176,7 +176,7 @@ services:
       - assemblyline_core_bridge
 
   al_ingester_submit:
-    image: sgaroncse/assemblyline_dev:4.0.2
+    image: sgaroncse/assemblyline_dev:4.0.3
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
       - C:\Users\Public\alv4\:/opt/alv4/
@@ -197,7 +197,7 @@ services:
       - assemblyline_core_bridge
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.7.0
+    image: docker.elastic.co/kibana/kibana:6.7.1
     environment:
       SERVER_NAME: localhost
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
@@ -205,7 +205,7 @@ services:
       - metrics_bridge
 
   apm_server:
-    image: sgaroncse/apm-server:6.7.0
+    image: sgaroncse/apm-server:6.7.1
     environment:
       ES_HOSTS: elasticsearch:9200
     ports:
@@ -214,7 +214,7 @@ services:
       - metrics_bridge
 
   elasticsearch:
-    image: sgaroncse/elasticsearch:6.7.0
+    image: sgaroncse/elasticsearch:6.7.1
     environment:
       ES_JAVA_OPTS: '-Xms512m -Xmx512m'
       DISCOVERY_TYPE: 'single-node'
@@ -225,7 +225,7 @@ services:
       - metrics_bridge
 
   metricbeat:
-    image: sgaroncse/metricbeat:6.7.0
+    image: sgaroncse/metricbeat:6.7.1
     user: root
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
@@ -243,7 +243,7 @@ services:
       - metrics_bridge
 
   nginx:
-    image: sgaroncse/nginx-ssl-dev:4.0.0
+    image: sgaroncse/nginx-ssl-dev:1.15.10
     ports:
       - '443:443'
       - '80:80'

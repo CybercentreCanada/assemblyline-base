@@ -1,4 +1,4 @@
 pytest
 pytest-cov
 retrying
-elastic-apm
+elastic-apm[flask]

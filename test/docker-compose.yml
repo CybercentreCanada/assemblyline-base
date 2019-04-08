@@ -10,7 +10,7 @@ services:
       - '9000:9000'
     command: server /data
   elasticsearch:
-    image: sgaroncse/elasticsearch:6.7.0
+    image: sgaroncse/elasticsearch:6.7.1
     environment:
       ES_JAVA_OPTS: '-Xms512m -Xmx512m'
       DISCOVERY_TYPE: 'single-node'

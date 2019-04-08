@@ -5,16 +5,16 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Build core containers
-(cd elasticsearch && docker build -t sgaroncse/elasticsearch:6.7.0 .)
-(cd apm-server && docker build -t sgaroncse/apm-server:6.7.0 .)
-(cd ../.. && docker build -f alv4/docker/metricbeat/Dockerfile -t sgaroncse/metricbeat:6.7.0 .)
-(cd nginx-ssl && docker build -t sgaroncse/nginx-ssl:4.0.0 -t sgaroncse/nginx-ssl:latest .)
-(cd nginx-ssl-dev && docker build -t sgaroncse/nginx-ssl-dev:4.0.0 -t sgaroncse/nginx-ssl-dev:latest .)
+(cd elasticsearch && docker build -t sgaroncse/elasticsearch:6.7.1 .)
+(cd apm-server && docker build -t sgaroncse/apm-server:6.7.1 .)
+(cd ../.. && docker build -f alv4/docker/metricbeat/Dockerfile -t sgaroncse/metricbeat:6.7.1 .)
+(cd nginx-ssl && docker build -t sgaroncse/nginx-ssl:1.15.10 .)
+(cd nginx-ssl-dev && docker build -t sgaroncse/nginx-ssl-dev:1.15.10 .)
 (cd riak && docker build -t sgaroncse/riak-kv:2.1.4 .)
 
 # Build default dev containers
-(cd ../.. && docker build -f alv4/docker/al_dev/Dockerfile -t sgaroncse/assemblyline_dev:latest -t sgaroncse/assemblyline_dev:4.0.2 .)
-(cd ../.. && docker build -f alv4/docker/al_dev_py2/Dockerfile -t sgaroncse/assemblyline_dev_py2:latest -t sgaroncse/assemblyline_dev_py2:4.0.2 .)
+(cd ../.. && docker build -f alv4/docker/al_dev/Dockerfile -t sgaroncse/assemblyline_dev:latest -t sgaroncse/assemblyline_dev:4.0.3 .)
+(cd ../.. && docker build -f alv4/docker/al_dev_py2/Dockerfile -t sgaroncse/assemblyline_dev_py2:latest -t sgaroncse/assemblyline_dev_py2:4.0.3 .)
 
 # Build services containers
 (cd ../.. && docker build -f alv4/docker/v3_services/v3_service_base_dev/Dockerfile -t sgaroncse/v3_service_base_dev:latest -t sgaroncse/v3_service_base_dev:3.3.3 .)

@@ -17,4 +17,4 @@ cart
 ssdeep
 python-magic
 apscheduler
-elastic-apm
+elastic-apm[flask]
