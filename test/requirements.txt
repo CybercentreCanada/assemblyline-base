@@ -1,4 +1,4 @@
 pytest
 pytest-cov
 retrying
-elasticapm
+elastic-apm

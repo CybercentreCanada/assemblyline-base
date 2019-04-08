@@ -17,3 +17,4 @@ cart
 ssdeep
 python-magic
 apscheduler
+elastic-apm
