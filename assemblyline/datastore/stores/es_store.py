@@ -113,6 +113,16 @@ class ESCollection(Collection):
 
                 return ret_val
 
+            except elasticsearch.exceptions.NotFoundError as e:
+                if "index_not_found_exception" in str(e):
+                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                    log.warning("The index does not exist. Trying to recreate it...")
+                    self._ensure_collection()
+                    self.datastore.connection_reset()
+                    retries += 1
+                else:
+                    raise
+
             except elasticsearch.exceptions.ConflictError:
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
