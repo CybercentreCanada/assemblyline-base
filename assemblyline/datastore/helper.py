@@ -1,5 +1,6 @@
 
 import concurrent.futures
+import elasticapm
 import json
 
 from assemblyline.common import forge
@@ -163,6 +164,7 @@ class AssemblylineDatastore(object):
         else:
             return data.as_primitives()
 
+    @elasticapm.capture_span(span_type='datastore')
     def delete_submission_tree(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
         submission = self.submission.get(sid, as_obj=False)
         errors = submission['errors']
@@ -246,6 +248,7 @@ class AssemblylineDatastore(object):
         self.submission_tree.delete(sid)
         self.submission_tags.delete(sid)
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_multiple_results(self, keys, cl_engine=forge.get_classification(), as_obj=False):
         empties = {k: self.create_empty_result_from_key(k, cl_engine, as_obj=as_obj)
                    for k in keys if k.endswith(".e")}
@@ -254,6 +257,7 @@ class AssemblylineDatastore(object):
         results.update(empties)
         return results
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_single_result(self, key, cl_engine=forge.get_classification(), as_obj=False):
         if key.endswith(".e"):
             data = self.create_empty_result_from_key(key, cl_engine, as_obj=as_obj)
@@ -262,6 +266,7 @@ class AssemblylineDatastore(object):
 
         return data
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_file_submission_meta(self, sha256, fields, access_control=None):
         query = f"files.sha256:{sha256} OR results:{sha256}*"
         with concurrent.futures.ThreadPoolExecutor(len(fields)) as executor:
@@ -274,6 +279,7 @@ class AssemblylineDatastore(object):
 
         return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_file_list_from_keys(self, keys):
         # TODO: needed?
         if len(keys) == 0:
@@ -292,6 +298,7 @@ class AssemblylineDatastore(object):
 
         return out
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_file_scores_from_keys(self, keys):
         # TODO: needed?
         if len(keys) == 0:
@@ -306,6 +313,7 @@ class AssemblylineDatastore(object):
 
         return scores
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_signature_last_modified(self):
         res = self.signature.search("id:*", fl="meta.last_modified",
                                     sort="meta.last_modified desc", rows=1, as_obj=False)
@@ -313,6 +321,7 @@ class AssemblylineDatastore(object):
             return res['items'][0]['meta']['last_modified']
         return '1970-01-01T00:00:00.000000Z'
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_signature_next_revision_for_name(self, org, name):
         query = "meta.rule_id:%s_* AND name:%s" % (org, name)
         results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
@@ -324,6 +333,7 @@ class AssemblylineDatastore(object):
             except (ValueError, KeyError):
                 return None, None
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_signature_last_id(self, org):
         query = "meta.rule_id:%s_0*" % org
         results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
@@ -335,6 +345,7 @@ class AssemblylineDatastore(object):
             except (ValueError, KeyError):
                 return 0
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_signature_last_revision_for_id(self, sid):
         query = "meta.rule_id:%s" % sid
         results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
@@ -346,6 +357,7 @@ class AssemblylineDatastore(object):
             except (ValueError, KeyError):
                 return 0
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_or_create_file_tree(self, submission, max_depth):
         if isinstance(submission, Model):
             submission = submission.as_primitives()
@@ -353,7 +365,7 @@ class AssemblylineDatastore(object):
         num_files = len(list(set([x[:64] for x in submission['results']])))
         max_score = submission['max_score']
 
-        cached_tree = self.submission_tree.get(submission['sid'], as_obj=False)
+        cached_tree = self.submission_tree.get_if_exists(submission['sid'], as_obj=False)
         if cached_tree:
             tree = json.loads(cached_tree['tree'])
             if self._is_valid_tree(tree, num_files, max_score):
@@ -461,6 +473,7 @@ class AssemblylineDatastore(object):
 
         return True
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_tag_list_from_keys(self, keys):
         if len(keys) == 0:
             return []
@@ -475,6 +488,7 @@ class AssemblylineDatastore(object):
 
         return out
 
+    @elasticapm.capture_span(span_type='datastore')
     def get_service_with_delta(self, service_name, version=None, as_obj=True):
         svc = self.ds.service_delta.get(service_name)
         if svc is None:
@@ -493,6 +507,7 @@ class AssemblylineDatastore(object):
         else:
             return svc_version_data
 
+    @elasticapm.capture_span(span_type='datastore')
     def list_all_services(self, as_obj=True, full=False):
         if full:
             services = [recursive_update(self.ds.service.get(f"{item['id']}_{item['version']}", as_obj=False),
@@ -512,6 +527,7 @@ class AssemblylineDatastore(object):
             else:
                 return services
 
+    @elasticapm.capture_span(span_type='datastore')
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(), redis=None):
         with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
             current_fileinfo = self.ds.file.get(sha256, as_obj=False) or {}
