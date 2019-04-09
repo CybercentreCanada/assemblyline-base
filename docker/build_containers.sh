@@ -1,8 +1,4 @@
 #!/bin/bash -ex
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root"
-   exit 1
-fi
 
 # Build core containers
 (cd elasticsearch && docker build -t sgaroncse/elasticsearch:6.7.1 .)
