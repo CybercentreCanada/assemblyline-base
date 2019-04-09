@@ -170,6 +170,7 @@ services:
     command: python3 /opt/alv4/alv4_core/al_core/ingester/run_ingest.py
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   al_ingester_internal:
     image: sgaroncse/assemblyline_dev:4.0.3
@@ -179,6 +180,7 @@ services:
     command: python3 /opt/alv4/alv4_core/al_core/ingester/run_internal.py
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   al_ingester_submit:
     image: sgaroncse/assemblyline_dev:4.0.3
@@ -188,6 +190,7 @@ services:
     command: python3 /opt/alv4/alv4_core/al_core/ingester/run_submit.py
     networks:
       - assemblyline_core_bridge
+      - metrics_bridge
 
   # Core servers
   minio:
