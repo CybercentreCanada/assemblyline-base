@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import baseconv
 import json
 import logging
 import redis
@@ -37,7 +38,7 @@ def reply_queue_name(prefix=None, suffix=None):
     else:
         components = []
 
-    components.append(str(uuid.uuid4()))
+    components.append(baseconv.base62.encode(uuid.uuid4().int))
 
     if suffix:
         components.append(str(suffix))

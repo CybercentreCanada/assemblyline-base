@@ -11,6 +11,7 @@ independent data models in python. This gives us:
 """
 
 import arrow
+import baseconv
 import copy
 import json
 import re
@@ -225,7 +226,7 @@ class UUID(Keyword):
     """
     def check(self, value, **kwargs):
         if value is None:
-            value = str(uuid.uuid4())
+            value = baseconv.base62.encode(uuid.uuid4().int)
         return str(value)
 
 

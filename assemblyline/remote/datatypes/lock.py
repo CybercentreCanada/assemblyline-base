@@ -1,4 +1,6 @@
-from uuid import uuid4
+
+import baseconv
+import uuid
 
 from assemblyline.remote.datatypes import get_client, retry_call
 
@@ -27,7 +29,7 @@ end
 
 class Lock(object):
     def __init__(self, name, timeout, host=None, port=None, db=None):
-        self.uuid = uuid4().hex
+        self.uuid = baseconv.base62.encode(uuid.uuid4().int)
         self.c = get_client(host, port, db, False)
         self.lock_release = '-'.join(('lock', str(timeout), name, 'released'))
         self.lock_holder = '-'.join(('lock', str(timeout), name, 'holder'))

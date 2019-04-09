@@ -1,3 +1,4 @@
+python-baseconv
 boto3
 pysftp
 netifaces

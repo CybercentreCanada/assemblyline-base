@@ -1,3 +1,4 @@
+import baseconv
 import datetime
 import random
 import time
@@ -106,7 +107,7 @@ def get_random_heuristic_id():
 
 
 def get_random_uid():
-    return str(uuid.uuid4())
+    return baseconv.base62.encode(uuid.uuid4().int)
 
 
 def get_random_label():

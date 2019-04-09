@@ -1,4 +1,5 @@
 
+import baseconv
 import json
 import os
 import subprocess
@@ -117,7 +118,7 @@ def recursive_flatten_tree(tree):
 # noinspection PyBroadException
 def create_bundle(sid, working_dir=WORK_DIR):
     with forge.get_datastore() as datastore:
-        temp_bundle_file = f"bundle_{uuid.uuid4()}"
+        temp_bundle_file = f"bundle_{baseconv.base62.encode(uuid.uuid4().int)}"
         current_working_dir = os.path.join(working_dir, temp_bundle_file)
         try:
             submission = datastore.submission.get(sid, as_obj=False)
@@ -176,7 +177,7 @@ def create_bundle(sid, working_dir=WORK_DIR):
 # noinspection PyBroadException,PyProtectedMember
 def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED):
     with forge.get_datastore() as datastore:
-        current_working_dir = os.path.join(working_dir, str(uuid.uuid4()))
+        current_working_dir = os.path.join(working_dir, baseconv.base62.encode(uuid.uuid4().int))
         res_file = os.path.join(current_working_dir, "results.json")
         try:
             os.makedirs(current_working_dir)

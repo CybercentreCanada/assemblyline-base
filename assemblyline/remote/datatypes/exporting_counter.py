@@ -1,3 +1,4 @@
+import baseconv
 import collections
 import copy
 import logging
@@ -40,7 +41,7 @@ class AutoExportingCounters(object):
         self.channel = forge.get_metrics_sink(redis)
         self.export_interval = export_interval_secs or config.core.metrics.export_interval
         self.name = name
-        self.host = host or uuid.uuid4().hex
+        self.host = host or baseconv.base62.encode(uuid.uuid4().int)
         self.type = counter_type or name
 
         self.counts = Counters()

@@ -1,3 +1,4 @@
+import baseconv
 import logging
 import os
 import shutil
@@ -79,7 +80,7 @@ class TransportLocal(Transport):
 
         dirname = os.path.dirname(dst_path)
         filename = os.path.basename(dst_path)
-        tempname = str(uuid.uuid4())
+        tempname = baseconv.base62.encode(uuid.uuid4().int)
         temppath = _join(dirname, tempname)
         finalpath = _join(dirname, filename)
         assert (finalpath == dst_path)
@@ -105,7 +106,7 @@ class TransportLocal(Transport):
         dirname = os.path.dirname(path)
         filename = os.path.basename(path)
 
-        tempname = str(uuid.uuid4())
+        tempname = baseconv.base62.encode(uuid.uuid4().int)
         temppath = _join(dirname, tempname)
 
         finalpath = _join(dirname, filename)

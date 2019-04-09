@@ -1,3 +1,4 @@
+import baseconv
 import json
 import os
 import requests
@@ -472,7 +473,7 @@ class SolrCollection(Collection):
         lock = threading.Lock()
         sf_t = threading.Thread(target=_auto_fill,
                                 args=[items, lock, args],
-                                name="stream_search_%s" % uuid.uuid4().hex)
+                                name=f"stream_search_{baseconv.base62.encode(uuid.uuid4().int)}")
         sf_t.setDaemon(True)
         sf_t.start()
         while not yield_done:

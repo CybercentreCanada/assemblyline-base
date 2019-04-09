@@ -1,3 +1,4 @@
+python-baseconv
 pytest
 pytest-cov
 retrying

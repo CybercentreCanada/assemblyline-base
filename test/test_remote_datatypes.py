@@ -1,3 +1,5 @@
+
+import baseconv
 import random
 import uuid
 import time
@@ -368,7 +370,7 @@ def test_comms_queue(redis_connection):
 
 def test_metric_counter(redis_connection):
     # Flush the counter before starting the test
-    test_counter_id = uuid.uuid4().hex
+    test_counter_id = baseconv.base62.encode(uuid.uuid4().int)
     counter = MetricCounter(test_counter_id, redis_connection)
     counter.reset()
     try:
