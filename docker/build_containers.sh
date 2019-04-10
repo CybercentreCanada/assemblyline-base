@@ -14,7 +14,7 @@
 
 # Build services containers
 (cd ../.. && docker build -f alv4/docker/v3_services/v3_service_base_dev/Dockerfile -t sgaroncse/v3_service_base_dev:latest -t sgaroncse/v3_service_base_dev:3.3.4 .)
-(cd ../.. && docker build -f alv4/docker/v3_services/alsvc_characterize/Dockerfile -t sgaroncse/alsvc_characterize:latest -t sgaroncse/alsvc_characterize:3.3.3 .)
-(cd ../.. && docker build -f alv4/docker/v3_services/alsvc_extract/Dockerfile -t sgaroncse/alsvc_extract:latest -t sgaroncse/alsvc_extract:3.3.3 .)
-(cd ../.. && docker build -f alv4/docker/v3_services/alsvc_pdfid/Dockerfile -t sgaroncse/alsvc_pdfid:latest -t sgaroncse/alsvc_pdfid:3.3.3 .)
+(cd ../.. && docker build -f alv4/docker/v3_services/alsvc_characterize/Dockerfile -t sgaroncse/alsvc_characterize:latest -t sgaroncse/alsvc_characterize:3.3.4 .)
+(cd ../.. && docker build -f alv4/docker/v3_services/alsvc_extract/Dockerfile -t sgaroncse/alsvc_extract:latest -t sgaroncse/alsvc_extract:3.3.4 .)
+(cd ../.. && docker build -f alv4/docker/v3_services/alsvc_pdfid/Dockerfile -t sgaroncse/alsvc_pdfid:latest -t sgaroncse/alsvc_pdfid:3.3.4 .)
 
