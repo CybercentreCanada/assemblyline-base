@@ -4,8 +4,8 @@
 (cd elasticsearch && docker build -t sgaroncse/elasticsearch:6.7.1 .)
 (cd apm-server && docker build -t sgaroncse/apm-server:6.7.1 .)
 (cd ../.. && docker build -f alv4/docker/metricbeat/Dockerfile -t sgaroncse/metricbeat:6.7.1 .)
-(cd nginx-ssl && docker build -t sgaroncse/nginx-ssl:1.15.10 .)
-(cd nginx-ssl-dev && docker build -t sgaroncse/nginx-ssl-dev:1.15.10 .)
+(cd nginx-ssl && docker build -t sgaroncse/nginx-ssl:1.15.10-1 .)
+(cd nginx-ssl-dev && docker build -t sgaroncse/nginx-ssl-dev:1.15.10-1 .)
 (cd riak && docker build -t sgaroncse/riak-kv:2.1.4 .)
 
 # Build default dev containers

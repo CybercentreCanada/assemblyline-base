@@ -263,7 +263,7 @@ services:
       - metrics_bridge
 
   nginx:
-    image: sgaroncse/nginx-ssl-dev:1.15.10
+    image: sgaroncse/nginx-ssl-dev:1.15.10-1
     ports:
       - '80:80'
       - '443:443'

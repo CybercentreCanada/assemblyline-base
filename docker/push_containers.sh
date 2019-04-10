@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 
 # Push core containers
 docker push sgaroncse/elasticsearch
