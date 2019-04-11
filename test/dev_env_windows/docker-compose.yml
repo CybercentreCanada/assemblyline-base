@@ -214,11 +214,8 @@ services:
   elasticsearch:
     image: sgaroncse/elasticsearch:7.0.0
     environment:
-      - node.name=elasticsearch
-      - cluster.initial_master_nodes=elasticsearch
-      - cluster.name=docker-cluster
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - "DISCOVERY_TYPE=single-node"
+      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+      DISCOVERY_TYPE: 'single-node'
     ports:
       - '9200:9200'
     networks:
