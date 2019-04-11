@@ -1,4 +1,4 @@
-FROM docker.elastic.co/beats/metricbeat:6.7.1
+FROM docker.elastic.co/beats/metricbeat:7.0.0
 
 USER root
 COPY alv4/test/scripts/wait-for-it.sh /usr/share/metricbeat/wait-for-it.sh

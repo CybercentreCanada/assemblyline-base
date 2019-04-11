@@ -10,7 +10,7 @@ from datemath import dm
 from retrying import retry
 
 from assemblyline import odm
-from assemblyline.datastore import log
+from assemblyline.datastore import log, SearchException
 
 log.setLevel(logging.INFO)
 yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
@@ -260,7 +260,12 @@ def _test_search(col, as_obj):
     assert col.search('classification:RESTRICTED', as_obj=as_obj)['total'] == 3
 
     # Testing non indexed and non stored fields
-    assert col.search('no_index:nidx*', as_obj=as_obj)['total'] == 0
+    try:
+        res = col.search('no_index:nidx*', as_obj=as_obj)
+    except SearchException:
+        res = {'total': 0}
+
+    assert res['total'] == 0
     assert col.search('no_store:nsto*', as_obj=as_obj)['total'] == 4
 
 

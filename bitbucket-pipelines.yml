@@ -27,22 +27,29 @@ pipelines:
 definitions:
   services:
     elasticsearch:
-      image: sgaroncse/elasticsearch:6.4.2
+      image: sgaroncse/elasticsearch:7.0.0
       memory: 768
       environment:
-        ES_JAVA_OPTS: '-Xms256m -Xmx256m'
-        DISCOVERY_TYPE: 'single-node'
+        - node.name=elasticsearch
+        - cluster.initial_master_nodes=elasticsearch
+        - cluster.name=docker-cluster
+        - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+        - "DISCOVERY_TYPE=single-node"
+
     redis:
       image: redis
       memory: 256
+
     riak:
       image: sgaroncse/riak-kv:2.1.4
       memory: 512
       environment:
         SOLR_HEAP: '-Xms256m -Xmx256m'
+
     zookeeper:
       image: zookeeper
       memory: 512
+
     solr:
       image: solr:7.5-alpine
       memory: 768

@@ -159,7 +159,7 @@ class ESCollection(Collection):
             out = []
 
         if key_list:
-            data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name, doc_type='_all')
+            data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name, doc_type='_doc')
             for row in data.get('docs', []):
                 if 'found' in row and not row['found']:
                     raise KeyError(row['_id'])
@@ -185,7 +185,7 @@ class ESCollection(Collection):
 
             try:
                 data = self.with_retries(self.datastore.client.get, index=self.name,
-                                         doc_type=self.name, id=key)['_source']
+                                         doc_type='_doc', id=key)['_source']
                 # TODO: Maybe we should not allow data that is not a dictionary...
                 if "__non_doc_raw__" in data:
                     return data['__non_doc_raw__']
@@ -216,7 +216,7 @@ class ESCollection(Collection):
         self.with_retries(
             self.datastore.client.index,
             index=self.name,
-            doc_type=self.name,
+            doc_type='_doc',
             id=key,
             body=json.dumps(saved_data)
         )
@@ -225,7 +225,7 @@ class ESCollection(Collection):
 
     def delete(self, key):
         try:
-            info = self.with_retries(self.datastore.client.delete, id=key, doc_type=self.name, index=self.name)
+            info = self.with_retries(self.datastore.client.delete, id=key, doc_type='_doc', index=self.name)
             return info['result'] == 'deleted'
         except elasticsearch.NotFoundError:
             return True
@@ -244,7 +244,7 @@ class ESCollection(Collection):
         }
         try:
             info = self.with_retries(self.datastore.client.delete_by_query, index=self.name,
-                                     body=query_body, doc_type=self.name)
+                                     body=query_body, doc_type='_doc')
             return info.get('deleted', 0) != 0
         except elasticsearch.NotFoundError:
             return False
@@ -289,7 +289,7 @@ class ESCollection(Collection):
         # noinspection PyBroadException
         try:
             res = self.with_retries(self.datastore.client.update, index=self.name,
-                                    doc_type=self.name, id=key, body=update_body)
+                                    doc_type='_doc', id=key, body=update_body)
         except Exception:
             return False
 
@@ -318,7 +318,7 @@ class ESCollection(Collection):
         # noinspection PyBroadException
         try:
             res = self.with_retries(self.datastore.client.update_by_query, index=self.name,
-                                    doc_type=self.name, body=query_body)
+                                    doc_type='_doc', body=query_body)
         except Exception:
             return False
 
@@ -510,7 +510,7 @@ class ESCollection(Collection):
         return {
             "offset": int(offset),
             "rows": int(rows),
-            "total": int(result['hits']['total']),
+            "total": int(result['hits']['total']['value']),
             "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
         }
 
@@ -553,7 +553,7 @@ class ESCollection(Collection):
             self.datastore.client,
             query=query_body,
             index=self.name,
-            doc_type=self.name,
+            doc_type='_doc',
             preserve_order=True
         )
 
@@ -692,10 +692,10 @@ class ESCollection(Collection):
         return {
             'offset': offset,
             'rows': rows,
-            'total': result['hits']['total'],
+            'total': int(result['hits']['total']['value']),
             'items': [{
                 'value': collapsed['fields'][group_field][0],
-                'total': collapsed['inner_hits']['group']['hits']['total'],
+                'total': int(collapsed['inner_hits']['group']['hits']['total']['value']),
                 'items': [self._format_output(row, field_list, as_obj=as_obj)
                           for row in collapsed['inner_hits']['group']['hits']['hits']]
             } for collapsed in result['hits']['hits']]
@@ -725,7 +725,7 @@ class ESCollection(Collection):
 
         data = self.with_retries(self.datastore.client.indices.get, self.name)
 
-        properties = flatten_fields(data[self.name]['mappings'][self.name].get('properties', {}))
+        properties = flatten_fields(data[self.name]['mappings'].get('properties', {}))
 
         collection_data = {}
 
@@ -779,7 +779,7 @@ class ESCollection(Collection):
                 "type": 'keyword'
             }
 
-            index['mappings'][self.name] = mappings
+            index['mappings'] = mappings
             try:
                 self.with_retries(self.datastore.client.indices.create, self.name, index)
             except elasticsearch.exceptions.RequestError as e:

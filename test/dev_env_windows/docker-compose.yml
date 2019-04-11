@@ -195,7 +195,7 @@ services:
       - al_core
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.7.1
+    image: docker.elastic.co/kibana/kibana:7.0.0
     environment:
       SERVER_NAME: localhost
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
@@ -203,7 +203,7 @@ services:
       - al_core
 
   apm_server:
-    image: sgaroncse/apm-server:6.7.1
+    image: sgaroncse/apm-server:7.0.0
     environment:
       ES_HOSTS: elasticsearch:9200
     ports:
@@ -212,17 +212,20 @@ services:
       - al_core
 
   elasticsearch:
-    image: sgaroncse/elasticsearch:6.7.1
+    image: sgaroncse/elasticsearch:7.0.0
     environment:
-      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
-      DISCOVERY_TYPE: 'single-node'
+      - node.name=elasticsearch
+      - cluster.initial_master_nodes=elasticsearch
+      - cluster.name=docker-cluster
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISCOVERY_TYPE=single-node"
     ports:
       - '9200:9200'
     networks:
       - al_core
 
   metricbeat:
-    image: sgaroncse/metricbeat:6.7.1
+    image: sgaroncse/metricbeat:7.0.0
     user: root
     volumes:
       - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
