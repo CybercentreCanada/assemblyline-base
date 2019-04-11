@@ -23,6 +23,17 @@ services:
     networks:
       - svc
 
+  # FrankenStrings service
+  alsvc_frankenstrings:
+    image: sgaroncse/alsvc_frankenstrings:3.3.5
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    volumes:
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/al/al_services/alsvc_frankenstrings
+    networks:
+      - svc
+
   # PDFId service
   alsvc_pdfid:
     image: sgaroncse/alsvc_pdfid:3.3.5

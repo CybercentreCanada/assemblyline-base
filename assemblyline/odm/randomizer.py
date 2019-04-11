@@ -49,7 +49,7 @@ SERVICES = {
     "PDFId": ("Static Analysis", "CORE"),
     "PeePDF": ("Static Analysis", "CORE"),
     "Characterize": ("Static Analysis", "CORE"),
-    "Frankenstrings": ("Static Analysis", "SECONDARY"),
+    "FrankenStrings": ("Static Analysis", "SECONDARY"),
     "APKaye": ("Static Analysis", "CORE"),
     "Cuckoo": ("Dynamic Analysis", "CORE"),
     "McAfee": ("Antivirus", "CORE"),
