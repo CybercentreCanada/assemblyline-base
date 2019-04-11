@@ -3,7 +3,7 @@ version: '2.4'
 services:
   # Characterize service
   alsvc_characterize:
-    image: sgaroncse/alsvc_characterize:3.3.4
+    image: sgaroncse/alsvc_characterize:3.3.5
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -17,7 +17,7 @@ services:
 
   # Extract service
   alsvc_extract:
-    image: sgaroncse/alsvc_extract:3.3.4
+    image: sgaroncse/alsvc_extract:3.3.5
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -31,7 +31,7 @@ services:
 
   # PDFId service
   alsvc_pdfid:
-    image: sgaroncse/alsvc_pdfid:3.3.4
+    image: sgaroncse/alsvc_pdfid:3.3.5
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:

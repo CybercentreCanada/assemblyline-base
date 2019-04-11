@@ -1,9 +1,9 @@
-version: '3'
+version: '2.4'
 
 services:
   # Characterize service
   alsvc_characterize:
-    image: sgaroncse/alsvc_characterize:3.3.4
+    image: sgaroncse/alsvc_characterize:3.3.5
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -17,7 +17,7 @@ services:
 
   # Extract service
   alsvc_extract:
-    image: sgaroncse/alsvc_extract:3.3.4
+    image: sgaroncse/alsvc_extract:3.3.5
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -31,7 +31,7 @@ services:
 
   # PDFId service
   alsvc_pdfid:
-    image: sgaroncse/alsvc_pdfid:3.3.4
+    image: sgaroncse/alsvc_pdfid:3.3.5
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -338,26 +338,11 @@ services:
         timeout: 30s
         retries: 3
 
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:7.0.0
-    user: root
-    volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /opt/alv4/alv4/test/dev_env/config/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
-    command: filebeat -e -strict.perms=false
-    networks:
-      - al_core
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-
   metricbeat:
     image: docker.elastic.co/beats/metricbeat:7.0.0
     user: root
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /opt/alv4/alv4/test/dev_env/config/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
     command: metricbeat -e --strict.perms=false
     networks:
       - al_core
