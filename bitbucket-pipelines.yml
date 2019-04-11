@@ -30,11 +30,11 @@ definitions:
       image: sgaroncse/elasticsearch:7.0.0
       memory: 768
       environment:
-        - node.name=elasticsearch
-        - cluster.initial_master_nodes=elasticsearch
-        - cluster.name=docker-cluster
-        - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
-        - "DISCOVERY_TYPE=single-node"
+        node.name: elasticsearch
+        cluster.initial_master_nodes: elasticsearch
+        cluster.name: docker-cluster
+        ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+        DISCOVERY_TYPE: "single-node"
 
     redis:
       image: redis
