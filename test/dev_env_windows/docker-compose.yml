@@ -146,6 +146,16 @@ services:
     networks:
       - al_core
 
+  # Watcher
+  al_watcher:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - C:\Users\Public\alv4\alv4\test\dev_env_windows\config\:/etc/assemblyline/
+      - C:\Users\Public\alv4\:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/watcher/run_watcher.py
+    networks:
+      - al_core
+
   # Dispatcher processes
   al_dispatcher_files:
     image: sgaroncse/assemblyline_dev:4.0.4
