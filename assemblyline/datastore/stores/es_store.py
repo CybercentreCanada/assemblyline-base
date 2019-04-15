@@ -60,6 +60,18 @@ def parse_sort(sort):
     raise SearchException('Unknown sort parameter ' + sort)
 
 
+class RetryableIterator(object):
+    def __init__(self, collection, iterable):
+        self._iter = iter(iterable)
+        self.collection = collection
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.collection.with_retries(self._iter.__next__)
+
+
 class ESCollection(Collection):
     DEFAULT_SORT = [{'_id': 'asc'}]
     MAX_SEARCH_ROWS = 500
@@ -548,13 +560,14 @@ class ESCollection(Collection):
             "stored_fields": fl or ['*']
         }
 
-        iterator = self.with_retries(
-            elasticsearch.helpers.scan,
+        iterator = RetryableIterator(
+            self,
+            elasticsearch.helpers.scan(
             self.datastore.client,
             query=query_body,
             index=self.name,
             doc_type='_doc',
-            preserve_order=True
+            preserve_order=True)
         )
 
         for value in iterator:
