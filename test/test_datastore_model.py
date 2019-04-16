@@ -7,7 +7,7 @@ from assemblyline.datastore import BaseStore, SearchException
 from assemblyline.datastore.stores.es_store import ESStore
 from assemblyline.datastore.stores.riak_store import RiakStore
 from assemblyline.datastore.stores.solr_store import SolrStore
-from assemblyline.odm import Model, Mapping
+from assemblyline.odm import Model, Mapping, Classification
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
@@ -239,6 +239,14 @@ def _perform_single_collection_test(ds: BaseStore, idx_name: str, doc: Model):
             if query:
                 if c.search(query, rows=0)["total"] != 1:
                     pytest.fail(f"Search query ({query}) did not yield any results.")
+
+        if isinstance(field, Classification) and "." not in name:
+            if c.search("__access_lvl__:[0 TO 200]", rows=0)["total"] != 1:
+                pytest.fail("Search query on field __access_lvl__ failed.")
+            if c.search("__access_grp1__:__EMPTY__", rows=0)["total"] != 1:
+                pytest.fail("Search query on field __access_grp1__ failed.")
+            if c.search("__access_grp2__:__EMPTY__", rows=0)["total"] != 1:
+                pytest.fail("Search query on field __access_grp2__ failed.")
 
 
 # noinspection PyShadowingNames
