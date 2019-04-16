@@ -14,23 +14,23 @@ class ServiceDelta(odm.Model):
     accepts = odm.Optional(odm.Keyword(), index=True, store=False)
     rejects = odm.Optional(odm.Keyword(), index=True, store=False)
 
-    category = odm.Optional(odm.Keyword(), index=True, store=False)
+    category = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
     config = odm.Optional(odm.Mapping(odm.Any()))
     cpu_cores = odm.Optional(odm.Float())
-    description = odm.Optional(odm.Text(), index=True, store=False)
+    description = odm.Optional(odm.Text(), index=True, store=False, copyto="__text__")
     enabled = odm.Optional(odm.Boolean(), index=True, store=False)
     install_by_default = odm.Optional(odm.Boolean())
     is_external = odm.Optional(odm.Boolean())
     licence_count = odm.Optional(odm.Integer())
 
-    name = odm.Optional(odm.Keyword(), index=True, store=False)
+    name = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
     version = odm.Keyword(index=True, store=True)
 
     ram_mb = odm.Optional(odm.Integer())
 
     disable_cache = odm.Optional(odm.Boolean())
 
-    stage = odm.Optional(odm.Keyword(), index=True, store=False)
+    stage = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
     submission_params = odm.Optional(odm.List(odm.Compound(SubmissionParamsDelta)))
     supported_platforms = odm.Optional(odm.List(odm.Enum(values=["windows", "linux"])))
     timeout = odm.Optional(odm.Integer())

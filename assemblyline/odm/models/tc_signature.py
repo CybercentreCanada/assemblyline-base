@@ -26,6 +26,6 @@ class TCSignature(odm.Model):
     comment = odm.Keyword(default_set=True)
     implant_family = odm.Keyword(default_set=True)
     last_modified = odm.Date(default="NOW")
-    name = odm.Keyword()
+    name = odm.Keyword(copyto="__text__")
     threat_actor = odm.Keyword(default_set=True)
     values = odm.List(odm.Keyword())

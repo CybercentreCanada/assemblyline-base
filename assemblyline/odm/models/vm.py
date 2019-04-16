@@ -9,7 +9,7 @@ OS_VARIANTS = OS_VARIANTS_WINDOWS + OS_VARIANTS_LINUX
 @odm.model(index=True, store=True)
 class VM(odm.Model):
     enabled = odm.Boolean(default=True)
-    name = odm.Keyword()
+    name = odm.Keyword(copyto="__text__")
     num_workers = odm.Integer(default=1)
     os_type = odm.Enum(values=OS_TYPES)
     os_variant = odm.Enum(values=OS_VARIANTS)

@@ -16,16 +16,16 @@ class Service(odm.Model):
     accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS, default_set=True)
     rejects = odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS, default_set=True)
 
-    category = odm.Keyword(store=True, default="Static Analysis")
+    category = odm.Keyword(store=True, default="Static Analysis", copyto="__text__")
     config = odm.Mapping(odm.Any(), default={})
     cpu_cores = odm.Float(default=1.0)
-    description = odm.Text(store=True, default="NA")
+    description = odm.Text(store=True, default="NA", copyto="__text__")
     enabled = odm.Boolean(store=True, default=False)
     install_by_default = odm.Boolean(default=False)
     is_external = odm.Boolean(default=False)
     licence_count = odm.Integer(default=0)
 
-    name = odm.Keyword(store=True)
+    name = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
 
     ram_mb = odm.Integer(default=1024)
@@ -33,7 +33,7 @@ class Service(odm.Model):
     # Should the result cache be disabled for this service
     disable_cache = odm.Boolean(default=False)
 
-    stage = odm.Keyword(store=True, default="CORE")
+    stage = odm.Keyword(store=True, default="CORE", copyto="__text__")
     submission_params = odm.List(odm.Compound(SubmissionParams), index=False, default=[])
     supported_platforms = odm.List(odm.Enum(values=["windows", "linux"]), default=["linux"])
     timeout = odm.Integer(default=60)

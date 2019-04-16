@@ -32,7 +32,7 @@ class File(odm.Model):    # File block
 
 @odm.model(index=True, store=True)
 class Alert(odm.Model):
-    alert_id = odm.Keyword()                                            # ID of the alert
+    alert_id = odm.Keyword(copyto="__text__")                           # ID of the alert
     al = odm.Compound(ALResults)                                        # Assemblyline result block
     classification = odm.Classification()                               # Classification of the alert
     expiry_ts = odm.Date(store=False)                                   # Expiry timestamp
