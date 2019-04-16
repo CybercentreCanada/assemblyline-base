@@ -197,7 +197,7 @@ class RiakCollection(SolrCollection):
         return None
 
     def _save(self, key, data):
-        if self.model_class:
+        if self.model_class and isinstance(data, self.model_class):
             data = data.as_primitives(hidden_fields=True)
         item = self.with_retries(self.riak_bucket.new, key=key, data=data, content_type='application/json')
         item.store()
@@ -277,7 +277,7 @@ class RiakCollection(SolrCollection):
 
     def _index_exists(self):
         try:
-            self.datastore.client.get_search_index('name')
+            self.datastore.client.get_search_index(self.name)
             return True
         except riak.RiakError:
             return False

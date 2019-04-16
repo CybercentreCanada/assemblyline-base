@@ -7,7 +7,7 @@ from datemath import dm
 from datemath.helpers import DateMathException
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
-from assemblyline.odm import BANNED_FIELDS
+from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List
 from assemblyline.remote.datatypes.lock import Lock
 
 log = logging.getLogger('assemblyline.datastore')
@@ -211,6 +211,11 @@ class Collection(object):
         """
         if self.model_class:
             fields = self.model_class.flat_fields()
+            if 'classification in fields':
+                fields.update({"__access_lvl__": Integer(),
+                              "__access_req__": List(Keyword()),
+                              "__access_grp1__": List(Keyword()),
+                              "__access_grp2__": List(Keyword())})
         else:
             fields = None
 
@@ -294,7 +299,7 @@ class Collection(object):
 
     def _update(self, key, operations):
         with Lock(f'collection-{self.name}-update-{key}', 5):
-            data = self.get(key)
+            data = self.get(key, as_obj=False)
 
             for op, doc_key, value in operations:
                 obj, cur_key = get_object(data, doc_key)
@@ -309,7 +314,7 @@ class Collection(object):
                 elif op == self.UPDATE_DEC:
                     obj[cur_key] -= value
 
-            return self.save(key, data)
+            return self._save(key, data)
 
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
                filters=(), access_control=None, as_obj=True):

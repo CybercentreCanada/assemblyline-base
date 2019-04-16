@@ -40,7 +40,31 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
         path = prefix + ([field.name] if field.name else [])
         name = '.'.join(path)
 
-        if isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
+        if isinstance(field, Classification):
+            mappings[name.strip(".")] = set_mapping(field, {
+                'type': __type_mapping[field.__class__]
+            })
+            if "." not in name:
+                mappings.update({
+                    "__access_lvl__": {
+                        'type': 'integer',
+                        'store': False,
+                        'index': True},
+                    "__access_req__": {
+                        'type': 'keyword',
+                        'store': False,
+                        'index': True},
+                    "__access_grp1__": {
+                        'type': 'keyword',
+                        'store': False,
+                        'index': True},
+                    "__access_grp2__": {
+                        'type': 'keyword',
+                        'store': False,
+                        'index': True},
+                })
+
+        elif isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
             mappings[name.strip(".")] = set_mapping(field, {
                 'type': __type_mapping[field.__class__]
             })

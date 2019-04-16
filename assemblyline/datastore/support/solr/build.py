@@ -49,7 +49,17 @@ def build_mapping(field_data, prefix=None, multivalued=False, dynamic=False):
         path = prefix + ([field.name] if field.name else [])
         name = '.'.join(path)
 
-        if isinstance(field, (Boolean, Integer, Float, Date)):
+        if isinstance(field, Classification):
+            mappings.extend(set_mapping(name, field, __type_mapping[field.__class__], dynamic))
+            if "." not in name:
+                mappings.extend([
+                    '<field name="__access_lvl__" type="pint" indexed="true" stored="false" multiValued="false"/>',
+                    '<field name="__access_req__" type="string" indexed="true" stored="false" multiValued="true"/>',
+                    '<field name="__access_grp1__" type="string" indexed="true" stored="false" multiValued="true"/>',
+                    '<field name="__access_grp2__" type="string" indexed="true" stored="false" multiValued="true"/>'
+                ])
+
+        elif isinstance(field, (Boolean, Integer, Float, Date)):
             # noinspection PyTypeChecker
             mappings.extend(set_mapping(name, field, __type_mapping[field.__class__], dynamic))
 
