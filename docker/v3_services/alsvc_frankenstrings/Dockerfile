@@ -1,4 +1,4 @@
-FROM sgaroncse/v3_service_base_dev:3.3.5
+FROM sgaroncse/v3_service_base_dev:3.3.6
 
 ENV SERVICE_PATH alsvc_frankenstrings.FrankenStrings
 
@@ -16,20 +16,21 @@ ENV AWS_SECRET_ACCESS_KEY=Uud08qLQ48Cbo9RB7b+H+M97aA2wdR8OXaHXIKwL
 ENV AWS_REGION=us-east-1
 
 # Download the support files from Amazon S3
-RUN mkdir -p /opt/al/support/flarefloss
-WORKDIR /opt/al/support/flarefloss/
-RUN aws s3 cp s3://assemblyline-support/fuzzywuzzy-master.zip .
-RUN aws s3 cp s3://assemblyline-support/vivisect-master.zip .
-RUN aws s3 cp s3://assemblyline-support/viv-utils-master.zip .
-RUN aws s3 cp s3://assemblyline-support/flare-floss-master.zip .
+RUN aws s3 cp s3://assemblyline-support/fuzzywuzzy-master.zip /tmp
+RUN aws s3 cp s3://assemblyline-support/vivisect-master.zip /tmp
+RUN aws s3 cp s3://assemblyline-support/viv-utils-master.zip /tmp
+RUN aws s3 cp s3://assemblyline-support/flare-floss-master.zip /tmp
 
 # Pip install the support files
 RUN pip install \
-  fuzzywuzzy-master.zip \
-  vivisect-master.zip \
-  viv-utils-master.zip \
-  flare-floss-master.zip
+  /tmp/fuzzywuzzy-master.zip \
+  /tmp/vivisect-master.zip \
+  /tmp/viv-utils-master.zip \
+  /tmp/flare-floss-master.zip
+
+# Cleanup
+RUN rm -rf /tmp
 
 # Clone FrankenStrings service code
 WORKDIR /opt/al/al_services
-RUN git clone https://bitbucket.org/cse-assemblyline/alsvc_frankenstrings.git
+RUN git clone -b prod_3.3 https://bitbucket.org/cse-assemblyline/alsvc_frankenstrings.git
