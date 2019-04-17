@@ -178,13 +178,13 @@ class Boolean(_Field):
 
 class Keyword(_Field):
     """
-    A field storing a short string with a technical interpritation.
+    A field storing a short string with a technical interpretation.
 
     Examples: file hashes, service names, document ids
     """
 
     def check(self, value, **kwargs):
-        if not value:
+        if value == '' or value is None:
             if self.default_set:
                 value = self.default
             else:
