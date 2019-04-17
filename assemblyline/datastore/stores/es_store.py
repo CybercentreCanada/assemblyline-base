@@ -752,7 +752,8 @@ class ESCollection(Collection):
             collection_data[p_name] = {
                 "indexed": p_val.get('index', True),
                 "stored": p_val.get('store', False),
-                "type": f_type
+                "type": f_type,
+                "default": "__text__" in p_val.get('copy_to', [])
             }
 
         return collection_data
