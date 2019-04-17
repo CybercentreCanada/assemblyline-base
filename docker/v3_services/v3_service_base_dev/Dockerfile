@@ -37,7 +37,6 @@ RUN mkdir -p /var/log/assemblyline
 RUN mkdir -p /opt/alv4
 RUN mkdir -p /opt/al/al_services
 RUN touch /opt/al/al_services/__init__.py
-WORKDIR /opt/al
 
 # Supervisor
 RUN mkdir -p /var/log/supervisor

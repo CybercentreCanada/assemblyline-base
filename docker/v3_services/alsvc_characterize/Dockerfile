@@ -1,7 +1,7 @@
-FROM sgaroncse/v3_service_base_dev:3.3.5
+FROM sgaroncse/v3_service_base_dev:3.3.6
 
 ENV SERVICE_PATH alsvc_characterize.Characterize
 
 # Clone Characterize service code
 WORKDIR /opt/al/al_services
-RUN git clone https://bitbucket.org/cse-assemblyline/alsvc_characterize.git
+RUN git clone -b prod_3.3 https://bitbucket.org/cse-assemblyline/alsvc_characterize.git
