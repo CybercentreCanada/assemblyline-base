@@ -63,6 +63,7 @@ class _Field:
     def __init__(self, name=None, index=None, store=None, copyto=None, default=None, default_set=None):
         self.index = index
         self.store = store
+        self.multivalued = False
         self.copyto = []
         if isinstance(copyto, str):
             self.copyto.append(copyto)
@@ -534,17 +535,24 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, skip_mappings):
+    def _recurse_fields(name, field, skip_mappings, multivalued=False):
         out = dict()
         for sub_name, sub_field in field.fields().items():
+            sub_field.multivalued = multivalued
+
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
+
             elif isinstance(sub_field, Any):
                 continue
+
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
-                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings))
+                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings,
+                                                 multivalued=multivalued or isinstance(sub_field, List)))
+
             elif sub_name:
                 out[".".join([name, sub_name])] = sub_field
+
             else:
                 out[name] = sub_field
         return out

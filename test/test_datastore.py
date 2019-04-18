@@ -354,7 +354,15 @@ def _test_c_fields(r_tc: Collection, s_tc: Collection, e_tc: Collection):
     # fields accordingly.
     e_fields = e_tc.fields()
     e_fields.pop('list', None)
-    assert compare_output(s_tc.fields(), e_fields, r_tc.fields())
+
+    # For non-modeled data, we only want to compare values for indexed, stored, and type field.
+    #  ** The default field will always be False because the value is pulled from the model (no need to compare)
+    #  ** The list field will always be True in elasticsearch (will always fail if we compare)
+    assert compare_output(
+        {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in s_tc.fields().items()},
+        {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in e_fields.items()},
+        {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in r_tc.fields().items()}
+    )
 
 
 TEST_CONSISTENCY_FUNCS = [

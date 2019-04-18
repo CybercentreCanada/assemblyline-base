@@ -642,7 +642,7 @@ class SolrCollection(Collection):
             } for grouping in data['groups']]
         }
 
-    def _fields_from_schema(self, port=8983):
+    def _fields_from_schema(self, model_fields, port=8983):
         session, host = self._get_session(port=port)
 
         url = f"http://{host}/{self.api_base}/{self.name}/schema/?wt=json"
@@ -658,8 +658,11 @@ class SolrCollection(Collection):
                 if not Collection.FIELD_SANITIZER.match(field_name):
                     continue
 
+                field_model = model_fields.get(field_name, None)
                 collection_data[field_name] = {
+                    "default": self.DEFAULT_SEARCH_FIELD in field_model.copyto if field_model else False,
                     "indexed": field['indexed'],
+                    "list": field.get('multiValued', False),
                     "stored": field['stored'],
                     "type": self._get_odm_type(field['type']),
                 }
@@ -691,7 +694,7 @@ class SolrCollection(Collection):
         except KeyError:
             return ds_type.lower()
 
-    def _field_from_data(self, port=8983):
+    def _field_from_data(self, model_fields, port=8983):
         session, host = self._get_session(port=port)
 
         url = f"http://{host}/{self.api_base}/{self.name}/admin/luke?numTerms=0&wt=json"
@@ -706,10 +709,13 @@ class SolrCollection(Collection):
                 if not Collection.FIELD_SANITIZER.match(field_name):
                     continue
 
+                field_model = model_fields.get(field_name, None)
                 collection_data[field_name] = {
+                    "default": self.DEFAULT_SEARCH_FIELD in field_model.copyto if field_model else False,
                     "indexed": field.get("schema", "").startswith("I"),
+                    "list": field_model.multivalued if field_model else False,
                     "stored": field.get("schema", "")[:3].endswith("S"),
-                    "type": self._get_odm_type(field['type']),
+                    "type": self._get_odm_type(field['type'])
                 }
 
             return collection_data
@@ -733,8 +739,13 @@ class SolrCollection(Collection):
                     raise SearchException(res.content)
 
     def fields(self, port=8983):
-        fields = self._field_from_data(port=port)
-        fields.update(self._fields_from_schema(port=port))
+        if self.model_class:
+            model_fields = self.model_class.flat_fields()
+        else:
+            model_fields = {}
+
+        fields = self._field_from_data(model_fields, port=port)
+        fields.update(self._fields_from_schema(model_fields, port=port))
         return fields
 
     def _get_configset(self):

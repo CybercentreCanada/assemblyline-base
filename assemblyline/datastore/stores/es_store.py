@@ -739,6 +739,10 @@ class ESCollection(Collection):
         data = self.with_retries(self.datastore.client.indices.get, self.name)
 
         properties = flatten_fields(data[self.name]['mappings'].get('properties', {}))
+        if self.model_class:
+            model_fields = self.model_class.flat_fields()
+        else:
+            model_fields = {}
 
         collection_data = {}
 
@@ -748,12 +752,14 @@ class ESCollection(Collection):
             if not Collection.FIELD_SANITIZER.match(p_name):
                 continue
 
+            field_model = model_fields.get(p_name, None)
             f_type = self._get_odm_type(p_val.get('analyzer', None) or p_val['type'])
             collection_data[p_name] = {
+                "default": self.DEFAULT_SEARCH_FIELD in p_val.get('copy_to', []),
                 "indexed": p_val.get('index', True),
+                "list": field_model.multivalued if field_model else True,
                 "stored": p_val.get('store', False),
-                "type": f_type,
-                "default": "__text__" in p_val.get('copy_to', [])
+                "type": f_type
             }
 
         return collection_data
