@@ -5,7 +5,7 @@ services:
   alsvc_characterize:
     image: sgaroncse/alsvc_characterize:3.3.5
     environment:
-      - SERVICE_API_HOST=http://172.17.0.1:5003
+      - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_characterize
@@ -14,7 +14,7 @@ services:
   alsvc_extract:
     image: sgaroncse/alsvc_extract:3.3.5
     environment:
-      - SERVICE_API_HOST=http://172.17.0.1:5003
+      - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_extract
@@ -23,7 +23,7 @@ services:
   alsvc_frankenstrings:
     image: sgaroncse/alsvc_frankenstrings:3.3.5
     environment:
-      - SERVICE_API_HOST=http://172.17.0.1:5003
+      - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_frankenstrings
@@ -32,7 +32,12 @@ services:
   alsvc_pdfid:
     image: sgaroncse/alsvc_pdfid:3.3.5
     environment:
-      - SERVICE_API_HOST=http://172.17.0.1:5003
+      - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_pdfid
+
+networks:
+  default:
+    external: true
+    name: svc

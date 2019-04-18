@@ -97,3 +97,7 @@ services:
     depends_on:
       kibana:
         condition: service_started
+
+networks:
+  default:
+    name: backend

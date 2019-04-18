@@ -3,27 +3,28 @@ core:
     delay: 0
   metrics:
     apm_server:
-      server_url: http://172.17.0.1:8200/
+      server_url: http://apm_server:8200/
     elasticsearch:
-      hosts: [172.17.0.1]
+      hosts: [elasticsearch]
     kibana:
-      host: 172.17.0.1
+      host: kibana
     redis:
-      host: 172.17.0.1
+      host: redis
   redis:
     nonpersistent:
-      host: 172.17.0.1
+      host: redis
     persistent:
-      host: 172.17.0.1
+      host: redis
+      port: 6379
 
 datastore:
   elasticsearch:
-    nodes: [172.17.0.1]
-  hosts: [172.17.0.1]
+    nodes: [elasticsearch]
+  hosts: [elasticsearch]
 
 filestore:
-  cache: ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@172.17.0.1:9000?s3_bucket=al-cache&use_ssl=False"]
-  storage: ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@172.17.0.1:9000?s3_bucket=al-storage&use_ssl=False"]
+  cache: ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@minio:9000?s3_bucket=al-cache&use_ssl=False"]
+  storage: ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@minio:9000?s3_bucket=al-storage&use_ssl=False"]
 
 logging:
   log_to_console: true
