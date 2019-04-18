@@ -574,7 +574,7 @@ class Model:
                     continue
                 if isinstance(field, Any):
                     continue
-                out.update(Model._recurse_fields(name, field, skip_mappings))
+                out.update(Model._recurse_fields(name, field, skip_mappings, multivalued=isinstance(field, List)))
         return out
 
     # Allow attribute assignment by default in the constructor until it is removed

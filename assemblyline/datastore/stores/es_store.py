@@ -757,7 +757,7 @@ class ESCollection(Collection):
             collection_data[p_name] = {
                 "default": self.DEFAULT_SEARCH_FIELD in p_val.get('copy_to', []),
                 "indexed": p_val.get('index', True),
-                "list": field_model.multivalued if field_model else True,
+                "list": field_model.multivalued if field_model else False,
                 "stored": p_val.get('store', False),
                 "type": f_type
             }
