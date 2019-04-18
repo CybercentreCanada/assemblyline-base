@@ -31,23 +31,20 @@ server {
         proxy_set_header      Upgrade         ${DOLLAR}http_upgrade;
         proxy_set_header      Connection      "upgrade";
 
-        proxy_pass            http://127.0.0.1:8000;
+        proxy_pass            http://al_socketio:5002;
     }
 
     location @alweb {
-        add_header            X-Frame-Options              SAMEORIGIN;
-        add_header            Strict-Transport-Security    "max-age=31536000; includeSubDomains";
+        add_header            X-Frame-Options            SAMEORIGIN;
+        add_header            Strict-Transport-Security  "max-age=31536000; includeSubDomains";
 
-        proxy_set_header      Host                         ${DOLLAR}http_host;
-        proxy_set_header      Scheme                       ${DOLLAR}scheme;
-        proxy_set_header      Server-Port                  ${DOLLAR}server_port;
-        include               uwsgi_params;
-        uwsgi_buffering       off;
-        uwsgi_pass            unix:/var/run/uwsgi/alui_uwsgi.sock;
-        uwsgi_param           UWSGI_CHDIR                  /opt/al/pkg/alv4_ui/;
-        uwsgi_param           HTTP_X_REMOTE_CERT_VERIFIED  ${DOLLAR}ssl_client_verify;
-        uwsgi_param           HTTP_X_REMOTE_DN             ${DOLLAR}ssl_client_s_dn;
-        uwsgi_param           HTTP_X_FORWARD_FOR           ${DOLLAR}proxy_add_x_forwarded_for;
+	    proxy_set_header      X-Forward-For              ${DOLLAR}proxy_add_x_forwarded_for;
+        proxy_set_header      X-Remote-Cert-Verified     ${DOLLAR}ssl_client_verify;
+        proxy_set_header      X-Remote-DN                ${DOLLAR}ssl_client_s_dn;
+        proxy_set_header      Host                       ${DOLLAR}http_host;
+        proxy_set_header      Scheme                     ${DOLLAR}scheme;
+        proxy_set_header      Server-Port                ${DOLLAR}server_port;
+
+        proxy_pass            http://al_ui:5000;
     }
-
 }
