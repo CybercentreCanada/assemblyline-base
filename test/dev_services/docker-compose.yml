@@ -1,0 +1,38 @@
+version: '2.4'
+
+services:
+  # Characterize service
+  alsvc_characterize:
+    image: sgaroncse/alsvc_characterize:3.3.5
+    environment:
+      - SERVICE_API_HOST=http://172.17.0.1:5003
+    volumes:
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/al/al_services/alsvc_characterize
+
+  # Extract service
+  alsvc_extract:
+    image: sgaroncse/alsvc_extract:3.3.5
+    environment:
+      - SERVICE_API_HOST=http://172.17.0.1:5003
+    volumes:
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/al/al_services/alsvc_extract
+
+  # FrankenStrings service
+  alsvc_frankenstrings:
+    image: sgaroncse/alsvc_frankenstrings:3.3.5
+    environment:
+      - SERVICE_API_HOST=http://172.17.0.1:5003
+    volumes:
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/al/al_services/alsvc_frankenstrings
+
+  # PDFId service
+  alsvc_pdfid:
+    image: sgaroncse/alsvc_pdfid:3.3.5
+    environment:
+      - SERVICE_API_HOST=http://172.17.0.1:5003
+    volumes:
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/al/al_services/alsvc_pdfid

@@ -1,0 +1,129 @@
+version: '2.4'
+
+services:
+  # Service server
+  al_service_server:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    ports:
+      - '5003:5003'
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/alv4/
+    command: python3 alv4_service_api/service/app.py
+
+  # Create test data
+  create_test_data:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/alv4/alv4_ui/test/
+    command: python3 create_test_data.py
+
+  # UI
+  al_ui:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    ports:
+      - '5000:5000'
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/alv4/alv4_ui/al_ui/
+    command: python3 app.py
+
+  # SocketIO Server
+  al_socketio:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    ports:
+      - '5002:5002'
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    working_dir: /opt/alv4/alv4_ui/al_ui/
+    command: python3 socketsrv.py
+
+  # Alerter
+  al_alerter:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/alerter/run_alerter.py
+
+  # Expiry
+  al_expiry:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/expiry/run_expiry.py
+
+  # Metrics aggregator
+  al_metrics:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/metrics/run_metrics_aggregator.py
+
+  # Hearbeat manager
+  al_heartbeat:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/metrics/run_heartbeat_manager.py
+
+  # Workflow
+  al_workflow:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/workflow/run_workflow.py
+
+  # Watcher
+  al_watcher:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/watcher/run_watcher.py
+
+  # Dispatcher processes
+  al_dispatcher_files:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/dispatching/run_files.py
+
+  al_dispatcher_submissions:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/dispatching/run_submissions.py
+
+  # Ingester Processes
+  al_ingester_ingest:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/ingester/run_ingest.py
+
+  al_ingester_internal:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/ingester/run_internal.py
+
+  al_ingester_submit:
+    image: sgaroncse/assemblyline_dev:4.0.4
+    volumes:
+      - /opt/alv4/alv4/test/dev_core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/al_core/ingester/run_submit.py
