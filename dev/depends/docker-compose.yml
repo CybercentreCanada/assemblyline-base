@@ -54,7 +54,7 @@ services:
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /opt/alv4/alv4/test/dev_depends/config/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /opt/alv4/alv4/dev/depends/config/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
     command: filebeat -e -strict.perms=false
     depends_on:
       elasticsearch:
@@ -65,7 +65,7 @@ services:
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /opt/alv4/alv4/test/dev_depends/config/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - /opt/alv4/alv4/dev/depends/config/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
     command: metricbeat -e --strict.perms=false
     depends_on:
       elasticsearch:
