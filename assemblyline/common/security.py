@@ -39,7 +39,7 @@ def get_password_hash(password):
     if password is None or len(password) == 0:
         return None
 
-    return bcrypt.encrypt(password)
+    return bcrypt.hash(password)
 
 
 def verify_password(password, pw_hash):
