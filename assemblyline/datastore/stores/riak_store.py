@@ -326,6 +326,7 @@ class RiakCollection(SolrCollection):
         }
         self.datastore.client.set_bucket_props(bucket=self.riak_bucket, props=props)
         self.datastore.client.delete_search_index(self.name)
+        self._ensure_collection()
 
 
 class RiakStore(SolrStore):

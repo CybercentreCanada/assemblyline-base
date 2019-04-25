@@ -882,6 +882,7 @@ class SolrCollection(Collection):
             else:
                 raise DataStoreException("Could not delete configset {collection}.".format(collection=self.name))
 
+        self._ensure_collection()
 
 class SolrStore(BaseStore):
     """ SOLR implementation of the ResultStore interface."""

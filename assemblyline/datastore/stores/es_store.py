@@ -826,6 +826,8 @@ class ESCollection(Collection):
         if self.with_retries(self.datastore.client.indices.exists, self.name):
             self.with_retries(self.datastore.client.indices.delete, self.name)
 
+        self._ensure_collection()
+
 
 class ESStore(BaseStore):
     """ Elasticsearch implementation of the ResultStore interface."""
