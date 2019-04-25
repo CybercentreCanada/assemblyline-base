@@ -116,12 +116,19 @@ class ESCollection(Collection):
 
     def with_retries(self, func, *args, **kwargs):
         retries = 0
+        updated = 0
+        deleted = 0
         while True:
             try:
                 ret_val = func(*args, **kwargs)
 
                 if retries:
                     log.info('Reconnected to elasticsearch!')
+
+                if updated:
+                    ret_val['updated'] += updated
+                if deleted:
+                    ret_val['deleted'] += deleted
 
                 return ret_val
 
@@ -135,7 +142,10 @@ class ESCollection(Collection):
                 else:
                     raise
 
-            except elasticsearch.exceptions.ConflictError:
+            except elasticsearch.exceptions.ConflictError as ce:
+                updated = ce.info.get('updated', 0)
+                deleted = ce.info.get('deleted', 0)
+
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
