@@ -127,6 +127,7 @@ class ESCollection(Collection):
 
                 if updated:
                     ret_val['updated'] += updated
+
                 if deleted:
                     ret_val['deleted'] += deleted
 
@@ -143,8 +144,8 @@ class ESCollection(Collection):
                     raise
 
             except elasticsearch.exceptions.ConflictError as ce:
-                updated = ce.info.get('updated', 0)
-                deleted = ce.info.get('deleted', 0)
+                updated += ce.info.get('updated', 0)
+                deleted += ce.info.get('deleted', 0)
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
