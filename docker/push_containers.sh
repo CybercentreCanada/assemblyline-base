@@ -9,6 +9,7 @@ docker push sgaroncse/nginx-ssl-dev
 docker push sgaroncse/riak-kv
 
 # Push dev containers
+docker push sgaroncse/assemblyline_base
 docker push sgaroncse/assemblyline_dev
 docker push sgaroncse/assemblyline_dev_py2
 

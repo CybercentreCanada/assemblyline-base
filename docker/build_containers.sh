@@ -9,6 +9,7 @@
 (cd riak && docker build -t sgaroncse/riak-kv:2.1.4 .)
 
 # Build default dev containers
+(cd ../.. && docker build -f alv4/docker/al_base/Dockerfile -t sgaroncse/assemblyline_base:latest -t sgaroncse/assemblyline_base:4.0.0 .)
 (cd ../.. && docker build -f alv4/docker/al_dev/Dockerfile -t sgaroncse/assemblyline_dev:latest -t sgaroncse/assemblyline_dev:4.0.4 .)
 (cd ../.. && docker build -f alv4/docker/al_dev_py2/Dockerfile -t sgaroncse/assemblyline_dev_py2:latest -t sgaroncse/assemblyline_dev_py2:4.0.4 .)
 
