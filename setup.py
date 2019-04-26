@@ -1,28 +1,16 @@
-import os
 
 from setuptools import setup, find_packages
 
 
-def read_requirements(path):
-    with open(os.path.join(os.path.dirname(__file__), path)) as req:
-        lines = req.read().split()
-
-    lines = [line.strip() for line in lines]
-    lines = [line.strip() for line in lines if len(line) > 0]
-    lines = [line.strip() for line in lines if line[0] != '#']
-
-    return lines
-
-
 setup(
     name="assemblyline",
-    version="4.0.0.dev2",
+    version="4.0.0.dev6",
     description="Assemblyline (v4) automated malware analysis framework base package.",
     long_description="This package provides the base functionalities for the different Assemblyline v4 components.",
     url="https://bitbucket.org/cse-assemblyline/alv4/",
     author="CCCS Assemblyline development team",
     author_email="assemblyline@cyber.gc.ca",
-    licence="MIT",
+    license="MIT",
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -36,8 +24,30 @@ setup(
     ],
     keywords="assemblyline malware gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test/*']),
-    install_requires=read_requirements('assemblyline/requirements.txt'),
-    tests_requires=read_requirements('test/requirements.txt'),
+    install_requires=[
+        'urllib3<1.25',
+        'python-baseconv',
+        'boto3',
+        'pysftp',
+        'netifaces',
+        'pyroute2',
+        'riak',
+        'redis',
+        'requests',
+        'elasticsearch>=6.0.0,<7.0.0',
+        'python-datemath',
+        'arrow',
+        'packaging',
+        'tabulate',
+        'PyYAML',
+        'easydict',
+        'passlib',
+        'cart',
+        'ssdeep',
+        'python-magic',
+        'apscheduler',
+        'elastic-apm[flask]',
+    ],
     package_data={
         '': ["*schema.xml", "*managed-schema", "*solrconfig.xml", "*classification.yml", "*.magic"]
     }
