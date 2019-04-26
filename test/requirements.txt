@@ -1,5 +1,3 @@
-python-baseconv
 pytest
 pytest-cov
 retrying
-elastic-apm[flask]
