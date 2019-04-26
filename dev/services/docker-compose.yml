@@ -1,6 +1,42 @@
 version: '2.4'
 
 services:
+  # ApiVector service
+#  alsvc_apivector:
+#    image: sgaroncse/alsvc_apivector:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_apivector
+
+  # APKaye service
+#  alsvc_apkaye:
+#    image: sgaroncse/alsvc_apkaye:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_apkaye
+
+  # Beaver service
+#  alsvc_beaver:
+#    image: sgaroncse/alsvc_beaver:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_beaver
+
+  # CFMD service
+#  alsvc_cfmd:
+#    image: sgaroncse/alsvc_cfmd:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_cfmd
+
   # Characterize service
   alsvc_characterize:
     image: sgaroncse/alsvc_characterize:3.3.5
@@ -9,6 +45,33 @@ services:
     volumes:
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_characterize
+
+  # Cleaver service
+#  alsvc_cleaver:
+#    image: sgaroncse/alsvc_cleaver:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_cleaver
+
+  # ConfigDecoder service
+#  alsvc_configdecoder:
+#    image: sgaroncse/alsvc_configdecoder:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_configdecoder
+
+  # Espresso service
+#  alsvc_espresso:
+#    image: sgaroncse/alsvc_espresso:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_espresso
 
   # Extract service
   alsvc_extract:
@@ -28,6 +91,69 @@ services:
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_frankenstrings
 
+  # FSecure service
+#  alsvc_fsecure:
+#    image: sgaroncse/alsvc_fsecure:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_fsecure
+
+  # IPArse service
+#  alsvc_iparse:
+#    image: sgaroncse/alsvc_iparse:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_iparse
+
+  # Lastline service
+#  alsvc_lastline:
+#    image: sgaroncse/alsvc_lastline:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_lastline
+
+  # MetaDefender service
+#  alsvc_metadefender:
+#    image: sgaroncse/alsvc_metadefender:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_metadefender
+
+  # MetaPeek service
+#  alsvc_metapeek:
+#    image: sgaroncse/alsvc_metapeek:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_metapeek
+
+  # NSRL service
+#  alsvc_nsrl:
+#    image: sgaroncse/alsvc_nsrl:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_nsrl
+
+  # Oletools service
+#  alsvc_oletools:
+#    image: sgaroncse/alsvc_oletools:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_oletools
+
   # PDFId service
   alsvc_pdfid:
     image: sgaroncse/alsvc_pdfid:3.3.5
@@ -36,6 +162,115 @@ services:
     volumes:
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_pdfid
+
+  # PeePDF service
+#  alsvc_peepdf:
+#    image: sgaroncse/alsvc_peepdf:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_peepdf
+
+  # PEFile service
+#  alsvc_pefile:
+#    image: sgaroncse/alsvc_pefile:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_pefile
+
+  # Pixaxe service
+#  alsvc_pixaxe:
+#    image: sgaroncse/alsvc_pixaxe:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_pixaxe
+
+  # Suricata service
+#  alsvc_suricata:
+#    image: sgaroncse/alsvc_suricata:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_suricata
+
+  # Swiffer service
+#  alsvc_swiffer:
+#    image: sgaroncse/alsvc_swiffer:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_swiffer
+
+  # Sync service
+#  alsvc_sync:
+#    image: sgaroncse/alsvc_sync:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_sync
+
+  # TagCheck service
+#  alsvc_tagcheck:
+#    image: sgaroncse/alsvc_tagcheck:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_tagcheck
+
+  # TorrentSlicer service
+#  alsvc_torrentslicer:
+#    image: sgaroncse/alsvc_torrentslicer:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_torrentslicer
+
+  # Unpacker service
+#  alsvc_unpacker:
+#    image: sgaroncse/alsvc_unpacker:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_unpacker
+
+  # VirusTotalDynamic service
+#  alsvc_virustotal_dynamic:
+#    image: sgaroncse/alsvc_virustotal_dynamic:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_virustotal_dynamic
+
+  # VirusTotalStatic service
+#  alsvc_virustotal_static:
+#    image: sgaroncse/alsvc_virustotal_static:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_virustotal_static
+
+  # Yara service
+#  alsvc_yara:
+#    image: sgaroncse/alsvc_yara:3.3.5
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    volumes:
+#      - /opt/alv4/:/opt/alv4/
+#    working_dir: /opt/al/al_services/alsvc_yara
+
 
 networks:
   default:
