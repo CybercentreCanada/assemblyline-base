@@ -7,6 +7,7 @@
 (cd nginx-ssl && docker build -t sgaroncse/nginx-ssl-bitbucket:1.15.10 .)
 (cd nginx-ssl && docker build -t sgaroncse/nginx-ssl:1.15.10-2 .)
 (cd nginx-ssl-dev && docker build -t sgaroncse/nginx-ssl-dev:1.15.10-1 .)
+(cd minio && docker build -t sgaroncse/minio .)
 (cd riak && docker build -t sgaroncse/riak-kv:2.1.4 .)
 
 # Build default dev containers
