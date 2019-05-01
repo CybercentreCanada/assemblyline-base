@@ -509,23 +509,24 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def list_all_services(self, as_obj=True, full=False):
+        items = list(self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False))
+
         if full:
-            services = [recursive_update(self.ds.service.get(f"{item['id']}_{item['version']}", as_obj=False),
-                                         self.ds.service_delta.get(item['id']).as_primitives(strip_null=True))
-                        for item in self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False)]
-            if as_obj:
-                return [Service(s) for s in services]
-            else:
-                return services
+            service_data = self.ds.service.multiget([f"{item['id']}_{item['version']}" for item in items], as_obj=False, as_dictionary=False)
+            service_delta = self.ds.service_delta.multiget([item['id'] for item in items], as_dictionary=False)
+            services = [recursive_update(data, delta.as_primitives(strip_null=True))
+                        for data, delta in zip(service_data, service_delta)]
+
         else:
             services_versions = {item['id']: item for item in self.ds.service.stream_search("id:*", as_obj=False)}
             services = [recursive_update(services_versions[f"{item['id']}_{item['version']}"], item)
-                        for item in self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False)
-                        if f"{item['id']}_{item['version']}" in services_versions]
-            if as_obj:
-                return [Service(s) for s in services]
-            else:
-                return services
+                        for item in items if f"{item['id']}_{item['version']}" in services_versions]
+
+        if as_obj:
+            return [Service(s) for s in services]
+        else:
+            return services
+
 
     @elasticapm.capture_span(span_type='datastore')
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(), redis=None):
