@@ -153,8 +153,8 @@ class CachedObject:
     def __init__(self, factory, refresh=5, args=None, kwargs=None):
         """
         Args:
-            factory: Factory that takes no arguments and returns only the object to be wrapped.
-            refresh: Refresh rate in seconds.
+            factory: Factory that takes the arguments given in `args` and `kwargs` and produces the proxyed object.
+            refresh: Refresh interval in seconds.
         """
         self._factory = factory
         self._refresh = refresh
@@ -175,6 +175,6 @@ class CachedObject:
 
     def __getitem__(self, item):
         if time.time() - self._update_time > self._refresh:
-            self._cached = self._factory()
+            self._cached = self._factory(*self._args, **self._kwargs)
             self._update_time = time.time()
         return self._cached[item]
