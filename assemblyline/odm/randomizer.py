@@ -5,7 +5,9 @@ import time
 import uuid
 
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
-    Classification, Optional, Any
+    Classification, Optional, Any, forge
+
+config = forge.get_config()
 
 ALPHA = "ABCDEFGHIJKLMNOPQRSTUPVXYZabcdefghijklmnopqrstuvwxyz"
 HASH_ALPHA = "abcdef0123456789"
@@ -193,7 +195,7 @@ def random_data_for_field(field, name):
             elif "filetype" in name:
                 return get_random_file_type()
             elif "organisation" in name:
-                return "CSE"
+                return config.system.organisation
             elif "poc" in name:
                 return f"{get_random_user()}@cse"
             elif "yara_version" in name:
