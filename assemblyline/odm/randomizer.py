@@ -197,7 +197,7 @@ def random_data_for_field(field, name):
             elif "organisation" in name:
                 return config.system.organisation
             elif "poc" in name:
-                return f"{get_random_user()}@cse"
+                return f"{get_random_user()}@{config.system.organisation.lower()}"
             elif "yara_version" in name:
                 return random.choice(['3.1', '3.2', '3.3', '3.4'])
             elif "heur_id" in name:
