@@ -6,7 +6,7 @@ from assemblyline.common.isotime import now_as_iso
 from assemblyline.filestore import FileStore
 
 DEFAULT_CACHE_LEN = 60 * 60  # 1 hour
-COMPONENT_VALIDATOR = re.compile("^[a-zA-Z][a-zA-Z0-9_.]*$")
+COMPONENT_VALIDATOR = re.compile("^[a-zA-Z0-9][a-zA-Z0-9_.]*$")
 
 class CacheStore(object):
     def __init__(self, component, config=None, datastore=None):

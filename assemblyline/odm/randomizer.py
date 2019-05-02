@@ -192,6 +192,12 @@ def random_data_for_field(field, name):
                 return get_random_hash(64)
             elif "filetype" in name:
                 return get_random_file_type()
+            elif "organisation" in name:
+                return "CSE"
+            elif "poc" in name:
+                return f"{get_random_user()}@cse"
+            elif "yara_version" in name:
+                return random.choice(['3.1', '3.2', '3.3', '3.4'])
             elif "heur_id" in name:
                 return get_random_heuristic_id()
             elif "label" in name:
