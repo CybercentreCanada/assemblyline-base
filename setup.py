@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="assemblyline",
-    version="4.0.0.dev8",
+    version="4.0.0.dev9",
     description="Assemblyline (v4) automated malware analysis framework base package.",
     long_description="This package provides the base functionalities for the different Assemblyline v4 components.",
     url="https://bitbucket.org/cse-assemblyline/alv4/",
@@ -31,7 +31,7 @@ setup(
         'pyroute2',
         'redis',
         'requests',
-        'elasticsearch>=6.0.0,<7.0.0',
+        'elasticsearch>=7.0.0,<8.0.0',
         'python-datemath',
         'arrow',
         'packaging',
