@@ -16,7 +16,7 @@ pipelines:
             - cp test/bitbucket/config.yml /etc/assemblyline
             - apt update
             - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
-            - pip install -r assemblyline/requirements.txt -r test/requirements.txt
+            - pip install -e . -r test/requirements.txt
             - pytest -rsx -vv
           services: &services
             - zookeeper
