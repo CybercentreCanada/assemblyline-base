@@ -182,7 +182,7 @@ class ESCollection(Collection):
             out = []
 
         if key_list:
-            data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name, doc_type='_doc')
+            data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name)
             for row in data.get('docs', []):
                 if 'found' in row and not row['found']:
                     raise KeyError(row['_id'])
@@ -207,8 +207,7 @@ class ESCollection(Collection):
         while not done:
 
             try:
-                data = self.with_retries(self.datastore.client.get, index=self.name,
-                                         doc_type='_doc', id=key)['_source']
+                data = self.with_retries(self.datastore.client.get, index=self.name, id=key)['_source']
                 # TODO: Maybe we should not allow data that is not a dictionary...
                 if "__non_doc_raw__" in data:
                     return data['__non_doc_raw__']
@@ -239,7 +238,6 @@ class ESCollection(Collection):
         self.with_retries(
             self.datastore.client.index,
             index=self.name,
-            doc_type='_doc',
             id=key,
             body=json.dumps(saved_data)
         )
@@ -248,7 +246,7 @@ class ESCollection(Collection):
 
     def delete(self, key):
         try:
-            info = self.with_retries(self.datastore.client.delete, id=key, doc_type='_doc', index=self.name)
+            info = self.with_retries(self.datastore.client.delete, id=key, index=self.name)
             return info['result'] == 'deleted'
         except elasticsearch.NotFoundError:
             return True
@@ -266,8 +264,7 @@ class ESCollection(Collection):
             }
         }
         try:
-            info = self.with_retries(self.datastore.client.delete_by_query, index=self.name,
-                                     body=query_body, doc_type='_doc')
+            info = self.with_retries(self.datastore.client.delete_by_query, index=self.name, body=query_body)
             return info.get('deleted', 0) != 0
         except elasticsearch.NotFoundError:
             return False
@@ -311,8 +308,7 @@ class ESCollection(Collection):
 
         # noinspection PyBroadException
         try:
-            res = self.with_retries(self.datastore.client.update, index=self.name,
-                                    doc_type='_doc', id=key, body=update_body)
+            res = self.with_retries(self.datastore.client.update, index=self.name, id=key, body=update_body)
         except Exception:
             return False
 
@@ -340,8 +336,7 @@ class ESCollection(Collection):
 
         # noinspection PyBroadException
         try:
-            res = self.with_retries(self.datastore.client.update_by_query, index=self.name,
-                                    doc_type='_doc', body=query_body)
+            res = self.with_retries(self.datastore.client.update_by_query, index=self.name, body=query_body)
         except Exception:
             return False
 
@@ -577,7 +572,6 @@ class ESCollection(Collection):
             self.datastore.client,
             query=query_body,
             index=self.name,
-            doc_type='_doc',
             preserve_order=True)
         )
 
