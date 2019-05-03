@@ -7,6 +7,7 @@ import warnings
 from datemath import dm
 from retrying import retry
 
+from assemblyline.common.testing import skip
 from assemblyline.datastore import Collection
 
 with warnings.catch_warnings():
@@ -85,7 +86,7 @@ def solr_connection(request):
     if collection:
         return collection
 
-    return pytest.skip("Connection to the SOLR server failed. This test cannot be performed...")
+    return skip("Connection to the SOLR server failed. This test cannot be performed...")
 
 
 @pytest.fixture(scope='module')
@@ -100,7 +101,7 @@ def es_connection(request):
     if collection:
         return collection
 
-    return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
 @pytest.fixture(scope='module')
@@ -115,7 +116,7 @@ def riak_connection(request):
     if collection:
         return collection
 
-    return pytest.skip("Connection to the Riak server failed. This test cannot be performed...")
+    return skip("Connection to the Riak server failed. This test cannot be performed...")
 
 
 def _test_get(c: Collection):

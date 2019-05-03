@@ -1,28 +1,100 @@
 
-image: python:3.6
-
 options:
   max-time: 10
+
 pipelines:
   default:
-    - step:
-        caches:
-          - pip
-        script:
-          - mkdir -p /etc/assemblyline/
-          - mkdir -p /var/cache/assemblyline/
-          - cp test/bitbucket/config.yml /etc/assemblyline
-          - apt update
-          - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
-          - pip install -r assemblyline/requirements.txt -r test/requirements.txt
-          - pip install pytest-error-for-skips  # Special for the pipeline where we know none should skip
-          - pytest -rsx -vv --error-for-skips
-        services:
-          - zookeeper
-          - riak
-          - redis
-          - elasticsearch
-          - solr
+    - parallel:
+      - step:
+          name: Build & Test 3.6
+          image: python:3.6
+          caches: &caches
+            - pip
+          script: &build_test
+            - mkdir -p /etc/assemblyline/
+            - mkdir -p /var/cache/assemblyline/
+            - cp test/bitbucket/config.yml /etc/assemblyline
+            - apt update
+            - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
+            - pip install -r assemblyline/requirements.txt -r test/requirements.txt
+            - pytest -rsx -vv
+          services: &services
+            - zookeeper
+            - riak
+            - redis
+            - elasticsearch
+            - solr
+      - step:
+          name: Build & Test 3.7
+          image: python:3.7
+          caches: *caches
+          script: *build_test
+          services: *services
+      - step:
+          name: Build & Test 3.8
+          image: python:3.8-rc
+          caches: *caches
+          script: *build_test
+          services: *services
+  tags:
+    v*:
+      - step:
+          name: Build Package
+          image: python:3.6
+          script:
+            - pip install wheel
+            - python setup.py bdist_wheel --universal
+            - ls dist/
+          artifacts:
+            - dist/*
+      - parallel:
+        - step:
+            name: Test 3.6
+            image: python:3.6
+            script: &deploy_test
+              - rm -rf assemblyline setup.py  # Make sure we are running on the package from the prior build
+              - apt update
+              - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
+              - pip install -f dist assemblyline
+              - mkdir -p /etc/assemblyline/
+              - mkdir -p /var/cache/assemblyline/
+              - cp test/bitbucket/config.yml /etc/assemblyline
+              - pip install -r test/requirements.txt
+              - pytest -rsx -vv
+            caches: *caches
+            services: *services
+        - step:
+            name: Test 3.7
+            image: python:3.7
+            script: *deploy_test
+            caches: *caches
+            services: *services
+        - step:
+            name: Test 3.8
+            image: python:3.8-rc
+            script: *deploy_test
+            caches: *caches
+            services: *services
+      - step:
+          name: Deploy to Test PyPI
+          image: python:3.6
+          deployment: test
+          script:
+            - pip install twine
+            - python setup.py sdist
+            - ls dist
+            - twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
+      - step:
+          name: Deploy to PyPI
+          image: python:3.6
+          trigger: manual
+          deployment: production
+          script:
+            - pip install twine
+            - python setup.py sdist
+            - ls dist
+            - twine upload dist/*
+
 
 definitions:
   services:

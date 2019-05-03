@@ -1,6 +1,7 @@
 import pytest
 
 from assemblyline.common import forge
+from assemblyline.common.testing import skip
 
 
 KEY = "test1"
@@ -20,7 +21,7 @@ def cachestore():
     if cachestore:
         return cachestore
 
-    return pytest.skip("Connection to the SOLR server failed. This test cannot be performed...")
+    return skip("Connection to the SOLR server failed. This test cannot be performed...")
 
 
 def test_expiry_field(cachestore):

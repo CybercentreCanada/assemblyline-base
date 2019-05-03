@@ -3,6 +3,7 @@ import pytest
 
 from retrying import retry
 
+from assemblyline.common.testing import skip
 from assemblyline.datastore import BaseStore, SearchException
 from assemblyline.datastore.stores.es_store import ESStore
 from assemblyline.datastore.stores.riak_store import RiakStore
@@ -56,7 +57,7 @@ def solr_datastore():
     if document_store:
         return document_store
 
-    return pytest.skip("Connection to the SOLR server failed. This test cannot be performed...")
+    return skip("Connection to the SOLR server failed. This test cannot be performed...")
 
 
 @pytest.fixture(scope='module')
@@ -69,7 +70,7 @@ def es_datastore():
     if document_store:
         return document_store
 
-    return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
 @pytest.fixture(scope='module')
@@ -82,7 +83,7 @@ def riak_datastore():
     if document_store:
         return document_store
 
-    return pytest.skip("Connection to the Riak server failed. This test cannot be performed...")
+    return skip("Connection to the Riak server failed. This test cannot be performed...")
 
 
 TEST_DATA = [

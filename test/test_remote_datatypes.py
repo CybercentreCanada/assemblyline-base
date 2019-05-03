@@ -9,6 +9,7 @@ import pytest
 from redis.exceptions import ConnectionError
 
 from assemblyline.remote.datatypes.counters import MetricCounter
+from assemblyline.common.testing import skip
 
 
 @pytest.fixture(scope='session')
@@ -22,7 +23,7 @@ def redis_connection():
     except ConnectionError:
         pass
 
-    return pytest.skip("Connection to the Redis server failed. This test cannot be performed...")
+    return skip("Connection to the Redis server failed. This test cannot be performed...")
 
 
 # noinspection PyShadowingNames
