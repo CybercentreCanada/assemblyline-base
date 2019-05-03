@@ -7,11 +7,11 @@ ENV PYTHONPATH /opt/alv4/alv4:/opt/alv4/alv4_core:/opt/alv4/alv4_service_api:/op
 
 # SSDEEP pkg requirments
 RUN apt-get update
-RUN apt-get install -yy build-essential libffi-dev python3 python3-dev python3-pip libfuzzy-dev
+RUN apt-get install -yy build-essential libffi-dev libfuzzy-dev
 
 # Pipy packages requirements
-COPY alv4/assemblyline/requirements.txt /tmp
-RUN pip3 install -r /tmp/requirements.txt
+RUN pip3 install assemblyline assemblyline-core
+RUN pip3 uninstall -y assemblyline assemblyline-core
 
 COPY alv4_ui/al_ui/requirements.txt /tmp
 RUN sed -i.old -e "s/assemblyline-core//g" -e "s/assemblyline//g" /tmp/requirements.txt

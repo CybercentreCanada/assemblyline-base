@@ -12,7 +12,6 @@ docker push sgaroncse/nginx-ssl-dev
 # Push dev containers
 docker push sgaroncse/assemblyline_base
 docker push sgaroncse/assemblyline_dev
-docker push sgaroncse/assemblyline_dev_py2
 
 # Push service containers
 docker push sgaroncse/v3_service_base_dev
