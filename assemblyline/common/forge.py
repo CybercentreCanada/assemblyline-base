@@ -78,12 +78,6 @@ def get_datastore(config=None):
     if config.datastore.type == "elasticsearch":
         from assemblyline.datastore.stores.es_store import ESStore
         return AssemblylineDatastore(ESStore(config.datastore.hosts))
-    elif config.datastore.type == "riak":
-        from assemblyline.datastore.stores.riak_store import RiakStore
-        return AssemblylineDatastore(RiakStore(config.datastore.hosts,
-                                               solr_port=config.datastore.riak.solr_port,
-                                               riak_http_port=config.datastore.riak.riak_http_port,
-                                               riak_pb_port=config.datastore.riak.riak_pb_port))
     elif config.datastore.type == "solr":
         from assemblyline.datastore.stores.solr_store import SolrStore
         return AssemblylineDatastore(SolrStore(config.datastore.hosts, port=config.datastore.solr.port))

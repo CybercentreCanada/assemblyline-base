@@ -107,7 +107,7 @@ class YaraValidator(object):
                     except Exception as ve:
                         raise ve
 
-                    # If datastore object given, change status of signature to INVALID in Riak
+                    # If datastore object given, change status of signature to INVALID
                     if datastore:
                         from assemblyline.common import forge
                         store = forge.get_datastore()
@@ -116,7 +116,7 @@ class YaraValidator(object):
                         # Get the offending sig ID
                         sig_query = "name:{} AND meta.al_status:(DEPLOYED OR NOISY)".format(invalid_rule)
                         sigl = store.signatures.list_filtered_keys(sig_query)
-                        # Mark and update Riak
+                        # Mark and update in datastore
                         store = forge.get_datastore()
                         for sig in sigl:
                             sigdata = store.signatures.get(sig)

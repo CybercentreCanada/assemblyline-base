@@ -8,7 +8,6 @@ docker push sgaroncse/minio
 docker push sgaroncse/nginx-ssl-bitbucket
 docker push sgaroncse/nginx-ssl
 docker push sgaroncse/nginx-ssl-dev
-docker push sgaroncse/riak-kv
 
 # Push dev containers
 docker push sgaroncse/assemblyline_base

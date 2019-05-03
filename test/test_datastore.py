@@ -104,21 +104,6 @@ def es_connection(request):
     return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
-@pytest.fixture(scope='module')
-def riak_connection(request):
-    from assemblyline.datastore.stores.riak_store import RiakStore
-
-    try:
-        collection = setup_store(RiakStore(['127.0.0.1']), request)
-    except SetupException:
-        collection = None
-
-    if collection:
-        return collection
-
-    return skip("Connection to the Riak server failed. This test cannot be performed...")
-
-
 def _test_get(c: Collection):
     # Test GET
     assert test_map.get('test1') == c.get('test1')
@@ -224,90 +209,69 @@ def test_es(es_connection: Collection, function):
     if es_connection:
         function(es_connection)
 
-
-# noinspection PyShadowingNames
-@pytest.mark.parametrize("function", [f[0] for f in TEST_FUNCTIONS], ids=[f[1] for f in TEST_FUNCTIONS])
-def test_riak(riak_connection: Collection, function):
-    if riak_connection:
-        function(riak_connection)
-
-
 def fix_date(data):
     # making date precision all the same throughout the datastores so we can compared them
     return {k.replace(".000", ""): v for k, v in data.items()}
 
 
-def compare_output(solr, elastic, riak):
+def compare_output(solr, elastic):
     errors = []
-
-    if solr != riak:
-        errors.append("solr != riak")
 
     if solr != elastic:
         errors.append("solr != elastic")
 
-    if elastic != riak:
-        errors.append("elastic != riak")
-
     if errors:
         print("\n\nNot all outputs are equal: {non_equal}\n\n"
-              "solr = {solr}\nelastic = {elastic}\nriak = {riak}\n\n".format(non_equal=", ".join(errors),
+              "solr = {solr}\nelastic = {elastic}\n\n".format(non_equal=", ".join(errors),
                                                                              solr=solr,
-                                                                             elastic=elastic,
-                                                                             riak=riak))
+                                                                             elastic=elastic))
         return False
 
     return True
 
 
-def _test_c_get(r_tc: Collection, s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.get('list'), e_tc.get('list'), r_tc.get('list'))
+def _test_c_get(s_tc: Collection, e_tc: Collection):
+    assert compare_output(s_tc.get('list'), e_tc.get('list'))
 
 
-def _test_c_require(r_tc: Collection, s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.require('string'), e_tc.require('string'), r_tc.require('string'))
+def _test_c_require(s_tc: Collection, e_tc: Collection):
+    assert compare_output(s_tc.require('string'), e_tc.require('string'))
 
 
-def _test_c_get_if_exists(r_tc: Collection, s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.get_if_exists('int'), e_tc.get_if_exists('int'), r_tc.get_if_exists('int'))
+def _test_c_get_if_exists(s_tc: Collection, e_tc: Collection):
+    assert compare_output(s_tc.get_if_exists('int'), e_tc.get_if_exists('int'))
 
 
-def _test_c_multiget(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+def _test_c_multiget(s_tc: Collection, e_tc: Collection):
     for x in range(5):
         key = 'dict%s' % x
-        assert compare_output(s_tc.get(key), e_tc.get(key), r_tc.get(key))
+        assert compare_output(s_tc.get(key), e_tc.get(key))
     assert compare_output(s_tc.multiget(['int', 'int']),
-                          e_tc.multiget(['int', 'int']),
-                          r_tc.multiget(['int', 'int']))
+                          e_tc.multiget(['int', 'int']))
 
 
-def _test_c_search(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+def _test_c_search(s_tc: Collection, e_tc: Collection):
     assert compare_output(s_tc.search('*:*', sort="id asc"),
-                          e_tc.search('*:*', sort="id asc"),
-                          r_tc.search('*:*', sort="id asc"))
+                          e_tc.search('*:*', sort="id asc"))
     assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
                                       sort="id asc", fl='classification_s'),
                           e_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
-                                      sort="id asc", fl='classification_s'),
-                          r_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
                                       sort="id asc", fl='classification_s'))
 
 
-def _test_c_streamsearch(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+def _test_c_streamsearch(s_tc: Collection, e_tc: Collection):
     ss_s_list = list(s_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
     ss_e_list = list(e_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
-    ss_r_list = list(r_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
-    assert compare_output(ss_s_list, ss_e_list, ss_r_list)
+    assert compare_output(ss_s_list, ss_e_list)
 
 
-def _test_c_keys(r_tc: Collection, s_tc: Collection, e_tc: Collection):
-    assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(r_tc.keys())))
+def _test_c_keys(s_tc: Collection, e_tc: Collection):
+    assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())))
 
 
-def _test_c_histogram(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+def _test_c_histogram(s_tc: Collection, e_tc: Collection):
     assert compare_output(s_tc.histogram('lvl_i', 0, 1000, 100, mincount=2),
-                          e_tc.histogram('lvl_i', 0, 1000, 100, mincount=2),
-                          r_tc.histogram('lvl_i', 0, 1000, 100, mincount=2))
+                          e_tc.histogram('lvl_i', 0, 1000, 100, mincount=2))
 
     h_s = s_tc.histogram('expiry_dt',
                          '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
@@ -317,39 +281,30 @@ def _test_c_histogram(r_tc: Collection, s_tc: Collection, e_tc: Collection):
                          '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
                          '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
                          '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
-    h_r = r_tc.histogram('expiry_dt',
-                         '{n}-10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
-                         '{n}+10{d}/{d}'.format(n=r_tc.datastore.now, d=r_tc.datastore.day),
-                         '+1{d}'.format(d=r_tc.datastore.day, mincount=2))
-    assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_r))
+    assert compare_output(fix_date(h_s), fix_date(h_e))
 
 
-def _test_c_facet(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+def _test_c_facet(s_tc: Collection, e_tc: Collection):
     assert compare_output(s_tc.facet('classification_s'),
-                          e_tc.facet('classification_s'),
-                          r_tc.facet('classification_s'))
+                          e_tc.facet('classification_s'))
 
 
-def _test_c_stats(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+def _test_c_stats(s_tc: Collection, e_tc: Collection):
     assert compare_output(s_tc.stats('lvl_i'),
-                          e_tc.stats('lvl_i'),
-                          r_tc.stats('lvl_i'))
+                          e_tc.stats('lvl_i'))
 
 
-def _test_c_group_search(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+def _test_c_group_search(s_tc: Collection, e_tc: Collection):
     assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s'),
-                          e_tc.grouped_search('lvl_i', fl='classification_s'),
-                          r_tc.grouped_search('lvl_i', fl='classification_s'))
+                          e_tc.grouped_search('lvl_i', fl='classification_s'))
 
     assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
                                               sort="lvl_i desc"),
                           e_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
-                                              sort="lvl_i desc"),
-                          r_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
                                               sort="lvl_i desc"))
 
 
-def _test_c_fields(r_tc: Collection, s_tc: Collection, e_tc: Collection):
+def _test_c_fields(s_tc: Collection, e_tc: Collection):
     # For some reason, elasticsearch adds the random list key as a field name. Since this is a
     # specific thing with elasticsearch we will pop that field from the rest and compare the other
     # fields accordingly.
@@ -362,7 +317,6 @@ def _test_c_fields(r_tc: Collection, s_tc: Collection, e_tc: Collection):
     assert compare_output(
         {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in s_tc.fields().items()},
         {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in e_fields.items()},
-        {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in r_tc.fields().items()}
     )
 
 
@@ -385,6 +339,6 @@ TEST_CONSISTENCY_FUNCS = [
 
 # noinspection PyShadowingNames
 @pytest.mark.parametrize("function", [f[0] for f in TEST_CONSISTENCY_FUNCS], ids=[f[1] for f in TEST_CONSISTENCY_FUNCS])
-def test_consistency(riak_connection: Collection, solr_connection: Collection, es_connection: Collection, function):
-    if riak_connection and solr_connection and es_connection:
-        function(riak_connection, solr_connection, es_connection)
+def test_consistency(solr_connection: Collection, es_connection: Collection, function):
+    if solr_connection and es_connection:
+        function(solr_connection, es_connection)

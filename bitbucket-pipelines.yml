@@ -20,7 +20,6 @@ pipelines:
             - pytest -rsx -vv
           services: &services
             - zookeeper
-            - riak
             - redis
             - elasticsearch
             - solr
@@ -108,12 +107,6 @@ definitions:
     redis:
       image: redis
       memory: 256
-
-    riak:
-      image: sgaroncse/riak-kv:2.1.4
-      memory: 512
-      environment:
-        SOLR_HEAP: '-Xms256m -Xmx256m'
 
     zookeeper:
       image: zookeeper

@@ -385,15 +385,6 @@ DEFAULT_ELASTICSEARCH = {
 
 
 @odm.model()
-class Riak(odm.Model):
-    # TODO: Model definition for Riak needs to be done
-    pass
-
-
-DEFAULT_RIAK = {}
-
-
-@odm.model()
 class Solr(odm.Model):
     # TODO: Model definition for Solr needs to be done
     pass
@@ -404,10 +395,9 @@ DEFAULT_SOLR = {}
 
 @odm.model()
 class Datastore(odm.Model):
-    type = odm.Enum({"elasticsearch", "riak", "solr"})
+    type = odm.Enum({"elasticsearch", "solr"})
     hosts: List[str] = odm.List(odm.Keyword())
     elasticsearch: Elasticsearch = odm.Compound(Elasticsearch, default=DEFAULT_ELASTICSEARCH)
-    riak: Riak = odm.Compound(Riak, default=DEFAULT_RIAK)
     solr: Solr = odm.Compound(Solr, default=DEFAULT_SOLR)
 
 
@@ -415,7 +405,6 @@ DEFAULT_DATASTORE = {
     "type": "elasticsearch",
     "hosts": ["localhost"],
     "elasticsearch": DEFAULT_ELASTICSEARCH,
-    "riak": DEFAULT_RIAK,
     "solr": DEFAULT_SOLR
 }
 

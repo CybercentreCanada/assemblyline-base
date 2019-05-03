@@ -24,15 +24,6 @@ services:
     ports:
       - '6379:6379'
 
-  riak:
-    image: sgaroncse/riak-kv:2.1.4
-    environment:
-      SOLR_HEAP: '-Xms512m -Xmx512m'
-    ports:
-      - '8093:8093'
-      - '8098:8098'
-      - '8087:8087'
-
   zookeeper:
     image: zookeeper
     networks:

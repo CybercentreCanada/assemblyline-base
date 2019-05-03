@@ -6,7 +6,6 @@ from retrying import retry
 from assemblyline.common.testing import skip
 from assemblyline.datastore import BaseStore, SearchException
 from assemblyline.datastore.stores.es_store import ESStore
-from assemblyline.datastore.stores.riak_store import RiakStore
 from assemblyline.datastore.stores.solr_store import SolrStore
 from assemblyline.odm import Model, Mapping, Classification
 from assemblyline.odm.models.alert import Alert
@@ -71,19 +70,6 @@ def es_datastore():
         return document_store
 
     return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
-
-
-@pytest.fixture(scope='module')
-def riak_datastore():
-    try:
-        document_store = setup_store(RiakStore(['127.0.0.1']))
-    except SetupException:
-        document_store = None
-
-    if document_store:
-        return document_store
-
-    return skip("Connection to the Riak server failed. This test cannot be performed...")
 
 
 TEST_DATA = [
@@ -263,9 +249,3 @@ def test_es_models(es_datastore: SolrStore, collection_name: str, document: Mode
     if es_datastore:
         _perform_single_collection_test(es_datastore, collection_name, document)
 
-
-# noinspection PyShadowingNames
-@pytest.mark.parametrize("collection_name,document", TEST_DATA, ids=[d[0] for d in TEST_DATA])
-def test_riak_models(riak_datastore: SolrStore, collection_name: str, document: Model):
-    if riak_datastore:
-        _perform_single_collection_test(riak_datastore, collection_name, document)

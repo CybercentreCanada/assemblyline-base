@@ -39,11 +39,6 @@ def es_connection(model, use_model=True):
     return setup_collection(ESStore(['127.0.0.1']), model, use_model)
 
 
-def riak_connection(model, use_model=True):
-    from assemblyline.datastore.stores.riak_store import RiakStore
-    return setup_collection(RiakStore(['127.0.0.1']), model, use_model)
-
-
 def measure(data, key):
     class _timer:
         def __enter__(self):
@@ -145,8 +140,6 @@ def main():
         print("Creating indexes...")
         log.setLevel(logging.ERROR)
         datastores = {
-            'riak': riak_connection(Submission, False),
-            'riak_model': riak_connection(Submission),
             'solr': solr_connection(Submission, False),
             'solr_model': solr_connection(Submission),
             'es': es_connection(Submission, False),

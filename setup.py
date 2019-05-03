@@ -29,7 +29,6 @@ setup(
         'pysftp',
         'netifaces',
         'pyroute2',
-        'riak',
         'redis',
         'requests',
         'elasticsearch>=6.0.0,<7.0.0',

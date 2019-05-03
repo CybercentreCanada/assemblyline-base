@@ -19,7 +19,7 @@ back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Class
 
 def build_mapping(field_data, prefix=None, multivalued=False, dynamic=False):
     """
-    The mapping for riak based on a python model object.
+    The mapping for solr based on a python model object.
     """
 
     prefix = prefix or []
