@@ -42,7 +42,7 @@ pipelines:
           image: python:3.6
           script:
             - pip install wheel
-            - python setup.py bdist_wheel --universal
+            - python setup.py bdist_wheel
             - ls dist/
           artifacts:
             - dist/*
@@ -80,7 +80,6 @@ pipelines:
           deployment: test
           script:
             - pip install twine
-            - python setup.py sdist
             - ls dist
             - twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
       - step:
@@ -90,7 +89,6 @@ pipelines:
           deployment: production
           script:
             - pip install twine
-            - python setup.py sdist
             - ls dist
             - twine upload dist/*
 
