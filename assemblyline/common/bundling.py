@@ -15,6 +15,7 @@ config = forge.get_config()
 Classification = forge.get_classification()
 MAX_RETRY = 10
 WORK_DIR = "/tmp/bundling"
+BUNDLE_MAGIC = b'\x1f\x8b\x08'
 
 
 class BundlingException(Exception):
