@@ -212,7 +212,7 @@ def random_data_for_field(field, name):
                 return get_random_service_name()
             elif "service_version" in name:
                 return get_random_service_version()
-            elif "sid" in name or "ingest_id" in name:
+            elif "sid" in name or "ingest_id" in name or "workflow_id" in name:
                 return get_random_uid()
             elif "mac" in name:
                 return get_random_hash(12).upper()
