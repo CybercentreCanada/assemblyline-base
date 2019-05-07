@@ -206,7 +206,7 @@ def random_data_for_field(field, name):
                 return get_random_label()
             elif "groups" in name:
                 return get_random_groups()
-            elif "owner" in name or "uname" in name or "submitter" in name:
+            elif "owner" in name or "uname" in name or "submitter" in name or "created_by" in name:
                 return get_random_user()
             elif "service_name" in name:
                 return get_random_service_name()
