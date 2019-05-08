@@ -29,12 +29,12 @@ pipelines:
           caches: *caches
           script: *build_test
           services: *services
-      - step:
-          name: Build & Test 3.8
-          image: python:3.8-rc
-          caches: *caches
-          script: *build_test
-          services: *services
+#      - step:
+#          name: Build & Test 3.8
+#          image: python:3.8-rc
+#          caches: *caches
+#          script: *build_test
+#          services: *services
   tags:
     v*:
       - step:
@@ -68,12 +68,12 @@ pipelines:
             script: *deploy_test
             caches: *caches
             services: *services
-        - step:
-            name: Test 3.8
-            image: python:3.8-rc
-            script: *deploy_test
-            caches: *caches
-            services: *services
+#        - step:
+#            name: Test 3.8
+#            image: python:3.8-rc
+#            script: *deploy_test
+#            caches: *caches
+#            services: *services
       - step:
           name: Deploy to Test PyPI
           image: python:3.6
