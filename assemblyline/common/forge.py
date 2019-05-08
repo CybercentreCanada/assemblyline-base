@@ -1,4 +1,5 @@
 # This file contains the loaders for the different components of the system
+import elasticapm
 import importlib
 import time
 import os
@@ -9,6 +10,7 @@ from easydict import EasyDict
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
 
+config_singletons = {}
 
 def get_classification(yml_config=None):
     from assemblyline.common.classification import Classification, InvalidDefinition
@@ -61,7 +63,10 @@ def _get_config(static=False, yml_config=None):
 
 
 def get_config(static=False, yml_config=None):
-    return CachedObject(_get_config, kwargs={'static': static, 'yml_config': yml_config})
+    if (static, yml_config) not in config_singletons:
+         config_singletons[(static, yml_config)] = CachedObject(_get_config, kwargs={'static': static,
+                                                                                     'yml_config': yml_config})
+    return config_singletons[(static, yml_config)]
 
 
 def get_constants(config=None):
@@ -144,31 +149,34 @@ def get_metrics_sink(redis=None):
 class CachedObject:
     """An object proxy that automatically refreshes its target periodically."""
 
-    def __init__(self, factory, refresh=5, args=None, kwargs=None):
+    def __init__(self, factory, refresh=60, args=None, kwargs=None):
         """
         Args:
             factory: Factory that takes the arguments given in `args` and `kwargs` and produces the proxyed object.
             refresh: Refresh interval in seconds.
         """
-        self._factory = factory
-        self._refresh = refresh
-        self._cached = None
-        self._update_time = 0
-        self._args = args or []
-        self._kwargs = kwargs or {}
+        self.__factory = factory
+        self.__refresh = refresh
+        self.__cached = None
+        self.__update_time = 0
+        self.__args = args or []
+        self.__kwargs = kwargs or {}
+
+    def __reload(self):
+        if time.time() - self.__update_time > self.__refresh:
+            with elasticapm.capture_span(name=f"CachedObject.reload({self.__factory.__name__})",
+                                         span_type="cached_object"):
+                self.__cached = self.__factory(*self.__args, **self.__kwargs)
+                self.__update_time = time.time()
 
     def __getattr__(self, key):
         """Forward all attribute requests to the underlying object.
 
         Refresh the object every `_update_time` seconds.
         """
-        if time.time() - self._update_time > self._refresh:
-            self._cached = self._factory(*self._args, **self._kwargs)
-            self._update_time = time.time()
-        return getattr(self._cached, key)
+        self.__reload()
+        return getattr(self.__cached, key)
 
     def __getitem__(self, item):
-        if time.time() - self._update_time > self._refresh:
-            self._cached = self._factory(*self._args, **self._kwargs)
-            self._update_time = time.time()
-        return self._cached[item]
+        self.__reload()
+        return self.__cached[item]
