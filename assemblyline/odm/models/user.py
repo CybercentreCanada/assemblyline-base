@@ -8,7 +8,6 @@ ACL = {"R", "W", "E"}
 @odm.model(index=False, store=False)
 class ApiKey(odm.Model):
     acl = odm.List(odm.Enum(values=ACL))  # Access control list for the apikey
-    name = odm.Keyword()                  # Name of the apikey
     password = odm.Keyword()              # BCrypt hash of the password for the apikey
 
 
@@ -16,7 +15,7 @@ class ApiKey(odm.Model):
 class User(odm.Model):
     agrees_with_tos = odm.Date(index=False, store=False, default_set=True)  # Date the user agree with terms of service
     api_quota = odm.Integer(default=10, store=False)                        # Max number of concurrent API requests
-    apikeys = odm.List(odm.Compound(ApiKey), default={})                    # List of apikeys
+    apikeys = odm.Mapping(odm.Compound(ApiKey), default={})                 # List of apikeys
     can_impersonate = odm.Boolean(default=False, index=False,
                                   store=False)                              # Allowed to query on behalf of others
     classification = odm.Classification(
