@@ -34,7 +34,7 @@ class SMTP(odm.Model):
 
 
 DEFAULT_SMTP = {
-    "from_adr": "noreply@assemblyline.local",
+    "from_adr": "noreply@localhost",
     "host": "localhost",
     "password": "changeme",
     "port": 587,
@@ -53,7 +53,7 @@ class Signup(odm.Model):
 DEFAULT_SIGNUP = {
     "enabled": False,
     "smtp": DEFAULT_SMTP,
-    "valid_email_patterns": [".*", ".*@assemblyline.local"]
+    "valid_email_patterns": [".*", ".*@localhost"]
 }
 
 
@@ -623,9 +623,9 @@ DEFAULT_UI = {
     "context": 'al_ui.site_specific.context',
     "debug": False,
     "download_encoding": "cart",
-    "email": 'admin@assemblyline.local',
+    "email": 'admin@localhost',
     "enforce_quota": True,
-    "fqdn": "assemblyline.local",
+    "fqdn": "localhost",
     "ingest_max_priority": 250,
     "read_only": False,
     "read_only_offset": "",
