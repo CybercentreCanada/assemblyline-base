@@ -18,7 +18,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
     ],
     keywords="assemblyline malware gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test/*']),
