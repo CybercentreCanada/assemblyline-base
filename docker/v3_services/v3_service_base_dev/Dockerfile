@@ -15,12 +15,10 @@ RUN apt-get update && apt-get install -y \
   supervisor
 
 # Pipy packages requirements
-COPY alv4/assemblyline/requirements.txt /tmp
-RUN pip3 install -r /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+RUN pip3 install assemblyline
+RUN pip install assemblyline
 
 COPY alv3_service/requirements.txt /tmp
-RUN sed -i.old -e "s/assemblyline-core//g" -e "s/assemblyline//g" /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
 COPY alv4_service_client/requirements.txt /tmp
