@@ -23,7 +23,7 @@ server {
         add_header            Strict-Transport-Security    "max-age=31536000; includeSubDomains";
 
         proxy_set_header      X-Remote-User   ${DOLLAR}remote_user;
-        proxy_set_header      X-Forward-For   ${DOLLAR}proxy_add_x_forwarded_for;
+        proxy_set_header      X-Forwarded-For ${DOLLAR}proxy_add_x_forwarded_for;
         proxy_set_header      Host            ${DOLLAR}http_host;
         proxy_redirect        off;
         proxy_buffering       off;
@@ -38,7 +38,7 @@ server {
         add_header            X-Frame-Options            SAMEORIGIN;
         add_header            Strict-Transport-Security  "max-age=31536000; includeSubDomains";
 
-	    proxy_set_header      X-Forward-For              ${DOLLAR}proxy_add_x_forwarded_for;
+	    proxy_set_header      X-Forwarded-For            ${DOLLAR}proxy_add_x_forwarded_for;
         proxy_set_header      X-Remote-Cert-Verified     ${DOLLAR}ssl_client_verify;
         proxy_set_header      X-Remote-DN                ${DOLLAR}ssl_client_s_dn;
         proxy_set_header      Host                       ${DOLLAR}http_host;
