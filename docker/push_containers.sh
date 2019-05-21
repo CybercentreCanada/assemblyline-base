@@ -3,7 +3,6 @@
 # Push core containers
 docker push sgaroncse/elasticsearch
 docker push sgaroncse/apm-server
-docker push sgaroncse/metricbeat
 docker push sgaroncse/minio
 docker push sgaroncse/nginx-ssl-bitbucket
 docker push sgaroncse/nginx-ssl

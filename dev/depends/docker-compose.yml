@@ -12,7 +12,7 @@ services:
     command: server /data
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.0.0
+    image: docker.elastic.co/kibana/kibana:7.1.0
     environment:
       SERVER_NAME: localhost
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
@@ -26,7 +26,7 @@ services:
       retries: 5
 
   apm_server:
-    image: sgaroncse/apm-server:7.0.0
+    image: sgaroncse/apm-server:7.1.0
     environment:
       ES_HOSTS: elasticsearch:9200
     ports:
@@ -36,7 +36,7 @@ services:
         condition: service_healthy
 
   elasticsearch:
-    image: sgaroncse/elasticsearch:7.0.0
+    image: sgaroncse/elasticsearch:7.1.0
     environment:
       ES_JAVA_OPTS: '-Xms512m -Xmx512m'
       DISCOVERY_TYPE: 'single-node'
@@ -49,7 +49,7 @@ services:
         retries: 3
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:7.0.0
+    image: docker.elastic.co/beats/filebeat:7.1.0
     user: root
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -61,7 +61,7 @@ services:
         condition: service_healthy
 
   metricbeat:
-    image: docker.elastic.co/beats/metricbeat:7.0.0
+    image: docker.elastic.co/beats/metricbeat:7.1.0
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
