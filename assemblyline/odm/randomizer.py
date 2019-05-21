@@ -88,6 +88,7 @@ F_TYPES = [
     "code/vb"
 ]
 
+
 def get_random_file_type():
     return random.choice(F_TYPES)
 

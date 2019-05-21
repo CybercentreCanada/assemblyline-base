@@ -4,20 +4,20 @@ from assemblyline.odm.models.workflow import PRIORITIES, STATUSES
 EXTENDED_SCAN_VALUES = {"submitted", "skipped", "incomplete", "completed"}
 
 
-@odm.model(index=True, store=True)
+@odm.model(index=True, store=False)
 class ALResults(odm.Model):                 # Assemblyline result block
-    attrib = odm.List(odm.Keyword(), store=False, copyto="__text__")   # List of attribution
-    av = odm.List(odm.Keyword(), copyto="__text__")                    # List of AV hits
-    domain = odm.List(odm.Keyword(), store=False, copyto="__text__")   # List of all domains
-    domain_dynamic = odm.List(odm.Keyword(), store=False)              # List of domains found during dynamic analysis
-    domain_static = odm.List(odm.Keyword(), store=False)               # List of domains foudn during static analysis
-    ip = odm.List(odm.Keyword(), store=False, copyto="__text__")       # List of all IPs
-    ip_dynamic = odm.List(odm.Keyword(), store=False)                  # List of IPs found during dynamic analysis
-    ip_static = odm.List(odm.Keyword(), store=False)                   # List of IPs found during static analysis
-    request_end_time = odm.Date(index=False, store=False)              # End time of the Assemblyline submission
-    score = odm.Integer()                                              # Maximum score found in the submission
-    summary = odm.List(odm.Keyword(), store=False, copyto="__text__")  # List of executive summary for the alert
-    yara = odm.List(odm.Keyword(), store=False, copyto="__text__")     # List of yara hits
+    attrib = odm.List(odm.Keyword(), default=[], copyto="__text__")          # List of attribution
+    av = odm.List(odm.Keyword(), default=[], store=True, copyto="__text__")  # List of AV hits
+    domain = odm.List(odm.Keyword(), default=[], copyto="__text__")          # List of all domains
+    domain_dynamic = odm.List(odm.Keyword(), default=[])                 # List of domains found during dynamic analysis
+    domain_static = odm.List(odm.Keyword(), default=[])                  # List of domains foudn during static analysis
+    ip = odm.List(odm.Keyword(), default=[], copyto="__text__")          # List of all IPs
+    ip_dynamic = odm.List(odm.Keyword(), default=[])                     # List of IPs found during dynamic analysis
+    ip_static = odm.List(odm.Keyword(), default=[])                      # List of IPs found during static analysis
+    request_end_time = odm.Date(index=False)                             # End time of the Assemblyline submission
+    score = odm.Integer(store=True)                                      # Maximum score found in the submission
+    summary = odm.List(odm.Keyword(), default=[], copyto="__text__")     # List of executive summary for the alert
+    yara = odm.List(odm.Keyword(), default=[], copyto="__text__")        # List of yara hits
 
 
 @odm.model(index=True, store=True)
@@ -43,7 +43,7 @@ class Alert(odm.Model):
     owner = odm.Keyword(default_set=True)                               # Owner of the alert
     priority = odm.Enum(values=PRIORITIES, default_set=True)            # Priority applied to the alert
     reporting_ts = odm.Date()                                           # Time at which the alert was created
-    sid = odm.Keyword(index=False, store=False)                         # ID of the submission related to this alert
+    sid = odm.Keyword(store=False)                                      # ID of the submission related to this alert
     status = odm.Enum(values=STATUSES, default_set=True)                # Status applied to the alert
     ts = odm.Date()                                                     # Timestamp at which the file was submitted
     type = odm.Keyword()                                                # Type of alert
