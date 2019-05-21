@@ -81,20 +81,21 @@ FILESTORE_METRICS = [
 # Types of metrics
 METRIC_TYPES = {
     'alerter': ALERT_METRICS,
-#    'datastore': DATASTORE_METRICS,
+    # 'datastore': DATASTORE_METRICS,
     'dispatcher': DISPATCH_METRICS,
     'expiry': EXPIRY_METRICS,
-#    'filestore': FILESTORE_METRICS,
+    # 'filestore': FILESTORE_METRICS,
     'ingester': INGEST_METRICS,
     'service': SRV_METRICS,
     'service_timing': SRV_TIMING_METRICS,
 }
 
 TIMED_METRICS = [
-#    'datastore',
-#    'filestore',
+    # 'datastore',
+    # 'filestore',
     'service_timing',
 ]
+
 
 class MetricsFactory(object):
     def __init__(self, metrics_type, name=None, redis=None, config=None):

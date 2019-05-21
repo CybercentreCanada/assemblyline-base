@@ -209,6 +209,7 @@ def test_es(es_connection: Collection, function):
     if es_connection:
         function(es_connection)
 
+
 def fix_date(data):
     # making date precision all the same throughout the datastores so we can compared them
     return {k.replace(".000", ""): v for k, v in data.items()}
@@ -223,8 +224,8 @@ def compare_output(solr, elastic):
     if errors:
         print("\n\nNot all outputs are equal: {non_equal}\n\n"
               "solr = {solr}\nelastic = {elastic}\n\n".format(non_equal=", ".join(errors),
-                                                                             solr=solr,
-                                                                             elastic=elastic))
+                                                              solr=solr,
+                                                              elastic=elastic))
         return False
 
     return True

@@ -64,6 +64,7 @@ class Counters(object):
         for queue in retry_call(self.c.keys, "%s-*" % self.prefix):
             retry_call(self.c.delete, queue)
 
+
 _M_COUNTER_POP_EXPIRED = """
 local now = redis.call("time")[1]
 local cur_minute = (math.floor(now / 60) * 60)
@@ -170,7 +171,6 @@ class MetricCounter:
         retry_call(self._inc_script, keys=[f"{self.path}.c"], args=[1])
         return retry_call(self._inc_script, keys=[f"{self.path}.t"], args=[execution_time])
 
-
     @classmethod
     def list_counters(cls, redis):
         """List all active counters on a redis server.
@@ -180,6 +180,7 @@ class MetricCounter:
         data = retry_call(redis.keys, cls.PREFIX + '*')
         pre = len(cls.PREFIX)
         return [key[pre:].decode() for key in data]
+
 
 class MetricsCounterAggregator(object):
     def __init__(self, metrics_type, name=None, config=None, redis=None):
