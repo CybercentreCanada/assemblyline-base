@@ -1,10 +1,9 @@
-import baseconv
 import logging
 import os
 import shutil
-import uuid
 
 from assemblyline.common.exceptions import ChainAll
+from assemblyline.common.uid import get_random_id
 from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
 
 
@@ -80,7 +79,7 @@ class TransportLocal(Transport):
 
         dirname = os.path.dirname(dst_path)
         filename = os.path.basename(dst_path)
-        tempname = baseconv.base62.encode(uuid.uuid4().int)
+        tempname = get_random_id()
         temppath = _join(dirname, tempname)
         finalpath = _join(dirname, filename)
         assert (finalpath == dst_path)
@@ -106,7 +105,7 @@ class TransportLocal(Transport):
         dirname = os.path.dirname(path)
         filename = os.path.basename(path)
 
-        tempname = baseconv.base62.encode(uuid.uuid4().int)
+        tempname = get_random_id()
         temppath = _join(dirname, tempname)
 
         finalpath = _join(dirname, filename)

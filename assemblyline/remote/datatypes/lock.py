@@ -1,7 +1,5 @@
 
-import baseconv
-import uuid
-
+from assemblyline.common.uid import get_random_id
 from assemblyline.remote.datatypes import get_client, retry_call
 
 lock_acquire_script = """
@@ -29,7 +27,7 @@ end
 
 class Lock(object):
     def __init__(self, name, timeout, host=None, port=None, db=None):
-        self.uuid = baseconv.base62.encode(uuid.uuid4().int)
+        self.uuid = get_random_id()
         self.c = get_client(host, port, db, False)
         self.lock_release = '-'.join(('lock', str(timeout), name, 'released'))
         self.lock_holder = '-'.join(('lock', str(timeout), name, 'holder'))

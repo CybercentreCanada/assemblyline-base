@@ -1,11 +1,8 @@
-import baseconv
 import logging
 import os
 import posixpath
-import tempfile
-
 import pysftp
-import uuid
+import tempfile
 import warnings
 
 from io import BytesIO
@@ -13,6 +10,7 @@ from io import BytesIO
 from paramiko import SSHException
 
 from assemblyline.common.exceptions import ChainAll
+from assemblyline.common.uid import get_random_id
 from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
 
 
@@ -127,7 +125,7 @@ class TransportSFTP(Transport):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
-        tempname = baseconv.base62.encode(uuid.uuid4().int)
+        tempname = get_random_id()
         temppath = posixpath.join(dirname, tempname)
         finalpath = posixpath.join(dirname, filename)
         assert (finalpath == dst_path)
@@ -154,7 +152,7 @@ class TransportSFTP(Transport):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
-        tempname = baseconv.base62.encode(uuid.uuid4().int)
+        tempname = get_random_id()
         temppath = posixpath.join(dirname, tempname)
         finalpath = posixpath.join(dirname, filename)
         assert (finalpath == dst_path)

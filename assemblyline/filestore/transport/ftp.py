@@ -1,16 +1,15 @@
-import baseconv
 import ftplib
 import logging
 import os
 import posixpath
 import time
-import uuid
 import errno
 
 from io import BytesIO
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.path import splitpath
+from assemblyline.common.uid import get_random_id
 from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
 
 
@@ -171,7 +170,7 @@ class TransportFTP(Transport):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
-        tempname = baseconv.base62.encode(uuid.uuid4().int)
+        tempname = get_random_id()
         temppath = posixpath.join(dirname, tempname)
         finalpath = posixpath.join(dirname, filename)
         assert (finalpath == dst_path)
@@ -200,7 +199,7 @@ class TransportFTP(Transport):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
-        tempname = baseconv.base62.encode(uuid.uuid4().int)
+        tempname = get_random_id()
         temppath = posixpath.join(dirname, tempname)
         finalpath = posixpath.join(dirname, filename)
         assert (finalpath == dst_path)

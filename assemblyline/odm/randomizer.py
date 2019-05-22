@@ -1,9 +1,8 @@
-import baseconv
 import datetime
 import random
 import time
-import uuid
 
+from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
     Classification, Optional, Any, forge
 
@@ -109,10 +108,6 @@ def get_random_heuristic_id():
     return f"AL_{get_random_service_name().upper()}_00{random.randint(1, 9)}"
 
 
-def get_random_uid():
-    return baseconv.base62.encode(uuid.uuid4().int)
-
-
 def get_random_label():
     return random.choice(LABELS)
 
@@ -214,7 +209,7 @@ def random_data_for_field(field, name):
             elif "service_version" in name:
                 return get_random_service_version()
             elif "sid" in name or "ingest_id" in name or "workflow_id" in name:
-                return get_random_uid()
+                return get_random_id()
             elif "mac" in name:
                 return get_random_hash(12).upper()
             elif "sha1" in name:

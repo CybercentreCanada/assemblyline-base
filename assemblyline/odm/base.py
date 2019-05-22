@@ -11,19 +11,17 @@ independent data models in python. This gives us:
 """
 
 import arrow
-import baseconv
 import copy
 import json
 import re
 import typing
-import uuid
 
 from datetime import datetime
-
 from dateutil.tz import tzutc
 
 from assemblyline.common import forge
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.uid import get_random_id
 
 BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "__access_grp2__"}
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -227,7 +225,7 @@ class UUID(Keyword):
     """
     def check(self, value, **kwargs):
         if value is None:
-            value = baseconv.base62.encode(uuid.uuid4().int)
+            value = get_random_id()
         return str(value)
 
 

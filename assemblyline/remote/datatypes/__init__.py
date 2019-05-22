@@ -1,21 +1,19 @@
 #!/usr/bin/env python
 
-import baseconv
 import json
 import logging
 import redis
 import time
-import uuid
-
 
 from datetime import datetime
 from packaging.version import parse
 
 
+from assemblyline.common import forge
+from assemblyline.common.uid import get_random_id
+
 # Add a version warning if redis python client is < 2.10.0. Older versions
 # have a connection bug that can manifest with the dispatcher.
-from assemblyline.common import forge
-
 if parse(redis.__version__) <= parse('2.10.0'):
     import warnings
     warnings.warn("%s works best with redis > 2.10.0. You're running"
@@ -38,7 +36,7 @@ def reply_queue_name(prefix=None, suffix=None):
     else:
         components = []
 
-    components.append(baseconv.base62.encode(uuid.uuid4().int))
+    components.append(get_random_id())
 
     if suffix:
         components.append(str(suffix))

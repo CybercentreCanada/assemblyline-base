@@ -1,16 +1,14 @@
 
-import baseconv
-import random
-import uuid
-import time
-from threading import Thread
-
 import pytest
+import random
+import time
+
+from threading import Thread
 from redis.exceptions import ConnectionError
 
-from assemblyline.remote.datatypes.counters import MetricCounter
 from assemblyline.common.testing import skip
-
+from assemblyline.common.uid import get_random_id
+from assemblyline.remote.datatypes.counters import MetricCounter
 
 @pytest.fixture(scope='session')
 def redis_connection():
@@ -187,7 +185,7 @@ def test_lock(redis_connection):
         assert not t2.is_alive()
 
 
-# noinspection PyShadowingNames
+# noinspection PyShadowingNames,PyUnusedLocal
 def test_priority_queue(redis_connection):
     from assemblyline.remote.datatypes.queues.priority import PriorityQueue
     with PriorityQueue('test-priority-queue') as pq:
@@ -228,7 +226,7 @@ def test_priority_queue(redis_connection):
         assert pq.dequeue_range(-100, 0) == ['second']
 
 
-# noinspection PyShadowingNames
+# noinspection PyShadowingNames,PyUnusedLocal
 def test_unique_priority_queue(redis_connection):
     from assemblyline.remote.datatypes.queues.priority import UniquePriorityQueue
     with UniquePriorityQueue('test-priority-queue') as pq:
@@ -345,11 +343,11 @@ def test_comms_queue(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.queues.comms import CommsQueue
 
-        def publish_messages(msg_list):
+        def publish_messages(message_list):
             time.sleep(0.1)
-            with CommsQueue('test-comms-queue') as cq:
-                for msg in msg_list:
-                    cq.publish(msg)
+            with CommsQueue('test-comms-queue') as cq_p:
+                for message in message_list:
+                    cq_p.publish(message)
 
         msg_list = ["bob", 1, {"bob": 1}, [1, 2, 3], None, "Nice!", "stop"]
         t = Thread(target=publish_messages, args=(msg_list,))
@@ -371,7 +369,7 @@ def test_comms_queue(redis_connection):
 
 def test_metric_counter(redis_connection):
     # Flush the counter before starting the test
-    test_counter_id = baseconv.base62.encode(uuid.uuid4().int)
+    test_counter_id = get_random_id()
     counter = MetricCounter(test_counter_id, redis_connection)
     counter.reset()
     try:

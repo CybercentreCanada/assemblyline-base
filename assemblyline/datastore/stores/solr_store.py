@@ -1,10 +1,8 @@
-import baseconv
 import json
 import os
 import requests
 import time
 import threading
-import uuid
 
 from copy import copy, deepcopy
 from random import choice
@@ -13,6 +11,7 @@ from urllib.parse import quote
 from assemblyline.common.chunk import chunked_list
 from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
+from assemblyline.common.uid import get_random_id
 from assemblyline.datastore import BaseStore, log, Collection
 from assemblyline.datastore.exceptions import SearchRetryException, DataStoreException, SearchException
 from assemblyline.datastore.support.solr.build import build_mapping, back_mapping
@@ -473,7 +472,7 @@ class SolrCollection(Collection):
         lock = threading.Lock()
         sf_t = threading.Thread(target=_auto_fill,
                                 args=[items, lock, args],
-                                name=f"stream_search_{baseconv.base62.encode(uuid.uuid4().int)}")
+                                name=f"stream_search_{get_random_id()}")
         sf_t.setDaemon(True)
         sf_t.start()
         while not yield_done:
