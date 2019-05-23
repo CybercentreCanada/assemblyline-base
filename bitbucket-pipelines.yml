@@ -90,7 +90,7 @@ pipelines:
           script:
             - pip install twine
             - ls dist
-            - twine upload dist/*
+            - twine upload --skip-existing dist/*
       - step:
           name: Deploy to Docker Hub
           trigger: manual
@@ -98,7 +98,7 @@ pipelines:
           deployment: container
           script:
             - export TAG=${BITBUCKET_TAG#v}
-            - until pip install assemblyline== 2>&1 | grep -q $TAG; do sleep 2; done
+            - until pip install assemblyline== 2>&1 | grep -q $TAG; do sleep 2; pip install assemblyline== 2>&1; done
             - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
             - docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
             - docker push cccs/assemblyline
