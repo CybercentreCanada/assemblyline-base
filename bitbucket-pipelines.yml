@@ -93,6 +93,7 @@ pipelines:
             - twine upload --skip-existing dist/*
       - step:
           name: Deploy to Docker Hub
+          image: python:3.6
           trigger: manual
           services: [docker]
           deployment: container
