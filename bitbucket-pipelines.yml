@@ -77,7 +77,7 @@ pipelines:
       - step:
           name: Deploy to Test PyPI
           image: python:3.6
-          deployment: test
+          deployment: test_pypi
           script:
             - pip install twine
             - ls dist
@@ -86,13 +86,22 @@ pipelines:
           name: Deploy to PyPI
           image: python:3.6
           trigger: manual
-          deployment: production
+          deployment: pypi
           script:
             - pip install twine
             - ls dist
             - twine upload dist/*
-
-
+      - step:
+          name: Deploy to Docker Hub
+          trigger: manual
+          services: [docker]
+          deployment: container
+          script:
+            - export TAG=${BITBUCKET_TAG#v}
+            - until pip install assemblyline== 2>&1 | grep -q $TAG; do sleep 2; done
+            - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
+            - docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
+            - docker push cccs/assemblyline
 definitions:
   services:
     elasticsearch:
