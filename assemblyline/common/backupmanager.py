@@ -4,281 +4,166 @@ import time
 import os
 import subprocess
 import threading
-import uuid
+
+from multiprocessing import Process
 
 from assemblyline.common import forge
+from assemblyline.common.uid import get_random_id
 from assemblyline.odm.models.error import ERROR_TYPES
 from assemblyline.remote.datatypes.hash import Hash
-from assemblyline.remote.datatypes.queues.named import NamedQueue, select
-
-TYPE_BACKUP = 0
-TYPE_RESTORE = 1
-
-DATABASE_NUM = 3
-RETRY_PRINT_THRESHOLD = 1000
-COUNT_INCREMENT = 1000
-LOW_THRESHOLD = 10000
-HIGH_THRESHOLD = 50000
+from assemblyline.remote.datatypes.queues.named import NamedQueue
 
 
-class SystemBackup(object):
-    def __init__(self, backup_file_path):
-        self.backup_file_path = backup_file_path
-        self.ds = forge.get_datastore()
+# noinspection PyBroadException
+def backup_worker(worker_id, instance_id, working_dir):
+    datastore = forge.get_datastore()
+    worker_queue = NamedQueue(f"r-worker-{instance_id}", ttl=1800)
+    done_queue = NamedQueue(f"r-done-{instance_id}", ttl=1800)
+    hash_queue = Hash(f"r-hash-{instance_id}")
+    with open(os.path.join(working_dir, "backup.part%s" % worker_id), "w+") as backup_file:
+        while True:
+            data = worker_queue.pop()
 
-        # Static maps
-        self.BUCKET_MAP = {
-            "blob": self.ds.blobs,
-            "node": self.ds.nodes,
-            "signature": self.ds.signatures,
-            "user": self.ds.users,
-            "workflow": self.ds.workflows
-        }
-        self.VALID_BUCKETS = sorted(self.BUCKET_MAP.keys())
+            missing = False
+            success = True
+            try:
+                to_write = datastore.get_collection(data['bucket_name']).get(data['key'], as_obj=False)
+                if to_write:
+                    if data.get('follow_keys', False):
+                        for bucket, bucket_key, getter in FOLLOW_KEYS.get(data['bucket_name'], []):
+                            for key in getter(to_write.get(bucket_key, None)):
+                                hash_key = "%s_%s" % (bucket, key)
+                                if not hash_queue.exists(hash_key):
+                                    hash_queue.add(hash_key, "True")
+                                    worker_queue.push({"bucket_name": bucket, "key": key, "follow_keys": True})
 
-    def list_valid_buckets(self):
-        return self.VALID_BUCKETS
+                    backup_file.write(json.dumps((data['bucket_name'], data['key'], to_write)) + "\n")
+                else:
+                    missing = True
+            except Exception:
+                success = False
 
-    # noinspection PyProtectedMember
-    def backup(self, bucket_list=None):
-        if bucket_list is None:
-            bucket_list = self.VALID_BUCKETS
-
-        for bucket in bucket_list:
-            if bucket not in self.VALID_BUCKETS:
-                print("ERROR: '%s' is not a valid bucket.\n\nChoose one of the following:\n\t%s\n" \
-                      % (bucket, "\n\t".join(self.VALID_BUCKETS)))
-                return
-
-        with open(self.backup_file_path, "wb") as out_file:
-            print("Starting system backup... [%s bucket(s)]" % ", ".join(bucket_list))
-            output = {}
-            for bucket in bucket_list:
-                data = {k: self.ds._get_bucket_item(self.BUCKET_MAP[bucket], k)
-                        for k in self.ds._stream_bucket_debug_keys(self.BUCKET_MAP[bucket])}
-                output[bucket] = data
-                print("\t[x] %s" % bucket.upper())
-
-            print("Saving backup to file %s..." % self.backup_file_path)
-            out_file.write(json.dumps(output))
-
-        print("Backup completed!\n")
-
-    # noinspection PyProtectedMember
-    def restore(self, bucket_list=None):
-        print("Loading backup file %s ..." % self.backup_file_path)
-
-        with open(self.backup_file_path, "rb") as bck_file:
-            restore = json.loads(bck_file.read())
-
-        if bucket_list is None:
-            bucket_list = self.VALID_BUCKETS
-
-        for bucket in bucket_list:
-            if bucket not in self.VALID_BUCKETS:
-                print("ERROR: '%s' is not a valid bucket.\n\nChoose one of the following:\n\t%s\n" \
-                      % (bucket, "\n\t".join(self.VALID_BUCKETS)))
-                return
-
-        print("Restoring data in buckets... [%s]" % ", ".join(bucket_list))
-        errors = []
-        for bucket in bucket_list:
-            if bucket not in restore:
-                print("\t[ ] %s" % bucket.upper())
-                errors.append(bucket)
-            else:
-                for k, v in restore[bucket].iteritems():
-                    v = self.ds.sanitize(bucket, v, k)
-                    self.ds._save_bucket_item(self.BUCKET_MAP[bucket], k, v)
-
-                print("\t[x] %s" % bucket.upper())
-
-        if len(errors) > 0:
-            print("Backup restore complete with missing data.\nThe following buckets don't have any data " \
-                  "to restore:\n\t%s \n" % "\n\t".join(errors))
-        else:
-            print("Backup restore complete!\n")
+            done_queue.push({
+                "success": success,
+                "missing": missing,
+                "bucket_name": data['bucket_name'],
+                "key": data['key']
+            })
 
 
 class DistributedBackup(object):
     def __init__(self, working_dir, worker_count=50, spawn_workers=True):
         self.working_dir = working_dir
-        self.ds = forge.get_datastore()
+        if os.path.exists(self.working_dir):
+            raise ValueError("Working directory already exists")
+        os.makedirs(self.working_dir, exist_ok=True)
+        self.datastore = forge.get_datastore()
         self.plist = []
-        self.instance_id = str(uuid.uuid4())
-        self.follow_queue = NamedQueue("r-follow_%s" % self.instance_id, db=DATABASE_NUM, ttl=1800)
-        self.hash_queue = Hash("r-hash_%s" % self.instance_id, db=DATABASE_NUM)
-        self.backup_queue = NamedQueue('r-backup_%s' % self.instance_id, db=DATABASE_NUM, ttl=1800)
-        self.backup_done_queue = NamedQueue("r-backup-done_%s" % self.instance_id, db=DATABASE_NUM, ttl=1800)
-        self.restore_done_queue = NamedQueue("r-restore-done_%s" % self.instance_id, db=DATABASE_NUM, ttl=1800)
+        self.instance_id = get_random_id()
+        self.worker_queue = NamedQueue(f"r-worker-{self.instance_id}", ttl=1800)
+        self.done_queue = NamedQueue(f"r-done-{self.instance_id}", ttl=1800)
+        self.hash_queue = Hash(f"r-hash-{self.instance_id}")
         self.bucket_error = []
-
-        self.BUCKET_MAP = {
-            "alert": self.ds.alerts,
-            "blob": self.ds.blobs,
-            "emptyresult": self.ds.emptyresults,
-            "error": self.ds.errors,
-            "file": self.ds.files,
-            "filescore": self.ds.filescores,
-            "node": self.ds.nodes,
-            "result": self.ds.results,
-            "signature": self.ds.signatures,
-            "submission": self.ds.submissions,
-            "user": self.ds.users,
-            "workflow": self.ds.workflows
-        }
-        self.VALID_BUCKETS = sorted(self.BUCKET_MAP.keys())
+        self.VALID_BUCKETS = sorted(list(self.datastore.ds.get_models().keys()))
         self.worker_count = worker_count
         self.spawn_workers = spawn_workers
-        self.current_type = None
+        self.total_count = 0
+        self.missing_map_count = {}
+        self.map_count = {}
+        self.last_time = 0
+        self.last_count = 0
+        self.error_count = 0
 
-    def terminate(self):
-        self._cleanup_queues(self.current_type)
-
-    def _cleanup_queues(self, task_type):
-        if task_type == TYPE_BACKUP:
-            print("\nCleaning up backup queues for ID: %s..." % self.instance_id)
-            self.backup_queue.delete()
-            for _ in range(100):
-                self.backup_queue.push({"is_done": True})
-            time.sleep(2)
-            self.backup_queue.delete()
-            self.backup_done_queue.delete()
-        else:
-            print("\nCleaning up restore queues for ID: %s..." % self.instance_id)
-            self.restore_done_queue.delete()
-
-        self.follow_queue.delete()
+    def cleanup(self):
+        self.worker_queue.delete()
+        self.done_queue.delete()
         self.hash_queue.delete()
+        for p in self.plist:
+            p.terminate()
 
-    def _done_thread(self, done_type):
-        # Init
-        map_count = {}
-        missing_map_count = {}
-        t_count = 0
-        e_count = 0
+    def done_thread(self, title):
         t0 = time.time()
-        t_last = t0
-        done_count = 0
-
-        # Initialise by type
-        if done_type == TYPE_BACKUP:
-            title = "Backup"
-            done_queue = self.backup_done_queue
-        else:
-            title = "Restore"
-            done_queue = self.restore_done_queue
+        self.last_time = t0
 
         while True:
-            msg = select(done_queue, timeout=1)
-            if not msg:
-                continue
+            msg = self.done_queue.pop(timeout=5)
 
-            _, data = msg
-            if data.get("is_done", False):
-                done_count += 1
-            else:
-                if data.get('success', False):
-                    t_count += 1
-
-                    bucket_name = data['bucket_name']
-
-                    if data.get("missing", False):
-                        if bucket_name not in missing_map_count:
-                            missing_map_count[bucket_name] = 0
-
-                        missing_map_count[bucket_name] += 1
-                    else:
-                        if bucket_name not in map_count:
-                            map_count[bucket_name] = 0
-
-                        map_count[bucket_name] += 1
-
-                    if t_count % COUNT_INCREMENT == 0:
-                        new_t = time.time()
-                        print("%s (%s at %s keys/sec) ==> %s" % (t_count,
-                                                                 new_t - t_last,
-                                                                 int(COUNT_INCREMENT / (new_t - t_last)),
-                                                                 map_count))
-                        t_last = new_t
-                else:
-                    e_count += 1
-
-            if done_count == self.worker_count:
+            if msg is None and self.worker_queue.length() == 0:
                 break
 
+            if msg.get('success', False):
+                self.total_count += 1
+
+                bucket_name = msg['bucket_name']
+
+                if msg.get("missing", False):
+                    if bucket_name not in self.missing_map_count:
+                        self.missing_map_count[bucket_name] = 0
+
+                    self.missing_map_count[bucket_name] += 1
+                else:
+                    if bucket_name not in self.map_count:
+                        self.map_count[bucket_name] = 0
+
+                    self.map_count[bucket_name] += 1
+
+                new_t = time.time()
+                if (new_t - self.last_time) > 5:
+                    print("%s (%s at %s keys/sec) ==> %s" %
+                          (self.total_count,
+                           new_t - self.last_time,
+                           int((self.total_count - self.last_count) / (new_t - self.last_time)),
+                           self.map_count))
+                    self.last_count = self.total_count
+                    self.last_time = new_t
+            else:
+                self.error_count += 1
+
         # Cleanup
-        self.hash_queue.delete()
+        self.cleanup()
 
         summary = ""
-        summary += "%s DONE! (%s keys backed up - %s errors - %s secs)\n" % \
-                   (title, t_count, e_count, time.time() - t0)
+        summary += f"{title} DONE! (%s items - %s errors - %s secs)\n" % \
+                   (self.total_count, self.error_count, time.time() - t0)
         summary += "\n############################################\n"
-        summary += "########## %08s SUMMARY ################\n" % title.upper()
+        summary += f"##########  {title.upper()} SUMMARY  ################\n"
         summary += "############################################\n\n"
 
-        for k, v in map_count.items():
+        for k, v in self.map_count.items():
             summary += "\t%15s: %s\n" % (k.upper(), v)
 
-        if len(missing_map_count.keys()) > 0:
+        if len(self.missing_map_count.keys()) > 0:
             summary += "\n\nMissing data:\n\n"
-            for k, v in missing_map_count.items():
+            for k, v in self.missing_map_count.items():
                 summary += "\t%15s: %s\n" % (k.upper(), v)
 
         if len(self.bucket_error) > 0:
-            summary += "\nThese buckets failed to %s completely: %s\n" % (title.lower(), self.bucket_error)
+            summary += f"\nThese buckets failed to {title.lower()} completely: {self.bucket_error}\n"
         print(summary)
-
-    # noinspection PyProtectedMember
-    def _key_streamer(self, bucket_name, _):
-        for x in self.ds._stream_bucket_debug_keys(self.BUCKET_MAP[bucket_name]):
-            yield x
-
-    def _search_streamer(self, bucket_name, query):
-        for x in self.ds.stream_search(bucket_name, query, fl="_yz_rk", item_buffer_size=500):
-            yield x['_yz_rk']
 
     # noinspection PyBroadException,PyProtectedMember
     def backup(self, bucket_list, follow_keys=False, query=None):
-        if query:
-            stream_func = self._search_streamer
-        else:
-            stream_func = self._key_streamer
+        if query is None:
+            query = 'id:*'
 
         for bucket in bucket_list:
             if bucket not in self.VALID_BUCKETS:
-                print("\n%s is not a valid bucket.\n\nThe list of valid buckets is the following:\n\n\t%s\n" % \
+                print("\n%s is not a valid bucket.\n\nThe list of valid buckets is the following:\n\n\t%s\n" %
                       (bucket.upper(), "\n\t".join(self.VALID_BUCKETS)))
                 return
+
         try:
-            # Cleaning queues
-            self.current_type = TYPE_BACKUP
+            print(f"Launching {self.worker_count} backup workers...")
+            for x in range(self.worker_count):
+                p = Process(target=backup_worker, args=(x, self.instance_id, self.working_dir))
+                p.start()
+                self.plist.append(p)
 
-            # Spawning workers
-            if self.spawn_workers:
-                print("Spawning %s backup workers ..." % self.worker_count)
-                subproc_logfile = self.working_dir.rstrip("/") + ".log"
-                subproc_logfile_fh = open(subproc_logfile, 'wb')
-                for x in range(self.worker_count):
-                    run_dir = __file__[:__file__.index("common/")]
-                    p = subprocess.Popen([os.path.join(run_dir, "run", "invoke.sh"),
-                                          os.path.join(run_dir, "run", "distributed_worker.py"),
-                                          str(TYPE_BACKUP),
-                                          str(x),
-                                          self.instance_id,
-                                          self.working_dir],
-                                         stderr=subproc_logfile_fh,
-                                         stdout=subproc_logfile_fh)
-                    self.plist.append(p)
-                print("All backup workers started!")
-                print("stdout/stderr from child processes will be written to %s" % subproc_logfile)
-            else:
-                print("No spawning any workers. You need to manually spawn %s workers..." % self.worker_count)
-
+            print("Starting completion thread...")
             # Start done thread
-            t = threading.Thread(target=self._done_thread, args=(TYPE_BACKUP,), name="Done thread")
-            t.setDaemon(True)
-            t.start()
+            dt = threading.Thread(target=self.done_thread, args=('Backup',), name="Done thread")
+            dt.setDaemon(True)
+            dt.start()
 
             # Process data buckets
             print("Send all keys of buckets [%s] to be backed-up..." % ', '.join(bucket_list))
@@ -286,46 +171,44 @@ class DistributedBackup(object):
                 print("Distributed backup will perform a deep backup.")
             for bucket_name in bucket_list:
                 try:
-                    count = 0
-                    for key in stream_func(bucket_name, query):
-                        self.backup_queue.push({"bucket_name": bucket_name, "key": key, "follow_keys": follow_keys})
+                    collection = self.datastore.get_collection(bucket_name)
+                    for item in collection.stream_search(query, fl="id", item_buffer_size=500, as_obj=False):
+                        self.worker_queue.push({"bucket_name": bucket_name, "key": item['id'],
+                                                "follow_keys": follow_keys})
 
-                        count += 1
-                        if count % COUNT_INCREMENT == 0:
-                            if self.backup_queue.length() > HIGH_THRESHOLD:
-                                retry = 0
-                                while self.backup_queue.length() > LOW_THRESHOLD:
-                                    if retry % RETRY_PRINT_THRESHOLD == 0:
-                                        print("WARNING: Backup queue reached max threshold (%s). " \
-                                              "Waiting for queue size " \
-                                              "to reach %s before sending more keys... [%s]" \
-                                              % (HIGH_THRESHOLD, LOW_THRESHOLD, self.backup_queue.length()))
-                                    time.sleep(0.1)
-                                    retry += 1
                 except Exception as e:
-                    self.follow_queue.delete()
-                    self.backup_queue.delete()
-                    self.hash_queue.delete()
+                    self.cleanup()
                     print(e)
                     print("Error occurred while processing bucket %s." % bucket_name)
                     self.bucket_error.append(bucket_name)
 
-            # Push kill message to all workers
-            print("All keys sent for all buckets. Sending kill command and waiting for workers to finish...")
-            for _ in range(self.worker_count):
-                self.backup_queue.push({"is_done": True})
-
-            # Wait for workers to finish
-            t.join()
+            dt.join()
         except Exception as e:
             print(e)
         finally:
             print("Backup of %s terminated.\n" % ", ".join(bucket_list))
 
+    # noinspection PyUnresolvedReferences
+    def restore_execution(self):
+        with open(os.path.join(self.working_dir, "backup.part%s" % self.worker_id), "rb") as input_file:
+            for l in input_file.xreadlines():
+                bucket_name, key, data = json.loads(l)
+
+                success = True
+                try:
+                    v = self.ds.sanitize(bucket_name, data, key)
+                    self.ds._save_bucket_item(self.ds.get_bucket(bucket_name), key, v)
+                except Exception:
+                    success = False
+
+                self.done_queue.push({"is_done": False,
+                                      "success": success,
+                                      "missing": False,
+                                      "bucket_name": bucket_name,
+                                      "key": key})
+
     def restore(self):
         try:
-            self.current_type = TYPE_RESTORE
-
             # Spawning workers
             print("Spawning %s restore workers ..." % self.worker_count)
             subproc_logfile = self.working_dir.rstrip("/") + ".log"
@@ -385,7 +268,7 @@ def _error_getter(data):
         return []
 
 
-def _srl_getter(data):
+def _sha256_getter(data):
     if data is not None:
         return [x[:64] for x in data]
     else:
@@ -394,7 +277,7 @@ def _srl_getter(data):
 
 def _file_getter(data):
     if data is not None:
-        return [x[1] for x in data]
+        return [x['sha256'] for x in data]
     else:
         return []
 
@@ -414,9 +297,9 @@ FOLLOW_KEYS = {
     "submission": [
         ('result', 'results', _result_getter),
         ('error', 'errors', _error_getter),
-        ('file', 'results', _srl_getter),
+        ('file', 'results', _sha256_getter),
         ('file', 'files', _file_getter),
-        ('file', 'errors', _srl_getter),
+        ('file', 'errors', _sha256_getter),
     ],
     "results": [
         ('file', 'response', _result_file_getter),
