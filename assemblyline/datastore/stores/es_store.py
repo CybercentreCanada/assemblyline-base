@@ -137,7 +137,7 @@ class ESCollection(Collection):
             except elasticsearch.exceptions.NotFoundError as e:
                 if "index_not_found_exception" in str(e):
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    log.warning("The index does not exist. Trying to recreate it...")
+                    log.debug("The index does not exist. Trying to recreate it...")
                     self._ensure_collection()
                     self.datastore.connection_reset()
                     retries += 1
@@ -798,8 +798,7 @@ class ESCollection(Collection):
 
     def _ensure_collection(self):
         if not self.with_retries(self.datastore.client.indices.exists, self.name):
-            log.warning(f"Collection {self.name.upper()} does not exists. "
-                        "Creating it now...")
+            log.debug(f"Collection {self.name.upper()} does not exists. Creating it now...")
 
             index = deepcopy(default_index)
             if 'settings' not in index:
@@ -842,7 +841,7 @@ class ESCollection(Collection):
         self._check_fields()
 
     def wipe(self):
-        log.warning("Wipe operation started for collection: %s" % self.name.upper())
+        log.debug("Wipe operation started for collection: %s" % self.name.upper())
 
         if self.with_retries(self.datastore.client.indices.exists, self.name):
             self.with_retries(self.datastore.client.indices.delete, self.name)

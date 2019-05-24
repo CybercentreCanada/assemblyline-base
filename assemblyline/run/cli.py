@@ -218,6 +218,13 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             print("Use a different backup directory, this one already exists.")
             return
 
+        try:
+            os.makedirs(dest, exist_ok=True)
+        except Exception:
+            print("Cannot make %s folder. Make sure you can write to this folder. "
+                  "Maybe you should write your backups in /tmp ?" % dest)
+            return
+
         if system_backup:
             system_buckets = [
                 'heuristic',
@@ -233,12 +240,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 'workflow'
             ]
 
-            try:
-                backup_manager = DistributedBackup(dest, worker_count=5)
-            except Exception:
-                print("Cannot make %s folder. Make sure you can write to this folder. "
-                      "Maybe you should write your backups in /tmp ?" % dest)
-                return
+            backup_manager = DistributedBackup(dest, worker_count=5)
 
             try:
                 backup_manager.backup(system_buckets)
@@ -272,13 +274,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             if follow:
                 total *= 100
 
-            try:
-                worker_count = int(max(2, min(total / 1000, multiprocessing.cpu_count() * 2)))
-                backup_manager = DistributedBackup(dest, worker_count=worker_count)
-            except Exception:
-                print("Cannot make %s folder. Make sure you can write to this folder. "
-                      "Maybe you should write your backups in /tmp ?" % dest)
-                return
+            worker_count = int(max(2, min(total / 1000, multiprocessing.cpu_count() * 2)))
+            backup_manager = DistributedBackup(dest, worker_count=worker_count)
 
             try:
                 backup_manager.backup([bucket], follow_keys=follow, query=query)
@@ -922,10 +919,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             'vm',
             'workflow'
         ]
-        for bucket in system_buckets:
-            self.datastore.get_collection(bucket).wipe()
-            print(f"Done wipping {bucket.upper()}.")
-
         if full:
             data_buckets = [
                 'alert',
@@ -938,13 +931,17 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 'submission_tree',
                 'submission_tags'
             ]
-            for bucket in data_buckets:
-                self.datastore.get_collection(bucket).wipe()
-                print(f"Done wipping {bucket.upper()}.")
+            system_buckets += data_buckets
 
-        self.do_index("commit")
+        print("\nWiping all buckets:")
+        for bucket in sorted(system_buckets):
+            self.datastore.get_collection(bucket).wipe()
+            print(f"    {bucket.upper()} wiped.")
+
         self.do_restore(backup_file)
+        self.do_index("commit")
         shutil.rmtree(backup_file)
+        print("\nData reset completed.\n")
 
     def do_ui(self, args):
         """
