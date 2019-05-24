@@ -836,7 +836,7 @@ class SolrCollection(Collection):
 
         if not self._collection_exist(session=session, host=host):
             # Create collection
-            log.warning(f"Collection {self.name.upper()} does not exists. "
+            log.debug(f"Collection {self.name.upper()} does not exists. "
                         "Creating it now...")
             create_url = f"http://{host}/{self.api_base}/admin/collections?action=CREATE" \
                 f"&name={self.name}&numShards={self.num_shards}&replicationFactor={self.replication_factor}" \
@@ -855,29 +855,29 @@ class SolrCollection(Collection):
         self._check_fields()
 
     def wipe(self):
-        log.warning("Wipe operation started for collection: %s" % self.name.upper())
+        log.debug("Wipe operation started for collection: %s" % self.name.upper())
         session, host = self._get_session()
 
         if self._collection_exist(session=session, host=host):
-            log.warning("Removing collection: {collection}".format(collection=self.name.upper()))
+            log.debug("Removing collection: {collection}".format(collection=self.name.upper()))
 
             delete_url = "http://{host}/{api_base}/admin/collections?action=DELETE" \
                          "&name={collection}".format(host=host, api_base=self.api_base,
                                                      collection=self.name)
             res = self.with_retries(session.get, delete_url, headers={"content-type": "application/json"})
             if res.ok:
-                log.warning("Collection {collection} deleted!".format(collection=self.name))
+                log.debug("Collection {collection} deleted!".format(collection=self.name))
             else:
                 raise DataStoreException("Could not create collection {collection}.".format(collection=self.name))
 
         if self._configset_exist(session=session, host=host):
-            log.warning("Removing configset: {collection}".format(collection=self.name.upper()))
+            log.debug("Removing configset: {collection}".format(collection=self.name.upper()))
             delete_url = "http://{host}/{api_base}/admin/configs?action=DELETE" \
                          "&name={collection}".format(host=host, api_base=self.api_base, collection=self.name)
             res = self.with_retries(session.post, delete_url, data=self._get_configset(),
                                     headers={"content-type": "application/json"})
             if res.ok:
-                log.warning("Configset {collection} deleted!".format(collection=self.name))
+                log.debug("Configset {collection} deleted!".format(collection=self.name))
             else:
                 raise DataStoreException("Could not delete configset {collection}.".format(collection=self.name))
 

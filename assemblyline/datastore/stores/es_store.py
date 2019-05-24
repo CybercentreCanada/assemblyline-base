@@ -8,6 +8,7 @@ import time
 from copy import deepcopy
 
 from assemblyline import odm
+from assemblyline.common.uid import get_random_id
 from assemblyline.datastore import Collection, BaseStore, log
 from assemblyline.datastore.exceptions import SearchException, SearchRetryException
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
@@ -136,7 +137,7 @@ class ESCollection(Collection):
             except elasticsearch.exceptions.NotFoundError as e:
                 if "index_not_found_exception" in str(e):
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    log.warning("The index does not exist. Trying to recreate it...")
+                    log.debug("The index does not exist. Trying to recreate it...")
                     self._ensure_collection()
                     self.datastore.connection_reset()
                     retries += 1
@@ -173,6 +174,32 @@ class ESCollection(Collection):
     def commit(self):
         self.with_retries(self.datastore.client.indices.refresh, self.name)
         self.with_retries(self.datastore.client.indices.clear_cache, self.name)
+        return True
+
+    def reindex(self):
+        if self.with_retries(self.datastore.client.indices.exists, self.name):
+            new_name = f'{self.name}_{get_random_id().lower()}'
+            body = {
+                "source": {
+                    "index": self.name
+                },
+                "dest": {
+                    "index": new_name
+                }
+            }
+            self.with_retries(self.datastore.client.reindex, body)
+            if self.with_retries(self.datastore.client.indices.exists, new_name):
+                self.with_retries(self.datastore.client.indices.delete, self.name)
+                body = {
+                    "source": {
+                        "index": new_name
+                    },
+                    "dest": {
+                        "index": self.name
+                    }
+                }
+                self.with_retries(self.datastore.client.reindex, body)
+                self.with_retries(self.datastore.client.indices.delete, new_name)
         return True
 
     def multiget(self, key_list, as_dictionary=True, as_obj=True):
@@ -771,8 +798,7 @@ class ESCollection(Collection):
 
     def _ensure_collection(self):
         if not self.with_retries(self.datastore.client.indices.exists, self.name):
-            log.warning(f"Collection {self.name.upper()} does not exists. "
-                        "Creating it now...")
+            log.debug(f"Collection {self.name.upper()} does not exists. Creating it now...")
 
             index = deepcopy(default_index)
             if 'settings' not in index:
@@ -815,7 +841,7 @@ class ESCollection(Collection):
         self._check_fields()
 
     def wipe(self):
-        log.warning("Wipe operation started for collection: %s" % self.name.upper())
+        log.debug("Wipe operation started for collection: %s" % self.name.upper())
 
         if self.with_retries(self.datastore.client.indices.exists, self.name):
             self.with_retries(self.datastore.client.indices.delete, self.name)

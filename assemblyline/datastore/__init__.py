@@ -90,6 +90,15 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
+    def reindex(self):
+        """
+        This function should be overloaded to perform a reindex of all the data of the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the commit was successful on all hosts
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
     def multiget(self, key_list, as_dictionary=True, as_obj=True):
         """
         Get a list of documents from the datastore and make sure they are normalized using
@@ -213,9 +222,9 @@ class Collection(object):
             fields = self.model_class.flat_fields()
             if 'classification in fields':
                 fields.update({"__access_lvl__": Integer(),
-                              "__access_req__": List(Keyword()),
-                              "__access_grp1__": List(Keyword()),
-                              "__access_grp2__": List(Keyword())})
+                               "__access_req__": List(Keyword()),
+                               "__access_grp1__": List(Keyword()),
+                               "__access_grp2__": List(Keyword())})
         else:
             fields = None
 

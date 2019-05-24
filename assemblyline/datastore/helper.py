@@ -146,6 +146,12 @@ class AssemblylineDatastore(object):
     def workflow(self):
         return self.ds.workflow
 
+    def get_collection(self, collection_name):
+        if collection_name in self.ds.get_models():
+            return getattr(self, collection_name)
+        else:
+            raise AttributeError(f'Collection {collection_name} does not exist.')
+
     @staticmethod
     def create_empty_result_from_key(key, cl_engine=forge.get_classification(), as_obj=True):
         sha256, svc_name, svc_version, _ = key.split(".", 3)
