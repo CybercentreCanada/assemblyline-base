@@ -3,7 +3,7 @@ version: '2.4'
 services:
   # ApiVector service
 #  alsvc_apivector:
-#    image: sgaroncse/alsvc_apivector:3.3.5
+#    image: cccs/alsvc_apivector:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -12,7 +12,7 @@ services:
 
   # APKaye service
 #  alsvc_apkaye:
-#    image: sgaroncse/alsvc_apkaye:3.3.5
+#    image: cccs/alsvc_apkaye:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -21,7 +21,7 @@ services:
 
   # Beaver service
 #  alsvc_beaver:
-#    image: sgaroncse/alsvc_beaver:3.3.5
+#    image: cccs/alsvc_beaver:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -30,7 +30,7 @@ services:
 
   # CFMD service
 #  alsvc_cfmd:
-#    image: sgaroncse/alsvc_cfmd:3.3.5
+#    image: cccs/alsvc_cfmd:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -39,7 +39,7 @@ services:
 
   # Characterize service
   alsvc_characterize:
-    image: sgaroncse/alsvc_characterize:3.3.5
+    image: cccs/alsvc_characterize:3.3.6
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -48,7 +48,7 @@ services:
 
   # Cleaver service
 #  alsvc_cleaver:
-#    image: sgaroncse/alsvc_cleaver:3.3.5
+#    image: cccs/alsvc_cleaver:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -57,7 +57,7 @@ services:
 
   # ConfigDecoder service
 #  alsvc_configdecoder:
-#    image: sgaroncse/alsvc_configdecoder:3.3.5
+#    image: cccs/alsvc_configdecoder:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -66,7 +66,7 @@ services:
 
   # Espresso service
 #  alsvc_espresso:
-#    image: sgaroncse/alsvc_espresso:3.3.5
+#    image: cccs/alsvc_espresso:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -75,7 +75,7 @@ services:
 
   # Extract service
   alsvc_extract:
-    image: sgaroncse/alsvc_extract:3.3.5
+    image: cccs/alsvc_extract:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -84,7 +84,7 @@ services:
 
   # FrankenStrings service
   alsvc_frankenstrings:
-    image: sgaroncse/alsvc_frankenstrings:3.3.5
+    image: cccs/alsvc_frankenstrings:3.3.6
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -93,7 +93,7 @@ services:
 
   # FSecure service
 #  alsvc_fsecure:
-#    image: sgaroncse/alsvc_fsecure:3.3.5
+#    image: cccs/alsvc_fsecure:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -102,7 +102,7 @@ services:
 
   # IPArse service
 #  alsvc_iparse:
-#    image: sgaroncse/alsvc_iparse:3.3.5
+#    image: cccs/alsvc_iparse:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -111,7 +111,7 @@ services:
 
   # Lastline service
 #  alsvc_lastline:
-#    image: sgaroncse/alsvc_lastline:3.3.5
+#    image: cccs/alsvc_lastline:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -120,7 +120,7 @@ services:
 
   # MetaDefender service
 #  alsvc_metadefender:
-#    image: sgaroncse/alsvc_metadefender:3.3.5
+#    image: cccs/alsvc_metadefender:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -129,7 +129,7 @@ services:
 
   # MetaPeek service
 #  alsvc_metapeek:
-#    image: sgaroncse/alsvc_metapeek:3.3.5
+#    image: cccs/alsvc_metapeek:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -138,7 +138,7 @@ services:
 
   # NSRL service
 #  alsvc_nsrl:
-#    image: sgaroncse/alsvc_nsrl:3.3.5
+#    image: cccs/alsvc_nsrl:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -147,7 +147,7 @@ services:
 
   # Oletools service
 #  alsvc_oletools:
-#    image: sgaroncse/alsvc_oletools:3.3.5
+#    image: cccs/alsvc_oletools:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -156,7 +156,7 @@ services:
 
   # PDFId service
   alsvc_pdfid:
-    image: sgaroncse/alsvc_pdfid:3.3.5
+    image: cccs/alsvc_pdfid:3.3.6
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     volumes:
@@ -165,7 +165,7 @@ services:
 
   # PeePDF service
 #  alsvc_peepdf:
-#    image: sgaroncse/alsvc_peepdf:3.3.5
+#    image: cccs/alsvc_peepdf:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -174,7 +174,7 @@ services:
 
   # PEFile service
 #  alsvc_pefile:
-#    image: sgaroncse/alsvc_pefile:3.3.5
+#    image: cccs/alsvc_pefile:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -183,7 +183,7 @@ services:
 
   # Pixaxe service
 #  alsvc_pixaxe:
-#    image: sgaroncse/alsvc_pixaxe:3.3.5
+#    image: cccs/alsvc_pixaxe:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -192,7 +192,7 @@ services:
 
   # Suricata service
 #  alsvc_suricata:
-#    image: sgaroncse/alsvc_suricata:3.3.5
+#    image: cccs/alsvc_suricata:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -201,7 +201,7 @@ services:
 
   # Swiffer service
 #  alsvc_swiffer:
-#    image: sgaroncse/alsvc_swiffer:3.3.5
+#    image: cccs/alsvc_swiffer:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -210,7 +210,7 @@ services:
 
   # Sync service
 #  alsvc_sync:
-#    image: sgaroncse/alsvc_sync:3.3.5
+#    image: cccs/alsvc_sync:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -219,7 +219,7 @@ services:
 
   # TagCheck service
 #  alsvc_tagcheck:
-#    image: sgaroncse/alsvc_tagcheck:3.3.5
+#    image: cccs/alsvc_tagcheck:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -228,7 +228,7 @@ services:
 
   # TorrentSlicer service
 #  alsvc_torrentslicer:
-#    image: sgaroncse/alsvc_torrentslicer:3.3.5
+#    image: cccs/alsvc_torrentslicer:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -237,7 +237,7 @@ services:
 
   # Unpacker service
 #  alsvc_unpacker:
-#    image: sgaroncse/alsvc_unpacker:3.3.5
+#    image: cccs/alsvc_unpacker:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -246,7 +246,7 @@ services:
 
   # VirusTotalDynamic service
 #  alsvc_virustotal_dynamic:
-#    image: sgaroncse/alsvc_virustotal_dynamic:3.3.5
+#    image: cccs/alsvc_virustotal_dynamic:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -255,7 +255,7 @@ services:
 
   # VirusTotalStatic service
 #  alsvc_virustotal_static:
-#    image: sgaroncse/alsvc_virustotal_static:3.3.5
+#    image: cccs/alsvc_virustotal_static:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
@@ -264,7 +264,7 @@ services:
 
   # Yara service
 #  alsvc_yara:
-#    image: sgaroncse/alsvc_yara:3.3.5
+#    image: cccs/alsvc_yara:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    volumes:
