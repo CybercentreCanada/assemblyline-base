@@ -120,6 +120,9 @@ class DistributedBackup(object):
             if msg is None and self.worker_queue.length() == 0:
                 break
 
+            if msg is None:
+                continue
+
             bucket_name = msg.get('bucket_name', 'unknown')
 
             if msg.get('success', False):

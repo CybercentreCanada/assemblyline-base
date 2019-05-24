@@ -906,7 +906,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         self.do_backup(backup_file)
 
         system_buckets = [
-            'cached_file',
             'heuristic',
             'service',
             'service_delta',
@@ -922,6 +921,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if full:
             data_buckets = [
                 'alert',
+                'cached_file',
                 'emptyresult',
                 'error',
                 'file',
