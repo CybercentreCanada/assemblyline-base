@@ -6,8 +6,17 @@ import os
 from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT
 from assemblyline.common import forge
 
+log_level_map = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+    "DISABLED": 60
+}
 
-def init_logging(name, config=None, log_level=logging.INFO):
+
+def init_logging(name, config=None, log_level=None):
     logger = logging.getLogger('assemblyline')
 
     # Test if we've initialized the log handler already.
@@ -20,32 +29,41 @@ def init_logging(name, config=None, log_level=logging.INFO):
     if config is None:
         config = forge.get_config()
 
+    if log_level is None:
+        log_level = log_level_map[config.logging.log_level]
+
     logging.root.setLevel(logging.CRITICAL)
     logger.setLevel(log_level)
+
+    if config.logging.log_level == "DISABLED":
+        # While log_level is set to disable, we will not create any handlers
+        return
 
     if config.logging.log_to_file:
         if not os.path.isdir(config.logging.log_directory):
             print('Warning: log directory does not exist. Will try to create %s' % config.logging.log_directory)
             os.makedirs(config.logging.directory)
 
-        if log_level == logging.DEBUG:
+        if log_level <= logging.DEBUG:
             dbg_file_handler = logging.handlers.RotatingFileHandler(
                 os.path.join(config.logging.log_directory, f'{name}.dbg'), maxBytes=10485760, backupCount=5)
             dbg_file_handler.setLevel(logging.DEBUG)
             dbg_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
             logger.addHandler(dbg_file_handler)
 
-        op_file_handler = logging.handlers.RotatingFileHandler(
-            os.path.join(config.logging.log_directory, f'{name}.log'), maxBytes=10485760, backupCount=5)
-        op_file_handler.setLevel(logging.INFO)
-        op_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
-        logger.addHandler(op_file_handler)
+        if log_level <= logging.INFO:
+            op_file_handler = logging.handlers.RotatingFileHandler(
+                os.path.join(config.logging.log_directory, f'{name}.log'), maxBytes=10485760, backupCount=5)
+            op_file_handler.setLevel(logging.INFO)
+            op_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
+            logger.addHandler(op_file_handler)
 
-        err_file_handler = logging.handlers.RotatingFileHandler(
-            os.path.join(config.logging.log_directory, f'{name}.err'), maxBytes=10485760, backupCount=5)
-        err_file_handler.setLevel(logging.ERROR)
-        err_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
-        logger.addHandler(err_file_handler)
+        if log_level <= logging.ERROR:
+            err_file_handler = logging.handlers.RotatingFileHandler(
+                os.path.join(config.logging.log_directory, f'{name}.err'), maxBytes=10485760, backupCount=5)
+            err_file_handler.setLevel(logging.ERROR)
+            err_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
+            logger.addHandler(err_file_handler)
  
     if config.logging.log_to_console:
         console = logging.StreamHandler()

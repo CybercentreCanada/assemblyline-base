@@ -169,13 +169,11 @@ class Dispatcher(odm.Model):
     # happens before this timeout ends, the timeout resets.
     timeout: float = odm.Integer()
     max_inflight: int = odm.Integer()
-    debug_logging: bool = odm.Boolean()
 
 
 DEFAULT_DISPATCHER = {
     "timeout": 5*60,
-    "max_inflight": 1000,
-    "debug_logging": False
+    "max_inflight": 1000
 }
 
 
@@ -442,6 +440,9 @@ DEFAULT_FILESTORE = {
 # This is the model definition for the logging block
 @odm.model()
 class Logging(odm.Model):
+    # What level of logging should we have
+    log_level: str = odm.Enum(values=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "DISABLED"])
+
     # Should we log to console?
     log_to_console: bool = odm.Boolean()
 
@@ -460,6 +461,7 @@ class Logging(odm.Model):
 
 
 DEFAULT_LOGGING = {
+    "log_level": "INFO",
     "log_to_console": True,
     "log_to_file": False,
     "log_directory": "/var/log/assemblyline/",
