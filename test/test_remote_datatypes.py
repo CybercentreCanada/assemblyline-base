@@ -8,7 +8,7 @@ from redis.exceptions import ConnectionError
 
 from assemblyline.common.testing import skip
 from assemblyline.common.uid import get_random_id
-from assemblyline.remote.datatypes.counters import MetricCounter
+
 
 @pytest.fixture(scope='session')
 def redis_connection():
@@ -366,58 +366,3 @@ def test_comms_queue(redis_connection):
         t.join()
         assert not t.is_alive()
 
-
-def test_metric_counter(redis_connection):
-    # Flush the counter before starting the test
-    test_counter_id = get_random_id()
-    counter = MetricCounter(test_counter_id, redis_connection)
-    counter.reset()
-    try:
-        # initialize on an empty set, should do nothing, return empty dict
-        data = counter.pop_expired()
-        assert not data
-        assert counter.read() == 0
-
-        # Call increment properly
-        to_add = random.randint(1, 10)
-        total = counter.increment(to_add)
-        assert total == to_add
-
-        # Now that there is some data in the counter, we should
-        assert test_counter_id in MetricCounter.list_counters(redis_connection)
-
-        # Add a bunch of data directly, but not enough to flush any out
-        for offset in range(30):
-            to_add = random.randint(1, 10)
-            total += to_add
-            counter.client.hincrby(counter.path, counter.get_server_time()-offset, to_add)
-
-        assert counter.read() == total
-        assert not counter.pop_expired()
-
-        # Fill in some old data to simulate backlog
-        for offset in range(3000):
-            counter.client.hincrby(counter.path, counter.get_server_time()-offset, 1)
-
-        # Run flush as if we are just starting since we just added data over 3000 seconds in the past
-        # we should get around 50 one minute buckets, depending on if we are on the edge of a minute or not
-        data = counter.pop_expired()
-        assert len(data) in [49, 50]
-
-        # Pop again to see if the pop method actually works
-        data = counter.pop_expired()
-        assert len(data) in [0, 1]
-
-        # Fill in some old data and compare the sum of those counters
-        counter.reset()
-        total = 0
-        for offset in range(30):
-            to_add = random.randint(1,10)
-            total += to_add
-            counter.client.hincrby(counter.path, counter.get_server_time() - (3 * 60) + offset, to_add)
-
-        data = counter.pop_expired()
-        assert sum(data.values()) == total
-        assert len(data) in [1, 2]
-    finally:
-        counter.reset()
