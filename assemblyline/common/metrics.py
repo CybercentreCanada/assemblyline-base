@@ -1,10 +1,6 @@
 from assemblyline.common import forge
 from assemblyline.remote.datatypes import get_client
-from assemblyline.remote.datatypes.counters import MetricsCounterAggregator
 from assemblyline.remote.datatypes.exporting_counter import AutoExportingCounters
-
-LEGACY = 'legacy'
-REMOTE_HASH = 'remote_hash'
 
 ALERT_METRICS = [
     'created',
@@ -98,6 +94,10 @@ TIMED_METRICS = [
 
 
 class MetricsFactory(object):
+    """A wrapper around what was once, multiple metrics methods.
+
+    Left in place until we decide we are absolutely not switching methods again.
+    """
     def __init__(self, metrics_type, name=None, redis=None, config=None):
         self.config = config or forge.get_config()
         self.redis = redis or get_client(
@@ -110,17 +110,13 @@ class MetricsFactory(object):
         self.type = metrics_type
         self.name = name or metrics_type
 
-        if self.config.core.metrics.type == LEGACY:
-            # Initialize legacy metrics
-            self.metrics_handler = AutoExportingCounters(
-                self.name,
-                redis=self.redis,
-                config=self.config,
-                counter_type=metrics_type)
-            self.metrics_handler.start()
-        else:
-            # Initialize hash map metrics
-            self.metrics_handler = MetricsCounterAggregator(self.type, self.name, self.config, self.redis)
+        # Initialize legacy metrics
+        self.metrics_handler = AutoExportingCounters(
+            self.name,
+            redis=self.redis,
+            config=self.config,
+            counter_type=metrics_type)
+        self.metrics_handler.start()
 
     def stop(self):
         self.metrics_handler.stop()

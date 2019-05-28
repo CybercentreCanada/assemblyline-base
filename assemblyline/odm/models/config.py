@@ -301,8 +301,6 @@ DEFAULT_KB_METRICS = {
     'port': 5601
 }
 
-METRICS_TYPES = [metrics.LEGACY, metrics.REMOTE_HASH]
-
 
 @odm.model()
 class APMServer(odm.Model):
@@ -323,7 +321,6 @@ class Metrics(odm.Model):
     export_interval: int = odm.Integer()
     kibana: KBMetrics = odm.Compound(KBMetrics, default=DEFAULT_KB_METRICS)
     redis: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
-    type: str = odm.Enum(values=METRICS_TYPES)
 
 
 DEFAULT_METRICS = {
@@ -332,7 +329,6 @@ DEFAULT_METRICS = {
     'export_interval': 5,
     'kibana': DEFAULT_KB_METRICS,
     'redis': DEFAULT_REDIS_NP,
-    'type': metrics.REMOTE_HASH
 }
 
 
