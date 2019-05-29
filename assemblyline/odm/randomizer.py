@@ -164,8 +164,11 @@ def random_data_for_field(field, name):
     if isinstance(field, Boolean):
         return random.choice([True, False])
     elif isinstance(field, Classification):
-        possible_classifications = list(field.engine._classification_cache)
-        possible_classifications.extend([field.engine.UNRESTRICTED, field.engine.RESTRICTED])
+        if field.engine.enforce:
+            possible_classifications = list(field.engine._classification_cache)
+            possible_classifications.extend([field.engine.UNRESTRICTED, field.engine.RESTRICTED])
+        else:
+            possible_classifications = [field.engine.UNRESTRICTED]
         return random.choice(possible_classifications)
     elif isinstance(field, Enum):
         return random.choice([x for x in field.values if x is not None])

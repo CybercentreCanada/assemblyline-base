@@ -129,7 +129,9 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
                 try:
                     os.makedirs(current_working_dir)
-                except Exception:
+                except Exception as e:
+                    if isinstance(PermissionError, e):
+                        raise
                     pass
 
                 # Create file information data

@@ -31,8 +31,11 @@ from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
 
 
+default_dtl = forge.get_config().submission.dtl
+
 class AssemblylineDatastore(object):
     def __init__(self, datastore_object):
+
         self.ds = datastore_object
         self.ds.register('alert', Alert)
         self.ds.register('cached_file', CachedFile)
@@ -158,6 +161,7 @@ class AssemblylineDatastore(object):
         svc_version = svc_version[1:]
 
         data = Result({
+            "expiry_ts": now_as_iso(default_dtl * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
                 "service_name": svc_name,
