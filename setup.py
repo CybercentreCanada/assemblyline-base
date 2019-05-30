@@ -52,6 +52,13 @@ setup(
         'elastic-apm[flask]',
     ],
     package_data={
-        '': ["*schema.xml", "*managed-schema", "*solrconfig.xml", "*classification.yml", "*.magic"]
+        '': [
+            "*schema.xml",
+            "*managed-schema",
+            "*solrconfig.xml",
+            "*classification.yml",
+            "*.magic",
+            "*sample_rules.yar"
+        ]
     }
 )
