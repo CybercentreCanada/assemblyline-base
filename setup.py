@@ -1,4 +1,5 @@
 import os
+
 from setuptools import setup, find_packages
 
 # For development and local builds use this version number, but for real builds replace it
@@ -50,6 +51,7 @@ setup(
         'python-magic',
         'apscheduler',
         'elastic-apm[flask]',
+        'cython',
     ],
     package_data={
         '': [
