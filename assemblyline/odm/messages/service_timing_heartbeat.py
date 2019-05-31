@@ -1,4 +1,5 @@
 from assemblyline import odm
+from . import PerformanceTimer
 
 MSG_TYPES = {"ServiceTimingHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.service_heartbeat.ServiceTimingMessage"
@@ -6,9 +7,9 @@ LOADER_CLASS = "assemblyline.odm.messages.service_heartbeat.ServiceTimingMessage
 
 @odm.model()
 class Metrics(odm.Model):
-    execution = odm.Integer()
+    execution = PerformanceTimer()
     execution_count = odm.Integer()
-    idle = odm.Integer()
+    idle = PerformanceTimer()
     idle_count = odm.Integer()
 
 

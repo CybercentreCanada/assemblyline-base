@@ -1,18 +1,10 @@
 from assemblyline.common import forge
 from assemblyline.remote.datatypes import get_client
 from assemblyline.remote.datatypes.exporting_counter import AutoExportingCounters
+from assemblyline.odm.messages import PerformanceTimer
 
-ALERT_METRICS = [
-    'created',
-    'error',
-    'received',
-    'updated']
-
-DISPATCH_METRICS = [
-    'files_completed',
-    'submissions_completed'
-]
-
+# Which datastore tables have an expiry and we want to monitor how many files are due
+# for expiry but still exist.
 EXPIRY_METRICS = [
     'alert',
     'cached_file',
@@ -26,79 +18,13 @@ EXPIRY_METRICS = [
     'submission_tags'
 ]
 
-INGEST_METRICS = [
-    'cache_miss',
-    'cache_expired',
-    'cache_stale',
-    'cache_hit_local',
-    'cache_hit',
-    'bytes_completed',
-    'bytes_ingested',
-    'duplicates',
-    'error',
-    'files_completed',
-    'skipped',
-    'submissions_ingested',
-    'submissions_completed',
-    'timed_out',
-    'whitelisted']
-
-SRV_METRICS = [
-    'cache_hit',
-    'cache_miss',
-    'cache_skipped',
-    'execute',
-    'fail_recoverable',
-    'fail_nonrecoverable',
-    'scored',
-    'not_scored'
-]
-
-SRV_TIMING_METRICS = [
-    'execution',
-    'idle'
-]
-
-DATASTORE_METRICS = [
-    'commit',
-    'get',
-    'mget',
-    'save',
-    'search',
-]
-
-FILESTORE_METRICS = [
-    'delete',
-    'download',
-    'exist',
-    'upload',
-]
-
-# Types of metrics
-METRIC_TYPES = {
-    'alerter': ALERT_METRICS,
-    # 'datastore': DATASTORE_METRICS,
-    'dispatcher': DISPATCH_METRICS,
-    'expiry': EXPIRY_METRICS,
-    # 'filestore': FILESTORE_METRICS,
-    'ingester': INGEST_METRICS,
-    'service': SRV_METRICS,
-    'service_timing': SRV_TIMING_METRICS,
-}
-
-TIMED_METRICS = [
-    # 'datastore',
-    # 'filestore',
-    'service_timing',
-]
-
 
 class MetricsFactory(object):
     """A wrapper around what was once, multiple metrics methods.
 
     Left in place until we decide we are absolutely not switching methods again.
     """
-    def __init__(self, metrics_type, name=None, redis=None, config=None):
+    def __init__(self, metrics_type, schema, name=None, redis=None, config=None):
         self.config = config or forge.get_config()
         self.redis = redis or get_client(
             self.config.core.metrics.redis.host,
@@ -106,6 +32,19 @@ class MetricsFactory(object):
             self.config.core.metrics.redis.db,
             False
         )
+
+        # Separate out the timers and normal counters
+        timer_schema = set()
+        counter_schema = set()
+
+        for _k, field_type in schema.fields().items():
+            if isinstance(field_type, PerformanceTimer):
+                timer_schema.add(_k)
+            else:
+                counter_schema.add(_k)
+
+        for _k in timer_schema:
+            counter_schema.discard(_k + '_count')
 
         self.type = metrics_type
         self.name = name or metrics_type
@@ -115,7 +54,10 @@ class MetricsFactory(object):
             self.name,
             redis=self.redis,
             config=self.config,
-            counter_type=metrics_type)
+            counter_type=metrics_type,
+            timer_names=timer_schema,
+            counter_names=counter_schema
+        )
         self.metrics_handler.start()
 
     def stop(self):

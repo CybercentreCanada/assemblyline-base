@@ -1,5 +1,4 @@
 import collections
-import copy
 import logging
 import pprint
 import threading
@@ -35,7 +34,9 @@ class AutoExportingCounters(object):
                  export_interval_secs=None,
                  counter_type=None,
                  config=None,
-                 redis=None):
+                 redis=None,
+                 counter_names=None,
+                 timer_names=None):
         config = config or forge.get_config()
         self.channel = forge.get_metrics_sink(redis)
         self.export_interval = export_interval_secs or config.core.metrics.export_interval
@@ -43,13 +44,14 @@ class AutoExportingCounters(object):
         self.host = host or get_random_id()
         self.type = counter_type or name
 
-        self.counts = Counters()
-        self.counts['type'] = counter_type or name
-        self.counts['name'] = name
-        self.counts['host'] = host
+        self.counter_schema = set(counter_names)
+        self.timer_schema = set(timer_names)
 
+        self.counts = None
         self.lock = threading.Lock()
         self.scheduler = None
+        self.reset()
+
         assert self.channel
         assert(self.export_interval > 0)
 
@@ -64,6 +66,17 @@ class AutoExportingCounters(object):
 
         atexit.register(lambda: self.stop())
 
+    def reset(self):
+        with self.lock:
+            old, self.counts = self.counts, Counters({key: 0 for key in self.counter_schema})
+            self.counts.update({key + '.t': 0 for key in self.timer_schema})
+            self.counts.update({key + '.c': 0 for key in self.timer_schema})
+            self.counts['type'] = self.type
+            self.counts['name'] = self.name
+            self.counts['host'] = self.host
+
+        return old
+
     def stop(self):
         if self.scheduler:
             self.scheduler.shutdown(wait=False)
@@ -74,13 +87,7 @@ class AutoExportingCounters(object):
         try:
             # To avoid blocking increments on the redis operation
             # we only hold the long to do a copy.
-            with self.lock:
-                thread_copy = dict(copy.deepcopy(self.counts).items())
-                self.counts = Counters()
-                self.counts['type'] = self.type
-                self.counts['name'] = self.name
-                self.counts['host'] = self.host
-
+            thread_copy = dict(self.reset().items())
             self.channel.publish(thread_copy)
             log.debug(f"{pprint.pformat(thread_copy)}")
 
@@ -90,6 +97,8 @@ class AutoExportingCounters(object):
 
     def increment(self, name, increment_by=1):
         try:
+            if name not in self.counter_schema:
+                raise ValueError(f"{name} is not an accepted counter for this module: f{self.counter_schema}")
             with self.lock:
                 self.counts[name] += increment_by
                 return increment_by
@@ -99,6 +108,8 @@ class AutoExportingCounters(object):
 
     def increment_execution_time(self, name, execution_time):
         try:
+            if name not in self.timer_schema:
+                raise ValueError(f"{name} is not an accepted counter for this module: f{self.timer_schema}")
             with self.lock:
                 self.counts[name + ".c"] += 1
                 self.counts[name + ".t"] += execution_time

@@ -16,6 +16,7 @@ class Metrics(odm.Model):
     received = odm.Integer()
     updated = odm.Integer()
 
+
 @odm.model()
 class Heartbeat(odm.Model):
     instances = odm.Integer()

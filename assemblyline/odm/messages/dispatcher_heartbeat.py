@@ -1,4 +1,5 @@
 from assemblyline import odm
+from . import PerformanceTimer
 
 MSG_TYPES = {"DispatcherHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.dispatcher_heartbeat.DispatcherMessage"
@@ -19,6 +20,10 @@ class Inflight(odm.Model):
 class Metrics(odm.Model):
     files_completed = odm.Integer()
     submissions_completed = odm.Integer()
+    cpu_seconds = PerformanceTimer()
+    cpu_seconds_count = odm.Integer()
+    busy_seconds = PerformanceTimer()
+    busy_seconds_count = odm.Integer()
 
 
 @odm.model()
