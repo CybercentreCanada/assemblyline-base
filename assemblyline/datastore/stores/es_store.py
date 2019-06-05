@@ -78,7 +78,7 @@ class ESCollection(Collection):
     MAX_SEARCH_ROWS = 500
     MAX_GROUP_LIMIT = 10
     MAX_FACET_LIMIT = 100
-    SCROLL_TIMEOUT = "2m"
+    SCROLL_TIMEOUT = "5m"
     DEFAULT_SEARCH_VALUES = {
         'timeout': None,
         'field_list': None,
