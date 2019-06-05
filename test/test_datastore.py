@@ -260,6 +260,28 @@ def _test_c_search(s_tc: Collection, e_tc: Collection):
                                       sort="id asc", fl='classification_s'))
 
 
+def _test_c_deepsearch(s_tc: Collection, e_tc: Collection):
+    s_res = []
+    deep_paging_id = "*"
+    while True:
+        s_data = s_tc.search('*:*', rows=5, deep_paging_id=deep_paging_id)
+        s_res.extend(s_data['items'])
+        if len(s_res) == s_data['total'] or len(s_data['items']) == 0:
+            break
+        deep_paging_id = s_data['next_deep_paging_id']
+
+    e_res = []
+    deep_paging_id = "*"
+    while True:
+        e_data = e_tc.search('*:*', rows=5, deep_paging_id=deep_paging_id)
+        e_res.extend(e_data['items'])
+        if len(e_res) == e_data['total'] or len(e_data['items']) == 0:
+            break
+        deep_paging_id = e_data['next_deep_paging_id']
+
+    assert compare_output(s_res, e_res)
+
+
 def _test_c_streamsearch(s_tc: Collection, e_tc: Collection):
     ss_s_list = list(s_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
     ss_e_list = list(e_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
@@ -326,6 +348,7 @@ TEST_CONSISTENCY_FUNCS = [
     (_test_c_require, "require"),
     (_test_c_get_if_exists, "get_if_exists"),
     (_test_c_multiget, "multiget"),
+    (_test_c_deepsearch, "deep_search"),
     (_test_c_search, "search"),
     (_test_c_streamsearch, "stream_search"),
     (_test_c_keys, "keys"),

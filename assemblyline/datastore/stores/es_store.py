@@ -78,6 +78,7 @@ class ESCollection(Collection):
     MAX_SEARCH_ROWS = 500
     MAX_GROUP_LIMIT = 10
     MAX_FACET_LIMIT = 100
+    SCROLL_TIMEOUT = "2m"
     DEFAULT_SEARCH_VALUES = {
         'timeout': None,
         'field_list': None,
@@ -411,7 +412,12 @@ class ESCollection(Collection):
 
         return {key: val for key, val in source.items() if key in fields}
 
-    def _search(self, args=None):
+    def _search(self, args=None, deep_paging_id=None):
+        params = None
+        if deep_paging_id is not None:
+            if deep_paging_id == "*":
+                params = {'scroll': self.SCROLL_TIMEOUT}
+
         parsed_values = deepcopy(self.DEFAULT_SEARCH_VALUES)
 
         # TODO: we should validate values for max rows, group length, history length...
@@ -496,8 +502,18 @@ class ESCollection(Collection):
             }
 
         try:
-            # Run the query
-            result = self.with_retries(self.datastore.client.search, index=self.name, body=json.dumps(query_body))
+            if deep_paging_id is not None and params is None:
+                # Get the next page
+                result = self.with_retries(self.datastore.client.scroll, scroll_id=deep_paging_id,
+                                           params={"scroll": self.SCROLL_TIMEOUT})
+            elif params is not None:
+                # Run the query
+                result = self.with_retries(self.datastore.client.search, index=self.name,
+                                           body=json.dumps(query_body), params=params)
+            else:
+                # Run the query
+                result = self.with_retries(self.datastore.client.search, index=self.name, body=json.dumps(query_body))
+
             return result
 
         except (elasticsearch.TransportError, elasticsearch.RequestError) as e:
@@ -514,7 +530,7 @@ class ESCollection(Collection):
             raise SearchException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
 
     def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None, as_obj=True):
+               fl=None, timeout=None, filters=None, access_control=None, deep_paging_id=None, as_obj=True):
 
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
@@ -550,14 +566,20 @@ class ESCollection(Collection):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args)
+        result = self._search(args, deep_paging_id=deep_paging_id)
 
-        return {
+        ret_data = {
             "offset": int(offset),
             "rows": int(rows),
             "total": int(result['hits']['total']['value']),
             "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
         }
+
+        deep_paging_id = result.get("_scroll_id", None)
+        if deep_paging_id is not None:
+            ret_data['next_deep_paging_id'] = deep_paging_id
+
+        return ret_data
 
     def stream_search(self, query, fl=None, filters=None, access_control=None, item_buffer_size=200, as_obj=True):
         if item_buffer_size > 500 or item_buffer_size < 50:

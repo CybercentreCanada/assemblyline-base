@@ -368,7 +368,7 @@ class SolrCollection(Collection):
                                           (self.name, query, args, res.content))
 
     def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None, as_obj=True):
+               fl=None, timeout=None, filters=None, access_control=None, deep_paging_id=None, as_obj=True):
 
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
@@ -378,12 +378,15 @@ class SolrCollection(Collection):
 
         args = [
             ('q', query),
-            ('start', offset),
             ('rows', rows),
-            ('sort', sort),
             ('wt', 'json'),
             ('df', self.DEFAULT_SEARCH_FIELD)
         ]
+
+        if deep_paging_id is not None:
+            args.extend([('sort', "id asc"), ('cursorMark', deep_paging_id)])
+        else:
+            args.extend([('sort', sort), ('start', offset)])
 
         if fl:
             args.append(('fl', fl))
@@ -409,6 +412,11 @@ class SolrCollection(Collection):
             "total": int(data['response']['numFound']),
             "items": [self._cleanup_search_result(x, fl, as_obj=as_obj) for x in data['response']['docs']]
         }
+
+        deep_paging_id = data.get('nextCursorMark', None)
+        if deep_paging_id:
+            output['next_deep_paging_id'] = deep_paging_id
+
         return output
 
     def stream_search(self, query, fl=None, filters=None, access_control=None, buffer_size=200, as_obj=True):

@@ -326,7 +326,7 @@ class Collection(object):
             return self._save(key, data)
 
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
-               filters=(), access_control=None, as_obj=True):
+               filters=(), access_control=None, deep_paging_id=None, as_obj=True):
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -343,6 +343,7 @@ class Collection(object):
                     }, ...]
             }
 
+        :param deep_paging_id: ID of the next page during deep paging searches
         :param as_obj: Return objects instead of dictionaries
         :param query: lucene query to search for
         :param offset: offset at which you want the results to start at (paging)
