@@ -668,7 +668,13 @@ class Model:
         return json.dumps(self.as_primitives())
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
+        if isinstance(other, dict):
+            try:
+                other = self.__class__(other)
+            except (ValueError, KeyError):
+                return False
+
+        elif not isinstance(other, self.__class__):
             return False
 
         if len(self._odm_py_obj) != len(other._odm_py_obj):
@@ -687,6 +693,14 @@ class Model:
             return f"<{self.__class__.__name__} [{self.id}] {self.json()}>"
         return f"<{self.__class__.__name__} {self.json()}>"
 
+    def __getitem__(self, name):
+        return self._odm_py_obj[name]
+
+    def __setitem__(self, name, value):
+        if name not in self._odm_field_cache:
+            raise KeyError(name)
+        return self.__setattr__(name, value)
+
     def __getattr__(self, name):
         # Any attribute that hasn't been explicity declared is forbidden
         raise KeyError(name)
@@ -695,7 +709,7 @@ class Model:
         # Any attribute that hasn't been explicitly declared is forbidden
         if self.__frozen and name not in self.fields():
             raise KeyError(name)
-        object.__setattr__(self, name, value)
+        return object.__setattr__(self, name, value)
 
 
 def model(index=None, store=None):
