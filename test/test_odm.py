@@ -503,3 +503,40 @@ def test_banned_keys():
         @model(index=True, store=True)
         class BannedTest(Model):
             ALL = Integer()
+
+
+def test_named_item_access():
+    @model()
+    class Inner(Model):
+        a = Integer()
+        b = Integer()
+
+    @model()
+    class Test(Model):
+        a = Compound(Inner)
+        b = Integer()
+
+    test = Test(dict(a=dict(a=10, b=100), b=99))
+
+    assert test.a['a'] == 10
+    assert test['a'].a == 10
+    assert test.a.a == 10
+    assert test['a']['a'] == 10
+    test.a['a'] = 1
+    assert test.a['a'] == 1
+    assert test['a'].a == 1
+    assert test.a.a == 1
+    assert test['a']['a'] == 1
+    test['a'].a = -1
+    assert test.a['a'] == -1
+    assert test['a'].a == -1
+    assert test.a.a == -1
+    assert test['a']['a'] == -1
+
+    with pytest.raises(KeyError):
+        _ = test['x']
+
+    with pytest.raises(KeyError):
+        test['x'] = 100
+
+    assert test['a'] == {'a': -1, 'b': 100}
