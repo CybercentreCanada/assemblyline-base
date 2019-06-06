@@ -105,7 +105,7 @@ def get_random_hash(hash_len):
 
 
 def get_random_heuristic_id():
-    return f"AL_{get_random_service_name().upper()}_00{random.randint(1, 9)}"
+    return f"AL_{get_random_service_name().upper()}_{random.randint(1, 9)}{random.randint(1, 9)}{random.randint(1, 9)}"
 
 
 def get_random_label():
