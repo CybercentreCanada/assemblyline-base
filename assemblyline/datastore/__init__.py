@@ -417,6 +417,9 @@ class Collection(object):
                 pass
 
             if not gaps_count:
+                if not (gap.startswith("-") or gap.startswith("+")):
+                    raise SearchException("Gap must be preceded with either + or - sign.")
+
                 try:
                     parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp
                     parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp
@@ -424,7 +427,7 @@ class Collection(object):
 
                     gaps_count = int((parsed_end - parsed_start) / parsed_gap)
                     ret_type = str
-                except DateMathException:
+                except (DateMathException, AttributeError):
                     pass
 
             if not gaps_count:
@@ -432,9 +435,8 @@ class Collection(object):
                     "Could not parse date ranges. (start='%s', end='%s', gap='%s')" % (start, end, gap))
 
             if gaps_count > self.MAX_FACET_LIMIT:
-                raise SearchException('Facet max steps are limited to %s. '
-                                      'Current settings would generate %s steps' % (self.MAX_FACET_LIMIT,
-                                                                                    gaps_count))
+                raise SearchException(f'Histograms are limited to a maximum of {self.MAX_FACET_LIMIT} steps. '
+                                      f'Current settings would generate {gaps_count} steps')
             return ret_type
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None):
