@@ -3,6 +3,7 @@ import os
 import random
 
 from assemblyline.common.security import get_password_hash
+from assemblyline.common.uid import get_random_id
 from assemblyline.common.yara import YaraImporter
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.emptyresult import EmptyResult
@@ -15,6 +16,7 @@ from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
+from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import SERVICES, random_model_obj, get_random_phrase
 
 full_file_list = []
@@ -258,6 +260,16 @@ def create_users(ds, log=None):
     ds.user.commit()
 
 
+def create_workflows(ds, log=None):
+    for x in range(20):
+        w_id = get_random_id()
+        ds.workflow.save(w_id, random_model_obj(Workflow))
+        if log:
+            log.info(f'\t{w_id}')
+
+    ds.workflow.commit()
+
+
 def get_sig_path():
     for (d, _, filenames) in os.walk(__file__[:-11]):
         for f in filenames:
@@ -306,3 +318,7 @@ def wipe_users(ds):
     ds.user_settings.wipe()
     ds.user_avatar.wipe()
     ds.user_favorites.wipe()
+
+
+def wipe_workflows(ds):
+    ds.workflow.wipe()
