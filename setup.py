@@ -1,7 +1,6 @@
 import os
 
 from setuptools import setup, find_packages
-from Cython.Build import cythonize
 
 # For development and local builds use this version number, but for real builds replace it
 # with the tag found in the environment
@@ -30,11 +29,6 @@ setup(
     ],
     keywords="assemblyline malware gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test/*']),
-    zip_safe=False,
-    ext_modules=cythonize(["assemblyline/*/*.pyx"]),
-    setup_requires=[
-        'cython'
-    ],
     install_requires=[
         'urllib3<1.25',
         'python-baseconv',
@@ -57,7 +51,6 @@ setup(
         'python-magic',
         'apscheduler',
         'elastic-apm[flask]',
-        'cython',
     ],
     package_data={
         '': [
@@ -67,8 +60,7 @@ setup(
             "*classification.yml",
             "*.magic",
             "*sample_rules.yar",
-            "*.pxd",
-            "*.pyx",
+            ".pyx",
         ]
     }
 )
