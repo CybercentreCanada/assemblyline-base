@@ -178,7 +178,7 @@ OLE_CLSID_GUIDs = {
     "BDD1F04B-858B-11D1-B16A-00C0F0283628": "document/office/word",  # Doc (see CVE2012-0158)
 }
 
-recognized = constants.RECOGNIZED_TAGS
+recognized = constants.RECOGNIZED_TYPES
 
 tag_to_extension = {
     'audiovisual/flash': '.swf',

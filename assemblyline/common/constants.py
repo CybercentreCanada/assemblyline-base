@@ -34,7 +34,7 @@ PRIORITY_THRESHOLDS = {
     'high': 100,
 }
 
-RECOGNIZED_TAGS = {
+RECOGNIZED_TYPES = {
     'android/apk': True,
     'android/dex': True,
     'android/resource': True,
