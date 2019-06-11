@@ -41,7 +41,7 @@ pipelines:
           name: Build Package
           image: python:3.6
           script:
-            - pip install wheel
+            - pip install wheel cython
             - python setup.py bdist_wheel
             - ls dist/
           artifacts:
