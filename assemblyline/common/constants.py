@@ -191,6 +191,10 @@ STANDARD_TAG_TYPES = [
     ('PE_IMPORT_MD5', 14),
     ('PE_OEP_BYTES', 15),
     ('PE_OEP_HEXDUMP', 16),
+    ('PE_IMPORT_FUZZY', 288),
+    ('PE_IMPORT_SORTED_FUZZY', 289),
+    ('PE_APIVECTOR', 290), # from this project: https://github.com/danielplohmann/apiscout
+
 
     # NET tags...
     ('NET_IP', 20),
@@ -320,10 +324,14 @@ STANDARD_TAG_TYPES = [
 
     # SWF TAGS
     ('SWF_TAGS_SSDEEP', 190),
+    ('SWF_HEADER_VERSION', 303),
+    ('SWF_HEADER_FRAME_SIZE', 304),
+    ('SWF_HEADER_FRAME_RATE', 305),
+    ('SWF_HEADER_FRAME_COUNT', 306),
 
     # ANDROID
     ('ANDROID_PKG_NAME', 216),
-    ('ANDROID_MINSDK', 217),
+    ('ANDROID_PKG_NAME', 217),
     ('ANDROID_TARGET_SDK', 202),
     ('ANDROID_APP_LABEL', 203),
     ('ANDROID_USE_LIBRARY', 204),
@@ -367,6 +375,7 @@ STANDARD_TAG_TYPES = [
     ('WIN_API_STRING', 259),
     ('PESTUDIO_BLACKLIST_STRING', 260),
     ('TAGCHECK_RULE', 261),
+    ('POWERSHELL_CMDLET', 300),
 
     # PLIST TAGS TYPES
     ('PLIST_APINSTALLERURL', 262),
@@ -395,7 +404,22 @@ STANDARD_TAG_TYPES = [
     ('PLIST_UIREQUIRESPERSISTENTWIFI', 285),
     ('PLIST_WKAPPBUNDLEIDENITIFER', 286),
 
-    # Last idx used == 287
+    # PIXAXE/EXIFTOOLS
+    ('SORTED_METADATA_HASH', 291),
+    ('EXIFTOOL_XMP_DOCUMENT_ID', 292),
+    ('EXIFTOOL_XMP_DERIVED_DOCUMENT_ID', 293),
+    ('EXIFTOOL_XMP_INSTANCE_ID', 294),
+    ('EXIFTOOL_XMP_TOOLKIT', 295),
+    ('EXIFTOOL_XMP_CREATOR_TOOL', 296),
+    ('IMAGE_MODE', 297),
+    ('IMAGE_SIZE', 298),
+    ('IMAGE_MEGAPIXELS', 299),
+
+    # TLS/SSL JA3 data. Currently being extracted by suricata
+    ('TLS_JA3_HASH', 307),
+    ('TLS_JA3_STRING', 308),
+
+    # Last tag idx used == 308
 ]
 
 FILE_SUMMARY = []
