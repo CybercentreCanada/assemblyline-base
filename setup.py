@@ -1,7 +1,7 @@
 import os
 
-from Cython.Build import cythonize
 from setuptools import setup, find_packages
+from Cython.Build import cythonize
 
 # For development and local builds use this version number, but for real builds replace it
 # with the tag found in the environment
