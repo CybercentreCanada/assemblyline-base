@@ -51,6 +51,7 @@ setup(
         'python-magic',
         'apscheduler',
         'elastic-apm[flask]',
+        'cython',
     ],
     package_data={
         '': [
