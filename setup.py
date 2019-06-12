@@ -60,7 +60,8 @@ setup(
             "*classification.yml",
             "*.magic",
             "*sample_rules.yar",
-            ".pyx",
+            "*.pyx",
+            "*.pxd",
         ]
     }
 )
