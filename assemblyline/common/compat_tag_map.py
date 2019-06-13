@@ -12,7 +12,6 @@ tag_map = {
         "heuristic": ['AV_HEURISTIC'],
         "virus_name": ['AV_VIRUS_NAME'],
     },
-    "base64_alphabet": ['BASE64_ALPHABET'],
     "cert": {
         "extended_key_usage": ['CERT_EXTENDED_KEY_USAGE'],
         "issuer": ['ANDROID_CERT_ISSUER', 'CERT_ISSUER'],
@@ -24,8 +23,8 @@ tag_map = {
         "subject_alt_name": ['CERT_SUBJECT_ALT_NAME'],
         "thumbprint": ['CERT_THUMBPRINT'],
         "valid": {
-            "from": ['ANDROID_CERT_START_DATE', 'CERT_VALID_FROM'],
-            "to": ['ANDROID_CERT_END_DATE', 'CERT_VALID_TO'],
+            "start": ['ANDROID_CERT_START_DATE', 'CERT_VALID_FROM'],
+            "end": ['ANDROID_CERT_END_DATE', 'CERT_VALID_TO'],
         },
     },
     "dynamic": {
@@ -93,18 +92,16 @@ tag_map = {
             "used_library": ['ANDROID_USE_LIBRARY'],
         },
         "img": {
+            "exif_tool": {
+                "creator_tool": ['EXIFTOOL_XMP_CREATOR_TOOL'],
+                "derived_document_id": ['EXIFTOOL_XMP_DERIVED_DOCUMENT_ID'],
+                "document_id": ['EXIFTOOL_XMP_DOCUMENT_ID'],
+                "instance_id": ['EXIFTOOL_XMP_INSTANCE_ID'],
+                "toolkit": ['EXIFTOOL_XMP_TOOLKIT'],
+            },
+            "mega_pixels": ['IMAGE_MEGAPIXELS'],
             "mode": ['IMAGE_MODE'],
             "size": ['IMAGE_SIZE'],
-            "mega_pixels": ['IMAGE_MEGAPIXELS'],
-            "exif_tool": {
-                "xmp": {
-                    "creator_tool": ['EXIFTOOL_XMP_CREATOR_TOOL'],
-                    "derived_document_id": ['EXIFTOOL_XMP_DERIVED_DOCUMENT_ID'],
-                    "document_id": ['EXIFTOOL_XMP_DOCUMENT_ID'],
-                    "instance_id": ['EXIFTOOL_XMP_INSTANCE_ID'],
-                    "toolkit": ['EXIFTOOL_XMP_TOOLKIT'],
-                }
-            },
             "sorted_metadata_hash": ['SORTED_METADATA_HASH'],
         },
         "ole": {
@@ -122,7 +119,7 @@ tag_map = {
             "summary": {
                 "author": ['OLE_SUMMARY_AUTHOR'],
                 "codepage": ['OLE_SUMMARY_CODEPAGE'],
-                "comments": ['OLE_SUMMARY_COMMENTS'],
+                "comment": ['OLE_SUMMARY_COMMENTS'],
                 "company": ['OLE_SUMMARY_COMPANY'],
                 "create_time": ['OLE_SUMMARY_CREATETIME'],
                 "last_printed": ['OLE_SUMMARY_LASTPRINTED'],
@@ -160,7 +157,7 @@ tag_map = {
             },
             "sections": {
                 "hash": ['PE_SECTION_HASH'],
-                "name": ['PE_SECTION_NAME', 'PE_UNEXPECTED_SECTION_NAME (context: unexpected)'],
+                "name": ['PE_SECTION_NAME', 'PE_UNEXPECTED_SECTION_NAME'],
             },
             "version": {
                 "description": ['PE_VERSION_INFO_FILE_DESCRIPTION'],
@@ -227,6 +224,7 @@ tag_map = {
                 "app_bundle_identifier": ['PLIST_WKAPPBUNDLEIDENITIFER'],
             }
         },
+    # TODO: Model done up to here...
         "powershell":{
             "cmdlet": ['POWERSHELL_CMDLET']
         },
@@ -254,7 +252,7 @@ tag_map = {
         "ip": ['NET_IP'],
         "mac_address": [],
         "port": ['NET_PORT'],
-        "protocol": ['NET_PROTOCOL', 'NET_PROTOCOL_SUSPICIOUS (context: suspicious)'],
+        "protocol": ['NET_PROTOCOL', 'NET_PROTOCOL_SUSPICIOUS'],
         "signature":{
             "id": ['SURICATA_SIGNATURE_ID'],
             "message": ['SURICATA_SIGNATURE_MESSAGE']
@@ -283,6 +281,7 @@ tag_map = {
 }
 
 UNSUSED = [
+    'BASE64_ALPHABET',
     'FILE_MIMETYPE',
     'FILE_EXTENSION',
     'SERVICE_NAME',
@@ -295,3 +294,28 @@ UNSUSED = [
     "REQUEST_SCORE",
     "DISPLAY_SEARCH_STRING"
 ]
+
+def flatten(data, parent_key=None):
+    items = []
+    for k, v in data.items():
+        cur_key = f"{parent_key}.{k}" if parent_key is not None else k
+        if isinstance(v, dict):
+            items.extend(flatten(v, cur_key).items())
+        else:
+            items.append((cur_key, v))
+
+    return dict(items)
+
+def reverse_map(data):
+    output = {}
+    for k, v in data.items():
+        for x in v:
+            output[x] = k
+
+    return output
+
+v3_lookup_map = reverse_map(flatten(tag_map))
+v3_lookup_map.update({k: None for k in UNSUSED})
+
+from pprint import pprint
+pprint(v3_lookup_map)

@@ -195,6 +195,30 @@ class Keyword(_Field):
         return str(value)
 
 
+class ValidatedKeyword(Keyword):
+    """
+    Keyword field which the values are validated by a regular expression
+    """
+    def __init__(self, validation_regex, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.validation_regex = re.compile(validation_regex)
+
+    def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError("Empty strings are not allow without defaults")
+
+        if value is None:
+            return value
+
+        if not self.validation_regex.match(value):
+            raise ValueError(f"'{value}' not match the validator: {self.validation_regex.pattern}")
+
+        return str(value)
+
+
 class Enum(Keyword):
     """
     A field storing a short string that has predefined list of possible values

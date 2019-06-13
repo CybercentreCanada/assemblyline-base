@@ -1,10 +1,11 @@
 import datetime
 import random
+import rstr
 import time
 
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
-    Classification, Optional, Any, forge
+    Classification, Optional, Any, forge, ValidatedKeyword
 
 config = forge.get_config()
 
@@ -160,7 +161,7 @@ def get_random_mapping(field):
 
 
 # noinspection PyProtectedMember
-def random_data_for_field(field, name):
+def random_data_for_field(field, name, minimal=False):
     if isinstance(field, Boolean):
         return random.choice([True, False])
     elif isinstance(field, Classification):
@@ -176,17 +177,25 @@ def random_data_for_field(field, name):
         return [random_data_for_field(field.child_type, name) if not isinstance(field.child_type, Model)
                 else random_model_obj(field.child_type, as_json=True) for _ in range(random.randint(1, 4))]
     elif isinstance(field, Compound):
-        return random_model_obj(field.child_type, as_json=True)
+        if minimal:
+            return random_minimal_obj(field.child_type, as_json=True)
+        else:
+            return random_model_obj(field.child_type, as_json=True)
     elif isinstance(field, Mapping):
         return get_random_mapping(field.child_type)
     elif isinstance(field, Optional):
-        return random_data_for_field(field.child_type, name)
+        if not minimal:
+            return random_data_for_field(field.child_type, name)
+        else:
+            return field.child_type.default
     elif isinstance(field, Date):
         return get_random_iso_date()
     elif isinstance(field, Integer):
         return random.randint(128, 4096)
     elif isinstance(field, Float):
         return random.randint(12800, 409600) / 100.0
+    elif isinstance(field, ValidatedKeyword):
+        return rstr.xeger(field.validation_regex.pattern)
     elif isinstance(field, Keyword):
         if name:
             if "sha256" in name:
@@ -256,7 +265,7 @@ def random_minimal_obj(model, as_json=False):
     data = {}
     for f_name, f_value in model._odm_field_cache.items():
         if not f_value.default_set:
-            data[f_name] = random_data_for_field(f_value, f_name)
+            data[f_name] = random_data_for_field(f_value, f_name, minimal=True)
 
     if as_json:
         return data
