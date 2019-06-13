@@ -1,3 +1,5 @@
+# cython: language_level=3
+
 # noinspection PyUnresolvedReferences
 from libc.string cimport memset
 

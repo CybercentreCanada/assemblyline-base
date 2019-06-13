@@ -2,7 +2,7 @@ import collections
 
 def recursive_update(d, u):
     for k, v in u.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             d[k] = recursive_update(d.get(k, {}), v)
         else:
             d[k] = v
@@ -13,7 +13,7 @@ def recursive_update(d, u):
 def get_recursive_delta(d1, d2):
     out = {}
     for k1, v1 in d1.items():
-        if isinstance(v1, collections.Mapping):
+        if isinstance(v1, collections.abc.Mapping):
             internal = get_recursive_delta(v1, d2.get(k1, {}))
             if internal:
                 out[k1] = internal
