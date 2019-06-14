@@ -5,12 +5,14 @@ import time
 
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
-    Classification, Optional, Any, forge, ValidatedKeyword
+    Classification, Optional, Any, forge, ValidatedKeyword, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, URIPath, \
+    URI, SSDeepHash
 
 config = forge.get_config()
 
 ALPHA = "ABCDEFGHIJKLMNOPQRSTUPVXYZabcdefghijklmnopqrstuvwxyz"
 HASH_ALPHA = "abcdef0123456789"
+SSDEEP_ALPHA = f"{ALPHA}0123456789"
 WORDS = """The Cyber Centre stays on the cutting edge of technology by working with commercial vendors of cyber security 
 technology to support their development of enhanced cyber defence tools To do this our experts survey the cyber 
 security market and evaluate emerging technologies in order to determine their potential to improve cyber security 
@@ -160,6 +162,29 @@ def get_random_mapping(field):
     return {META_KEYS[i]: random_data_for_field(field, META_KEYS[i]) for i in range(random.randint(0, 5))}
 
 
+def get_random_phone():
+    return f'{random.choice(["", "+1 "])}{"-".join([str(random.randint(100, 999)) for _ in range(3)])}' \
+        f'{str(random.randint(0, 9))}'
+
+
+def get_random_mac():
+    return ":".join([get_random_hash(2) for _ in range(6)])
+
+
+def get_random_uri_path():
+    return f"/{'/'.join([get_random_word() for _ in range(random.randint(2, 6))])}"
+
+
+def get_random_uri():
+    return f"{random.choice(['http', 'https', 'ftp'])}://{get_random_host()}{get_random_uri_path()}"
+
+
+def get_random_ssdeep():
+    return f"{str(random.randint(30, 99999))}" \
+        f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}" \
+        f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}"
+
+
 # noinspection PyProtectedMember
 def random_data_for_field(field, name, minimal=False):
     if isinstance(field, Boolean):
@@ -194,6 +219,26 @@ def random_data_for_field(field, name, minimal=False):
         return random.randint(128, 4096)
     elif isinstance(field, Float):
         return random.randint(12800, 409600) / 100.0
+    elif isinstance(field, MD5):
+        return get_random_hash(32)
+    elif isinstance(field, SHA1):
+        return get_random_hash(40)
+    elif isinstance(field, SHA256):
+        return get_random_hash(64)
+    elif isinstance(field, SSDeepHash):
+        return get_random_ssdeep()
+    elif isinstance(field, URI):
+        return get_random_uri()
+    elif isinstance(field, URIPath):
+        return get_random_uri_path()
+    elif isinstance(field, MAC):
+        return get_random_mac()
+    elif isinstance(field, PhoneNumber):
+        return get_random_phone()
+    elif isinstance(field, IP):
+        return get_random_ip()
+    elif isinstance(field, Domain):
+        return get_random_host()
     elif isinstance(field, ValidatedKeyword):
         return rstr.xeger(field.validation_regex.pattern)
     elif isinstance(field, Keyword):

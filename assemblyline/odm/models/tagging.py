@@ -29,30 +29,83 @@ class Tag(odm.Model):
 
 
 @odm.model(index=True, store=False)
+class TagInt(odm.Model):
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.Integer()                                                         # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
+
+
+@odm.model(index=True, store=False)
+class TagMD5(odm.Model):
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.MD5(copyto="__text__")                                            # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
+
+
+@odm.model(index=True, store=False)
 class TagSha1(odm.Model):
-    classification = odm.Classification()                                             # Classification of the tag
-    value = odm.ValidatedKeyword(r"^[a-z0-9]{40}$",
-                                 copyto="__text__")                                   # Value of the tag
-    context = odm.Optional(odm.Keyword())                                             # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))           # Category of tag
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.SHA1(copyto="__text__")                                           # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
 class TagSSDeep(odm.Model):
-    classification = odm.Classification()                                             # Classification of the tag
-    value = odm.ValidatedKeyword(r"^[0-9]{1,18}:[a-zA-Z0-9]{1,64}:[a-zA-Z0-9]{1,64}$",
-                                 copyto="__text__")                                   # Value of the tag
-    context = odm.Optional(odm.Keyword())                                             # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))           # Category of tag
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.SSDeepHash(copyto="__text__")                                     # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
+
+
+@odm.model(index=True, store=False)
+class TagDomain(odm.Model):
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.Domain(copyto="__text__")                                         # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
+
+
+@odm.model(index=True, store=False)
+class TagIP(odm.Model):
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.IP(copyto="__text__")                                             # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
+
+
+@odm.model(index=True, store=False)
+class TagURI(odm.Model):
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.URI(copyto="__text__")                                            # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
+
+
+@odm.model(index=True, store=False)
+class TagURIPath(odm.Model):
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.URIPath(copyto="__text__")                                        # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
+
+
+@odm.model(index=True, store=False)
+class TagMAC(odm.Model):
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.MAC(copyto="__text__")                                            # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
 class TagPhone(odm.Model):
-    classification = odm.Classification()                                             # Classification of the tag
-    value = odm.ValidatedKeyword(r"^(\+?\d{1,2})?[ .-]?(\(\d{3}\)|\d{3})[ .-](\d{3})[ .-](\d{4})$",
-                                 copyto="__text__")                                   # Value of the tag
-    context = odm.Optional(odm.Keyword())                                             # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))           # Category of tag
+    classification = odm.Classification()                                         # Classification of the tag
+    value = odm.PhoneNumber(copyto="__text__")                                    # Value of the tag
+    context = odm.Optional(odm.Keyword())                                         # Context of the tag
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 ## Model definition
@@ -353,15 +406,32 @@ class Tagging(odm.Model):
             ui = odm.Optional(odm.Compound(FilePListUI))
             wk = odm.Optional(odm.Compound(FilePListWK))
 
+        @odm.model(index=True, store=False)
+        class FilePowerShell(odm.Model):
+            cmdlet = odm.Optional(odm.List(odm.Compound(Tag)))
+
+        @odm.model(index=True, store=False)
+        class FileSWF(odm.Model):
+            @odm.model(index=True, store=False)
+            class FileSWFHeader(odm.Model):
+                @odm.model(index=True, store=False)
+                class FileSWFHeaderFrame(odm.Model):
+                    count = odm.Optional(odm.List(odm.Compound(TagInt)))
+                    rate = odm.Optional(odm.List(odm.Compound(Tag)))
+                    size = odm.Optional(odm.List(odm.Compound(TagInt)))
+
+                version = odm.Optional(odm.List(odm.Compound(Tag)))
+
+            tags_ssdeep = odm.Optional(odm.List(odm.Compound(TagSSDeep)))
 
         api_string = odm.Optional(odm.List(odm.Compound(Tag)))
         compiler = odm.Optional(odm.List(odm.Compound(Tag)))
         config = odm.Optional(odm.List(odm.Compound(Tag)))
-        libs = odm.Optional(odm.List(odm.Compound(Tag)))
+        lib = odm.Optional(odm.List(odm.Compound(Tag)))
         name = odm.Optional(odm.Compound(FileName))
         path = odm.Optional(odm.List(odm.Compound(Tag)))
         rule = odm.Optional(odm.Compound(FileRule))
-        strings = odm.Optional(odm.Compound(FileStrings))
+        string = odm.Optional(odm.Compound(FileStrings))
         summary = odm.Optional(odm.List(odm.Compound(Tag)))
         apk = odm.Optional(odm.Compound(FileAPK))
         img = odm.Optional(odm.Compound(FileIMG))
@@ -369,8 +439,53 @@ class Tagging(odm.Model):
         pe = odm.Optional(odm.Compound(FilePE))
         pdf = odm.Optional(odm.Compound(FilePDF))
         plist = odm.Optional(odm.Compound(FilePList))
-        # powershell = odm.Optional(odm.Compound(FilePowerShell))
-        # swf = odm.Optional(odm.Compound(FileSWF))
+        powershell = odm.Optional(odm.Compound(FilePowerShell))
+        swf = odm.Optional(odm.Compound(FileSWF))
+
+    @odm.model(index=True, store=False)
+    class Network(odm.Model):
+        @odm.model(index=True, store=False)
+        class NetworkEmail(odm.Model):
+            address = odm.Optional(odm.List(odm.Compound(Tag)))
+            date = odm.Optional(odm.List(odm.Compound(Tag)))
+            subject = odm.Optional(odm.List(odm.Compound(Tag)))
+            msg_id = odm.Optional(odm.List(odm.Compound(Tag)))
+
+        @odm.model(index=True, store=False)
+        class NetworkSignature(odm.Model):
+            signature_id = odm.Optional(odm.List(odm.Compound(Tag)))
+            message = odm.Optional(odm.List(odm.Compound(Tag)))
+
+        @odm.model(index=True, store=False)
+        class NetworkTLS(odm.Model):
+            ja3_hash = odm.Optional(odm.List(odm.Compound(TagMD5)))
+            ja3_string = odm.Optional(odm.List(odm.Compound(Tag)))
+
+        attack = odm.Optional(odm.List(odm.Compound(Tag)))
+        domain = odm.Optional(odm.List(odm.Compound(TagDomain)))
+        email = odm.Optional(odm.Compound(NetworkEmail))
+        ip = odm.Optional(odm.List(odm.Compound(TagIP)))
+        mac_address = odm.Optional(odm.List(odm.Compound(TagMAC)))
+        port = odm.Optional(odm.List(odm.Compound(TagInt)))
+        protocol = odm.Optional(odm.List(odm.Compound(TagInt)))
+        signature = odm.Optional(odm.Compound(NetworkSignature))
+        tls = odm.Optional(odm.Compound(NetworkTLS))
+        uri = odm.Optional(odm.List(odm.Compound(TagURI)))
+        uri_path = odm.Optional(odm.List(odm.Compound(TagURIPath)))
+
+    @odm.model(index=True, store=False)
+    class Technique(odm.Model):
+        comms_routine = odm.Optional(odm.List(odm.Compound(Tag)))
+        config = odm.Optional(odm.List(odm.Compound(Tag)))
+        crypto = odm.Optional(odm.List(odm.Compound(Tag)))
+        keylogger = odm.Optional(odm.List(odm.Compound(Tag)))
+        macro = odm.Optional(odm.List(odm.Compound(Tag)))
+        masking_algo = odm.Optional(odm.List(odm.Compound(Tag)))
+        obfuscation = odm.Optional(odm.List(odm.Compound(Tag)))
+        packer = odm.Optional(odm.List(odm.Compound(Tag)))
+        persistence = odm.Optional(odm.List(odm.Compound(Tag)))
+        shellcode = odm.Optional(odm.List(odm.Compound(Tag)))
+        string = odm.Optional(odm.List(odm.Compound(Tag)))
 
     attribution = odm.Optional(odm.Compound(Attribution))
     av = odm.Optional(odm.Compound(AV))
@@ -378,6 +493,9 @@ class Tagging(odm.Model):
     dynamic = odm.Optional(odm.Compound(Dynamic))
     info = odm.Optional(odm.Compound(Info))
     file = odm.Optional(odm.Compound(File))
+    network = odm.Optional(odm.Compound(Network))
+    source = odm.Optional(odm.List(odm.Compound(Tag)))
+    technique = odm.Optional(odm.Compound(Technique))
 
 
 from pprint import pprint

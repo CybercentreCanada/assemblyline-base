@@ -58,7 +58,7 @@ tag_map = {
         "api_string": ['WIN_API_STRING'],
         "compiler": ['INFO_COMPILER'],
         "config": ['FILE_CONFIG'],
-        "libs": ['INFO_LIBS'],
+        "lib": ['INFO_LIBS'],
         "name": {
             "anomaly": ['FILENAME_ANOMALIES'],
             "extracted": ['FILE_NAME'],
@@ -68,7 +68,7 @@ tag_map = {
             "tagcheck": ['TAGCHECK_RULE'],
             "yara": ['FILE_YARA_RULE'],
         },
-        "strings":{
+        "string":{
             "blacklisted": ['PESTUDIO_BLACKLIST_STRING'],
             "decoded": ['FILE_DECODED_STRING'],
             "extracted": ['FILE_STRING'],
@@ -254,7 +254,7 @@ tag_map = {
         "port": ['NET_PORT'],
         "protocol": ['NET_PROTOCOL', 'NET_PROTOCOL_SUSPICIOUS'],
         "signature":{
-            "id": ['SURICATA_SIGNATURE_ID'],
+            "signature_id": ['SURICATA_SIGNATURE_ID'],
             "message": ['SURICATA_SIGNATURE_MESSAGE']
         },
         "tls":{
@@ -270,13 +270,13 @@ tag_map = {
         "config": ['TECHNIQUE_CONFIG'],
         "crypto": ['TECHNIQUE_CRYPTO'],
         "keylogger": ['TECHNIQUE_KEYLOGGER'],
-        "macros": ['TECHNIQUE_MACROS'],
+        "macro": ['TECHNIQUE_MACROS'],
         "masking_algo": ['MASKING_ALGO'],
         "obfuscation": ['TECHNIQUE_OBFUSCATION', 'FILE_OBFUSCATION'],
         "packer": ['TECHNIQUE_PACKER'],
         "persistence": ['TECHNIQUE_PERSISTENCE'],
         "shellcode": ['SHELLCODE', 'TECHNIQUE_SHELLCODE'],
-        "strings": ['IMPLANT_STRINGS'],
+        "string": ['IMPLANT_STRINGS'],
     },
 }
 
