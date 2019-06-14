@@ -40,7 +40,7 @@ class SubmissionParams(odm.Model):
     classification = odm.Classification(
         default=Classification.UNRESTRICTED)                            # Original classification of the submission
     deep_scan = odm.Boolean(default=False)                              # Should a deep scan be performed?
-    description = odm.Text(default="", store=True, copyto="__text__")   # Description of the submission
+    description = odm.Text(store=True, copyto="__text__")               # Description of the submission
     generate_alert = odm.Boolean(default=False)                         # Should this submission generate an alert
     groups = odm.List(odm.Keyword(), default=["USERS"])                 # List of groups related to this scan
     ignore_cache = odm.Boolean(default=False)                           # ignore the service caching or not
