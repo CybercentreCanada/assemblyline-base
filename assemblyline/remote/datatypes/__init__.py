@@ -57,8 +57,8 @@ def retry_call(func, *args, **kw):
 
             return ret_val
 
-        except redis.ConnectionError:
-            log.warning('No connection to Redis, reconnecting...')
+        except redis.ConnectionError as ce:
+            log.warning(f'No connection to Redis, reconnecting... [{ce}]')
             time.sleep(2 ** exponent)
             exponent = exponent + 1 if exponent < maximum else exponent
 
