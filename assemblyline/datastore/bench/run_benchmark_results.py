@@ -10,7 +10,7 @@ import string
 from tabulate import tabulate
 
 from assemblyline.datastore import log
-from assemblyline.odm.models.submission import Submission
+from assemblyline.odm.models.result import Result
 from assemblyline.odm.randomizer import random_model_obj
 
 DATASET_SIZE = 1000
@@ -80,7 +80,7 @@ def run(ds, times, dataset):
     with measure(times, 'range_searches_50'):
         results = []
         for ii in range(DATASET_SIZE):
-            results.append(pool.submit(ds.search, f'max_score:[{str(ii)} TO {str(ii+500)}]', rows=50))
+            results.append(pool.submit(ds.search, f'result.score:[{str(ii)} TO {str(ii+500)}]', rows=50))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
@@ -89,7 +89,7 @@ def run(ds, times, dataset):
         results = []
         for _ in range(DATASET_SIZE):
             results.append(pool.submit(ds.histogram,
-                                       "times.submitted",
+                                       "created",
                                        f"{ds.datastore.now}-1{ds.datastore.hour}",
                                        ds.datastore.now,
                                        f"+1{ds.datastore.minute}"))
@@ -100,7 +100,7 @@ def run(ds, times, dataset):
     with measure(times, 'facet'):
         results = []
         for _ in range(DATASET_SIZE):
-            results.append(pool.submit(ds.facet, "errors"))
+            results.append(pool.submit(ds.facet, "response.service_name"))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
@@ -108,7 +108,7 @@ def run(ds, times, dataset):
     with measure(times, 'groups'):
         results = []
         for _ in range(DATASET_SIZE):
-            results.append(pool.submit(ds.grouped_search, 'state', rows=10))
+            results.append(pool.submit(ds.grouped_search, 'response.service_name', rows=10))
         concurrent.futures.wait(results)
     [res.result() for res in results]
 
@@ -135,15 +135,15 @@ def main():
 
         print(f"\nGenerating random dataset of {DATASET_SIZE} documents...")
         for ii in range(DATASET_SIZE):
-            data[str(ii)] = random_model_obj(Submission, as_json=True)
+            data[str(ii)] = random_model_obj(Result, as_json=True)
 
         print("Creating indexes...")
         log.setLevel(logging.ERROR)
         datastores = {
-            'solr': solr_connection(Submission, False),
-            'solr_model': solr_connection(Submission),
-            'es': es_connection(Submission, False),
-            'es_model': es_connection(Submission),
+            'solr': solr_connection(Result, False),
+            'solr_model': solr_connection(Result),
+            'es': es_connection(Result, False),
+            'es_model': es_connection(Result),
         }
         log.setLevel(logging.INFO)
 

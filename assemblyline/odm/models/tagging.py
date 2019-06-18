@@ -1,5 +1,4 @@
 from assemblyline import odm
-from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
 
 # TODO: only for heuristics maybe?!
 CATEGORIES = [
@@ -496,9 +495,3 @@ class Tagging(odm.Model):
     network = odm.Optional(odm.Compound(Network))
     source = odm.Optional(odm.List(odm.Compound(Tag)))
     technique = odm.Optional(odm.Compound(Technique))
-
-
-from pprint import pprint
-pprint(random_model_obj(Tagging).as_primitives())
-pprint(random_minimal_obj(Tagging).as_primitives(strip_null=True))
-assert random_minimal_obj(Tagging).as_primitives(strip_null=True) == {}

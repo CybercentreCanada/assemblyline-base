@@ -58,7 +58,6 @@ setup(
         'apscheduler',
         'elastic-apm[flask]',
         'cython',
-        'rstr',
     ],
     package_data={
         '': [

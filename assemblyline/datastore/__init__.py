@@ -8,6 +8,7 @@ from datemath.helpers import DateMathException
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
 from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List
+from assemblyline.odm.base import _Field
 from assemblyline.remote.datatypes.lock import Lock
 
 log = logging.getLogger('assemblyline.datastore')
@@ -470,6 +471,13 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
+    def __get_possible_fields(self, field):
+        field_types = [field.__name__.lower()]
+        if field.__bases__[0] != _Field:
+            field_types.extend(self.__get_possible_fields(field.__bases__[0]))
+
+        return field_types
+
     def _check_fields(self, model=None):
         if model is None:
             if self.model_class:
@@ -490,10 +498,8 @@ class Collection(object):
             if fields[field_name]['stored'] != model[field_name].store:
                 raise RuntimeError(f"Field {field_name} didn't have the expected store value.")
 
-            possible_field_types = [
-                model[field_name].__class__.__name__.lower(),
-                model[field_name].__class__.__bases__[0].__name__.lower(),
-            ]
+            possible_field_types = self.__get_possible_fields(model[field_name].__class__)
+
             if fields[field_name]['type'] not in possible_field_types:
                 raise RuntimeError(f"Field {field_name} didn't have the expected store "
                                    f"type. [{fields[field_name]['type']} != "

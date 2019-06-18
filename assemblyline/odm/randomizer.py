@@ -1,6 +1,5 @@
 import datetime
 import random
-import rstr
 import time
 
 from assemblyline.common.uid import get_random_id
@@ -239,8 +238,6 @@ def random_data_for_field(field, name, minimal=False):
         return get_random_ip()
     elif isinstance(field, Domain):
         return get_random_host()
-    elif isinstance(field, ValidatedKeyword):
-        return rstr.xeger(field.validation_regex.pattern)
     elif isinstance(field, Keyword):
         if name:
             if "sha256" in name:

@@ -316,6 +316,3 @@ def reverse_map(data):
 
 v3_lookup_map = reverse_map(flatten(tag_map))
 v3_lookup_map.update({k: None for k in UNSUSED})
-
-from pprint import pprint
-pprint(v3_lookup_map)

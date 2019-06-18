@@ -1,10 +1,10 @@
 from assemblyline.common import forge
 
 from assemblyline import odm
+from assemblyline.odm.models.tagging import Tagging, CATEGORIES
 
 BODY_TYPES = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON"}
 constants = forge.get_constants()
-TAG_TYPES = sorted([x[0] for x in constants.STANDARD_TAG_TYPES])
 
 
 @odm.model(index=True, store=False)
@@ -17,25 +17,25 @@ class Section(odm.Model):
     title_text = odm.Text(copyto="__text__")                # Title of the section
     depth = odm.Integer(index=False)                        # Depth of the section
     parent_section_id = odm.Integer(index=False)            # ID of the parent section
-    score = odm.Integer(index=False)                        # Score of the section
     body_format = odm.Enum(values=BODY_TYPES, index=False)  # Type of body in this section
 
 
 @odm.model(index=True, store=False)
-class Tag(odm.Model):
-    classification = odm.Classification()   # Classification of the tag
-    value = odm.Keyword(copyto="__text__")  # Value of the tag
-    context = odm.Optional(odm.Keyword())   # Context of the tag
-    type = odm.Enum(values=TAG_TYPES)       # Type of tag
+class Heuristic(odm.Model):
+    classification = odm.Classification()                                    # Classification of the heuristic
+    heur_id = odm.Keyword(copyto="__text__")                                 # Triggered heuristic
+    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))  # Heuristic's category
+    score = odm.Integer()                                                    # Heuristic's score
 
 
 @odm.model(index=True, store=True)
 class ResultBody(odm.Model):
     truncated = odm.Boolean(index=False, store=False,
-                            default=False)                  # is the result body truncated or not
-    tags = odm.List(odm.Compound(Tag), default=[])          # List of tag objects
-    score = odm.Integer(default=0)                          # Aggregate of the score for all sections
-    sections = odm.List(odm.Compound(Section), default=[])  # List of sections
+                            default=False)                      # is the result body truncated or not
+    heuristics = odm.List(odm.Compound(Heuristic), default=[])  # List of tag objects
+    tags = odm.Compound(Tagging, default={})
+    score = odm.Integer(default=0)                              # Aggregate of the score for all heuristics
+    sections = odm.List(odm.Compound(Section), default=[])      # List of sections
 
 
 @odm.model(index=False, store=False)

@@ -216,6 +216,16 @@ class ValidatedKeyword(Keyword):
         super().__init__(*args, **kwargs)
         self.validation_regex = re.compile(validation_regex)
 
+    def __deepcopy__(self, memo=None):
+        # NOTE: This deepcopy code does not work with a sub-class that add args of kwargs that should be copied.
+        #       If that is the case, the sub-class should implement its own deepcopy function.
+        valid_fields = ["name", "index", "store", "copyto", "default", "default_set"]
+        if 'validation_regex' in self.__class__.__init__.__code__.co_varnames:
+            return self.__class__(self.validation_regex.pattern, **{k: v for k, v in self.__dict__.items()
+                                                                      if k in valid_fields})
+        else:
+            return self.__class__(**{k: v for k, v in self.__dict__.items() if k in valid_fields})
+
     def check(self, value, **kwargs):
         if not value:
             if self.default_set:

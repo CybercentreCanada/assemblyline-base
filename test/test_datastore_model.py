@@ -148,8 +148,13 @@ def _assert_key_exists(key, data):
 
 def _get_value(key, data):
     while "." in key:
+        if data is None:
+            return data
         main, key = key.split(".", 1)
         data = data[main]
+
+    if data is None:
+        return data
 
     if isinstance(data, list):
         if len(data) == 0:
@@ -170,10 +175,7 @@ def _get_value(key, data):
         return _get_value(list(value.keys())[0], value)
     else:
         value = str(value)
-        if " " in value or (":" in value and value.endswith("Z")):
-            value = f'"{str(value)}"'
-
-        if "/" in value:
+        if " " in value or ":" in value or "/" in value:
             value = f'"{value}"'
 
         return value
