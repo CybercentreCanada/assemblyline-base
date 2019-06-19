@@ -1,3 +1,4 @@
+import random
 
 import pytest
 
@@ -151,15 +152,28 @@ def _get_value(key, data):
         if data is None:
             return data
         main, key = key.split(".", 1)
-        data = data[main]
+
+        if isinstance(data, list):
+            for x in data:
+                value = _get_value(f"{main}.{key}", x)
+                if value is not None:
+                    return value
+            return None
+
+        try:
+            data = data[main]
+        except TypeError:
+            pass
 
     if data is None:
         return data
 
     if isinstance(data, list):
-        if len(data) == 0:
-            return None
-        data = data[0]
+        for x in data:
+            value = _get_value(key, x)
+            if value is not None:
+                return value
+        return None
 
     value = data[key]
     if value is None:
