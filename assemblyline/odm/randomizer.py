@@ -4,8 +4,9 @@ import time
 
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
-    Classification, Optional, Any, forge, ValidatedKeyword, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, URIPath, \
+    Classification, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, URIPath, \
     URI, SSDeepHash
+from assemblyline.odm.models.tagging import Tagging
 
 config = forge.get_config()
 
@@ -183,6 +184,32 @@ def get_random_ssdeep():
         f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}" \
         f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}"
 
+def get_random_tags():
+    out = {}
+    flat_fields = Tagging.flat_fields()
+    tag_list = random.choices([x for x in flat_fields if x.endswith('value')], k=random.randint(1, 10))
+    for key in tag_list:
+        parts = key.replace('.value', '').split(".")
+        d = out
+        for part in parts[:-1]:
+            if part not in d:
+                d[part] = dict()
+            d = d[part]
+
+        if parts[-1] not in d:
+            d[parts[-1]] = []
+
+        for _ in range(random.randint(1, 3)):
+            data = {
+                "value": random_data_for_field(flat_fields[key], key.split(".")[-1]),
+                "classification": random_data_for_field(flat_fields[key.replace('value', 'classification')],
+                                                       key.split(".")[-1]),
+                "context": random_data_for_field(flat_fields[key.replace('value', 'context')], key.split(".")[-1])
+            }
+            d[parts[-1]].append(data)
+
+    return out
+
 
 # noinspection PyProtectedMember
 def random_data_for_field(field, name, minimal=False):
@@ -215,6 +242,8 @@ def random_data_for_field(field, name, minimal=False):
     elif isinstance(field, Date):
         return get_random_iso_date()
     elif isinstance(field, Integer):
+        if name == 'depth':
+            return random.randint(1,3)
         return random.randint(128, 4096)
     elif isinstance(field, Float):
         return random.randint(12800, 409600) / 100.0
@@ -292,6 +321,13 @@ def random_data_for_field(field, name, minimal=False):
 
 # noinspection PyProtectedMember
 def random_model_obj(model, as_json=False):
+    if model == Tagging:
+        data = get_random_tags()
+        if as_json:
+            return data
+        else:
+            return model(data)
+
     data = {}
     for f_name, f_value in model._odm_field_cache.items():
         data[f_name] = random_data_for_field(f_value, f_name)
