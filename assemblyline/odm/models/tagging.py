@@ -1,30 +1,11 @@
 from assemblyline import odm
 
-# TODO: only for heuristics maybe?!
-CATEGORIES = [
-    "Initial Access",
-    "Execution",
-    "Persistence",
-    "Privilege Escalation",
-    "Defense Evasion",
-    "Credential Access",
-    "Discovery",
-    "Lateral Movement",
-    "Collection",
-    "Command and Control",
-    "Exfiltration",
-    "Impact",
-    "Effects"
-]
 
-
-## Tag definition
 @odm.model(index=True, store=False)
 class Tag(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.Keyword(copyto="__text__")  # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -32,7 +13,6 @@ class TagInt(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.Integer()                                                         # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -40,7 +20,6 @@ class TagMD5(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.MD5(copyto="__text__")                                            # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -48,7 +27,6 @@ class TagSha1(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.SHA1(copyto="__text__")                                           # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -56,7 +34,6 @@ class TagSSDeep(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.SSDeepHash(copyto="__text__")                                     # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -64,7 +41,6 @@ class TagDomain(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.Domain(copyto="__text__")                                         # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -72,7 +48,6 @@ class TagIP(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.IP(copyto="__text__")                                             # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -80,7 +55,6 @@ class TagURI(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.URI(copyto="__text__")                                            # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -88,7 +62,6 @@ class TagURIPath(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.URIPath(copyto="__text__")                                        # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -96,7 +69,6 @@ class TagMAC(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.MAC(copyto="__text__")                                            # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 @odm.model(index=True, store=False)
@@ -104,7 +76,6 @@ class TagPhone(odm.Model):
     classification = odm.Classification()                                         # Classification of the tag
     value = odm.PhoneNumber(copyto="__text__")                                    # Value of the tag
     context = odm.Optional(odm.Keyword())                                         # Context of the tag
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))       # Category of tag
 
 
 ## Model definition

@@ -1,23 +1,11 @@
 from assemblyline.common import forge
 
 from assemblyline import odm
-from assemblyline.odm.models.tagging import Tagging, CATEGORIES
+from assemblyline.odm.models.heuristic import CATEGORIES
+from assemblyline.odm.models.tagging import Tagging
 
 BODY_TYPES = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON"}
 constants = forge.get_constants()
-
-
-@odm.model(index=True, store=False)
-class Section(odm.Model):
-    section_id = odm.Integer(index=False)                   # ID of the section to generate the tree
-    body = odm.Optional(odm.Text(copyto="__text__"))        # Text body of the result section
-    classification = odm.Classification()                   # Classification of the section
-    truncated = odm.Boolean(index=False)                    # is the result section truncated of not
-    finalized = odm.Boolean(index=False)                    # is the result section finalized or not
-    title_text = odm.Text(copyto="__text__")                # Title of the section
-    depth = odm.Integer(index=False)                        # Depth of the section
-    parent_section_id = odm.Integer(index=False)            # ID of the parent section
-    body_format = odm.Enum(values=BODY_TYPES, index=False)  # Type of body in this section
 
 
 @odm.model(index=True, store=False)
@@ -28,12 +16,19 @@ class Heuristic(odm.Model):
     score = odm.Integer()                                                    # Heuristic's score
 
 
+@odm.model(index=True, store=False)
+class Section(odm.Model):
+    body = odm.Optional(odm.Text(copyto="__text__"))        # Text body of the result section
+    classification = odm.Classification()                   # Classification of the section
+    body_format = odm.Enum(values=BODY_TYPES, index=False)  # Type of body in this section
+    depth = odm.Integer(index=False)                        # Depth of the section
+    heuristic = odm.Optional(odm.Compound(Heuristic))       # List of tag objects
+    tags = odm.Compound(Tagging, default={})                # List of tags associated to this section
+    title_text = odm.Text(copyto="__text__")                # Title of the section
+
+
 @odm.model(index=True, store=True)
 class ResultBody(odm.Model):
-    truncated = odm.Boolean(index=False, store=False,
-                            default=False)                      # is the result body truncated or not
-    heuristics = odm.List(odm.Compound(Heuristic), default=[])  # List of tag objects
-    tags = odm.Compound(Tagging, default={})
     score = odm.Integer(default=0)                              # Aggregate of the score for all heuristics
     sections = odm.List(odm.Compound(Section), default=[])      # List of sections
 
@@ -71,7 +66,6 @@ class Result(odm.Model):
     classification = odm.Classification()                 # Aggregate classification for the result
     created = odm.Date(default="NOW")                     # Date at which the result object got created
     expiry_ts = odm.Date(store=False)                     # Expiry time stamp
-    oversized = odm.Boolean(default=False)                # Is an oversized record
     response: ResponseBody = odm.Compound(ResponseBody)   # The body of the response from the service
     result: ResultBody = odm.Compound(ResultBody,
                                       default={})         # The result body
@@ -104,7 +98,6 @@ class Result(odm.Model):
     def is_empty(self):
         if len(self.response.extracted) == 0 and \
                 len(self.response.supplementary) == 0 and \
-                len(self.result.tags) == 0 and \
                 len(self.result.sections) == 0 and \
                 self.result.score == 0:
             return True
