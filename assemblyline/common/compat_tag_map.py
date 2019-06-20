@@ -1,3 +1,4 @@
+from assemblyline.common.dict_utils import flatten
 
 tag_map = {
     "attribution": {
@@ -224,7 +225,6 @@ tag_map = {
                 "app_bundle_identifier": ['PLIST_WKAPPBUNDLEIDENITIFER'],
             }
         },
-    # TODO: Model done up to here...
         "powershell":{
             "cmdlet": ['POWERSHELL_CMDLET']
         },
@@ -282,29 +282,20 @@ tag_map = {
 
 UNSUSED = [
     'BASE64_ALPHABET',
-    'FILE_MIMETYPE',
-    'FILE_EXTENSION',
-    'SERVICE_NAME',
-    'SERVICE_DISPLAY_NAME',
-    'SERVICE_DESCRIPTION',
-    'DYNAMIC_MALWARE_PATTERN',
+    'DISPLAY_SEARCH_STRING',
     'DYNAMIC_MALICIOUSNESS',
+    'DYNAMIC_MALWARE_PATTERN',
+    'FILE_ATTRIBUTION',
+    'FILE_EXTENSION',
+    'FILE_MIMETYPE',
     'HEURISTIC',
-    "REQUEST_USERNAME",
-    "REQUEST_SCORE",
-    "DISPLAY_SEARCH_STRING"
+    'REQUEST_SCORE',
+    'REQUEST_USERNAME',
+    'SERVICE_DESCRIPTION',
+    'SERVICE_DISPLAY_NAME',
+    'SERVICE_NAME',
 ]
 
-def flatten(data, parent_key=None):
-    items = []
-    for k, v in data.items():
-        cur_key = f"{parent_key}.{k}" if parent_key is not None else k
-        if isinstance(v, dict):
-            items.extend(flatten(v, cur_key).items())
-        else:
-            items.append((cur_key, v))
-
-    return dict(items)
 
 def reverse_map(data):
     output = {}

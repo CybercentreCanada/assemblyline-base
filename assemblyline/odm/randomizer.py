@@ -185,9 +185,20 @@ def get_random_ssdeep():
         f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}"
 
 def get_random_tags():
+    desired_tag_types = [
+        'attribution.actor.value',
+        'network.ip.value',
+        'network.domain.value',
+        'av.virus_name.value',
+        'attribution.implant.value',
+        'file.rule.yara.value',
+        'file.summary.value',
+        'attribution.exploit.value'
+    ]
     out = {}
     flat_fields = Tagging.flat_fields()
-    tag_list = random.choices([x for x in flat_fields if x.endswith('value')], k=random.randint(1, 10))
+    tag_list = random.choices([x for x in flat_fields if x.endswith('value')], k=random.randint(0, 2))
+    tag_list.extend(random.choices(desired_tag_types, k=random.randint(1, 2)))
     for key in tag_list:
         parts = key.replace('.value', '').split(".")
         d = out
@@ -199,7 +210,7 @@ def get_random_tags():
         if parts[-1] not in d:
             d[parts[-1]] = []
 
-        for _ in range(random.randint(1, 3)):
+        for _ in range(random.randint(1, 2)):
             data = {
                 "value": random_data_for_field(flat_fields[key], key.split(".")[-1]),
                 "classification": random_data_for_field(flat_fields[key.replace('value', 'classification')],

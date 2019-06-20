@@ -672,18 +672,17 @@ DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
     'summary_tag_types': [
-        'NET_IP',
-        'NET_DOMAIN_NAME',
-        'NET_FULL_URI',
-        'AV_VIRUS_NAME',
-        'IMPLANT_NAME',
-        'IMPLANT_FAMILY',
-        'TECHNIQUE_OBFUSCATION',
-        'THREAT_ACTOR',
-        'FILE_CONFIG',
-        'FILE_OBFUSCATION',
-        'EXPLOIT_NAME',
-        'FILE_SUMMARY'
+        'network.ip',
+        'network.domain',
+        'network.uri',
+        'av.virus_name',
+        'attribution.implant',
+        'attribution.family',
+        'techinique.obfuscation',
+        'attribution.actor',
+        'file.config',
+        'attribution.exploit',
+        'file.summary'
     ]
 }
 
