@@ -186,21 +186,21 @@ def get_random_ssdeep():
 
 def get_random_tags():
     desired_tag_types = [
-        'attribution.actor.value',
-        'network.ip.value',
-        'network.domain.value',
-        'av.virus_name.value',
-        'attribution.implant.value',
-        'file.rule.yara.value',
-        'file.summary.value',
-        'attribution.exploit.value'
+        'attribution.actor',
+        'network.ip',
+        'network.domain',
+        'av.virus_name',
+        'attribution.implant',
+        'file.rule.yara',
+        'file.summary',
+        'attribution.exploit'
     ]
     out = {}
     flat_fields = Tagging.flat_fields()
-    tag_list = random.choices([x for x in flat_fields if x.endswith('value')], k=random.randint(0, 2))
+    tag_list = random.choices(list(flat_fields.keys()), k=random.randint(0, 2))
     tag_list.extend(random.choices(desired_tag_types, k=random.randint(1, 2)))
     for key in tag_list:
-        parts = key.replace('.value', '').split(".")
+        parts = key.split(".")
         d = out
         for part in parts[:-1]:
             if part not in d:
@@ -211,13 +211,7 @@ def get_random_tags():
             d[parts[-1]] = []
 
         for _ in range(random.randint(1, 2)):
-            data = {
-                "value": random_data_for_field(flat_fields[key], key.split(".")[-1]),
-                "classification": random_data_for_field(flat_fields[key.replace('value', 'classification')],
-                                                       key.split(".")[-1]),
-                "context": random_data_for_field(flat_fields[key.replace('value', 'context')], key.split(".")[-1])
-            }
-            d[parts[-1]].append(data)
+            d[parts[-1]].append(random_data_for_field(flat_fields[key], key.split(".")[-1]))
 
     return out
 

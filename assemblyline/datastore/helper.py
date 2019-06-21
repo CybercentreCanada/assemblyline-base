@@ -496,9 +496,12 @@ class AssemblylineDatastore(object):
                 for tag_type, tags in flatten(section.get('tags', {})).items():
                     if tags is not None:
                         for tag in tags:
-                            tag['key'] = key
-                            tag['type'] = tag_type
-                            out.append(tag)
+                            out.append({
+                                'type': tag_type,
+                                'short_type': tag_type.rsplit(".", 1)[-1],
+                                'value': tag,
+                                'key': key
+                            })
 
         return out
 

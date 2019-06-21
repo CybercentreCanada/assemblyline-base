@@ -10,7 +10,6 @@ constants = forge.get_constants()
 
 @odm.model(index=True, store=False)
 class Heuristic(odm.Model):
-    classification = odm.Classification()                                    # Classification of the heuristic
     heur_id = odm.Keyword(copyto="__text__")                                 # Triggered heuristic
     category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))  # Heuristic's category
     score = odm.Integer()                                                    # Heuristic's score
