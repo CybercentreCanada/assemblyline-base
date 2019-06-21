@@ -178,7 +178,10 @@ def _get_value(key, data):
         return value
     elif isinstance(value, list):
         if len(value) > 0:
-            return str(value[0])
+            value = str(value[0])
+            if " " in value or ":" in value or "/" in value:
+                value = f'"{value}"'
+            return value
         else:
             return None
     elif isinstance(value, bool):
