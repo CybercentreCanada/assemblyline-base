@@ -3,6 +3,13 @@ from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVI
 
 
 @odm.model(index=False, store=False)
+class DockerConfig(odm.Model):
+    image = odm.Keyword()                                 # Complete name of the Docker image with tag
+    dependencies = odm.List(odm.Keyword(), default=[])    # List of other required Docker container(s)
+    network = odm.List(odm.Keyword(), default=[])         # Network access rules
+
+
+@odm.model(index=False, store=False)
 class SubmissionParams(odm.Model):
     default = odm.Any()
     name = odm.Keyword()
@@ -34,6 +41,8 @@ class Service(odm.Model):
     disable_cache = odm.Boolean(default=False)
 
     stage = odm.Keyword(store=True, default="CORE", copyto="__text__")
-    submission_params = odm.List(odm.Compound(SubmissionParams), index=False, default=[])
+    submission_params: SubmissionParams = odm.List(odm.Compound(SubmissionParams), index=False, default=[])
     supported_platforms = odm.List(odm.Enum(values=["windows", "linux"]), default=["linux"])
     timeout = odm.Integer(default=60)
+
+    docker_config: DockerConfig = odm.Compound(DockerConfig)

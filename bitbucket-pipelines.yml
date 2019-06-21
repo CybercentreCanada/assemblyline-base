@@ -16,7 +16,6 @@ pipelines:
             - cp test/bitbucket/config.yml /etc/assemblyline
             - apt update
             - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
-            - pip install cython  # Install Cython before we run setup.py
             - pip install -e . -r test/requirements.txt
             - pytest -rsx -vv
           services: &services
@@ -42,7 +41,7 @@ pipelines:
           name: Build Package
           image: python:3.6
           script:
-            - pip install wheel cython
+            - pip install wheel
             - python setup.py bdist_wheel
             - ls dist/
           artifacts:

@@ -73,7 +73,10 @@ def create_services(ds, log=None):
             "enabled": True,
             "category": svc[0],
             "stage": svc[1],
-            "version": "3.3.0"
+            "version": "3.3.0",
+            "docker_config": {
+                "image": f"cccs/alsvc_{svc_name.lower()}:latest",
+            },
         })
         # Save a v3 service
         ds.service.save(f"{service_data.name}_{service_data.version}", service_data)
