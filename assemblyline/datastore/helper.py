@@ -1,5 +1,7 @@
 
 import concurrent.futures
+from typing import Union, List
+
 import elasticapm
 import json
 
@@ -518,7 +520,12 @@ class AssemblylineDatastore(object):
             return svc_version_data
 
     @elasticapm.capture_span(span_type='datastore')
-    def list_all_services(self, as_obj=True, full=False):
+    def list_all_services(self, as_obj=True, full=False) -> Union[List[dict], List[Service]]:
+        """
+        :param as_obj: Return ODM objects rather than dicts
+        :param full: If true retrieve all the fields of the service object, otherwise only
+                     fields returned by search are given.
+        """
         items = list(self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False))
 
         if full:
@@ -533,7 +540,10 @@ class AssemblylineDatastore(object):
                         for item in items if f"{item['id']}_{item['version']}" in services_versions]
 
         if as_obj:
-            return [Service(s) for s in services]
+            mask = None
+            if not full and services:
+                mask = services[0].keys()
+            return [Service(s, mask=mask) for s in services]
         else:
             return services
 
