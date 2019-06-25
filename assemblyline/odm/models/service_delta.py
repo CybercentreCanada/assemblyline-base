@@ -2,6 +2,13 @@ from assemblyline import odm
 
 
 @odm.model(index=False, store=False)
+class DockerConfigDelta(odm.Model):
+    image = odm.Optional(odm.Keyword())                    # Complete name of the Docker image with tag
+    dependencies = odm.Optional(odm.List(odm.Keyword()))   # List of other required Docker container(s)
+    network = odm.Optional(odm.List(odm.Keyword()))        # Network access rules
+
+
+@odm.model(index=False, store=False)
 class SubmissionParamsDelta(odm.Model):
     default = odm.Optional(odm.Any())
     name = odm.Optional(odm.Keyword())
@@ -34,3 +41,5 @@ class ServiceDelta(odm.Model):
     submission_params = odm.Optional(odm.List(odm.Compound(SubmissionParamsDelta)))
     supported_platforms = odm.Optional(odm.List(odm.Enum(values=["windows", "linux"])))
     timeout = odm.Optional(odm.Integer())
+
+    docker_config: DockerConfigDelta = odm.Optional(odm.Compound(DockerConfigDelta))

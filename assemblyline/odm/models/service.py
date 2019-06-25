@@ -3,8 +3,16 @@ from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVI
 
 
 @odm.model(index=False, store=False)
+class EnvironmentVariable(odm.Model):
+    name = odm.Keyword()
+    value = odm.Keyword()
+
+
+@odm.model(index=False, store=False)
 class DockerConfig(odm.Model):
     image = odm.Keyword()                                 # Complete name of the Docker image with tag
+    command = odm.Optional(odm.Keyword())
+    environment = odm.List(odm.Compound(EnvironmentVariable), default=[])
     dependencies = odm.List(odm.Keyword(), default=[])    # List of other required Docker container(s)
     network = odm.List(odm.Keyword(), default=[])         # Network access rules
 

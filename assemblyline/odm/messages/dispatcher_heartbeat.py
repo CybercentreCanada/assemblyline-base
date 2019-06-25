@@ -8,6 +8,7 @@ LOADER_CLASS = "assemblyline.odm.messages.dispatcher_heartbeat.DispatcherMessage
 @odm.model()
 class Queues(odm.Model):
     ingest = odm.Integer()
+    files = odm.Integer()
 
 
 @odm.model()
@@ -32,6 +33,7 @@ class Heartbeat(odm.Model):
     instances = odm.Integer()
     metrics = odm.Compound(Metrics)
     queues = odm.Compound(Queues)
+    component = odm.Keyword()
 
 
 @odm.model()
