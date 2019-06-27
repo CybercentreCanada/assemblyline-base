@@ -1,9 +1,12 @@
 from assemblyline import odm
+from .service import EnvironmentVariable
 
 
 @odm.model(index=False, store=False)
 class DockerConfigDelta(odm.Model):
     image = odm.Optional(odm.Keyword())                    # Complete name of the Docker image with tag
+    command = odm.Optional(odm.Keyword())
+    environment = odm.List(odm.Compound(EnvironmentVariable), default=[])
     dependencies = odm.Optional(odm.List(odm.Keyword()))   # List of other required Docker container(s)
     network = odm.Optional(odm.List(odm.Keyword()))        # Network access rules
 
