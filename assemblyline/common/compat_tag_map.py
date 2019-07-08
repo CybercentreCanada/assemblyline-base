@@ -87,7 +87,7 @@ tag_map = {
             "pkg_name": ['ANDROID_PKG_NAME'],
             "provides_component": ['ANDROID_PROVIDES_COMPONENT'],
             "sdk": {
-                "min": ['ANDROID_PKG_NAME'],
+                "min": ['ANDROID_MINSDK'],
                 "target": ['ANDROID_TARGET_SDK'],
             },
             "used_library": ['ANDROID_USE_LIBRARY'],
