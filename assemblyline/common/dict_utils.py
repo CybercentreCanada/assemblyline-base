@@ -40,3 +40,16 @@ def flatten(data, parent_key=None):
             items.append((cur_key, v))
 
     return dict(items)
+
+
+def unflatten(data):
+    out = dict()
+    for k, v in data.items():
+        parts = k.split(".")
+        d = out
+        for p in parts[:-1]:
+            if p not in d:
+                d[p] = dict()
+            d = d[p]
+        d[parts[-1]] = v
+    return out
