@@ -1,5 +1,5 @@
 from assemblyline.odm import Keyword, Text, Date, Integer, Float, Boolean, Classification, Enum, List, Compound, \
-    Mapping, Any, UUID, Optional
+    Mapping, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, SSDeepHash, SHA1, SHA256, MD5
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -11,10 +11,22 @@ __type_mapping = {
     Date: 'pdate',
     Classification: 'string',
     Enum: 'string',
-    UUID: 'string'
+    UUID: 'string',
+    IP: 'string',
+    Domain: 'string',
+    URI: 'string',
+    URIPath: 'string',
+    MAC: 'string',
+    PhoneNumber: 'string',
+    SSDeepHash: 'string',
+    SHA1: 'string',
+    SHA256: 'string',
+    MD5: 'string'
 }
 
-back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID]}
+back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
+                                                                     URIPath, MAC, PhoneNumber, SSDeepHash,
+                                                                     SHA1, SHA256, MD5]}
 
 
 def build_mapping(field_data, prefix=None, multivalued=False, dynamic=False):

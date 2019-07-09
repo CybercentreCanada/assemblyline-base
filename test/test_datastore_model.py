@@ -1,4 +1,3 @@
-
 import pytest
 
 from retrying import retry
@@ -148,20 +147,41 @@ def _assert_key_exists(key, data):
 
 def _get_value(key, data):
     while "." in key:
+        if data is None:
+            return data
         main, key = key.split(".", 1)
-        data = data[main]
+
+        if isinstance(data, list):
+            for x in data:
+                value = _get_value(f"{main}.{key}", x)
+                if value is not None:
+                    return value
+            return None
+
+        try:
+            data = data[main]
+        except TypeError:
+            pass
+
+    if data is None:
+        return data
 
     if isinstance(data, list):
-        if len(data) == 0:
-            return None
-        data = data[0]
+        for x in data:
+            value = _get_value(key, x)
+            if value is not None:
+                return value
+        return None
 
     value = data[key]
     if value is None:
         return value
     elif isinstance(value, list):
         if len(value) > 0:
-            return str(value[0])
+            value = str(value[0])
+            if " " in value or ":" in value or "/" in value:
+                value = f'"{value}"'
+            return value
         else:
             return None
     elif isinstance(value, bool):
@@ -170,10 +190,7 @@ def _get_value(key, data):
         return _get_value(list(value.keys())[0], value)
     else:
         value = str(value)
-        if " " in value or (":" in value and value.endswith("Z")):
-            value = f'"{str(value)}"'
-
-        if "/" in value:
+        if " " in value or ":" in value or "/" in value:
             value = f'"{value}"'
 
         return value

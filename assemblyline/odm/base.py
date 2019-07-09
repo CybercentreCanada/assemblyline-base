@@ -28,6 +28,19 @@ DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
 UTC_TZ = tzutc()
 
+DOMAIN_REGEX = r"(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?)"
+DOMAIN_ONLY_REGEX = f"^{DOMAIN_REGEX}$"
+IP_REGEX = r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+IP_ONLY_REGEX = f"^{IP_REGEX}$"
+PHONE_REGEX = r"^(\+?\d{1,2})?[ .-]?(\(\d{3}\)|\d{3})[ .-](\d{3})[ .-](\d{4})$"
+SSDEEP_REGEX = r"^[0-9]{1,18}:[a-zA-Z0-9]{1,64}:[a-zA-Z0-9]{1,64}$"
+MD5_REGEX = r"^[a-f0-9]{32}$"
+SHA1_REGEX = r"^[a-f0-9]{40}$"
+SHA256_REGEX = r"^[a-f0-9]{64}$"
+MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
+URI_PATH = r"(?:[/?#]\S*)"
+FULL_URI = f"^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\d{{2,5}})?{URI_PATH}?$"
+
 
 def flat_to_nested(data: dict):
     sub_data = {}
@@ -193,6 +206,90 @@ class Keyword(_Field):
             return None
 
         return str(value)
+
+
+class ValidatedKeyword(Keyword):
+    """
+    Keyword field which the values are validated by a regular expression
+    """
+    def __init__(self, validation_regex, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.validation_regex = re.compile(validation_regex)
+
+    def __deepcopy__(self, memo=None):
+        # NOTE: This deepcopy code does not work with a sub-class that add args of kwargs that should be copied.
+        #       If that is the case, the sub-class should implement its own deepcopy function.
+        valid_fields = ["name", "index", "store", "copyto", "default", "default_set"]
+        if 'validation_regex' in self.__class__.__init__.__code__.co_varnames:
+            return self.__class__(self.validation_regex.pattern, **{k: v for k, v in self.__dict__.items()
+                                                                      if k in valid_fields})
+        else:
+            return self.__class__(**{k: v for k, v in self.__dict__.items() if k in valid_fields})
+
+    def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError("Empty strings are not allow without defaults")
+
+        if value is None:
+            return value
+
+        if not self.validation_regex.match(value):
+            raise ValueError(f"'{value}' not match the validator: {self.validation_regex.pattern}")
+
+        return str(value)
+
+
+class IP(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(IP_ONLY_REGEX, *args, **kwargs)
+
+
+class Domain(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(DOMAIN_ONLY_REGEX, *args, **kwargs)
+
+
+class URI(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(FULL_URI, *args, **kwargs)
+
+
+class URIPath(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(URI_PATH, *args, **kwargs)
+
+
+class MAC(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(MAC_REGEX, *args, **kwargs)
+
+
+class PhoneNumber(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(PHONE_REGEX, *args, **kwargs)
+
+
+class SSDeepHash(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(SSDEEP_REGEX, *args, **kwargs)
+
+
+class SHA1(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(SHA1_REGEX, *args, **kwargs)
+
+
+class SHA256(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(SHA256_REGEX, *args, **kwargs)
+
+
+class MD5(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(MD5_REGEX, *args, **kwargs)
 
 
 class Enum(Keyword):

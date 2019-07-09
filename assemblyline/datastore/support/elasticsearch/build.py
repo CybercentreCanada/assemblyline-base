@@ -1,5 +1,6 @@
 from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
-    Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional
+    Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
+    SSDeepHash, SHA1, SHA256, MD5
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -11,10 +12,22 @@ __type_mapping = {
     Text: 'text',
     Classification: 'keyword',
     Enum: 'keyword',
-    UUID: 'keyword'
+    UUID: 'keyword',
+    IP: 'keyword',
+    Domain: 'keyword',
+    URI: 'keyword',
+    URIPath: 'keyword',
+    MAC: 'keyword',
+    PhoneNumber: 'keyword',
+    SSDeepHash: 'keyword',
+    SHA1: 'keyword',
+    SHA256: 'keyword',
+    MD5: 'keyword'
 }
 # TODO: We might want to use custom analyzers for Classification and Enum and not create special backmapping cases
-back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID]}
+back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
+                                                                     URIPath, MAC, PhoneNumber, SSDeepHash,
+                                                                     SHA1, SHA256, MD5]}
 
 
 def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):

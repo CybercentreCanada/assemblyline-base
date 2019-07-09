@@ -6,7 +6,7 @@ import elasticapm
 import json
 
 from assemblyline.common import forge
-from assemblyline.common.dict_utils import recursive_update
+from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore import Collection
 from assemblyline.odm import Model
@@ -494,9 +494,16 @@ class AssemblylineDatastore(object):
 
         out = []
         for key, item in items.items():
-            tags = item.get('result', {}).get('tags', [])
-            [tag.update({"key": key}) for tag in tags]
-            out.extend(tags)
+            for section in item.get('result', {}).get('sections', []):
+                for tag_type, tags in flatten(section.get('tags', {})).items():
+                    if tags is not None:
+                        for tag in tags:
+                            out.append({
+                                'type': tag_type,
+                                'short_type': tag_type.rsplit(".", 1)[-1],
+                                'value': tag,
+                                'key': key
+                            })
 
         return out
 

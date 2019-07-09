@@ -4,12 +4,15 @@ import time
 
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
-    Classification, Optional, Any, forge
+    Classification, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, URIPath, \
+    URI, SSDeepHash
+from assemblyline.odm.models.tagging import Tagging
 
 config = forge.get_config()
 
 ALPHA = "ABCDEFGHIJKLMNOPQRSTUPVXYZabcdefghijklmnopqrstuvwxyz"
 HASH_ALPHA = "abcdef0123456789"
+SSDEEP_ALPHA = f"{ALPHA}0123456789"
 WORDS = """The Cyber Centre stays on the cutting edge of technology by working with commercial vendors of cyber security 
 technology to support their development of enhanced cyber defence tools To do this our experts survey the cyber 
 security market and evaluate emerging technologies in order to determine their potential to improve cyber security 
@@ -159,8 +162,62 @@ def get_random_mapping(field):
     return {META_KEYS[i]: random_data_for_field(field, META_KEYS[i]) for i in range(random.randint(0, 5))}
 
 
+def get_random_phone():
+    return f'{random.choice(["", "+1 "])}{"-".join([str(random.randint(100, 999)) for _ in range(3)])}' \
+        f'{str(random.randint(0, 9))}'
+
+
+def get_random_mac():
+    return ":".join([get_random_hash(2) for _ in range(6)])
+
+
+def get_random_uri_path():
+    return f"/{'/'.join([get_random_word() for _ in range(random.randint(2, 6))])}"
+
+
+def get_random_uri():
+    return f"{random.choice(['http', 'https', 'ftp'])}://{get_random_host()}{get_random_uri_path()}"
+
+
+def get_random_ssdeep():
+    return f"{str(random.randint(30, 99999))}" \
+        f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}" \
+        f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}"
+
+def get_random_tags():
+    desired_tag_types = [
+        'attribution.actor',
+        'network.ip',
+        'network.domain',
+        'av.virus_name',
+        'attribution.implant',
+        'file.rule.yara',
+        'file.summary',
+        'attribution.exploit'
+    ]
+    out = {}
+    flat_fields = Tagging.flat_fields()
+    tag_list = random.choices(list(flat_fields.keys()), k=random.randint(0, 2))
+    tag_list.extend(random.choices(desired_tag_types, k=random.randint(1, 2)))
+    for key in tag_list:
+        parts = key.split(".")
+        d = out
+        for part in parts[:-1]:
+            if part not in d:
+                d[part] = dict()
+            d = d[part]
+
+        if parts[-1] not in d:
+            d[parts[-1]] = []
+
+        for _ in range(random.randint(1, 2)):
+            d[parts[-1]].append(random_data_for_field(flat_fields[key], key.split(".")[-1]))
+
+    return out
+
+
 # noinspection PyProtectedMember
-def random_data_for_field(field, name):
+def random_data_for_field(field, name, minimal=False):
     if isinstance(field, Boolean):
         return random.choice([True, False])
     elif isinstance(field, Classification):
@@ -176,17 +233,45 @@ def random_data_for_field(field, name):
         return [random_data_for_field(field.child_type, name) if not isinstance(field.child_type, Model)
                 else random_model_obj(field.child_type, as_json=True) for _ in range(random.randint(1, 4))]
     elif isinstance(field, Compound):
-        return random_model_obj(field.child_type, as_json=True)
+        if minimal:
+            return random_minimal_obj(field.child_type, as_json=True)
+        else:
+            return random_model_obj(field.child_type, as_json=True)
     elif isinstance(field, Mapping):
         return get_random_mapping(field.child_type)
     elif isinstance(field, Optional):
-        return random_data_for_field(field.child_type, name)
+        if not minimal:
+            return random_data_for_field(field.child_type, name)
+        else:
+            return field.child_type.default
     elif isinstance(field, Date):
         return get_random_iso_date()
     elif isinstance(field, Integer):
+        if name == 'depth':
+            return random.randint(1,3)
         return random.randint(128, 4096)
     elif isinstance(field, Float):
         return random.randint(12800, 409600) / 100.0
+    elif isinstance(field, MD5):
+        return get_random_hash(32)
+    elif isinstance(field, SHA1):
+        return get_random_hash(40)
+    elif isinstance(field, SHA256):
+        return get_random_hash(64)
+    elif isinstance(field, SSDeepHash):
+        return get_random_ssdeep()
+    elif isinstance(field, URI):
+        return get_random_uri()
+    elif isinstance(field, URIPath):
+        return get_random_uri_path()
+    elif isinstance(field, MAC):
+        return get_random_mac()
+    elif isinstance(field, PhoneNumber):
+        return get_random_phone()
+    elif isinstance(field, IP):
+        return get_random_ip()
+    elif isinstance(field, Domain):
+        return get_random_host()
     elif isinstance(field, Keyword):
         if name:
             if "sha256" in name:
@@ -241,6 +326,13 @@ def random_data_for_field(field, name):
 
 # noinspection PyProtectedMember
 def random_model_obj(model, as_json=False):
+    if model == Tagging:
+        data = get_random_tags()
+        if as_json:
+            return data
+        else:
+            return model(data)
+
     data = {}
     for f_name, f_value in model._odm_field_cache.items():
         data[f_name] = random_data_for_field(f_value, f_name)
@@ -256,7 +348,7 @@ def random_minimal_obj(model, as_json=False):
     data = {}
     for f_name, f_value in model._odm_field_cache.items():
         if not f_value.default_set:
-            data[f_name] = random_data_for_field(f_value, f_name)
+            data[f_name] = random_data_for_field(f_value, f_name, minimal=True)
 
     if as_json:
         return data

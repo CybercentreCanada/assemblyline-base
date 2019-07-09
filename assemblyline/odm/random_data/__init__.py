@@ -220,6 +220,9 @@ def create_submission(ds, fs, log=None):
         f.sha256 = first_level_files[fid]
         fid += 1
 
+    s.params.psid = None
+    s.state = 'completed'
+
     ds.submission.save(s.sid, s)
 
     ds.emptyresult.commit()

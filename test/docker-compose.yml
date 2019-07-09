@@ -14,7 +14,7 @@ services:
   elasticsearch:
     image: sgaroncse/elasticsearch:7.1.0
     environment:
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
       DISCOVERY_TYPE: "single-node"
     ports:
       - '9200:9200'
@@ -33,7 +33,7 @@ services:
     image: solr:7.5-alpine
     environment:
       ZK_HOST: zookeeper:2181
-      SOLR_JAVA_MEM: '-Xms512m -Xmx512m'
+      SOLR_JAVA_MEM: '-Xms2048m -Xmx2048m'
     depends_on:
       - zookeeper
     ports:
