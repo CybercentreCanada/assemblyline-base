@@ -1,6 +1,13 @@
 from inspect import getmembers, ismethod
 from sys import exc_info
 from traceback import format_tb
+from typing import Iterable
+
+
+class MultiKeyError(KeyError):
+    def __init__(self, keys: Iterable[str]):
+        super().__init__(str(keys))
+        self.keys = set(keys)
 
 
 class ChainException(Exception):

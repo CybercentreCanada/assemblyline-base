@@ -8,6 +8,7 @@ import time
 from copy import deepcopy
 
 from assemblyline import odm
+from assemblyline.common.exceptions import MultiKeyError
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore import Collection, BaseStore, log
 from assemblyline.datastore.exceptions import SearchException, SearchRetryException
@@ -204,6 +205,7 @@ class ESCollection(Collection):
         return True
 
     def multiget(self, key_list, as_dictionary=True, as_obj=True):
+        missing = []
         if as_dictionary:
             out = {}
         else:
@@ -213,7 +215,8 @@ class ESCollection(Collection):
             data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name)
             for row in data.get('docs', []):
                 if 'found' in row and not row['found']:
-                    raise KeyError(row['_id'])
+                    missing.append(row['_id'])
+                    continue
                 if '__non_doc_raw__' in row['_source']:
                     if as_dictionary:
                         out[row['_id']] = row['_source']['__non_doc_raw__']
@@ -225,6 +228,10 @@ class ESCollection(Collection):
                         out[row['_id']] = self.normalize(row['_source'], as_obj=as_obj)
                     else:
                         out.append(self.normalize(row['_source'], as_obj=as_obj))
+
+        if missing:
+            raise MultiKeyError(missing)
+
         return out
 
     def _get(self, key, retries):
