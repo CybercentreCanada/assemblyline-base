@@ -25,6 +25,9 @@ class Task(odm.Model):
     max_files = odm.Integer()
     ttl = odm.Integer()
 
+    # Whether the service cache should be ignored during the processing of this task
+    ignore_cache = odm.Boolean(default=False)
+
     @staticmethod
     def make_key(sid, service_name, sha):
         return f"{sid}_{service_name}_{sha}"

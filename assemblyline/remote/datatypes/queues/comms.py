@@ -27,13 +27,20 @@ class CommsQueue(object):
     def close(self):
         retry_call(self.p.close)
 
-    def listen(self):
+    def listen(self, blocking=True):
         retried = False
         while True:
             self._connect()
             try:
-                i = self.p.listen()
-                v = next(i)
+                if blocking:
+                    i = self.p.listen()
+                    v = next(i)
+                else:
+                    v = self.p.get_message()
+                    if v is None:
+                        yield None
+                        continue
+
                 if isinstance(v, dict) and v.get('type', None) == 'message':
                     data = decode(v.get('data', 'null'))
                     yield (data)

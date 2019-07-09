@@ -17,6 +17,7 @@ class Metrics(odm.Model):
 class Heartbeat(odm.Model):
     instances = odm.Integer()
     metrics = odm.Compound(Metrics)
+    queue = odm.Integer()
     service_name = odm.Keyword()
 
 
