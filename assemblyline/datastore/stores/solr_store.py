@@ -9,6 +9,7 @@ from random import choice
 from urllib.parse import quote
 
 from assemblyline.common.chunk import chunked_list
+from assemblyline.common.exceptions import MultiKeyError
 from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
 from assemblyline.common.uid import get_random_id
@@ -149,8 +150,7 @@ class SolrCollection(Collection):
                     retry += 1
 
                 if retry >= SolrCollection.MULTIGET_MAX_RETRY:
-                    raise KeyError(str(temp_keys))
-
+                    raise MultiKeyError(temp_keys)
         return ret
 
     def _get(self, key, retries):
