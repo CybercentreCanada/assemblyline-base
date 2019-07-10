@@ -124,6 +124,9 @@ def _setup_collection(ds, name, doc):
         ds.register(name, model_class=doc.__class__)
         collection = ds.__getattr__(name)
 
+        # Make sure the collection is empty
+        collection.delete_matching("id:*")
+
         # Save test document
         collection.save("document_id", doc)
 

@@ -305,7 +305,7 @@ def wipe_signatures(ds):
 def wipe_submissions(ds, fs):
     ds.error.wipe()
     ds.file.wipe()
-    ds.emptyresult.commit()
+    ds.emptyresult.wipe()
     ds.result.wipe()
     ds.submission.wipe()
     ds.submission_tags.wipe()

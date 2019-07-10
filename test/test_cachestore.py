@@ -13,6 +13,7 @@ COMPONENT = "test_component"
 def cachestore():
     try:
         cachestore = forge.get_cachestore(COMPONENT)
+        cachestore.datastore.cached_file.delete_matching("id:*")
         cachestore.save(KEY, DATA)
         cachestore.datastore.cached_file.commit()
     except ConnectionError:

@@ -51,11 +51,15 @@ def test_alert_source(datastore):
     alert_datasource = Alert(NullLogger())
     resp = alert_datasource.query(alert.file.sha256, access_control=None)
     for res in resp:
-        score = res['data'][0]['score']
+        score = None
+        for item in res['data']:
+            if score is None or item['score'] > score:
+                score = item['score']
+
         if score >= 2000:
             assert res['malicious']
             assert res['confirmed']
-        elif 1000 <= score < 2000:
+        elif 500 <= score < 2000:
             assert res['malicious']
             assert not res['confirmed']
         else:
