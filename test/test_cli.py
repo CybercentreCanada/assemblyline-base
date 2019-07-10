@@ -2,7 +2,6 @@
 import json
 import os
 import pytest
-import random
 import tempfile
 
 from assemblyline.common import forge
