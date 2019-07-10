@@ -1,4 +1,5 @@
 from assemblyline import odm
+from . import PerformanceTimer
 
 MSG_TYPES = {"IngestHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.ingest_heartbeat.IngestMessage"
@@ -30,6 +31,10 @@ class Metrics(odm.Model):
     submissions_ingested = odm.Integer()   # Number of ingested submissions
     timed_out = odm.Integer()              # Number of timed_out submissions
     whitelisted = odm.Integer()            # Number of whitelisted submissions
+    cpu_seconds = PerformanceTimer()
+    cpu_seconds_count = odm.Integer()
+    busy_seconds = PerformanceTimer()
+    busy_seconds_count = odm.Integer()
 
 
 @odm.model()
