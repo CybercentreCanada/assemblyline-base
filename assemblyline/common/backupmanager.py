@@ -1,7 +1,8 @@
 
 import json
-import time
 import os
+import random
+import time
 import threading
 
 from multiprocessing import Process
@@ -19,14 +20,22 @@ def backup_worker(worker_id, instance_id, working_dir):
     worker_queue = NamedQueue(f"r-worker-{instance_id}", ttl=1800)
     done_queue = NamedQueue(f"r-done-{instance_id}", ttl=1800)
     hash_queue = Hash(f"r-hash-{instance_id}")
+    stopping = False
     with open(os.path.join(working_dir, "backup.part%s" % worker_id), "w+") as backup_file:
         while True:
             data = worker_queue.pop(timeout=1)
             if data is None:
+                if stopping:
+                    break
                 continue
 
             if data.get('stop', False):
-                break
+                if not stopping:
+                    stopping = True
+                else:
+                    time.sleep(round(random.uniform(0.050, 0.250), 3))
+                    worker_queue.push(data)
+                continue
 
             missing = False
             success = True
@@ -54,15 +63,15 @@ def backup_worker(worker_id, instance_id, working_dir):
                 "key": data['key']
             })
 
+    done_queue.push({"stopped": True})
+
 
 # noinspection PyBroadException
 def restore_worker(worker_id, instance_id, working_dir):
     datastore = forge.get_datastore()
     done_queue = NamedQueue(f"r-done-{instance_id}", ttl=1800)
-    worker_queue = NamedQueue(f"r-worker-{instance_id}", ttl=1800)
 
     with open(os.path.join(working_dir, "backup.part%s" % worker_id), "rb") as input_file:
-        worker_queue.push(str(worker_id))
         for l in input_file:
             bucket_name, key, data = json.loads(l)
 
@@ -79,14 +88,16 @@ def restore_worker(worker_id, instance_id, working_dir):
                 "bucket_name": bucket_name,
                 "key": key})
 
-    worker_queue.pop()
+    done_queue.push({"stopped": True})
 
 
 class DistributedBackup(object):
-    def __init__(self, working_dir, worker_count=50, spawn_workers=True):
+    def __init__(self, working_dir, worker_count=50, spawn_workers=True, use_threading=False, logger=None):
         self.working_dir = working_dir
         self.datastore = forge.get_datastore()
+        self.logger = logger
         self.plist = []
+        self.use_threading = use_threading
         self.instance_id = get_random_id()
         self.worker_queue = NamedQueue(f"r-worker-{self.instance_id}", ttl=1800)
         self.done_queue = NamedQueue(f"r-done-{self.instance_id}", ttl=1800)
@@ -114,13 +125,16 @@ class DistributedBackup(object):
         t0 = time.time()
         self.last_time = t0
 
-        while True:
+        running_threads = self.worker_count
+
+        while running_threads > 0:
             msg = self.done_queue.pop(timeout=1)
 
-            if msg is None and self.worker_queue.length() == 0:
-                break
-
             if msg is None:
+                continue
+
+            if "stopped" in msg:
+                running_threads -= 1
                 continue
 
             bucket_name = msg.get('bucket_name', 'unknown')
@@ -141,11 +155,12 @@ class DistributedBackup(object):
 
                 new_t = time.time()
                 if (new_t - self.last_time) > 5:
-                    print("%s (%s at %s keys/sec) ==> %s" %
-                          (self.total_count,
-                           new_t - self.last_time,
-                           int((self.total_count - self.last_count) / (new_t - self.last_time)),
-                           self.map_count))
+                    if self.logger:
+                        self.logger.info("%s (%s at %s keys/sec) ==> %s" %
+                                         (self.total_count,
+                                          new_t - self.last_time,
+                                          int((self.total_count - self.last_count) / (new_t - self.last_time)),
+                                          self.map_count))
                     self.last_count = self.total_count
                     self.last_time = new_t
             else:
@@ -181,7 +196,8 @@ class DistributedBackup(object):
 
         if len(self.bucket_error) > 0:
             summary += f"\nThese buckets failed to {title.lower()} completely: {self.bucket_error}\n"
-        print(summary)
+        if self.logger:
+            self.logger.info(summary)
 
     # noinspection PyBroadException,PyProtectedMember
     def backup(self, bucket_list, follow_keys=False, query=None):
@@ -190,25 +206,33 @@ class DistributedBackup(object):
 
         for bucket in bucket_list:
             if bucket not in self.VALID_BUCKETS:
-                print("\n%s is not a valid bucket.\n\nThe list of valid buckets is the following:\n\n\t%s\n" %
-                      (bucket.upper(), "\n\t".join(self.VALID_BUCKETS)))
+                if self.logger:
+                    self.logger.warn("\n%s is not a valid bucket.\n\nThe list of valid buckets is the following:\n\n\t%s\n" %
+                                     (bucket.upper(), "\n\t".join(self.VALID_BUCKETS)))
                 return
 
         targets = ', '.join(bucket_list)
         try:
-            print("\n-----------------------")
-            print("----- Data Backup -----")
-            print("-----------------------")
-            print(f"    Deep: {follow_keys}")
-            print(f"    Buckets: {targets}")
-            print(f"    Workers: {self.worker_count}")
-            print(f"    Target directory: {self.working_dir}")
-            print(f"    Filtering query: {query}")
+            if self.logger:
+                self.logger.info("\n-----------------------")
+                self.logger.info("----- Data Backup -----")
+                self.logger.info("-----------------------")
+                self.logger.info(f"    Deep: {follow_keys}")
+                self.logger.info(f"    Buckets: {targets}")
+                self.logger.info(f"    Workers: {self.worker_count}")
+                self.logger.info(f"    Target directory: {self.working_dir}")
+                self.logger.info(f"    Filtering query: {query}")
 
+            # Start the workers
             for x in range(self.worker_count):
-                p = Process(target=backup_worker, args=(x, self.instance_id, self.working_dir))
-                p.start()
-                self.plist.append(p)
+                if self.use_threading:
+                    t = threading.Thread(target=backup_worker, args=(x, self.instance_id, self.working_dir))
+                    t.setDaemon(True)
+                    t.start()
+                else:
+                    p = Process(target=backup_worker, args=(x, self.instance_id, self.working_dir))
+                    p.start()
+                    self.plist.append(p)
 
             # Start done thread
             dt = threading.Thread(target=self.done_thread, args=('Backup',), name="Done thread")
@@ -225,8 +249,9 @@ class DistributedBackup(object):
 
                 except Exception as e:
                     self.cleanup()
-                    print(e)
-                    print("Error occurred while processing bucket %s." % bucket_name)
+                    if self.logger:
+                        self.logger.execption(e)
+                        self.logger.error("Error occurred while processing bucket %s." % bucket_name)
                     self.bucket_error.append(bucket_name)
 
             for _ in range(self.worker_count):
@@ -234,20 +259,28 @@ class DistributedBackup(object):
 
             dt.join()
         except Exception as e:
-            print(e)
+            if self.logger:
+                self.logger.execption(e)
 
     def restore(self):
         try:
-            print("\n------------------------")
-            print("----- Data Restore -----")
-            print("------------------------")
-            print(f"    Workers: {self.worker_count}")
-            print(f"    Target directory: {self.working_dir}")
+            if self.logger:
+                self.logger.info("\n------------------------")
+                self.logger.info("----- Data Restore -----")
+                self.logger.info("------------------------")
+                self.logger.info(f"    Workers: {self.worker_count}")
+                self.logger.info(f"    Target directory: {self.working_dir}")
 
             for x in range(self.worker_count):
-                p = Process(target=restore_worker, args=(x, self.instance_id, self.working_dir))
-                p.start()
-                self.plist.append(p)
+                if self.use_threading:
+                    t = threading.Thread(target=restore_worker,
+                                         args=(x, self.instance_id, self.working_dir))
+                    t.setDaemon(True)
+                    t.start()
+                else:
+                    p = Process(target=restore_worker, args=(x, self.instance_id, self.working_dir))
+                    p.start()
+                    self.plist.append(p)
 
             # Start done thread
             dt = threading.Thread(target=self.done_thread, args=('Restore',), name="Done thread")
@@ -257,7 +290,8 @@ class DistributedBackup(object):
             # Wait for workers to finish
             dt.join()
         except Exception as e:
-            print(e)
+            if self.logger:
+                self.logger.execption(e)
 
 
 def _string_getter(data):
