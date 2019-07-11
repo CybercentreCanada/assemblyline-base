@@ -26,6 +26,12 @@ def _strip_lists(model, data):
     out = {}
     for key, value in odm.flat_to_nested(data).items():
         doc_type = fields.get(key, fields.get('', model))
+        # TODO: While we strip lists we don't want to know that the field is optional but we want to know what
+        #       type of optional field that is. The following two lines of code change the doc_type to the
+        #       child_type of the field. (Should model.fields() actually do that for us instead?)
+        if isinstance(doc_type, odm.Optional):
+            doc_type = doc_type.child_type
+
         if isinstance(doc_type, odm.List):
             out[key] = value
         elif isinstance(doc_type, odm.Compound) or isinstance(doc_type, odm.Mapping):
