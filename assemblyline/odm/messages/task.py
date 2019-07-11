@@ -7,10 +7,10 @@ LOADER_CLASS = "assemblyline.odm.messages.task.TaskMessage"
 @odm.model()
 class FileInfo(odm.Model):
     magic = odm.Keyword()   # The output from libmagic which was used to determine the tag
-    md5 = odm.Keyword()     # MD5 of the file
+    md5 = odm.MD5()     # MD5 of the file
     mime = odm.Keyword()    # The libmagic mime type
-    sha1 = odm.Keyword()    # SHA1 hash of the file
-    sha256 = odm.Keyword()  # SHA256 hash of the file
+    sha1 = odm.SHA1()    # SHA1 hash of the file
+    sha256 = odm.SHA256()  # SHA256 hash of the file
     size = odm.Integer()    # Size of the file
     type = odm.Keyword()    # The file type
 
