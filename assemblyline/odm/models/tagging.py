@@ -318,6 +318,7 @@ class Tagging(odm.Model):
             tags_ssdeep = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")))
 
         api_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+        behavior = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         compiler = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         config = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         lib = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -325,7 +326,6 @@ class Tagging(odm.Model):
         path = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         rule = odm.Optional(odm.Compound(FileRule))
         string = odm.Optional(odm.Compound(FileStrings))
-        summary = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         apk = odm.Optional(odm.Compound(FileAPK))
         img = odm.Optional(odm.Compound(FileIMG))
         ole = odm.Optional(odm.Compound(FileOLE))

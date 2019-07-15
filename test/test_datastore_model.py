@@ -20,6 +20,7 @@ from assemblyline.odm.models.service_client import ServiceClient
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
+from assemblyline.odm.models.submission_attack import SubmissionAttack
 from assemblyline.odm.models.submission_tags import SubmissionTags
 from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.tc_signature import TCSignature
@@ -86,6 +87,7 @@ TEST_DATA = [
     ("service_delta", random_model_obj(ServiceDelta)),
     ("signature", random_model_obj(Signature)),
     ("submission", random_model_obj(Submission)),
+    ("submission_attack", random_model_obj(SubmissionAttack)),
     ("submission_tags", random_model_obj(SubmissionTags)),
     ("submission_tree", random_model_obj(SubmissionTree)),
     ("tc_signature", random_model_obj(TCSignature)),
@@ -107,6 +109,7 @@ TEST_DATA = [
     ("service_delta_min", random_model_obj(ServiceDelta)),
     ("signature_min", random_minimal_obj(Signature)),
     ("submission_min", random_minimal_obj(Submission)),
+    ("submission_attack_min", random_model_obj(SubmissionAttack)),
     ("submission_tags_min", random_model_obj(SubmissionTags)),
     ("submission_tree_min", random_minimal_obj(SubmissionTree)),
     ("tc_signature_min", random_minimal_obj(TCSignature)),

@@ -8,6 +8,7 @@ EXTENDED_SCAN_VALUES = {"submitted", "skipped", "incomplete", "completed"}
 class ALResults(odm.Model):                 # Assemblyline result block
     attrib = odm.List(odm.Keyword(), default=[], copyto="__text__")          # List of attribution
     av = odm.List(odm.Keyword(), default=[], store=True, copyto="__text__")  # List of AV hits
+    behavior = odm.List(odm.Keyword(), default=[], copyto="__text__")        # List of behaviors for the alert
     domain = odm.List(odm.Keyword(), default=[], copyto="__text__")          # List of all domains
     domain_dynamic = odm.List(odm.Keyword(), default=[])                 # List of domains found during dynamic analysis
     domain_static = odm.List(odm.Keyword(), default=[])                  # List of domains foudn during static analysis
@@ -16,7 +17,6 @@ class ALResults(odm.Model):                 # Assemblyline result block
     ip_static = odm.List(odm.Keyword(), default=[])                      # List of IPs found during static analysis
     request_end_time = odm.Date(index=False)                             # End time of the Assemblyline submission
     score = odm.Integer(store=True)                                      # Maximum score found in the submission
-    summary = odm.List(odm.Keyword(), default=[], copyto="__text__")     # List of executive summary for the alert
     yara = odm.List(odm.Keyword(), default=[], copyto="__text__")        # List of yara hits
 
 

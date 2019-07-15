@@ -308,6 +308,7 @@ def wipe_submissions(ds, fs):
     ds.emptyresult.wipe()
     ds.result.wipe()
     ds.submission.wipe()
+    ds.submission_attack.wipe()
     ds.submission_tags.wipe()
     ds.submission_tree.wipe()
 

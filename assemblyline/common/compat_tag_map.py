@@ -57,6 +57,7 @@ tag_map = {
     },
     "file": {
         "api_string": ['WIN_API_STRING'],
+        "behavior": ['FILE_SUMMARY'],
         "compiler": ['INFO_COMPILER'],
         "config": ['FILE_CONFIG'],
         "lib": ['INFO_LIBS'],
@@ -74,7 +75,6 @@ tag_map = {
             "decoded": ['FILE_DECODED_STRING'],
             "extracted": ['FILE_STRING'],
         },
-        "summary": ['FILE_SUMMARY'],
         "apk": {
             "activity": ['ANDROID_ACTIVITY'],
             "app": {

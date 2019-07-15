@@ -910,14 +910,14 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         elif action_type == 'non_system':
             non_system_buckets = [
                 'alert', 'cached_file', 'emptyresult', 'error', 'file', 'filescore', 'result',
-                'submission', 'submission_tree', 'submission_tags', 'workflow'
+                'submission', 'submission_tree', 'submission_tags', 'submission_attack', 'workflow'
             ]
             for bucket in non_system_buckets:
                 self.datastore.get_collection(bucket).wipe()
                 self.logger.info(f"Done wipping {bucket.upper()}.")
         elif action_type == 'submission_data':
             submission_data_buckets = ['emptyresult', 'error', 'file', 'filescore', 'result',
-                                       'submission', 'submission_tree', 'submission_tags']
+                                       'submission', 'submission_tree', 'submission_tags', 'submission_attack']
             for bucket in submission_data_buckets:
                 self.datastore.get_collection(bucket).wipe()
                 self.logger.info(f"Done wipping {bucket.upper()}.")
@@ -975,7 +975,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 'result',
                 'submission',
                 'submission_tree',
-                'submission_tags'
+                'submission_tags',
+                'submission_attack'
             ]
             system_buckets += data_buckets
 

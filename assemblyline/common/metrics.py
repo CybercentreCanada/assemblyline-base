@@ -15,7 +15,8 @@ EXPIRY_METRICS = [
     'result',
     'submission',
     'submission_tree',
-    'submission_tags'
+    'submission_tags',
+    'submission_attack'
 ]
 
 

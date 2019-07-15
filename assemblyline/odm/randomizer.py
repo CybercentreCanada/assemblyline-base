@@ -189,11 +189,14 @@ def get_random_tags():
         'attribution.actor',
         'network.ip',
         'network.domain',
+        'network.uri',
         'av.virus_name',
         'attribution.implant',
         'file.rule.yara',
-        'file.summary',
-        'attribution.exploit'
+        'file.behavior',
+        'attribution.exploit',
+        'technique.packer',
+        'technique.obfuscation'
     ]
     out = {}
     flat_fields = Tagging.flat_fields()

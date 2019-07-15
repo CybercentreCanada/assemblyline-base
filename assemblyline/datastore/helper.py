@@ -6,6 +6,7 @@ import elasticapm
 import json
 
 from assemblyline.common import forge
+from assemblyline.common.attack_map import attack_map
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore import Collection
@@ -23,6 +24,7 @@ from assemblyline.odm.models.service_client import ServiceClient
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
+from assemblyline.odm.models.submission_attack import SubmissionAttack
 from assemblyline.odm.models.submission_tags import SubmissionTags
 from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.tc_signature import TCSignature
@@ -53,6 +55,7 @@ class AssemblylineDatastore(object):
         self.ds.register('service_delta', ServiceDelta)
         self.ds.register('signature', Signature)
         self.ds.register('submission', Submission)
+        self.ds.register('submission_attack', SubmissionAttack)
         self.ds.register('submission_tree', SubmissionTree)
         self.ds.register('submission_tags', SubmissionTags)
         self.ds.register('tc_signature', TCSignature)
@@ -120,6 +123,10 @@ class AssemblylineDatastore(object):
     @property
     def submission(self):
         return self.ds.submission
+
+    @property
+    def submission_attack(self):
+        return self.ds.submission_attack
 
     @property
     def submission_tags(self):
@@ -265,6 +272,7 @@ class AssemblylineDatastore(object):
         self.submission.delete(sid)
         self.submission_tree.delete(sid)
         self.submission_tags.delete(sid)
+        self.submission_attack.delete(sid)
 
     @elasticapm.capture_span(span_type='datastore')
     def get_multiple_results(self, keys, cl_engine=forge.get_classification(), as_obj=False):
@@ -510,6 +518,32 @@ class AssemblylineDatastore(object):
                                 'value': tag,
                                 'key': key
                             })
+
+        return out
+
+    @elasticapm.capture_span(span_type='datastore')
+    def get_attack_matrix_from_keys(self, keys):
+        if len(keys) == 0:
+            return []
+        keys = [x for x in list(keys) if not x.endswith(".e")]
+        items = self.result.multiget(keys, as_obj=False)
+
+        out = []
+        for key, item in items.items():
+            for section in item.get('result', {}).get('sections', []):
+                attack_id = section.get('heuristic', {}).get('attack_id', None)
+                if attack_id:
+                    attack_pattern_def = attack_map.get(attack_id, {})
+                    if attack_pattern_def:
+                        out.append({
+                            "key": key,
+                            "attack_id": attack_id,
+                            "name": attack_pattern_def['name'],
+                            "categories": attack_pattern_def['categories']
+                        })
+                    else:
+                        # TODO: I need a logger because I need to report this.
+                        pass
 
         return out
 
