@@ -679,7 +679,7 @@ class Model:
         if data is None:
             data = {}
         if not hasattr(data, 'items'):
-            raise TypeError('Model must be constructed with dict like')
+            raise TypeError(f"'{self.__class__.__name__}' object must be constructed with dict like")
         self._odm_py_obj = {}
         self.id = docid
 

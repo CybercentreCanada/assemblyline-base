@@ -21,7 +21,7 @@ class Section(odm.Model):
     classification = odm.Classification()                   # Classification of the section
     body_format = odm.Enum(values=BODY_TYPES, index=False)  # Type of body in this section
     depth = odm.Integer(index=False)                        # Depth of the section
-    heuristic = odm.Optional(odm.Compound(Heuristic))       # List of tag objects
+    heuristic = odm.Optional(odm.Compound(Heuristic))       # Heuristic used to score result section
     tags = odm.Compound(Tagging, default={})                # List of tags associated to this section
     title_text = odm.Text(copyto="__text__")                # Title of the section
 
@@ -51,7 +51,7 @@ class ResponseBody(odm.Model):
     milestones = odm.Compound(Milestone, default={})                    # Milestone block
     service_version = odm.Keyword(store=False)                          # Version of the service that ran on the file
     service_name = odm.Keyword(copyto="__text__")                       # Name of the service that scan the file
-    service_tool_version = odm.Optional(odm.Keyword(copyto="__text__")) # Tool version of the service
+    service_tool_version = odm.Keyword(copyto="__text__", default='')   # Tool version of the service
     supplementary = odm.List(odm.Compound(File), default=[])            # List of supplementary files
     extracted = odm.List(odm.Compound(File), default=[])                # List of extracted files
     service_context = odm.Keyword(index=False, store=False,

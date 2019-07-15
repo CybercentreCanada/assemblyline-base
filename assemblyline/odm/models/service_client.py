@@ -17,6 +17,6 @@ class ServiceClient(odm.Model):
     ip = odm.IP()                                   # IP address of the client
     service_name = odm.Keyword()                    # Name of the service running on the client
     service_version = odm.Keyword()                 # Version of the service running on the client
-    service_tool_version = odm.Keyword()            # Tool version of the service running on the client
+    service_tool_version = odm.Keyword(default='')  # Tool version of the service running on the client
     current = odm.Optional(odm.Compound(Current))   # Info about the current status and task assigned to the client
     tasking_counters = odm.Optional(odm.Any())      # MetricsFactory counters for the service and service_timing
