@@ -8,13 +8,13 @@ LOADER_CLASS = "assemblyline.odm.messages.submission.SubmissionMessage"
 
 @odm.model(index=True, store=True)
 class Notification(odm.Model):
-    queue = odm.Keyword(default_set=True)      # Queue to publish the completion message
-    threshold = odm.Integer(default_set=True)  # Notify only if this score threshold is met
+    queue = odm.Optional(odm.Keyword())      # Queue to publish the completion message
+    threshold = odm.Optional(odm.Integer())  # Notify only if this score threshold is met
 
 
 @odm.model()
 class Submission(odm.Model):
-    sid = odm.UUID(default_set=True)                                     # Submission ID to use
+    sid = odm.Optional(odm.UUID())                                       # Submission ID to use
     time = odm.Date(default="NOW")
     files: List[File] = odm.List(odm.Compound(File), default=[])         # File block
     metadata: Dict[str, str] = odm.Mapping(odm.Keyword(), default={})    # Metadata submitted with the file
