@@ -308,8 +308,7 @@ def wipe_submissions(ds, fs):
     ds.emptyresult.wipe()
     ds.result.wipe()
     ds.submission.wipe()
-    ds.submission_attack.wipe()
-    ds.submission_tags.wipe()
+    ds.submission_summary.wipe()
     ds.submission_tree.wipe()
 
     for f in full_file_list:

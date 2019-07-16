@@ -15,8 +15,7 @@ class Metrics(odm.Model):
     result = odm.Integer()
     submission = odm.Integer()
     submission_tree = odm.Integer()
-    submission_tags = odm.Integer()
-    submission_attack = odm.Integer()
+    submission_summary = odm.Integer()
 
 @odm.model()
 class Heartbeat(odm.Model):
