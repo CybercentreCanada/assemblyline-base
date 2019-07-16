@@ -52,7 +52,7 @@ class SubmissionParams(odm.Model):
     max_supplementary = odm.Integer(default=500)                        # Max number of supplementary files
     priority = odm.Integer(default=1000)                                # Priority of the scan
     profile = odm.Boolean(default=False)                                # Should the submission do extra profiling
-    psid = odm.Optional(odm.Keyword())                                  # Parent submission ID
+    psid = odm.Optional(odm.UUID())                                     # Parent submission ID
     quota_item = odm.Boolean(default=False)                             # Does this submission count against quota
     services = odm.Compound(ServiceSelection, default={})               # Service selection bloc
     service_spec = odm.Mapping(odm.Mapping(odm.Keyword()), default={})  # Service specific parameters
@@ -107,7 +107,7 @@ class Submission(odm.Model):
     metadata = odm.Mapping(odm.Keyword(), store=False)         # Metadata associated to the submission
     params: SubmissionParams = odm.Compound(SubmissionParams)  # Submission detail blocs
     results: List[str] = odm.List(odm.Keyword(), store=False)  # List of result keys
-    sid = odm.Keyword(copyto="__text__")                       # Submission ID
+    sid = odm.UUID(copyto="__text__")                          # Submission ID
     state = odm.Enum(values=SUBMISSION_STATES)                 # Status of the submission
     times = odm.Compound(Times, default={})                    # Timing bloc
 

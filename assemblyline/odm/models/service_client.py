@@ -6,7 +6,7 @@ STATUSES = {'INITIALIZING', 'WAITING', 'PROCESSING', 'RESULT_FOUND', 'ERROR_FOUN
 @odm.model(index=True, store=True)
 class Current(odm.Model):
     status = odm.Enum(values=STATUSES, default='INITIALIZING')  # Status of the client
-    task_sid = odm.Optional(odm.Keyword())                      # SID of the task currently assigned to the client
+    task_sid = odm.Optional(odm.UUID())                         # SID of the task currently assigned to the client
     task_start_time = odm.Optional(odm.Date())                  # Time the task was assigned to the client
 
 

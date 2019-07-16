@@ -43,7 +43,7 @@ class Alert(odm.Model):
     owner = odm.Optional(odm.Keyword())                                 # Owner of the alert
     priority = odm.Optional(odm.Enum(values=PRIORITIES))                # Priority applied to the alert
     reporting_ts = odm.Date()                                           # Time at which the alert was created
-    sid = odm.Keyword(store=False)                                      # ID of the submission related to this alert
+    sid = odm.UUID(store=False)                                         # ID of the submission related to this alert
     status = odm.Optional(odm.Enum(values=STATUSES))                    # Status applied to the alert
     ts = odm.Date()                                                     # Timestamp at which the file was submitted
     type = odm.Keyword()                                                # Type of alert

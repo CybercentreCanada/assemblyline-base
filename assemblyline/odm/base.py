@@ -318,7 +318,7 @@ class Enum(Keyword):
 
 class UUID(Keyword):
     """
-    A field storing an auto-generated unique ID is None is provided
+    A field storing an auto-generated unique ID if None is provided
     """
     def check(self, value, **kwargs):
         if value is None:
