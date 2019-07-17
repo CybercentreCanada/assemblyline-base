@@ -1,7 +1,7 @@
 from assemblyline import odm
 
 
-ALLOWED_VERDICTS = ["malicious", "very suspicious", "suspicious", "non-malicious", "safe"]
+ALLOWED_VERDICTS = ["malicious", "highly suspicious", "suspicious", "non-malicious", "safe"]
 ALLOWED_COLLECTION = ['submission', 'result']
 
 @odm.model(index=True, store=True)
