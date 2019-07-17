@@ -26,6 +26,7 @@ from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
+from assemblyline.odm.models.verdict import Verdict
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
@@ -92,6 +93,7 @@ TEST_DATA = [
     ("user", random_model_obj(User)),
     ("user_favorites", random_model_obj(UserFavorites)),
     ("user_settings", random_model_obj(UserSettings)),
+    ("verdict", random_model_obj(Verdict)),
     ("vm", random_model_obj(VM)),
     ("workflow", random_model_obj(Workflow)),
     ("alert_min", random_minimal_obj(Alert)),
@@ -113,6 +115,7 @@ TEST_DATA = [
     ("user_min", random_minimal_obj(User)),
     ("user_favorites_min", random_minimal_obj(UserFavorites)),
     ("user_settings_min", random_minimal_obj(UserSettings)),
+    ("verdict_min", random_minimal_obj(Verdict)),
     ("vm_min", random_minimal_obj(VM)),
     ("workflow_min", random_minimal_obj(Workflow))
 ]
