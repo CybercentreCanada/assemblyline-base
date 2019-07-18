@@ -531,6 +531,8 @@ class System(odm.Model):
     constants: str = odm.Keyword()
     # Organisation acronym used for signatures
     organisation: str = odm.Text()
+    # Type of system (production, staging, development)
+    type: str = odm.Enum(values=['production', 'staging', 'development'])
     # Parameter of the yara engine
     yara: Yara = odm.Compound(Yara)
 
@@ -538,6 +540,7 @@ class System(odm.Model):
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
+    "type": 'production',
     "yara": DEFAULT_YARA
 }
 
