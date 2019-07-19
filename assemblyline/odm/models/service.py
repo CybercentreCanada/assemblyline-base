@@ -61,8 +61,8 @@ class Service(odm.Model):
     supported_platforms = odm.List(odm.Enum(values=["windows", "linux"]), default=["linux"])
     timeout = odm.Integer(default=60)
 
-    heuristics = odm.List(odm.Compound(Heuristic), default=[])
+    # heuristics = odm.List(odm.Compound(Heuristic), default=[])
 
     docker_config: DockerConfig = odm.Compound(DockerConfig)
 
-    update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))
+    # update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))
