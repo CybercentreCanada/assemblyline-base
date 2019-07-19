@@ -1,5 +1,6 @@
 from assemblyline import odm
 from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVICE_REJECTS
+from assemblyline.odm.models.heuristic import Heuristic
 
 
 @odm.model(index=False, store=False)
@@ -15,6 +16,13 @@ class DockerConfig(odm.Model):
     environment = odm.List(odm.Compound(EnvironmentVariable), default=[])
     dependencies = odm.List(odm.Keyword(), default=[])    # List of other required Docker container(s)
     network = odm.List(odm.Keyword(), default=[])         # Network access rules
+
+
+@odm.model(index=False, store=False)
+class UpdateConfig(odm.Model):
+    source_type = odm.Enum(values=['URL', 'Dockerfile', 'Function'])
+    source_value = odm.Keyword()
+    frequency = odm.Integer()
 
 
 @odm.model(index=False, store=False)
@@ -53,4 +61,8 @@ class Service(odm.Model):
     supported_platforms = odm.List(odm.Enum(values=["windows", "linux"]), default=["linux"])
     timeout = odm.Integer(default=60)
 
+    heuristics = odm.List(odm.Compound(Heuristic), default=[])
+
     docker_config: DockerConfig = odm.Compound(DockerConfig)
+
+    update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))
