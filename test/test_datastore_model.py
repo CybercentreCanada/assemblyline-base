@@ -140,6 +140,9 @@ def _setup_collection(ds, name, doc):
 
 
 def _assert_key_exists(key, data):
+    if data is None:
+        raise Exception(f"'{key}' is inside an optional compound field which cannot be stored.")
+
     if "." in key:
         main, sub = key.split(".", 1)
         if main not in data:
