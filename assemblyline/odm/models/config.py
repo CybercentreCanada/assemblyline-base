@@ -606,13 +606,13 @@ class UI(odm.Model):
     # Statistics configuration
     statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS)
     # Terms of service
-    tos: str = odm.Text(default_set=True)
+    tos: str = odm.Optional(odm.Text())
     # Lock out user after accepting the terms of service
     tos_lockout: bool = odm.Boolean()
     # Headers that will be used by the url_download method
-    url_submission_headers: Dict[str, str] = odm.Mapping(odm.Keyword(), default_set=True)
+    url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
     # Proxy that will be used by the url_download method
-    url_submission_proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default_set=True)
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
 
 
 DEFAULT_UI = {

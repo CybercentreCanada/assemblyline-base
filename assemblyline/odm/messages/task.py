@@ -17,7 +17,7 @@ class FileInfo(odm.Model):
 
 @odm.model()
 class Task(odm.Model):
-    sid = odm.Keyword()
+    sid = odm.UUID()
     fileinfo: FileInfo = odm.Compound(FileInfo)   # File info block
     service_name = odm.Keyword()
     service_config = odm.Keyword()      # Service specific parameters

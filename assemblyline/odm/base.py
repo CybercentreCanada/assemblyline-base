@@ -318,7 +318,7 @@ class Enum(Keyword):
 
 class UUID(Keyword):
     """
-    A field storing an auto-generated unique ID is None is provided
+    A field storing an auto-generated unique ID if None is provided
     """
     def check(self, value, **kwargs):
         if value is None:
@@ -679,7 +679,7 @@ class Model:
         if data is None:
             data = {}
         if not hasattr(data, 'items'):
-            raise TypeError('Model must be constructed with dict like')
+            raise TypeError(f"'{self.__class__.__name__}' object must be constructed with dict like")
         self._odm_py_obj = {}
         self.id = docid
 

@@ -1,5 +1,6 @@
 from assemblyline import odm
 from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVICE_REJECTS
+from assemblyline.odm.models.heuristic import Heuristic
 
 
 @odm.model(index=False, store=False)
@@ -18,6 +19,13 @@ class DockerConfig(odm.Model):
 
 
 @odm.model(index=False, store=False)
+class UpdateConfig(odm.Model):
+    source_type = odm.Enum(values=['URL', 'Dockerfile', 'Function'])
+    source_value = odm.Keyword()
+    frequency = odm.Integer()
+
+
+@odm.model(index=False, store=False)
 class SubmissionParams(odm.Model):
     default = odm.Any()
     name = odm.Keyword()
@@ -28,8 +36,8 @@ class SubmissionParams(odm.Model):
 @odm.model(index=True, store=False)
 class Service(odm.Model):
     # Regexes applied to assemblyline style file type string
-    accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS, default_set=True)
-    rejects = odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS, default_set=True)
+    accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS)
+    rejects = odm.Optional(odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS))
 
     category = odm.Keyword(store=True, default="Static Analysis", copyto="__text__")
     config = odm.Mapping(odm.Any(), default={})
@@ -53,4 +61,8 @@ class Service(odm.Model):
     supported_platforms = odm.List(odm.Enum(values=["windows", "linux"]), default=["linux"])
     timeout = odm.Integer(default=60)
 
+    # heuristics = odm.List(odm.Compound(Heuristic), default=[])
+
     docker_config: DockerConfig = odm.Compound(DockerConfig)
+
+    # update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))

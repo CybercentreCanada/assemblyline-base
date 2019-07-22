@@ -6,7 +6,7 @@ Classification = forge.get_classification()
 PATTERNS = list(attack_map.keys())
 
 
-@odm.model(index=True, store=True)
+@odm.model(index=True, store=False)
 class Namespace(odm.Model):
     collection = odm.Keyword()    # Collection where the ID is stored
     id_field = odm.Keyword()      # Field to lookup as the ID for the namespace

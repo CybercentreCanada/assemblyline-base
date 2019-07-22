@@ -1,5 +1,4 @@
 import pytest
-
 from retrying import retry
 
 from assemblyline.common.testing import skip
@@ -97,19 +96,19 @@ TEST_DATA = [
     ("vm", random_model_obj(VM)),
     ("workflow", random_model_obj(Workflow)),
     ("alert_min", random_minimal_obj(Alert)),
-    ("cached_file_min", random_model_obj(CachedFile)),
+    ("cached_file_min", random_minimal_obj(CachedFile)),
     ("emptyresult_min", random_minimal_obj(EmptyResult)),
     ("error_min", random_minimal_obj(Error)),
     ("file_min", random_minimal_obj(File)),
     ("filescore_min", random_minimal_obj(FileScore)),
-    ("heuristic_min", random_model_obj(Heuristic)),
+    ("heuristic_min", random_minimal_obj(Heuristic)),
     ("result_min", random_minimal_obj(Result)),
     ("service_min", random_minimal_obj(Service)),
-    ("service_client_min", random_model_obj(ServiceClient)),
-    ("service_delta_min", random_model_obj(ServiceDelta)),
+    ("service_client_min", random_minimal_obj(ServiceClient)),
+    ("service_delta_min", random_minimal_obj(ServiceDelta)),
     ("signature_min", random_minimal_obj(Signature)),
     ("submission_min", random_minimal_obj(Submission)),
-    ("submission_summary_min", random_model_obj(SubmissionSummary)),
+    ("submission_summary_min", random_minimal_obj(SubmissionSummary)),
     ("submission_tree_min", random_minimal_obj(SubmissionTree)),
     ("tc_signature_min", random_minimal_obj(TCSignature)),
     ("user_min", random_minimal_obj(User)),
@@ -144,6 +143,9 @@ def _setup_collection(ds, name, doc):
 
 
 def _assert_key_exists(key, data):
+    if data is None:
+        raise Exception(f"'{key}' is inside an optional compound field which cannot be stored.")
+
     if "." in key:
         main, sub = key.split(".", 1)
         if main not in data:
