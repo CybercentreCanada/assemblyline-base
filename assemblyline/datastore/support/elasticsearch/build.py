@@ -88,8 +88,14 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 'format': 'date_optional_time||epoch_millis',
             })
 
-        elif isinstance(field, (List, Optional)):
+        elif isinstance(field, List):
             temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=path,
+                                                        allow_refuse_implicit=False)
+            mappings.update(temp_mappings)
+            dynamic.extend(temp_dynamic)
+
+        elif isinstance(field, Optional):
+            temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=prefix,
                                                         allow_refuse_implicit=False)
             mappings.update(temp_mappings)
             dynamic.extend(temp_dynamic)

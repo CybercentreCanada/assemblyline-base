@@ -83,7 +83,7 @@ def build_mapping(field_data, prefix=None, multivalued=False, dynamic=False):
             mappings.extend(build_mapping([field.child_type], prefix=path, multivalued=True))
 
         elif isinstance(field, Optional):
-            mappings.extend(build_mapping([field.child_type], prefix=path, multivalued=multivalued))
+            mappings.extend(build_mapping([field.child_type], prefix=prefix, multivalued=multivalued))
 
         elif isinstance(field, Compound):
             mappings.extend(build_mapping(field.fields().values(), prefix=path, multivalued=multivalued))
@@ -96,7 +96,7 @@ def build_mapping(field_data, prefix=None, multivalued=False, dynamic=False):
                 mappings.extend(build_mapping(child, prefix=path, multivalued=True, dynamic=True))
             elif isinstance(child, Optional):
                 path.append("*")
-                mappings.extend(build_mapping(child, prefix=path, multivalued=multivalued, dynamic=True))
+                mappings.extend(build_mapping(child, prefix=prefix, multivalued=multivalued, dynamic=True))
             elif isinstance(child, Mapping):
                 path.append("*")
                 mappings.extend(build_mapping(child.fields().values(), prefix=path,

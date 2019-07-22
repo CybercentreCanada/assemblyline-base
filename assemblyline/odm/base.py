@@ -71,7 +71,7 @@ class UndefinedFunction(Exception):
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, default_set=None):
+    def __init__(self, name=None, index=None, store=None, copyto=None, default=None):
         self.index = index
         self.store = store
         self.multivalued = False
@@ -86,7 +86,7 @@ class _Field:
         self.setter_function = None
 
         self.default = default
-        self.default_set = True if default is not None else default_set
+        self.default_set = default is not None
 
     # noinspection PyProtectedMember
     def __get__(self, obj, objtype=None):
@@ -200,7 +200,7 @@ class Keyword(_Field):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError("Empty strings are not allow without defaults for " + self.name)
+                raise ValueError(f"Empty strings are not allow without defaults for field '{self.name}'")
 
         if value is None:
             return None
@@ -219,7 +219,7 @@ class ValidatedKeyword(Keyword):
     def __deepcopy__(self, memo=None):
         # NOTE: This deepcopy code does not work with a sub-class that add args of kwargs that should be copied.
         #       If that is the case, the sub-class should implement its own deepcopy function.
-        valid_fields = ["name", "index", "store", "copyto", "default", "default_set"]
+        valid_fields = ["name", "index", "store", "copyto", "default"]
         if 'validation_regex' in self.__class__.__init__.__code__.co_varnames:
             return self.__class__(self.validation_regex.pattern, **{k: v for k, v in self.__dict__.items()
                                                                       if k in valid_fields})
@@ -320,6 +320,11 @@ class UUID(Keyword):
     """
     A field storing an auto-generated unique ID if None is provided
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_set = True
+
     def check(self, value, **kwargs):
         if value is None:
             value = get_random_id()
@@ -575,11 +580,11 @@ class Compound(_Field):
 
 class Optional(_Field):
     """A wrapper field to allow simple types (int, float, bool) to take None values."""
-    def __init__(self, child_type, default_set=True, **kwargs):
+    def __init__(self, child_type, **kwargs):
         if child_type.default_set:
-            kwargs['default_set'] = True
             kwargs['default'] = child_type.default
-        super().__init__(default_set=default_set, **kwargs)
+        super().__init__(**kwargs)
+        self.default_set = True
         self.child_type = child_type
 
     def check(self, value, *args, **kwargs):
@@ -815,7 +820,12 @@ def model(index=None, store=None):
         for name, field_data in cls.fields().items():
             if not FIELD_SANITIZER.match(name) or name in BANNED_FIELDS:
                 raise ValueError(f"Illegal variable name: {name}")
+
             field_data.name = name
+
+            if isinstance(field_data, Optional):
+                field_data.child_type.name = name
+
             field_data.apply_defaults(index=index, store=store)
         return cls
     return _finish_model
