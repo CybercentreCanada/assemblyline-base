@@ -1,7 +1,7 @@
 from assemblyline.common import forge
 
 from assemblyline import odm
-from assemblyline.odm.models.heuristic import CATEGORIES
+from assemblyline.odm.models.heuristic import PATTERNS
 from assemblyline.odm.models.tagging import Tagging
 
 BODY_TYPES = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON"}
@@ -11,7 +11,7 @@ constants = forge.get_constants()
 @odm.model(index=True, store=False)
 class Heuristic(odm.Model):
     heur_id = odm.Keyword(copyto="__text__")                                 # Triggered heuristic
-    category = odm.Optional(odm.Enum(values=CATEGORIES, copyto="__text__"))  # Heuristic's category
+    attack_id = odm.Optional(odm.Enum(values=PATTERNS, copyto="__text__"))   # Attack matrix ID
     score = odm.Integer()                                                    # Heuristic's score
 
 

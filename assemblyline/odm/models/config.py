@@ -2,8 +2,6 @@ from typing import Dict, List
 from assemblyline import odm
 
 # TODO: Apply proper index and store values
-from assemblyline.common import metrics
-
 
 @odm.model()
 class PasswordRequirement(odm.Model):
@@ -533,6 +531,8 @@ class System(odm.Model):
     constants: str = odm.Keyword()
     # Organisation acronym used for signatures
     organisation: str = odm.Text()
+    # Type of system (production, staging, development)
+    type: str = odm.Enum(values=['production', 'staging', 'development'])
     # Parameter of the yara engine
     yara: Yara = odm.Compound(Yara)
 
@@ -540,6 +540,7 @@ class System(odm.Model):
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
+    "type": 'production',
     "yara": DEFAULT_YARA
 }
 
@@ -557,9 +558,9 @@ DEFAULT_STATISTICS = {
     "alert": [
         'al.attrib',
         'al.av',
+        'al.behavior',
         'al.domain',
         'al.ip',
-        'al.summary',
         'al.yara',
         'file.name',
         'file.md5',
@@ -639,6 +640,38 @@ DEFAULT_UI = {
 
 # Options regarding all submissions, regardless of their input method
 @odm.model()
+class TagTypes(odm.Model):
+    attribution: List[str] = odm.List(odm.Keyword())
+    behavior: List[str] = odm.List(odm.Keyword())
+    ioc: List[str] = odm.List(odm.Keyword())
+
+
+DEFAULT_TAG_TYPES = {
+    'attribution': [
+        'attribution.actor',
+        'attribution.campaign',
+        'attribution.exploit',
+        'attribution.implant',
+        'attribution.family',
+        'attribution.network',
+        'av.virus_name',
+        'file.config',
+        'techinique.obfuscation',
+    ],
+    'behavior': [
+        'file.behavior'
+    ],
+    'ioc': [
+        'network.email.address',
+        'network.ip',
+        'network.domain',
+        'network.uri',
+
+    ]
+}
+
+# Options regarding all submissions, regardless of their input method
+@odm.model()
 class Submission(odm.Model):
     # Path to the routine used to
     decode_file: str = odm.Keyword()
@@ -660,7 +693,7 @@ class Submission(odm.Model):
     max_metadata_length: int = odm.Integer()
 
     # Summary tag types
-    summary_tag_types: List[str] = odm.List(odm.Keyword())
+    tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES)
 
 
 DEFAULT_SUBMISSION = {
@@ -671,19 +704,7 @@ DEFAULT_SUBMISSION = {
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
-    'summary_tag_types': [
-        'network.ip',
-        'network.domain',
-        'network.uri',
-        'av.virus_name',
-        'attribution.implant',
-        'attribution.family',
-        'techinique.obfuscation',
-        'attribution.actor',
-        'file.config',
-        'attribution.exploit',
-        'file.summary'
-    ]
+    'tag_types': DEFAULT_TAG_TYPES
 }
 
 

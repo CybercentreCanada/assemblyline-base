@@ -19,12 +19,13 @@ from assemblyline.odm.models.service_client import ServiceClient
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
-from assemblyline.odm.models.submission_tags import SubmissionTags
+from assemblyline.odm.models.submission_summary import SubmissionSummary
 from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
+from assemblyline.odm.models.verdict import Verdict
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
@@ -85,12 +86,13 @@ TEST_DATA = [
     ("service_delta", random_model_obj(ServiceDelta)),
     ("signature", random_model_obj(Signature)),
     ("submission", random_model_obj(Submission)),
-    ("submission_tags", random_model_obj(SubmissionTags)),
+    ("submission_summary", random_model_obj(SubmissionSummary)),
     ("submission_tree", random_model_obj(SubmissionTree)),
     ("tc_signature", random_model_obj(TCSignature)),
     ("user", random_model_obj(User)),
     ("user_favorites", random_model_obj(UserFavorites)),
     ("user_settings", random_model_obj(UserSettings)),
+    ("verdict", random_model_obj(Verdict)),
     ("vm", random_model_obj(VM)),
     ("workflow", random_model_obj(Workflow)),
     ("alert_min", random_minimal_obj(Alert)),
@@ -106,12 +108,13 @@ TEST_DATA = [
     ("service_delta_min", random_minimal_obj(ServiceDelta)),
     ("signature_min", random_minimal_obj(Signature)),
     ("submission_min", random_minimal_obj(Submission)),
-    ("submission_tags_min", random_minimal_obj(SubmissionTags)),
+    ("submission_summary_min", random_minimal_obj(SubmissionSummary)),
     ("submission_tree_min", random_minimal_obj(SubmissionTree)),
     ("tc_signature_min", random_minimal_obj(TCSignature)),
     ("user_min", random_minimal_obj(User)),
     ("user_favorites_min", random_minimal_obj(UserFavorites)),
     ("user_settings_min", random_minimal_obj(UserSettings)),
+    ("verdict_min", random_minimal_obj(Verdict)),
     ("vm_min", random_minimal_obj(VM)),
     ("workflow_min", random_minimal_obj(Workflow))
 ]
