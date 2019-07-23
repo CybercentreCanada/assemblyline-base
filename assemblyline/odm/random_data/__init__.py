@@ -13,7 +13,6 @@ from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
-from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
@@ -234,16 +233,6 @@ def create_submission(ds, fs, log=None):
     return s
 
 
-def create_tc_signatures(ds, log=None):
-    for x in range(20):
-        tc_id = f"TC_0000{x+1:#02d}"
-        ds.tc_signature.save(tc_id, random_model_obj(TCSignature))
-        if log:
-            log.info(f'\t{tc_id}')
-
-    ds.tc_signature.commit()
-
-
 def create_users(ds, log=None):
     user_data = User({
         "agrees_with_tos": "NOW",
@@ -313,10 +302,6 @@ def wipe_submissions(ds, fs):
 
     for f in full_file_list:
         fs.delete(f)
-
-
-def wipe_tc_signatures(ds):
-    ds.tc_signature.wipe()
 
 
 def wipe_users(ds):

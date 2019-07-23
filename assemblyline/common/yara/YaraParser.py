@@ -4,14 +4,17 @@ import re
 
 from assemblyline.common.str_utils import is_safe_str, safe_str
 from assemblyline.common import forge
-from assemblyline.odm.models.signature import RequiredMeta
+# from assemblyline.odm.models.signature import RequiredMeta
 
 config = forge.get_config()
 cl_engine = forge.get_classification()
 yara_externals = {f"al_{i}": i for i in config.system.yara.externals}
 
-REQUIRED_META = list(RequiredMeta.fields().keys())
-
+# REQUIRED_META = list(RequiredMeta.fields().keys())
+REQUIRED_META = [
+    "al_status", "creation_date", "description", "organisation", "last_modified", "poc", "rule_group",
+    "exploit", "implant", "info", "technique", "tool", "rule_id", "rule_version", "yara_version"
+]
 
 class YaraCharsetValidationException(Exception):
     def __init__(self, data):

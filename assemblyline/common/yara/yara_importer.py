@@ -1,9 +1,10 @@
-
+import json
 import os
 import logging
 
 from assemblyline.common import forge
 from assemblyline.common.yara import YaraParser
+from assemblyline.odm.models.signature import Signature
 
 
 class YaraImporter(object):
@@ -75,7 +76,15 @@ class YaraImporter(object):
             res = self.yp.validate_rule(rule)
             if res['valid']:
                 rule['warning'] = res.get('warning', None)
-                self.ds.signature.save(key, rule)
+                sig = Signature({
+                    'classification': rule['classification'],
+                    "data": json.dumps(rule),
+                    "revision": rule['meta']['rule_version'],
+                    "signature_id": rule['meta']['rule_id'],
+                    "status": rule['meta']['al_status'],
+                    "type": "yara"
+                })
+                self.ds.signature.save(key, sig)
                 self.log.info("Added signature %s" % rule['name'])
             else:
                 failed_list.append((rule['name'], "Failed rule validation (%s)" % res['message']['error']))

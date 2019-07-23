@@ -21,7 +21,6 @@ from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_summary import SubmissionSummary
 from assemblyline.odm.models.submission_tree import SubmissionTree
-from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
@@ -88,7 +87,6 @@ TEST_DATA = [
     ("submission", random_model_obj(Submission)),
     ("submission_summary", random_model_obj(SubmissionSummary)),
     ("submission_tree", random_model_obj(SubmissionTree)),
-    ("tc_signature", random_model_obj(TCSignature)),
     ("user", random_model_obj(User)),
     ("user_favorites", random_model_obj(UserFavorites)),
     ("user_settings", random_model_obj(UserSettings)),
@@ -110,7 +108,6 @@ TEST_DATA = [
     ("submission_min", random_minimal_obj(Submission)),
     ("submission_summary_min", random_minimal_obj(SubmissionSummary)),
     ("submission_tree_min", random_minimal_obj(SubmissionTree)),
-    ("tc_signature_min", random_minimal_obj(TCSignature)),
     ("user_min", random_minimal_obj(User)),
     ("user_favorites_min", random_minimal_obj(UserFavorites)),
     ("user_settings_min", random_minimal_obj(UserSettings)),
