@@ -4,7 +4,6 @@ import random
 
 from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
-from assemblyline.common.yara import YaraImporter
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
@@ -17,6 +16,7 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import SERVICES, random_model_obj, get_random_phrase
+from assemblyline.run.yara_importer import YaraImporter
 
 full_file_list = []
 
@@ -94,13 +94,11 @@ def create_services(ds, log=None):
 
 
 def create_signatures(ds):
-    yp = YaraImporter(logger=NullLogger())
-    parsed = yp.parse_file(get_sig_path())
-    yp.import_now([p['rule'] for p in parsed])
-
+    yara = YaraImporter(logger=NullLogger())
+    signatures = yara.import_file(get_sig_path())
     ds.signature.commit()
 
-    return [p['rule']['name'] for p in parsed]
+    return [s['name'] for s in signatures]
 
 
 def _create_errors_for_file(ds, f, services_done, log=None):

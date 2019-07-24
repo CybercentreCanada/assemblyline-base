@@ -11,9 +11,15 @@ RULE_STATUSES = DEPLOYED_STATUSES + DRAFT_STATUSES + STALE_STATUSES
 
 @odm.model(index=True, store=True)
 class Signature(odm.Model):
-    classification = odm.Classification(store=True, default=Classification.UNRESTRICTED)  # Classification of the rule
-    data = odm.Text(store=False, copyto="__text__")                                       # Data of the signature
-    revision = odm.Keyword()                                                              # Revision of the signature
-    signature_id = odm.Keyword()                                                          # ID of the signature
-    status = odm.Enum(values=RULE_STATUSES)                                               # Type of rule
-    type = odm.Keyword()                                                                  # Type of signature
+    classification = odm.Classification(store=True, default=Classification.UNRESTRICTED)
+    data = odm.Text(index=False, store=False)
+    last_modified = odm.Date(default="NOW")
+    name = odm.Keyword(copyto="__text__")
+    order = odm.Integer(store=False)
+    revision = odm.Keyword()
+    signature_id = odm.Keyword()
+    source = odm.Keyword()
+    state_change_date = odm.Optional(odm.Date(store=False))
+    state_change_user = odm.Optional(odm.Keyword(store=False))
+    status = odm.Enum(values=RULE_STATUSES, copyto="__text__")
+    type = odm.Keyword(copyto="__text__")

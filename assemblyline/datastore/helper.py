@@ -333,15 +333,16 @@ class AssemblylineDatastore(object):
         return scores
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_signature_last_modified(self):
-        res = self.signature.search("id:*", fl="meta.last_modified",
-                                    sort="meta.last_modified desc", rows=1, as_obj=False)
+    def get_signature_last_modified(self, sig_type):
+        res = self.signature.search(f"type:{sig_type}", fl="last_modified",
+                                    sort="last_modified desc", rows=1, as_obj=False)
         if res['total'] > 0:
-            return res['items'][0]['meta']['last_modified']
+            return res['items'][0]['last_modified']
         return '1970-01-01T00:00:00.000000Z'
 
     @elasticapm.capture_span(span_type='datastore')
     def get_signature_next_revision_for_name(self, org, name):
+        # TODO: Fix for new signature stuff
         query = "meta.rule_id:%s_* AND name:%s" % (org, name)
         results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
         if len(results) == 0:
@@ -354,6 +355,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_signature_last_id(self, org):
+        # TODO: Fix for new signature stuff
         query = "meta.rule_id:%s_0*" % org
         results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
         if len(results) == 0:
@@ -366,7 +368,8 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_signature_last_revision_for_id(self, sid):
-        query = "meta.rule_id:%s" % sid
+        # TODO: Fix for new signature stuff
+        query = "signature_id:%s" % sid
         results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
         if len(results) == 0:
             return 0
