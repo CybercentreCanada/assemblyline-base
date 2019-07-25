@@ -16,6 +16,7 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import SERVICES, random_model_obj, get_random_phrase
+from assemblyline.run.suricata_importer import SuricataImporter
 from assemblyline.run.yara_importer import YaraImporter
 
 full_file_list = []
@@ -95,7 +96,10 @@ def create_services(ds, log=None):
 
 def create_signatures(ds):
     yara = YaraImporter(logger=NullLogger())
-    signatures = yara.import_file(get_sig_path())
+    suricata = SuricataImporter(logger=NullLogger())
+    signatures = yara.import_file(get_yara_sig_path(), default_status="DEPLOYED")
+    signatures.extend(suricata.import_file(get_suricata_sig_path(), default_status="DEPLOYED"))
+
     ds.signature.commit()
 
     return [s['name'] for s in signatures]
@@ -263,13 +267,22 @@ def create_workflows(ds, log=None):
     ds.workflow.commit()
 
 
-def get_sig_path():
+def get_suricata_sig_path():
+    for (d, _, filenames) in os.walk(__file__[:-11]):
+        for f in filenames:
+            if f == 'sample_suricata.rules':
+                return os.path.join(d, f)
+
+    raise Exception('Could not find suricata sample file...')
+
+
+def get_yara_sig_path():
     for (d, _, filenames) in os.walk(__file__[:-11]):
         for f in filenames:
             if f == 'sample_rules.yar':
                 return os.path.join(d, f)
 
-    raise Exception('Could not find test yara files...')
+    raise Exception('Could not find yara sample file...')
 
 
 def wipe_alerts(ds):

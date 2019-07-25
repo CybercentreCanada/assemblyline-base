@@ -21,31 +21,19 @@ class PrintLogger(object):
 
 def create_basic_data(log=None, ds=None):
     ds = ds or forge.get_datastore()
-    if ds.user.search("id:*", rows=0)['total'] == 0:
-        log.info("\nCreating user objects...")
-        create_users(ds, log=log)
-    else:
-        log.info("\nUsers already exist, skipping...")
+    log.info("\nCreating user objects...")
+    create_users(ds, log=log)
 
-    if ds.service_delta.search("id:*", rows=0)['total'] == 0:
-        log.info("\nCreating services...")
-        create_services(ds, log=log)
-    else:
-        log.info("Services already exist, skipping...")
+    log.info("\nCreating services...")
+    create_services(ds, log=log)
 
-    if ds.signature.search("id:*", rows=0)['total'] == 0:
-        log.info("\nImporting test signatures...")
-        signatures = create_signatures(ds)
-        for s in signatures:
-            log.info(f"\t{s}")
-    else:
-        log.info("Signatures already exist, skipping...")
+    log.info("\nImporting test signatures...")
+    signatures = create_signatures(ds)
+    for s in signatures:
+        log.info(f"\t{s}")
 
-    if ds.heuristic.search("id:*", rows=0)['total'] == 0:
-        log.info("\nCreating random heuristics...")
-        create_heuristics(ds, log=log)
-    else:
-        log.info("Heuristics already exist, skipping...")
+    log.info("\nCreating random heuristics...")
+    create_heuristics(ds, log=log)
 
 
 def create_extra_data(log=None, ds=None, fs=None):
