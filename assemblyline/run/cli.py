@@ -18,7 +18,7 @@ from assemblyline.common import forge, log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
 from assemblyline.common.security import get_totp_token, generate_random_secret
 from assemblyline.common.uid import get_random_id
-from assemblyline.common.yara import YaraParser
+from assemblyline.odm.models.signature import RULE_STATUSES
 from assemblyline.remote.datatypes.hash import Hash
 
 warnings.filterwarnings("ignore")
@@ -589,8 +589,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if action_type == 'show' and item_id:
             self.logger.info(pformat(signatures.get(item_id, as_obj=False)))
         elif action_type == 'change_status' and item_id and id_type and status:
-            if status not in YaraParser.STATUSES:
-                statuses = "\n".join(YaraParser.STATUSES)
+            if status not in RULE_STATUSES:
+                statuses = "\n".join(RULE_STATUSES)
                 self._print_error(f"\nInvalid status for action 'change_status' of signature command."
                                   f"\n\nValid statuses are:\n{statuses}")
                 return
