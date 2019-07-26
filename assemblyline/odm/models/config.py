@@ -1,11 +1,10 @@
 from typing import Dict, List
 
-from al_core.dispatching.dispatcher import FILE_QUEUE, SUBMISSION_QUEUE
-
 from assemblyline import odm
 
 # TODO: Apply proper index and store values
 from assemblyline.common import metrics
+from assemblyline.common.constants import FILE_QUEUE, SUBMISSION_QUEUE
 from assemblyline.odm.models.service import EnvironmentVariable, DockerConfig
 
 
