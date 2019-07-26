@@ -1,6 +1,5 @@
 from assemblyline import odm
 from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVICE_REJECTS
-from assemblyline.odm.models.heuristic import Heuristic
 
 
 @odm.model(index=False, store=False)
@@ -20,9 +19,11 @@ class DockerConfig(odm.Model):
 
 @odm.model(index=False, store=False)
 class UpdateConfig(odm.Model):
-    source_type = odm.Enum(values=['URL', 'Dockerfile', 'Function'])
-    source_value = odm.Keyword()
-    frequency = odm.Integer()
+    method = odm.Enum(values=['URL', 'Dockerfile', 'Function'])  # Method used to generate update file for service
+    source = odm.Keyword()                                       # Source for the update method, ie. URL, path to
+                                                                 # Dockerfile, Python module name
+    frequency = odm.Integer()                                    # Update check frequency (secs)
+    file_path = odm.Keyword()                                    # File path to the update file
 
 
 @odm.model(index=False, store=False)
@@ -61,8 +62,6 @@ class Service(odm.Model):
     supported_platforms = odm.List(odm.Enum(values=["windows", "linux"]), default=["linux"])
     timeout = odm.Integer(default=60)
 
-    # heuristics = odm.List(odm.Compound(Heuristic), default=[])
-
     docker_config: DockerConfig = odm.Compound(DockerConfig)
 
-    # update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))
+    update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))
