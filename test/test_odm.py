@@ -1,7 +1,7 @@
 from assemblyline.common.classification import InvalidClassification
 
 from assemblyline.odm import model, Model, KeyMaskException, Compound, List, \
-    Keyword, Integer, Mapping, Classification, Enum
+    Keyword, Integer, Mapping, Classification, Enum, UUID
 
 import json
 import pytest
@@ -540,3 +540,23 @@ def test_named_item_access():
         test['x'] = 100
 
     assert test['a'] == {'a': -1, 'b': 100}
+
+
+
+def test_uuid():
+    @model()
+    class Test(Model):
+        uuid = UUID()
+
+    a = Test()
+    b = Test()
+    assert a.uuid != '' and a.uuid is not None
+    assert a.uuid != b.uuid
+
+    b.uuid = '123abc'
+    c = Test({'uuid': 'abc123'})
+
+    assert a.uuid != b.uuid and b.uuid != c.uuid
+    assert b.uuid == '123abc'
+    assert c.uuid == 'abc123'
+

@@ -1,7 +1,13 @@
 from typing import Dict, List
+
+from al_core.dispatching.dispatcher import FILE_QUEUE, SUBMISSION_QUEUE
+
 from assemblyline import odm
 
 # TODO: Apply proper index and store values
+from assemblyline.common import metrics
+from assemblyline.odm.models.service import EnvironmentVariable, DockerConfig
+
 
 @odm.model()
 class PasswordRequirement(odm.Model):
@@ -343,6 +349,99 @@ DEFAULT_REDIS = {
 
 
 @odm.model()
+class ScalerProfile(odm.Model):
+    """Minimal description for an assemblyline core component controlled by the scaler."""
+    cpu: float = odm.Float()
+    ram: int = odm.Integer()
+    growth: int = odm.Optional(odm.Integer())
+    shrink: int = odm.Optional(odm.Integer())
+    backlog: int = odm.Optional(odm.Integer())
+    min_instances: int = odm.Optional(odm.Integer())
+    max_instances: int = odm.Optional(odm.Integer())
+    queue: str = odm.Keyword()
+    container_config: DockerConfig = odm.Compound(DockerConfig)
+
+
+@odm.model()
+class ScalerServiceDefaults(odm.Model):
+    """A set of default values to be used running a service when no other value is set."""
+    growth: int = odm.Integer()
+    shrink: int = odm.Integer()
+    backlog: int = odm.Integer()
+    min_instances: int = odm.Integer()
+    environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
+    network: List[str] = odm.List(odm.Keyword())
+
+    def apply(self, profile: ScalerProfile) -> dict:
+        data = profile.as_primitives(strip_null=True)
+        data.setdefault('growth', self.growth)
+        data.setdefault('shrink', self.shrink)
+        data.setdefault('backlog', self.backlog)
+        data.setdefault('min_instances', self.min_instances)
+        data['container_config'] = DockerConfig(data['container_config'])
+        data['container_config'].network = list(set(profile.container_config.network) | set(self.network))
+        set_keys = set(var.name for var in profile.container_config.environment)
+        for var in self.environment:
+            if var.name not in set_keys:
+                data['container_config'].environment.append(var)
+        return data
+
+
+@odm.model()
+class Scaler(odm.Model):
+    service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
+    core_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
+    core_configs = odm.Mapping(odm.Compound(ScalerProfile))
+
+    core_namespace: str = odm.Keyword()
+    service_namespace: str = odm.Keyword()
+
+
+DEFAULT_SCALER = {
+    'service_defaults': {
+        'growth': 60,
+        'shrink': 60,
+        'backlog': 100,
+        'min_instances': 0,
+        'environment': [{'name': 'SERVICE_API_HOST', 'value': 'http://al_service_server:5003'}],
+        'network': ['svc'],
+    },
+    'core_defaults': {
+        'growth': 60,
+        'shrink': 60,
+        'backlog': 100,
+        'min_instances': 1,
+        'environment': [],
+        'network': [],
+    },
+    'core_configs': {
+        'dispatcher_files': {
+            'cpu': 0,
+            'ram': 0,
+            'container_config': {
+                'image': 'sgaroncse/assemblyline_dev:4.0.5',
+                'command': 'python3 /opt/alv4/alv4_core/al_core/dispatching/run_files.py',
+                'network': ['backend'],
+            },
+            'queue': FILE_QUEUE
+        },
+        'dispatcher_submissions': {
+            'cpu': 0,
+            'ram': 0,
+            'container_config': {
+                'image': 'sgaroncse/assemblyline_dev:4.0.5',
+                'command': 'python3 /opt/alv4/alv4_core/al_core/dispatching/run_submissions.py',
+                'network': ['backend'],
+            },
+            'queue': SUBMISSION_QUEUE
+        }
+    },
+    'core_namespace': 'al',
+    'service_namespace': 'alsvc',
+}
+
+
+@odm.model()
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
     dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
@@ -350,6 +449,7 @@ class Core(odm.Model):
     ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER)
     metrics: Metrics = odm.Compound(Metrics, default=DEFAULT_METRICS)
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS)
+    scaler: Scaler = odm.Compound(Scaler, default=DEFAULT_SCALER)
 
 
 DEFAULT_CORE = {
@@ -359,6 +459,7 @@ DEFAULT_CORE = {
     "ingester": DEFAULT_INGESTER,
     "metrics": DEFAULT_METRICS,
     "redis": DEFAULT_REDIS,
+    "scaler": DEFAULT_SCALER,
 }
 
 
