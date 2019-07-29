@@ -30,7 +30,7 @@ def _timestamp_to_ms(ts):
         return 0.0
 
 
-def epoch_to_iso(t):
+def epoch_to_iso(t) -> str:
     s = datetime.utcfromtimestamp(t).isoformat()
     return ''.join((s, 'Z'))
 
