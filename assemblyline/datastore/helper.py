@@ -341,41 +341,27 @@ class AssemblylineDatastore(object):
         return '1970-01-01T00:00:00.000000Z'
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_signature_next_revision_for_name(self, org, name):
-        # TODO: Fix for new signature stuff
-        query = "meta.rule_id:%s_* AND name:%s" % (org, name)
-        results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
-        if len(results) == 0:
-            return None, None
-        else:
-            try:
-                return results[0]["meta"]["rule_id"], int(results[0]["meta.rule_version"]) + 1
-            except (ValueError, KeyError):
-                return None, None
-
-    @elasticapm.capture_span(span_type='datastore')
-    def get_signature_last_id(self, org):
-        # TODO: Fix for new signature stuff
-        query = "meta.rule_id:%s_0*" % org
-        results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
+    def get_signature_last_id(self, org, source, sig_type):
+        query = f"signature_id:{org}_0* AND source:{source} AND type:{sig_type}"
+        results = self.signature.search(query, offset=0, fl="signature_id",
+                                        rows=1, sort="signature_id desc", as_obj=False)["items"]
         if len(results) == 0:
             return 0
         else:
             try:
-                return int(results[0]["meta"]["rule_id"].split("_")[1])
+                return int(results[0]["signature_id"].split("_")[1])
             except (ValueError, KeyError):
                 return 0
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_signature_last_revision_for_id(self, sid):
-        # TODO: Fix for new signature stuff
-        query = "signature_id:%s" % sid
+    def get_signature_last_revision_for_id(self, sid, source, sig_type):
+        query = f"signature_id:{sid} AND source:{source} AND type:{sig_type}"
         results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
         if len(results) == 0:
             return 0
         else:
             try:
-                return int(results[0]["meta"]["rule_version"])
+                return int(results[0]["revision"])
             except (ValueError, KeyError):
                 return 0
 
