@@ -22,7 +22,7 @@ class UpdateConfig(odm.Model):
     method = odm.Enum(values=['URL', 'Dockerfile', 'Function'])  # Method used to generate update file for service
     source = odm.Keyword()                                       # Source for the update method, ie. URL, path to
                                                                  # Dockerfile, Python module name
-    frequency = odm.Integer()                                    # Update check frequency (secs)
+    update_interval_seconds = odm.Integer()                      # Update check interval in seconds
     file_path = odm.Keyword()                                    # File path to the update file
 
 
