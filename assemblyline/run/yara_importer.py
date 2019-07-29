@@ -29,6 +29,8 @@ class YaraImporter(object):
                 name = name.replace("global ", "").replace("private ", "").replace("rule ", "")
                 break
 
+        if name is None:
+            return name
         return name.strip()
 
     def parse_meta(self, signature):
@@ -69,7 +71,7 @@ class YaraImporter(object):
             name = self.get_signature_name(signature)
             status = meta.get('al_status', default_status)
 
-            key = f"yara_{signature_id}r.{revision}"
+            key = f"yara_{signature_id}_{revision}"
 
             sig = Signature({
                 'classification': classification,

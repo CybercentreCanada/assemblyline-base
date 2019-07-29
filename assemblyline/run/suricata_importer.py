@@ -21,16 +21,20 @@ class SuricataImporter(object):
 
     def parse_meta(self, signature):
         meta = {}
-        meta_parts = signature.split("(", 1)[1].strip(" );").split("; ")
-        for part in meta_parts:
-            if ":" in part:
-                key, val = part.split(":", 1)
-                if key == "metadata":
-                    for metadata in val.split(","):
-                        meta_key, meta_val = metadata.strip().split(' ')
-                        meta[meta_key] = safe_str(meta_val)
-                else:
-                    meta[key] = safe_str(val.strip('"'))
+        try:
+            meta_parts = signature.split("(", 1)[1].strip(" );").split("; ")
+            for part in meta_parts:
+                if ":" in part:
+                    key, val = part.split(":", 1)
+                    if key == "metadata":
+                        for metadata in val.split(","):
+                            meta_key, meta_val = metadata.strip().split(' ')
+                            meta[meta_key] = safe_str(meta_val)
+                    else:
+                        meta[key] = safe_str(val.strip('"'))
+        except ValueError:
+            return meta
+
         return meta
 
     def _save_signatures(self, signatures, source, default_status="TESTING"):
@@ -47,7 +51,7 @@ class SuricataImporter(object):
             name = meta['msg']
             status = meta.get('al_status', default_status)
 
-            key = f"suricata_{signature_id}r.{revision}"
+            key = f"suricata_{signature_id}_{revision}"
 
             sig = Signature({
                 'classification': classification,
