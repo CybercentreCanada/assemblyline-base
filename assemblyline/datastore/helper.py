@@ -500,12 +500,14 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_summary_from_keys(self, keys):
+        out = {"tags": [], "attack_matrix": []}
+
         if len(keys) == 0:
-            return []
+            return out
+
         keys = [x for x in list(keys) if not x.endswith(".e")]
         items = self.result.multiget(keys, as_obj=False)
 
-        out = {"tags": [], "attack_matrix": []}
         for key, item in items.items():
             for section in item.get('result', {}).get('sections', []):
                 # Get attack matrix data
