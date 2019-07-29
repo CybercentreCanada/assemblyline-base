@@ -7,7 +7,7 @@ STATUSES = {'INITIALIZING', 'WAITING', 'PROCESSING', 'RESULT_FOUND', 'ERROR_FOUN
 class Current(odm.Model):
     status = odm.Enum(values=STATUSES, default='INITIALIZING')  # Status of the client
     task_sid = odm.Optional(odm.UUID())                         # SID of the task currently assigned to the client
-    task_start_time = odm.Optional(odm.Date())                  # Time the task was assigned to the client
+    task_timeout = odm.Optional(odm.Date())                     # Time the task was assigned to the client
 
 
 @odm.model(index=True, store=True)
@@ -18,5 +18,6 @@ class ServiceClient(odm.Model):
     service_name = odm.Keyword()                        # Name of the service running on the client
     service_version = odm.Keyword()                     # Version of the service running on the client
     service_tool_version = odm.Optional(odm.Keyword())  # Tool version of the service running on the client
+    service_timeout = odm.Integer()                     # Timeout of the service running on the client
     current = odm.Optional(odm.Compound(Current))       # Info about the current status and task assigned to the client
     tasking_counters = odm.Optional(odm.Any())          # MetricsFactory counters for the service and service_timing
