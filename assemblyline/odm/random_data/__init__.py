@@ -18,6 +18,7 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import SERVICES, random_model_obj, get_random_phrase
+from assemblyline.datastore.helper import AssemblylineDatastore
 
 full_file_list = []
 
@@ -66,8 +67,11 @@ def create_heuristics(ds, log=None, heuristics_count=40):
     ds.heuristic.commit()
 
 
-def create_services(ds, log=None):
-    for svc_name, svc in SERVICES.items():
+def create_services(ds: AssemblylineDatastore, log=None, limit=None):
+    if not limit:
+        limit = len(SERVICES)
+
+    for svc_name, svc in list(SERVICES.items())[:limit]:
         service_data = Service({
             "name": svc_name,
             "enabled": True,

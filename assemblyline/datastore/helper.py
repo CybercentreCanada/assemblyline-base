@@ -72,95 +72,95 @@ class AssemblylineDatastore(object):
         self.ds.close()
 
     @property
-    def alert(self):
+    def alert(self) -> Collection:
         return self.ds.alert
 
     @property
-    def cached_file(self):
+    def cached_file(self) -> Collection:
         return self.ds.cached_file
 
     @property
-    def emptyresult(self):
+    def emptyresult(self) -> Collection:
         return self.ds.emptyresult
 
     @property
-    def error(self):
+    def error(self) -> Collection:
         return self.ds.error
 
     @property
-    def file(self):
+    def file(self) -> Collection:
         return self.ds.file
 
     @property
-    def filescore(self):
+    def filescore(self) -> Collection:
         return self.ds.filescore
 
     @property
-    def heuristic(self):
+    def heuristic(self) -> Collection:
         return self.ds.heuristic
 
     @property
-    def result(self):
+    def result(self) -> Collection:
         return self.ds.result
 
     @property
-    def service(self):
+    def service(self) -> Collection:
         return self.ds.service
 
     @property
-    def service_client(self):
+    def service_client(self) -> Collection:
         return self.ds.service_client
 
     @property
-    def service_delta(self):
+    def service_delta(self) -> Collection:
         return self.ds.service_delta
 
     @property
-    def signature(self):
+    def signature(self) -> Collection:
         return self.ds.signature
 
     @property
-    def submission(self):
+    def submission(self) -> Collection:
         return self.ds.submission
 
     @property
-    def submission_summary(self):
+    def submission_summary(self) -> Collection:
         return self.ds.submission_summary
 
     @property
-    def submission_tree(self):
+    def submission_tree(self) -> Collection:
         return self.ds.submission_tree
 
     @property
-    def tc_signature(self):
+    def tc_signature(self) -> Collection:
         return self.ds.tc_signature
 
     @property
-    def user(self):
+    def user(self) -> Collection:
         return self.ds.user
 
     @property
-    def user_avatar(self):
+    def user_avatar(self) -> Collection:
         return self.ds.user_avatar
 
     @property
-    def user_favorites(self):
+    def user_favorites(self) -> Collection:
         return self.ds.user_favorites
 
     @property
-    def user_settings(self):
+    def user_settings(self) -> Collection:
         return self.ds.user_settings
 
     @property
-    def vm(self):
+    def vm(self) -> Collection:
         return self.ds.vm
 
     @property
-    def verdict(self):
+    def verdict(self) -> Collection:
         return self.ds.verdict
 
     @property
-    def workflow(self):
+    def workflow(self) -> Collection:
         return self.ds.workflow
 
     def get_collection(self, collection_name):
