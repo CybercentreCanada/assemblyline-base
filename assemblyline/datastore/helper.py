@@ -1,9 +1,9 @@
 
 import concurrent.futures
+import json
 from typing import Union, List
 
 import elasticapm
-import json
 
 from assemblyline.common import forge
 from assemblyline.common.attack_map import attack_map
@@ -34,7 +34,6 @@ from assemblyline.odm.models.verdict import Verdict
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
-
 
 default_dtl = forge.get_config().submission.dtl
 
@@ -511,8 +510,8 @@ class AssemblylineDatastore(object):
         for key, item in items.items():
             for section in item.get('result', {}).get('sections', []):
                 # Get attack matrix data
-                attack_id = section.get('heuristic', {}).get('attack_id', None)
-                if attack_id:
+                if section.get('heuristic', False) and section['heuristic'].get('attack_id', False):
+                    attack_id = section['heuristic']['attack_id']
                     attack_pattern_def = attack_map.get(attack_id, {})
                     if attack_pattern_def:
                         out['attack_matrix'].append({
