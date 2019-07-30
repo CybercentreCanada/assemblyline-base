@@ -418,3 +418,38 @@ TEST_CONSISTENCY_FUNC = [
 def test_datastore_consistency(solr_connection, es_connection, function, as_obj):
     if solr_connection and es_connection:
         function(solr_connection, es_connection, as_obj)
+
+
+@pytest.fixture(scope='module')
+def es_store():
+    from assemblyline.datastore.stores.es_store import ESStore
+    store = ESStore(['127.0.0.1'])
+    ret_val = store.ping()
+    if ret_val:
+        return store
+    return pytest.skip()
+
+@pytest.fixture()
+def es_scratch_name(es_store):
+    name = ''.join(random.sample(string.ascii_lowercase, 12))
+    yield name
+    getattr(es_store, name).wipe()
+
+
+def test_dynamic_fields(es_store, es_scratch_name):
+
+    @odm.model(index=True, store=True)
+    class Test(odm.Model):
+        number = odm.Integer()
+        other = odm.Any(index=False)
+
+    es_store.register(es_scratch_name, Test)
+    col = getattr(es_store, es_scratch_name)
+
+    assert list(sorted(col.fields().keys())) == ['id', 'number']
+
+    # Elasticsearch should ignore the type of other
+    col.save('a', Test(dict(number=100, other=100)))
+    col.save('b', Test(dict(number=100, other='100')))
+    col.save('c', Test(dict(number=100, other=True)))
+

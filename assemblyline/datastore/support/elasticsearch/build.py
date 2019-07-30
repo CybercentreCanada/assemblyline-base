@@ -122,10 +122,10 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
         # We cannot use the dynamic type matching if others are in play because they conflict with each other
         # TODO: Find a way to make them work together.
         dynamic.append({'refuse_all_implicit_mappings': {
-            "match_mapping_type": "*",
             "match": "*",
             "mapping": {
-                "enabled": False
+                "index": False,
+                "ignore_malformed": True,
             }
         }})
 
