@@ -39,7 +39,7 @@ class SuricataImporter(object):
 
     def _save_signatures(self, signatures, source, default_status="TESTING"):
         saved_sigs = []
-        order = 0
+        order = 1
         for signature in signatures:
             signature_hash = get_id_from_data(signature, length=16)
 

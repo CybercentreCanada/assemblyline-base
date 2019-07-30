@@ -333,7 +333,10 @@ class AssemblylineDatastore(object):
         return scores
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_signature_last_modified(self, sig_type):
+    def get_signature_last_modified(self, sig_type=None):
+        if sig_type is None:
+            sig_type = "*"
+
         res = self.signature.search(f"type:{sig_type}", fl="last_modified",
                                     sort="last_modified desc", rows=1, as_obj=False)
         if res['total'] > 0:

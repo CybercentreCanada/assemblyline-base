@@ -781,7 +781,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                   reindex  [<bucket>]
 
         Actions:
-            commit       Force SOLR to commit the index
+            commit       Force datastore to commit the index
             reindex      Force a reindex of all the database (this can be really slow)
 
         Parameters:
