@@ -266,7 +266,7 @@ class Tagging(odm.Model):
                     version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
                 compiler = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-                version = odm.Optional(odm.Compound(FilePListDTPlatform))
+                platform = odm.Optional(odm.Compound(FilePListDTPlatform))
 
             @odm.model(index=True, store=False)
             class FilePListLS(odm.Model):
