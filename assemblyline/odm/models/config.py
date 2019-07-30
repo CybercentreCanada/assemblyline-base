@@ -2,6 +2,8 @@ from typing import Dict, List
 from assemblyline import odm
 
 # TODO: Apply proper index and store values
+from assemblyline.odm.models.user import USER_TYPES
+
 
 @odm.model()
 class PasswordRequirement(odm.Model):
@@ -61,7 +63,7 @@ class User(odm.Model):
     name: str = odm.Keyword()
     password: str = odm.Keyword()
     groups: List[str] = odm.List(odm.Keyword())
-    is_admin: bool = odm.Boolean()
+    type: bool = odm.List(odm.Enum(values=USER_TYPES))
     classification = odm.Classification(is_user_classification=True)
 
 
@@ -71,7 +73,7 @@ DEFAULT_USERS = {
         "name": "Default admin user",
         "password": "changeme",
         "groups": ["ADMIN", "INTERNAL", "USERS"],
-        "is_admin": True,
+        "type": ['admin', 'user'],
         "classification": "UNRESTRICTED"
     },
     "internal": {
@@ -79,7 +81,7 @@ DEFAULT_USERS = {
         "name": "Internal re-submission user",
         "password": "Int3rn@lP4s$",
         "groups": ["INTERNAL"],
-        "is_admin": False,
+        "type": ['user'],
         "classification": "UNRESTRICTED"
     }
 }

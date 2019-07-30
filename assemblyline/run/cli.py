@@ -721,7 +721,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         elif action_type == 'set_admin' and item_id:
             item = users.get(item_id)
             if item:
-                item.is_admin = True
+                if 'admin' not in item.type:
+                    item.type.append('admin')
                 users.save(item_id, item)
                 self.logger.info(f"{item_id} was added admin priviledges")
             else:
@@ -729,7 +730,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         elif action_type == 'unset_admin' and item_id:
             item = users.get(item_id)
             if item:
-                item.is_admin = False
+                item.type.pop('admin', None)
                 users.save(item_id, item)
                 self.logger.info(f"{item_id} was removed admin priviledges")
             else:
