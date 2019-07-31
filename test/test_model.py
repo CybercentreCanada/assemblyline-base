@@ -1,8 +1,10 @@
 import pytest
 
 from assemblyline.common import forge
-from assemblyline.odm.models.config import DEFAULT_CONFIG, Config
 from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.cached_file import CachedFile
+from assemblyline.odm.models.config import DEFAULT_CONFIG, Config
+from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
@@ -13,9 +15,14 @@ from assemblyline.odm.models.service_client import ServiceClient
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
+from assemblyline.odm.models.submission_summary import SubmissionSummary
 from assemblyline.odm.models.submission_tree import SubmissionTree
+from assemblyline.odm.models.tagging import Tagging
 from assemblyline.odm.models.user import User
+from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
+from assemblyline.odm.models.verdict import Verdict
+from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj
 
@@ -25,6 +32,13 @@ def test_alert_model():
         random_model_obj(Alert).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'Alert' object and validate it.")
+
+
+def test_cached_file_model():
+    try:
+        random_model_obj(CachedFile).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'CachedFile' object and validate it.")
 
 
 def test_config_model():
@@ -37,6 +51,13 @@ def test_config_model():
 def test_default_config_model():
     config = forge.get_config(yml_config="/etc/assemblyline/default.yml")
     assert config.as_primitives() == Config(DEFAULT_CONFIG).as_primitives()
+
+
+def test_emptyresult_model():
+    try:
+        random_model_obj(EmptyResult).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'EmptyResult' object and validate it.")
 
 
 def test_error_model():
@@ -95,6 +116,22 @@ def test_service_delta_model():
         pytest.fail("Could not generate 'ServiceDelta' object and validate it.")
 
 
+def test_service_to_service_delta_model():
+    try:
+        data = random_model_obj(Service).as_primitives()
+        ServiceDelta(data).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not use a 'Service' object to create a 'ServiceDelta' object.")
+
+
+def test_service_delta_to_service_model():
+    try:
+        data = random_model_obj(ServiceDelta).as_primitives()
+        Service(data).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not use a 'ServiceDelta' object to create a 'Service' object.")
+
+
 def test_signature_model():
     try:
         random_model_obj(Signature).as_primitives()
@@ -109,11 +146,25 @@ def test_submission_model():
         pytest.fail("Could not generate 'Submission' object and validate it.")
 
 
+def test_submission_summary_model():
+    try:
+        random_model_obj(SubmissionSummary).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'SubmissionSummary' object and validate it.")
+
+
 def test_submission_tree_model():
     try:
         random_model_obj(SubmissionTree).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'SubmissionTree' object and validate it.")
+
+
+def test_tagging_model():
+    try:
+        random_model_obj(Tagging).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'Tagging' object and validate it.")
 
 
 def test_user_model():
@@ -123,11 +174,32 @@ def test_user_model():
         pytest.fail("Could not generate 'User' object and validate it.")
 
 
+def test_user_favorites_model():
+    try:
+        random_model_obj(UserFavorites).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'UserFavorites' object and validate it.")
+
+
 def test_user_settings_model():
     try:
         random_model_obj(UserSettings).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'UserSettings' object and validate it.")
+
+
+def test_verdict_model():
+    try:
+        random_model_obj(Verdict).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'Verdict' object and validate it.")
+
+
+def test_vm_model():
+    try:
+        random_model_obj(VM).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'VM' object and validate it.")
 
 
 def test_workflow_model():
