@@ -242,7 +242,7 @@ def create_users(ds, log=None):
         "name": "Admin user",
         "password": get_password_hash("admin"),
         "uname": "admin",
-        "type": ["admin", "user"]})
+        "type": ["admin", "user", "signature_importer"]})
     ds.user.save('admin', user_data)
     ds.user_settings.save('admin', UserSettings())
     if log:
