@@ -13,17 +13,22 @@ class DockerConfig(odm.Model):
     image = odm.Keyword()                                 # Complete name of the Docker image with tag
     command = odm.Optional(odm.Keyword())
     environment = odm.List(odm.Compound(EnvironmentVariable), default=[])
-    dependencies = odm.List(odm.Keyword(), default=[])    # List of other required Docker container(s)
     network = odm.List(odm.Keyword(), default=[])         # Network access rules
 
 
 @odm.model(index=False, store=False)
+class UpdateSource(odm.Model):
+    uri = odm.Keyword()
+    # ETC.
+
+
+@odm.model(index=False, store=False)
 class UpdateConfig(odm.Model):
-    method = odm.Enum(values=['URL', 'Dockerfile', 'Function'])  # Method used to generate update file for service
-    source = odm.Keyword()                                       # Source for the update method, ie. URL, path to
-                                                                 # Dockerfile, Python module name
-    update_interval_seconds = odm.Integer()                      # Update check interval in seconds
-    file_path = odm.Keyword()                                    # File path to the update file
+    method = odm.Enum(values=['run', 'build'])                    # Are we going to run a container, or build a new container?
+    sources = odm.List(odm.Compound(UpdateSource))                # Generic external resources we need
+    update_interval_seconds = odm.Integer()                       # Update check interval in seconds
+    run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
+    # build_options = odm.Optional(odm.Compound(DockerfileConfig))  # If we are going to build a container, how?
 
 
 @odm.model(index=False, store=False)
@@ -63,5 +68,6 @@ class Service(odm.Model):
     timeout = odm.Integer(default=60)
 
     docker_config: DockerConfig = odm.Compound(DockerConfig)
+    dependencies = odm.List(odm.Compound(DockerConfig), default=[])    # List of other required Docker container(s)
 
     update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))
