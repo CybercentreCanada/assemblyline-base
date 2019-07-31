@@ -52,6 +52,8 @@ setup(
         'apscheduler',
         'elastic-apm[flask]',
         'cython',
+        'docker',
+        'kubernetes',
     ],
     package_data={
         '': [
