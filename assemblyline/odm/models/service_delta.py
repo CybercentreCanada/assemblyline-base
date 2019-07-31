@@ -1,14 +1,39 @@
 from assemblyline import odm
-from .service import EnvironmentVariable
+
+
+@odm.model(index=False, store=False)
+class EnvironmentVariableDelta(odm.Model):
+    name = odm.Keyword()
+    value = odm.Keyword()
 
 
 @odm.model(index=False, store=False)
 class DockerConfigDelta(odm.Model):
-    image = odm.Optional(odm.Keyword())                    # Complete name of the Docker image with tag
+    image = odm.Optional(odm.Keyword())
     command = odm.Optional(odm.Keyword())
-    environment = odm.List(odm.Compound(EnvironmentVariable), default=[])
-    dependencies = odm.Optional(odm.List(odm.Keyword()))   # List of other required Docker container(s)
-    network = odm.Optional(odm.List(odm.Keyword()))        # Network access rules
+    environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariableDelta)))
+    network = odm.Optional(odm.List(odm.Keyword()))
+
+
+@odm.model(index=False, store=False)
+class UpdateSourceDelta(odm.Model):
+    uri = odm.Optional(odm.Keyword())
+    name = odm.Optional(odm.Keyword())
+    username = odm.Optional(odm.Keyword())
+    password = odm.Optional(odm.Keyword())
+    headers = odm.Optional(odm.Mapping(odm.Keyword()))
+    public_key = odm.Optional(odm.Keyword())
+    pattern = odm.Optional(odm.Keyword())
+
+
+@odm.model(index=False, store=False)
+class UpdateConfigDelta(odm.Model):
+    method = odm.Optional(odm.Enum(values=['run', 'build']))
+    sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
+    update_interval_seconds = odm.Optional(odm.Integer())
+    run_options = odm.Optional(odm.Compound(DockerConfigDelta))
+    # build_options = odm.Optional(odm.Compound(DockerfileConfigDelta))
+    generates_signatures = odm.Optional(odm.Boolean())
 
 
 @odm.model(index=False, store=False)
@@ -46,3 +71,6 @@ class ServiceDelta(odm.Model):
     timeout = odm.Optional(odm.Integer())
 
     docker_config: DockerConfigDelta = odm.Optional(odm.Compound(DockerConfigDelta))
+    dependencies = odm.Optional(odm.List(odm.Compound(DockerConfigDelta)))
+
+    update_config: UpdateConfigDelta = odm.Optional(odm.Compound(UpdateConfigDelta))
