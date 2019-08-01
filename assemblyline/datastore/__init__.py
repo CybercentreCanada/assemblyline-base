@@ -37,12 +37,14 @@ class Collection(object):
     UPDATE_DEC = "DEC"
     UPDATE_APPEND = "APPEND"
     UPDATE_REMOVE = "REMOVE"
+    UPDATE_DELETE = "DELETE"
     UPDATE_OPERATIONS = [
         UPDATE_APPEND,
         UPDATE_DEC,
         UPDATE_INC,
         UPDATE_REMOVE,
-        UPDATE_SET
+        UPDATE_SET,
+        UPDATE_DELETE,
     ]
 
     def __init__(self, datastore, name, model_class=None):
@@ -315,6 +317,8 @@ class Collection(object):
                 obj, cur_key = get_object(data, doc_key)
                 if op == self.UPDATE_SET:
                     obj[cur_key] = value
+                elif op == self.UPDATE_DELETE:
+                    obj[cur_key].pop(value)
                 elif op == self.UPDATE_APPEND:
                     obj[cur_key].append(value)
                 elif op == self.UPDATE_REMOVE:

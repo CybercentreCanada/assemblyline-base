@@ -32,10 +32,10 @@ with warnings.catch_warnings():
         'string': "A string!",
         'list': ['a', 'list', 'of', 'string', 100],
         'int': 69,
-        'to_update': {'counters': {'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
-        'bulk_update': {'bulk_b': True, 'counters': {
+        'to_update': {'counters': {'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], "map": {'a': 1}},
+        'bulk_update': {'bulk_b': True, "map": {'a': 1}, 'counters': {
             'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
-        'bulk_update2': {'bulk_b': True, 'counters': {
+        'bulk_update2': {'bulk_b': True, "map": {'a': 1}, 'counters': {
             'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
         'delete1': {'delete_b': True, 'lvl_i': 100},
         'delete2': {'delete_b': True, 'lvl_i': 300},
@@ -137,13 +137,15 @@ def _test_keys(c: Collection):
 
 def _test_update(c: Collection):
     # Test Update
-    expected = {'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!']}
+    expected = {'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!'], "map": {'b': 99}}
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
         (c.UPDATE_INC, "counters.inc_i", 50),
         (c.UPDATE_DEC, "counters.dec_i", 50),
         (c.UPDATE_APPEND, "list", "world!"),
-        (c.UPDATE_REMOVE, "list", "remove")
+        (c.UPDATE_REMOVE, "list", "remove"),
+        (c.UPDATE_DELETE, "map", "a"),
+        (c.UPDATE_SET, "map.b", 99),
     ]
     assert c.update('to_update', operations)
     assert c.get('to_update') == expected
@@ -151,13 +153,15 @@ def _test_update(c: Collection):
 
 def _test_update_by_query(c: Collection):
     # Test update_by_query
-    expected = {'bulk_b': True, 'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!']}
+    expected = {'bulk_b': True, 'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!'], "map": {'b': 99}}
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
         (c.UPDATE_INC, "counters.inc_i", 50),
         (c.UPDATE_DEC, "counters.dec_i", 50),
         (c.UPDATE_APPEND, "list", "world!"),
-        (c.UPDATE_REMOVE, "list", "remove")
+        (c.UPDATE_REMOVE, "list", "remove"),
+        (c.UPDATE_DELETE, "map", "a"),
+        (c.UPDATE_SET, "map.b", 99),
     ]
     assert c.update_by_query("bulk_b:true", operations)
     expected.update({})
