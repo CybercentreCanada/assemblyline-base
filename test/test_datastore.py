@@ -338,6 +338,10 @@ def _test_c_fields(s_tc: Collection, e_tc: Collection):
     e_fields = e_tc.fields()
     e_fields.pop('list', None)
 
+    # Solr doesn't seem to handle fields that are modified the same way either
+    e_fields.pop('map.a')
+    e_fields.pop('map.b')
+
     # For non-modeled data, we only want to compare values for indexed, stored, and type field.
     #  ** The default field will always be False because the value is pulled from the model (no need to compare)
     #  ** The list field will always be True in elasticsearch (will always fail if we compare)
