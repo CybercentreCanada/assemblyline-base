@@ -600,9 +600,10 @@ class AssemblylineDatastore(object):
         items = list(self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False))
 
         if full:
-            service_data = self.ds.service.multiget([f"{item['id']}_{item['version']}" for item in items], as_obj=False, as_dictionary=False)
+            service_data = self.ds.service.multiget([f"{item['id']}_{item['version']}" for item in items],
+                                                    as_dictionary=False)
             service_delta = self.ds.service_delta.multiget([item['id'] for item in items], as_dictionary=False)
-            services = [recursive_update(data, delta.as_primitives(strip_null=True))
+            services = [recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True))
                         for data, delta in zip(service_data, service_delta)]
 
         else:
