@@ -318,6 +318,9 @@ class ESCollection(Collection):
             if op == self.UPDATE_SET:
                 op_sources.append(f"ctx._source.{doc_key} = params.value{val_id}")
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_DELETE:
+                op_sources.append(f"ctx._source.{doc_key}.remove(params.value{val_id})")
+                op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_APPEND:
                 op_sources.append(f"ctx._source.{doc_key}.add(params.value{val_id})")
                 op_params[f'value{val_id}'] = value
