@@ -580,11 +580,12 @@ class AssemblylineDatastore(object):
         if version is not None:
             svc.version = version
 
-        svc_version_data = self.ds.service.get(f"{service_name}_{svc.version}", as_obj=False)
+        svc_version_data = self.ds.service.get(f"{service_name}_{svc.version}")
         if svc_version_data is None:
             return svc_version_data
 
-        svc_version_data = recursive_update(svc_version_data, svc.as_primitives(strip_null=True))
+        svc_version_data = recursive_update(svc_version_data.as_primitives(strip_null=True),
+                                            svc.as_primitives(strip_null=True))
         if as_obj:
             return Service(svc_version_data)
         else:
