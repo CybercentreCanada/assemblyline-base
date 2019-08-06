@@ -2,7 +2,6 @@
 
 # IDE files
 .pydevproject
-.coverage
 .python-version
 .idea
 
