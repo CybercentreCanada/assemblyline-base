@@ -10,7 +10,7 @@ from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.service import Service
+from assemblyline.odm.models.service import Service, UpdateSource
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
@@ -72,7 +72,7 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
         limit = len(SERVICES)
 
     for svc_name, svc in list(SERVICES.items())[:limit]:
-        service_data = Service({
+        service_data = {
             "name": svc_name,
             "enabled": True,
             "category": svc[0],
@@ -81,7 +81,17 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
             "docker_config": {
                 "image": f"cccs/alsvc_{svc_name.lower()}:latest",
             },
-        })
+        }
+
+        if random.choice([True, False]):
+            service_data['update_config'] = {
+                "method": "run",
+                "sources": [random_model_obj(UpdateSource)],
+                "update_interval_seconds": 600,
+                "generates_signatures": True
+            }
+
+        service_data = Service(service_data)
         # Save a v3 service
         ds.service.save(f"{service_data.name}_{service_data.version}", service_data)
 
