@@ -420,7 +420,7 @@ DEFAULT_SCALER = {
             'ram': 0,
             'container_config': {
                 'image': 'sgaroncse/assemblyline_dev:4.0.5',
-                'command': 'python3 /opt/alv4/alv4_core/al_core/dispatching/run_files.py',
+                'command': ['python3', '/opt/alv4/alv4_core/al_core/dispatching/run_files.py'],
                 'network': ['backend'],
             },
             'queue': FILE_QUEUE
@@ -430,7 +430,7 @@ DEFAULT_SCALER = {
             'ram': 0,
             'container_config': {
                 'image': 'sgaroncse/assemblyline_dev:4.0.5',
-                'command': 'python3 /opt/alv4/alv4_core/al_core/dispatching/run_submissions.py',
+                'command': ['python3', '/opt/alv4/alv4_core/al_core/dispatching/run_submissions.py'],
                 'network': ['backend'],
             },
             'queue': SUBMISSION_QUEUE

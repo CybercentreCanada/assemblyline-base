@@ -804,7 +804,7 @@ class Model:
         return self.__setattr__(name, value)
 
     def __getattr__(self, name):
-        # Any attribute that hasn't been explicity declared is forbidden
+        # Any attribute that hasn't been explicitly declared is forbidden
         raise KeyError(name)
 
     def __setattr__(self, name, value):
