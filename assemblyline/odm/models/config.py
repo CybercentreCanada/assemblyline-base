@@ -573,7 +573,6 @@ SERVICE_CATEGORIES = [
     'Filtering',
     'Networking',
     'Static Analysis',
-    'System'
 ]
 SERVICE_STAGES = [
     'SETUP',
@@ -597,8 +596,6 @@ class Services(odm.Model):
     min_service_workers: int = odm.Integer()
     # Different stages of execution in order
     stages: List[str] = odm.List(odm.Keyword())
-    # Category for mandatory services (e.g. Sync)
-    system_category: str = odm.Text()
 
 
 DEFAULT_SERVICES = {
@@ -606,7 +603,6 @@ DEFAULT_SERVICES = {
     "default_timeout": 60,
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
-    "system_category": 'System'
 }
 
 
