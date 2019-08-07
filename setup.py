@@ -63,6 +63,7 @@ setup(
             "*classification.yml",
             "*.magic",
             "*sample_rules.yar",
+            "*sample_suricata.rules",
             "*.pyx",
             "*.pxd",
         ]
