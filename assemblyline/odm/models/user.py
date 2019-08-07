@@ -3,6 +3,7 @@ from assemblyline.common import forge
 Classification = forge.get_classification()
 
 ACL = {"R", "W", "E"}
+USER_TYPES = {"admin", "signature_manager", "signature_importer", "user"}
 
 
 @odm.model(index=False, store=False)
@@ -26,11 +27,11 @@ class User(odm.Model):
     groups = odm.List(odm.Keyword(), copyto="__text__",
                       default=["USERS"])                                # List of groups the user submits to
     is_active = odm.Boolean(default=True)                               # is the user active
-    is_admin = odm.Boolean(default=False)                               # is the user an admin
     name = odm.Keyword(copyto="__text__")                               # Full name of the user
     otp_sk = odm.Optional(odm.Keyword(index=False, store=False))        # Secret key to generate one time passwords
     password = odm.Keyword(index=False, store=False)                    # BCrypt hash of the user's password
     submission_quota = odm.Integer(default=5, store=False)              # Maximum number of concurrent submissions
+    type = odm.List(odm.Enum(values=USER_TYPES), default=['user'])      # Type of user
     u2f_devices = odm.Mapping(odm.Keyword(), index=False,
                               store=False, default={})                  # Map of u2f security tokens
     uname = odm.Keyword(copyto="__text__")                              # Username

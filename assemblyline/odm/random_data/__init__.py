@@ -4,20 +4,20 @@ import random
 
 from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
-from assemblyline.common.yara import YaraImporter
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.service import Service
+from assemblyline.odm.models.service import Service, UpdateSource
 from assemblyline.odm.models.submission import Submission
-from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import SERVICES, random_model_obj, get_random_phrase
+from assemblyline.run.suricata_importer import SuricataImporter
+from assemblyline.run.yara_importer import YaraImporter
 from assemblyline.datastore.helper import AssemblylineDatastore
 
 full_file_list = []
@@ -72,7 +72,7 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
         limit = len(SERVICES)
 
     for svc_name, svc in list(SERVICES.items())[:limit]:
-        service_data = Service({
+        service_data = {
             "name": svc_name,
             "enabled": True,
             "category": svc[0],
@@ -81,7 +81,17 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
             "docker_config": {
                 "image": f"cccs/alsvc_{svc_name.lower()}:latest",
             },
-        })
+        }
+
+        if random.choice([True, False]):
+            service_data['update_config'] = {
+                "method": "run",
+                "sources": [random_model_obj(UpdateSource)],
+                "update_interval_seconds": 600,
+                "generates_signatures": True
+            }
+
+        service_data = Service(service_data)
         # Save a v3 service
         ds.service.save(f"{service_data.name}_{service_data.version}", service_data)
 
@@ -99,13 +109,14 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
 
 
 def create_signatures(ds):
-    yp = YaraImporter(logger=NullLogger())
-    parsed = yp.parse_file(get_sig_path())
-    yp.import_now([p['rule'] for p in parsed])
+    yara = YaraImporter(logger=NullLogger())
+    suricata = SuricataImporter(logger=NullLogger())
+    signatures = yara.import_file(get_yara_sig_path(), default_status="DEPLOYED")
+    signatures.extend(suricata.import_file(get_suricata_sig_path(), default_status="DEPLOYED"))
 
     ds.signature.commit()
 
-    return [p['rule']['name'] for p in parsed]
+    return [s['name'] for s in signatures]
 
 
 def _create_errors_for_file(ds, f, services_done, log=None):
@@ -238,16 +249,6 @@ def create_submission(ds, fs, log=None):
     return s
 
 
-def create_tc_signatures(ds, log=None):
-    for x in range(20):
-        tc_id = f"TC_0000{x+1:#02d}"
-        ds.tc_signature.save(tc_id, random_model_obj(TCSignature))
-        if log:
-            log.info(f'\t{tc_id}')
-
-    ds.tc_signature.commit()
-
-
 def create_users(ds, log=None):
     user_data = User({
         "agrees_with_tos": "NOW",
@@ -255,7 +256,7 @@ def create_users(ds, log=None):
         "name": "Admin user",
         "password": get_password_hash("admin"),
         "uname": "admin",
-        "is_admin": True})
+        "type": ["admin", "user", "signature_importer"]})
     ds.user.save('admin', user_data)
     ds.user_settings.save('admin', UserSettings())
     if log:
@@ -280,13 +281,22 @@ def create_workflows(ds, log=None):
     ds.workflow.commit()
 
 
-def get_sig_path():
+def get_suricata_sig_path():
+    for (d, _, filenames) in os.walk(__file__[:-11]):
+        for f in filenames:
+            if f == 'sample_suricata.rules':
+                return os.path.join(d, f)
+
+    raise Exception('Could not find suricata sample file...')
+
+
+def get_yara_sig_path():
     for (d, _, filenames) in os.walk(__file__[:-11]):
         for f in filenames:
             if f == 'sample_rules.yar':
                 return os.path.join(d, f)
 
-    raise Exception('Could not find test yara files...')
+    raise Exception('Could not find yara sample file...')
 
 
 def wipe_alerts(ds):
@@ -317,10 +327,6 @@ def wipe_submissions(ds, fs):
 
     for f in full_file_list:
         fs.delete(f)
-
-
-def wipe_tc_signatures(ds):
-    ds.tc_signature.wipe()
 
 
 def wipe_users(ds):

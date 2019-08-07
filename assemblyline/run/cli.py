@@ -18,7 +18,7 @@ from assemblyline.common import forge, log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
 from assemblyline.common.security import get_totp_token, generate_random_secret
 from assemblyline.common.uid import get_random_id
-from assemblyline.common.yara import YaraParser
+from assemblyline.odm.models.signature import RULE_STATUSES
 from assemblyline.remote.datatypes.hash import Hash
 
 warnings.filterwarnings("ignore")
@@ -277,7 +277,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 'service',
                 'service_delta',
                 'signature',
-                'tc_signature',
                 'user',
                 'user_avatar',
                 'user_favorites',
@@ -590,8 +589,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if action_type == 'show' and item_id:
             self.logger.info(pformat(signatures.get(item_id, as_obj=False)))
         elif action_type == 'change_status' and item_id and id_type and status:
-            if status not in YaraParser.STATUSES:
-                statuses = "\n".join(YaraParser.STATUSES)
+            if status not in RULE_STATUSES:
+                statuses = "\n".join(RULE_STATUSES)
                 self._print_error(f"\nInvalid status for action 'change_status' of signature command."
                                   f"\n\nValid statuses are:\n{statuses}")
                 return
@@ -722,7 +721,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         elif action_type == 'set_admin' and item_id:
             item = users.get(item_id)
             if item:
-                item.is_admin = True
+                if 'admin' not in item.type:
+                    item.type.append('admin')
                 users.save(item_id, item)
                 self.logger.info(f"{item_id} was added admin priviledges")
             else:
@@ -730,7 +730,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         elif action_type == 'unset_admin' and item_id:
             item = users.get(item_id)
             if item:
-                item.is_admin = False
+                item.type.pop('admin', None)
                 users.save(item_id, item)
                 self.logger.info(f"{item_id} was removed admin priviledges")
             else:
@@ -781,7 +781,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                   reindex  [<bucket>]
 
         Actions:
-            commit       Force SOLR to commit the index
+            commit       Force datastore to commit the index
             reindex      Force a reindex of all the database (this can be really slow)
 
         Parameters:
@@ -956,7 +956,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             'service',
             'service_delta',
             'signature',
-            'tc_signature',
             'user',
             'user_avatar',
             'user_favorites',

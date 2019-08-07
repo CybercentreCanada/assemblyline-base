@@ -1,0 +1,67 @@
+#
+# THIS FILE CONTAINS RANDOMLY SELECTED RULES FROM THE EMERGING THREATS RULE SET
+#
+# Emerging Threats
+#
+# This distribution may contain rules under two different licenses.
+#
+#  Rules with sids 1 through 3464, and 100000000 through 100000908 are under the GPLv2.
+#  A copy of that license is available at http://www.gnu.org/licenses/gpl-2.0.html
+#
+#  Rules with sids 2000000 through 2799999 are from Emerging Threats and are covered under the BSD License
+#  as follows:
+#
+#*************************************************************
+#  Copyright (c) 2003-2017, Emerging Threats
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
+#  following conditions are met:
+#
+#  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+#    disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+#    following disclaimer in the documentation and/or other materials provided with the distribution.
+#  * Neither the name of the nor the names of its contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS AND ANY EXPRESS OR IMPLIED WARRANTIES,
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+#  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+#  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+#  USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#*************************************************************
+#
+
+alert tcp $EXTERNAL_NET any -> $HOME_NET 110 (msg:"GPL POP3 AUTH overflow attempt"; flow:to_server,established; content:"AUTH"; nocase; isdataat:50,relative; pcre:"/^AUTH\s[^\n]{50}/smi"; reference:bugtraq,830; reference:cve,1999-0822; reference:nessus,10184; classtype:attempted-admin; sid:2101936; rev:9; metadata:created_at 2010_09_23, updated_at 2010_09_23;)
+
+alert tcp $EXTERNAL_NET $HTTP_PORTS -> $HOME_NET any (msg:"ET ACTIVEX EasyMail Object IMAP4 Component Buffer Overflow Function call Attempt"; flow:from_server,established; content:"ActiveXObject"; nocase; content:"EasyMail.IMAP4.6"; distance:0; nocase; content:"LicenseKey"; nocase; reference:url,secunia.com/advisories/24199/; reference:url,doc.emergingthreats.net/2010658; classtype:web-application-attack; sid:2010658; rev:2; metadata:created_at 2010_07_30, updated_at 2010_07_30;)
+
+#alert udp $HOME_NET any -> $EXTERNAL_NET 69 (msg:"ET ATTACK_RESPONSE Cisco TclShell TFTP Read Request"; content:"|00 01 74 63 6C 73 68 2E 74 63 6C|"; reference:url,wwww.irmplc.com/downloads/whitepapers/Creating_Backdoors_in_Cisco_IOS_using_Tcl.pdf; reference:url,doc.emergingthreats.net/2009244; classtype:bad-unknown; sid:2009244; rev:2; metadata:created_at 2010_07_30, updated_at 2010_07_30;)
+
+alert udp $EXTERNAL_NET 69 -> $HOME_NET any (msg:"ET ATTACK_RESPONSE Cisco TclShell TFTP Download"; content:"|54 63 6C 53 68 65 6C 6C|"; reference:url,wwww.irmplc.com/downloads/whitepapers/Creating_Backdoors_in_Cisco_IOS_using_Tcl.pdf; reference:url,doc.emergingthreats.net/2009245; classtype:bad-unknown; sid:2009245; rev:2; metadata:created_at 2010_07_30, updated_at 2010_07_30;)
+
+alert tcp $HOME_NET any -> $EXTERNAL_NET 5222 (msg:"ET CHAT Facebook Chat using XMPP"; flow:to_server,established; content:"chat.facebook.com"; nocase; content:"jabber|3A|client"; nocase; distance:9; within:13; threshold: type limit, track by_src, count 1, seconds 60; reference:url,www.facebook.com/sitetour/chat.php; reference:url,doc.emergingthreats.net/2010819; classtype:policy-violation; sid:2010819; rev:4; metadata:created_at 2010_07_30, updated_at 2010_07_30;)
+
+alert udp ![$SMTP_SERVERS,$DNS_SERVERS] any -> $DNS_SERVERS 53 (msg:"ET DNS DNS Lookup for localhost.DOMAIN.TLD"; content:"|01 00 00 01 00 00 00 00 00 00|"; depth:10; offset:2; content:"|09|localhost"; fast_pattern; nocase; classtype:bad-unknown; sid:2011802; rev:3; metadata:created_at 2010_10_12, updated_at 2010_10_12;)
+
+alert udp any any -> $HOME_NET 53 (msg:"ET DOS DNS Amplification Attack Inbound"; content:"|01 00 00 01 00 00 00 00 00 01|"; depth:10; offset:2; pcre:"/^[^\x00]+?\x00/R"; content:"|00 ff 00 01 00 00 29|"; within:7; fast_pattern; byte_test:2,>,4095,0,relative; threshold: type both, track by_dst, seconds 60, count 5; classtype:bad-unknown; sid:2016016; rev:8; metadata:created_at 2012_12_11, updated_at 2012_12_11;)
+
+alert udp any 123 -> any 0:1023 (msg:"ET DOS Likely NTP DDoS In Progress MON_LIST Response to Non-Ephemeral Port IMPL 0x03"; content:"|00 03 2a|"; offset:1; depth:3; byte_test:1,&,128,0; byte_test:1,&,64,0; byte_test:1,&,4,0; byte_test:1,&,2,0; byte_test:1,&,1,0; threshold: type both,track by_src,count 1,seconds 120; reference:url,www.symantec.com/connect/blogs/hackers-spend-christmas-break-launching-large-scale-ntp-reflection-attacks; reference:url,en.wikipedia.org/wiki/Ephemeral_port; classtype:attempted-dos; sid:2017966; rev:3; metadata:created_at 2014_01_13, updated_at 2014_01_13;)
+
+alert http $EXTERNAL_NET any -> $HTTP_SERVERS any (msg:"ET EXPLOIT Possible CVE-2016-10033 PHPMailer RCE Attempt"; flow:to_server,established; content:"POST"; http_method; content:"Content-Type|3a 20|multipart/form-data|3b|"; http_header; content:"<?php"; http_client_body; fast_pattern; content:"|5c 22 20|"; http_client_body; content:"-X"; http_client_body; content:".php"; http_client_body; content:"@"; http_client_body; reference:url,legalhackers.com/advisories/PHPMailer-Exploit-Remote-Code-Exec-CVE-2016-10033-Vuln.html; reference:url,github.com/opsxcq/exploit-CVE-2016-10033; classtype:attempted-user; sid:2023686; rev:2; metadata:affected_product PHPMailer, attack_target Web_Server, deployment Datacenter, signature_severity Major, created_at 2016_12_27, performance_impact Low, updated_at 2016_12_27;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"ET EXPLOIT Possible Microsoft Edge Chakra.dll Type Confusion (CVE-2016-7200 CVE-2016-7201) Observed in SunDown EK 1"; flow:established,to_client; file_data; content:"0x1DA2F5"; fast_pattern; nocase; content:"0x1DA2CB"; nocase; distance:0; content:"getPrototypeOf"; nocase; content:".__proto__"; nocase; content:"Symbol.species"; reference:cve,2016-7200; reference:url,malware.dontneedcoffee.com/2017/01/CVE-2016-7200-7201.html; classtype:attempted-user; sid:2023700; rev:2; metadata:affected_product Microsoft_Edge_Browser, attack_target Client_Endpoint, deployment Perimeter, tag Exploit_Kit_Sundown, signature_severity Critical, created_at 2017_01_06, updated_at 2017_01_06;)
+
+alert tcp $HOME_NET any -> $EXTERNAL_NET 20000 (msg:"ET GAMES Gold VIP Club Casino Client in Use"; flow:established,to_server; dsize:25; content:"Gold VIP Club Casino"; reference:url,doc.emergingthreats.net/2007746; classtype:policy-violation; sid:2007746; rev:5; metadata:created_at 2010_07_30, updated_at 2010_07_30;)
+
+alert udp $HOME_NET any -> $EXTERNAL_NET 1434 (msg:"GPL WORM Slammer Worm propagation attempt OUTBOUND"; content:"|04|"; depth:1; content:"|81 F1 03 01 04 9B 81 F1|"; content:"sock"; content:"send"; reference:bugtraq,5310; reference:bugtraq,5311; reference:cve,2002-0649; reference:nessus,11214; reference:url,vil.nai.com/vil/content/v_99992.htm; classtype:misc-attack; sid:2102004; rev:8; metadata:created_at 2010_09_23, updated_at 2010_09_23;)
+
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ET WORM Rimecud Worm checkin"; flow:established,to_server; content:"GET"; http_method; content:"User-Agent|3a| Mozilla/3.0 (compatible|3b| Indy Library)"; http_header; content:"/taskx.txt"; http_uri; fast_pattern; reference:url,www.threatexpert.com/report.aspx?md5=9623efa133415d19c941ef92a4f921fc; classtype:trojan-activity; sid:2012739; rev:2; metadata:created_at 2011_04_29, updated_at 2011_04_29;)
+
+alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"ET MALWARE 180solutions Spyware (tracked event 2 reporting)"; flow: to_server,established; content:"/trackedevent.aspx?"; nocase; http_uri; content:"ver="; nocase; http_uri; content:"&ver="; nocase; http_uri; content:"&rnd="; http_uri; nocase; reference:url,securityresponse.symantec.com/avcenter/venc/data/pf/adware.180search.html; reference:url,doc.emergingthreats.net/bin/view/Main/2003306; classtype:trojan-activity; sid:2003306; rev:8; metadata:created_at 2010_07_30, updated_at 2010_07_30;)
+
+alert udp $HOME_NET any -> $EXTERNAL_NET 53 (msg:"ET MALWARE Lookup of Malware Domain twothousands.cm Likely Infection"; content:"|01 00 00 01 00 00 00 00 00 00|"; depth:10; offset:2; content:"|0c|twothousands|02|cm"; fast_pattern; distance:0; nocase; classtype:misc-activity; sid:2012176; rev:1; metadata:created_at 2011_01_12, updated_at 2011_01_12;)

@@ -629,7 +629,7 @@ class Classification(object):
 
     def get_access_control_parts(self, c12n, user_classification=False):
         """
-        Returns a dictionary containing the different access parameters SOLR needs to build it's queries
+        Returns a dictionary containing the different access parameters Lucene needs to build it's queries
 
         Args:
             c12n: The classification to get the parts from

@@ -26,7 +26,6 @@ from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission_summary import SubmissionSummary
 from assemblyline.odm.models.submission_tree import SubmissionTree
-from assemblyline.odm.models.tc_signature import TCSignature
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
@@ -56,7 +55,6 @@ class AssemblylineDatastore(object):
         self.ds.register('submission', Submission)
         self.ds.register('submission_tree', SubmissionTree)
         self.ds.register('submission_summary', SubmissionSummary)
-        self.ds.register('tc_signature', TCSignature)
         self.ds.register('user', User)
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
@@ -130,10 +128,6 @@ class AssemblylineDatastore(object):
     @property
     def submission_tree(self) -> Collection:
         return self.ds.submission_tree
-
-    @property
-    def tc_signature(self) -> Collection:
-        return self.ds.tc_signature
 
     @property
     def user(self) -> Collection:
@@ -338,46 +332,38 @@ class AssemblylineDatastore(object):
         return scores
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_signature_last_modified(self):
-        res = self.signature.search("id:*", fl="meta.last_modified",
-                                    sort="meta.last_modified desc", rows=1, as_obj=False)
+    def get_signature_last_modified(self, sig_type=None):
+        if sig_type is None:
+            sig_type = "*"
+
+        res = self.signature.search(f"type:{sig_type}", fl="last_modified",
+                                    sort="last_modified desc", rows=1, as_obj=False)
         if res['total'] > 0:
-            return res['items'][0]['meta']['last_modified']
+            return res['items'][0]['last_modified']
         return '1970-01-01T00:00:00.000000Z'
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_signature_next_revision_for_name(self, org, name):
-        query = "meta.rule_id:%s_* AND name:%s" % (org, name)
-        results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
-        if len(results) == 0:
-            return None, None
-        else:
-            try:
-                return results[0]["meta"]["rule_id"], int(results[0]["meta.rule_version"]) + 1
-            except (ValueError, KeyError):
-                return None, None
-
-    @elasticapm.capture_span(span_type='datastore')
-    def get_signature_last_id(self, org):
-        query = "meta.rule_id:%s_0*" % org
-        results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
+    def get_signature_last_id(self, org, source, sig_type):
+        query = f"signature_id:{org}_0* AND source:{source} AND type:{sig_type}"
+        results = self.signature.search(query, offset=0, fl="signature_id",
+                                        rows=1, sort="signature_id desc", as_obj=False)["items"]
         if len(results) == 0:
             return 0
         else:
             try:
-                return int(results[0]["meta"]["rule_id"].split("_")[1])
+                return int(results[0]["signature_id"].split("_")[1])
             except (ValueError, KeyError):
                 return 0
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_signature_last_revision_for_id(self, sid):
-        query = "meta.rule_id:%s" % sid
+    def get_signature_last_revision_for_id(self, sid, source, sig_type):
+        query = f"signature_id:{sid} AND source:{source} AND type:{sig_type}"
         results = self.signature.search(query, offset=0, rows=1, sort="id desc", as_obj=False)["items"]
         if len(results) == 0:
             return 0
         else:
             try:
-                return int(results[0]["meta"]["rule_version"])
+                return int(results[0]["revision"])
             except (ValueError, KeyError):
                 return 0
 
@@ -594,11 +580,12 @@ class AssemblylineDatastore(object):
         if version is not None:
             svc.version = version
 
-        svc_version_data = self.ds.service.get(f"{service_name}_{svc.version}", as_obj=False)
+        svc_version_data = self.ds.service.get(f"{service_name}_{svc.version}")
         if svc_version_data is None:
             return svc_version_data
 
-        svc_version_data = recursive_update(svc_version_data, svc.as_primitives(strip_null=True))
+        svc_version_data = recursive_update(svc_version_data.as_primitives(strip_null=True),
+                                            svc.as_primitives(strip_null=True))
         if as_obj:
             return Service(svc_version_data)
         else:
@@ -614,9 +601,10 @@ class AssemblylineDatastore(object):
         items = list(self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False))
 
         if full:
-            service_data = self.ds.service.multiget([f"{item['id']}_{item['version']}" for item in items], as_obj=False, as_dictionary=False)
+            service_data = self.ds.service.multiget([f"{item['id']}_{item['version']}" for item in items],
+                                                    as_dictionary=False)
             service_delta = self.ds.service_delta.multiget([item['id'] for item in items], as_dictionary=False)
-            services = [recursive_update(data, delta.as_primitives(strip_null=True))
+            services = [recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True))
                         for data, delta in zip(service_data, service_delta)]
 
         else:

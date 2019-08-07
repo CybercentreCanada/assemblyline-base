@@ -83,6 +83,7 @@ class Tagging(odm.Model):
 
         @odm.model(index=True, store=False)
         class FileRule(odm.Model):
+            suricata = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             tagcheck = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             yara = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 

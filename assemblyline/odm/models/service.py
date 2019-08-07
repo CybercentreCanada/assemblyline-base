@@ -34,7 +34,7 @@ class UpdateConfig(odm.Model):
     update_interval_seconds = odm.Integer()                       # Update check interval in seconds
     run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
     # build_options = odm.Optional(odm.Compound(DockerfileConfig))  # If we are going to build a container, how?
-    generates_signatures = odm.Boolean(default=False)
+    generates_signatures = odm.Boolean(index=True, default=False)
 
 
 @odm.model(index=False, store=False)
