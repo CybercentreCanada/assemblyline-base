@@ -1,6 +1,12 @@
 import collections
 
 def recursive_update(d, u):
+    if d is None:
+        return u
+
+    if u is None:
+        return d
+
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
             d[k] = recursive_update(d.get(k, {}), v)
@@ -11,6 +17,12 @@ def recursive_update(d, u):
 
 
 def get_recursive_delta(d1, d2):
+    if d1 is None:
+        return d2
+
+    if d2 is None:
+        return d1
+
     out = {}
     for k1, v1 in d1.items():
         if isinstance(v1, collections.abc.Mapping):
