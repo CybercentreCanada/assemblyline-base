@@ -24,7 +24,7 @@ metricbeat.modules:
     hosts: ["kibana:5601"]
     basepath: ""
     enabled: true
-    xpack.enabled: true
+    # xpack.enabled: true
   - module: elasticsearch
     metricsets:
       - node
@@ -37,7 +37,7 @@ metricbeat.modules:
     period: 10s
     hosts: ["elasticsearch:9200"]
     enabled: true
-    xpack.enabled: true
+    # xpack.enabled: true
 
 processors:
   - add_cloud_metadata: ~
