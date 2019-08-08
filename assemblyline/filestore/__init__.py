@@ -1,16 +1,16 @@
 
-import elasticapm
 import json
 import logging
-
 from urllib.parse import urlparse, parse_qs, unquote
 
+import elasticapm
+
 from assemblyline.common.exceptions import get_stacktrace_info
-from assemblyline.filestore.transport.local import TransportLocal
 from assemblyline.filestore.transport.ftp import TransportFTP
-from assemblyline.filestore.transport.sftp import TransportSFTP
 from assemblyline.filestore.transport.http import TransportHTTP
+from assemblyline.filestore.transport.local import TransportLocal
 from assemblyline.filestore.transport.s3 import TransportS3
+from assemblyline.filestore.transport.sftp import TransportSFTP
 
 
 class FileStoreException(Exception):
@@ -156,7 +156,7 @@ class FileStore(object):
 
     @elasticapm.capture_span(span_type='filestore')
     def delete(self, path, location='all'):
-        with elasticapm.capture_span(name='delete', span_type='filestore', tags={'path': path}):
+        with elasticapm.capture_span(name='delete', span_type='filestore', labels={'path': path}):
             for t in self.slice(location):
                 try:
                     t.delete(path)
