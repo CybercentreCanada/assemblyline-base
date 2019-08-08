@@ -104,6 +104,21 @@ def es_connection(request):
     return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
+@pytest.fixture(scope='module')
+def collection(request):
+    """Get a connection to either datastore, in a way that can be controlled by pytest.parametrize"""
+    try:
+        if request.param == 'elastic':
+            from assemblyline.datastore.stores.es_store import ESStore
+            return setup_store(ESStore(['127.0.0.1']), request)
+        elif request.param == 'solr':
+            from assemblyline.datastore.stores.solr_store import SolrStore
+            return setup_store(SolrStore(['127.0.0.1']), request)
+    except SetupException:
+        return pytest.skip()
+    raise ValueError("No other datastore names")
+
+
 def _test_get(c: Collection):
     # Test GET
     assert test_map.get('test1') == c.get('test1')
@@ -374,3 +389,8 @@ TEST_CONSISTENCY_FUNCS = [
 def test_consistency(solr_connection: Collection, es_connection: Collection, function):
     if solr_connection and es_connection:
         function(solr_connection, es_connection)
+
+
+@pytest.mark.parametrize('collection', ['elastic', 'solr'], indirect=True)
+def test_multiget_empty(collection: Collection):
+    assert collection.multiget([]) == {}

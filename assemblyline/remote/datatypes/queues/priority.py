@@ -132,7 +132,7 @@ class UniquePriorityQueue(PriorityQueue):
         """Remove a value from the priority  queue."""
         retry_call(self.c.zrem, self.name, json.dumps(data))
 
-    def push(self, priority: int, data) -> int:
+    def push(self, priority: int, data, vip=None) -> int:
         """Add or update elements in the priority queue.
 
         Existing elements will have their priority updated.

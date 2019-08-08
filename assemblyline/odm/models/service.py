@@ -11,7 +11,7 @@ class EnvironmentVariable(odm.Model):
 @odm.model(index=False, store=False)
 class DockerConfig(odm.Model):
     image = odm.Keyword()                                 # Complete name of the Docker image with tag
-    command = odm.Optional(odm.Keyword())
+    command = odm.Optional(odm.List(odm.Keyword()))
     environment = odm.List(odm.Compound(EnvironmentVariable), default=[])
     network = odm.List(odm.Keyword(), default=[])         # Network access rules
 

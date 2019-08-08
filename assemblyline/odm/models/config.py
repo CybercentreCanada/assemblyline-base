@@ -420,7 +420,7 @@ DEFAULT_SCALER = {
             'ram': 0,
             'container_config': {
                 'image': 'sgaroncse/assemblyline_dev:4.0.5',
-                'command': 'python3 /opt/alv4/alv4_core/al_core/dispatching/run_files.py',
+                'command': ['python3', '/opt/alv4/alv4_core/al_core/dispatching/run_files.py'],
                 'network': ['backend'],
             },
             'queue': FILE_QUEUE
@@ -430,7 +430,7 @@ DEFAULT_SCALER = {
             'ram': 0,
             'container_config': {
                 'image': 'sgaroncse/assemblyline_dev:4.0.5',
-                'command': 'python3 /opt/alv4/alv4_core/al_core/dispatching/run_submissions.py',
+                'command': ['python3', '/opt/alv4/alv4_core/al_core/dispatching/run_submissions.py'],
                 'network': ['backend'],
             },
             'queue': SUBMISSION_QUEUE
@@ -573,7 +573,6 @@ SERVICE_CATEGORIES = [
     'Filtering',
     'Networking',
     'Static Analysis',
-    'System'
 ]
 SERVICE_STAGES = [
     'SETUP',
@@ -597,8 +596,6 @@ class Services(odm.Model):
     min_service_workers: int = odm.Integer()
     # Different stages of execution in order
     stages: List[str] = odm.List(odm.Keyword())
-    # Category for mandatory services (e.g. Sync)
-    system_category: str = odm.Text()
 
 
 DEFAULT_SERVICES = {
@@ -606,7 +603,6 @@ DEFAULT_SERVICES = {
     "default_timeout": 60,
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
-    "system_category": 'System'
 }
 
 
