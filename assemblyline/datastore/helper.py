@@ -29,7 +29,6 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
-from assemblyline.odm.models.verdict import Verdict
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
@@ -59,7 +58,6 @@ class AssemblylineDatastore(object):
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_settings', UserSettings)
-        self.ds.register('verdict', Verdict)
         self.ds.register('vm', VM)
         self.ds.register('workflow', Workflow)
 
@@ -148,10 +146,6 @@ class AssemblylineDatastore(object):
     @property
     def vm(self) -> Collection:
         return self.ds.vm
-
-    @property
-    def verdict(self) -> Collection:
-        return self.ds.verdict
 
     @property
     def workflow(self) -> Collection:

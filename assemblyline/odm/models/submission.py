@@ -95,6 +95,12 @@ class Times(odm.Model):
     submitted = odm.Date(default="NOW")              # Date at which the submission started scanning
 
 
+@odm.model(index=True, store=False)
+class Verdict(odm.Model):
+    malicious = odm.List(odm.Keyword(), default=[])      # List of user that thinks this submission is malicious
+    non_malicious = odm.List(odm.Keyword(), default=[])  # List of user that thinks this submission is non-malicious
+
+
 @odm.model(index=True, store=True)
 class Submission(odm.Model):
     classification = odm.Classification()                      # Classification of the submission
@@ -110,6 +116,7 @@ class Submission(odm.Model):
     sid = odm.UUID(copyto="__text__")                          # Submission ID
     state = odm.Enum(values=SUBMISSION_STATES)                 # Status of the submission
     times = odm.Compound(Times, default={})                    # Timing bloc
+    verdict = odm.Compound(Verdict, default={})                # Verdict timing
 
     def is_submit(self):
         return self.state == 'submitted'

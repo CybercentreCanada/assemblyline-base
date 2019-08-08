@@ -30,6 +30,12 @@ class File(odm.Model):    # File block
     type = odm.Keyword(copyto="__text__")               # Type of file as identified by Assemblyline
 
 
+@odm.model(index=True, store=False)
+class Verdict(odm.Model):
+    malicious = odm.List(odm.Keyword(), default=[])      # List of user that thinks this submission is malicious
+    non_malicious = odm.List(odm.Keyword(), default=[])  # List of user that thinks this submission is non-malicious
+
+
 @odm.model(index=True, store=True)
 class Alert(odm.Model):
     alert_id = odm.Keyword(copyto="__text__")                           # ID of the alert
@@ -47,3 +53,4 @@ class Alert(odm.Model):
     status = odm.Optional(odm.Enum(values=STATUSES))                    # Status applied to the alert
     ts = odm.Date()                                                     # Timestamp at which the file was submitted
     type = odm.Keyword()                                                # Type of alert
+    verdict = odm.Compound(Verdict, default={})                         # Verdict timing
