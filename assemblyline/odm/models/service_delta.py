@@ -10,7 +10,7 @@ class EnvironmentVariableDelta(odm.Model):
 @odm.model(index=False, store=False)
 class DockerConfigDelta(odm.Model):
     image = odm.Optional(odm.Keyword())
-    command = odm.Optional(odm.Keyword())
+    command = odm.Optional(odm.List(odm.Keyword()))
     environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariableDelta)))
     network = odm.Optional(odm.List(odm.Keyword()))
 
