@@ -325,7 +325,7 @@ class ESCollection(Collection):
                 op_sources.append(f"ctx._source.{doc_key}.add(params.value{val_id})")
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                op_sources.append(f"ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))")
+                op_sources.append(f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) {{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}")
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
                 op_sources.append(f"ctx._source.{doc_key} += params.value{val_id}")
@@ -336,9 +336,11 @@ class ESCollection(Collection):
 
             val_id += 1
 
+        joined_sources = """;\n""".join(op_sources)
+
         script = {
             "lang": "painless",
-            "source": """;\n""".join(op_sources),
+            "source": joined_sources.replace("};\n", "}\n"),
             "params": op_params
         }
         return script
