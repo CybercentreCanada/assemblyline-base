@@ -30,6 +30,7 @@ setup(
     keywords="assemblyline malware gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test/*']),
     install_requires=[
+        'arrow==0.14.4',
         'urllib3<1.25',
         'python-baseconv',
         'boto3',
