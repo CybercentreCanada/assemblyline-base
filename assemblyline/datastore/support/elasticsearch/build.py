@@ -111,7 +111,20 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 dynamic.extend(build_templates(f'{name}.*', field.child_type))
 
         elif isinstance(field, Any):
-            continue
+            field_template = {
+                "path_match": name,
+                "mapping": {
+                    "type": "keyword",
+                    "index": False,
+                    "store": False,
+                    "ignore_malformed": True,
+                }
+            }
+
+            if field.index or field.store:
+                raise ValueError(f"Any may not be indexed or stored: {name}")
+            dynamic.append({f"{name}_tpl": field_template})
+
         else:
             raise NotImplementedError(f"Unknown type for elasticsearch schema: {field.__class__}")
 
@@ -140,7 +153,8 @@ def build_templates(name, field, nested_template=False) -> list:
                 "mapping": {
                     "type": "nested",
                     "index": field.index,
-                    "store": field.store
+                    "store": field.store,
+                    "ignore_malformed": not (field.index or field.store),
                 }
             }
             if field.copyto:
@@ -163,6 +177,21 @@ def build_templates(name, field, nested_template=False) -> list:
                 field_template['mapping']['copy_to'] = field.copyto[0]
 
             return [{f"{name}_tpl": field_template}]
+
+    elif isinstance(field, Any):
+        field_template = {
+            "path_match": name,
+            "mapping": {
+                "type": "keyword",
+                "index": False,
+                "store": False,
+                "ignore_malformed": True,
+            }
+        }
+
+        if field.index or field.store:
+            raise ValueError(f"Mapping to Any may not be indexed or stored: {name}")
+        return [{f"{name}_tpl": field_template}]
 
     elif isinstance(field, (Mapping, List)):
         temp_name = name
