@@ -10,7 +10,7 @@ services:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/alv4/
-    command: python3 alv4_service_api/service/app.py
+    command: python3 alv4_service_server/al_service_server/app.py
     networks:
       - default
       - svc

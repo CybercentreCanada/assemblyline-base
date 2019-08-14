@@ -1,9 +1,9 @@
 FROM python:3.6-stretch
-# NOTE: to build this container you must be in a directory where alv4, alv4_ui, alv4_core, alv4_service_api and
+# NOTE: to build this container you must be in a directory where alv4, alv4_ui, alv4_core, alv4_service_server and
 # alv4_service_client code is checked out
 
 # Setup environment varibles
-ENV PYTHONPATH /opt/alv4/alv4:/opt/alv4/alv4_core:/opt/alv4/alv4_service_api:/opt/alv4/alv4_service_client:/opt/alv4/alv4_ui
+ENV PYTHONPATH /opt/alv4/alv4:/opt/alv4/alv4_core:/opt/alv4/alv4_service_server:/opt/alv4/alv4_service_client:/opt/alv4/alv4_ui
 
 # SSDEEP pkg requirments
 RUN apt-get update
@@ -20,7 +20,7 @@ RUN rm -rf /tmp/alv4_core
 # Clear out the packages we installed only for their dependencies
 RUN pip3 uninstall -y assemblyline assemblyline-core assemblyline-ui
 
-COPY alv4_service_api/service/requirements.txt /tmp
+COPY alv4_service_server/al_service_server/requirements.txt /tmp
 RUN sed -i.old -e "s/assemblyline-core//g" -e "s/assemblyline//g" /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
 
