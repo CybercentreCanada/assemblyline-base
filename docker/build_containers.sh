@@ -10,4 +10,4 @@
 
 # Build default dev containers
 (cd ../.. && docker build -f alv4/docker/al_base/Dockerfile -t sgaroncse/assemblyline_base:latest -t sgaroncse/assemblyline_base:4.0.0 .)
-(cd ../.. && docker build -f alv4/docker/al_dev/Dockerfile -t sgaroncse/assemblyline_dev:latest -t sgaroncse/assemblyline_dev:4.0.5 .)
+(cd ../.. && docker build -f alv4/docker/al_dev/Dockerfile -t cccs/assemblyline_dev:latest -t cccs/assemblyline_dev:4.0.7 .)
