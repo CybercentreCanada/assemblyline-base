@@ -14,8 +14,7 @@ class UserSettings(odm.Model):                                      # User's def
     deep_scan = odm.Boolean(default=False)                            # Should a deep scan be performed
     description = odm.Keyword(default="")                             # Default description
     download_encoding = odm.Enum(values=ENCODINGS, default="cart")    # Default download encoding when downloading files
-    expand_min_score = odm.Integer(default=50)                        # Auto-expand section when score bigger then this
-    hide_raw_results = odm.Boolean(default=True)                      # Hide raw JSON sections
+    expand_min_score = odm.Integer(default=500)                       # Auto-expand section when score bigger then this
     ignore_cache = odm.Boolean(default=False)                         # Ignore service caching
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False)  # Ignore dynamic recursion prevention
     ignore_filtering = odm.Boolean(default=False)                     # Ignore filtering services
