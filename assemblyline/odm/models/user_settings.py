@@ -5,7 +5,7 @@ from assemblyline.odm.models.submission import ServiceSelection, DEFAULT_SRV_SEL
 Classification = forge.get_classification()
 
 ENCODINGS = {"cart", "raw"}
-
+VIEWS = {"report", "details"}
 
 @odm.model(index=False, store=False)
 class UserSettings(odm.Model):                                      # User's default settings
@@ -22,4 +22,5 @@ class UserSettings(odm.Model):                                      # User's def
     profile = odm.Boolean(default=False)                              # Should the submission do extra profiling
     service_spec = odm.Mapping(odm.Keyword(), default={})             # Default service specific settings
     services = odm.Compound(ServiceSelection, default={})             # Default service selection
+    submission_view = odm.Enum(values=VIEWS, default="report")        # Default view for completed submissions
     ttl = odm.Integer(default=15)                                     # Default submission Time to Live (days)
