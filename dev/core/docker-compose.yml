@@ -22,7 +22,7 @@ services:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/alv4/alv4/assemblyline/odm/random_data/
-    command: python3 create_test_data.py
+    command: python3 create_test_data.py nosvc
 
   # UI
   al_ui:
