@@ -2,6 +2,7 @@ import concurrent.futures
 import logging
 import re
 import warnings
+from typing import Dict
 
 from datemath import dm
 from datemath.helpers import DateMathException
@@ -493,7 +494,7 @@ class Collection(object):
 
         missing = set(model.keys()) - set(fields.keys())
         if missing:
-            raise RuntimeError(f"Couldn't load collection, fields missing: {missing}")
+            self._add_fields({key: model[key] for key in missing})
 
         matching = set(fields.keys()) & set(model.keys())
         for field_name in matching:
@@ -508,6 +509,9 @@ class Collection(object):
                 raise RuntimeError(f"Field {field_name} didn't have the expected store "
                                    f"type. [{fields[field_name]['type']} != "
                                    f"{model[field_name].__class__.__name__.lower()}]")
+
+    def _add_fields(self, missing_fields: Dict[str, _Field]):
+        raise RuntimeError(f"Couldn't load collection, fields missing: {missing_fields.keys()}")
 
     def wipe(self):
         """

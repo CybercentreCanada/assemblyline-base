@@ -8,6 +8,7 @@ SUBMISSION_STATES = ['failed', 'submitted', 'completed']
 DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
 DEFAULT_RESUBMIT = ["Dynamic Analysis"]
 
+
 @odm.model(index=True, store=False)
 class File(odm.Model):
     name = odm.Keyword(copyto="__text__")    # Name of the file

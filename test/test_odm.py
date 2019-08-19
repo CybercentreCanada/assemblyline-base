@@ -542,7 +542,6 @@ def test_named_item_access():
     assert test['a'] == {'a': -1, 'b': 100}
 
 
-
 def test_uuid():
     @model()
     class Test(Model):
@@ -560,3 +559,32 @@ def test_uuid():
     assert b.uuid == '123abc'
     assert c.uuid == 'abc123'
 
+
+def test_name_injection():
+    @model()
+    class A(Model):
+        fast = Integer(default=1)
+        slow = Keyword(default='abc')
+        flags = List(Keyword(), default=['cat-snack'])
+
+    @model()
+    class B(Model):
+        speed = Compound(A, default={})
+
+    a = A()
+    fields = a.fields()
+    assert fields['fast'].name == 'fast'
+    assert fields['slow'].name == 'slow'
+    assert fields['flags'].name == 'flags'
+
+    fields = a.flat_fields()
+    assert fields['fast'].name == 'fast'
+    assert fields['slow'].name == 'slow'
+
+    b = B()
+    fields = b.fields()
+    assert fields['speed'].name == 'speed'
+
+    fields = b.flat_fields()
+    assert fields['speed.fast'].name == 'fast'
+    assert fields['speed.slow'].name == 'slow'

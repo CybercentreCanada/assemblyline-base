@@ -285,6 +285,7 @@ DEFAULT_REDIS_P = {
 class ESMetrics(odm.Model):
     hosts: str = odm.Optional(odm.List(odm.Keyword()))
 
+
 DEFAULT_ES_METRICS = {
     'hosts': None
 }

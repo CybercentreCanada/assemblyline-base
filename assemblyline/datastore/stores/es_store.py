@@ -1,3 +1,4 @@
+from typing import Dict
 
 import elasticsearch
 import elasticsearch.helpers
@@ -636,10 +637,11 @@ class ESCollection(Collection):
         iterator = RetryableIterator(
             self,
             elasticsearch.helpers.scan(
-            self.datastore.client,
-            query=query_body,
-            index=self.name,
-            preserve_order=True)
+                self.datastore.client,
+                query=query_body,
+                index=self.name,
+                preserve_order=True
+            )
         )
 
         for value in iterator:
@@ -879,6 +881,34 @@ class ESCollection(Collection):
                 log.warning(f"Tried to create a collection that already exists: {self.name.upper()}")
 
         self._check_fields()
+
+    def _add_fields(self, missing_fields: Dict):
+        no_fix = []
+        properties = {}
+        for name, field in missing_fields.items():
+            # Figure out the path of the field in the document, if the name is set in the field, it
+            # is going to be duplicated in the path from missing_fields, so drop it
+            prefix = name.split('.')
+            if field.name:
+                prefix = prefix[:-1]
+
+            # Build the fields and templates for this new mapping
+            sub_properties, sub_templates = build_mapping([field], prefix=prefix, allow_refuse_implicit=False)
+            properties.update(sub_properties)
+            if sub_templates:
+                no_fix.append(name)
+
+        # If we have collected any fields that we can't just blindly add, as they might conflict
+        # with existing things, (we might have the refuse_all_implicit_mappings rule in place)
+        # simply raise an exception
+        if no_fix:
+            raise ValueError(f"Can't update database mapping for {self.name}, "
+                             f"couldn't safely amend mapping for {no_fix}")
+
+        # If we got this far, the missing fields have been described in properties, upload them to the
+        # server, and we should be able to move on.
+        mappings = {"properties": properties}
+        self.with_retries(self.datastore.client.indices.put_mapping, index=self.name, body=mappings)
 
     def wipe(self):
         log.debug("Wipe operation started for collection: %s" % self.name.upper())
