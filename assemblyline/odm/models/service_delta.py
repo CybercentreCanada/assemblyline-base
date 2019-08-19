@@ -53,6 +53,7 @@ class ServiceDelta(odm.Model):
     config = odm.Optional(odm.Mapping(odm.Any()))
     cpu_cores = odm.Optional(odm.Float())
     description = odm.Optional(odm.Text(), index=True, store=False, copyto="__text__")
+    default_result_classification = odm.Optional(odm.Classification())
     enabled = odm.Optional(odm.Boolean(), index=True, store=False)
     install_by_default = odm.Optional(odm.Boolean())
     is_external = odm.Optional(odm.Boolean())
