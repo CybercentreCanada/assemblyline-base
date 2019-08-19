@@ -1,11 +1,9 @@
 from typing import Dict, List
 
 from assemblyline import odm
-
 # TODO: Apply proper index and store values
 from assemblyline.common.constants import FILE_QUEUE, SUBMISSION_QUEUE
 from assemblyline.odm.models.service import EnvironmentVariable, DockerConfig
-
 from assemblyline.odm.models.user import USER_TYPES
 
 
@@ -162,7 +160,7 @@ DEFAULT_ALERTER = {
         "file.sha1",
         "file.sha256"
     ],
-    "process_alert_message": "al_core.alerter.processing.process_alert_message",
+    "process_alert_message": "assemblyline_core.alerter.processing.process_alert_message",
 
 }
 
@@ -420,7 +418,7 @@ DEFAULT_SCALER = {
             'ram': 0,
             'container_config': {
                 'image': 'sgaroncse/assemblyline_dev:4.0.5',
-                'command': ['python3', '/opt/alv4/alv4_core/al_core/dispatching/run_files.py'],
+                'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py'],
                 'network': ['backend'],
             },
             'queue': FILE_QUEUE
@@ -430,7 +428,7 @@ DEFAULT_SCALER = {
             'ram': 0,
             'container_config': {
                 'image': 'sgaroncse/assemblyline_dev:4.0.5',
-                'command': ['python3', '/opt/alv4/alv4_core/al_core/dispatching/run_submissions.py'],
+                'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py'],
                 'network': ['backend'],
             },
             'queue': SUBMISSION_QUEUE
