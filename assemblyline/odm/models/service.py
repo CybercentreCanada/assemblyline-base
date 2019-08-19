@@ -1,5 +1,8 @@
 from assemblyline import odm
+from assemblyline.common import forge
 from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVICE_REJECTS
+
+Classification = forge.get_classification()
 
 
 @odm.model(index=False, store=False)
@@ -55,6 +58,7 @@ class Service(odm.Model):
     config = odm.Mapping(odm.Any(), default={})
     cpu_cores = odm.Float(default=1.0)
     description = odm.Text(store=True, default="NA", copyto="__text__")
+    default_result_classification = odm.Classification(default=Classification.UNRESTRICTED)
     enabled = odm.Boolean(store=True, default=False)
     install_by_default = odm.Boolean(default=False)
     is_external = odm.Boolean(default=False)
