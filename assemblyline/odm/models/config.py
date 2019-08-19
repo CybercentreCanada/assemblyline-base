@@ -126,11 +126,11 @@ DEFAULT_AUTH = {
     "allow_2fa": True,
     "allow_apikeys": True,
     "allow_u2f": True,
-    "apikey_handler": 'al_ui.site_specific.validate_apikey',
-    "dn_handler": 'al_ui.site_specific.validate_dn',
-    "dn_parser": 'al_ui.site_specific.basic_dn_parser',
+    "apikey_handler": 'assemblyline_ui.site_specific.validate_apikey',
+    "dn_handler": 'assemblyline_ui.site_specific.validate_dn',
+    "dn_parser": 'assemblyline_ui.site_specific.basic_dn_parser',
     "internal": DEFAULT_INTERNAL,
-    "userpass_handler": 'al_ui.site_specific.validate_userpass'
+    "userpass_handler": 'assemblyline_ui.site_specific.validate_userpass'
 }
 
 
@@ -714,7 +714,7 @@ DEFAULT_UI = {
     "allow_raw_downloads": True,
     "allow_url_submissions": True,
     "audit": True,
-    "context": 'al_ui.site_specific.context',
+    "context": 'assemblyline_ui.site_specific.context',
     "debug": False,
     "download_encoding": "cart",
     "email": 'admin@localhost',
