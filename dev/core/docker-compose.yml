@@ -52,7 +52,7 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/alerter/run_alerter.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/alerter/run_alerter.py
 
   # Expiry
   al_expiry:
@@ -60,7 +60,7 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/expiry/run_expiry.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/expiry/run_expiry.py
 
   # Metrics aggregator
   al_metrics:
@@ -68,7 +68,7 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/metrics/run_metrics_aggregator.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/metrics/run_metrics_aggregator.py
 
   # Hearbeat manager
   al_heartbeat:
@@ -76,7 +76,7 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/metrics/run_heartbeat_manager.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/metrics/run_heartbeat_manager.py
 
   # Workflow
   al_workflow:
@@ -84,7 +84,7 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/workflow/run_workflow.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/workflow/run_workflow.py
 
   # Watcher
   al_watcher:
@@ -92,7 +92,7 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/watcher/run_watcher.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/watcher/run_watcher.py
 
 #  # Dispatcher processes
 #  al_dispatcher_files:
@@ -100,14 +100,14 @@ services:
 #    volumes:
 #      - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
 #      - /opt/alv4/:/opt/alv4/
-#    command: python3 /opt/alv4/alv4_core/al_core/dispatching/run_files.py
+#    command: python3 /opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py
 #
 #  al_dispatcher_submissions:
 #    image: cccs/assemblyline_dev:4.0.7
 #    volumes:
 #      - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
 #      - /opt/alv4/:/opt/alv4/
-#    command: python3 /opt/alv4/alv4_core/al_core/dispatching/run_submissions.py
+#    command: python3 /opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py
 
   al_scaler:
     image: cccs/assemblyline_dev:4.0.7
@@ -115,7 +115,7 @@ services:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
       - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
-    command: python3 /opt/alv4/alv4_core/al_core/scaler/run_scaler.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/scaler/run_scaler.py
 
   # Ingester Processes
   al_ingester_ingest:
@@ -123,21 +123,21 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/ingester/run_ingest.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/ingester/run_ingest.py
 
   al_ingester_internal:
     image: cccs/assemblyline_dev:4.0.7
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/ingester/run_internal.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/ingester/run_internal.py
 
   al_ingester_submit:
     image: cccs/assemblyline_dev:4.0.7
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    command: python3 /opt/alv4/alv4_core/al_core/ingester/run_submit.py
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/ingester/run_submit.py
 
 networks:
   default:
