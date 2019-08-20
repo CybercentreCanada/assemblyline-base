@@ -62,15 +62,15 @@ def local_to_epoch(ts, hp=False):
         return epoch + (utc_offset_from_local(epoch) * 3600)
 
 
-def local_to_iso(ts):
+def local_to_iso(ts) -> str:
     return epoch_to_iso(local_to_epoch(ts))
 
 
-def now(offset=0.0):
+def now(offset=0.0) -> float:
     return time() + offset
 
 
-def now_as_iso(offset=0.0):
+def now_as_iso(offset=0.0) -> str:
     return epoch_to_iso(now(offset))
 
 

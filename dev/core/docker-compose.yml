@@ -32,8 +32,7 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    working_dir: /opt/alv4/alv4_ui/al_ui/
-    command: python3 app.py
+    command: python3 -m assemblyline_ui.app
 
   # SocketIO Server
   al_socketio:
@@ -43,7 +42,7 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
-    working_dir: /opt/alv4/alv4_ui/al_ui/
+    working_dir: /opt/alv4/alv4_ui/assemblyline_ui/
     command: python3 socketsrv.py
 
   # Alerter
