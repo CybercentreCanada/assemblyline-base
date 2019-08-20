@@ -10,13 +10,13 @@ independent data models in python. This gives us:
 
 """
 
-import arrow
 import copy
 import json
 import re
 import typing
-
 from datetime import datetime
+
+import arrow
 from dateutil.tz import tzutc
 
 from assemblyline.common import forge
@@ -442,6 +442,26 @@ class Classification(Keyword):
         if isinstance(value, ClassificationObject):
             return ClassificationObject(self.engine, value.value, is_uc=self.is_uc)
         return ClassificationObject(self.engine, value, is_uc=self.is_uc)
+
+
+class ClassificationString(Keyword):
+    """A field storing the classification as a string only."""
+
+    def __init__(self, *args, yml_config=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.engine = forge.get_classification(yml_config=yml_config)
+
+    def check(self, value, **kwargs):
+        if not value:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError("Empty classification is not allowed without defaults")
+
+        if not self.engine.is_valid(value):
+            raise ValueError(f"Invalid classification: {value}")
+
+        return str(value)
 
 
 class TypedList(list):

@@ -4,8 +4,8 @@ import time
 
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
-    Classification, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, URIPath, \
-    URI, SSDeepHash
+    Classification, ClassificationString, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, \
+    URIPath, URI, SSDeepHash
 from assemblyline.odm.models.tagging import Tagging
 
 config = forge.get_config()
@@ -229,6 +229,9 @@ def random_data_for_field(field, name, minimal=False):
             possible_classifications.extend([field.engine.UNRESTRICTED, field.engine.RESTRICTED])
         else:
             possible_classifications = [field.engine.UNRESTRICTED]
+        return random.choice(possible_classifications)
+    elif isinstance(field, ClassificationString):
+        possible_classifications = [field.engine.UNRESTRICTED]
         return random.choice(possible_classifications)
     elif isinstance(field, Enum):
         return random.choice([x for x in field.values if x is not None])
