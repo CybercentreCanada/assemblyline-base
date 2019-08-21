@@ -1,14 +1,15 @@
 from typing import Optional as Opt
 from datetime import datetime
 from assemblyline import odm
+from assemblyline.odm.messages.task import Task
 
-STATUSES = {'INITIALIZING', 'WAITING', 'PROCESSING', 'RESULT_FOUND', 'ERROR_FOUND'}
+STATUSES = {'INITIALIZING', 'WAITING', 'PROCESSING', 'IDLE'}
 
 
 @odm.model(index=True, store=False)
 class Current(odm.Model):
     status: str = odm.Enum(values=STATUSES, default='INITIALIZING')  # Status of the client
-    task_sid: Opt[str] = odm.Optional(odm.UUID())                    # SID of the task currently assigned to the client
+    task: Opt[Task] = odm.Optional(odm.Compound(Task))
     task_timeout: Opt[datetime] = odm.Optional(odm.Date())           # Time the task was assigned to the client
 
 

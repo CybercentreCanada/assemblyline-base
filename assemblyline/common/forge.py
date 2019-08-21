@@ -12,6 +12,7 @@ from assemblyline.common.importing import load_module_by_path
 
 config_singletons = {}
 
+
 def get_classification(yml_config=None):
     from assemblyline.common.classification import Classification, InvalidDefinition
 
