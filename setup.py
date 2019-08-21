@@ -38,7 +38,7 @@ setup(
         'pyroute2',
         'redis',
         'requests',
-        'elasticsearch>=7.0.0,<8.0.0',
+        'elasticsearch>=7.0.0,<8.0.0,!=7.0.3',  # Temporarily skip .3 the elasticsearch package until we work out that error
         'python-datemath',
         'packaging',
         'tabulate',
