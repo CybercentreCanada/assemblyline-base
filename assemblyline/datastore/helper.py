@@ -20,7 +20,6 @@ from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
-from assemblyline.odm.models.service_client import ServiceClient
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
@@ -48,7 +47,6 @@ class AssemblylineDatastore(object):
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
         self.ds.register('service', Service)
-        self.ds.register('service_client', ServiceClient)
         self.ds.register('service_delta', ServiceDelta)
         self.ds.register('signature', Signature)
         self.ds.register('submission', Submission)
