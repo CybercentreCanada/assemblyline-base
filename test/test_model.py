@@ -11,7 +11,6 @@ from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
-from assemblyline.odm.models.service_client import ServiceClient
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
 from assemblyline.odm.models.submission import Submission
@@ -99,13 +98,6 @@ def test_service_model():
         random_model_obj(Service).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'Service' object and validate it.")
-
-
-def test_service_client_model():
-    try:
-        random_model_obj(ServiceClient).as_primitives()
-    except (ValueError, TypeError, KeyError):
-        pytest.fail("Could not generate 'ServiceClient' object and validate it.")
 
 
 def test_service_delta_model():
