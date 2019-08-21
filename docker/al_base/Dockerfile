@@ -1,4 +1,4 @@
-FROM python:3.6-stretch
+FROM python:3.7-stretch
 
 # Setup environment varibles
 ENV PYTHONPATH /opt/alv4/

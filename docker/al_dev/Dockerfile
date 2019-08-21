@@ -1,4 +1,4 @@
-FROM python:3.6-stretch
+FROM python:3.7-stretch
 # NOTE: to build this container you must be in a directory where alv4, alv4_ui, alv4_core, alv4_service_server and
 # alv4_service_client code is checked out
 
