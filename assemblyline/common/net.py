@@ -1,16 +1,16 @@
+import socket
+import subprocess
+import sys
+import uuid
+from random import randint
+
 import netifaces as nif
 import pyroute2
-import socket
-import sys
-import subprocess
-import uuid
-
-from random import randint
 
 from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN
 
 
-def is_valid_port(value):
+def is_valid_port(value: int) -> bool:
     try:
         if 1 <= int(value) <= 65535:
             return True
@@ -20,7 +20,7 @@ def is_valid_port(value):
     return False
 
 
-def is_valid_domain(domain):
+def is_valid_domain(domain: str) -> bool:
     if "@" in domain:
         return False
 
@@ -31,7 +31,7 @@ def is_valid_domain(domain):
     return False
 
 
-def is_valid_ip(ip):
+def is_valid_ip(ip: str) -> bool:
     parts = ip.split(".")
     if len(parts) == 4:
         for p in parts:
@@ -52,7 +52,7 @@ def is_valid_ip(ip):
     return False
 
 
-def is_valid_email(email):
+def is_valid_email(email: str) -> bool:
     parts = email.split("@")
     if len(parts) == 2:
         if is_valid_domain(parts[1]):
@@ -61,15 +61,15 @@ def is_valid_email(email):
     return False
 
 
-def get_hostname():
+def get_hostname() -> str:
     return socket.gethostname()
 
 
-def get_mac_address():
+def get_mac_address() -> str:
     return "".join(["{0:02x}".format((uuid.getnode() >> i) & 0xff) for i in range(0, 8 * 6, 8)][::-1]).upper()
 
 
-def get_mac_for_ip(ip):
+def get_mac_for_ip(ip: str) -> str:
     for i in nif.interfaces():
         addrs = nif.ifaddresses(i)
         try:
@@ -85,13 +85,13 @@ def get_mac_for_ip(ip):
     return get_mac_address()
 
 
-def get_random_mac(seperator=':'):
+def get_random_mac(seperator: str = ':') -> str:
     oui = [0x52, 0x54, 0x00]
     mac = oui + [randint(0, 0xff), randint(0, 0xff), randint(0, 0xff)]
     return seperator.join("%02x" % x for x in mac).upper()
 
 
-def get_route_to(dst):
+def get_route_to(dst: str) -> str:
     ret_val = None
     try:
         with pyroute2.IPRoute() as ipr:
@@ -110,7 +110,7 @@ def get_route_to(dst):
         return ret_val
 
 
-def get_hostip():
+def get_hostip() -> str:
     ip = None
     try:
         from assemblyline.common import forge
@@ -122,7 +122,7 @@ def get_hostip():
     return ip or get_default_gateway_ip()
 
 
-def get_default_gateway_ip():
+def get_default_gateway_ip() -> str:
     # fetch the nic serving up the default gateway
     if_default = nif.gateways().get('default')
     (ip, nic) = if_default.get(nif.AF_INET)

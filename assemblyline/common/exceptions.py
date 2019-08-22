@@ -74,5 +74,5 @@ class ChainAll(object):
         return cls
 
 
-def get_stacktrace_info(ex):
+def get_stacktrace_info(ex: Exception) -> str:
     return ''.join(format_tb(exc_info()[2]) + [': '.join((ex.__class__.__name__, str(ex)))])

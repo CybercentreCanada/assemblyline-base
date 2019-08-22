@@ -2,11 +2,12 @@ import array
 import io
 
 from math import ceil, log
+from typing import Tuple, List, BinaryIO, AnyStr
 
 frequency = None
 
 
-def calculate_entropy(contents):
+def calculate_entropy(contents: AnyStr) -> float:
     """ this function calculates the entropy of the file
         It is given by the formula:
             E = -SUM[v in 0..255](p(v) * ln(p(v)))
@@ -34,7 +35,7 @@ def calculate_entropy(contents):
     return entropy
 
 
-def calculate_partition_entropy(fin, num_partitions=50):
+def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tuple[float, List[float]]:
     """Calculate the entropy of a file and its partitions."""
 
     # Split input into num_parititions and calculate
@@ -65,7 +66,7 @@ class BufferedCalculator(object):
         self.c = {}
         self.length = 0
 
-    def entropy(self):
+    def entropy(self) -> float:
         if self.length == 0:
             return 0.0
 
@@ -84,7 +85,7 @@ class BufferedCalculator(object):
 
         return entropy
 
-    def update(self, data, length=0):
+    def update(self, data: AnyStr, length: int = 0):
         if not length:
             length = len(data)
 

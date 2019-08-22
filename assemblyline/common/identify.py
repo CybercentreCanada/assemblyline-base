@@ -1,25 +1,23 @@
-#!/usr/bin/env python
-
-import magic
-import ssdeep
-
+import os
 import platform
 import re
-import subprocess
 import struct
+import subprocess
 import sys
-import os
 import threading
 import uuid
 import zipfile
-
 from binascii import hexlify
-from cart import get_metadata_only
 from collections import defaultdict
+from typing import Tuple, Union, Dict
 
-from assemblyline.common.str_utils import dotdump, safe_str
+import magic
+import ssdeep
+from cart import get_metadata_only
+
 from assemblyline.common.digests import get_digests_for_file
 from assemblyline.common.forge import get_constants
+from assemblyline.common.str_utils import dotdump, safe_str
 
 constants = get_constants()
 
@@ -372,7 +370,7 @@ if platform.system() != 'Windows':
 
 
 # Translate the match object into a sub-type label.
-def subtype(label):
+def subtype(label: str) -> str:
     for entry in sl_patterns:
         if entry[1].search(label):  # pylint: disable=E1101
             return entry[0]
@@ -380,7 +378,7 @@ def subtype(label):
     return 'unknown'
 
 
-def ident(buf, length):
+def ident(buf, length: int) -> Dict:
     data = {'ascii': '', 'hex': '', 'magic': '', 'mime': '', 'type': 'unknown'}
 
     if length <= 0:
@@ -500,13 +498,13 @@ def ident(buf, length):
     return data
 
 
-def _confidence(score):
+def _confidence(score: Union[int, float]) -> str:
     conf = float(score) / float(STRONG_SCORE * 5)
     conf = min(1.0, conf) * 100
     return str(int(conf)) + r'%'
 
 
-def _differentiate(lang, scores_map):
+def _differentiate(lang: str, scores_map: Dict) -> str:
     if lang == 'code/javascript':
         jscript_score = scores_map['code/jscript']
         pdfjs_score = scores_map['code/pdfjs']
@@ -519,7 +517,7 @@ def _differentiate(lang, scores_map):
 
 
 # Pass a filepath and this will return the guessed language in the AL tag format.
-def guess_language(path):
+def guess_language(path: str) -> Tuple[str, Union[str, int]]:
     file_length = os.path.getsize(path)
     with open(path, 'rb') as fh:
         if file_length > 131070:
@@ -563,7 +561,7 @@ def guess_language(path):
 
 
 # noinspection PyBroadException
-def zip_ident(path, fallback=None):
+def zip_ident(path: str, fallback: str = None) -> str:
     file_list = []
 
     try:
@@ -643,7 +641,7 @@ def zip_ident(path, fallback=None):
 
 
 # noinspection PyBroadException
-def cart_ident(path):
+def cart_ident(path: str) -> str:
     try:
         metadata = get_metadata_only(path)
     except Exception:
@@ -651,7 +649,7 @@ def cart_ident(path):
     return metadata.get('al', {}).get('type', 'archive/cart')
 
 
-def dos_ident(path):
+def dos_ident(path: str) -> str:
     # noinspection PyBroadException
     try:
         with open(path, "rb") as fh:
@@ -683,7 +681,7 @@ def dos_ident(path):
     return "executable/windows/dos"
 
 
-def fileinfo(path):
+def fileinfo(path: str) -> Dict:
     path = safe_str(path)
 
     data = get_digests_for_file(path, on_first_block=ident)

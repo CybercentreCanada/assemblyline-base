@@ -1,7 +1,9 @@
+from typing import List, Dict
+
 from assemblyline.common.dict_utils import flatten
 
 
-def tag_list_to_dict(tag_list):
+def tag_list_to_dict(tag_list: List) -> Dict:
     tag_dict = {}
     for t in tag_list:
         if t['type'] not in tag_dict:
@@ -11,7 +13,7 @@ def tag_list_to_dict(tag_list):
     return tag_dict
 
 
-def tag_dict_to_list(tag_dict):
+def tag_dict_to_list(tag_dict: Dict) -> List:
     return [
         {'type': k,
          'value': t,

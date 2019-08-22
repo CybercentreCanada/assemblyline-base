@@ -1,8 +1,8 @@
 """Sequence manipulation methods used in parsing raw datastore output."""
-import typing
+from typing import Sequence, Generator, List
 
 
-def chunk(l: typing.Sequence, n: int) -> typing.Generator:
+def chunk(l: Sequence, n: int) -> Generator:
     """ Yield n-sized chunks from list.
 
     >>> list(chunk([1,2,3,4,5,6,7], 2))
@@ -12,7 +12,7 @@ def chunk(l: typing.Sequence, n: int) -> typing.Generator:
         yield l[i:i+n]
 
 
-def chunked_list(l: typing.Sequence, n: int) -> typing.List:
+def chunked_list(l: Sequence, n: int) -> List:
     """ Create a list of n-sized chunks from list.
 
     >>> chunked_list([1,2,3,4,5,6,7], 2)

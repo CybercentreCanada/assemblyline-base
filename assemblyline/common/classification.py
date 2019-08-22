@@ -1,6 +1,7 @@
-import logging
 import itertools
+import logging
 from copy import copy
+from typing import Set, List, KeysView, Union, Dict, Optional, Tuple, Any
 
 CLASSIFICATION_DEFINITION_TEMPLATE = {
     # This is a demonstration classification definition to showcase all the
@@ -137,6 +138,7 @@ CLASSIFICATION_DEFINITION_TEMPLATE = {
 
 log = logging.getLogger('assemblyline.classification')
 
+
 class InvalidClassification(Exception):
     pass
 
@@ -153,7 +155,7 @@ class Classification(object):
     NULL_CLASSIFICATION = "NULL"
     INVALID_CLASSIFICATION = "INVALID"
 
-    def __init__(self, classification_definition):
+    def __init__(self, classification_definition: Dict):
         """
         Returns the classification class instantiated with the classification_definition
 
@@ -302,7 +304,7 @@ class Classification(object):
     # Private functions
     ############################
     @staticmethod
-    def _build_combinations(items, separator="/", solitary_display=None):
+    def _build_combinations(items: Set, separator: str = "/", solitary_display: Optional[Dict] = None) -> Set:
         if solitary_display is None:
             solitary_display = {}
 
@@ -317,7 +319,7 @@ class Classification(object):
         return out
 
     @staticmethod
-    def _list_items_and_aliases(data, long_format=True):
+    def _list_items_and_aliases(data: List, long_format: bool = True) -> Set:
         items = set()
         for item in data:
             if long_format:
@@ -327,7 +329,7 @@ class Classification(object):
 
         return items
 
-    def _get_c12n_level_index(self, c12n):
+    def _get_c12n_level_index(self, c12n: str) -> str:
         # Parse classifications in uppercase mode only
         c12n = c12n.upper()
 
@@ -342,7 +344,7 @@ class Classification(object):
             raise InvalidClassification("Classification level '%s' was not found in "
                                         "your classification definition." % lvl)
 
-    def _get_c12n_level_text(self, lvl_idx, long_format=True):
+    def _get_c12n_level_text(self, lvl_idx: int, long_format: bool = True) -> str:
         text = self.levels_map.get(str(lvl_idx), None)
         if not text:
             raise InvalidClassification("Classification level number '%s' was not "
@@ -351,7 +353,7 @@ class Classification(object):
             return self.levels_map_stl[text]
         return text
 
-    def _get_c12n_required(self, c12n, long_format=True):
+    def _get_c12n_required(self, c12n: str, long_format: bool = True) -> List:
         # Parse classifications in uppercase mode only
         c12n = c12n.upper()
 
@@ -371,7 +373,7 @@ class Classification(object):
             return sorted([self.access_req_map_stl[r] for r in return_set])
         return sorted(list(return_set))
 
-    def _get_c12n_groups(self, c12n, long_format=True):
+    def _get_c12n_groups(self, c12n: str, long_format: bool = True) -> Tuple[List, List]:
         # Parse classifications in uppercase mode only
         c12n = c12n.upper()
 
@@ -407,11 +409,11 @@ class Classification(object):
         return sorted(list(g1_set)), sorted(list(g2_set))
 
     @staticmethod
-    def _can_see_required(user_req, req):
+    def _can_see_required(user_req: List, req: List) -> bool:
         return set(req).issubset(user_req)
 
     @staticmethod
-    def _can_see_groups(user_groups, req):
+    def _can_see_groups(user_groups: List, req: List) -> bool:
         if len(req) == 0:
             return True
 
@@ -422,8 +424,8 @@ class Classification(object):
         return False
 
     # noinspection PyTypeChecker
-    def _get_normalized_classification_text(self, lvl_idx, req, groups, subgroups, long_format=True,
-                                            skip_auto_select=False):
+    def _get_normalized_classification_text(self, lvl_idx: int, req: List, groups: List, subgroups: List,
+                                            long_format: bool = True, skip_auto_select: bool = False) -> str:
         # 1. Check for all required items if they need a specific classification lvl
         required_lvl_idx = 0
         for r in req:
@@ -507,7 +509,8 @@ class Classification(object):
 
         return out
 
-    def _get_classification_parts(self, c12n, long_format=True):
+    def _get_classification_parts(self, c12n: str, long_format: bool = True) \
+            -> Tuple[Union[Union[int, str], Any], List, List, List]:
         lvl_idx = self._get_c12n_level_index(c12n)
         req = self._get_c12n_required(c12n, long_format=long_format)
         groups, subgroups = self._get_c12n_groups(c12n, long_format=long_format)
@@ -515,7 +518,7 @@ class Classification(object):
         return lvl_idx, req, groups, subgroups
 
     @staticmethod
-    def _max_groups(groups_1, groups_2):
+    def _max_groups(groups_1: List, groups_2: List) -> List:
         if len(groups_1) > 0 and len(groups_2) > 0:
             groups = set(groups_1) & set(groups_2)
         else:
@@ -532,7 +535,7 @@ class Classification(object):
     # Public functions
     # ++++++++++++++++++++++++
     # noinspection PyUnusedLocal
-    def list_all_classification_combinations(self, long_format=True):
+    def list_all_classification_combinations(self, long_format: bool = True) -> Set:
         combinations = set()
 
         levels = self._list_items_and_aliases(self.original_definition['levels'], long_format=long_format)
@@ -594,7 +597,7 @@ class Classification(object):
         return combinations
 
     # noinspection PyUnusedLocal
-    def default_user_classification(self, user=None, long_format=True):
+    def default_user_classification(self, user: Optional[str] = None, long_format: bool = True) -> str:
         """
         You can overload this function to specify a way to get the default classification of a user.
         By default, this function returns the UNRESTRICTED value of your classification definition.
@@ -608,7 +611,7 @@ class Classification(object):
         """
         return self.UNRESTRICTED
 
-    def get_parsed_classification_definition(self):
+    def get_parsed_classification_definition(self) -> Dict:
         """
         Returns all dictionary of all the variables inside the classification object that will be used
         to enforce classification throughout the system.
@@ -627,7 +630,7 @@ class Classification(object):
         out.pop('_classification_cache_short', None)
         return out
 
-    def get_access_control_parts(self, c12n, user_classification=False):
+    def get_access_control_parts(self, c12n: str, user_classification: bool = False) -> Dict:
         """
         Returns a dictionary containing the different access parameters Lucene needs to build it's queries
 
@@ -663,7 +666,7 @@ class Classification(object):
             else:
                 raise
 
-    def get_access_control_req(self):
+    def get_access_control_req(self) -> Union[KeysView, List]:
         """
         Returns a list of the different possible REQUIRED parts
         """
@@ -672,7 +675,7 @@ class Classification(object):
 
         return self.access_req_map_stl.keys()
 
-    def get_access_control_groups(self):
+    def get_access_control_groups(self) -> Union[KeysView, List]:
         """
         Returns a list of the different possible GROUPS
         """
@@ -681,7 +684,7 @@ class Classification(object):
 
         return self.groups_map_stl.keys()
 
-    def get_access_control_subgroups(self):
+    def get_access_control_subgroups(self) -> Union[KeysView, List]:
         """
         Returns a list of the different possible SUBGROUPS
         """
@@ -690,7 +693,7 @@ class Classification(object):
 
         return self.subgroups_map_stl.keys()
 
-    def intersect_user_classification(self, user_c12n_1, user_c12n_2, long_format=True):
+    def intersect_user_classification(self, user_c12n_1: str, user_c12n_2: str, long_format: bool = True) -> str:
         """
         This function intersects two user classification to return the maximum classification
         that both user could see.
@@ -731,7 +734,7 @@ class Classification(object):
                                                         long_format=long_format,
                                                         skip_auto_select=True)
 
-    def is_accessible(self, user_c12n, c12n):
+    def is_accessible(self, user_c12n: str, c12n: str) -> bool:
         """
         Given a user classification, check if a user is allow to see a certain classification
 
@@ -770,7 +773,7 @@ class Classification(object):
             return True
         return False
 
-    def is_valid(self, c12n, skip_auto_select=False):
+    def is_valid(self, c12n: str, skip_auto_select: bool = False) -> bool:
         """
         Performs a series of checks againts a classification to make sure it is valid in it's current form
 
@@ -854,7 +857,7 @@ class Classification(object):
 
         return True
 
-    def max_classification(self, c12n_1, c12n_2, long_format=True):
+    def max_classification(self, c12n_1: str, c12n_2: str, long_format: bool = True) -> str:
         """
         Mixes to classification and returns to most restrictive form for them
 
@@ -893,7 +896,7 @@ class Classification(object):
                                                         subgroups,
                                                         long_format=long_format)
 
-    def min_classification(self, c12n_1, c12n_2, long_format=True):
+    def min_classification(self, c12n_1: str, c12n_2: str, long_format: bool = True) -> str:
         """
         Mixes to classification and returns to least restrictive form for them
 
@@ -939,7 +942,7 @@ class Classification(object):
                                                         subgroups,
                                                         long_format=long_format)
 
-    def normalize_classification(self, c12n, long_format=True, skip_auto_select=False):
+    def normalize_classification(self, c12n: str, long_format: bool = True, skip_auto_select: bool = False) -> str:
         """
         Normalize a given classification by applying the rules defined in the classification definition.
         This function will remove any invalid parts and add missing parts to the classification.

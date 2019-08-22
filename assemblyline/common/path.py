@@ -1,8 +1,9 @@
 import os
 import sys
+from typing import Optional, List, AnyStr
 
 
-def modulepath(modulename):
+def modulepath(modulename: str) -> AnyStr:
     m = sys.modules[modulename]
     f = getattr(m, '__file__', None)
     if not f:
@@ -10,7 +11,7 @@ def modulepath(modulename):
     return os.path.dirname(os.path.abspath(f))
 
 
-def splitpath(path, sep=None):
+def splitpath(path: str, sep: Optional[str] = None) -> List:
     """ Split the path into a list of items """
     return list(filter(len, path.split(sep or os.path.sep)))
 
@@ -26,7 +27,7 @@ VALID_UNC_CHARS = [chr(x) for x in ASCII_LOWER_CASE_LETTERS +
                    ASCII_UPPER_CASE_LETTERS + ASCII_NUMBERS + ASCII_OTHER]
 
 
-def is_unc_legal(path):
+def is_unc_legal(path: str) -> bool:
     """Determine whether or not a given string representing a Windows file path is legal
     or not as per the Unified Naming Convention (UNC) specifications."""
     if len(path) <= 0:

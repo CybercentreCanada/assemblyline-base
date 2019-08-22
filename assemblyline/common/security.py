@@ -5,6 +5,7 @@ import os
 import re
 import struct
 import time
+from typing import List, Optional
 
 from passlib.hash import bcrypt
 
@@ -51,8 +52,8 @@ def verify_password(password, pw_hash):
         return False
 
 
-def get_password_requirement_message(lower=True, upper=True, number=False, special=False, min_length=12):
-    msg = "Password needs to be at least %s characters" % min_length
+def get_password_requirement_message(lower: bool = True, upper: bool = True, number: bool = False, special: bool = False, min_length: int = 12) -> str:
+    msg = f"Password needs to be at least {min_length} characters"
 
     if lower or upper or number or special:
         msg += " with the following characteristics: "
@@ -71,7 +72,7 @@ def get_password_requirement_message(lower=True, upper=True, number=False, speci
     return msg
 
 
-def check_password_requirements(password, lower=True, upper=True, number=False, special=False, min_length=12):
+def check_password_requirements(password: str, lower: bool = True, upper: bool = True, number: bool = False, special: bool = False, min_length: int = 12) -> bool:
     check_upper = re.compile(UPPERCASE)
     check_lower = re.compile(LOWERCASE)
     check_number = re.compile(NUMBER)
@@ -98,7 +99,7 @@ def check_password_requirements(password, lower=True, upper=True, number=False, 
     return True
 
 
-def get_random_password(alphabet=None, length=24):
+def get_random_password(alphabet: Optional[List] = None, length: int = 24) -> str:
     if alphabet is None:
         alphabet = PASS_BASIC
     r_bytes = bytearray(os.urandom(length))

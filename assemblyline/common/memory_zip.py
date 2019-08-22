@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import io
 import zipfile
+from typing import Union
 
 
 class InMemoryZip(object):
@@ -7,7 +10,7 @@ class InMemoryZip(object):
         # Create the in-memory file-like object
         self.in_memory_zip = io.BytesIO()
 
-    def append(self, filename_in_zip, file_contents):
+    def append(self, filename_in_zip: str, file_contents: Union[str, bytes]) -> InMemoryZip:
         """
         Appends a file with name filename_in_zip and contents of
         file_contents to the in-memory zip.
@@ -26,7 +29,7 @@ class InMemoryZip(object):
 
         return self
 
-    def read(self):
+    def read(self) -> bytes:
         """
         Returns a string with the contents of the in-memory zip.
         """

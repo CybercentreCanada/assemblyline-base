@@ -1,15 +1,17 @@
 import binascii
+from typing import Sequence
+
 from assemblyline.common.chunk import chunk
 
 FILTER = b''.join([bytes([x]) if x in range(32, 127) else b'.' for x in range(256)])
 
 
-def dump(binary, size=2, sep=b" "):
+def dump(binary: Sequence, size: int = 2, sep: bytes = b" ") -> bytes:
     hexstr = binascii.hexlify(binary)
     return sep.join(chunk(hexstr, size))
 
 
-def hexdump(binary, length=16, indent="", indent_size=0, newline='\n', prefix_offset=0):
+def hexdump(binary: Sequence, length: int = 16, indent: str = "", indent_size: int = 0, newline: str = '\n', prefix_offset: int = 0) -> str:
     """
     Create a string buffer that shows the given data in hexdump format.
     

@@ -1,6 +1,8 @@
-import collections
+from collections.abc import Mapping
+from typing import Dict, Optional, Mapping as _Mapping, Union
 
-def recursive_update(d, u):
+
+def recursive_update(d: Dict, u: _Mapping) -> Union[Dict, _Mapping]:
     if d is None:
         return u
 
@@ -8,7 +10,7 @@ def recursive_update(d, u):
         return d
 
     for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
+        if isinstance(v, Mapping):
             d[k] = recursive_update(d.get(k, {}), v)
         else:
             d[k] = v
@@ -16,7 +18,7 @@ def recursive_update(d, u):
     return d
 
 
-def get_recursive_delta(d1, d2):
+def get_recursive_delta(d1: Mapping, d2: Mapping) -> Mapping:
     if d1 is None:
         return d2
 
@@ -25,7 +27,7 @@ def get_recursive_delta(d1, d2):
 
     out = {}
     for k1, v1 in d1.items():
-        if isinstance(v1, collections.abc.Mapping):
+        if isinstance(v1, Mapping):
             internal = get_recursive_delta(v1, d2.get(k1, {}))
             if internal:
                 out[k1] = internal
@@ -42,7 +44,7 @@ def get_recursive_delta(d1, d2):
     return out
 
 
-def flatten(data, parent_key=None):
+def flatten(data: Dict, parent_key: Optional[str] = None) -> Dict:
     items = []
     for k, v in data.items():
         cur_key = f"{parent_key}.{k}" if parent_key is not None else k
@@ -54,7 +56,7 @@ def flatten(data, parent_key=None):
     return dict(items)
 
 
-def unflatten(data):
+def unflatten(data: Dict) -> Dict:
     out = dict()
     for k, v in data.items():
         parts = k.split(".")

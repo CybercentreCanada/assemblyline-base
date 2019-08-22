@@ -1,7 +1,7 @@
-
-import baseconv
 import hashlib
 import uuid
+
+import baseconv
 
 TINY = 8
 SHORT = 16
@@ -14,13 +14,13 @@ def get_random_id():
 
 
 def get_id_from_data(data, prefix=None, length=MEDIUM):
-    posssible_len  = [TINY, SHORT, MEDIUM, LONG]
-    if length not in posssible_len:
-        raise ValueError(f"Invalid hash length of {length}. Possible values are: {str(posssible_len)}.")
+    possible_len = [TINY, SHORT, MEDIUM, LONG]
+    if length not in possible_len:
+        raise ValueError(f"Invalid hash length of {length}. Possible values are: {str(possible_len)}.")
     sha256_hash = hashlib.sha256(str(data).encode()).hexdigest()[:length]
-    hash = baseconv.base62.encode(int(sha256_hash, 16))
+    _hash = baseconv.base62.encode(int(sha256_hash, 16))
 
     if isinstance(prefix, str):
-        hash = f"{prefix}_{hash}"
+        _hash = f"{prefix}_{_hash}"
 
-    return hash
+    return _hash

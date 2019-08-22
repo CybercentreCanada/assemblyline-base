@@ -1,10 +1,12 @@
 import logging
-import logging.handlers
 import logging.config
+import logging.handlers
 import os
+from typing import Optional
 
-from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT
 from assemblyline.common import forge
+from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT
+from assemblyline.odm.models.config import Config
 
 log_level_map = {
     "DEBUG": logging.DEBUG,
@@ -16,7 +18,7 @@ log_level_map = {
 }
 
 
-def init_logging(name, config=None, log_level=None):
+def init_logging(name: str, config: Optional[Config] = None, log_level: Optional[logging] = None):
     logger = logging.getLogger('assemblyline')
 
     # Test if we've initialized the log handler already.

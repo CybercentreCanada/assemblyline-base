@@ -1,3 +1,5 @@
+from typing import Dict
+
 from assemblyline.common.dict_utils import flatten
 
 tag_map = {
@@ -297,13 +299,14 @@ UNSUSED = [
 ]
 
 
-def reverse_map(data):
+def reverse_map(data: Dict) -> Dict:
     output = {}
     for k, v in data.items():
         for x in v:
             output[x] = k
 
     return output
+
 
 v3_lookup_map = reverse_map(flatten(tag_map))
 v3_lookup_map.update({k: None for k in UNSUSED})
