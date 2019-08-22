@@ -1,6 +1,7 @@
 import datetime
 import random
 import time
+from typing import Optional as _Optional, Dict, Any as _Any
 
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
@@ -91,100 +92,101 @@ F_TYPES = [
 ]
 
 
-def get_random_file_type():
+def get_random_file_type() -> str:
     return random.choice(F_TYPES)
 
 
-def get_random_word():
+def get_random_word() -> str:
     return random.choice(WORDS)
 
 
-def get_random_phrase(wmin=2, wmax=6):
+def get_random_phrase(wmin: int = 2, wmax: int = 6) -> str:
     return " ".join([get_random_word() for _ in range(random.randint(wmin, wmax))])
 
 
-def get_random_hash(hash_len):
+def get_random_hash(hash_len: int) -> str:
     return "".join([random.choice(HASH_ALPHA) for _ in range(hash_len)])
 
 
-def get_random_heuristic_id():
+def get_random_heuristic_id() -> str:
     return f"AL_{get_random_service_name().upper()}_{random.randint(1, 9)}{random.randint(1, 9)}{random.randint(1, 9)}"
 
 
-def get_random_label():
+def get_random_label() -> str:
     return random.choice(LABELS)
 
 
-def get_random_user():
+def get_random_user() -> str:
     return random.choice(USERS)
 
 
-def get_random_groups():
+def get_random_groups() -> str:
     return random.choice(GROUPS)
 
 
-def get_random_filename(smin=1, smax=3):
+def get_random_filename(smin: int = 1, smax: int = 3) -> str:
     return "_".join([get_random_word().lower() for _ in range(random.randint(smin, smax))]) + random.choice(EXT)
 
 
-def get_random_directory(smin=2, smax=6):
+def get_random_directory(smin: int = 2, smax: int = 6) -> str:
     return "/".join([get_random_word().lower() for _ in range(random.randint(smin, smax))])
 
 
-def get_random_string(smin=4, smax=24):
+def get_random_string(smin: int = 4, smax: int = 24) -> str:
     return "".join([random.choice(ALPHA) for _ in range(random.randint(smin, smax))])
 
 
-def get_random_host():
+def get_random_host() -> str:
     return get_random_word().lower() + random.choice(DOM)
 
 
-def get_random_service_name():
+def get_random_service_name() -> str:
     return random.choice(list(SERVICES.keys()))
 
 
-def get_random_service_version():
+def get_random_service_version() -> str:
     return f"4.0.0.{get_random_hash(7)}"
 
 
-def get_random_ip():
+def get_random_ip() -> str:
     return ".".join([str(random.randint(1, 254)) for _ in range(4)])
 
 
-def get_random_iso_date(epoch=None):
+def get_random_iso_date(epoch: _Optional[float] = None) -> str:
     if epoch is None:
         epoch = time.time() + random.randint(-10000, 10000)
 
     return datetime.datetime.fromtimestamp(epoch).isoformat() + "Z"
 
 
-def get_random_mapping(field):
+def get_random_mapping(field) -> Dict[str, _Any]:
     return {META_KEYS[i]: random_data_for_field(field, META_KEYS[i]) for i in range(random.randint(0, 5))}
 
 
-def get_random_phone():
+def get_random_phone() -> str:
     return f'{random.choice(["", "+1 "])}{"-".join([str(random.randint(100, 999)) for _ in range(3)])}' \
         f'{str(random.randint(0, 9))}'
 
 
-def get_random_mac():
+def get_random_mac() -> str:
     return ":".join([get_random_hash(2) for _ in range(6)])
 
 
-def get_random_uri_path():
+def get_random_uri_path() -> str:
     return f"/{'/'.join([get_random_word() for _ in range(random.randint(2, 6))])}"
 
 
-def get_random_uri():
+def get_random_uri() -> str:
     return f"{random.choice(['http', 'https', 'ftp'])}://{get_random_host()}{get_random_uri_path()}"
 
 
-def get_random_ssdeep():
+def get_random_ssdeep() -> str:
     return f"{str(random.randint(30, 99999))}" \
         f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}" \
         f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}"
 
-def get_random_tags():
+
+def get_random_tags() -> dict:
     desired_tag_types = [
         'attribution.actor',
         'network.ip',
@@ -220,7 +222,7 @@ def get_random_tags():
 
 
 # noinspection PyProtectedMember
-def random_data_for_field(field, name, minimal=False):
+def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
     if isinstance(field, Boolean):
         return random.choice([True, False])
     elif isinstance(field, Classification):
@@ -327,7 +329,7 @@ def random_data_for_field(field, name, minimal=False):
 
 
 # noinspection PyProtectedMember
-def random_model_obj(model, as_json=False):
+def random_model_obj(model, as_json: bool = False) -> _Any:
     if model == Tagging:
         data = get_random_tags()
         if as_json:
@@ -346,7 +348,7 @@ def random_model_obj(model, as_json=False):
 
 
 # noinspection PyProtectedMember
-def random_minimal_obj(model, as_json=False):
+def random_minimal_obj(model, as_json: bool = False) -> _Any:
     data = {}
     for f_name, f_value in model._odm_field_cache.items():
         if not f_value.default_set:
