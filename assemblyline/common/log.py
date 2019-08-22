@@ -18,7 +18,7 @@ log_level_map = {
 }
 
 
-def init_logging(name: str, config: Optional[Config] = None, log_level: Optional[logging] = None):
+def init_logging(name: str, config: Optional[Config] = None, log_level=None):
     logger = logging.getLogger('assemblyline')
 
     # Test if we've initialized the log handler already.

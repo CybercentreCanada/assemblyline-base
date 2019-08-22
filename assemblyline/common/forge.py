@@ -2,28 +2,20 @@
 import importlib
 import os
 import time
-from typing import Optional
 
 import elasticapm
 import yaml
 from easydict import EasyDict
 
-from assemblyline.cachestore import CacheStore
-from assemblyline.common.classification import Classification, InvalidDefinition
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
-from assemblyline.datastore.exceptions import DataStoreException
-from assemblyline.datastore.helper import AssemblylineDatastore
-from assemblyline.datastore.stores.es_store import ESStore
-from assemblyline.datastore.stores.solr_store import SolrStore
-from assemblyline.filestore import FileStore
-from assemblyline.odm.models.config import Config
-from assemblyline.remote.datatypes.queues.comms import CommsQueue
 
 config_singletons = {}
 
 
-def get_classification(yml_config: Optional[str] = None) -> Classification:
+def get_classification(yml_config=None):
+    from assemblyline.common.classification import Classification, InvalidDefinition
+
     if yml_config is None:
         yml_config = "/etc/assemblyline/classification.yml"
 
@@ -48,7 +40,9 @@ def get_classification(yml_config: Optional[str] = None) -> Classification:
     return Classification(classification_definition)
 
 
-def _get_config(static: bool = False, yml_config: Optional[str] = None) -> Config:
+def _get_config(static=False, yml_config=None):
+    from assemblyline.odm.models.config import Config
+
     if yml_config is None:
         yml_config = "/etc/assemblyline/config.yml"
 
@@ -69,32 +63,36 @@ def _get_config(static: bool = False, yml_config: Optional[str] = None) -> Confi
     return Config(config)
 
 
-def get_config(static: bool = False, yml_config: Optional[str] = None) -> Config:
+def get_config(static=False, yml_config=None):
     if (static, yml_config) not in config_singletons:
-        config_singletons[(static, yml_config)] = CachedObject(_get_config, kwargs={'static': static,
-                                                                                    'yml_config': yml_config})
+         config_singletons[(static, yml_config)] = CachedObject(_get_config, kwargs={'static': static,
+                                                                                     'yml_config': yml_config})
     return config_singletons[(static, yml_config)]
 
 
-def get_constants(config: Optional[Config] = None):
+def get_constants(config=None):
     if config is None:
         config = get_config()
     return importlib.import_module(config.system.constants)
 
 
-def get_datastore(config=None) -> AssemblylineDatastore:
+def get_datastore(config=None):
+    from assemblyline.datastore.helper import AssemblylineDatastore
     if not config:
         config = get_config(static=True)
 
     if config.datastore.type == "elasticsearch":
+        from assemblyline.datastore.stores.es_store import ESStore
         return AssemblylineDatastore(ESStore(config.datastore.hosts))
     elif config.datastore.type == "solr":
+        from assemblyline.datastore.stores.solr_store import SolrStore
         return AssemblylineDatastore(SolrStore(config.datastore.hosts, port=config.datastore.solr.port))
     else:
+        from assemblyline.datastore.exceptions import DataStoreException
         raise DataStoreException(f"Invalid datastore type: {config.datastore.type}")
 
 
-def get_dn_parser(config: Optional[Config] = None):
+def get_dn_parser(config=None):
     if config is None:
         config = get_config()
     try:
@@ -103,11 +101,13 @@ def get_dn_parser(config: Optional[Config] = None):
         return None
 
 
-def get_cachestore(component, config: Optional[Config] = None, datastore: Optional[AssemblylineDatastore] = None) -> CacheStore:
+def get_cachestore(component, config=None, datastore=None):
+    from assemblyline.cachestore import CacheStore
     return CacheStore(component, config=config, datastore=datastore)
 
 
-def get_filestore(config=None) -> FileStore:
+def get_filestore(config=None):
+    from assemblyline.filestore import FileStore
     if config is None:
         config = get_config()
     return FileStore(*config.filestore.storage)
@@ -118,38 +118,39 @@ def get_process_alert_message():
     return load_module_by_path(config.core.alerter.process_alert_message)
 
 
-def get_site_specific_apikey_handler(config: Optional[Config] = None):
+def get_site_specific_apikey_handler(config=None):
     if config is None:
         config = get_config()
     return load_module_by_path(config.auth.apikey_handler)
 
 
-def get_site_specific_dn_handler(config: Optional[Config] = None):
+def get_site_specific_dn_handler(config=None):
     if config is None:
         config = get_config()
     return load_module_by_path(config.auth.dn_handler)
 
 
-def get_site_specific_userpass_handler(config: Optional[Config] = None):
+def get_site_specific_userpass_handler(config=None):
     if config is None:
         config = get_config()
     return load_module_by_path(config.auth.userpass_handler)
 
 
-def get_ui_context(config: Optional[Config] = None) -> EasyDict:
+def get_ui_context(config=None):
     if config is None:
         config = get_config()
     return EasyDict(load_module_by_path(config.ui.context))
 
 
-def get_metrics_sink(redis=None) -> CommsQueue:
+def get_metrics_sink(redis=None):
+    from assemblyline.remote.datatypes.queues.comms import CommsQueue
     return CommsQueue('assemblyline_metrics', host=redis)
 
 
 class CachedObject:
     """An object proxy that automatically refreshes its target periodically."""
 
-    def __init__(self, factory, refresh: int = 60, args=None, kwargs=None):
+    def __init__(self, factory, refresh=60, args=None, kwargs=None):
         """
         Args:
             factory: Factory that takes the arguments given in `args` and `kwargs` and produces the proxyed object.
