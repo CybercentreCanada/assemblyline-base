@@ -1,10 +1,9 @@
-from assemblyline.common import forge
-
 from assemblyline import odm
+from assemblyline.common import forge
 from assemblyline.odm.models.heuristic import PATTERNS
 from assemblyline.odm.models.tagging import Tagging
 
-BODY_TYPES = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON"}
+BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "HEURISTIC"}
 constants = forge.get_constants()
 
 
@@ -19,7 +18,7 @@ class Heuristic(odm.Model):
 class Section(odm.Model):
     body = odm.Optional(odm.Text(copyto="__text__"))        # Text body of the result section
     classification = odm.Classification()                   # Classification of the section
-    body_format = odm.Enum(values=BODY_TYPES, index=False)  # Type of body in this section
+    body_format = odm.Enum(values=BODY_FORMAT, index=False)  # Type of body in this section
     depth = odm.Integer(index=False)                        # Depth of the section
     heuristic = odm.Optional(odm.Compound(Heuristic))       # Heuristic used to score result section
     tags = odm.Compound(Tagging, default={})                # List of tags associated to this section
