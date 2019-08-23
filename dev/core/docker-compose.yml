@@ -3,7 +3,7 @@ version: '2.4'
 services:
   # Service server
   al_service_server:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     ports:
       - '5003:5003'
     volumes:
@@ -17,7 +17,7 @@ services:
 
   # Create test data
   create_test_data:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -26,7 +26,7 @@ services:
 
   # UI
   al_ui:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     ports:
       - '5000:5000'
     volumes:
@@ -36,7 +36,7 @@ services:
 
   # SocketIO Server
   al_socketio:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     ports:
       - '5002:5002'
     volumes:
@@ -47,7 +47,7 @@ services:
 
   # Alerter
   al_alerter:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -55,7 +55,7 @@ services:
 
   # Expiry
   al_expiry:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -63,7 +63,7 @@ services:
 
   # Metrics aggregator
   al_metrics:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -71,7 +71,7 @@ services:
 
   # Hearbeat manager
   al_heartbeat:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -79,7 +79,7 @@ services:
 
   # Workflow
   al_workflow:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -87,7 +87,7 @@ services:
 
   # Watcher
   al_watcher:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -95,21 +95,21 @@ services:
 
 #  # Dispatcher processes
 #  al_dispatcher_files:
-#    image: cccs/assemblyline_dev:4.0.7
+#    image: cccs/assemblyline_dev:4.0.8
 #    volumes:
 #      - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
 #      - /opt/alv4/:/opt/alv4/
 #    command: python3 /opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py
 #
 #  al_dispatcher_submissions:
-#    image: cccs/assemblyline_dev:4.0.7
+#    image: cccs/assemblyline_dev:4.0.8
 #    volumes:
 #      - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
 #      - /opt/alv4/:/opt/alv4/
 #    command: python3 /opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py
 
   al_scaler:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
@@ -118,21 +118,21 @@ services:
 
   # Ingester Processes
   al_ingester_ingest:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/assemblyline_core/ingester/run_ingest.py
 
   al_ingester_internal:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/assemblyline_core/ingester/run_internal.py
 
   al_ingester_submit:
-    image: cccs/assemblyline_dev:4.0.7
+    image: cccs/assemblyline_dev:4.0.8
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
