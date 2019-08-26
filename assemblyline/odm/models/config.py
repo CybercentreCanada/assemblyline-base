@@ -350,8 +350,6 @@ DEFAULT_REDIS = {
 @odm.model()
 class ScalerProfile(odm.Model):
     """Minimal description for an assemblyline core component controlled by the scaler."""
-    cpu: float = odm.Float()
-    ram: int = odm.Integer()
     growth: int = odm.Optional(odm.Integer())
     shrink: int = odm.Optional(odm.Integer())
     backlog: int = odm.Optional(odm.Integer())
@@ -415,8 +413,6 @@ DEFAULT_SCALER = {
     },
     'core_configs': {
         'dispatcher_files': {
-            'cpu': 0,
-            'ram': 0,
             'container_config': {
                 'image': 'cccs/assemblyline_dev:4.0.8',
                 'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py'],
@@ -425,8 +421,6 @@ DEFAULT_SCALER = {
             'queue': FILE_QUEUE
         },
         'dispatcher_submissions': {
-            'cpu': 0,
-            'ram': 0,
             'container_config': {
                 'image': 'cccs/assemblyline_dev:4.0.8',
                 'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py'],
