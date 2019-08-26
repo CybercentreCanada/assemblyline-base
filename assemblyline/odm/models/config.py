@@ -418,7 +418,7 @@ DEFAULT_SCALER = {
             'cpu': 0,
             'ram': 0,
             'container_config': {
-                'image': 'sgaroncse/assemblyline_dev:4.0.5',
+                'image': 'cccs/assemblyline_dev:4.0.8',
                 'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py'],
                 'network': ['backend'],
             },
@@ -428,7 +428,7 @@ DEFAULT_SCALER = {
             'cpu': 0,
             'ram': 0,
             'container_config': {
-                'image': 'sgaroncse/assemblyline_dev:4.0.5',
+                'image': 'cccs/assemblyline_dev:4.0.8',
                 'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py'],
                 'network': ['backend'],
             },
