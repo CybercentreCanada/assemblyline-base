@@ -1,3 +1,5 @@
+from typing import List, Optional as Opt
+
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVICE_REJECTS
@@ -13,10 +15,12 @@ class EnvironmentVariable(odm.Model):
 
 @odm.model(index=False, store=False)
 class DockerConfig(odm.Model):
-    image = odm.Keyword()                                 # Complete name of the Docker image with tag
-    command = odm.Optional(odm.List(odm.Keyword()))
-    environment = odm.List(odm.Compound(EnvironmentVariable), default=[])
-    network = odm.List(odm.Keyword(), default=[])         # Network access rules
+    image: str = odm.Keyword()                                 # Complete name of the Docker image with tag
+    command: Opt[List[str]] = odm.Optional(odm.List(odm.Keyword()))
+    environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
+    network: List[str] = odm.List(odm.Keyword(), default=[])         # Network access rules
+    cpu_cores: float = odm.Float(default=1.0)
+    ram_mb: int = odm.Integer(default=1024)
 
 
 @odm.model(index=False, store=False)
@@ -56,7 +60,6 @@ class Service(odm.Model):
 
     category = odm.Keyword(store=True, default="Static Analysis", copyto="__text__")
     config = odm.Mapping(odm.Any(), default={})
-    cpu_cores = odm.Float(default=1.0)
     description = odm.Text(store=True, default="NA", copyto="__text__")
     default_result_classification = odm.ClassificationString(default=Classification.UNRESTRICTED)
     enabled = odm.Boolean(store=True, default=False)
@@ -66,8 +69,6 @@ class Service(odm.Model):
 
     name = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
-
-    ram_mb = odm.Integer(default=1024)
 
     # Should the result cache be disabled for this service
     disable_cache = odm.Boolean(default=False)

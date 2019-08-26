@@ -13,6 +13,8 @@ class DockerConfigDelta(odm.Model):
     command = odm.Optional(odm.List(odm.Keyword()))
     environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariableDelta)))
     network = odm.Optional(odm.List(odm.Keyword()))
+    cpu_cores = odm.Optional(odm.Float())
+    ram_mb = odm.Optional(odm.Integer())
 
 
 @odm.model(index=False, store=False)
@@ -51,7 +53,6 @@ class ServiceDelta(odm.Model):
 
     category = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
     config = odm.Optional(odm.Mapping(odm.Any()))
-    cpu_cores = odm.Optional(odm.Float())
     description = odm.Optional(odm.Text(), index=True, store=False, copyto="__text__")
     default_result_classification = odm.Optional(odm.ClassificationString())
     enabled = odm.Optional(odm.Boolean(), index=True, store=False)
@@ -61,8 +62,6 @@ class ServiceDelta(odm.Model):
 
     name = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
     version = odm.Keyword(index=True, store=True)
-
-    ram_mb = odm.Optional(odm.Integer())
 
     disable_cache = odm.Optional(odm.Boolean())
 
