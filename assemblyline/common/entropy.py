@@ -22,7 +22,7 @@ def calculate_entropy(contents: AnyStr) -> float:
 
     # keep a count of all the bytes
     for byte in contents:
-        count[ord(byte)] += 1
+        count[byte] += 1
 
     entropy = float(0)
 
