@@ -74,7 +74,6 @@ pipelines:
       - step:
           name: Deploy to PyPI
           image: python:3.7
-          trigger: manual
           deployment: pypi
           caches: *caches
           script:
@@ -84,7 +83,6 @@ pipelines:
       - step:
           name: Deploy to Docker Hub
           image: python:3.7
-          trigger: manual
           services: [docker]
           deployment: container
           script:
