@@ -6,26 +6,20 @@ services:
 #    image: cccs/alsvc_apivector:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_apivector
 
   # APKaye service
-#  alsvc_apkaye:
-#    image: cccs/alsvc_apkaye:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_apkaye
+  alsvc_apkaye:
+    image: cccs/alsvc_apkaye:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_apkaye
 
   # Beaver service
 #  alsvc_beaver:
 #    image: cccs/alsvc_beaver:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_beaver
 
   # CFMD service
@@ -33,8 +27,6 @@ services:
 #    image: cccs/alsvc_cfmd:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_cfmd
 
   # Characterize service
@@ -42,44 +34,34 @@ services:
     image: cccs/alsvc_characterize:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    volumes:
-      - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_characterize
 
   # Cleaver service
-#  alsvc_cleaver:
-#    image: cccs/alsvc_cleaver:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_cleaver
+  alsvc_cleaver:
+    image: cccs/alsvc_cleaver:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_cleaver
 
   # ConfigDecoder service
 #  alsvc_configdecoder:
 #    image: cccs/alsvc_configdecoder:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_configdecoder
 
   # Espresso service
-#  alsvc_espresso:
-#    image: cccs/alsvc_espresso:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_espresso
+  alsvc_espresso:
+    image: cccs/alsvc_espresso:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_espresso
 
   # Extract service
   alsvc_extract:
     image: cccs/alsvc_extract:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    volumes:
-      - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_extract
 
   # FrankenStrings service
@@ -87,35 +69,27 @@ services:
     image: cccs/alsvc_frankenstrings:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    volumes:
-      - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_frankenstrings
 
   # FSecure service
 #  alsvc_fsecure:
 #    image: cccs/alsvc_fsecure:latest
 #    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
+#      - SERVICE_API_HOST=http://al_service_server:5003/
 #    working_dir: /opt/al/al_services/alsvc_fsecure
 
   # IPArse service
-#  alsvc_iparse:
-#    image: cccs/alsvc_iparse:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_iparse
+  alsvc_iparse:
+    image: cccs/alsvc_iparse:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_iparse
 
   # Lastline service
 #  alsvc_lastline:
 #    image: cccs/alsvc_lastline:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_lastline
 
   # MetaDefender service
@@ -123,26 +97,20 @@ services:
 #    image: cccs/alsvc_metadefender:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_metadefender
 
   # MetaPeek service
-#  alsvc_metapeek:
-#    image: cccs/alsvc_metapeek:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_metapeek
+  alsvc_metapeek:
+    image: cccs/alsvc_metapeek:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_metapeek
 
   # NSRL service
 #  alsvc_nsrl:
 #    image: cccs/alsvc_nsrl:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_nsrl
 
   # Oletools service
@@ -150,8 +118,6 @@ services:
 #    image: cccs/alsvc_oletools:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_oletools
 
   # PDFId service
@@ -159,98 +125,76 @@ services:
     image: cccs/alsvc_pdfid:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    volumes:
-      - /opt/alv4/:/opt/alv4/
     working_dir: /opt/al/al_services/alsvc_pdfid
 
   # PeePDF service
-#  alsvc_peepdf:
-#    image: cccs/alsvc_peepdf:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_peepdf
+  alsvc_peepdf:
+    image: cccs/alsvc_peepdf:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_peepdf
 
   # PEFile service
-#  alsvc_pefile:
-#    image: cccs/alsvc_pefile:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_pefile
+  alsvc_pefile:
+    image: cccs/alsvc_pefile:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_pefile
 
   # Pixaxe service
-#  alsvc_pixaxe:
-#    image: cccs/alsvc_pixaxe:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_pixaxe
+  alsvc_pixaxe:
+    image: cccs/alsvc_pixaxe:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_pixaxe
 
   # Suricata service
 #  alsvc_suricata:
 #    image: cccs/alsvc_suricata:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_suricata
 
   # Swiffer service
-#  alsvc_swiffer:
-#    image: cccs/alsvc_swiffer:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_swiffer
+  alsvc_swiffer:
+    image: cccs/alsvc_swiffer:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_swiffer
 
   # Sync service
-#  alsvc_sync:
-#    image: cccs/alsvc_sync:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_sync
+  alsvc_sync:
+    image: cccs/alsvc_sync:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_sync
 
   # TagCheck service
 #  alsvc_tagcheck:
 #    image: cccs/alsvc_tagcheck:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_tagcheck
 
   # TorrentSlicer service
-#  alsvc_torrentslicer:
-#    image: cccs/alsvc_torrentslicer:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_torrentslicer
+  alsvc_torrentslicer:
+    image: cccs/alsvc_torrentslicer:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_torrentslicer
 
   # Unpacker service
-#  alsvc_unpacker:
-#    image: cccs/alsvc_unpacker:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_unpacker
+  alsvc_unpacker:
+    image: cccs/alsvc_unpacker:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_unpacker
 
   # VirusTotalDynamic service
 #  alsvc_virustotal_dynamic:
 #    image: cccs/alsvc_virustotal_dynamic:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_virustotal_dynamic
 
   # VirusTotalStatic service
@@ -258,18 +202,14 @@ services:
 #    image: cccs/alsvc_virustotal_static:latest
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
 #    working_dir: /opt/al/al_services/alsvc_virustotal_static
 
   # Yara service
-#  alsvc_yara:
-#    image: cccs/alsvc_yara:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    volumes:
-#      - /opt/alv4/:/opt/alv4/
-#    working_dir: /opt/al/al_services/alsvc_yara
+  alsvc_yara:
+    image: cccs/alsvc_yara:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+    working_dir: /opt/al/al_services/alsvc_yara
 
 
 networks:
