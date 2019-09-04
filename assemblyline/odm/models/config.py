@@ -26,22 +26,37 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
 
 
 @odm.model()
+class Notify(odm.Model):
+    base_url: str = odm.Optional(odm.Keyword())
+    api_key: str = odm.Optional(odm.Keyword())
+    registration_template: str = odm.Optional(odm.Keyword())
+    password_reset_template: int = odm.Optional(odm.Keyword())
+
+
+DEFAULT_NOTIFY = {
+    "base_url": None,
+    "api_key": None,
+    "registration_template": None,
+    "password_reset_template": None,
+}
+
+@odm.model()
 class SMTP(odm.Model):
-    from_adr: str = odm.Keyword()
-    host: str = odm.Keyword()
-    password: str = odm.Keyword()
+    from_adr: str = odm.Optional(odm.Keyword())
+    host: str = odm.Optional(odm.Keyword())
+    password: str = odm.Optional(odm.Keyword())
     port: int = odm.Integer()
     tls: bool = odm.Boolean()
-    user: str = odm.Keyword()
+    user: str = odm.Optional(odm.Keyword())
 
 
 DEFAULT_SMTP = {
-    "from_adr": "noreply@localhost",
-    "host": "localhost",
-    "password": "changeme",
+    "from_adr": None,
+    "host": None,
+    "password": None,
     "port": 587,
     "tls": True,
-    "user": "noreply"
+    "user": None
 }
 
 
@@ -49,11 +64,13 @@ DEFAULT_SMTP = {
 class Signup(odm.Model):
     enabled: bool = odm.Boolean()
     smtp: SMTP = odm.Compound(SMTP, default=DEFAULT_SMTP)
+    notify: Notify = odm.Compound(Notify, default=DEFAULT_NOTIFY)
     valid_email_patterns: List[str] = odm.List(odm.Keyword())
 
 
 DEFAULT_SIGNUP = {
     "enabled": False,
+    "notify": DEFAULT_NOTIFY,
     "smtp": DEFAULT_SMTP,
     "valid_email_patterns": [".*", ".*@localhost"]
 }

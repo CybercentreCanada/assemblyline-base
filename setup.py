@@ -53,6 +53,7 @@ setup(
         'cython',
         'docker',
         'kubernetes',
+        'notifications-python-client'
     ],
     package_data={
         '': [
