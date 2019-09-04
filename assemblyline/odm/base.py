@@ -196,6 +196,11 @@ class Keyword(_Field):
     """
 
     def check(self, value, **kwargs):
+        # We have a special case for bytes here due to how often strings and bytes
+        # get mixed up in python apis
+        if isinstance(value, bytes):
+            raise ValueError(f"Keyword ({self.name}) doesn't accept bytes values")
+
         if value == '' or value is None:
             if self.default_set:
                 value = self.default
