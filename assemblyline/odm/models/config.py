@@ -567,14 +567,13 @@ SERVICE_CATEGORIES = [
     'Networking',
     'Static Analysis',
 ]
+
 SERVICE_STAGES = [
-    'SETUP',
     'FILTER',
     'EXTRACT',
     'CORE',
     'SECONDARY',
-    'POST',
-    'TEARDOWN'
+    'POST'
 ]
 
 # This is the model definition for the System block

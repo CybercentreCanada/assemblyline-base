@@ -9,7 +9,7 @@ DISPATCH_RUNNING_TASK_HASH = 'dispatch-active-tasks'
 
 # A null empty accepts, accepts all. A null rejects, rejects nothing
 DEFAULT_SERVICE_ACCEPTS = ".*"
-DEFAULT_SERVICE_REJECTS = None
+DEFAULT_SERVICE_REJECTS = "empty|metadata/.*"
 
 # Queue priority values for each bucket in the ingester
 PRIORITIES = {
