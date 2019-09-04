@@ -125,7 +125,7 @@ class Tagging(odm.Model):
                 instance_id = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 toolkit = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
-            exiftool = odm.Optional(odm.Compound(FileIMGExiftool))
+            exif_tool = odm.Optional(odm.Compound(FileIMGExiftool))
             mega_pixels = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             mode = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             size = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
