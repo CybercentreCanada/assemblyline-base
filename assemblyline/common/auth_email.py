@@ -36,10 +36,10 @@ def send_email(title: str, message: str, to: str):
 
 
 def send_reset_email(to: str, reset_id: str):
-    if config.auth.signup.notify.base_url is not None:
-        nc = NotificationsAPIClient(config.auth.signup.notify.api_key,
-                                    base_url=config.auth.signup.notify.base_url)
-        nc.send_email_notification(to, config.auth.signup.notify.password_reset_template,
+    if config.auth.internal.signup.notify.base_url is not None:
+        nc = NotificationsAPIClient(config.auth.internal.signup.notify.api_key,
+                                    base_url=config.auth.internal.signup.notify.base_url)
+        nc.send_email_notification(to, config.auth.internal.signup.notify.password_reset_template,
                                    personalisation={"fqdn": config.ui.fqdn, "reset_id": reset_id})
     else:
         message = dedent(f"""   
@@ -58,10 +58,10 @@ def send_reset_email(to: str, reset_id: str):
 
 
 def send_signup_email(to: str, registration_key: str):
-    if config.auth.signup.notify.base_url is not None:
-        nc = NotificationsAPIClient(config.auth.signup.notify.api_key,
-                                    base_url=config.auth.signup.notify.base_url)
-        nc.send_email_notification(to, config.auth.signup.notify.registration_template,
+    if config.auth.internal.signup.notify.base_url is not None:
+        nc = NotificationsAPIClient(config.auth.internal.signup.notify.api_key,
+                                    base_url=config.auth.internal.signup.notify.base_url)
+        nc.send_email_notification(to, config.auth.internal.signup.notify.registration_template,
                                    personalisation={"fqdn": config.ui.fqdn, "registration_key": registration_key})
     else:
         message = dedent(f"""
