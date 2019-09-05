@@ -109,6 +109,9 @@ def test_type_validation():
     with pytest.raises(ValueError):
         instance.second = 'cats'
 
+    with pytest.raises(ValueError):
+        instance.first = b'abc'
+
 
 # noinspection PyPropertyAccess
 def test_setters():
