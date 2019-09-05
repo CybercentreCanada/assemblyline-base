@@ -34,6 +34,7 @@ from assemblyline.remote.datatypes.lock import Lock
 
 default_dtl = forge.get_config().submission.dtl
 
+
 class AssemblylineDatastore(object):
     def __init__(self, datastore_object):
 
@@ -612,6 +613,13 @@ class AssemblylineDatastore(object):
         else:
             return services
 
+    @elasticapm.capture_span(span_type='datastore')
+    def list_all_heuristics(self, as_obj=True) -> Union[List[dict], List[Heuristic]]:
+        """
+        :param as_obj: Return ODM objects rather than dicts
+        """
+        heuristics = list(self.ds.heuristic.stream_search("id:*", as_obj=as_obj))
+        return heuristics
 
     @elasticapm.capture_span(span_type='datastore')
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(), redis=None):

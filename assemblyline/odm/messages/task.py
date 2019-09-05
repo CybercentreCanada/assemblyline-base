@@ -18,9 +18,9 @@ class FileInfo(odm.Model):
 @odm.model()
 class Task(odm.Model):
     sid = odm.UUID()
-    fileinfo: FileInfo = odm.Compound(FileInfo)   # File info block
+    fileinfo: FileInfo = odm.Compound(FileInfo)          # File info block
     service_name = odm.Keyword()
-    service_config = odm.Keyword()      # Service specific parameters
+    service_config = odm.Mapping(odm.Any(), default={})  # Service specific parameters
     depth = odm.Integer(default=0)
     max_files = odm.Integer()
     ttl = odm.Integer()

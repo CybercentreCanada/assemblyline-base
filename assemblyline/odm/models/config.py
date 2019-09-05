@@ -431,7 +431,7 @@ DEFAULT_SCALER = {
     'core_configs': {
         'dispatcher_files': {
             'container_config': {
-                'image': 'cccs/assemblyline_dev:4.0.8',
+                'image': 'cccs/assemblyline_dev:4.0.9',
                 'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py'],
                 'network': ['backend'],
             },
@@ -439,7 +439,7 @@ DEFAULT_SCALER = {
         },
         'dispatcher_submissions': {
             'container_config': {
-                'image': 'cccs/assemblyline_dev:4.0.8',
+                'image': 'cccs/assemblyline_dev:4.0.9',
                 'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py'],
                 'network': ['backend'],
             },
