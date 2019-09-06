@@ -236,7 +236,7 @@ class ValidatedKeyword(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError("Empty strings are not allow without defaults")
+                raise ValueError(f"Empty strings are not allow without defaults (field: {self.name})")
 
         if value is None:
             return value
