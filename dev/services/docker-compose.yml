@@ -10,7 +10,7 @@ services:
 
   # APKaye service
   alsvc_apkaye:
-    image: cccs/alsvc_apkaye:latest
+    image: cccs/assemblyline-service-apkaye:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     working_dir: /opt/al/al_services/alsvc_apkaye
@@ -31,7 +31,7 @@ services:
 
   # Characterize service
   alsvc_characterize:
-    image: cccs/alsvc_characterize:latest
+    image: cccs/assemblyline-service-characterize:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     working_dir: /opt/al/al_services/alsvc_characterize
@@ -101,7 +101,7 @@ services:
 
   # MetaPeek service
   alsvc_metapeek:
-    image: cccs/alsvc_metapeek:latest
+    image: cccs/assemblyline-service-metapeek:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
     working_dir: /opt/al/al_services/alsvc_metapeek
