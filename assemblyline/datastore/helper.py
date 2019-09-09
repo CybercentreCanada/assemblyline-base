@@ -260,6 +260,10 @@ class AssemblylineDatastore(object):
         self.submission_summary.delete(sid)
 
     @elasticapm.capture_span(span_type='datastore')
+    def get_all_heuristics(self):
+        return {h['id']: h for h in self.ds.heuristic.stream_search("id:*", as_obj=False)}
+
+    @elasticapm.capture_span(span_type='datastore')
     def get_multiple_results(self, keys, cl_engine=forge.get_classification(), as_obj=False):
         empties = {k: self.create_empty_result_from_key(k, cl_engine, as_obj=as_obj)
                    for k in keys if k.endswith(".e")}
@@ -478,30 +482,60 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_summary_from_keys(self, keys):
-        out = {"tags": [], "attack_matrix": []}
+        out = {
+            "tags": [],
+            "attack_matrix": [],
+            "heuristics": {
+                "info": [],
+                "suspicious": [],
+                "malicious": []
+            }
+        }
 
         if len(keys) == 0:
             return out
 
+        heuristics = self.get_all_heuristics()
         keys = [x for x in list(keys) if not x.endswith(".e")]
         items = self.result.multiget(keys, as_obj=False)
 
         for key, item in items.items():
             for section in item.get('result', {}).get('sections', []):
-                # Get attack matrix data
-                if section.get('heuristic', False) and section['heuristic'].get('attack_id', False):
-                    attack_id = section['heuristic']['attack_id']
-                    attack_pattern_def = attack_map.get(attack_id, {})
-                    if attack_pattern_def:
-                        out['attack_matrix'].append({
-                            "key": key,
-                            "attack_id": attack_id,
-                            "name": attack_pattern_def['name'],
-                            "categories": attack_pattern_def['categories']
+                if section.get('heuristic', False):
+                    # Get the heuristics data
+                    h = heuristics.get(section['heuristic']['heur_id'], None)
+                    if h is not None:
+                        if section['heuristic']['score'] < 100:
+                            b_type = "info"
+                        elif section['heuristic']['score'] < 1000:
+                            b_type = "suspicious"
+                        else:
+                            b_type = "malicious"
+
+                        out['heuristics'][b_type].append({
+                            'heur_id': h['heur_id'],
+                            'name': h['name'],
+                            'key': key
                         })
                     else:
-                        # TODO: I need a logger because I need to report this.
+                        # TODO: I need a logger because I need to report this
                         pass
+
+
+                    if section['heuristic'].get('attack_id', False):
+                        # Get attack matrix data
+                        attack_id = section['heuristic']['attack_id']
+                        attack_pattern_def = attack_map.get(attack_id, {})
+                        if attack_pattern_def:
+                            out['attack_matrix'].append({
+                                "key": key,
+                                "attack_id": attack_id,
+                                "name": attack_pattern_def['name'],
+                                "categories": attack_pattern_def['categories']
+                            })
+                        else:
+                            # TODO: I need a logger because I need to report this.
+                            pass
 
                 # Get tagging data
                 for tag_type, tags in flatten(section.get('tags', {})).items():
