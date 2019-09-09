@@ -63,7 +63,6 @@ class Service(odm.Model):
     description = odm.Text(store=True, default="NA", copyto="__text__")
     default_result_classification = odm.ClassificationString(default=Classification.UNRESTRICTED)
     enabled = odm.Boolean(store=True, default=False)
-    install_by_default = odm.Boolean(default=False)
     is_external = odm.Boolean(default=False)
     licence_count = odm.Integer(default=0)
 
