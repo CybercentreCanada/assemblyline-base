@@ -491,6 +491,11 @@ class AssemblylineDatastore(object):
                 "malicious": []
             }
         }
+        done_map = {
+            "heuristics": set(),
+            "attack": set(),
+            "tags": set()
+        }
 
         if len(keys) == 0:
             return out
@@ -512,27 +517,32 @@ class AssemblylineDatastore(object):
                         else:
                             b_type = "malicious"
 
-                        out['heuristics'][b_type].append({
-                            'heur_id': h['heur_id'],
-                            'name': h['name'],
-                            'key': key
-                        })
+                        cache_key = f"{h['heur_id']}_{key}"
+                        if cache_key not in done_map['heuristics']:
+                            out['heuristics'][b_type].append({
+                                'heur_id': h['heur_id'],
+                                'name': h['name'],
+                                'key': key
+                            })
+                            done_map['heuristics'].add(cache_key)
                     else:
                         # TODO: I need a logger because I need to report this
                         pass
-
 
                     if section['heuristic'].get('attack_id', False):
                         # Get attack matrix data
                         attack_id = section['heuristic']['attack_id']
                         attack_pattern_def = attack_map.get(attack_id, {})
                         if attack_pattern_def:
-                            out['attack_matrix'].append({
-                                "key": key,
-                                "attack_id": attack_id,
-                                "name": attack_pattern_def['name'],
-                                "categories": attack_pattern_def['categories']
-                            })
+                            cache_key = f"{attack_id}_{key}"
+                            if cache_key not in done_map['attack']:
+                                out['attack_matrix'].append({
+                                    "key": key,
+                                    "attack_id": attack_id,
+                                    "name": attack_pattern_def['name'],
+                                    "categories": attack_pattern_def['categories']
+                                })
+                                done_map['attack'].add(cache_key)
                         else:
                             # TODO: I need a logger because I need to report this.
                             pass
@@ -541,12 +551,16 @@ class AssemblylineDatastore(object):
                 for tag_type, tags in flatten(section.get('tags', {})).items():
                     if tags is not None:
                         for tag in tags:
-                            out['tags'].append({
-                                'type': tag_type,
-                                'short_type': tag_type.rsplit(".", 1)[-1],
-                                'value': tag,
-                                'key': key
-                            })
+                            cache_key = f"{tag_type}_{tag}_{key}"
+
+                            if cache_key not in done_map['tags']:
+                                out['tags'].append({
+                                    'type': tag_type,
+                                    'short_type': tag_type.rsplit(".", 1)[-1],
+                                    'value': tag,
+                                    'key': key
+                                })
+                                done_map['tags'].add(cache_key)
 
         return out
 
@@ -656,7 +670,8 @@ class AssemblylineDatastore(object):
         return heuristics
 
     @elasticapm.capture_span(span_type='datastore')
-    def save_or_freshen_file(self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(), redis=None):
+    def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
+                             cl_engine=forge.get_classification(), redis=None):
         with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
             current_fileinfo = self.ds.file.get(sha256, as_obj=False) or {}
 
