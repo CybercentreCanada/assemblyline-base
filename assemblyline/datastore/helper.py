@@ -380,6 +380,7 @@ class AssemblylineDatastore(object):
 
         files = {}
         scores = {}
+        file_data_map = self.file.multiget([x[:64] for x in submission['results']], as_dictionary=True, as_obj=False)
 
         for key, item in self.result.multiget([x for x in submission['results'] if not x.endswith(".e")],
                                               as_obj=False).items():
@@ -423,6 +424,9 @@ class AssemblylineDatastore(object):
 
                 placeholder[child_p['sha256']] = {
                     "name": [child_p['name']],
+                    "type": file_data_map[child_p['sha256']]['type'],
+                    "sha256": file_data_map[sha256]['sha256'],
+                    "size": file_data_map[sha256]['size'],
                     "children": children_list,
                     "truncated": truncated,
                     "score": scores.get(child_p['sha256'], 0),
@@ -446,6 +450,9 @@ class AssemblylineDatastore(object):
                 tree[sha256] = {
                     "name": [name],
                     "children": children,
+                    "type": file_data_map[sha256]['type'],
+                    "sha256": file_data_map[sha256]['sha256'],
+                    "size": file_data_map[sha256]['size'],
                     "truncated": False,
                     "score": scores.get(sha256, 0),
                 }
