@@ -1,8 +1,9 @@
 from assemblyline import odm
 
 
-@odm.model(index=True, store=False)
+@odm.model(index=False, store=False)
 class SubmissionSummary(odm.Model):
-    expiry_ts = odm.Date()        # Expiry date
-    tags = odm.Text(index=False)  # Tags cache
-    attack_matrix = odm.Text(index=False)  # Tags cache
+    expiry_ts = odm.Date(index=True)  # Expiry date
+    tags = odm.Text()                 # Tags cache
+    attack_matrix = odm.Text()        # Att&ck Matrix cache
+    heuristics = odm.Text()           # Heuristics cache
