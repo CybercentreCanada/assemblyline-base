@@ -425,8 +425,8 @@ class AssemblylineDatastore(object):
                 placeholder[child_p['sha256']] = {
                     "name": [child_p['name']],
                     "type": file_data_map[child_p['sha256']]['type'],
-                    "sha256": file_data_map[sha256]['sha256'],
-                    "size": file_data_map[sha256]['size'],
+                    "sha256": file_data_map[child_p['sha256']]['sha256'],
+                    "size": file_data_map[child_p['sha256']]['size'],
                     "children": children_list,
                     "truncated": truncated,
                     "score": scores.get(child_p['sha256'], 0),
