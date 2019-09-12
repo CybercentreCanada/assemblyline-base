@@ -9,33 +9,33 @@ class EnvironmentVariableDelta(odm.Model):
 
 @odm.model(index=False, store=False)
 class DockerConfigDelta(odm.Model):
-    image = odm.Optional(odm.Keyword())
+    allow_internet_access = odm.Optional(odm.Boolean())
     command = odm.Optional(odm.List(odm.Keyword()))
-    environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariableDelta)))
-    network = odm.Optional(odm.List(odm.Keyword()))
     cpu_cores = odm.Optional(odm.Float())
+    environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariableDelta)))
+    image = odm.Optional(odm.Keyword())
     ram_mb = odm.Optional(odm.Integer())
 
 
 @odm.model(index=False, store=False)
 class UpdateSourceDelta(odm.Model):
-    uri = odm.Optional(odm.Keyword())
-    name = odm.Optional(odm.Keyword())
-    username = odm.Optional(odm.Keyword())
-    password = odm.Optional(odm.Keyword())
     headers = odm.Optional(odm.Mapping(odm.Keyword()))
-    public_key = odm.Optional(odm.Keyword())
+    name = odm.Optional(odm.Keyword())
+    password = odm.Optional(odm.Keyword())
     pattern = odm.Optional(odm.Keyword())
+    public_key = odm.Optional(odm.Keyword())
+    uri = odm.Optional(odm.Keyword())
+    username = odm.Optional(odm.Keyword())
 
 
 @odm.model(index=False, store=False)
 class UpdateConfigDelta(odm.Model):
-    method = odm.Optional(odm.Enum(values=['run', 'build']))
-    sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
-    update_interval_seconds = odm.Optional(odm.Integer())
-    run_options = odm.Optional(odm.Compound(DockerConfigDelta))
     # build_options = odm.Optional(odm.Compound(DockerfileConfigDelta))
     generates_signatures = odm.Optional(odm.Boolean())
+    method = odm.Optional(odm.Enum(values=['run', 'build']))
+    run_options = odm.Optional(odm.Compound(DockerConfigDelta))
+    sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
+    update_interval_seconds = odm.Optional(odm.Integer())
 
 
 @odm.model(index=False, store=False)
