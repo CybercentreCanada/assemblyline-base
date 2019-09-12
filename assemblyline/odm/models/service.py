@@ -15,33 +15,33 @@ class EnvironmentVariable(odm.Model):
 
 @odm.model(index=False, store=False)
 class DockerConfig(odm.Model):
-    image: str = odm.Keyword()                                 # Complete name of the Docker image with tag
+    allow_internet_access: bool = odm.Boolean(default=False)
     command: Opt[List[str]] = odm.Optional(odm.List(odm.Keyword()))
-    environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
-    network: List[str] = odm.List(odm.Keyword(), default=[])         # Network access rules
     cpu_cores: float = odm.Float(default=1.0)
+    environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
+    image: str = odm.Keyword()                                 # Complete name of the Docker image with tag
     ram_mb: int = odm.Integer(default=1024)
 
 
 @odm.model(index=False, store=False)
 class UpdateSource(odm.Model):
-    uri = odm.Keyword()
     name = odm.Keyword()
-    username = odm.Optional(odm.Keyword())
     password = odm.Optional(odm.Keyword())
-    headers = odm.Optional(odm.Mapping(odm.Keyword()))
-    public_key = odm.Optional(odm.Keyword())
     pattern = odm.Optional(odm.Keyword())
+    public_key = odm.Optional(odm.Keyword())
+    uri = odm.Keyword()
+    username = odm.Optional(odm.Keyword())
+    headers = odm.Optional(odm.Mapping(odm.Keyword()))
 
 
 @odm.model(index=False, store=False)
 class UpdateConfig(odm.Model):
-    method = odm.Enum(values=['run', 'build'])                    # Are we going to run or build a container?
-    sources = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
-    update_interval_seconds = odm.Integer()                       # Update check interval in seconds
-    run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
     # build_options = odm.Optional(odm.Compound(DockerfileConfig))  # If we are going to build a container, how?
     generates_signatures = odm.Boolean(index=True, default=False)
+    method = odm.Enum(values=['run', 'build'])                    # Are we going to run or build a container?
+    run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
+    sources = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
+    update_interval_seconds = odm.Integer()                       # Update check interval in seconds
 
 
 @odm.model(index=False, store=False)
