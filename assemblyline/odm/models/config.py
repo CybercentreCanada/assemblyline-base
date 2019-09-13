@@ -384,7 +384,6 @@ class ScalerServiceDefaults(odm.Model):
     backlog: int = odm.Integer()
     min_instances: int = odm.Integer()
     environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
-    network: List[str] = odm.List(odm.Keyword())
 
     def apply(self, profile: ScalerProfile) -> dict:
         data = profile.as_primitives(strip_null=True)
@@ -418,7 +417,6 @@ DEFAULT_SCALER = {
         'backlog': 100,
         'min_instances': 0,
         'environment': [{'name': 'SERVICE_API_HOST', 'value': 'http://al_service_server:5003'}],
-        'network': ['svc'],
     },
     'core_defaults': {
         'growth': 60,
@@ -426,14 +424,12 @@ DEFAULT_SCALER = {
         'backlog': 100,
         'min_instances': 1,
         'environment': [],
-        'network': [],
     },
     'core_configs': {
         'dispatcher_files': {
             'container_config': {
                 'image': 'cccs/assemblyline_dev:4.0.9',
                 'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py'],
-                'network': ['backend'],
             },
             'queue': FILE_QUEUE
         },
@@ -441,7 +437,6 @@ DEFAULT_SCALER = {
             'container_config': {
                 'image': 'cccs/assemblyline_dev:4.0.9',
                 'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py'],
-                'network': ['backend'],
             },
             'queue': SUBMISSION_QUEUE
         }
