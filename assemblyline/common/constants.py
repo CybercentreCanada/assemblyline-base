@@ -6,6 +6,7 @@ FILE_QUEUE = 'dispatch-file-queue'
 SUBMISSION_QUEUE = 'dispatch-submission-queue'
 DISPATCH_TASK_HASH = 'dispatch-active-submissions'
 DISPATCH_RUNNING_TASK_HASH = 'dispatch-active-tasks'
+SCALER_TIMEOUT_QUEUE = 'scaler-timeout-queue'
 
 # A null empty accepts, accepts all. A null rejects, rejects nothing
 DEFAULT_SERVICE_ACCEPTS = ".*"

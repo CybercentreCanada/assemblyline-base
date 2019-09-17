@@ -191,7 +191,7 @@ class Dispatcher(odm.Model):
 
 
 DEFAULT_DISPATCHER = {
-    "timeout": 5*60,
+    "timeout": 15*60,
     "max_inflight": 1000
 }
 
