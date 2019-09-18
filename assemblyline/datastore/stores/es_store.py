@@ -165,7 +165,7 @@ class ESCollection(Collection):
                     elasticsearch.exceptions.ConnectionError,
                     elasticsearch.exceptions.ConnectionTimeout) as e:
                 if not isinstance(e, SearchRetryException):
-                    log.warning(f"No connection to elasticsearch {self.datastore._hosts}, retying...")
+                    log.warning(f"No connection to Elasticsearch {self.datastore._hosts}, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
@@ -173,7 +173,7 @@ class ESCollection(Collection):
             except elasticsearch.exceptions.TransportError as e:
                 err_code, msg, cause = e.args
                 if err_code == 503 or err_code == '503':
-                    log.warning("Looks like index is not ready yet, retying...")
+                    log.warning("Looks like index is not ready yet, retrying...")
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.datastore.connection_reset()
                     retries += 1
