@@ -392,7 +392,6 @@ class ScalerServiceDefaults(odm.Model):
         data.setdefault('backlog', self.backlog)
         data.setdefault('min_instances', self.min_instances)
         data['container_config'] = DockerConfig(data['container_config'])
-        data['container_config'].network = list(set(profile.container_config.network) | set(self.network))
         set_keys = set(var.name for var in profile.container_config.environment)
         for var in self.environment:
             if var.name not in set_keys:
