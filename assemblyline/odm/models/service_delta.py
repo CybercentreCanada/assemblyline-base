@@ -19,7 +19,7 @@ class DockerConfigDelta(odm.Model):
 
 @odm.model(index=False, store=False)
 class UpdateSourceDelta(odm.Model):
-    headers = odm.Optional(odm.Mapping(odm.Keyword()))
+    headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariableDelta)))
     name = odm.Optional(odm.Keyword())
     password = odm.Optional(odm.Keyword())
     pattern = odm.Optional(odm.Keyword())

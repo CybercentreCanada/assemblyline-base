@@ -31,7 +31,7 @@ class UpdateSource(odm.Model):
     public_key = odm.Optional(odm.Keyword())
     uri = odm.Keyword()
     username = odm.Optional(odm.Keyword())
-    headers = odm.Optional(odm.Mapping(odm.Keyword()))
+    headers = odm.List(odm.Compound(EnvironmentVariable), default=[])
 
 
 @odm.model(index=False, store=False)
