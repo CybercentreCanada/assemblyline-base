@@ -77,7 +77,7 @@ class Hash(object):
     def length(self):
         return retry_call(self.c.hlen, self.name)
 
-    def items(self):
+    def items(self) -> dict:
         items = retry_call(self.c.hgetall, self.name)
         if not isinstance(items, dict):
             return {}
@@ -105,22 +105,22 @@ class ExpiringHash(Hash):
         super(ExpiringHash, self).__init__(name, host, port, db)
         self.ttl = ttl
 
-    def add(self, key, value):
+    def add(self, key, value, ttl=None):
         rval = super(ExpiringHash, self).add(key, value)
-        retry_call(self.c.expire, self.name, self.ttl)
+        retry_call(self.c.expire, self.name, ttl or self.ttl)
         return rval
 
-    def set(self, key, value):
+    def set(self, key, value, ttl=None):
         rval = super(ExpiringHash, self).set(key, value)
-        retry_call(self.c.expire, self.name, self.ttl)
+        retry_call(self.c.expire, self.name, ttl or self.ttl)
         return rval
 
-    def increment(self, key, increment=1):
+    def increment(self, key, increment=1, ttl=None):
         rval = super(ExpiringHash, self).increment(key, increment)
-        retry_call(self.c.expire, self.name, self.ttl)
+        retry_call(self.c.expire, self.name, ttl or self.ttl)
         return rval
 
-    def limited_add(self, key, value, size_limit):
+    def limited_add(self, key, value, size_limit, ttl=None):
         rval = super(ExpiringHash, self).limited_add(key, value, size_limit)
-        retry_call(self.c.expire, self.name, self.ttl)
+        retry_call(self.c.expire, self.name, ttl or self.ttl)
         return rval
