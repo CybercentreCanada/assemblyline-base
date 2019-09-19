@@ -1,3 +1,4 @@
+import enum
 import os
 from assemblyline.common.path import modulepath
 
@@ -7,6 +8,18 @@ SUBMISSION_QUEUE = 'dispatch-submission-queue'
 DISPATCH_TASK_HASH = 'dispatch-active-submissions'
 DISPATCH_RUNNING_TASK_HASH = 'dispatch-active-tasks'
 SCALER_TIMEOUT_QUEUE = 'scaler-timeout-queue'
+
+
+# A table storing information about the state of a service, expected type is ExpiringHash
+# with a default ttl of None, and the ttl set per field based on the timeouts of queries
+# and service operation
+class ServiceStatus(enum.IntEnum):
+    Idle = 0
+    Running = 1
+
+
+SERVICE_STATE_HASH = 'service-stasis-table'
+
 
 # A null empty accepts, accepts all. A null rejects, rejects nothing
 DEFAULT_SERVICE_ACCEPTS = ".*"
