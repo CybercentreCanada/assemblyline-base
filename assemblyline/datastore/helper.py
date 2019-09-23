@@ -380,7 +380,10 @@ class AssemblylineDatastore(object):
 
         files = {}
         scores = {}
-        file_data_map = self.file.multiget([x[:64] for x in submission['results']], as_dictionary=True, as_obj=False)
+        file_hashes = [x[:64] for x in submission['results']]
+        file_hashes.extend([x[:64] for x in submission['errors']])
+        file_hashes.extend([f['sha256'] for f in submission['files']])
+        file_data_map = self.file.multiget(list(set(file_hashes)), as_dictionary=True, as_obj=False)
 
         for key, item in self.result.multiget([x for x in submission['results'] if not x.endswith(".e")],
                                               as_obj=False).items():
