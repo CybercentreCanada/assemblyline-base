@@ -773,9 +773,6 @@ DEFAULT_TAG_TYPES = {
 # Options regarding all submissions, regardless of their input method
 @odm.model()
 class Submission(odm.Model):
-    # Path to the routine used to
-    decode_file: str = odm.Keyword()
-
     # Default values for parameters that may be overridden on a per submission basis
     # How many extracted files may be added to a Submission
     default_max_extracted: int = odm.Integer()
@@ -797,7 +794,6 @@ class Submission(odm.Model):
 
 
 DEFAULT_SUBMISSION = {
-    'decode_file': 'assemblyline.common.codec.decode_file',
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
     'dtl': 15,
