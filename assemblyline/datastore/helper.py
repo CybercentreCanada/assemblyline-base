@@ -425,15 +425,28 @@ class AssemblylineDatastore(object):
                         recurse_tree(new_child, children_list,
                                      parents_p + [child_p['sha256']], lvl + 1)
 
-                placeholder[child_p['sha256']] = {
-                    "name": [child_p['name']],
-                    "type": file_data_map[child_p['sha256']]['type'],
-                    "sha256": file_data_map[child_p['sha256']]['sha256'],
-                    "size": file_data_map[child_p['sha256']]['size'],
-                    "children": children_list,
-                    "truncated": truncated,
-                    "score": scores.get(child_p['sha256'], 0),
-                }
+                try:
+                    placeholder[child_p['sha256']] = {
+                        "name": [child_p['name']],
+                        "type": file_data_map[child_p['sha256']]['type'],
+                        "sha256": file_data_map[child_p['sha256']]['sha256'],
+                        "size": file_data_map[child_p['sha256']]['size'],
+                        "children": children_list,
+                        "truncated": truncated,
+                        "score": scores.get(child_p['sha256'], 0),
+                    }
+                except KeyError as e:
+                    missing_key = str(e).strip("'")
+                    file_data_map[missing_key] = self.file.get(missing_key, as_obj=False)
+                    placeholder[child_p['sha256']] = {
+                        "name": [child_p['name']],
+                        "type": file_data_map[child_p['sha256']]['type'],
+                        "sha256": file_data_map[child_p['sha256']]['sha256'],
+                        "size": file_data_map[child_p['sha256']]['size'],
+                        "children": children_list,
+                        "truncated": truncated,
+                        "score": scores.get(child_p['sha256'], 0),
+                    }
 
         tree = {}
         for f in submission['files']:
