@@ -10,6 +10,27 @@ DISPATCH_RUNNING_TASK_HASH = 'dispatch-active-tasks'
 SCALER_TIMEOUT_QUEUE = 'scaler-timeout-queue'
 
 
+# Some pure functions for getting queue lengths (effectively for appending/prepending constants to strings)
+def service_queue_name(service: str) -> str:
+    """Take the name of a service, and provide the queue name to send tasks to that service."""
+    return 'service-queue-' + service
+
+
+def make_watcher_list_name(sid: str) -> str:
+    """Get the name of the list dispatcher will pull for sending out submission events."""
+    return 'dispatch-watcher-list-' + sid
+
+
+def get_temporary_submission_data_name(sid: str, file_hash: str) -> str:
+    """The HashMap used for tracking auxiliary processing data."""
+    return '/'.join((sid, file_hash, 'temp_data'))
+
+
+def get_tag_set_name(sid: str, file_hash: str) -> str:
+    """The HashSet used to track the tags for an in-process file."""
+    return '/'.join((sid, file_hash, 'tags'))
+
+
 # A table storing information about the state of a service, expected type is ExpiringHash
 # with a default ttl of None, and the ttl set per field based on the timeouts of queries
 # and service operation
