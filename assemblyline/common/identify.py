@@ -379,7 +379,7 @@ def subtype(label: str) -> str:
 
 
 def ident(buf, length: int) -> Dict:
-    data = {'ascii': '', 'hex': '', 'magic': '', 'mime': '', 'type': 'unknown'}
+    data = {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}
 
     if length <= 0:
         return data

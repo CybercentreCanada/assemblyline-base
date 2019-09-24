@@ -17,7 +17,7 @@ class File(odm.Model):
     hex = odm.Keyword(index=False, store=False)       # Hex dump of the first 64 bytes of the file
     md5 = odm.Keyword(copyto="__text__")              # MD5 of the top level file
     magic = odm.Keyword(store=False)                  # Output from libmagic related to that file
-    mime = odm.Keyword(store=False)                   # Mime type of the file as identified by libmagic
+    mime = odm.Optional(odm.Keyword(store=False))     # Mime type of the file as identified by libmagic
     seen = odm.Compound(Seen, default={})             # Attributes about when the file was seen
     sha1 = odm.Keyword(copyto="__text__")             # SHA1 hash of the file
     sha256 = odm.Keyword(copyto="__text__")           # SHA256 hash of the file
