@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 import redis
 import json
 
@@ -96,6 +98,12 @@ class Hash(object):
             raise ValueError("Cannot use bytes for hashmap keys")
         return retry_call(self.c.hset, self.name, key, json.dumps(value))
 
+    def multi_set(self, data: Dict[str, Any]):
+        if any(isinstance(key, bytes) for key in data.keys()):
+            raise ValueError("Cannot use bytes for hashmap keys")
+        encoded = {key: json.dumps(value) for key, value in data.items()}
+        return retry_call(self.c.hmset, self.name, mapping=encoded)
+
     def delete(self):
         retry_call(self.c.delete, self.name)
 
@@ -105,22 +113,27 @@ class ExpiringHash(Hash):
         super(ExpiringHash, self).__init__(name, host, port, db)
         self.ttl = ttl
 
-    def add(self, key, value, ttl=None):
+    def add(self, key, value):
         rval = super(ExpiringHash, self).add(key, value)
-        retry_call(self.c.expire, self.name, ttl or self.ttl)
+        retry_call(self.c.expire, self.name, self.ttl)
         return rval
 
-    def set(self, key, value, ttl=None):
+    def set(self, key, value):
         rval = super(ExpiringHash, self).set(key, value)
-        retry_call(self.c.expire, self.name, ttl or self.ttl)
+        retry_call(self.c.expire, self.name, self.ttl)
         return rval
 
-    def increment(self, key, increment=1, ttl=None):
+    def multi_set(self, data):
+        rval = super(ExpiringHash, self).multi_set(data)
+        retry_call(self.c.expire, self.name, self.ttl)
+        return rval
+
+    def increment(self, key, increment=1):
         rval = super(ExpiringHash, self).increment(key, increment)
-        retry_call(self.c.expire, self.name, ttl or self.ttl)
+        retry_call(self.c.expire, self.name, self.ttl)
         return rval
 
-    def limited_add(self, key, value, size_limit, ttl=None):
+    def limited_add(self, key, value, size_limit):
         rval = super(ExpiringHash, self).limited_add(key, value, size_limit)
-        retry_call(self.c.expire, self.name, ttl or self.ttl)
+        retry_call(self.c.expire, self.name, self.ttl)
         return rval
