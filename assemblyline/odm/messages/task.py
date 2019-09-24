@@ -16,6 +16,13 @@ class FileInfo(odm.Model):
 
 
 @odm.model()
+class TagItem(odm.Model):
+    type = odm.Keyword()
+    value = odm.Keyword()
+    short_type = odm.Optional(odm.Keyword())
+
+
+@odm.model()
 class Task(odm.Model):
     sid = odm.UUID()
     fileinfo: FileInfo = odm.Compound(FileInfo)          # File info block
@@ -24,6 +31,9 @@ class Task(odm.Model):
     depth = odm.Integer(default=0)
     max_files = odm.Integer()
     ttl = odm.Integer()
+
+    tags = odm.List(odm.Compound(TagItem))
+    temporary_submission_data = odm.List(odm.Compound(TagItem))
 
     # Whether the service cache should be ignored during the processing of this task
     ignore_cache = odm.Boolean(default=False)
