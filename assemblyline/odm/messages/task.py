@@ -19,7 +19,13 @@ class FileInfo(odm.Model):
 class TagItem(odm.Model):
     type = odm.Keyword()
     value = odm.Keyword()
-    short_type = odm.Optional(odm.Keyword())
+    short_type = odm.Keyword()
+
+
+@odm.model()
+class DataItem(odm.Model):
+    name = odm.Keyword()
+    value = odm.Any()
 
 
 @odm.model()
@@ -33,7 +39,7 @@ class Task(odm.Model):
     ttl = odm.Integer()
 
     tags = odm.List(odm.Compound(TagItem))
-    temporary_submission_data = odm.List(odm.Compound(TagItem))
+    temporary_submission_data = odm.List(odm.Compound(DataItem))
 
     # Whether the service cache should be ignored during the processing of this task
     ignore_cache = odm.Boolean(default=False)
