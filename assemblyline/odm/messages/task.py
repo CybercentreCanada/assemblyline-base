@@ -38,8 +38,8 @@ class Task(odm.Model):
     max_files = odm.Integer()
     ttl = odm.Integer()
 
-    tags = odm.List(odm.Compound(TagItem))
-    temporary_submission_data = odm.List(odm.Compound(DataItem))
+    tags = odm.List(odm.Compound(TagItem), default=[])
+    temporary_submission_data = odm.List(odm.Compound(DataItem), default=[])
 
     # Whether the service cache should be ignored during the processing of this task
     ignore_cache = odm.Boolean(default=False)
