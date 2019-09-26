@@ -690,7 +690,7 @@ def fileinfo(path: str) -> Dict:
     # then the input file is almost certainly an office file, but based on only the first
     # block magic can't figure out any more than that. To handle that case we will read the
     # entire file, and identify again.
-    if data['mime'].lower() in ['application/cdfv2-corrupt', 'application/cdfv2-unknown']:
+    if data['mime'] is not None and data['mime'].lower() in ['application/cdfv2-corrupt', 'application/cdfv2-unknown']:
         with open(path, 'rb') as fh:
             buf = fh.read()
             buflen = len(buf)
