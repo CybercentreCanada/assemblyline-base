@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import random
 
@@ -15,7 +16,7 @@ from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.odm.randomizer import SERVICES, random_model_obj, get_random_phrase
+from assemblyline.odm.randomizer import SERVICES, random_model_obj, get_random_phrase, get_random_uri, get_random_word
 from assemblyline.run.suricata_importer import SuricataImporter
 from assemblyline.run.yara_importer import YaraImporter
 from assemblyline.datastore.helper import AssemblylineDatastore
@@ -146,6 +147,25 @@ def _create_results_for_file(ds, f, possible_childs=None, log=None):
     services_done = []
     for _ in range(random.randint(2, 5)):
         r = random_model_obj(Result)
+        for section in r.result.sections:
+            if section.body_format == "GRAPH_DATA":
+                cmap_min = 0
+                cmap_max = random.choice([5, 10, 20])
+                color_map_data = {
+                    'type': 'colormap',
+                    'data': {
+                        'domain': [cmap_min, cmap_max],
+                        'values': [random.random() * cmap_max for _ in range(50)]
+                    }
+                }
+                section.body = json.dumps(color_map_data)
+            elif section.body_format == "URL":
+                data = [{"url": get_random_uri()} for _ in range(random.randint(1, 4))]
+                section.body = json.dumps(data)
+            elif section.body_format == "JSON":
+                data = {get_random_word(): get_random_id() for _ in range(random.randint(3, 9))}
+                section.body = json.dumps(data)
+
         # Only one result per service per file
         while r.response.service_name in services_done:
             r.response.service_name = random.choice(list(SERVICES.keys()))
