@@ -122,6 +122,13 @@ class AutoExportingCounters(object):
 
 
 def export_metrics_once(name, schema, metrics, host=None, counter_type=None, config=None, redis=None):
+    """Manually publish metric counts to the metrics system.
+
+    This was built for when the service server is reporting metrics for execution and caching
+    on behalf of many services. At the moment the metrics system uses the hosts to count the number
+    of instances of each service. This could be done with a single auto exporting counter for
+    the service server, but that may require significant downstream changes in the metrics system.
+    """
     config = config or forge.get_config()
     redis = redis or get_client(
         config.core.metrics.redis.host,
