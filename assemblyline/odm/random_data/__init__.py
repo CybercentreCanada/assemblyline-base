@@ -145,8 +145,11 @@ def _create_errors_for_file(ds, f, services_done, log=None):
 def _create_results_for_file(ds, f, possible_childs=None, log=None):
     r_list = []
     services_done = []
-    for _ in range(random.randint(2, 5)):
+    section_depth_list = [[1, 1, 2, 3, 1], [1, 2, 1], [1, 2, 3, 1], [1, 2]]
+    section_depth = random.choice(section_depth_list)
+    for depth_id in range(random.randint(2, 5)):
         r = random_model_obj(Result)
+        r.depth = section_depth[depth_id % len(section_depth)]
         for section in r.result.sections:
             if section.body_format == "GRAPH_DATA":
                 cmap_min = 0
