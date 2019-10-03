@@ -20,7 +20,6 @@ services:
     image: cccs/assemblyline-service-apkaye:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_apkaye
 
   # Beaver service
 #  alsvc_beaver:
@@ -41,7 +40,6 @@ services:
     image: cccs/assemblyline-service-characterize:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_characterize
 
   # Cleaver service
   alsvc_cleaver:
@@ -69,7 +67,6 @@ services:
     image: cccs/alsvc_extract:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_extract
 
   # FrankenStrings service
   alsvc_frankenstrings:
@@ -111,7 +108,6 @@ services:
     image: cccs/assemblyline-service-metapeek:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_metapeek
 
   # NSRL service
 #  alsvc_nsrl:
