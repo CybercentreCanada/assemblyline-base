@@ -23,14 +23,14 @@ def test_https():
     assert fs.get('assemblyline') is not None
 
 
-def test_sftp():
-    """
-    Test SFTP FileStore by fetching the readme.txt file from
-    Rebex test server.
-    """
-    fs = FileStore('sftp://demo:password@test.rebex.net')
-    assert fs.exists('readme.txt') != []
-    assert fs.get('readme.txt') is not None
+# def test_sftp():
+#     """
+#     Test SFTP FileStore by fetching the readme.txt file from
+#     Rebex test server.
+#     """
+#     fs = FileStore('sftp://demo:password@test.rebex.net')
+#     assert fs.exists('readme.txt') != []
+#     assert fs.get('readme.txt') is not None
 
 
 def test_ftp():
