@@ -186,18 +186,16 @@ services:
     working_dir: /opt/al/al_services/alsvc_unpacker
 
   # VirusTotalDynamic service
-#  alsvc_virustotal_dynamic:
-#    image: cccs/alsvc_virustotal_dynamic:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_virustotal_dynamic
+  alsvc_virustotal_dynamic:
+    image: cccs/assemblyline-service-virustotal-dynamic:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # VirusTotalStatic service
-#  alsvc_virustotal_static:
-#    image: cccs/alsvc_virustotal_static:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_virustotal_static
+  alsvc_virustotal_static:
+    image: cccs/assemblyline-service-virustotal-static:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # Yara service
   alsvc_yara:
