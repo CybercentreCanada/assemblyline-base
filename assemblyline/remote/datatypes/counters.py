@@ -6,11 +6,11 @@ from assemblyline.remote.datatypes.hash import Hash
 
 
 class Counters(object):
-    def __init__(self, prefix="counter", host=None, port=None, db=None, track_counters=False):
-        self.c = get_client(host, port, db, False)
+    def __init__(self, prefix="counter", host=None, port=None, track_counters=False):
+        self.c = get_client(host, port, False)
         self.prefix = prefix
         if track_counters:
-            self.tracker = Hash("c-tracker-%s" % prefix, host=host, port=port, db=db)
+            self.tracker = Hash("c-tracker-%s" % prefix, host=host, port=port)
         else:
             self.tracker = None
 

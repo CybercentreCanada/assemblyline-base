@@ -4,8 +4,8 @@ from assemblyline.remote.datatypes import get_client, retry_call
 
 
 class MultiQueue(object):
-    def __init__(self, host=None, port=None, db=None, private=False):
-        self.c = get_client(host, port, db, private)
+    def __init__(self, host=None, port=None, private=False):
+        self.c = get_client(host, port, private)
 
     def delete(self, name):
         retry_call(self.c.delete, name)

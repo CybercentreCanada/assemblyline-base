@@ -29,7 +29,6 @@ class MetricsFactory(object):
         self.redis = redis or get_client(
             self.config.core.metrics.redis.host,
             self.config.core.metrics.redis.port,
-            self.config.core.metrics.redis.db,
             False
         )
 

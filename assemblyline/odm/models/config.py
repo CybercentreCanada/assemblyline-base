@@ -280,19 +280,16 @@ DEFAULT_INGESTER = {
 
 @odm.model()
 class RedisServer(odm.Model):
-    db: int = odm.Integer()
     host: str = odm.Keyword()
     port: int = odm.Integer()
 
 
 DEFAULT_REDIS_NP = {
-    "db": 0,
     "host": "127.0.0.1",
     "port": 6379
 }
 
 DEFAULT_REDIS_P = {
-    "db": 0,
     "host": "127.0.0.1",
     "port": 6380
 }

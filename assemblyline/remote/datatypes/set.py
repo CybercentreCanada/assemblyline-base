@@ -24,8 +24,8 @@ return false
 
 
 class Set(object):
-    def __init__(self, name, host=None, port=None, db=None):
-        self.c = get_client(host, port, db, False)
+    def __init__(self, name, host=None, port=None):
+        self.c = get_client(host, port, False)
         self.name = name
         self._drop_card = self.c.register_script(_drop_card_script)
         self._limited_add = self.c.register_script(_limited_add)
@@ -75,8 +75,8 @@ class Set(object):
 
 
 class ExpiringSet(Set):
-    def __init__(self, name, ttl=86400, host=None, port=None, db=None):
-        super(ExpiringSet, self).__init__(name, host, port, db)
+    def __init__(self, name, ttl=86400, host=None, port=None):
+        super(ExpiringSet, self).__init__(name, host, port)
         self.ttl = ttl
 
     def add(self, *values):

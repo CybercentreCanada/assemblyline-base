@@ -133,7 +133,6 @@ def export_metrics_once(name, schema, metrics, host=None, counter_type=None, con
     redis = redis or get_client(
         config.core.metrics.redis.host,
         config.core.metrics.redis.port,
-        config.core.metrics.redis.db,
         False
     )
 

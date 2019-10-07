@@ -1031,8 +1031,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             flsk_sess = Hash(
                 "flask_sessions",
                 host=config.core.redis.nonpersistent.host,
-                port=config.core.redis.nonpersistent.port,
-                db=config.core.redis.nonpersistent.db
+                port=config.core.redis.nonpersistent.port
             )
 
             if not username:
@@ -1053,8 +1052,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             flsk_sess = Hash(
                 "flask_sessions",
                 host=config.core.redis.nonpersistent.host,
-                port=config.core.redis.nonpersistent.port,
-                db=config.core.redis.nonpersistent.db
+                port=config.core.redis.nonpersistent.port
             )
 
             if not username:

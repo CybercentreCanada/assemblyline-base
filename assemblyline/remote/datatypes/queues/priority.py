@@ -53,8 +53,8 @@ return result
 
 
 class PriorityQueue(object):
-    def __init__(self, name, host=None, port=None, db=None, private=False):
-        self.c = get_client(host, port, db, private)
+    def __init__(self, name, host=None, port=None, private=False):
+        self.c = get_client(host, port, private)
         self.r = self.c.register_script(pq_pop_script)
         self.s = self.c.register_script(pq_push_script)
         self.t = self.c.register_script(pq_unpush_script)
@@ -124,8 +124,8 @@ class PriorityQueue(object):
 class UniquePriorityQueue(PriorityQueue):
     """A priority queue where duplicate entries will be merged."""
 
-    def __init__(self, name, host=None, port=None, db=None, private=False):
-        super().__init__(name, host, port, db, private)
+    def __init__(self, name, host=None, port=None, private=False):
+        super().__init__(name, host, port, private)
         del self.s
 
     def remove(self, data: str):

@@ -63,26 +63,25 @@ def retry_call(func, *args, **kw):
             exponent = exponent + 1 if exponent < maximum else exponent
 
 
-def get_client(host, port, db, private):
+def get_client(host, port, private):
     # In case a structure is passed a client as host
     if isinstance(host, (redis.Redis, redis.StrictRedis)):
         return host
 
-    if not host or not port or not db:
+    if not host or not port:
         config = forge.get_config(static=True)
 
         host = host or config.core.redis.nonpersistent.host
         port = int(port or config.core.redis.nonpersistent.port)
-        db = int(db or config.core.redis.nonpersistent.db)
 
     if private:
-        return redis.StrictRedis(host=host, port=port, db=db)
+        return redis.StrictRedis(host=host, port=port)
     else:
-        return redis.StrictRedis(connection_pool=get_pool(host, port, db))
+        return redis.StrictRedis(connection_pool=get_pool(host, port))
 
 
-def get_pool(host, port, db):
-    key = (host, port, db)
+def get_pool(host, port):
+    key = (host, port)
 
     connection_pool = pool.get(key, None)
     if not connection_pool:
@@ -90,7 +89,6 @@ def get_pool(host, port, db):
             redis.BlockingConnectionPool(
                 host=host,
                 port=port,
-                db=db,
                 max_connections=200
             )
         pool[key] = connection_pool

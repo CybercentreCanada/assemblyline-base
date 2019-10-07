@@ -4,8 +4,8 @@ from assemblyline.remote.datatypes import get_client, retry_call
 
 
 class NamedQueue(object):
-    def __init__(self, name, host=None, port=None, db=None, private=False, ttl=0):
-        self.c = get_client(host, port, db, private)
+    def __init__(self, name, host=None, port=None, private=False, ttl=0):
+        self.c = get_client(host, port, private)
         self.name = name
         self.ttl = ttl
 

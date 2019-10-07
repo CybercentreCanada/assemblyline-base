@@ -26,11 +26,11 @@ return nil
 
 
 class Hash(object):
-    def __init__(self, name, host=None, port=None, db=None):
+    def __init__(self, name, host=None, port=None):
         if isinstance(host, redis.Redis):
             self.c = host
         else:
-            self.c = get_client(host, port, db, False)
+            self.c = get_client(host, port, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
         self._limited_add = self.c.register_script(_limited_add)
@@ -109,8 +109,8 @@ class Hash(object):
 
 
 class ExpiringHash(Hash):
-    def __init__(self, name, ttl=86400, host=None, port=None, db=None):
-        super(ExpiringHash, self).__init__(name, host, port, db)
+    def __init__(self, name, ttl=86400, host=None, port=None):
+        super(ExpiringHash, self).__init__(name, host, port)
         self.ttl = ttl
 
     def add(self, key, value):
