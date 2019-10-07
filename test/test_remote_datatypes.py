@@ -13,7 +13,7 @@ from assemblyline.common.uid import get_random_id
 @pytest.fixture(scope='session')
 def redis_connection():
     from assemblyline.remote.datatypes import get_client
-    c = get_client(None, None, None, False)
+    c = get_client(None, None, False)
     try:
         ret_val = c.ping()
         if ret_val:
