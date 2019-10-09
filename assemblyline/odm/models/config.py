@@ -306,20 +306,6 @@ DEFAULT_ES_METRICS = {
 
 
 @odm.model()
-class KBMetrics(odm.Model):
-    host: str = odm.Optional(odm.Keyword())
-    password: str = odm.Keyword()
-    port: int = odm.Integer()
-
-
-DEFAULT_KB_METRICS = {
-    'host': None,
-    'password': 'kibana',
-    'port': 5601
-}
-
-
-@odm.model()
 class APMServer(odm.Model):
     server_url: str = odm.Optional(odm.Keyword())
     token: str = odm.Optional(odm.Keyword())
@@ -336,7 +322,6 @@ class Metrics(odm.Model):
     apm_server: APMServer = odm.Compound(APMServer, default=DEFAULT_APM_SERVER)
     elasticsearch: ESMetrics = odm.Compound(ESMetrics, default=DEFAULT_ES_METRICS)
     export_interval: int = odm.Integer()
-    kibana: KBMetrics = odm.Compound(KBMetrics, default=DEFAULT_KB_METRICS)
     redis: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
 
 
@@ -344,7 +329,6 @@ DEFAULT_METRICS = {
     'apm_server': DEFAULT_APM_SERVER,
     'elasticsearch': DEFAULT_ES_METRICS,
     'export_interval': 5,
-    'kibana': DEFAULT_KB_METRICS,
     'redis': DEFAULT_REDIS_NP,
 }
 
@@ -465,41 +449,14 @@ DEFAULT_CORE = {
 
 
 @odm.model()
-class Elasticsearch(odm.Model):
-    heap_min_size: int = odm.Integer()
-    heap_max_size: int = odm.Integer()
-    nodes: List[str] = odm.List(odm.Keyword())
-
-
-DEFAULT_ELASTICSEARCH = {
-    "heap_min_size": 1,
-    "heap_max_size": 4,
-    "nodes": ['localhost']
-}
-
-
-@odm.model()
-class Solr(odm.Model):
-    # TODO: Model definition for Solr needs to be done
-    pass
-
-
-DEFAULT_SOLR = {}
-
-
-@odm.model()
 class Datastore(odm.Model):
     type = odm.Enum({"elasticsearch", "solr"})
     hosts: List[str] = odm.List(odm.Keyword())
-    elasticsearch: Elasticsearch = odm.Compound(Elasticsearch, default=DEFAULT_ELASTICSEARCH)
-    solr: Solr = odm.Compound(Solr, default=DEFAULT_SOLR)
 
 
 DEFAULT_DATASTORE = {
     "type": "elasticsearch",
-    "hosts": ["localhost"],
-    "elasticsearch": DEFAULT_ELASTICSEARCH,
-    "solr": DEFAULT_SOLR
+    "hosts": ["http://assemblyline:assemblylinepass@localhost"],
 }
 
 
