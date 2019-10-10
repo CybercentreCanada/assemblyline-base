@@ -73,8 +73,8 @@ services:
       K_USERNAME: user
       K_PASSWORD: devpass
     volumes:
-      - /opt/alv4/alv4/dev/depends/scripts:/var/lib/assemblyline/scripts
-    command: python /var/lib/assemblyline/scripts/setup_elastic.py
+      - /opt/alv4/alv4/assemblyline/run:/var/lib/assemblyline/run
+    command: python /var/lib/assemblyline/run/setup_elastic.py
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.4.0
