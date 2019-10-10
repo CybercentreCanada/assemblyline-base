@@ -35,7 +35,7 @@ services:
       ES_HOSTS: elasticsearch:9200
       ELASTICSEARCH_USERNAME: apm
       ELASTICSEARCH_PASSWORD: apmpass
-    command: /usr/local/bin/docker-entrypoint -e -E output.elasticsearch.username=$$ELASTICSEARCH_USERNAME -E output.elasticsearch.password=$$ELASTICSEARCH_PASSWORD
+    command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e -E output.elasticsearch.username=$$ELASTICSEARCH_USERNAME -E output.elasticsearch.password=$$ELASTICSEARCH_PASSWORD"
     ports:
       - '8200:8200'
     depends_on:
@@ -59,7 +59,7 @@ services:
       retries: 3
 
   elasticsearch-setup:
-    image: sgaroncse/elasticsearch:7.4.0
+    image: cccs/assemblyline
     environment:
       ELASTIC_HOST: elasticsearch
       ELASTIC_PASSWORD: temporary_setup_password
@@ -72,7 +72,9 @@ services:
       SU_PASSWORD: devpass
       K_USERNAME: user
       K_PASSWORD: devpass
-    command: /usr/share/elasticsearch/setup.sh
+    volumes:
+      - /opt/alv4/alv4/dev/depends/scripts:/var/lib/assemblyline/scripts
+    command: python /var/lib/assemblyline/scripts/setup_elastic.py
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.4.0
