@@ -534,42 +534,41 @@ class TypedMapping(dict):
         self.index = index
         self.store = store
         if self.index or self.store:
-            for key in items.keys():
-                if not FIELD_SANITIZER.match(key):
-                    raise KeyError(f"Illegal key: {key}")
+            self.sanitizer = FIELD_SANITIZER
+        else:
+            self.sanitizer = re.compile("^[A-Za-z0-9_ ]*$")
+        for key in items.keys():
+            if not self.sanitizer.match(key):
+                raise KeyError(f"Illegal key: {key}")
         super().__init__({key: type_p.check(el) for key, el in items.items()})
         self.type = type_p
 
     def __setitem__(self, key, item):
-        if self.index or self.store:
-            if not FIELD_SANITIZER.match(key):
-                raise KeyError(f"Illegal key: {key}")
+        if not self.sanitizer.match(key):
+            raise KeyError(f"Illegal key: {key}")
         return super().__setitem__(key, self.type.check(item))
 
     def update(self, *args, **kwargs):
         # Update supports three input layouts:
         # 1. A single dictionary
         if len(args) == 1 and isinstance(args[0], dict):
-            if self.index or self.store:
-                for key in args[0].keys():
-                    if not FIELD_SANITIZER.match(key):
-                        raise KeyError(f"Illegal key: {key}")
+            for key in args[0].keys():
+                if not self.sanitizer.match(key):
+                    raise KeyError(f"Illegal key: {key}")
             return super().update({key: self.type.check(item) for key, item in args[0].items()})
 
         # 2. A list of key value pairs as if you were constructing a dictionary
         elif args:
-            if self.index or self.store:
-                for key, value in args:
-                    if not FIELD_SANITIZER.match(key):
-                        raise KeyError(f"Illegal key: {key}")
+            for key, value in args:
+                if not self.sanitizer.match(key):
+                    raise KeyError(f"Illegal key: {key}")
             return super().update({key: self.type.check(item) for key, item in args})
 
         # 3. Key values as arguments, can be combined with others
         if kwargs:
-            if self.index or self.store:
-                for key in kwargs.keys():
-                    if not FIELD_SANITIZER.match(key):
-                        raise KeyError(f"Illegal key: {key}")
+            for key in kwargs.keys():
+                if not self.sanitizer.match(key):
+                    raise KeyError(f"Illegal key: {key}")
             return super().update({key: self.type.check(item) for key, item in kwargs.items()})
 
 

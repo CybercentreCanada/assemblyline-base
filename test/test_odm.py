@@ -393,7 +393,7 @@ def test_sub_field_masking():
 def test_mapping():
     @model()
     class Test(Model):
-        a = Mapping(Integer(), default={})
+        a = Mapping(Integer(), default={}, index=True, store=True)
 
     test = Test({})
 
@@ -406,12 +406,49 @@ def test_mapping():
         test.a['abc.abc.abc'] = None
 
     with pytest.raises(KeyError):
-        test.a['4abc.abc.abc'] = None
+        test.a['4abc'] = None
+
+    with pytest.raises(KeyError):
+        test.a['ABC'] = None
+
+    with pytest.raises(KeyError):
+        test.a['a b'] = None
+
 
     test.a['cat'] = 10
     test.a['dog'] = -100
 
     assert len(test.a) == 2
+    assert test.a['dog'] == -100
+
+    with pytest.raises(ValueError):
+        test.a['red'] = 'can'
+
+    test = Test({'a': {'walk': 100}})
+    assert len(test.a) == 1
+    assert test.a['walk'] == 100
+
+
+def test_non_indexed_mapping():
+    @model()
+    class Test(Model):
+        a = Mapping(Integer(), default={}, index=False, store=False)
+
+    test = Test({})
+    assert len(test.a) == 0
+    with pytest.raises(KeyError):
+        _ = test.a['abc']
+
+    with pytest.raises(KeyError):
+        test.a['abc.abc.abc'] = None
+
+    test.a['4abc'] = 1
+    test.a['ABC'] = 1
+    test.a['a b'] = 1
+    test.a['cat'] = 10
+    test.a['dog'] = -100
+
+    assert len(test.a) == 5
     assert test.a['dog'] == -100
 
     with pytest.raises(ValueError):
