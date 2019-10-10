@@ -18,32 +18,14 @@ metricbeat.modules:
     hosts: ["unix:///var/run/docker.sock"]
     period: 10s
     enabled: true
-  - module: kibana
-    metricsets: ["status"]
-    period: 10s
-    hosts: ["kibana:5601"]
-    basepath: ""
-    enabled: true
-    # xpack.enabled: true
-  - module: elasticsearch
-    metricsets:
-      - node
-      - node_stats
-      - index
-      - index_recovery
-      - index_summary
-      - shard
-      - ml_job
-    period: 10s
-    hosts: ["elasticsearch:9200"]
-    enabled: true
-    # xpack.enabled: true
 
 processors:
   - add_cloud_metadata: ~
 
 output.elasticsearch:
   hosts: 'elasticsearch:9200'
+  username: metricbeat
+  password: metricbeatpass
 
 setup.kibana.host: "http://kibana:5601"
 setup.dashboards.enabled: true

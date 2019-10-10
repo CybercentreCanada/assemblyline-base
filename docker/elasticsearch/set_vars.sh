@@ -15,3 +15,7 @@ fi
 if [ $CLUSTER_NAME ]; then
     grep -q 'cluster.name:' config/elasticsearch.yml || echo "cluster.name: $CLUSTER_NAME" >> config/elasticsearch.yml
 fi
+
+if [ $ELASTIC_PASSWORD ]; then
+    grep -q 'xpack.security.enabled:' config/elasticsearch.yml || echo "xpack.security.enabled: true" >> config/elasticsearch.yml
+fi

@@ -15,3 +15,5 @@ processors:
 
 output.elasticsearch:
   hosts: 'elasticsearch:9200'
+  username: filebeat
+  password: filebeatpass
