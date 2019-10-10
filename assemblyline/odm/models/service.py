@@ -59,7 +59,7 @@ class Service(odm.Model):
     rejects = odm.Optional(odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS))
 
     category = odm.Keyword(store=True, default="Static Analysis", copyto="__text__")
-    config = odm.Mapping(odm.Any(), default={})
+    config = odm.Mapping(odm.Any(), default={}, index=False, store=False)
     description = odm.Text(store=True, default="NA", copyto="__text__")
     default_result_classification = odm.ClassificationString(default=Classification.UNRESTRICTED)
     enabled = odm.Boolean(store=True, default=False)
