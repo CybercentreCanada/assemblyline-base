@@ -96,11 +96,10 @@ services:
 #    working_dir: /opt/al/al_services/alsvc_lastline
 
   # MetaDefender service
-#  alsvc_metadefender:
-#    image: cccs/alsvc_metadefender:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_metadefender
+  alsvc_metadefender:
+    image: cccs/assemblyline-service-metadefender:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # MetaPeek service
   alsvc_metapeek:
