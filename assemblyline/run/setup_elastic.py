@@ -78,6 +78,11 @@ if __name__ == "__main__":
             req = requests.get(f"http://elastic:{ELASTIC_PASSWORD}@{ELASTIC_HOST}:9200/_cluster/health")
             if req.status_code == 401:
                 print(f"Cannot configure elasticsearch server at {ELASTIC_HOST} with the provided password. Exiting...")
+                if os.getenv("SU_USERNAME") and os.getenv("SU_PASSWORD"):
+                    req = requests.get(f"http://{os.getenv('SU_USERNAME')}:{os.getenv('SU_PASSWORD')}"
+                                       f"@{ELASTIC_HOST}:9200/_cluster/health")
+                    if req.status_code == 401:
+                        exit(1)
                 exit(0)
 
             elastic_up = True
