@@ -163,7 +163,8 @@ class ESCollection(Collection):
 
             except (SearchRetryException,
                     elasticsearch.exceptions.ConnectionError,
-                    elasticsearch.exceptions.ConnectionTimeout) as e:
+                    elasticsearch.exceptions.ConnectionTimeout,
+                    elasticsearch.exceptions.AuthenticationException) as e:
                 if not isinstance(e, SearchRetryException):
                     log.warning(f"No connection to Elasticsearch {self.datastore._hosts}, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
