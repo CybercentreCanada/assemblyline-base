@@ -66,7 +66,6 @@ class ServiceDelta(odm.Model):
 
     stage = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
     submission_params = odm.Optional(odm.List(odm.Compound(SubmissionParamsDelta)))
-    supported_platforms = odm.Optional(odm.List(odm.Enum(values=["windows", "linux"])))
     timeout = odm.Optional(odm.Integer())
 
     docker_config: DockerConfigDelta = odm.Optional(odm.Compound(DockerConfigDelta))

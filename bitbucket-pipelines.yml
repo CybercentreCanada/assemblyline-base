@@ -23,17 +23,17 @@ pipelines:
             - redis
             - elasticsearch
             - solr
-#      - step:
-#          name: Build & Test 3.8
-#          image: python:3.8-rc
-#          caches: *caches
-#          script: *build_test
-#          services: *services
+      - step:
+          name: Build & Test 3.8
+          image: python:3.8
+          caches: *caches
+          script: *build_test
+          services: *services
   tags:
     v*:
       - step:
           name: Build Package
-          image: python:3.7
+          image: python:3.8
           script:
             - pip install wheel
             - python setup.py bdist_wheel
@@ -56,15 +56,15 @@ pipelines:
               - pytest -rsx -vv
             caches: *caches
             services: *services
-#        - step:
-#            name: Test 3.8
-#            image: python:3.8-rc
-#            script: *deploy_test
-#            caches: *caches
-#            services: *services
+        - step:
+            name: Test 3.8
+            image: python:3.8
+            script: *deploy_test
+            caches: *caches
+            services: *services
       - step:
           name: Deploy to Test PyPI
-          image: python:3.7
+          image: python:3.8
           deployment: test_pypi
           caches: *caches
           script:
@@ -73,7 +73,7 @@ pipelines:
             - twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
       - step:
           name: Deploy to PyPI
-          image: python:3.7
+          image: python:3.8
           deployment: pypi
           caches: *caches
           script:
@@ -82,7 +82,7 @@ pipelines:
             - twine upload --skip-existing dist/*
       - step:
           name: Deploy to Docker Hub
-          image: python:3.7
+          image: python:3.8
           services: [docker]
           deployment: container
           script:

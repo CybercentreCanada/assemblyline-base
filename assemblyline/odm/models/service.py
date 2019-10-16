@@ -74,7 +74,6 @@ class Service(odm.Model):
 
     stage = odm.Keyword(store=True, default="CORE", copyto="__text__")
     submission_params: SubmissionParams = odm.List(odm.Compound(SubmissionParams), index=False, default=[])
-    supported_platforms = odm.List(odm.Enum(values=["windows", "linux"]), default=["linux"])
     timeout = odm.Integer(default=60)
 
     docker_config: DockerConfig = odm.Compound(DockerConfig)
