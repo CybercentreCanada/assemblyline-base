@@ -154,9 +154,6 @@ def export_metrics_once(name, schema, metrics, host=None, counter_type=None, con
     counts = Counters({key: 0 for key in counter_schema})
     counts.update({key + '.t': 0 for key in timer_schema})
     counts.update({key + '.c': 0 for key in timer_schema})
-    counts['type'] = counter_type
-    counts['name'] = name
-    counts['host'] = host
 
     for metric, value in metrics.items():
         if metric in counter_schema:
@@ -166,5 +163,9 @@ def export_metrics_once(name, schema, metrics, host=None, counter_type=None, con
             counts[name + ".t"] += value
         else:
             raise ValueError(f"{metric} is not an accepted counter")
+
+    counts['type'] = counter_type
+    counts['name'] = name
+    counts['host'] = host
 
     channel.publish(dict(counts.items()))
