@@ -4,6 +4,7 @@ from time import time
 EPOCH = datetime.utcfromtimestamp(0)
 ISO_FMT = '%Y-%m-%dT%H:%M:%S'
 LOCAL_FMT = '%Y-%m-%d %H:%M:%S'
+DB_FMT = '%Y%m%d'
 
 # DO NOT REMOVE!!! THIS IS MAGIC!
 # strptime Thread safe fix... yeah ...
@@ -76,6 +77,10 @@ def now_as_iso(offset: float = 0.0) -> str:
 
 def now_as_local(offset: float = 0.0) -> str:
     return epoch_to_local(now(offset))
+
+
+def now_as_db(offset: float = 0.0, date_format: str = DB_FMT) -> str:
+    return datetime.fromtimestamp(now(offset)).strftime(date_format)
 
 
 def utc_offset_from_local(cur_time: float = None) -> float:
