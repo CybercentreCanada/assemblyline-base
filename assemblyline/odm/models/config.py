@@ -253,6 +253,7 @@ class Ingester(odm.Model):
 
     # How long can a queue get before we start dropping files
     sampling_at: Dict[str, int] = odm.Mapping(odm.Integer())
+    max_inflight = odm.Integer()
 
 
 DEFAULT_INGESTER = {
@@ -274,7 +275,8 @@ DEFAULT_INGESTER = {
         'medium':  2000000,
         'high':    1000000,
         'critical': 500000,
-    }
+    },
+    'max_inflight': 500
 }
 
 
