@@ -3,7 +3,7 @@ from assemblyline.common import forge
 from assemblyline.odm.models.heuristic import PATTERNS
 from assemblyline.odm.models.tagging import Tagging
 
-BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON"}
+BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE"}
 constants = forge.get_constants()
 
 
