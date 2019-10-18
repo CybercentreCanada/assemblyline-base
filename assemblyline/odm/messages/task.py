@@ -32,6 +32,7 @@ class DataItem(odm.Model):
 class Task(odm.Model):
     sid = odm.UUID()
     fileinfo: FileInfo = odm.Compound(FileInfo)          # File info block
+    filename = odm.Keyword()
     service_name = odm.Keyword()
     service_config = odm.Mapping(odm.Any(), default={})  # Service specific parameters
     depth = odm.Integer(default=0)
