@@ -385,10 +385,6 @@ class ScalerServiceDefaults(odm.Model):
 @odm.model()
 class Scaler(odm.Model):
     service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
-    core_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
-    core_configs = odm.Mapping(odm.Compound(ScalerProfile))
-
-    core_namespace: str = odm.Keyword()
     service_namespace: str = odm.Keyword()
 
 
@@ -400,30 +396,6 @@ DEFAULT_SCALER = {
         'min_instances': 0,
         'environment': [{'name': 'SERVICE_API_HOST', 'value': 'http://al_service_server:5003'}],
     },
-    'core_defaults': {
-        'growth': 60,
-        'shrink': 60,
-        'backlog': 100,
-        'min_instances': 1,
-        'environment': [],
-    },
-    'core_configs': {
-        'dispatcher_files': {
-            'container_config': {
-                'image': 'cccs/assemblyline_dev:4.0.9',
-                'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py'],
-            },
-            'queue': FILE_QUEUE
-        },
-        'dispatcher_submissions': {
-            'container_config': {
-                'image': 'cccs/assemblyline_dev:4.0.9',
-                'command': ['python3', '/opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py'],
-            },
-            'queue': SUBMISSION_QUEUE
-        }
-    },
-    'core_namespace': 'al',
     'service_namespace': 'alsvc',
 }
 
