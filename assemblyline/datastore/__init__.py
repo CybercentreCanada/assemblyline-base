@@ -179,6 +179,9 @@ class Collection(object):
         :param data: raw data or instance of the model class to save as the document
         :return: True if the document was saved properly
         """
+        if " " in key:
+            raise DataStoreException("You are not allowed to use spaces in datastore keys.")
+            
         return self._save(key, self.normalize(data))
 
     def _save(self, key, data):
