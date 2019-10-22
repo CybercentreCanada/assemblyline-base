@@ -9,6 +9,7 @@ import time
 from copy import deepcopy
 
 from assemblyline import odm
+from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.exceptions import MultiKeyError
 from assemblyline.common.isotime import now_as_db
 from assemblyline.common.uid import get_random_id
@@ -361,7 +362,9 @@ class ESCollection(Collection):
                 op_sources.append(f"ctx._source.{doc_key}.add(params.value{val_id})")
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                op_sources.append(f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) {{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}")
+                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
+                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
                 op_sources.append(f"ctx._source.{doc_key} += params.value{val_id}")
@@ -382,23 +385,23 @@ class ESCollection(Collection):
         return script
 
     def _update(self, key, operations):
-        # TODO: Fix for multi-index
         script = self._create_scripts_from_operations(operations)
 
         update_body = {
             "script": script
         }
 
-        # noinspection PyBroadException
-        try:
-            res = self.with_retries(self.datastore.client.update, index=self.name, id=key, body=update_body)
-        except Exception:
-            return False
-
-        return res['result'] == "updated"
+        for index in self.index_list:
+            # noinspection PyBroadException
+            try:
+                res = self.with_retries(self.datastore.client.update, index=index, id=key, body=update_body)
+                return res['result'] == "updated"
+            except elasticsearch.NotFoundError:
+                continue
+            except Exception:
+                return False
 
     def _update_by_query(self, query, operations, filters):
-        # TODO: Fix for multi-index
         if filters is None:
             filters = []
 
@@ -469,7 +472,6 @@ class ESCollection(Collection):
         return {key: val for key, val in source.items() if key in fields}
 
     def _search(self, args=None, deep_paging_id=None):
-        # TODO: Fix for multi-index
         params = None
         if deep_paging_id is not None:
             if deep_paging_id == "*":
@@ -512,7 +514,6 @@ class ESCollection(Collection):
             query_body['timeout'] = parsed_values['timeout']
 
         # Add an histogram aggregation
-        # TODO: Should we turn off normal queries when histogram is active?
         if parsed_values['histogram_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
             query_body["aggregations"]["histogram"] = {
@@ -524,7 +525,6 @@ class ESCollection(Collection):
             }
 
         # Add a facet aggregation
-        # TODO: Should we turn off normal queries when facet is active?
         if parsed_values['facet_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
             for field in parsed_values['facet_fields']:
@@ -536,7 +536,6 @@ class ESCollection(Collection):
                 }
 
         # Add a facet aggregation
-        # TODO: Should we turn off normal queries when facet is active?
         if parsed_values['stats_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
             for field in parsed_values['stats_fields']:
@@ -640,7 +639,6 @@ class ESCollection(Collection):
         return ret_data
 
     def stream_search(self, query, fl=None, filters=None, access_control=None, item_buffer_size=200, as_obj=True):
-        # TODO: Fix for multi-index
         if item_buffer_size > 500 or item_buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
 
@@ -679,7 +677,7 @@ class ESCollection(Collection):
             elasticsearch.helpers.scan(
                 self.datastore.client,
                 query=query_body,
-                index=self.name,
+                index=f"{self.name}*",
                 preserve_order=True
             )
         )
@@ -689,7 +687,6 @@ class ESCollection(Collection):
             yield self._format_output(value, fl, as_obj=as_obj)
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None):
-        # TODO: Fix for multi-index
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -724,7 +721,6 @@ class ESCollection(Collection):
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
               mincount=1, filters=None, access_control=None):
-        # TODO: Fix for multi-index
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -753,7 +749,6 @@ class ESCollection(Collection):
                 for row in result['aggregations'][field]['buckets']}
 
     def stats(self, field, query="id:*", filters=None, access_control=None):
-        # TODO: Fix for multi-index
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -777,8 +772,6 @@ class ESCollection(Collection):
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True):
-        # TODO: Fix for multi-index
-
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
@@ -939,7 +932,6 @@ class ESCollection(Collection):
         self._check_fields()
 
     def _add_fields(self, missing_fields: Dict):
-        # TODO: Fix for multi-index
         no_fix = []
         properties = {}
         for name, field in missing_fields.items():
@@ -965,14 +957,22 @@ class ESCollection(Collection):
         # If we got this far, the missing fields have been described in properties, upload them to the
         # server, and we should be able to move on.
         mappings = {"properties": properties}
-        self.with_retries(self.datastore.client.indices.put_mapping, index=self.name, body=mappings)
+        for index in self.index_list:
+            self.with_retries(self.datastore.client.indices.put_mapping, index=index, body=mappings)
+
+        current_template = self.with_retries(self.datastore.client.indices.get_template, self.name)[self.name]
+        recursive_update(current_template, {'mappings': mappings})
+        self.with_retries(self.datastore.client.indices.put_template, self.name, body=current_template)
 
     def wipe(self):
-        # TODO: Fix for multi-index
         log.debug("Wipe operation started for collection: %s" % self.name.upper())
 
-        if self.with_retries(self.datastore.client.indices.exists, self.name):
-            self.with_retries(self.datastore.client.indices.delete, self.name)
+        for index in self.index_list:
+            if self.with_retries(self.datastore.client.indices.exists, index):
+                self.with_retries(self.datastore.client.indices.delete, index)
+
+        if self.with_retries(self.datastore.client.indices.exists_template, self.name):
+            self.with_retries(self.datastore.client.indices.delete_template, self.name)
 
         self._ensure_collection()
 
