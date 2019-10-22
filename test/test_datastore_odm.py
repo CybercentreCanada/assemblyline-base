@@ -148,6 +148,21 @@ def es_connection(request):
     return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
+@pytest.fixture(scope='module')
+def es_multi_connection(request):
+    from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
+
+    try:
+        collection = setup_store(ESStoreMulti(['127.0.0.1']), request)
+    except SetupException:
+        collection = None
+
+    if collection:
+        return collection
+
+    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+
+
 def get_obj(obj_map, key, as_obj):
     obj = obj_map.get(key)
     if not as_obj:
@@ -287,12 +302,18 @@ def test_es(es_connection, function, as_obj):
     function(es_connection, as_obj)
 
 
+# noinspection PyShadowingNames
+@pytest.mark.parametrize("function,as_obj", [(f[0], f[1]) for f in TEST_FUNCTIONS], ids=[f[2] for f in TEST_FUNCTIONS])
+def test_es_multi(es_multi_connection, function, as_obj):
+    function(es_multi_connection, as_obj)
+
+
 def fix_date(data):
     # making date precision all the same throughout the datastores so we can compared them
     return {k.replace(".000", ""): v for k, v in data.items()}
 
 
-def compare_output(solr, elastic):
+def compare_output(solr, elastic, elastic_multi):
     errors = []
 
     try:
@@ -301,67 +322,91 @@ def compare_output(solr, elastic):
     except odm.KeyMaskException:
         errors.append("solr != elastic")
 
+    try:
+        if solr != elastic_multi:
+            errors.append("solr != elastic_multi")
+    except odm.KeyMaskException:
+        errors.append("solr != elastic_multi")
+
+    try:
+        if elastic_multi != elastic:
+            errors.append("elastic_multi != elastic")
+    except odm.KeyMaskException:
+        errors.append("elastic_multi != elastic")
+
     if errors:
-        print("\n\nNot all outputs are equal: {non_equal}\n\n"
-              "solr = {solr}\nelastic = {elastic}\n\n".format(non_equal=", ".join(errors),
-                                                                             solr=solr,
-                                                                             elastic=elastic))
+        print(f"\n\nNot all outputs are equal: {', '.join(errors)}\n\n"
+              f"solr = {solr}\n"
+              f"elastic = {elastic}\n"
+              f"elastic_multi = {elastic_multi}\n\n")
         return False
 
     return True
 
 
-def _test_c_get(s_tc, e_tc, as_obj):
+def _test_c_get(s_tc, e_tc, em_tc, as_obj):
     # non-existant object
     assert compare_output(s_tc.get('not-a-key', as_obj=as_obj),
-                          e_tc.get('not-a-key', as_obj=as_obj))
+                          e_tc.get('not-a-key', as_obj=as_obj),
+                          em_tc.get('not-a-key', as_obj=as_obj))
     # non-existant object (fast)
     assert compare_output(s_tc.get_if_exists('not-a-key', as_obj=as_obj),
-                          e_tc.get_if_exists('not-a-key', as_obj=as_obj))
+                          e_tc.get_if_exists('not-a-key', as_obj=as_obj),
+                          em_tc.get_if_exists('not-a-key', as_obj=as_obj))
 
     # Existing object
     assert compare_output(s_tc.get('test1', as_obj=as_obj),
-                          e_tc.get('test1', as_obj=as_obj))
+                          e_tc.get('test1', as_obj=as_obj),
+                          em_tc.get('test1', as_obj=as_obj))
 
     assert compare_output(s_tc.require('test1', as_obj=as_obj),
-                          e_tc.require('test1', as_obj=as_obj))
+                          e_tc.require('test1', as_obj=as_obj),
+                          em_tc.require('test1', as_obj=as_obj))
 
     assert compare_output(s_tc.get_if_exists('test1', as_obj=as_obj),
-                          e_tc.get_if_exists('test1', as_obj=as_obj))
+                          e_tc.get_if_exists('test1', as_obj=as_obj),
+                          em_tc.get_if_exists('test1', as_obj=as_obj))
 
     for x in range(5):
         key = 'dict%s' % x
         assert compare_output(s_tc.get(key, as_obj=as_obj),
-                              e_tc.get(key, as_obj=as_obj))
+                              e_tc.get(key, as_obj=as_obj),
+                              em_tc.get(key, as_obj=as_obj))
 
 
-def _test_c_mget(s_tc, e_tc, as_obj):
+def _test_c_mget(s_tc, e_tc, em_tc, as_obj):
     assert compare_output(s_tc.multiget(['test1', 'test1'], as_obj=as_obj),
-                          e_tc.multiget(['test1', 'test1'], as_obj=as_obj))
+                          e_tc.multiget(['test1', 'test1'], as_obj=as_obj),
+                          em_tc.multiget(['test1', 'test1'], as_obj=as_obj))
 
 
-def _test_c_search(s_tc, e_tc, as_obj):
+def _test_c_search(s_tc, e_tc, em_tc, as_obj):
     assert compare_output(s_tc.search('*:*', sort="id asc", as_obj=as_obj),
-                          e_tc.search('*:*', sort="id asc", as_obj=as_obj))
+                          e_tc.search('*:*', sort="id asc", as_obj=as_obj),
+                          em_tc.search('*:*', sort="id asc", as_obj=as_obj))
     assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="height:100",
                                       sort="id asc", fl='flavour', as_obj=as_obj),
                           e_tc.search('*:*', offset=1, rows=1, filters="height:100",
-                                      sort="id asc", fl='flavour', as_obj=as_obj))
+                                      sort="id asc", fl='flavour', as_obj=as_obj),
+                          em_tc.search('*:*', offset=1, rows=1, filters="height:100",
+                                       sort="id asc", fl='flavour', as_obj=as_obj))
 
 
-def _test_c_streamsearch(s_tc, e_tc, as_obj):
+def _test_c_streamsearch(s_tc, e_tc, em_tc, as_obj):
     ss_s_list = list(s_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour', as_obj=as_obj))
     ss_e_list = list(e_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour', as_obj=as_obj))
-    assert compare_output(ss_s_list, ss_e_list)
+    ss_em_list = list(em_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour', as_obj=as_obj))
+    assert compare_output(ss_s_list, ss_e_list, ss_em_list)
 
 
-def _test_c_keys(s_tc, e_tc, _):
-    assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())))
+def _test_c_keys(s_tc, e_tc, em_tc, _):
+    assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(em_tc.keys())))
 
 
-def _test_c_histogram(s_tc, e_tc, _):
+def _test_c_histogram(s_tc, e_tc, em_tc, _):
     assert compare_output(s_tc.histogram('height', 0, 200, 20, mincount=2),
-                          e_tc.histogram('height', 0, 200, 20, mincount=2))
+                          e_tc.histogram('height', 0, 200, 20, mincount=2),
+                          em_tc.histogram('height', 0, 200, 20, mincount=2))
 
     h_s = s_tc.histogram('birthday',
                          '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
@@ -371,26 +416,33 @@ def _test_c_histogram(s_tc, e_tc, _):
                          '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
                          '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
                          '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
-    assert compare_output(fix_date(h_s), fix_date(h_e))
+    h_em = em_tc.histogram('birthday',
+                           '{n}-10{d}/{d}'.format(n=em_tc.datastore.now, d=em_tc.datastore.day),
+                           '{n}+10{d}/{d}'.format(n=em_tc.datastore.now, d=em_tc.datastore.day),
+                           '+1{d}'.format(d=em_tc.datastore.day, mincount=2))
+    assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_em))
 
 
-def _test_c_facet(s_tc, e_tc, _):
+def _test_c_facet(s_tc, e_tc, em_tc, _):
     assert compare_output(s_tc.facet('tags'),
-                          e_tc.facet('tags'))
+                          e_tc.facet('tags'),
+                          em_tc.facet('tags'))
 
 
-def _test_c_stats(s_tc, e_tc, _):
+def _test_c_stats(s_tc, e_tc, em_tc, _):
     assert compare_output(s_tc.stats('height'),
-                          e_tc.stats('height'))
+                          e_tc.stats('height'),
+                          em_tc.stats('height'))
 
 
-def _test_c_groupsearch(s_tc, e_tc, as_obj):
+def _test_c_groupsearch(s_tc, e_tc, em_tc, as_obj):
     assert compare_output(s_tc.grouped_search('height', fl='flavour', as_obj=as_obj),
-                          e_tc.grouped_search('height', fl='flavour', as_obj=as_obj))
+                          e_tc.grouped_search('height', fl='flavour', as_obj=as_obj),
+                          em_tc.grouped_search('height', fl='flavour', as_obj=as_obj))
 
 
-def _test_c_fields(s_tc, e_tc, _):
-    assert compare_output(s_tc.fields(), e_tc.fields())
+def _test_c_fields(s_tc, e_tc, em_tc, _):
+    assert compare_output(s_tc.fields(), e_tc.fields(), em_tc.fields())
 
 
 TEST_CONSISTENCY_FUNC = [
@@ -415,9 +467,9 @@ TEST_CONSISTENCY_FUNC = [
 # noinspection PyShadowingNames
 @pytest.mark.parametrize("function,as_obj", [(f[0], f[1]) for f in TEST_CONSISTENCY_FUNC],
                          ids=[f[2] for f in TEST_CONSISTENCY_FUNC])
-def test_datastore_consistency(solr_connection, es_connection, function, as_obj):
-    if solr_connection and es_connection:
-        function(solr_connection, es_connection, as_obj)
+def test_datastore_consistency(solr_connection, es_connection, es_multi_connection, function, as_obj):
+    if solr_connection and es_connection and es_multi_connection:
+        function(solr_connection, es_connection, es_multi_connection, as_obj)
 
 
 @pytest.fixture(scope='module')
@@ -428,6 +480,7 @@ def es_store():
     if ret_val:
         return store
     return pytest.skip()
+
 
 @pytest.fixture()
 def es_scratch_name(es_store):
@@ -452,4 +505,3 @@ def test_dynamic_fields(es_store, es_scratch_name):
     col.save('a', Test(dict(number=100, other=100)))
     col.save('b', Test(dict(number=100, other='100')))
     col.save('c', Test(dict(number=100, other=True)))
-
