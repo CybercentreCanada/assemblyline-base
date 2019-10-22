@@ -850,9 +850,11 @@ class ESCollectionMulti(Collection):
                     raise ValueError("Unknown field data " + str(props))
             return out
 
-        data = self.with_retries(self.datastore.client.indices.get_template, self.name)
+        properties = {}
+        for index in self.index_list:
+            data = self.with_retries(self.datastore.client.indices.get, index)
+            properties.update(flatten_fields(data[index]['mappings'].get('properties', {})))
 
-        properties = flatten_fields(data[self.name]['mappings'].get('properties', {}))
         if self.model_class:
             model_fields = self.model_class.flat_fields()
         else:
