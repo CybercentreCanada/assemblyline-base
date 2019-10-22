@@ -83,7 +83,7 @@ class RetryableIterator(object):
         return self.collection.with_retries(self._iter.__next__)
 
 
-class ESCollection(Collection):
+class ESCollectionMulti(Collection):
     DEFAULT_SORT = [{'_id': 'asc'}]
     MAX_SEARCH_ROWS = 500
     MAX_GROUP_LIMIT = 10
@@ -981,8 +981,8 @@ class ESCollection(Collection):
         self._ensure_collection()
 
 
-class ESStore(BaseStore):
-    """ Elasticsearch implementation of the ResultStore interface."""
+class ESStoreMulti(BaseStore):
+    """ Elasticsearch multi-index implementation of the ResultStore interface."""
     DEFAULT_SORT = "id asc"
     DATE_FORMAT = {
         'NOW': 'now',
@@ -1000,8 +1000,8 @@ class ESStore(BaseStore):
         'DATE_END': 'Z'
     }
 
-    def __init__(self, hosts, collection_class=ESCollection):
-        super(ESStore, self).__init__(hosts, collection_class)
+    def __init__(self, hosts, collection_class=ESCollectionMulti):
+        super(ESStoreMulti, self).__init__(hosts, collection_class)
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
 
