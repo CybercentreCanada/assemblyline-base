@@ -124,7 +124,8 @@ if __name__ == "__main__":
     # Creating assemblyline user
     if os.getenv("AL_PASSWORD"):
         try:
-            create_role('assemblyline_system', 
+            create_role('assemblyline_system',
+                        cluster_priv=["manage_index_templates"],
                         indices=[
                             "al_metrics_*",
                             "alert*",

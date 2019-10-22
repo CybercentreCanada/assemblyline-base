@@ -424,13 +424,15 @@ DEFAULT_CORE = {
 
 @odm.model()
 class Datastore(odm.Model):
-    type = odm.Enum({"elasticsearch", "solr"})
     hosts: List[str] = odm.List(odm.Keyword())
+    index_splitting: bool = odm.Boolean()
+    type = odm.Enum({"elasticsearch", "elasticsearch", "solr"})
 
 
 DEFAULT_DATASTORE = {
-    "type": "elasticsearch",
     "hosts": ["http://assemblyline:assemblylinepass@localhost"],
+    "index_splitting": True,
+    "type": "elasticsearch",
 }
 
 
