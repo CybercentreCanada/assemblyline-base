@@ -83,7 +83,7 @@ def get_datastore(config=None):
 
     if config.datastore.type == "elasticsearch":
         if config.datastore.index_splitting:
-            from assemblyline.datastore.stores.es_store_multi import ESStore as ESStoreMulti
+            from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
             return AssemblylineDatastore(ESStoreMulti(config.datastore.hosts))
         else:
             from assemblyline.datastore.stores.es_store import ESStore
