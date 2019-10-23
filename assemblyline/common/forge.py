@@ -82,8 +82,12 @@ def get_datastore(config=None):
         config = get_config(static=True)
 
     if config.datastore.type == "elasticsearch":
-        from assemblyline.datastore.stores.es_store import ESStore
-        return AssemblylineDatastore(ESStore(config.datastore.hosts))
+        if config.datastore.index_splitting:
+            from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
+            return AssemblylineDatastore(ESStoreMulti(config.datastore.hosts))
+        else:
+            from assemblyline.datastore.stores.es_store import ESStore
+            return AssemblylineDatastore(ESStore(config.datastore.hosts))
     elif config.datastore.type == "solr":
         from assemblyline.datastore.stores.solr_store import SolrStore
         return AssemblylineDatastore(SolrStore(config.datastore.hosts, port=config.datastore.solr.port))

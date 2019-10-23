@@ -5,11 +5,16 @@ import os
 import tempfile
 
 from botocore.exceptions import ClientError, EndpointConnectionError, ConnectionClosedError
-from botocore.vendored.requests.packages.urllib3 import disable_warnings
 from io import BytesIO
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
+
+try:
+    from botocore.vendored.requests.packages.urllib3 import disable_warnings
+except ImportError:
+    from urllib3 import disable_warnings
+
 
 disable_warnings()
 

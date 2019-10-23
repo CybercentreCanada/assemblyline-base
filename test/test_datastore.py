@@ -32,7 +32,17 @@ with warnings.catch_warnings():
         'string': "A string!",
         'list': ['a', 'list', 'of', 'string', 100],
         'int': 69,
-        'to_update': {'counters': {'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], "map": {'a': 1}},
+        'to_update': {
+            'counters': {
+                'lvl_i': 100,
+                "inc_i": 0,
+                "dec_i": 100
+            },
+            "list": ['hello', 'remove'],
+            "map": {
+                'a': 1
+            }
+        },
         'bulk_update': {'bulk_b': True, "map": {'a': 1}, 'counters': {
             'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
         'bulk_update2': {'bulk_b': True, "map": {'a': 1}, 'counters': {
@@ -105,12 +115,30 @@ def es_connection(request):
 
 
 @pytest.fixture(scope='module')
+def es_multi_connection(request):
+    from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
+
+    try:
+        collection = setup_store(ESStoreMulti(['127.0.0.1']), request)
+    except SetupException:
+        collection = None
+
+    if collection:
+        return collection
+
+    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+
+
+@pytest.fixture(scope='module')
 def collection(request):
     """Get a connection to either datastore, in a way that can be controlled by pytest.parametrize"""
     try:
         if request.param == 'elastic':
             from assemblyline.datastore.stores.es_store import ESStore
             return setup_store(ESStore(['127.0.0.1']), request)
+        elif request.param == 'elastic_multi':
+            from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
+            return setup_store(ESStoreMulti(['127.0.0.1']), request)
         elif request.param == 'solr':
             from assemblyline.datastore.stores.solr_store import SolrStore
             return setup_store(SolrStore(['127.0.0.1']), request)
@@ -168,7 +196,15 @@ def _test_update(c: Collection):
 
 def _test_update_by_query(c: Collection):
     # Test update_by_query
-    expected = {'bulk_b': True, 'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!'], "map": {'b': 99}}
+    expected = {
+        'bulk_b': True,
+        'counters': {
+            'lvl_i': 666,
+            'inc_i': 50,
+            'dec_i': 50},
+        'list': ['hello', 'world!'],
+        "map": {'b': 99}
+    }
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
         (c.UPDATE_INC, "counters.inc_i", 50),
@@ -229,57 +265,74 @@ def test_es(es_connection: Collection, function):
         function(es_connection)
 
 
+# noinspection PyShadowingNames
+@pytest.mark.parametrize("function", [f[0] for f in TEST_FUNCTIONS], ids=[f[1] for f in TEST_FUNCTIONS])
+def test_es_multi(es_multi_connection: Collection, function):
+    if es_multi_connection:
+        function(es_multi_connection)
+
+
 def fix_date(data):
     # making date precision all the same throughout the datastores so we can compared them
     return {k.replace(".000", ""): v for k, v in data.items()}
 
 
-def compare_output(solr, elastic):
+def compare_output(solr, elastic, elastic_multi):
     errors = []
 
     if solr != elastic:
         errors.append("solr != elastic")
 
+    if solr != elastic_multi:
+        errors.append("solr != elastic_multi")
+
+    if elastic != elastic_multi:
+        errors.append("elastic != elastic_multi")
+
     if errors:
-        print("\n\nNot all outputs are equal: {non_equal}\n\n"
-              "solr = {solr}\nelastic = {elastic}\n\n".format(non_equal=", ".join(errors),
-                                                              solr=solr,
-                                                              elastic=elastic))
+        print(f"\n\nNot all outputs are equal: {', '.join(errors)}\n\n"
+              f"solr = {solr}\n"
+              f"elastic = {elastic}\n"
+              f"elastic_multi = {elastic_multi}\n\n")
         return False
 
     return True
 
 
-def _test_c_get(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.get('list'), e_tc.get('list'))
+def _test_c_get(s_tc: Collection, e_tc: Collection, em_tc: Collection):
+    assert compare_output(s_tc.get('list'), e_tc.get('list'), em_tc.get('list'))
 
 
-def _test_c_require(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.require('string'), e_tc.require('string'))
+def _test_c_require(s_tc: Collection, e_tc: Collection, em_tc: Collection):
+    assert compare_output(s_tc.require('string'), e_tc.require('string'), em_tc.require('string'))
 
 
-def _test_c_get_if_exists(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.get_if_exists('int'), e_tc.get_if_exists('int'))
+def _test_c_get_if_exists(s_tc: Collection, e_tc: Collection, em_tc: Collection):
+    assert compare_output(s_tc.get_if_exists('int'), e_tc.get_if_exists('int'), em_tc.get_if_exists('int'))
 
 
-def _test_c_multiget(s_tc: Collection, e_tc: Collection):
+def _test_c_multiget(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     for x in range(5):
         key = 'dict%s' % x
-        assert compare_output(s_tc.get(key), e_tc.get(key))
+        assert compare_output(s_tc.get(key), e_tc.get(key), em_tc.get(key))
     assert compare_output(s_tc.multiget(['int', 'int']),
-                          e_tc.multiget(['int', 'int']))
+                          e_tc.multiget(['int', 'int']),
+                          em_tc.multiget(['int', 'int']))
 
 
-def _test_c_search(s_tc: Collection, e_tc: Collection):
+def _test_c_search(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     assert compare_output(s_tc.search('*:*', sort="id asc"),
-                          e_tc.search('*:*', sort="id asc"))
+                          e_tc.search('*:*', sort="id asc"),
+                          em_tc.search('*:*', sort="id asc"))
     assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
                                       sort="id asc", fl='classification_s'),
                           e_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
-                                      sort="id asc", fl='classification_s'))
+                                      sort="id asc", fl='classification_s'),
+                          em_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
+                                       sort="id asc", fl='classification_s'))
 
 
-def _test_c_deepsearch(s_tc: Collection, e_tc: Collection):
+def _test_c_deepsearch(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     s_res = []
     deep_paging_id = "*"
     while True:
@@ -298,22 +351,33 @@ def _test_c_deepsearch(s_tc: Collection, e_tc: Collection):
             break
         deep_paging_id = e_data['next_deep_paging_id']
 
-    assert compare_output(s_res, e_res)
+    em_res = []
+    deep_paging_id = "*"
+    while True:
+        em_data = em_tc.search('*:*', rows=5, deep_paging_id=deep_paging_id)
+        em_res.extend(em_data['items'])
+        if len(em_res) == em_data['total'] or len(em_data['items']) == 0:
+            break
+        deep_paging_id = em_data['next_deep_paging_id']
+
+    assert compare_output(s_res, e_res, em_res)
 
 
-def _test_c_streamsearch(s_tc: Collection, e_tc: Collection):
+def _test_c_streamsearch(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     ss_s_list = list(s_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
     ss_e_list = list(e_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
-    assert compare_output(ss_s_list, ss_e_list)
+    ss_em_list = list(em_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
+    assert compare_output(ss_s_list, ss_e_list, ss_em_list)
 
 
-def _test_c_keys(s_tc: Collection, e_tc: Collection):
-    assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())))
+def _test_c_keys(s_tc: Collection, e_tc: Collection, em_tc: Collection):
+    assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())), sorted(list(em_tc.keys())))
 
 
-def _test_c_histogram(s_tc: Collection, e_tc: Collection):
+def _test_c_histogram(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     assert compare_output(s_tc.histogram('lvl_i', 0, 1000, 100, mincount=2),
-                          e_tc.histogram('lvl_i', 0, 1000, 100, mincount=2))
+                          e_tc.histogram('lvl_i', 0, 1000, 100, mincount=2),
+                          em_tc.histogram('lvl_i', 0, 1000, 100, mincount=2))
 
     h_s = s_tc.histogram('expiry_dt',
                          '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
@@ -323,39 +387,52 @@ def _test_c_histogram(s_tc: Collection, e_tc: Collection):
                          '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
                          '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
                          '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
-    assert compare_output(fix_date(h_s), fix_date(h_e))
+    h_em = em_tc.histogram('expiry_dt',
+                           '{n}-10{d}/{d}'.format(n=em_tc.datastore.now, d=em_tc.datastore.day),
+                           '{n}+10{d}/{d}'.format(n=em_tc.datastore.now, d=em_tc.datastore.day),
+                           '+1{d}'.format(d=em_tc.datastore.day, mincount=2))
+    assert compare_output(fix_date(h_s), fix_date(h_e), fix_date(h_em))
 
 
-def _test_c_facet(s_tc: Collection, e_tc: Collection):
+def _test_c_facet(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     assert compare_output(s_tc.facet('classification_s'),
-                          e_tc.facet('classification_s'))
+                          e_tc.facet('classification_s'),
+                          em_tc.facet('classification_s'))
 
 
-def _test_c_stats(s_tc: Collection, e_tc: Collection):
+def _test_c_stats(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     assert compare_output(s_tc.stats('lvl_i'),
-                          e_tc.stats('lvl_i'))
+                          e_tc.stats('lvl_i'),
+                          em_tc.stats('lvl_i'))
 
 
-def _test_c_group_search(s_tc: Collection, e_tc: Collection):
+def _test_c_group_search(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s'),
-                          e_tc.grouped_search('lvl_i', fl='classification_s'))
+                          e_tc.grouped_search('lvl_i', fl='classification_s'),
+                          em_tc.grouped_search('lvl_i', fl='classification_s'))
 
     assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
                                               sort="lvl_i desc"),
                           e_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
-                                              sort="lvl_i desc"))
+                                              sort="lvl_i desc"),
+                          em_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
+                                               sort="lvl_i desc"))
 
 
-def _test_c_fields(s_tc: Collection, e_tc: Collection):
+def _test_c_fields(s_tc: Collection, e_tc: Collection, em_tc: Collection):
     # For some reason, elasticsearch adds the random list key as a field name. Since this is a
     # specific thing with elasticsearch we will pop that field from the rest and compare the other
     # fields accordingly.
     e_fields = e_tc.fields()
     e_fields.pop('list', None)
+    em_fields = em_tc.fields()
+    em_fields.pop('list', None)
 
     # Solr doesn't seem to handle fields that are modified the same way either
-    e_fields.pop('map.a')
-    e_fields.pop('map.b')
+    e_fields.pop('map.a', None)
+    e_fields.pop('map.b', None)
+    em_fields.pop('map.a', None)
+    em_fields.pop('map.b', None)
 
     # For non-modeled data, we only want to compare values for indexed, stored, and type field.
     #  ** The default field will always be False because the value is pulled from the model (no need to compare)
@@ -363,6 +440,7 @@ def _test_c_fields(s_tc: Collection, e_tc: Collection):
     assert compare_output(
         {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in s_tc.fields().items()},
         {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in e_fields.items()},
+        {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in em_fields.items()},
     )
 
 
@@ -386,11 +464,11 @@ TEST_CONSISTENCY_FUNCS = [
 
 # noinspection PyShadowingNames
 @pytest.mark.parametrize("function", [f[0] for f in TEST_CONSISTENCY_FUNCS], ids=[f[1] for f in TEST_CONSISTENCY_FUNCS])
-def test_consistency(solr_connection: Collection, es_connection: Collection, function):
-    if solr_connection and es_connection:
-        function(solr_connection, es_connection)
+def test_consistency(solr_connection: Collection, es_connection: Collection, es_multi_connection: Collection, function):
+    if solr_connection and es_connection and es_multi_connection:
+        function(solr_connection, es_connection, es_multi_connection)
 
 
-@pytest.mark.parametrize('collection', ['elastic', 'solr'], indirect=True)
+@pytest.mark.parametrize('collection', ['elastic', 'elastic_multi', 'solr'], indirect=True)
 def test_multiget_empty(collection: Collection):
     assert collection.multiget([]) == {}

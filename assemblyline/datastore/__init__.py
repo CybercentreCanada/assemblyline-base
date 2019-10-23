@@ -169,7 +169,7 @@ class Collection(object):
         """
         return self.normalize(self._get(key, self.RETRY_INFINITY), as_obj=as_obj)
 
-    def save(self, key, data):
+    def save(self, key, data, index_split_id=None):
         """
         Save a to document to the datastore using the key as its document id.
 
@@ -177,14 +177,17 @@ class Collection(object):
 
         :param key: ID of the document to save
         :param data: raw data or instance of the model class to save as the document
+        :param index_split_id: if index_splitting is turned on in the config,
+                               this is the id of the split to insert the data into
+                               ** only use when moving data from an index to another
         :return: True if the document was saved properly
         """
         if " " in key:
             raise DataStoreException("You are not allowed to use spaces in datastore keys.")
             
-        return self._save(key, self.normalize(data))
+        return self._save(key, self.normalize(data), index_split_id=index_split_id)
 
-    def _save(self, key, data):
+    def _save(self, key, data, index_split_id=None):
         """
         This function should takes in an instance of the the model class as input
         and saves it to the database backend at the id mentioned by the key.

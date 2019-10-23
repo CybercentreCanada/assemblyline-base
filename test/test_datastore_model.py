@@ -4,6 +4,7 @@ from retrying import retry
 from assemblyline.common.testing import skip
 from assemblyline.datastore import BaseStore, SearchException
 from assemblyline.datastore.stores.es_store import ESStore
+from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
 from assemblyline.datastore.stores.solr_store import SolrStore
 from assemblyline.odm import Model, Mapping, Classification
 from assemblyline.odm.models.alert import Alert
@@ -60,6 +61,19 @@ def solr_datastore():
 def es_datastore():
     try:
         document_store = setup_store(ESStore(['127.0.0.1']))
+    except SetupException:
+        document_store = None
+
+    if document_store:
+        return document_store
+
+    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+
+
+@pytest.fixture(scope='module')
+def es_multi_datastore():
+    try:
+        document_store = setup_store(ESStoreMulti(['127.0.0.1']))
     except SetupException:
         document_store = None
 
@@ -219,7 +233,7 @@ def _perform_single_collection_test(ds: BaseStore, idx_name: str, doc: Model):
 
         if not field.index:
             # Test non-indexed field searches, should fail of return no results
-            if isinstance(ds, ESStore):
+            if isinstance(ds, ESStore) or isinstance(ds, ESStoreMulti):
                 with pytest.raises(SearchException):
                     c.search(f"{name}:{_get_value(name, doc_data)}", rows=0)
             else:
@@ -264,7 +278,12 @@ def test_solr_models(solr_datastore: SolrStore, collection_name: str, document: 
 
 # noinspection PyShadowingNames
 @pytest.mark.parametrize("collection_name,document", TEST_DATA, ids=[d[0] for d in TEST_DATA])
-def test_es_models(es_datastore: SolrStore, collection_name: str, document: Model):
+def test_es_models(es_datastore: ESStore, collection_name: str, document: Model):
     if es_datastore:
         _perform_single_collection_test(es_datastore, collection_name, document)
 
+# noinspection PyShadowingNames
+@pytest.mark.parametrize("collection_name,document", TEST_DATA, ids=[d[0] for d in TEST_DATA])
+def test_es_multi_models(es_multi_datastore: ESStoreMulti, collection_name: str, document: Model):
+    if es_multi_datastore:
+        _perform_single_collection_test(es_multi_datastore, collection_name, document)

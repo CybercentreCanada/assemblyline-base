@@ -124,22 +124,23 @@ if __name__ == "__main__":
     # Creating assemblyline user
     if os.getenv("AL_PASSWORD"):
         try:
-            create_role('assemblyline_system', 
+            create_role('assemblyline_system',
+                        cluster_priv=["manage_index_templates"],
                         indices=[
                             "al_metrics_*",
-                            "alert",
+                            "alert*",
                             "cached_*",
-                            "emptyresult",
-                            "error",
+                            "emptyresult*",
+                            "error*",
                             "file*",
-                            "heuristic",
-                            "result",
+                            "heuristic*",
+                            "result*",
                             "service*",
-                            "signature",
+                            "signature*",
                             "submission*",
                             "user*",
-                            "vm",
-                            "workflow"])
+                            "vm*",
+                            "workflow*"])
             create_user('assemblyline', os.getenv("AL_PASSWORD"), ["assemblyline_system"])
         except SetupException as e:
             print(str(e))

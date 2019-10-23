@@ -187,7 +187,7 @@ class SolrCollection(Collection):
 
         return None
 
-    def _save(self, key, source_data):
+    def _save(self, key, source_data, index_split_id=None):
         if self.model_class and isinstance(source_data, self.model_class):
             data = source_data.as_primitives(hidden_fields=True)
         else:
