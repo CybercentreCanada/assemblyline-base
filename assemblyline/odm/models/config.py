@@ -1,11 +1,10 @@
 from typing import Dict, List
 
 from assemblyline import odm
-# TODO: Apply proper index and store values
-from assemblyline.common.constants import FILE_QUEUE, SUBMISSION_QUEUE
 from assemblyline.odm.models.service import EnvironmentVariable, DockerConfig
 from assemblyline.odm.models.user import USER_TYPES
 
+# TODO: Apply proper index and store values
 
 @odm.model()
 class PasswordRequirement(odm.Model):
@@ -431,7 +430,7 @@ class Datastore(odm.Model):
 
 DEFAULT_DATASTORE = {
     "hosts": ["http://assemblyline:assemblylinepass@localhost"],
-    "index_splitting": True,
+    "index_splitting": False,
     "type": "elasticsearch",
 }
 
