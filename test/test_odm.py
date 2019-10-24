@@ -1,7 +1,7 @@
 from assemblyline.common.classification import InvalidClassification
 
 from assemblyline.odm import model, Model, KeyMaskException, Compound, List, \
-    Keyword, Integer, Mapping, Classification, Enum, UUID
+    Keyword, Integer, Mapping, Classification, Enum, UUID, construct_safe
 
 import json
 import pytest
@@ -628,3 +628,54 @@ def test_name_injection():
     fields = b.flat_fields()
     assert fields['speed.fast'].name == 'fast'
     assert fields['speed.slow'].name == 'slow'
+
+
+def test_construct_safe():
+    @model()
+    class Flag(Model):
+        uuid = UUID()
+        name = Keyword()
+        fans = List(Integer(), default=[])
+
+    @model()
+    class A(Model):
+        fast = Integer(default=1)
+        slow = Keyword(default='abc')
+        count = List(Integer())
+
+    @model()
+    class B(Model):
+        speed = Compound(A, default={})
+        flags = List(Compound(Flag))
+
+    out, dropped = construct_safe(B, {
+        'speed': {
+            'fast': 'abc',
+            'count': ['100', 100, 'hundred', '9dy']
+        },
+        'flags': ['abc', {'uuid': 'bad'}, {'name': 'good'}, {'name': 'some-good', 'fans': [1, '99', 'many']}],
+        'cats': 'red'
+    })
+
+    from pprint import pprint
+    pprint(out.as_primitives())
+    pprint(dropped)
+
+    assert out.speed.fast == 1
+    assert out.speed.slow == 'abc'
+    assert out.speed.count == [100, 100]
+    assert len(out.flags) == 2
+    assert out.flags[0].name == 'good'
+    assert out.flags[0].uuid
+    assert len(out.flags[0].fans) == 0
+    assert out.flags[1].name == 'some-good'
+    assert out.flags[1].uuid
+    assert set(out.flags[1].fans) == {1, 99}
+
+    assert dropped['cats'] == 'red'
+    assert dropped['speed']['fast'] == 'abc'
+    assert set(dropped['speed']['count']) == {'hundred', '9dy'}
+    assert len(dropped['flags']) == 3
+    assert dropped['flags'][0] == 'abc'
+    assert dropped['flags'][1]['uuid'] == 'bad'
+    assert dropped['flags'][2]['fans'] == ['many']

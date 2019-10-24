@@ -17,6 +17,7 @@ import typing
 from datetime import datetime
 
 import arrow
+from assemblyline.common.dict_utils import recursive_update
 from dateutil.tz import tzutc
 
 from assemblyline.common import forge
@@ -860,3 +861,51 @@ def model(index=None, store=None):
             field_data.apply_defaults(index=index, store=store)
         return cls
     return _finish_model
+
+
+def _construct_field(field, value):
+    if isinstance(field, List):
+        clean, dropped = [], []
+        for item in value:
+            _c, _d = _construct_field(field.child_type, item)
+            if _c is not None:
+                clean.append(_c)
+            if _d is not None:
+                dropped.append(_d)
+        return clean, dropped
+
+    elif isinstance(field, Compound):
+        _c, _d = construct_safe(field.child_type, value)
+        if len(_d) == 0:
+            _d = None
+        return _c, _d
+    else:
+        try:
+            return field.check(value), None
+        except (ValueError, TypeError):
+            return None, value
+
+
+def construct_safe(mod, data) -> typing.Tuple[typing.Any, typing.Dict]:
+    if not isinstance(data, dict):
+        return None, data
+    fields = mod.fields()
+    clean = {}
+    dropped = {}
+    for key, value in data.items():
+        if key not in fields:
+            dropped[key] = value
+            continue
+
+        _c, _d = _construct_field(fields[key], value)
+
+        if _c is not None:
+            clean[key] = _c
+        if _d is not None:
+            dropped[key] = _d
+
+    try:
+        return mod(clean), dropped
+    except ValueError:
+        return None, recursive_update(dropped, clean)
+
