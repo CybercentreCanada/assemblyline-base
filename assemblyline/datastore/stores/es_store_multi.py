@@ -233,36 +233,44 @@ class ESCollectionMulti(Collection):
             return True
 
     def multiget(self, key_list, as_dictionary=True, as_obj=True, error_on_missing=True):
-        found_some = False
+
+        def add_to_output(data_output, data_id):
+            if "__non_doc_raw__" in data_output:
+                if as_dictionary:
+                    out[data_id] = data_output['__non_doc_raw__']
+                else:
+                    out.append(data_output['__non_doc_raw__'])
+            else:
+                data_output.pop('id', None)
+                if as_dictionary:
+                    out[data_id] = self.normalize(data_output, as_obj=as_obj)
+                else:
+                    out.append(self.normalize(data_output, as_obj=as_obj))
+
         if as_dictionary:
             out = {}
         else:
             out = []
 
         if key_list:
-            for index in self.index_list:
-                if found_some and not key_list:
+            data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.current_index)
+
+            for row in data.get('docs', []):
+                if 'found' in row and not row['found']:
                     continue
 
-                data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=index)
+                key_list.remove(row['_id'])
+                add_to_output(row['_source'], row['_id'])
 
-                for row in data.get('docs', []):
-                    if 'found' in row and not row['found']:
-                        continue
-                    found_some = True
+            if key_list:
+                query_body = {"query": {"ids": {"values": key_list}}}
+                rows = self.with_retries(self.datastore.client.search, f"{self.name}-*",
+                                         body=query_body)['hits']['hits']
 
+                for row in rows:
                     key_list.remove(row['_id'])
-                    if '__non_doc_raw__' in row['_source']:
-                        if as_dictionary:
-                            out[row['_id']] = row['_source']['__non_doc_raw__']
-                        else:
-                            out.append(row['_source']['__non_doc_raw__'])
-                    else:
-                        row['_source'].pop('id', None)
-                        if as_dictionary:
-                            out[row['_id']] = self.normalize(row['_source'], as_obj=as_obj)
-                        else:
-                            out.append(self.normalize(row['_source'], as_obj=as_obj))
+                    add_to_output(row['_source'], row['_id'])
+
 
         if key_list and error_on_missing:
             raise MultiKeyError(key_list)
@@ -270,32 +278,38 @@ class ESCollectionMulti(Collection):
         return out
 
     def _get(self, key, retries):
+
+        def normalize_output(data_output):
+            if "__non_doc_raw__" in data_output:
+                return data_output['__non_doc_raw__']
+            data_output.pop('id', None)
+            return data_output
+
         if retries is None:
             retries = self.RETRY_NONE
 
-        found = False
         done = False
         while not done:
-            for index_name in self.index_list:
-                try:
-                    data = self.with_retries(self.datastore.client.get, index=index_name, id=key)['_source']
-                    found = True
-                    # TODO: Maybe we should not allow data that is not a dictionary...
-                    if "__non_doc_raw__" in data:
-                        return data['__non_doc_raw__']
-                    data.pop('id', None)
-                    return data
-                except elasticsearch.exceptions.NotFoundError:
-                    pass
+            try:
+                data = self.with_retries(self.datastore.client.get, index=self.current_index, id=key)['_source']
+                return normalize_output(data)
+            except elasticsearch.exceptions.NotFoundError:
+                pass
 
-            if not found:
-                if retries > 0:
-                    time.sleep(0.05)
-                    retries -= 1
-                elif retries < 0:
-                    time.sleep(0.05)
-                else:
-                    done = True
+            if len(self.index_list) > 1:
+                query_body = {"query":{"ids": {"values": [key]}}}
+                hits = self.with_retries(self.datastore.client.search, f"{self.name}-*",
+                                         body=query_body)['hits']['hits']
+                if len(hits) > 0:
+                    return normalize_output(max(hits, key=lambda row: row['_index'])['_source'])
+
+            if retries > 0:
+                time.sleep(0.05)
+                retries -= 1
+            elif retries < 0:
+                time.sleep(0.05)
+            else:
+                done = True
 
         return None
 

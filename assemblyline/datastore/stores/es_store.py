@@ -212,7 +212,7 @@ class ESCollection(Collection):
                 self.with_retries(self.datastore.client.indices.delete, new_name)
         return True
 
-    def multiget(self, key_list, as_dictionary=True, as_obj=True):
+    def multiget(self, key_list, as_dictionary=True, as_obj=True, error_on_missing=True):
         missing = []
         if as_dictionary:
             out = {}
@@ -237,7 +237,7 @@ class ESCollection(Collection):
                     else:
                         out.append(self.normalize(row['_source'], as_obj=as_obj))
 
-        if missing:
+        if missing and error_on_missing:
             raise MultiKeyError(missing)
 
         return out
