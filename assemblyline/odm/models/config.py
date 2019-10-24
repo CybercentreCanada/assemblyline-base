@@ -384,18 +384,16 @@ class ScalerServiceDefaults(odm.Model):
 @odm.model()
 class Scaler(odm.Model):
     service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
-    service_namespace: str = odm.Keyword()
 
 
 DEFAULT_SCALER = {
     'service_defaults': {
         'growth': 60,
-        'shrink': 60,
+        'shrink': 30,
         'backlog': 100,
         'min_instances': 0,
         'environment': [{'name': 'SERVICE_API_HOST', 'value': 'http://al_service_server:5003'}],
-    },
-    'service_namespace': 'alsvc',
+    }
 }
 
 
