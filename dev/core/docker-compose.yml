@@ -117,7 +117,11 @@ services:
 
 #  al_scaler:
 #    image: cccs/assemblyline_dev:4.0.9
+#    environment:
+#      FILE_UPDATE_VOLUME: /opt/alv4/update_data/
+#      FILE_UPDATE_DIRECTORY: /mount/update_root/
 #    volumes:
+#      - /opt/alv4/update_data/:/mount/update_root/
 #      - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
 #      - /opt/alv4/:/opt/alv4/
 #      - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
