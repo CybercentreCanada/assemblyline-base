@@ -529,10 +529,11 @@ class ESCollection(Collection):
             elif params is not None:
                 # Run the query
                 result = self.with_retries(self.datastore.client.search, index=self.name,
-                                           body=json.dumps(query_body), params=params)
+                                           body=json.dumps(query_body), params=params, track_total_hits=True)
             else:
                 # Run the query
-                result = self.with_retries(self.datastore.client.search, index=self.name, body=json.dumps(query_body))
+                result = self.with_retries(self.datastore.client.search, index=self.name,
+                                           body=json.dumps(query_body), track_total_hits=True)
 
             return result
 
