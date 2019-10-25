@@ -338,32 +338,25 @@ class ESCollectionMulti(Collection):
         return True
 
     def delete(self, key):
-        for index_name in self.index_list:
-            try:
-                info = self.with_retries(self.datastore.client.delete, id=key, index=index_name)
-                return info['result'] == 'deleted'
-            except elasticsearch.NotFoundError:
-                pass
+        deleted = False
 
-        return True
+        try:
+            info = self.with_retries(self.datastore.client.delete, id=key, index=self.current_index)
+            deleted = info['result'] == 'deleted'
+        except elasticsearch.NotFoundError:
+            pass
+
+        query_body = {"query": {"ids": {"values": [key]}}}
+        info = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name}-*", body=query_body)
+        if not deleted:
+            deleted = info.get('deleted', 0) != 0
+
+        return deleted
 
     def delete_matching(self, query, workers=20):
-        query_body = {
-            "query": {
-                "bool": {
-                    "must": {
-                        "query_string": {
-                            "query": query
-                        }
-                    }
-                }
-            }
-        }
-        try:
-            info = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name}-*", body=query_body)
-            return info.get('deleted', 0) != 0
-        except elasticsearch.NotFoundError:
-            return False
+        query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
+        info = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name}-*", body=query_body)
+        return info.get('deleted', 0) != 0
 
     def _create_scripts_from_operations(self, operations):
         op_sources = []
