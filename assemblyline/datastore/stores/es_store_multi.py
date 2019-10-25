@@ -200,9 +200,8 @@ class ESCollectionMulti(Collection):
                     raise
 
     def commit(self):
-        for index in self.index_list:
-            self.with_retries(self.datastore.client.indices.refresh, index)
-            self.with_retries(self.datastore.client.indices.clear_cache, index)
+        self.with_retries(self.datastore.client.indices.refresh, self.current_index)
+        self.with_retries(self.datastore.client.indices.clear_cache, self.current_index)
         return True
 
     def reindex(self):
@@ -402,15 +401,19 @@ class ESCollectionMulti(Collection):
             "script": script
         }
 
-        for index in self.index_list:
-            # noinspection PyBroadException
-            try:
-                res = self.with_retries(self.datastore.client.update, index=index, id=key, body=update_body)
-                return res['result'] == "updated"
-            except elasticsearch.NotFoundError:
-                continue
-            except Exception:
-                return False
+        # noinspection PyBroadException
+        try:
+            res = self.with_retries(self.datastore.client.update, index=self.current_index, id=key, body=update_body)
+            return res['result'] == "updated"
+        except elasticsearch.NotFoundError:
+            pass
+        except Exception:
+            return False
+
+        query_body = {"query": {"ids": {"values": [key]}}}
+        update_body.update(query_body)
+        info = self.with_retries(self.datastore.client.update_by_query, index=f"{self.name}-*", body=update_body)
+        return info.get('updated', 0) != 0
 
     def _update_by_query(self, query, operations, filters):
         if filters is None:
@@ -857,10 +860,8 @@ class ESCollectionMulti(Collection):
                     raise ValueError("Unknown field data " + str(props))
             return out
 
-        properties = {}
-        for index in self.index_list:
-            data = self.with_retries(self.datastore.client.indices.get, index)
-            properties.update(flatten_fields(data[index]['mappings'].get('properties', {})))
+        data = self.with_retries(self.datastore.client.indices.get, self.current_index)
+        properties = flatten_fields(data[self.current_index]['mappings'].get('properties', {}))
 
         if self.model_class:
             model_fields = self.model_class.flat_fields()
