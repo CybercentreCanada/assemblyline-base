@@ -73,7 +73,7 @@ def es_datastore():
 @pytest.fixture(scope='module')
 def es_multi_datastore():
     try:
-        document_store = setup_store(ESStoreMulti(['127.0.0.1']))
+        document_store = setup_store(ESStoreMulti(['127.0.0.1'], ilm_config=DEFAULT_ILM_INDEXES))
     except SetupException:
         document_store = None
 

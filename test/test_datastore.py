@@ -9,6 +9,7 @@ from retrying import retry
 
 from assemblyline.common.testing import skip
 from assemblyline.datastore import Collection
+from assemblyline.odm.models.config import DEFAULT_ILM_INDEXES
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -119,7 +120,7 @@ def es_multi_connection(request):
     from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
 
     try:
-        collection = setup_store(ESStoreMulti(['127.0.0.1']), request)
+        collection = setup_store(ESStoreMulti(['127.0.0.1'], ilm_config=DEFAULT_ILM_INDEXES), request)
     except SetupException:
         collection = None
 
@@ -138,7 +139,7 @@ def collection(request):
             return setup_store(ESStore(['127.0.0.1']), request)
         elif request.param == 'elastic_multi':
             from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
-            return setup_store(ESStoreMulti(['127.0.0.1']), request)
+            return setup_store(ESStoreMulti(['127.0.0.1'], ilm_config=DEFAULT_ILM_INDEXES), request)
         elif request.param == 'solr':
             from assemblyline.datastore.stores.solr_store import SolrStore
             return setup_store(SolrStore(['127.0.0.1']), request)

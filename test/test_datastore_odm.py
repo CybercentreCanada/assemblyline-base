@@ -153,7 +153,7 @@ def es_multi_connection(request):
     from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
 
     try:
-        collection = setup_store(ESStoreMulti(['127.0.0.1']), request)
+        collection = setup_store(ESStoreMulti(['127.0.0.1'], ilm_config=DEFAULT_ILM_INDEXES), request)
     except SetupException:
         collection = None
 

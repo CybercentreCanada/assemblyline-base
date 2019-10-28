@@ -1094,6 +1094,9 @@ class ESStoreMulti(BaseStore):
     }
 
     def __init__(self, hosts, collection_class=ESCollectionMulti, ilm_config=None):
+        if ilm_config is None:
+            ilm_config = {}
+
         super(ESStoreMulti, self).__init__(hosts, collection_class, ilm_config=ilm_config)
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
