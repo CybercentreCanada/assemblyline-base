@@ -166,7 +166,7 @@ class ESCollection(Collection):
                     elasticsearch.exceptions.ConnectionTimeout,
                     elasticsearch.exceptions.AuthenticationException) as e:
                 if not isinstance(e, SearchRetryException):
-                    log.warning(f"No connection to Elasticsearch {self.datastore._hosts}, retrying...")
+                    log.warning(f"No connection to Elasticsearch {' | '.join(self.datastore._hosts)}, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
@@ -182,8 +182,7 @@ class ESCollection(Collection):
                     raise
 
     def commit(self):
-        self.with_retries(self.datastore.client.indices.refresh, self.name)
-        self.with_retries(self.datastore.client.indices.clear_cache, self.name)
+        self.with_retries(self.datastore.client.indices.flush, self.name)
         return True
 
     def reindex(self):

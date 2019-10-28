@@ -76,15 +76,16 @@ def get_constants(config=None):
     return importlib.import_module(config.system.constants)
 
 
-def get_datastore(config=None):
+def get_datastore(config=None, multi=False):
     from assemblyline.datastore.helper import AssemblylineDatastore
     if not config:
         config = get_config(static=True)
 
     if config.datastore.type == "elasticsearch":
-        if config.datastore.index_splitting:
+        if multi:
             from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
-            return AssemblylineDatastore(ESStoreMulti(config.datastore.hosts))
+            return AssemblylineDatastore(ESStoreMulti(config.datastore.hosts,
+                                                      ilm_config=config.datastore.ilm.indexes.as_primitives()))
         else:
             from assemblyline.datastore.stores.es_store import ESStore
             return AssemblylineDatastore(ESStore(config.datastore.hosts))

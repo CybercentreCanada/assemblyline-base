@@ -11,7 +11,6 @@ from copy import deepcopy
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.exceptions import MultiKeyError
-from assemblyline.common.isotime import now_as_db
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore import Collection, BaseStore, log
 from assemblyline.datastore.exceptions import SearchException, SearchRetryException
@@ -119,6 +118,11 @@ class ESCollectionMulti(Collection):
         self.shards = shards
         self._index_list = []
 
+        if name in datastore.ilm_config:
+            self.ilm_config = datastore.ilm_config[name]
+        else:
+            self.ilm_config = None
+
         super().__init__(datastore, name, model_class=model_class)
 
         self.stored_fields = {}
@@ -128,19 +132,14 @@ class ESCollectionMulti(Collection):
                     self.stored_fields[name] = field
 
     @property
-    def current_index(self):
-        return f"{self.name}-{now_as_db()}"
-
-    @property
     def index_list(self):
         if not self._index_list:
             self._index_list = list(self.with_retries(self.datastore.client.indices.get, f"{self.name}-*").keys())
 
-        current_index = self.current_index
-        if current_index not in self._index_list:
-            self._index_list.append(current_index)
+        if self.name not in self._index_list:
+            self._index_list.append(self.name)
 
-        return sorted(self._index_list, reverse=True)
+        return [self.name] + sorted(self._index_list, reverse=True)
 
     def with_retries(self, func, *args, **kwargs):
         retries = 0
@@ -184,7 +183,7 @@ class ESCollectionMulti(Collection):
                     elasticsearch.exceptions.ConnectionTimeout,
                     elasticsearch.exceptions.AuthenticationException) as e:
                 if not isinstance(e, SearchRetryException):
-                    log.warning(f"No connection to Elasticsearch {self.datastore._hosts}, retrying...")
+                    log.warning(f"No connection to Elasticsearch {' | '.join(self.datastore._hosts)}, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
@@ -200,8 +199,9 @@ class ESCollectionMulti(Collection):
                     raise
 
     def commit(self):
-        self.with_retries(self.datastore.client.indices.refresh, self.current_index)
-        self.with_retries(self.datastore.client.indices.clear_cache, self.current_index)
+        self.with_retries(self.datastore.client.indices.flush, self.name)
+        if self.ilm_config:
+            self.with_retries(self.datastore.client.indices.flush, f"{self.name}-archive")
         return True
 
     def reindex(self):
@@ -252,7 +252,7 @@ class ESCollectionMulti(Collection):
             out = []
 
         if key_list:
-            data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.current_index)
+            data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name)
 
             for row in data.get('docs', []):
                 if 'found' in row and not row['found']:
@@ -290,7 +290,7 @@ class ESCollectionMulti(Collection):
         done = False
         while not done:
             try:
-                data = self.with_retries(self.datastore.client.get, index=self.current_index, id=key)['_source']
+                data = self.with_retries(self.datastore.client.get, index=self.name, id=key)['_source']
                 return normalize_output(data)
             except elasticsearch.exceptions.NotFoundError:
                 pass
@@ -323,7 +323,7 @@ class ESCollectionMulti(Collection):
 
         saved_data['id'] = key
 
-        target_index = self.current_index
+        target_index = self.name
         if index_split_id is not None:
             target_index = f"{self.name}-{index_split_id}"
 
@@ -340,7 +340,7 @@ class ESCollectionMulti(Collection):
         deleted = False
 
         try:
-            info = self.with_retries(self.datastore.client.delete, id=key, index=self.current_index)
+            info = self.with_retries(self.datastore.client.delete, id=key, index=self.name)
             deleted = info['result'] == 'deleted'
         except elasticsearch.NotFoundError:
             pass
@@ -354,7 +354,7 @@ class ESCollectionMulti(Collection):
 
     def delete_matching(self, query, workers=20):
         query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-        info = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name}-*", body=query_body)
+        info = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name},{self.name}-*", body=query_body)
         return info.get('deleted', 0) != 0
 
     def _create_scripts_from_operations(self, operations):
@@ -403,7 +403,7 @@ class ESCollectionMulti(Collection):
 
         # noinspection PyBroadException
         try:
-            res = self.with_retries(self.datastore.client.update, index=self.current_index, id=key, body=update_body)
+            res = self.with_retries(self.datastore.client.update, index=self.name, id=key, body=update_body)
             return res['result'] == "updated"
         except elasticsearch.NotFoundError:
             pass
@@ -437,7 +437,7 @@ class ESCollectionMulti(Collection):
 
         # noinspection PyBroadException
         try:
-            res = self.with_retries(self.datastore.client.update_by_query, index=f"{self.name}-*", body=query_body)
+            res = self.with_retries(self.datastore.client.update_by_query, index=f"{self.name},{self.name}-*", body=query_body)
         except Exception:
             return False
 
@@ -578,11 +578,11 @@ class ESCollectionMulti(Collection):
                                            params={"scroll": self.SCROLL_TIMEOUT})
             elif params is not None:
                 # Run the query
-                result = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
+                result = self.with_retries(self.datastore.client.search, index=f"{self.name},{self.name}-*",
                                            body=json.dumps(query_body), params=params)
             else:
                 # Run the query
-                result = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
+                result = self.with_retries(self.datastore.client.search, index=f"{self.name},{self.name}-*",
                                            body=json.dumps(query_body))
 
             return result
@@ -691,7 +691,7 @@ class ESCollectionMulti(Collection):
             elasticsearch.helpers.scan(
                 self.datastore.client,
                 query=query_body,
-                index=f"{self.name}-*",
+                index=f"{self.name},{self.name}-*",
                 preserve_order=True
             )
         )
@@ -860,8 +860,8 @@ class ESCollectionMulti(Collection):
                     raise ValueError("Unknown field data " + str(props))
             return out
 
-        data = self.with_retries(self.datastore.client.indices.get, self.current_index)
-        properties = flatten_fields(data[self.current_index]['mappings'].get('properties', {}))
+        data = self.with_retries(self.datastore.client.indices.get, self.name)
+        properties = flatten_fields(data[self.name]['mappings'].get('properties', {}))
 
         if self.model_class:
             model_fields = self.model_class.flat_fields()
@@ -888,17 +888,71 @@ class ESCollectionMulti(Collection):
 
         return collection_data
 
-    def _ensure_collection(self):
-        if not self.with_retries(self.datastore.client.indices.exists_template, self.name):
-            log.debug(f"Index template {self.name.upper()} does not exists. Creating it now...")
+    def _ilm_policy_exists(self):
+        conn = self.datastore.client.transport.get_connection()
+        pol_req = conn.session.get(f"{conn.base_url}/_ilm/policy/{self.name}_policy")
+        return pol_req.ok
 
-            index = deepcopy(default_index)
-            if 'settings' not in index:
-                index['settings'] = {}
-            if 'index' not in index['settings']:
-                index['settings']['index'] = {}
-            index['settings']['index']['number_of_shards'] = self.shards
-            index['settings']['index']['number_of_replicas'] = self.replicas
+    def _create_ilm_policy(self):
+        data_base = {
+            "policy": {
+                "phases": {
+                    "hot": {
+                        "min_age": "0ms",
+                        "actions": {
+                            "set_priority": {
+                                "priority": 100
+                            },
+                            "rollover": {
+                                "max_age": f"{self.ilm_config['warm']}{self.ilm_config['unit']}"
+                            }
+                        }
+                    },
+                    "warm": {
+                        "actions": {
+                            "set_priority": {
+                                "priority": 50
+                            }
+                        }
+                    },
+                    "cold": {
+                        "min_age": f"{self.ilm_config['cold']}{self.ilm_config['unit']}",
+                        "actions": {
+                            "set_priority": {
+                                "priority": 20
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if self.ilm_config['delete']:
+            data_base['policy']['phases']['delete'] = {
+                "min_age": f"{self.ilm_config['delete']}{self.ilm_config['unit']}",
+                "actions": {
+                    "delete": {}
+                }
+            }
+
+        conn = self.datastore.client.transport.get_connection()
+        pol_req = conn.session.put(f"{conn.base_url}/_ilm/policy/{self.name}_policy",
+                           headers={"Content-Type": "application/json"},
+                           data=json.dumps(data_base))
+        if not pol_req.ok:
+            raise Exception(f"ERROR: Failed to create ILM policy: {self.name}_policy")
+
+
+    def _ensure_collection(self):
+
+        def get_index_definition():
+            index_def = deepcopy(default_index)
+            if 'settings' not in index_def:
+                index_def['settings'] = {}
+            if 'index' not in index_def['settings']:
+                index_def['settings']['index'] = {}
+            index_def['settings']['index']['number_of_shards'] = self.shards
+            index_def['settings']['index']['number_of_replicas'] = self.replicas
 
             mappings = deepcopy(default_mapping)
             if self.model_class:
@@ -922,26 +976,55 @@ class ESCollectionMulti(Collection):
                 "type": 'keyword'
             }
 
-            index['mappings'] = mappings
-            index["index_patterns"] = [f"{self.name}-*"]
-            index["order"] = 1
+            index_def['mappings'] = mappings
 
+            return index_def
+
+        # Create HOT index
+        if not self.with_retries(self.datastore.client.indices.exists, self.name):
+            log.debug(f"Index {self.name.upper()} does not exists. Creating it now...")
             try:
-                self.with_retries(self.datastore.client.indices.put_template, self.name, index)
+                self.with_retries(self.datastore.client.indices.create, self.name, get_index_definition())
             except elasticsearch.exceptions.RequestError as e:
                 if "resource_already_exists_exception" not in str(e):
                     raise
                 log.warning(f"Tried to create an index template that already exists: {self.name.upper()}")
 
-        current_index = self.current_index
-        if not self.with_retries(self.datastore.client.indices.exists, current_index):
-            log.debug(f"Index {current_index.upper()} does not exists. Creating it now...")
-            try:
-                self.with_retries(self.datastore.client.indices.create, current_index)
-            except elasticsearch.exceptions.RequestError as e:
-                if "resource_already_exists_exception" not in str(e):
-                    raise
-                log.warning(f"Tried to create an index template that already exists: {current_index.upper()}")
+        # Create ILM policy
+        if self.ilm_config:
+            if not self._ilm_policy_exists():
+                self.with_retries(self._create_ilm_policy)
+
+            # Create WARM index template
+            if not self.with_retries(self.datastore.client.indices.exists_template, self.name):
+                log.debug(f"Index template {self.name.upper()} does not exists. Creating it now...")
+
+                index = get_index_definition()
+
+                index["index_patterns"] = [f"{self.name}-*"]
+                index["order"] = 1
+                index["settings"]["index.lifecycle.name"] = f"{self.name}_policy"
+                index["settings"]["index.lifecycle.rollover_alias"] = f"{self.name}-archive"
+
+                try:
+                    self.with_retries(self.datastore.client.indices.put_template, self.name, index)
+                except elasticsearch.exceptions.RequestError as e:
+                    if "resource_already_exists_exception" not in str(e):
+                        raise
+                    log.warning(f"Tried to create an index template that already exists: {self.name.upper()}")
+
+            if not self.with_retries(self.datastore.client.indices.exists_alias, f"{self.name}-archive"):
+                log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
+
+                index = { "aliases": { f"{self.name}-archive": {"is_write_index": True}}}
+
+                try:
+                    self.with_retries(self.datastore.client.indices.create, f"{self.name}-000001", index)
+                except elasticsearch.exceptions.RequestError as e:
+                    if "resource_already_exists_exception" not in str(e):
+                        raise
+                    log.warning(f"Tried to create an index template that already exists: {self.name.upper()}-000001")
+
 
         self._check_fields()
 
@@ -1010,8 +1093,8 @@ class ESStoreMulti(BaseStore):
         'DATE_END': 'Z'
     }
 
-    def __init__(self, hosts, collection_class=ESCollectionMulti):
-        super(ESStoreMulti, self).__init__(hosts, collection_class)
+    def __init__(self, hosts, collection_class=ESCollectionMulti, ilm_config=None):
+        super(ESStoreMulti, self).__init__(hosts, collection_class, ilm_config=ilm_config)
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
 

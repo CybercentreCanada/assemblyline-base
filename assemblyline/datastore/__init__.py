@@ -138,7 +138,7 @@ class Collection(object):
 
         This is the normal way to get data of the system.
 
-        :param as_obj:
+        :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
@@ -561,12 +561,13 @@ class BaseStore(object):
         'DATE_END': 'Z||'
     }
 
-    def __init__(self, hosts, collection_class):
+    def __init__(self, hosts, collection_class, ilm_config=None):
         self._hosts = hosts
         self._collection_class = collection_class
         self._closed = False
         self._collections = {}
         self._models = {}
+        self.ilm_config = ilm_config
 
     def __enter__(self):
         return self

@@ -420,15 +420,65 @@ DEFAULT_CORE = {
 
 
 @odm.model()
+class ILMParams(odm.Model):
+    warm = odm.Integer()
+    cold = odm.Integer()
+    delete = odm.Integer()
+    unit = odm.Enum(['d', 'h', 'm'])
+
+
+DEFAULT_ILM_PARAMS = {
+    "warm": 1,
+    "cold": 15,
+    "delete": 30,
+    "unit":  "d"
+}
+
+
+@odm.model()
+class ILMIndexes(odm.Model):
+    alert = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
+    error = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
+    file = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
+    result = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
+    submission = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
+    submission_summary = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
+    submission_tree = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
+
+
+DEFAULT_ILM_INDEXES = {
+    'alert': DEFAULT_ILM_PARAMS,
+    'error': DEFAULT_ILM_PARAMS,
+    'file': DEFAULT_ILM_PARAMS,
+    'result': DEFAULT_ILM_PARAMS,
+    'submission': DEFAULT_ILM_PARAMS,
+    'submission_summary': DEFAULT_ILM_PARAMS,
+    'submission_tree': DEFAULT_ILM_PARAMS,
+}
+
+
+@odm.model()
+class ILM(odm.Model):
+    days_until_archive = odm.Integer()
+    indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES)
+
+
+DEFAULT_ILM = {
+    "days_until_archive": 5,
+    "indexes": DEFAULT_ILM_INDEXES
+}
+
+
+@odm.model()
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword())
-    index_splitting: bool = odm.Boolean()
-    type = odm.Enum({"elasticsearch", "elasticsearch", "solr"})
+    ilm = odm.Compound(ILM, default=DEFAULT_ILM)
+    type = odm.Enum({"elasticsearch", "solr"})
 
 
 DEFAULT_DATASTORE = {
     "hosts": ["http://assemblyline:assemblylinepass@localhost"],
-    "index_splitting": False,
+    "ilm": DEFAULT_ILM,
     "type": "elasticsearch",
 }
 

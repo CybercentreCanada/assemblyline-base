@@ -210,7 +210,7 @@ if __name__ == "__main__":
     # Creating assemblyline user
     if os.getenv("AL_PASSWORD"):
         create_role('assemblyline_system',
-                    cluster_priv=["manage_index_templates"],
+                    cluster_priv=["manage_index_templates", "manage_ilm"],
                     indices=[
                         "al_metrics_*",
                         "alert*",
