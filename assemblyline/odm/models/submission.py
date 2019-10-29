@@ -105,10 +105,11 @@ class Verdict(odm.Model):
 
 @odm.model(index=True, store=True)
 class Submission(odm.Model):
+    archive_ts = odm.Date(store=False)                         # Archiving timestamp
     classification = odm.Classification()                      # Classification of the submission
     error_count = odm.Integer()                                # Total number of errors in the submission
     errors = odm.List(odm.Keyword(), store=False)              # List of error keys
-    expiry_ts = odm.Date(store=False)                          # Expiry time stamp
+    expiry_ts = odm.Optional(odm.Date(store=False))            # Expiry timestamp
     file_count = odm.Integer()                                 # Total number of files in the submission
     files: List[File] = odm.List(odm.Compound(File))           # List of files that were originally submitted
     max_score = odm.Integer()                                  # Maximum score of all the files in the scan

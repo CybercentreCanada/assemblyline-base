@@ -162,7 +162,7 @@ class Alerter(odm.Model):
 
 
 DEFAULT_ALERTER = {
-    "alert_ttl": 90,
+    "alert_ttl": 0,
     "constant_alert_fields": ["alert_id", "file", "ts"],
     "default_group_field": "file.sha256",
     "delay": 300,
@@ -254,8 +254,12 @@ class Ingester(odm.Model):
     sampling_at: Dict[str, int] = odm.Mapping(odm.Integer())
     max_inflight = odm.Integer()
 
+    # How long are files results cached
+    cache_dtl: int = odm.Integer()
+
 
 DEFAULT_INGESTER = {
+    'cache_dtl': 2,
     'default_user': 'internal',
     'default_services': [],
     'default_resubmit_services': [],
@@ -442,8 +446,6 @@ class ILMIndexes(odm.Model):
     file = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
     result = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
     submission = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
-    submission_summary = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
-    submission_tree = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
 
 
 DEFAULT_ILM_INDEXES = {
@@ -452,8 +454,6 @@ DEFAULT_ILM_INDEXES = {
     'file': DEFAULT_ILM_PARAMS,
     'result': DEFAULT_ILM_PARAMS,
     'submission': DEFAULT_ILM_PARAMS,
-    'submission_summary': DEFAULT_ILM_PARAMS,
-    'submission_tree': DEFAULT_ILM_PARAMS,
 }
 
 
@@ -773,7 +773,7 @@ class Submission(odm.Model):
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
-    'dtl': 15,
+    'dtl': 0,
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,

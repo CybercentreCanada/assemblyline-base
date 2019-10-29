@@ -32,7 +32,7 @@ from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
 
-default_dtl = forge.get_config().submission.dtl
+days_until_archive = forge.get_config().datastore.ilm.days_until_archive
 
 
 class AssemblylineDatastore(object):
@@ -162,7 +162,8 @@ class AssemblylineDatastore(object):
         svc_version = svc_version[1:]
 
         data = Result({
-            "expiry_ts": now_as_iso(default_dtl * 24 * 60 * 60),
+            "archive_ts": now_as_iso(days_until_archive * 24 * 60 * 60),
+            "expiry_ts": now_as_iso(days_until_archive * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
                 "service_name": svc_name,
@@ -449,7 +450,7 @@ class AssemblylineDatastore(object):
                 }
 
         cached_tree = {
-            'expiry_ts': submission['expiry_ts'],
+            'expiry_ts': now_as_iso(days_until_archive * 24 * 60 * 60),
             'tree': json.dumps(tree)
         }
 
@@ -674,12 +675,16 @@ class AssemblylineDatastore(object):
             current_fileinfo = self.ds.file.get(sha256, as_obj=False) or {}
 
             # Remove control fields from file info and update current file info
-            for x in ['classification', 'expiry_ts', 'seen']:
+            for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
                 fileinfo.pop(x, None)
             current_fileinfo.update(fileinfo)
 
+            current_fileinfo['archive_ts'] = now_as_iso(days_until_archive * 24 * 60 * 60)
+
             # Update expiry time
-            current_fileinfo['expiry_ts'] = max(current_fileinfo.get('expiry_ts', expiry), expiry)
+            current_expiry = current_fileinfo.get('expiry_ts', expiry)
+            if current_expiry and expiry:
+                current_fileinfo['expiry_ts'] = max(current_expiry, expiry)
 
             # Update seen counters
             now = now_as_iso()

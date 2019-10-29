@@ -40,8 +40,9 @@ class Verdict(odm.Model):
 class Alert(odm.Model):
     alert_id = odm.Keyword(copyto="__text__")                           # ID of the alert
     al = odm.Compound(ALResults)                                        # Assemblyline result block
+    archive_ts = odm.Date(store=False)                                  # Archiving timestamp
     classification = odm.Classification()                               # Classification of the alert
-    expiry_ts = odm.Date(store=False)                                   # Expiry timestamp
+    expiry_ts = odm.Optional(odm.Date(store=False))                     # Expiry timestamp
     extended_scan = odm.Enum(values=EXTENDED_SCAN_VALUES, store=False)  # Status of the extended scan
     file = odm.Compound(File)                                           # File block
     label = odm.List(odm.Keyword(), copyto="__text__", default=[])      # List of labels applied to the alert

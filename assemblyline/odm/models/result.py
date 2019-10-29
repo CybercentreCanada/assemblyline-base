@@ -60,9 +60,10 @@ class ResponseBody(odm.Model):
 
 @odm.model(index=True, store=True)
 class Result(odm.Model):
+    archive_ts = odm.Date(store=False)                         # Archiving timestamp
     classification = odm.Classification()                      # Aggregate classification for the result
     created = odm.Date(default="NOW")                          # Date at which the result object got created
-    expiry_ts = odm.Date(store=False)                          # Expiry time stamp
+    expiry_ts = odm.Optional(odm.Date(store=False))            # Expiry time stamp
     response: ResponseBody = odm.Compound(ResponseBody)        # The body of the response from the service
     result: ResultBody = odm.Compound(ResultBody, default={})  # The result body
     sha256 = odm.Keyword(store=False)                          # SHA256 of the file the result object relates to
