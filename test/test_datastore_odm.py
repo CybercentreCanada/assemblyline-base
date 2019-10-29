@@ -6,6 +6,7 @@ import random
 import string
 import warnings
 
+from assemblyline.odm.models.config import DEFAULT_ILM_INDEXES
 from datemath import dm
 from retrying import retry
 

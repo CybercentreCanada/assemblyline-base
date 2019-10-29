@@ -1,4 +1,5 @@
 import pytest
+from assemblyline.odm.models.config import DEFAULT_ILM_INDEXES
 from retrying import retry
 
 from assemblyline.common.testing import skip
