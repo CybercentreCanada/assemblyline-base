@@ -14,7 +14,8 @@ from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.str_utils import safe_str
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore import BaseStore, log, Collection
-from assemblyline.datastore.exceptions import SearchRetryException, DataStoreException, SearchException
+from assemblyline.datastore.exceptions import SearchRetryException, DataStoreException, SearchException, \
+    UndefinedFunction
 from assemblyline.datastore.support.solr.build import build_mapping, back_mapping
 from assemblyline.odm import flat_to_nested, Mapping
 
@@ -96,6 +97,9 @@ class SolrCollection(Collection):
         if ":" not in host:
             host += ":%s" % port
         return session, host
+
+    def archive(self, query):
+        raise UndefinedFunction("SOLR datastore does not support archiving data.")
 
     def commit(self):
         for host in self.datastore.get_hosts():

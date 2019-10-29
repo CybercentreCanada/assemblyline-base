@@ -200,6 +200,15 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
+    def archive(self, query):
+        """
+        This function should archive to document that are matching to query to an time splitted index
+
+        :param query: query to run to archive documents
+        :return: Number of archived documents
+        """
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
     def delete(self, key):
         """
         This function should delete the underlying document referenced by the key.

@@ -12,7 +12,7 @@ from assemblyline import odm
 from assemblyline.common.exceptions import MultiKeyError
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore import Collection, BaseStore, log
-from assemblyline.datastore.exceptions import SearchException, SearchRetryException
+from assemblyline.datastore.exceptions import SearchException, SearchRetryException, UndefinedFunction
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
     default_dynamic_templates
 from assemblyline.datastore.support.elasticsearch.build import build_mapping, back_mapping
@@ -180,6 +180,9 @@ class ESCollection(Collection):
                     retries += 1
                 else:
                     raise
+
+    def archive(self, query):
+        raise UndefinedFunction("Single index elasticsearch datastore does not support archiving data.")
 
     def commit(self):
         self.with_retries(self.datastore.client.indices.refresh, self.name)

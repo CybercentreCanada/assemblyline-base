@@ -198,6 +198,37 @@ class ESCollectionMulti(Collection):
                 else:
                     raise
 
+    def archive(self, query):
+        reindex_body = {
+            "source":{
+                "index": self.name,
+                "query": {
+                    "bool": {
+                        "must": {
+                            "query_string": {
+                                "query": query
+                            }
+                        }
+                    }
+                }
+            },
+            "dest":{
+                "index": f"{self.name}-archive"
+            }
+        }
+        res_reindex = self.with_retries(self.datastore.client.reindex, reindex_body)
+        total_archived = res_reindex['updated'] + res_reindex['created']
+        if res_reindex['total'] == total_archived:
+            if total_archived != 0:
+                delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
+                info = self.with_retries(self.datastore.client.delete_by_query, index=self.name, body=delete_body)
+                return info.get('deleted', 0) == total_archived
+            else:
+                return True
+        else:
+            return False
+
+
     def commit(self):
         self.with_retries(self.datastore.client.indices.refresh, self.name)
         self.with_retries(self.datastore.client.indices.clear_cache, self.name)
