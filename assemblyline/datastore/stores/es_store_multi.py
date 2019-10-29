@@ -199,9 +199,11 @@ class ESCollectionMulti(Collection):
                     raise
 
     def commit(self):
-        self.with_retries(self.datastore.client.indices.flush, self.name)
+        self.with_retries(self.datastore.client.indices.refresh, self.name)
+        self.with_retries(self.datastore.client.indices.clear_cache, self.name)
         if self.ilm_config:
-            self.with_retries(self.datastore.client.indices.flush, f"{self.name}-archive")
+            self.with_retries(self.datastore.client.indices.refresh, f"{self.name}-archive")
+            self.with_retries(self.datastore.client.indices.clear_cache, f"{self.name}-archive")
         return True
 
     def reindex(self):

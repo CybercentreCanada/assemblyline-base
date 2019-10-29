@@ -182,7 +182,8 @@ class ESCollection(Collection):
                     raise
 
     def commit(self):
-        self.with_retries(self.datastore.client.indices.flush, self.name)
+        self.with_retries(self.datastore.client.indices.refresh, self.name)
+        self.with_retries(self.datastore.client.indices.clear_cache, self.name)
         return True
 
     def reindex(self):
