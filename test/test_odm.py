@@ -679,3 +679,23 @@ def test_construct_safe():
     assert dropped['flags'][0] == 'abc'
     assert dropped['flags'][1]['uuid'] == 'bad'
     assert dropped['flags'][2]['fans'] == ['many']
+
+
+def test_model_equal():
+    @model()
+    class Inner(Model):
+        a = Integer()
+        b = Integer()
+
+    @model()
+    class Test(Model):
+        a = Compound(Inner)
+        b = Integer()
+
+    a = Test(dict(a=dict(a=10, b=5), b=99))
+    assert a == dict(a=dict(a=10, b=5), b=99)
+    assert a != dict(a=dict(a=0, b=5), b=99)
+    assert a != dict(a=dict(a=10, b=5), b=0)
+    assert a != dict(a=dict(a=10, b=5))
+    assert a != []
+    assert a != 99

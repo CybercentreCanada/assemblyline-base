@@ -8,7 +8,7 @@ from datemath import dm
 from datemath.helpers import DateMathException
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
-from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List
+from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping
 from assemblyline.odm.base import _Field
 from assemblyline.remote.datatypes.lock import Lock
 
@@ -234,6 +234,9 @@ class Collection(object):
         """
         Validate the different operations received for a partial update
 
+        TODO: When the field is of type Mapping, the validation/check only works for depth 1. A full recursive
+              solution is needed to support multi-depth cases.
+
         :param operations: list of operation tuples
         :raises: DatastoreException if operation not valid
         """
@@ -253,10 +256,20 @@ class Collection(object):
                 raise DataStoreException(f"Not a valid Update Operation: {op}")
 
             if fields is not None:
+                prev_key = None
                 if doc_key not in fields:
-                    raise DataStoreException(f"Invalid field for model: {doc_key}")
+                    if '.' in doc_key:
+                        prev_key = doc_key[:doc_key.rindex('.')]
+                        if prev_key in fields and not isinstance(fields[prev_key], Mapping):
+                            raise DataStoreException(f"Invalid field for model: {prev_key}")
+                    else:
+                        raise DataStoreException(f"Invalid field for model: {doc_key}")
 
-                field = fields[doc_key]
+                if prev_key:
+                    field = fields[prev_key].child_type
+                else:
+                    field = fields[doc_key]
+
                 if op in [self.UPDATE_APPEND, self.UPDATE_REMOVE]:
                     try:
                         value = field.check(value)
