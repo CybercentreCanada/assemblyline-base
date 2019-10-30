@@ -9,5 +9,4 @@
 (cd minio && docker build -t sgaroncse/minio .)
 
 # Build default dev containers
-(cd ../.. && docker build -f alv4/docker/al_base/Dockerfile -t sgaroncse/assemblyline_base:latest -t sgaroncse/assemblyline_base:4.0.0 .)
-(cd ../.. && docker build -f alv4/docker/al_dev/Dockerfile -t cccs/assemblyline_dev:latest -t cccs/assemblyline_dev:4.0.9 .)
+(cd ../.. && docker build -f alv4/docker/al_dev/Dockerfile -t cccs/assemblyline_dev:latest -t cccs/assemblyline_dev:4.0.10 .)

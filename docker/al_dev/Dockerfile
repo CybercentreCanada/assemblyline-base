@@ -10,14 +10,7 @@ RUN apt-get update
 RUN apt-get install -yy build-essential libffi-dev libfuzzy-dev
 
 # Pipy packages requirements
-RUN pip3 install assemblyline assemblyline-ui assemblyline-service-server
-
-# Install all the dependencies for core (+core)
-COPY alv4_core /tmp/alv4_core
-RUN pip3 install -e /tmp/alv4_core
-RUN rm -rf /tmp/alv4_core
-
-# Clear out the packages we installed only for their dependencies
+RUN pip3 install assemblyline assemblyline-core assemblyline-ui assemblyline-service-server
 RUN pip3 uninstall -y assemblyline assemblyline-core assemblyline-ui assemblyline-service-server
 
 # Create Assemblyline source directory
