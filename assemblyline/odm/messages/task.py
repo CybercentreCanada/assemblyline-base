@@ -42,6 +42,8 @@ class Task(odm.Model):
     tags = odm.List(odm.Compound(TagItem), default=[])
     temporary_submission_data = odm.List(odm.Compound(DataItem), default=[])
 
+    deep_scan = odm.Boolean(default=False)
+
     # Whether the service cache should be ignored during the processing of this task
     ignore_cache = odm.Boolean(default=False)
 
