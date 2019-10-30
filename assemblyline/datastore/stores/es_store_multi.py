@@ -371,7 +371,6 @@ class ESCollectionMulti(Collection):
 
     def delete(self, key):
         deleted = False
-
         try:
             info = self.with_retries(self.datastore.client.delete, id=key, index=self.name)
             deleted = info['result'] == 'deleted'
@@ -381,7 +380,7 @@ class ESCollectionMulti(Collection):
         query_body = {"query": {"ids": {"values": [key]}}}
         info = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name}-*", body=query_body)
         if not deleted:
-            deleted = info.get('deleted', 0) != 0
+            deleted = info.get('deleted', 0) == info.get('total', 0)
 
         return deleted
 
