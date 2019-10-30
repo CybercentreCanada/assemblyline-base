@@ -66,6 +66,12 @@ class AssemblylineDatastore(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.ds.close()
 
+    def enable_archive_access(self):
+        self.ds.archive_access = True
+
+    def disable_archive_access(self):
+        self.ds.archive_access = False
+
     @property
     def alert(self) -> Collection:
         return self.ds.alert

@@ -169,7 +169,7 @@ class Collection(object):
         """
         return self.normalize(self._get(key, self.RETRY_INFINITY), as_obj=as_obj)
 
-    def save(self, key, data, index_split_id=None):
+    def save(self, key, data):
         """
         Save a to document to the datastore using the key as its document id.
 
@@ -185,9 +185,9 @@ class Collection(object):
         if " " in key:
             raise DataStoreException("You are not allowed to use spaces in datastore keys.")
             
-        return self._save(key, self.normalize(data), index_split_id=index_split_id)
+        return self._save(key, self.normalize(data))
 
-    def _save(self, key, data, index_split_id=None):
+    def _save(self, key, data):
         """
         This function should takes in an instance of the the model class as input
         and saves it to the database backend at the id mentioned by the key.

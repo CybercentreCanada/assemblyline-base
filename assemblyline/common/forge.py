@@ -76,19 +76,17 @@ def get_constants(config=None):
     return importlib.import_module(config.system.constants)
 
 
-def get_datastore(config=None, multi=False):
+def get_datastore(config=None, archive_access=False):
     from assemblyline.datastore.helper import AssemblylineDatastore
     if not config:
         config = get_config(static=True)
 
     if config.datastore.type == "elasticsearch":
-        if multi:
-            from assemblyline.datastore.stores.es_store_multi import ESStoreMulti
-            return AssemblylineDatastore(ESStoreMulti(config.datastore.hosts,
-                                                      ilm_config=config.datastore.ilm.indexes.as_primitives()))
+        from assemblyline.datastore.stores.es_store import ESStore
+        if archive_access:
+            return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=True))
         else:
-            from assemblyline.datastore.stores.es_store import ESStore
-            return AssemblylineDatastore(ESStore(config.datastore.hosts))
+            return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=False))
     elif config.datastore.type == "solr":
         from assemblyline.datastore.stores.solr_store import SolrStore
         return AssemblylineDatastore(SolrStore(config.datastore.hosts, port=config.datastore.solr.port))
