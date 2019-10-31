@@ -16,26 +16,22 @@ services:
     environment:
       SERVER_NAME: localhost
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-      ELASTICSEARCH_USERNAME: kibana
-      ELASTICSEARCH_PASSWORD: kibanapass
-      SU_USERNAME: admin
-      SU_PASSWORD: devpass
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: devpass
     depends_on:
       elasticsearch:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail -u $$SU_USERNAME:$$SU_PASSWORD http://localhost:5601/"]
+      test: ["CMD-SHELL", "curl --silent --fail -u $$ELASTICSEARCH_USERNAME:$$ELASTICSEARCH_PASSWORD http://localhost:5601/"]
       interval: 30s
       timeout: 10s
       retries: 5
 
   apm_server:
-    image: sgaroncse/apm-server:7.4.0
-    environment:
-      ES_HOSTS: elasticsearch:9200
-      ELASTICSEARCH_USERNAME: apm
-      ELASTICSEARCH_PASSWORD: apmpass
-    command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e -E output.elasticsearch.username=$$ELASTICSEARCH_USERNAME -E output.elasticsearch.password=$$ELASTICSEARCH_PASSWORD"
+    image: docker.elastic.co/apm/apm-server:7.4.0
+    volumes:
+      - /opt/alv4/alv4/dev/depends/config/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
+    command: apm-server -e -strict.perms=false
     ports:
       - '8200:8200'
     depends_on:
@@ -47,44 +43,25 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
       DISCOVERY_TYPE: "single-node"
-      ELASTIC_PASSWORD: temporary_setup_password
-      SU_USERNAME: admin
-      SU_PASSWORD: devpass
+      ELASTIC_PASSWORD: devpass
     ports:
       - '9200:9200'
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail -u $$SU_USERNAME:$$SU_PASSWORD localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl --silent --fail -u elastic:$$ELASTIC_PASSWORD localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 30s
       retries: 3
-
-  elasticsearch-setup:
-    image: cccs/assemblyline
-    environment:
-      ELASTIC_HOST: elasticsearch
-      ELASTIC_PASSWORD: temporary_setup_password
-      KIBANA_PASSWORD: kibanapass
-      APM_PASSWORD: apmpass
-      FILEBEAT_PASSWORD: filebeatpass
-      METRICBEAT_PASSWORD: metricbeatpass
-      AL_PASSWORD: assemblylinepass
-      SU_USERNAME: admin
-      SU_PASSWORD: devpass
-      K_USERNAME: user
-      K_PASSWORD: devpass
-    command: python -m assemblyline.run.setup_elastic
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.4.0
     user: root
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-      ELASTICSEARCH_USERNAME: filebeat
-      ELASTICSEARCH_PASSWORD: filebeatpass
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /opt/alv4/alv4/dev/depends/config/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /opt/alv4/alv4/dev/depends/config/filebeat_policy.json:/usr/share/filebeat/filebeat_policy.json:ro
     command: filebeat -e -strict.perms=false
     depends_on:
       elasticsearch:
@@ -95,16 +72,13 @@ services:
     user: root
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-      ELASTICSEARCH_USERNAME: metricbeat
-      ELASTICSEARCH_PASSWORD: metricbeatpass
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /opt/alv4/alv4/dev/depends/config/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - /opt/alv4/alv4/dev/depends/config/metricbeat_policy.json:/usr/share/metricbeat/metricbeat_policy.json:ro
     command: metricbeat -e --strict.perms=false
     depends_on:
       elasticsearch:
-        condition: service_healthy
-      kibana:
         condition: service_healthy
 
   redis:

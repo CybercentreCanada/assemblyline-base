@@ -484,7 +484,7 @@ class Datastore(odm.Model):
 
 
 DEFAULT_DATASTORE = {
-    "hosts": ["http://assemblyline:assemblylinepass@localhost"],
+    "hosts": ["http://elastic:devpass@localhost"],
     "ilm": DEFAULT_ILM,
     "type": "elasticsearch",
 }

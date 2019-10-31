@@ -1,0 +1,19 @@
+fields:
+  env: dev
+
+logging:
+  level: info
+  json: true
+
+output.elasticsearch:
+  hosts: ['elasticsearch:9200']
+  username: elastic
+  password: devpass
+
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+setup.kibana:
+  host: "http://kibana:5601"
+  username: elastic
+  password: devpass
