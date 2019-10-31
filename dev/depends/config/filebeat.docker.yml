@@ -11,7 +11,7 @@ filebeat.inputs:
         - "*"
 
 logging:
-  level: info
+  level: warning
   json: true
 
 processors:

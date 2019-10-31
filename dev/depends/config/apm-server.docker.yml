@@ -2,7 +2,7 @@ fields:
   env: dev
 
 logging:
-  level: info
+  level: warning
   json: true
 
 output.elasticsearch:
