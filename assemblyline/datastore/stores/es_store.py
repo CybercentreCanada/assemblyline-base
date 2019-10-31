@@ -216,6 +216,13 @@ class ESCollection(Collection):
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.datastore.connection_reset()
                     retries += 1
+                elif err_code == 429 or err_code == '429':
+                    log.warning("Elasticsearch is too busy to perform the requested task, "
+                                "we will wait a bit and retry...")
+                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                    self.datastore.connection_reset()
+                    retries += 1
+
                 else:
                     raise
 
