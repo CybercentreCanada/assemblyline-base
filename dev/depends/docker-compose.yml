@@ -13,11 +13,8 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.4.0
-    environment:
-      SERVER_NAME: localhost
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-      ELASTICSEARCH_USERNAME: elastic
-      ELASTICSEARCH_PASSWORD: devpass
+    volumes:
+      - /opt/alv4/alv4/dev/depends/config/kibana.docker.yml:/usr/share/kibana/config/kibana.yml:ro
     depends_on:
       elasticsearch:
         condition: service_healthy

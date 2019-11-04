@@ -1,0 +1,8 @@
+elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+elasticsearch.password: devpass
+elasticsearch.username: elastic
+
+logging.quiet: true
+
+server.name: kibana
+server.host: "0"
