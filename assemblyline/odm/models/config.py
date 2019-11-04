@@ -542,12 +542,16 @@ class Logging(odm.Model):
     # How often should counters log their values (seconds)
     export_interval: int = odm.Integer()
 
+    # Log in JSON format
+    log_as_json: bool = odm.Boolean()
+
 
 DEFAULT_LOGGING = {
+    "log_directory": "/var/log/assemblyline/",
+    "log_as_json": True,
     "log_level": "INFO",
     "log_to_console": True,
     "log_to_file": False,
-    "log_directory": "/var/log/assemblyline/",
     "log_to_syslog": False,
     "syslog_host": "localhost",
     "export_interval": 5

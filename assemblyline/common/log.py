@@ -5,7 +5,7 @@ import os
 from typing import Optional
 
 from assemblyline.common import forge
-from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT
+from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT, AL_JSON_FORMAT
 from assemblyline.odm.models.config import Config
 
 log_level_map = {
@@ -16,6 +16,12 @@ log_level_map = {
     "CRITICAL": logging.CRITICAL,
     "DISABLED": 60
 }
+
+
+class JsonFormatter(logging.Formatter):
+    def formatMessage(self, record):
+        record.message = record.message.replace('"', '\\"')
+        return self._style.format(record)
 
 
 def init_logging(name: str, config: Optional[Config] = None, log_level=None):
@@ -50,26 +56,39 @@ def init_logging(name: str, config: Optional[Config] = None, log_level=None):
             dbg_file_handler = logging.handlers.RotatingFileHandler(
                 os.path.join(config.logging.log_directory, f'{name}.dbg'), maxBytes=10485760, backupCount=5)
             dbg_file_handler.setLevel(logging.DEBUG)
-            dbg_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
+            if config.logging.log_as_json:
+                dbg_file_handler.setFormatter(JsonFormatter(AL_JSON_FORMAT))
+            else:
+                dbg_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
             logger.addHandler(dbg_file_handler)
 
         if log_level <= logging.INFO:
             op_file_handler = logging.handlers.RotatingFileHandler(
                 os.path.join(config.logging.log_directory, f'{name}.log'), maxBytes=10485760, backupCount=5)
             op_file_handler.setLevel(logging.INFO)
-            op_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
+            if config.logging.log_as_json:
+                op_file_handler.setFormatter(JsonFormatter(AL_JSON_FORMAT))
+            else:
+                op_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
             logger.addHandler(op_file_handler)
 
         if log_level <= logging.ERROR:
             err_file_handler = logging.handlers.RotatingFileHandler(
                 os.path.join(config.logging.log_directory, f'{name}.err'), maxBytes=10485760, backupCount=5)
             err_file_handler.setLevel(logging.ERROR)
+            if config.logging.log_as_json:
+                err_file_handler.setFormatter(JsonFormatter(AL_JSON_FORMAT))
+            else:
+                err_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
             err_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
             logger.addHandler(err_file_handler)
  
     if config.logging.log_to_console:
         console = logging.StreamHandler()
-        console.setFormatter(logging.Formatter(AL_LOG_FORMAT))
+        if config.logging.log_as_json:
+            console.setFormatter(JsonFormatter(AL_JSON_FORMAT))
+        else:
+            console.setFormatter(logging.Formatter(AL_LOG_FORMAT))
         logger.addHandler(console)
 
     if config.logging.log_to_syslog and config.logging.syslog_host:
