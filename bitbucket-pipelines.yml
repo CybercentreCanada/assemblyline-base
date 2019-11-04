@@ -97,9 +97,8 @@ definitions:
       image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
       memory: 768
       environment:
-        DISCOVERY_TYPE: single-node
-        LOGGER_LEVEL: WARN
         ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+      command: ["elasticsearch", "-Ediscovery.type=single-node", "-Elogger.level=WARN"]
 
     redis:
       image: redis
