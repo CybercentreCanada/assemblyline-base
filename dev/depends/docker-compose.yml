@@ -39,11 +39,13 @@ services:
         condition: service_healthy
 
   elasticsearch:
-    image: sgaroncse/elasticsearch:7.4.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
     environment:
-      ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
-      DISCOVERY_TYPE: "single-node"
-      ELASTIC_PASSWORD: devpass
+      - xpack.security.enabled=true
+      - discovery.type=single-node
+      - logger.level=WARN
+      - "ELASTIC_PASSWORD=devpass"
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
     ports:
       - '9200:9200'
     healthcheck:

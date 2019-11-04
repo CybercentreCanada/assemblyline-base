@@ -94,11 +94,12 @@ pipelines:
 definitions:
   services:
     elasticsearch:
-      image: sgaroncse/elasticsearch:7.4.0
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
       memory: 768
       environment:
-        ES_JAVA_OPTS: '-Xms256m -Xmx256m'
-        DISCOVERY_TYPE: 'single-node'
+        - discovery.type=single-node
+        - logger.level=WARN
+        - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
 
     redis:
       image: redis
