@@ -4,5 +4,7 @@ elasticsearch.username: elastic
 
 logging.quiet: true
 
+server.basePath: /kibana
+server.rewriteBasePath: true
 server.name: kibana
 server.host: "0"
