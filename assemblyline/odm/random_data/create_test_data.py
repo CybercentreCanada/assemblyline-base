@@ -19,7 +19,7 @@ class PrintLogger(object):
         print(f"{self.indent}[E] {msg}")
 
 
-def create_basic_data(log=None, ds=None, svc=True):
+def create_basic_data(log=None, ds=None, svc=True, sigs=True):
     ds = ds or forge.get_datastore()
     log.info("\nCreating user objects...")
     create_users(ds, log=log)
@@ -28,10 +28,11 @@ def create_basic_data(log=None, ds=None, svc=True):
         log.info("\nCreating services...")
         create_services(ds, log=log)
 
-    log.info("\nImporting test signatures...")
-    signatures = create_signatures(ds)
-    for s in signatures:
-        log.info(f"\t{s}")
+    if sigs:
+        log.info("\nImporting test signatures...")
+        signatures = create_signatures(ds)
+        for s in signatures:
+            log.info(f"\t{s}")
 
     if svc:
         log.info("\nCreating random heuristics...")
@@ -55,7 +56,7 @@ def create_extra_data(log=None, ds=None, fs=None):
 if __name__ == "__main__":
     datastore = forge.get_datastore()
     logger = PrintLogger()
-    create_basic_data(log=logger, ds=datastore, svc="nosvc" not in sys.argv)
+    create_basic_data(log=logger, ds=datastore, svc="nosvc" not in sys.argv, sigs="nosigs" not in sys.argv)
     if "full" in sys.argv:
         create_extra_data(log=logger, ds=datastore)
 
