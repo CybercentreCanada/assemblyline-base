@@ -7,7 +7,7 @@ from assemblyline.common import identify
 # noinspection PyBroadException
 def decode_file(original_path, fileinfo):
     extracted_path = None
-    al_meta = {}
+    hdr = {}
     with open(original_path, 'rb') as original_file:
         if is_cart(original_file.read(256)):
             original_file.seek(0)
@@ -18,12 +18,11 @@ def decode_file(original_path, fileinfo):
             cart_extracted = False
             try:
                 hdr, _ = unpack_stream(original_file, extracted_file)
-                al_meta = hdr.get("al", {}).get("meta", {})
                 cart_extracted = True
 
             except Exception:
                 extracted_path = None
-                al_meta = {}
+                hdr = {}
                 fileinfo['type'] = 'corrupted/cart'
 
             finally:
@@ -32,7 +31,7 @@ def decode_file(original_path, fileinfo):
             if cart_extracted:
                 fileinfo = identify.fileinfo(extracted_path)
 
-    return extracted_path, fileinfo, al_meta
+    return extracted_path, fileinfo, hdr
 
 
 # noinspection PyUnusedLocal
