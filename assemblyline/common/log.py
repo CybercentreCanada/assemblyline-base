@@ -20,7 +20,7 @@ log_level_map = {
 
 class JsonFormatter(logging.Formatter):
     def formatMessage(self, record):
-        record.message = record.message.replace('"', '\\"')
+        record.message = record.message.replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r')
         return self._style.format(record)
 
 
