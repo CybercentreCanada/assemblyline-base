@@ -1,12 +1,12 @@
-fields:
-  env: dev
+apm-server:
+  host: "0.0.0.0:8200"
 
 logging:
   level: warning
   json: true
 
 output.elasticsearch:
-  hosts: ['elasticsearch:9200']
+  hosts: ['http://elasticsearch:9200']
   username: elastic
   password: devpass
 

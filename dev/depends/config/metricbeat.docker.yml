@@ -1,6 +1,3 @@
-fields:
-  env: dev
-
 logging:
   level: warning
   json: true

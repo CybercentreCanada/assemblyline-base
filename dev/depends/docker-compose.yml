@@ -28,7 +28,7 @@ services:
     image: docker.elastic.co/apm/apm-server:7.4.0
     volumes:
       - /opt/alv4/alv4/dev/depends/config/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
-    command: apm-server -e -strict.perms=false
+    command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e -strict.perms=false"
     ports:
       - '8200:8200'
     depends_on:

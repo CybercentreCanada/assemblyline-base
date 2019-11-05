@@ -1,6 +1,3 @@
-fields:
-  env: dev
-
 filebeat.inputs:
   - type: docker
     combine_partial: true
