@@ -511,20 +511,22 @@ class AssemblylineDatastore(object):
 
         for key, item in items.items():
             for section in item.get('result', {}).get('sections', []):
+                h_type = "info"
+
                 if section.get('heuristic', False):
                     # Get the heuristics data
                     h = heuristics.get(section['heuristic']['heur_id'], None)
                     if h is not None:
                         if section['heuristic']['score'] < 100:
-                            b_type = "info"
+                            h_type = "info"
                         elif section['heuristic']['score'] < 1000:
-                            b_type = "suspicious"
+                            h_type = "suspicious"
                         else:
-                            b_type = "malicious"
+                            h_type = "malicious"
 
                         cache_key = f"{h['heur_id']}_{key}"
                         if cache_key not in done_map['heuristics']:
-                            out['heuristics'][b_type].append({
+                            out['heuristics'][h_type].append({
                                 'heur_id': h['heur_id'],
                                 'name': h['name'],
                                 'key': key
@@ -544,6 +546,7 @@ class AssemblylineDatastore(object):
                                 out['attack_matrix'].append({
                                     "key": key,
                                     "attack_id": attack_id,
+                                    "h_type": h_type,
                                     "name": attack_pattern_def['name'],
                                     "categories": attack_pattern_def['categories']
                                 })
@@ -561,6 +564,7 @@ class AssemblylineDatastore(object):
                             if cache_key not in done_map['tags']:
                                 out['tags'].append({
                                     'type': tag_type,
+                                    'h_type': h_type,
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key
