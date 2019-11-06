@@ -31,7 +31,7 @@ class UpdateSourceDelta(odm.Model):
 @odm.model(index=False, store=False)
 class UpdateConfigDelta(odm.Model):
     # build_options = odm.Optional(odm.Compound(DockerfileConfigDelta))
-    generates_signatures = odm.Optional(odm.Boolean())
+    generates_signatures = odm.Optional(odm.Boolean(), index=True)
     method = odm.Optional(odm.Enum(values=['run', 'build']))
     run_options = odm.Optional(odm.Compound(DockerConfigDelta))
     sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
@@ -46,26 +46,26 @@ class SubmissionParamsDelta(odm.Model):
     value = odm.Optional(odm.Any())
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=True, store=False)
 class ServiceDelta(odm.Model):
-    accepts = odm.Optional(odm.Keyword(), index=True, store=False)
-    rejects = odm.Optional(odm.Keyword(), index=True, store=False)
+    accepts = odm.Optional(odm.Keyword(), store=True)
+    rejects = odm.Optional(odm.Keyword(), store=True)
 
-    category = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
-    config = odm.Optional(odm.Mapping(odm.Any()))
-    description = odm.Optional(odm.Text(), index=True, store=False, copyto="__text__")
+    category = odm.Optional(odm.Keyword(), store=True, copyto="__text__")
+    config = odm.Optional(odm.Mapping(odm.Any()), index=False)
+    description = odm.Optional(odm.Text(), store=True, copyto="__text__")
     default_result_classification = odm.Optional(odm.ClassificationString())
-    enabled = odm.Optional(odm.Boolean(), index=True, store=False)
+    enabled = odm.Optional(odm.Boolean(), store=True)
     is_external = odm.Optional(odm.Boolean())
     licence_count = odm.Optional(odm.Integer())
 
-    name = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
-    version = odm.Keyword(index=True, store=True)
+    name = odm.Optional(odm.Keyword(), store=True, copyto="__text__")
+    version = odm.Keyword(store=True)
 
     disable_cache = odm.Optional(odm.Boolean())
 
-    stage = odm.Optional(odm.Keyword(), index=True, store=False, copyto="__text__")
-    submission_params = odm.Optional(odm.List(odm.Compound(SubmissionParamsDelta)))
+    stage = odm.Optional(odm.Keyword(), store=True, copyto="__text__")
+    submission_params = odm.Optional(odm.List(odm.Compound(SubmissionParamsDelta)), index=False)
     timeout = odm.Optional(odm.Integer())
 
     docker_config: DockerConfigDelta = odm.Optional(odm.Compound(DockerConfigDelta))

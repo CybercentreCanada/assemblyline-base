@@ -648,7 +648,7 @@ class AssemblylineDatastore(object):
         :param full: If true retrieve all the fields of the service object, otherwise only
                      fields returned by search are given.
         """
-        items = list(self.ds.service_delta.stream_search("id:*", fl='id,version', as_obj=False))
+        items = list(self.ds.service_delta.stream_search("id:*", as_obj=False))
 
         if full:
             service_data = self.ds.service.multiget([f"{item['id']}_{item['version']}" for item in items],
