@@ -60,6 +60,10 @@ def _get_config(static=False, yml_config=None):
         # TODO: Load a datastore object and load the config changes from the datastore
         # config.update(datastore_changes)
         pass
+
+    if 'AL_LOG_LEVEL' in os.environ:
+        config['logging']['log_level'] = os.environ['AL_LOG_LEVEL']
+
     return Config(config)
 
 
