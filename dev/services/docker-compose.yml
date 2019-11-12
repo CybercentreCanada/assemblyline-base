@@ -137,10 +137,9 @@ services:
 
   # PEFile service
   alsvc_pefile:
-    image: cccs/alsvc_pefile:latest
+    image: cccs/assemblyline-service-pefile:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_pefile
 
   # Pixaxe service
   alsvc_pixaxe:
