@@ -8,7 +8,7 @@ from datemath import dm
 from datemath.helpers import DateMathException
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
-from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping
+from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model
 from assemblyline.odm.base import _Field
 from assemblyline.remote.datatypes.lock import Lock
 
@@ -281,6 +281,9 @@ class Collection(object):
                         value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                if isinstance(value, Model):
+                    value = value.as_primitives()
 
             ret_ops.append((op, doc_key, value))
 
