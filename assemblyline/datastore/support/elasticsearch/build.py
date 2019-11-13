@@ -1,6 +1,6 @@
 from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
-    SSDeepHash, SHA1, SHA256, MD5, ClassificationString
+    SSDeepHash, SHA1, SHA256, MD5, ClassificationString, FlattenedObject
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -23,7 +23,8 @@ __type_mapping = {
     SSDeepHash: 'keyword',
     SHA1: 'keyword',
     SHA256: 'keyword',
-    MD5: 'keyword'
+    MD5: 'keyword',
+    FlattenedObject: 'nested'
 }
 # TODO: We might want to use custom analyzers for Classification and Enum and not create special backmapping cases
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
@@ -82,6 +83,11 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
             mappings[name.strip(".")] = set_mapping(field, {
                 'type': __type_mapping[field.__class__]
             })
+
+        elif isinstance(field, FlattenedObject):
+            mappings[name.strip(".")] = {
+                'type': __type_mapping[field.__class__]
+            }
 
         elif isinstance(field, Date):
             mappings[name.strip(".")] = set_mapping(field, {

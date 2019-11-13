@@ -27,6 +27,8 @@ from assemblyline.common.uid import get_random_id
 BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "__access_grp2__"}
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
+FLATTENED_OBJECT_SANITIZER = re.compile("^[a-z][a-z0-9_.]*$")
+NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ ]*$")
 UTC_TZ = tzutc()
 
 DOMAIN_REGEX = r"(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?)"
@@ -228,7 +230,7 @@ class ValidatedKeyword(Keyword):
         valid_fields = ["name", "index", "store", "copyto", "default"]
         if 'validation_regex' in self.__class__.__init__.__code__.co_varnames:
             return self.__class__(self.validation_regex.pattern, **{k: v for k, v in self.__dict__.items()
-                                                                      if k in valid_fields})
+                                                                    if k in valid_fields})
         else:
             return self.__class__(**{k: v for k, v in self.__dict__.items() if k in valid_fields})
 
@@ -531,13 +533,11 @@ class List(_Field):
 
 
 class TypedMapping(dict):
-    def __init__(self, type_p, index, store, **items):
+    def __init__(self, type_p, index, store, sanitizer, **items):
         self.index = index
         self.store = store
-        if self.index or self.store:
-            self.sanitizer = FIELD_SANITIZER
-        else:
-            self.sanitizer = re.compile("^[A-Za-z0-9_ ]*$")
+        self.sanitizer = sanitizer
+
         for key in items.keys():
             if not self.sanitizer.match(key):
                 raise KeyError(f"Illegal key: {key}")
@@ -577,11 +577,16 @@ class Mapping(_Field):
     """A field storing a sequence of typed elements."""
 
     def __init__(self, child_type, **kwargs):
-        super().__init__(**kwargs)
         self.child_type = child_type
+        super().__init__(**kwargs)
 
     def check(self, value, **kwargs):
-        return TypedMapping(self.child_type, self.index, self.store, **value)
+        if self.index or self.store:
+            sanitizer = FIELD_SANITIZER
+        else:
+            sanitizer = NOT_INDEXED_SANITIZER
+
+        return TypedMapping(self.child_type, self.index, self.store, sanitizer, **value)
 
     def apply_defaults(self, index, store):
         """Initialize the default settings for the child field."""
@@ -589,6 +594,16 @@ class Mapping(_Field):
         super().apply_defaults(index, store)
         # Then pass through the initialized values on the list to the child type
         self.child_type.apply_defaults(self.index, self.store)
+
+
+class FlattenedObject(Mapping):
+    """A field storing a flattened object"""
+
+    def __init__(self, **kwargs):
+        super().__init__(Keyword(), **kwargs)
+
+    def check(self, value, **kwargs):
+        return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
 
 
 class Compound(_Field):
@@ -908,4 +923,3 @@ def construct_safe(mod, data) -> typing.Tuple[typing.Any, typing.Dict]:
         return mod(clean), dropped
     except ValueError:
         return None, recursive_update(dropped, clean)
-

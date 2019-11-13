@@ -17,7 +17,7 @@ class Submission(odm.Model):
     sid = odm.UUID()                                                     # Submission ID to use
     time = odm.Date(default="NOW")
     files: List[File] = odm.List(odm.Compound(File), default=[])         # File block
-    metadata: Dict[str, str] = odm.Mapping(odm.Keyword(), default={})    # Metadata submitted with the file
+    metadata: Dict[str, str] = odm.FlattenedObject(default={})           # Metadata submitted with the file
     notification: Notification = odm.Compound(Notification, default={})  # Notification queue parameters
     params: SubmissionParams = odm.Compound(SubmissionParams)            # Parameters of the submission
 

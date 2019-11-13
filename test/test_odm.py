@@ -1,7 +1,7 @@
 from assemblyline.common.classification import InvalidClassification
 
 from assemblyline.odm import model, Model, KeyMaskException, Compound, List, \
-    Keyword, Integer, Mapping, Classification, Enum, UUID, construct_safe
+    Keyword, Integer, Mapping, Classification, Enum, UUID, construct_safe, FlattenedObject
 
 import json
 import pytest
@@ -414,7 +414,6 @@ def test_mapping():
     with pytest.raises(KeyError):
         test.a['a b'] = None
 
-
     test.a['cat'] = 10
     test.a['dog'] = -100
 
@@ -457,6 +456,41 @@ def test_non_indexed_mapping():
     test = Test({'a': {'walk': 100}})
     assert len(test.a) == 1
     assert test.a['walk'] == 100
+
+
+def test_flattened_object():
+    @model()
+    class Test(Model):
+        a = FlattenedObject(default={}, index=True, store=True)
+
+    test = Test()
+
+    assert len(test.a) == 0
+
+    with pytest.raises(KeyError):
+        _ = test.a['abc']
+
+    with pytest.raises(KeyError):
+        test.a['4abc'] = "hello"
+
+    with pytest.raises(KeyError):
+        test.a['ABC'] = "hello"
+
+    with pytest.raises(KeyError):
+        test.a['a b'] = "hello"
+
+    test.a['abc'] = 1
+    test.a['abc.abc.abc'] = "hello"
+    test.a['cat'] = "cat"
+    test.a['dog'] = "dog"
+
+    assert len(test.a) == 4
+    assert test.a['dog'] == "dog"
+    assert test.a['abc'] == "1"
+
+    test = Test({'a': {'walk': 100}})
+    assert len(test.a) == 1
+    assert test.a['walk'] == "100"
 
 
 def test_classification():
