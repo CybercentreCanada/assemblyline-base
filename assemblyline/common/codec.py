@@ -4,6 +4,7 @@ import tempfile
 from cart import pack_stream, unpack_stream, is_cart
 from assemblyline.common import identify
 
+
 # noinspection PyBroadException
 def decode_file(original_path, fileinfo):
     extracted_path = None
@@ -35,7 +36,10 @@ def decode_file(original_path, fileinfo):
 
 
 # noinspection PyUnusedLocal
-def encode_file(input_path, name):
+def encode_file(input_path, name, metadata=None):
+    if metadata is None:
+        metadata = {}
+
     _, output_path = tempfile.mkstemp()
 
     with open(output_path, 'wb') as oh:
@@ -43,8 +47,8 @@ def encode_file(input_path, name):
             data = ih.read(64)
             if not is_cart(data):
                 ih.seek(0)
-                pack_stream(ih, oh, {"name": name})
+                metadata.update({'name': name})
+                pack_stream(ih, oh, metadata)
                 return output_path, f"{name}.cart"
             else:
                 return input_path, name
-
