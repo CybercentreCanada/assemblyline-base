@@ -58,7 +58,7 @@ def wrap_bidir_unicode_string(uni_str):
 # 0xdf but the values 0xc0 and 0xc1 are invalid as they could only be
 # the result of an overlong encoding of basic ASCII characters. There
 # are similar restrictions on the valid values for 3 and 4-byte sequences.
-_valid_utf8 = re.compile(r"""((?:
+_valid_utf8 = re.compile(rb"""((?:
     [\x09\x0a\x20-\x7e]|             # 1-byte (ASCII excluding control chars).
     [\xc2-\xdf][\x80-\xbf]|          # 2-bytes (excluding overlong sequences).
     [\xe0][\xa0-\xbf][\x80-\xbf]|    # 3-bytes (excluding overlong sequences).
@@ -77,7 +77,7 @@ def _escape(t, reversible=True):
     if t[0] % 2:
         return t[1].replace('\\', '\\\\') if reversible else t[1]
     else:
-        return ''.join(('\\x%02x' % ord(x)) for x in t[1])
+        return b''.join((b'\\x%02x' % x) for x in t[1])
 
 
 def dotdump(s):
@@ -86,47 +86,42 @@ def dotdump(s):
 
 def escape_str(s, reversible=True, force_str=False):
     if isinstance(s, bytes):
-        return escape_str_strict(s.decode('utf8'), reversible)
+        return escape_str_strict(s, reversible)
     elif not isinstance(s, str):
         if force_str:
             return str(s)
         return s
 
-    return escape_str_strict(s, reversible)
+    return escape_str_strict(s.encode('utf8'), reversible)
 
 
 # Returns a string (str) with only valid UTF-8 byte sequences.
-def escape_str_strict(s, reversible=True):
-    return ''.join([_escape(t, reversible)
-                    for t in enumerate(_valid_utf8.split(s))])
+def escape_str_strict(s: bytes, reversible=True) -> str:
+    escaped = b''.join([_escape(t, reversible)
+                       for t in enumerate(_valid_utf8.split(s))])
+    return escaped.decode('utf-8')
 
 
 def safe_str(s, force_str=False):
     return escape_str(s, reversible=False, force_str=force_str)
 
 
-def is_safe_str(s):
+def is_safe_str(s) -> bool:
     return escape_str(copy(s), reversible=False) == s
 
 
 # noinspection PyBroadException
-def translate_str(s, min_confidence=0.7):
-    if isinstance(s, bytes):
-        temp = s.decode("raw_unicode_escape")
-        if "\\u" in temp:
-            return {
-                'confidence': 1,
-                'encoding': 'unicode',
-                'converted': safe_str(s)
-            }
-        s = temp
-    elif isinstance(s, str):
-        raise TypeError('Expected %s or %s got %s' % (str, bytes, type(s)))
+def translate_str(s, min_confidence=0.7) -> dict:
+    if not isinstance(s, (str, bytes)):
+        raise TypeError(f'Expected str or bytes got {type(s)}')
+
+    if isinstance(s, str):
+        s = s.encode("utf-8")
 
     try:
         r = chardet.detect(s)
     except Exception:
-        r = {'confidence': 0, 'encoding': 'unknown'}
+        r = {'confidence': 0.0, 'encoding': None, 'language': None}
 
     if r['confidence'] > 0 and r['confidence'] >= min_confidence:
         try:
@@ -137,6 +132,8 @@ def translate_str(s, min_confidence=0.7):
         t = s
 
     r['converted'] = safe_str(t)
+    r['encoding'] = r['encoding'] or 'unknown'
+    r['language'] = r['language'] or 'unknown'
 
     return r
 
