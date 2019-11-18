@@ -88,6 +88,13 @@ class PriorityQueue(object):
                 return decode(ret_val[0][21:])
             return None
 
+    def blocking_pop(self, timeout=0):
+        """When only one item is requested, blocking is is possible."""
+        result = retry_call(self.c.bzpopmin, self.name, timeout)
+        if result:
+            return decode(result[1][21:])
+        return None
+
     def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1):
         """Dequeue a number of elements, within a specified range of scores.
 
@@ -181,3 +188,19 @@ class UniquePriorityQueue(PriorityQueue):
         """
         results = retry_call(self._deque_range, keys=[self.name], args=[lower_limit, upper_limit, skip, num])
         return [decode(res) for res in results]
+
+
+def select(*queues, **kw):
+    timeout = kw.get('timeout', 0)
+    if len(queues) < 1:
+        raise TypeError('At least one queue must be specified')
+    if any([type(q) != PriorityQueue for q in queues]):
+        raise TypeError('Only NamedQueues supported')
+
+    c = queues[0].c
+    response = retry_call(c.bzpopmin, [q.name for q in queues], timeout)
+
+    if not response:
+        return response
+
+    return response[0].decode('utf-8'), json.loads(response[1])
