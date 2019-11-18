@@ -5,6 +5,9 @@ import time
 
 import elasticapm
 import yaml
+from assemblyline.common.constants import service_queue_name
+
+from assemblyline.remote.datatypes.queues.priority import PriorityQueue
 from easydict import EasyDict
 
 from assemblyline.common.dict_utils import recursive_update
@@ -152,6 +155,10 @@ def get_ui_context(config=None):
 def get_metrics_sink(redis=None):
     from assemblyline.remote.datatypes.queues.comms import CommsQueue
     return CommsQueue('assemblyline_metrics', host=redis)
+
+
+def get_service_queue(service: str, redis=None) -> PriorityQueue:
+    return PriorityQueue(service_queue_name(service), redis)
 
 
 class CachedObject:
