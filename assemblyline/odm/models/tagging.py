@@ -35,6 +35,7 @@ class Tagging(odm.Model):
         subject_alt_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         thumbprint = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         valid = odm.Optional(odm.Compound(CertValid))
+        version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
     @odm.model(index=True, store=False)
     class Dynamic(odm.Model):

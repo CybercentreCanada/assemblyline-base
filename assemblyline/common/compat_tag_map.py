@@ -29,6 +29,7 @@ tag_map = {
             "start": ['ANDROID_CERT_START_DATE', 'CERT_VALID_FROM'],
             "end": ['ANDROID_CERT_END_DATE', 'CERT_VALID_TO'],
         },
+        "version": ['CERT_VERSION'],
     },
     "dynamic": {
         "autorun_location": ['AUTORUN_LOCATION'],
