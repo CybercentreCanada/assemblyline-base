@@ -141,9 +141,10 @@ def create_bundle(sid, working_dir=WORK_DIR):
                 file_infos = get_file_infos(flatten_tree, datastore)
 
                 # Add bundling metadata
-                if 'al_originate_from' not in submission['metadata']:
-                    submission['metadata']['al_originate_from'] = config.ui.fqdn
-                    submission['metadata']['al_original_classification'] = submission['classification']
+                if 'bundle.source' not in submission['metadata']:
+                    submission['metadata']['bundle.source'] = config.ui.fqdn
+                if Classification.enforce and 'bundle.classification' not in submission['metadata']:
+                    submission['metadata']['bundle.classification'] = submission['classification']
 
                 data = {
                     'submission': submission,
