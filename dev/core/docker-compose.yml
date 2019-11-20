@@ -106,6 +106,8 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
+    environment:
+      SKIP_SERVICE_SETUP: 'true'
     command: python3 /opt/alv4/alv4_core/assemblyline_core/dispatching/run_files.py
 
   al_dispatcher_submissions:
@@ -113,6 +115,8 @@ services:
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
+    environment:
+      SKIP_SERVICE_SETUP: 'true'
     command: python3 /opt/alv4/alv4_core/assemblyline_core/dispatching/run_submissions.py
 
 #  al_scaler:
@@ -126,6 +130,18 @@ services:
 #      - /opt/alv4/:/opt/alv4/
 #      - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
 #    command: python3 /opt/alv4/alv4_core/assemblyline_core/scaler/run_scaler.py
+#
+#  al_updater:
+#    image: cccs/assemblyline_dev:4.0.11
+#    environment:
+#      FILE_UPDATE_VOLUME: /opt/alv4/update_data/
+#      FILE_UPDATE_DIRECTORY: /mount/update_root/
+#    volumes:
+#      - /opt/alv4/update_data/:/mount/update_root/
+#      - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
+#      - /opt/alv4/:/opt/alv4/
+#      - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
+#    command: python3 /opt/alv4/alv4_core/assemblyline_core/updater/run_updater.py
 
   # Ingester Processes
   al_ingester_ingest:
