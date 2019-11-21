@@ -1053,7 +1053,8 @@ class ESCollection(Collection):
 
             mappings['properties']['__text__'] = {
                 "store": False,
-                "type": 'keyword'
+                "type": 'keyword',
+                "ignore_above": 8191  # The maximum always safe value in elasticsearch
             }
 
             index_def['mappings'] = mappings
