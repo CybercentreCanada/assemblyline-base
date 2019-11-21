@@ -27,10 +27,7 @@ return nil
 
 class Hash(object):
     def __init__(self, name, host=None, port=None):
-        if isinstance(host, redis.Redis):
-            self.c = host
-        else:
-            self.c = get_client(host, port, False)
+        self.c = get_client(host, port, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
         self._limited_add = self.c.register_script(_limited_add)

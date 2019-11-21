@@ -164,14 +164,14 @@ def get_service_queue(service: str, redis=None):
 class CachedObject:
     """An object proxy that automatically refreshes its target periodically."""
 
-    def __init__(self, factory, refresh=60, args=None, kwargs=None):
+    def __init__(self, factory, refresh=None, args=None, kwargs=None):
         """
         Args:
             factory: Factory that takes the arguments given in `args` and `kwargs` and produces the proxyed object.
             refresh: Refresh interval in seconds.
         """
         self.__factory = factory
-        self.__refresh = refresh
+        self.__refresh = float(refresh or 60)
         self.__cached = None
         self.__update_time = 0
         self.__args = args or []
