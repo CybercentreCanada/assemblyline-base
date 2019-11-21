@@ -165,7 +165,7 @@ def _create_results_for_file(ds, f, possible_childs=None, log=None):
             elif section.body_format == "URL":
                 data = [{"url": get_random_uri()} for _ in range(random.randint(1, 4))]
                 section.body = json.dumps(data)
-            elif section.body_format == "JSON":
+            elif section.body_format in ["JSON", "KEY_VALUE"]:
                 data = {get_random_word(): get_random_id() for _ in range(random.randint(3, 9))}
                 section.body = json.dumps(data)
 
