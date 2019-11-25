@@ -50,7 +50,7 @@ def _strip_lists(model, data):
 def parse_sort(sort):
     """
     This function tries to do two things at once:
-        - convert solr sort syntax to elastic,
+        - convert AL sort syntax to elastic,
         - convert any sorts on the key _id to _id_
     """
     if isinstance(sort, list):
@@ -204,7 +204,7 @@ class ESCollection(Collection):
                     elasticsearch.exceptions.ConnectionTimeout,
                     elasticsearch.exceptions.AuthenticationException) as e:
                 if not isinstance(e, SearchRetryException):
-                    log.warning(f"No connection to Elasticsearch {' | '.join(self.datastore._hosts)}, retrying...")
+                    log.warning(f"No connection to Elasticsearch {' | '.join(self.datastore.get_hosts())}, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
@@ -231,7 +231,7 @@ class ESCollection(Collection):
             return False
 
         reindex_body = {
-            "source":{
+            "source": {
                 "index": self.name,
                 "query": {
                     "bool": {
@@ -243,7 +243,7 @@ class ESCollection(Collection):
                     }
                 }
             },
-            "dest":{
+            "dest": {
                 "index": f"{self.name}-archive"
             }
         }
@@ -258,7 +258,6 @@ class ESCollection(Collection):
                 return True
         else:
             return False
-
 
     def commit(self):
         self.with_retries(self.datastore.client.indices.refresh, self.name)
@@ -334,7 +333,6 @@ class ESCollection(Collection):
                     key_list.remove(row['_id'])
                     add_to_output(row['_source'], row['_id'])
 
-
         if key_list and error_on_missing:
             raise MultiKeyError(key_list)
 
@@ -360,7 +358,7 @@ class ESCollection(Collection):
                 pass
 
             if self.archive_access:
-                query_body = {"query":{"ids": {"values": [key]}}}
+                query_body = {"query": {"ids": {"values": [key]}}}
                 hits = self.with_retries(self.datastore.client.search, f"{self.name}-*",
                                          body=query_body)['hits']['hits']
                 if len(hits) > 0:
@@ -1017,14 +1015,12 @@ class ESCollection(Collection):
 
         conn = self.datastore.client.transport.get_connection()
         pol_req = conn.session.put(f"{conn.base_url}/_ilm/policy/{self.name}_policy",
-                           headers={"Content-Type": "application/json"},
-                           data=json.dumps(data_base))
+                                   headers={"Content-Type": "application/json"},
+                                   data=json.dumps(data_base))
         if not pol_req.ok:
             raise Exception(f"ERROR: Failed to create ILM policy: {self.name}_policy")
 
-
     def _ensure_collection(self):
-
         def get_index_definition():
             index_def = deepcopy(default_index)
             if 'settings' not in index_def:
@@ -1097,7 +1093,7 @@ class ESCollection(Collection):
             if not self.with_retries(self.datastore.client.indices.exists_alias, f"{self.name}-archive"):
                 log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
 
-                index = { "aliases": { f"{self.name}-archive": {"is_write_index": True}}}
+                index = {"aliases": {f"{self.name}-archive": {"is_write_index": True}}}
 
                 try:
                     self.with_retries(self.datastore.client.indices.create, f"{self.name}-000001", index)
@@ -1105,7 +1101,6 @@ class ESCollection(Collection):
                     if "resource_already_exists_exception" not in str(e):
                         raise
                     log.warning(f"Tried to create an index template that already exists: {self.name.upper()}-000001")
-
 
         self._check_fields()
 

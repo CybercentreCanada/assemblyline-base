@@ -19,10 +19,8 @@ pipelines:
             - pip install -e . -r test/requirements.txt
             - pytest -rsx -vv
           services: &services
-            - zookeeper
             - redis
             - elasticsearch
-            - solr
       - step:
           name: Build & Test 3.8
           image: python:3.8
@@ -91,26 +89,16 @@ pipelines:
             - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
             - docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
             - docker push cccs/assemblyline
+
 definitions:
   services:
     elasticsearch:
       image: sgaroncse/elasticsearch:7.4.0
-      memory: 768
+      memory: 1024
       environment:
-        ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+        ES_JAVA_OPTS: "-Xms256m -Xmx512m"
         DISCOVERY_TYPE: 'single-node'
 
     redis:
       image: redis
       memory: 256
-
-    zookeeper:
-      image: zookeeper
-      memory: 512
-
-    solr:
-      image: solr:7.5-alpine
-      memory: 768
-      environment:
-        ZK_HOST: 'localhost:2181'
-        SOLR_JAVA_MEM: '-Xms256m -Xmx256m'

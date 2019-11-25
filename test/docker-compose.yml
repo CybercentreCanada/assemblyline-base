@@ -24,25 +24,3 @@ services:
     image: redis
     ports:
       - '6379:6379'
-
-  zookeeper:
-    image: zookeeper
-    networks:
-      - zookeeper_bridge
-
-  solr:
-    image: solr:7.5-alpine
-    environment:
-      ZK_HOST: zookeeper:2181
-      SOLR_JAVA_MEM: '-Xms2048m -Xmx2048m'
-    depends_on:
-      - zookeeper
-    ports:
-      - "8983:8983"
-    networks:
-      - default
-      - zookeeper_bridge
-
-networks:
-  zookeeper_bridge:
-    driver: bridge

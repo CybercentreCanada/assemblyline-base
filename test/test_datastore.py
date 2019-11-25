@@ -85,21 +85,6 @@ def setup_store(docstore, request):
 
 
 @pytest.fixture(scope='module')
-def solr_connection(request):
-    from assemblyline.datastore.stores.solr_store import SolrStore
-
-    try:
-        collection = setup_store(SolrStore(['127.0.0.1']), request)
-    except SetupException:
-        collection = None
-
-    if collection:
-        return collection
-
-    return skip("Connection to the SOLR server failed. This test cannot be performed...")
-
-
-@pytest.fixture(scope='module')
 def es_connection(request):
     from assemblyline.datastore.stores.es_store import ESStore
 
@@ -114,21 +99,6 @@ def es_connection(request):
     return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
-@pytest.fixture(scope='module')
-def collection(request):
-    """Get a connection to either datastore, in a way that can be controlled by pytest.parametrize"""
-    try:
-        if request.param == 'elastic':
-            from assemblyline.datastore.stores.es_store import ESStore
-            return setup_store(ESStore(['127.0.0.1']), request)
-        elif request.param == 'solr':
-            from assemblyline.datastore.stores.solr_store import SolrStore
-            return setup_store(SolrStore(['127.0.0.1']), request)
-    except SetupException:
-        return pytest.skip()
-    raise ValueError("No other datastore names")
-
-
 def _test_get(c: Collection):
     # Test GET
     assert test_map.get('test1') == c.get('test1')
@@ -138,6 +108,28 @@ def _test_get(c: Collection):
     assert test_map.get('string') == c.get('string')
     assert test_map.get('list') == c.get('list')
     assert test_map.get('int') == c.get('int')
+
+
+def _test_require(c: Collection):
+    # Test GET
+    assert test_map.get('test1') == c.require('test1')
+    assert test_map.get('test2') == c.require('test2')
+    assert test_map.get('test3') == c.require('test3')
+    assert test_map.get('test4') == c.require('test4')
+    assert test_map.get('string') == c.require('string')
+    assert test_map.get('list') == c.require('list')
+    assert test_map.get('int') == c.require('int')
+
+
+def _test_get_if_exists(c: Collection):
+    # Test GET
+    assert test_map.get('test1') == c.get_if_exists('test1')
+    assert test_map.get('test2') == c.get_if_exists('test2')
+    assert test_map.get('test3') == c.get_if_exists('test3')
+    assert test_map.get('test4') == c.get_if_exists('test4')
+    assert test_map.get('string') == c.get_if_exists('string')
+    assert test_map.get('list') == c.get_if_exists('list')
+    assert test_map.get('int') == c.get_if_exists('int')
 
 
 def _test_multiget(c: Collection):
@@ -150,6 +142,8 @@ def _test_multiget(c: Collection):
 
     for k, v in c.multiget(['test1', 'int', 'test2'], as_dictionary=True).items():
         assert test_map[k] == v
+
+    assert c.multiget([]) == {}
 
 
 def _test_keys(c: Collection):
@@ -222,22 +216,123 @@ def _test_fields(c: Collection):
     assert c.fields() != {}
 
 
+def _test_search(c: Collection):
+    for item in c.search('*:*', sort="id asc")['items']:
+        assert item['id'][0] in test_map
+    for item in c.search('*:*', offset=1, rows=1,
+                         filters="lvl_i:400", sort="id asc", fl='id,classification_s')['items']:
+        assert item['id'][0] in test_map
+        assert item.get('classification_s', None) is not None
+
+
+def _test_group_search(c: Collection):
+    gs_simple = c.grouped_search('lvl_i', fl='classification_s')
+    assert gs_simple['offset'] == 0
+    assert gs_simple['rows'] == 25
+    assert gs_simple['total'] == 8
+    assert len(gs_simple['items']) == 3
+    total = 0
+    for item in gs_simple['items']:
+        assert 'value' in item
+        assert isinstance(item['value'], int)
+        assert 'total' in item
+        assert isinstance(item['total'], int)
+        assert 'items' in item
+        assert isinstance(item['items'], list)
+        total += item['total']
+    assert total == gs_simple['total']
+
+    gs_complex = c.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2, sort="lvl_i desc")
+    assert gs_complex['offset'] == 1
+    assert gs_complex['rows'] == 2
+    assert gs_complex['total'] == 8
+    assert len(gs_complex['items']) == 2
+    total = 0
+    for item in gs_complex['items']:
+        assert 'value' in item
+        assert isinstance(item['value'], int)
+        assert 'total' in item
+        assert isinstance(item['total'], int)
+        assert 'items' in item
+        assert isinstance(item['items'], list)
+        total += item['total']
+    assert total == gs_complex['total']
+
+
+def _test_deepsearch(c: Collection):
+    res = []
+    deep_paging_id = "*"
+    while True:
+        s_data = c.search('*:*', rows=5, deep_paging_id=deep_paging_id)
+        res.extend(s_data['items'])
+        if len(res) == s_data['total'] or len(s_data['items']) == 0:
+            break
+        deep_paging_id = s_data['next_deep_paging_id']
+
+    assert len(res) == c.search('*:*', sort="id asc")['total']
+    for item in res:
+        assert item['id'][0] in test_map
+
+
+def _test_streamsearch(c: Collection):
+    items = list(c.stream_search('classification_s:*', filters="lvl_i:400", fl='id,classification_s'))
+    for item in items:
+        assert item['id'][0] in test_map
+        assert item.get('classification_s', None) is not None
+
+
+def _test_histogram(c: Collection):
+    h_int = c.histogram('lvl_i', 0, 1000, 100, mincount=2)
+    for k, v in h_int.items():
+        assert isinstance(k, int)
+        assert isinstance(v, int)
+        assert v > 0
+
+    h_date = c.histogram('expiry_dt', '{n}-10{d}/{d}'.format(n=c.datastore.now, d=c.datastore.day),
+                         '{n}+10{d}/{d}'.format(n=c.datastore.now, d=c.datastore.day),
+                         '+1{d}'.format(d=c.datastore.day, mincount=2))
+    for k, v in h_date.items():
+        assert isinstance(k, str)
+        assert "T00:00:00" in k
+        assert k.endswith("Z")
+        assert isinstance(v, int)
+        assert v > 0
+
+
+def _test_facet(c: Collection):
+    facets = c.facet('classification_s')
+    for k, v in facets.items():
+        assert k in ["U", "C", "TS"]
+        assert isinstance(v, int)
+        assert v > 0
+
+
+def _test_stats(c: Collection):
+    stats = c.stats('lvl_i')
+    for k, v in stats.items():
+        assert k in ['count', 'min', 'max', 'avg', 'sum']
+        assert isinstance(v, (int, float))
+        assert v > 0
+
+
 TEST_FUNCTIONS = [
     (_test_get, "get"),
+    (_test_require, "require"),
+    (_test_get_if_exists, "get_if_exists"),
     (_test_multiget, "multiget"),
     (_test_keys, "keys"),
     (_test_update, "update"),
     (_test_update_by_query, "update_by_query"),
     (_test_delete_matching, "delete_matching"),
-    (_test_fields, "fields")
+    (_test_fields, "fields"),
+    (_test_search, "search"),
+    (_test_group_search, "group_search"),
+    (_test_deepsearch, "deepsearch"),
+    (_test_streamsearch, "streamsearch"),
+    (_test_histogram, "histogram"),
+    (_test_facet, "facet"),
+    (_test_stats, "stats"),
 ]
-
-
-# noinspection PyShadowingNames
-@pytest.mark.parametrize("function", [f[0] for f in TEST_FUNCTIONS], ids=[f[1] for f in TEST_FUNCTIONS])
-def test_solr(solr_connection: Collection, function):
-    if solr_connection:
-        function(solr_connection)
 
 
 # noinspection PyShadowingNames
@@ -245,169 +340,3 @@ def test_solr(solr_connection: Collection, function):
 def test_es(es_connection: Collection, function):
     if es_connection:
         function(es_connection)
-
-
-def fix_date(data):
-    # making date precision all the same throughout the datastores so we can compared them
-    return {k.replace(".000", ""): v for k, v in data.items()}
-
-
-def compare_output(solr, elastic):
-    errors = []
-
-    if solr != elastic:
-        errors.append("solr != elastic")
-
-    if errors:
-        print(f"\n\nNot all outputs are equal: {', '.join(errors)}\n\n"
-              f"solr = {solr}\n"
-              f"elastic = {elastic}\n\n")
-        return False
-
-    return True
-
-
-def _test_c_get(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.get('list'), e_tc.get('list'))
-
-
-def _test_c_require(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.require('string'), e_tc.require('string'))
-
-
-def _test_c_get_if_exists(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.get_if_exists('int'), e_tc.get_if_exists('int'))
-
-
-def _test_c_multiget(s_tc: Collection, e_tc: Collection):
-    for x in range(5):
-        key = 'dict%s' % x
-        assert compare_output(s_tc.get(key), e_tc.get(key))
-    assert compare_output(s_tc.multiget(['int', 'int']),
-                          e_tc.multiget(['int', 'int']))
-
-
-def _test_c_search(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.search('*:*', sort="id asc"),
-                          e_tc.search('*:*', sort="id asc"))
-    assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
-                                      sort="id asc", fl='classification_s'),
-                          e_tc.search('*:*', offset=1, rows=1, filters="lvl_i:400",
-                                      sort="id asc", fl='classification_s'))
-
-
-def _test_c_deepsearch(s_tc: Collection, e_tc: Collection):
-    s_res = []
-    deep_paging_id = "*"
-    while True:
-        s_data = s_tc.search('*:*', rows=5, deep_paging_id=deep_paging_id)
-        s_res.extend(s_data['items'])
-        if len(s_res) == s_data['total'] or len(s_data['items']) == 0:
-            break
-        deep_paging_id = s_data['next_deep_paging_id']
-
-    e_res = []
-    deep_paging_id = "*"
-    while True:
-        e_data = e_tc.search('*:*', rows=5, deep_paging_id=deep_paging_id)
-        e_res.extend(e_data['items'])
-        if len(e_res) == e_data['total'] or len(e_data['items']) == 0:
-            break
-        deep_paging_id = e_data['next_deep_paging_id']
-
-    assert compare_output(s_res, e_res)
-
-
-def _test_c_streamsearch(s_tc: Collection, e_tc: Collection):
-    ss_s_list = list(s_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
-    ss_e_list = list(e_tc.stream_search('classification_s:*', filters="lvl_i:400", fl='classification_s'))
-    assert compare_output(ss_s_list, ss_e_list)
-
-
-def _test_c_keys(s_tc: Collection, e_tc: Collection):
-    assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())))
-
-
-def _test_c_histogram(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.histogram('lvl_i', 0, 1000, 100, mincount=2),
-                          e_tc.histogram('lvl_i', 0, 1000, 100, mincount=2))
-
-    h_s = s_tc.histogram('expiry_dt',
-                         '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
-                         '{n}+10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
-                         '+1{d}'.format(d=s_tc.datastore.day, mincount=2))
-    h_e = e_tc.histogram('expiry_dt',
-                         '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
-                         '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
-                         '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
-    assert compare_output(fix_date(h_s), fix_date(h_e))
-
-
-def _test_c_facet(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.facet('classification_s'),
-                          e_tc.facet('classification_s'))
-
-
-def _test_c_stats(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.stats('lvl_i'),
-                          e_tc.stats('lvl_i'))
-
-
-def _test_c_group_search(s_tc: Collection, e_tc: Collection):
-    assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s'),
-                          e_tc.grouped_search('lvl_i', fl='classification_s'))
-
-    assert compare_output(s_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
-                                              sort="lvl_i desc"),
-                          e_tc.grouped_search('lvl_i', fl='classification_s', offset=1, rows=2,
-                                              sort="lvl_i desc"))
-
-
-def _test_c_fields(s_tc: Collection, e_tc: Collection):
-    # For some reason, elasticsearch adds the random list key as a field name. Since this is a
-    # specific thing with elasticsearch we will pop that field from the rest and compare the other
-    # fields accordingly.
-    e_fields = e_tc.fields()
-    e_fields.pop('list', None)
-
-    # Solr doesn't seem to handle fields that are modified the same way either
-    e_fields.pop('map.a', None)
-    e_fields.pop('map.b', None)
-
-    # For non-modeled data, we only want to compare values for indexed, stored, and type field.
-    #  ** The default field will always be False because the value is pulled from the model (no need to compare)
-    #  ** The list field will always be True in elasticsearch (will always fail if we compare)
-    assert compare_output(
-        {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in s_tc.fields().items()},
-        {n: {'indexed': x['indexed'], 'stored': x['stored'], 'type': x['type']} for n, x in e_fields.items()},
-    )
-
-
-TEST_CONSISTENCY_FUNCS = [
-    (_test_c_get, "get"),
-    (_test_c_require, "require"),
-    (_test_c_get_if_exists, "get_if_exists"),
-    (_test_c_multiget, "multiget"),
-    (_test_c_deepsearch, "deep_search"),
-    (_test_c_search, "search"),
-    (_test_c_streamsearch, "stream_search"),
-    (_test_c_keys, "keys"),
-    (_test_c_histogram, "histogram"),
-    (_test_c_facet, "facet"),
-    (_test_c_stats, "stats"),
-    (_test_c_group_search, "group_search"),
-    (_test_c_fields, "fields"),
-
-]
-
-
-# noinspection PyShadowingNames
-@pytest.mark.parametrize("function", [f[0] for f in TEST_CONSISTENCY_FUNCS], ids=[f[1] for f in TEST_CONSISTENCY_FUNCS])
-def test_consistency(solr_connection: Collection, es_connection: Collection, function):
-    if solr_connection and es_connection:
-        function(solr_connection, es_connection)
-
-
-@pytest.mark.parametrize('collection', ['elastic', 'solr'], indirect=True)
-def test_multiget_empty(collection: Collection):
-    assert collection.multiget([]) == {}

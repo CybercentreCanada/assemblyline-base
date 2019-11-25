@@ -93,9 +93,6 @@ def get_datastore(config=None, archive_access=False):
             return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=True))
         else:
             return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=False))
-    elif config.datastore.type == "solr":
-        from assemblyline.datastore.stores.solr_store import SolrStore
-        return AssemblylineDatastore(SolrStore(config.datastore.hosts, port=config.datastore.solr.port))
     else:
         from assemblyline.datastore.exceptions import DataStoreException
         raise DataStoreException(f"Invalid datastore type: {config.datastore.type}")

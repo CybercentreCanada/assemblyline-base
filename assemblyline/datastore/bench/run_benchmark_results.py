@@ -29,11 +29,6 @@ def setup_collection(datastore, model, use_model):
     return col
 
 
-def solr_connection(model, use_model=True):
-    from assemblyline.datastore.stores.solr_store import SolrStore
-    return setup_collection(SolrStore(['127.0.0.1']), model, use_model)
-
-
 def es_connection(model, use_model=True):
     from assemblyline.datastore.stores.es_store import ESStore
     return setup_collection(ESStore(['127.0.0.1']), model, use_model)
@@ -140,8 +135,6 @@ def main():
         print("Creating indexes...")
         log.setLevel(logging.ERROR)
         datastores = {
-            'solr': solr_connection(Result, False),
-            'solr_model': solr_connection(Result),
             'es': es_connection(Result, False),
             'es_model': es_connection(Result),
         }

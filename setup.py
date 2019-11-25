@@ -39,7 +39,7 @@ setup(
         'pyroute2',
         'redis',
         'requests',
-        'elasticsearch>=7.0.0,<8.0.0,!=7.0.3',  # Temporarily skip .3 the elasticsearch package until we work out that error
+        'elasticsearch>=7.0.0,<8.0.0,!=7.0.3',  # 7.0.3 is excluded due to an error
         'python-datemath',
         'packaging',
         'tabulate',
@@ -58,9 +58,6 @@ setup(
     ],
     package_data={
         '': [
-            "*schema.xml",
-            "*managed-schema",
-            "*solrconfig.xml",
             "*classification.yml",
             "*.magic",
             "*sample_rules.yar",

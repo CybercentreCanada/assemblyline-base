@@ -533,15 +533,15 @@ def test_classification():
 def test_enum():
     @model(index=True, store=True)
     class EnumTest(Model):
-        enum = Enum(values=("magic", "solr", "elasticsearch"))
+        enum = Enum(values=("magic", "data", "elasticsearch"))
 
     et = EnumTest({"enum": "magic"})
     assert et.enum == "magic"
 
     et.enum = "magic"
     assert et.enum == "magic"
-    et.enum = "solr"
-    assert et.enum == "solr"
+    et.enum = "data"
+    assert et.enum == "data"
     et.enum = "elasticsearch"
     assert et.enum == "elasticsearch"
 

@@ -480,7 +480,7 @@ DEFAULT_ILM = {
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword())
     ilm = odm.Compound(ILM, default=DEFAULT_ILM)
-    type = odm.Enum({"elasticsearch", "solr"})
+    type = odm.Enum({"elasticsearch"})
 
 
 DEFAULT_DATASTORE = {

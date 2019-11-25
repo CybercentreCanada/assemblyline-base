@@ -1,7 +1,6 @@
 import pytest
 
 from assemblyline.common import forge
-from assemblyline.common.testing import skip
 
 
 KEY = "test1"
@@ -11,18 +10,12 @@ COMPONENT = "test_component"
 
 @pytest.fixture(scope='module')
 def cachestore():
-    try:
-        cachestore = forge.get_cachestore(COMPONENT)
-        cachestore.datastore.cached_file.delete_matching("id:*")
-        cachestore.save(KEY, DATA)
-        cachestore.datastore.cached_file.commit()
-    except ConnectionError:
-        cachestore = None
+    cachestore = forge.get_cachestore(COMPONENT)
+    cachestore.datastore.cached_file.delete_matching("id:*")
+    cachestore.save(KEY, DATA)
+    cachestore.datastore.cached_file.commit()
 
-    if cachestore:
-        return cachestore
-
-    return skip("Connection to the SOLR server failed. This test cannot be performed...")
+    return cachestore
 
 
 def test_expiry_field(cachestore):

@@ -6,13 +6,14 @@ import random
 import string
 import warnings
 
-from assemblyline.odm.models.config import DEFAULT_ILM_INDEXES
 from datemath import dm
 from retrying import retry
 
 from assemblyline import odm
 from assemblyline.datastore import log, SearchException
 from assemblyline.common.testing import skip
+from assemblyline.datastore.support.elasticsearch.build import back_mapping
+from assemblyline.odm import Mapping
 
 log.setLevel(logging.INFO)
 yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
@@ -99,7 +100,6 @@ def setup_store(docstore, request):
         if ret_val:
             collection_name = ''.join(random.choices(string.ascii_lowercase, k=10))
             docstore.register(collection_name, BaseTestModel)
-            docstore.register(collection_name, BaseTestModel)
             collection = docstore.__getattr__(collection_name)
             request.addfinalizer(collection.wipe)
 
@@ -120,26 +120,20 @@ def setup_store(docstore, request):
 
 
 @pytest.fixture(scope='module')
-def solr_connection(request):
-    from assemblyline.datastore.stores.solr_store import SolrStore
+def es_store():
+    from assemblyline.datastore.stores.es_store import ESStore
+    store = ESStore(['127.0.0.1'])
+    ret_val = store.ping()
+    if ret_val:
+        return store
 
-    try:
-        collection = setup_store(SolrStore(['127.0.0.1']), request)
-    except SetupException:
-        collection = None
-
-    if collection:
-        return collection
-
-    return skip("Connection to the SOLR server failed. This test cannot be performed...")
+    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
 @pytest.fixture(scope='module')
-def es_connection(request):
-    from assemblyline.datastore.stores.es_store import ESStore
-
+def es_connection(es_store, request):
     try:
-        collection = setup_store(ESStore(['127.0.0.1']), request)
+        collection = setup_store(es_store, request)
     except SetupException:
         collection = None
 
@@ -157,14 +151,17 @@ def get_obj(obj_map, key, as_obj):
 
 
 def _test_get(col, as_obj):
+    assert col.get('not-a-key', as_obj=as_obj) is None
+    assert col.get_if_exists('not-a-key', as_obj=as_obj) is None
+
     for x in range(1, 4):
         assert get_obj(test_map, f'test{x}', as_obj) == col.get(f'test{x}', as_obj=as_obj)
 
     for x in range(1, 4):
-        assert get_obj(test_map, f'dict{x}', as_obj) == col.get(f'dict{x}', as_obj=as_obj)
+        assert get_obj(test_map, f'dict{x}', as_obj) == col.get_if_exists(f'dict{x}', as_obj=as_obj)
 
     for x in range(1, 4):
-        assert get_obj(test_map, f'extra{x}', as_obj) == col.get(f'extra{x}', as_obj=as_obj)
+        assert get_obj(test_map, f'extra{x}', as_obj) == col.require(f'extra{x}', as_obj=as_obj)
 
     assert col.get('string', as_obj=as_obj) is None
     assert col.get('list', as_obj=as_obj) is None
@@ -256,11 +253,88 @@ def _test_search(col, as_obj):
     assert col.search('no_store:nsto*', as_obj=as_obj)['total'] == 4
 
 
+def _test_groupsearch(col, as_obj):
+    g_res = col.grouped_search('height', fl='flavour', as_obj=as_obj)
+    assert g_res['total'] == 12
+    assert len(g_res['items']) <= g_res['rows']
+    total = 0
+    for item in g_res['items']:
+        assert 'value' in item
+        assert isinstance(item['value'], int)
+        assert 'total' in item
+        assert isinstance(item['total'], int)
+        assert 'items' in item
+        assert isinstance(item['items'], list)
+
+        total += item['total']
+        assert 1 <= len(item['items']) <= item['total']
+
+        if as_obj:
+            assert isinstance(item['items'][0].flavour, str)
+        else:
+            assert isinstance(item['items'][0]['flavour'], str)
+
+    assert total == g_res['total']
+
+
 def _test_search_primitives(col, _):
     # Make sure as_obj=False produces the same result then obj.as_primitives()
     obj_item = col.search('features:chocolate', fl='features')['items'][0]
     dict_item = col.search('features:chocolate', fl='features', as_obj=False)['items'][0]
     assert obj_item.as_primitives() == dict_item
+
+
+def _test_streamsearch(col, as_obj):
+    res = col.search('flavour:*', filters="height:[30 TO 400]", fl='flavour', as_obj=as_obj)
+    items = list(col.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour', as_obj=as_obj))
+    assert len(items) == res['total']
+    for item in items:
+        assert item in res['items']
+
+
+def _test_histogram(col, _):
+    h_int = col.histogram('height', 0, 200, 20, mincount=2)
+    for k, v in h_int.items():
+        assert isinstance(k, int)
+        assert isinstance(v, int)
+        assert v > 0
+
+    h_date = col.histogram('birthday', '{n}-10{d}/{d}'.format(n=col.datastore.now, d=col.datastore.day),
+                           '{n}+10{d}/{d}'.format(n=col.datastore.now, d=col.datastore.day),
+                           '+1{d}'.format(d=col.datastore.day, mincount=2))
+    for k, v in h_date.items():
+        assert isinstance(k, str)
+        assert "T00:00:00" in k
+        assert k.endswith("Z")
+        assert isinstance(v, int)
+        assert v > 0
+
+
+def _test_facet(col, _):
+    facets = col.facet('tags')
+    for k, v in facets.items():
+        assert k in ["cats", "10", "silly"]
+        assert isinstance(v, int)
+        assert v > 0
+
+
+def _test_stats(col, _):
+    stats = col.stats('height')
+    for k, v in stats.items():
+        assert k in ['count', 'min', 'max', 'avg', 'sum']
+        assert isinstance(v, (int, float))
+        assert v > 0
+
+
+def _test_fields(col, _):
+    db_fields = col.fields()
+    model_fields = BaseTestModel.flat_fields()
+    for k, v in model_fields.items():
+        if isinstance(v, Mapping):
+            continue
+        else:
+            f_type = back_mapping[db_fields[k]['type']]
+            assert isinstance(v, f_type)
 
 
 TEST_FUNCTIONS = [
@@ -272,14 +346,16 @@ TEST_FUNCTIONS = [
     (_test_keys, None, "keys"),
     (_test_search, True, "search - object"),
     (_test_search, False, "search - dict"),
+    (_test_groupsearch, True, "groupsearch - object"),
+    (_test_groupsearch, False, "groupsearch - dict"),
     (_test_search_primitives, None, "search primitives"),
+    (_test_streamsearch, True, "streamsearch - object"),
+    (_test_streamsearch, False, "streamsearch - dict"),
+    (_test_histogram, None, "histogram"),
+    (_test_facet, None, "facet"),
+    (_test_stats, None, "stats"),
+    (_test_fields, None, "fields"),
 ]
-
-
-# noinspection PyShadowingNames
-@pytest.mark.parametrize("function,as_obj", [(f[0], f[1]) for f in TEST_FUNCTIONS], ids=[f[2] for f in TEST_FUNCTIONS])
-def test_solr(solr_connection, function, as_obj):
-    function(solr_connection, as_obj)
 
 
 # noinspection PyShadowingNames
@@ -288,168 +364,29 @@ def test_es(es_connection, function, as_obj):
     function(es_connection, as_obj)
 
 
-def fix_date(data):
-    # making date precision all the same throughout the datastores so we can compared them
-    return {k.replace(".000", ""): v for k, v in data.items()}
-
-
-def compare_output(solr, elastic):
-    errors = []
-
-    try:
-        if solr != elastic:
-            errors.append("solr != elastic")
-    except odm.KeyMaskException:
-        errors.append("solr != elastic")
-
-    if errors:
-        print(f"\n\nNot all outputs are equal: {', '.join(errors)}\n\n"
-              f"solr = {solr}\n"
-              f"elastic = {elastic}\n\n")
-        return False
-
-    return True
-
-
-def _test_c_get(s_tc, e_tc, as_obj):
-    # non-existant object
-    assert compare_output(s_tc.get('not-a-key', as_obj=as_obj),
-                          e_tc.get('not-a-key', as_obj=as_obj))
-    # non-existant object (fast)
-    assert compare_output(s_tc.get_if_exists('not-a-key', as_obj=as_obj),
-                          e_tc.get_if_exists('not-a-key', as_obj=as_obj))
-
-    # Existing object
-    assert compare_output(s_tc.get('test1', as_obj=as_obj),
-                          e_tc.get('test1', as_obj=as_obj))
-
-    assert compare_output(s_tc.require('test1', as_obj=as_obj),
-                          e_tc.require('test1', as_obj=as_obj))
-
-    assert compare_output(s_tc.get_if_exists('test1', as_obj=as_obj),
-                          e_tc.get_if_exists('test1', as_obj=as_obj))
-
-    for x in range(5):
-        key = 'dict%s' % x
-        assert compare_output(s_tc.get(key, as_obj=as_obj),
-                              e_tc.get(key, as_obj=as_obj))
-
-
-def _test_c_mget(s_tc, e_tc, as_obj):
-    assert compare_output(s_tc.multiget(['test1', 'test1'], as_obj=as_obj),
-                          e_tc.multiget(['test1', 'test1'], as_obj=as_obj))
-
-
-def _test_c_search(s_tc, e_tc, as_obj):
-    assert compare_output(s_tc.search('*:*', sort="id asc", as_obj=as_obj),
-                          e_tc.search('*:*', sort="id asc", as_obj=as_obj))
-    assert compare_output(s_tc.search('*:*', offset=1, rows=1, filters="height:100",
-                                      sort="id asc", fl='flavour', as_obj=as_obj),
-                          e_tc.search('*:*', offset=1, rows=1, filters="height:100",
-                                      sort="id asc", fl='flavour', as_obj=as_obj))
-
-
-def _test_c_streamsearch(s_tc, e_tc, as_obj):
-    ss_s_list = list(s_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour', as_obj=as_obj))
-    ss_e_list = list(e_tc.stream_search('flavour:*', filters="height:[30 TO 400]", fl='flavour', as_obj=as_obj))
-    assert compare_output(ss_s_list, ss_e_list)
-
-
-def _test_c_keys(s_tc, e_tc, _):
-    assert compare_output(sorted(list(s_tc.keys())), sorted(list(e_tc.keys())))
-
-
-def _test_c_histogram(s_tc, e_tc, _):
-    assert compare_output(s_tc.histogram('height', 0, 200, 20, mincount=2),
-                          e_tc.histogram('height', 0, 200, 20, mincount=2))
-
-    h_s = s_tc.histogram('birthday',
-                         '{n}-10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
-                         '{n}+10{d}/{d}'.format(n=s_tc.datastore.now, d=s_tc.datastore.day),
-                         '+1{d}'.format(d=s_tc.datastore.day, mincount=2))
-    h_e = e_tc.histogram('birthday',
-                         '{n}-10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
-                         '{n}+10{d}/{d}'.format(n=e_tc.datastore.now, d=e_tc.datastore.day),
-                         '+1{d}'.format(d=e_tc.datastore.day, mincount=2))
-    assert compare_output(fix_date(h_s), fix_date(h_e))
-
-
-def _test_c_facet(s_tc, e_tc, _):
-    assert compare_output(s_tc.facet('tags'),
-                          e_tc.facet('tags'))
-
-
-def _test_c_stats(s_tc, e_tc, _):
-    assert compare_output(s_tc.stats('height'),
-                          e_tc.stats('height'))
-
-
-def _test_c_groupsearch(s_tc, e_tc, as_obj):
-    assert compare_output(s_tc.grouped_search('height', fl='flavour', as_obj=as_obj),
-                          e_tc.grouped_search('height', fl='flavour', as_obj=as_obj))
-
-
-def _test_c_fields(s_tc, e_tc, _):
-    assert compare_output(s_tc.fields(), e_tc.fields())
-
-
-TEST_CONSISTENCY_FUNC = [
-    (_test_c_get, True, "get - object"),
-    (_test_c_get, False, "get - dict"),
-    (_test_c_mget, True, "multiget - object"),
-    (_test_c_mget, False, "multiget - dict"),
-    (_test_c_search, True, "search - object"),
-    (_test_c_search, False, "search - dict"),
-    (_test_c_streamsearch, True, "streamsearch - object"),
-    (_test_c_streamsearch, False, "streamsearch - dict"),
-    (_test_c_keys, None, "keys"),
-    (_test_c_histogram, None, "histogram"),
-    (_test_c_facet, None, "facet"),
-    (_test_c_stats, None, "stats"),
-    (_test_c_groupsearch, True, "groupsearch - object"),
-    (_test_c_groupsearch, False, "groupsearch - dict"),
-    (_test_c_fields, None, "fields"),
-]
-
-
-# noinspection PyShadowingNames
-@pytest.mark.parametrize("function,as_obj", [(f[0], f[1]) for f in TEST_CONSISTENCY_FUNC],
-                         ids=[f[2] for f in TEST_CONSISTENCY_FUNC])
-def test_datastore_consistency(solr_connection, es_connection, function, as_obj):
-    if solr_connection and es_connection:
-        function(solr_connection, es_connection, as_obj)
-
-
-@pytest.fixture(scope='module')
-def es_store():
-    from assemblyline.datastore.stores.es_store import ESStore
-    store = ESStore(['127.0.0.1'])
-    ret_val = store.ping()
-    if ret_val:
-        return store
-    return pytest.skip()
-
-
-@pytest.fixture()
-def es_scratch_name(es_store):
-    name = ''.join(random.sample(string.ascii_lowercase, 12))
-    yield name
-    getattr(es_store, name).wipe()
-
-
-def test_dynamic_fields(es_store, es_scratch_name):
+def test_dynamic_fields(es_store):
 
     @odm.model(index=True, store=True)
     class Test(odm.Model):
         number = odm.Integer()
         other = odm.Any(index=False)
 
-    es_store.register(es_scratch_name, Test)
-    col = getattr(es_store, es_scratch_name)
+    collection_name = ''.join(random.choices(string.ascii_lowercase, k=10))
+    es_store.register(collection_name, Test)
+    col = getattr(es_store, collection_name)
+    col.wipe()
 
     assert list(sorted(col.fields().keys())) == ['id', 'number']
 
     # Elasticsearch should ignore the type of other
-    col.save('a', Test(dict(number=100, other=100)))
-    col.save('b', Test(dict(number=100, other='100')))
-    col.save('c', Test(dict(number=100, other=True)))
+    data = {
+        'int': Test(dict(number=100, other=100)),
+        'str': Test(dict(number=100, other='100')),
+        'bool': Test(dict(number=100, other=True))
+    }
+
+    for k, v in data.items():
+        col.save(k, v)
+
+    for k in data.keys():
+        assert col.get(k) == data.get(k, None)

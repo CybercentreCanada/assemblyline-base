@@ -5,7 +5,6 @@ from retrying import retry
 from assemblyline.common.testing import skip
 from assemblyline.datastore import BaseStore, SearchException
 from assemblyline.datastore.stores.es_store import ESStore
-from assemblyline.datastore.stores.solr_store import SolrStore
 from assemblyline.odm import Model, Mapping, Classification
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
@@ -42,19 +41,6 @@ def setup_store(docstore):
     except ConnectionError:
         pass
     raise SetupException("Could not setup Datastore: %s" % docstore.__class__.__name__)
-
-
-@pytest.fixture(scope='module')
-def solr_datastore():
-    try:
-        document_store = setup_store(SolrStore(['127.0.0.1']))
-    except SetupException:
-        document_store = None
-
-    if document_store:
-        return document_store
-
-    return skip("Connection to the SOLR server failed. This test cannot be performed...")
 
 
 @pytest.fixture(scope='module')
@@ -254,13 +240,6 @@ def _perform_single_collection_test(ds: BaseStore, idx_name: str, doc: Model):
                 pytest.fail("Search query on field __access_grp1__ failed.")
             if c.search("__access_grp2__:__EMPTY__", rows=0)["total"] != 1:
                 pytest.fail("Search query on field __access_grp2__ failed.")
-
-
-# noinspection PyShadowingNames
-@pytest.mark.parametrize("collection_name,document", TEST_DATA, ids=[d[0] for d in TEST_DATA])
-def test_solr_models(solr_datastore: SolrStore, collection_name: str, document: Model):
-    if solr_datastore:
-        _perform_single_collection_test(solr_datastore, collection_name, document)
 
 
 # noinspection PyShadowingNames
