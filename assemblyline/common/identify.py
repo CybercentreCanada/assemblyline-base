@@ -408,7 +408,7 @@ def ident(buf, length: int) -> Dict:
         if len(labels) > 0:
             data['magic'] = safe_str(labels[0])
 
-        if len(mimes) > 0:
+        if len(mimes) > 0 and mimes[0] != b'':
             data['mime'] = safe_str(mimes[0])
 
         # Highest priority is given to mime type matching something
