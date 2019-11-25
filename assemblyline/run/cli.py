@@ -80,7 +80,7 @@ class PrintLogger(object):
 
 def init():
     global DATASTORE
-    DATASTORE = forge.get_datastore()
+    DATASTORE = forge.get_datastore(archive_access=True)
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
@@ -103,8 +103,8 @@ def action_done(args):
         if t_count % COUNT_INCREMENT == 0:
             new_t = time.time()
             if do_print:
-                print("[%s] %s %s so far (%s at %s keys/sec)" % \
-                      (bucket, t_count, action, new_t - t_last, int(COUNT_INCREMENT / (new_t - t_last))))
+                print(f"[{bucket}] {t_count} {action} so far ({new_t - t_last}"
+                      f" at {int(COUNT_INCREMENT / (new_t - t_last))} keys/sec)")
             t_last = new_t
     elif do_print:
         print("!!ERROR!! [%s] %s ==> %s" % (bucket, action, key))
@@ -118,7 +118,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         self.logger = logger_class()
         self.prompt = ""
         self.intro = ""
-        self.datastore = forge.get_datastore()
+        self.datastore = forge.get_datastore(archive_access=True)
         self.config = forge.get_config()
         if show_prompt:
             self._update_context()
@@ -297,6 +297,10 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             total = data['total']
             if not total:
                 self.logger.info("\nNothing in '%s' matches the query:\n\n  %s\n" % (bucket.upper(), query))
+                try:
+                    os.rmdir(dest)
+                except Exception:
+                    self.logger.error(f"Cannot remove backup destination folder '{dest}'.")
                 return
             else:
                 self.logger.info("\nNumber of items matching this query: %s\n" % data["total"])
@@ -309,11 +313,15 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                     cont = cont == "y"
                 else:
                     self.logger.warn("You are not in interactive mode therefor the backup was not executed. "
-                          "Add 'force' to your commandline to execute the backup.")
+                                     "Add 'force' to your commandline to execute the backup.")
                     cont = False
 
                 if not cont:
                     self.logger.warn("\n**ABORTED**\n")
+                    try:
+                        os.rmdir(dest)
+                    except Exception:
+                        self.logger.error(f"Cannot remove backup destination folder '{dest}'.")
                     return
 
             if follow:

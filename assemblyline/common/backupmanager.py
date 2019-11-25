@@ -16,7 +16,7 @@ from assemblyline.remote.datatypes.queues.named import NamedQueue
 
 # noinspection PyBroadException
 def backup_worker(worker_id, instance_id, working_dir):
-    datastore = forge.get_datastore()
+    datastore = forge.get_datastore(archive_access=True)
     worker_queue = NamedQueue(f"r-worker-{instance_id}", ttl=1800)
     done_queue = NamedQueue(f"r-done-{instance_id}", ttl=1800)
     hash_queue = Hash(f"r-hash-{instance_id}")
@@ -68,7 +68,7 @@ def backup_worker(worker_id, instance_id, working_dir):
 
 # noinspection PyBroadException
 def restore_worker(worker_id, instance_id, working_dir):
-    datastore = forge.get_datastore()
+    datastore = forge.get_datastore(archive_access=True)
     done_queue = NamedQueue(f"r-done-{instance_id}", ttl=1800)
 
     with open(os.path.join(working_dir, "backup.part%s" % worker_id), "rb") as input_file:
@@ -94,7 +94,7 @@ def restore_worker(worker_id, instance_id, working_dir):
 class DistributedBackup(object):
     def __init__(self, working_dir, worker_count=50, spawn_workers=True, use_threading=False, logger=None):
         self.working_dir = working_dir
-        self.datastore = forge.get_datastore()
+        self.datastore = forge.get_datastore(archive_access=True)
         self.logger = logger
         self.plist = []
         self.use_threading = use_threading
