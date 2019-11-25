@@ -256,7 +256,7 @@ def _test_group_search(c: Collection):
         assert 'items' in item
         assert isinstance(item['items'], list)
         total += item['total']
-    assert total == gs_complex['total']
+    assert total <= gs_complex['total']
 
 
 def _test_deepsearch(c: Collection):
