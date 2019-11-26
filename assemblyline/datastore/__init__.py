@@ -363,7 +363,7 @@ class Collection(object):
             return self._save(key, data)
 
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
-               filters=(), access_control=None, deep_paging_id=None, as_obj=True):
+               filters=(), access_control=None, deep_paging_id=None, as_obj=True, use_archive=True):
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -380,6 +380,7 @@ class Collection(object):
                     }, ...]
             }
 
+        :param use_archive: Query also the archive
         :param deep_paging_id: ID of the next page during deep paging searches
         :param as_obj: Return objects instead of dictionaries
         :param query: lucene query to search for
@@ -394,7 +395,8 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def stream_search(self, query, fl=None, filters=(), access_control=None, buffer_size=200, as_obj=True):
+    def stream_search(self, query, fl=None, filters=(), access_control=None,
+                      buffer_size=200, as_obj=True, use_archive=True):
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys
@@ -476,18 +478,19 @@ class Collection(object):
                                       f'Current settings would generate {gaps_count} steps')
             return ret_type
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1,
+                  filters=None, access_control=None, use_archive=True):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-              mincount=1, filters=None, access_control=None):
+              mincount=1, filters=None, access_control=None, use_archive=True):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def stats(self, field, query="id:*", filters=None, access_control=None):
+    def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=True):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def grouped_search(self, group_field, query="id:*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
-                       rows=DEFAULT_ROW_SIZE, filters=(), access_control=None, as_obj=True):
+                       rows=DEFAULT_ROW_SIZE, filters=(), access_control=None, as_obj=True, use_archive=True):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def fields(self):

@@ -555,9 +555,9 @@ class ESCollection(Collection):
 
         return {key: val for key, val in source.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None):
+    def _search(self, args=None, deep_paging_id=None, use_archive=True):
         index = self.name
-        if self.archive_access:
+        if self.archive_access and use_archive:
             index = f"{index},{self.name}-*"
 
         params = None
@@ -675,7 +675,8 @@ class ESCollection(Collection):
             raise SearchException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
 
     def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None, deep_paging_id=None, as_obj=True):
+               fl=None, timeout=None, filters=None, access_control=None,
+               deep_paging_id=None, as_obj=True, use_archive=True):
 
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
@@ -711,7 +712,7 @@ class ESCollection(Collection):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args, deep_paging_id=deep_paging_id)
+        result = self._search(args, deep_paging_id=deep_paging_id, use_archive=use_archive)
 
         ret_data = {
             "offset": int(offset),
@@ -726,7 +727,8 @@ class ESCollection(Collection):
 
         return ret_data
 
-    def stream_search(self, query, fl=None, filters=None, access_control=None, item_buffer_size=200, as_obj=True):
+    def stream_search(self, query, fl=None, filters=None, access_control=None,
+                      item_buffer_size=200, as_obj=True, use_archive=True):
         if item_buffer_size > 500 or item_buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
 
@@ -734,7 +736,7 @@ class ESCollection(Collection):
             raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
 
         index = self.name
-        if self.archive_access:
+        if self.archive_access and use_archive:
             index = f"{index},{self.name}-*"
 
         if filters is None:
@@ -778,7 +780,8 @@ class ESCollection(Collection):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl, as_obj=as_obj)
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1,
+                  filters=None, access_control=None, use_archive=True):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -805,14 +808,14 @@ class ESCollection(Collection):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args)
+        result = self._search(args, use_archive=use_archive)
 
         # Convert the histogram into a dictionary
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-              mincount=1, filters=None, access_control=None):
+              mincount=1, filters=None, access_control=None, use_archive=True):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -834,13 +837,13 @@ class ESCollection(Collection):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args)
+        result = self._search(args, use_archive=use_archive)
 
         # Convert the histogram into a dictionary
         return {row.get('key_as_string', row['key']): row['doc_count']
                 for row in result['aggregations'][field]['buckets']}
 
-    def stats(self, field, query="id:*", filters=None, access_control=None):
+    def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=True):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -859,11 +862,11 @@ class ESCollection(Collection):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args)
+        result = self._search(args, use_archive=use_archive)
         return result['aggregations'][f"{field}_stats"]
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
-                       rows=None, filters=None, access_control=None, as_obj=True):
+                       rows=None, filters=None, access_control=None, as_obj=True, use_archive=True):
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
@@ -903,7 +906,7 @@ class ESCollection(Collection):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args)
+        result = self._search(args, use_archive=use_archive)
 
         return {
             'offset': offset,
