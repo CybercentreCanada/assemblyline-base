@@ -203,4 +203,4 @@ def select(*queues, **kw):
     if not response:
         return response
 
-    return response[0].decode('utf-8'), json.loads(response[1])
+    return response[0].decode('utf-8'), json.loads(response[1][21:])
