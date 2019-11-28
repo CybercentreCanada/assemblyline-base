@@ -7,6 +7,7 @@ from typing import Dict
 from datemath import dm
 from datemath.helpers import DateMathException
 
+from assemblyline.common.exceptions import MultiKeyError
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
 from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model
 from assemblyline.odm.base import _Field
@@ -103,20 +104,40 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
-    def multiget(self, key_list, as_dictionary=True, as_obj=True):
+    def multiget(self, key_list, as_dictionary=True, as_obj=True, error_on_missing=True):
         """
         Get a list of documents from the datastore and make sure they are normalized using
         the model class
 
-        :param as_dictionary:
-        :param as_obj:
+        :param error_on_missing: Should it raise a key error when keys are missing
+        :param as_dictionary: Return a disctionary of items or a list
+        :param as_obj: Return objects or not
         :param key_list: list of keys of documents to get
         :return: list of instances of the model class
         """
+        missing = []
+
         if as_dictionary:
-            return {x: self.get(x, as_obj=as_obj) for x in key_list}
+            output = {}
+            for x in key_list:
+                item = self.get(x, as_obj=as_obj)
+                if item is None:
+                    missing.append(x)
+                else:
+                    output[x] = item
         else:
-            return [self.get(x, as_obj=as_obj) for x in key_list]
+            output = []
+            for x in key_list:
+                item = self.get(x, as_obj=as_obj)
+                if item is None:
+                    missing.append(x)
+                else:
+                    output.append(item)
+
+        if error_on_missing and missing:
+            raise MultiKeyError(missing, output)
+
+        return output
 
     def _get(self, key, retries):
         """

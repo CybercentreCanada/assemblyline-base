@@ -334,7 +334,7 @@ class ESCollection(Collection):
                     add_to_output(row['_source'], row['_id'])
 
         if key_list and error_on_missing:
-            raise MultiKeyError(key_list)
+            raise MultiKeyError(key_list, out)
 
         return out
 
