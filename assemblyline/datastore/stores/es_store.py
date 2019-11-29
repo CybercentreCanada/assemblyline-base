@@ -326,10 +326,17 @@ class ESCollection(Collection):
 
             if key_list and self.archive_access:
                 query_body = {"query": {"ids": {"values": key_list}}}
-                rows = self.with_retries(self.datastore.client.search, f"{self.name}-*",
-                                         body=query_body)['hits']['hits']
+                iterator = RetryableIterator(
+                    self,
+                    elasticsearch.helpers.scan(
+                        self.datastore.client,
+                        query=query_body,
+                        index=f"{self.name}-*",
+                        preserve_order=True
+                    )
+                )
 
-                for row in rows:
+                for row in iterator:
                     key_list.remove(row['_id'])
                     add_to_output(row['_source'], row['_id'])
 
