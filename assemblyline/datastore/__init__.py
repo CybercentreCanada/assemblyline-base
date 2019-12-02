@@ -6,6 +6,7 @@ from typing import Dict
 
 from datemath import dm
 from datemath.helpers import DateMathException
+from datetime import datetime
 
 from assemblyline.common.exceptions import MultiKeyError
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
@@ -198,9 +199,6 @@ class Collection(object):
 
         :param key: ID of the document to save
         :param data: raw data or instance of the model class to save as the document
-        :param index_split_id: if index_splitting is turned on in the config,
-                               this is the id of the split to insert the data into
-                               ** only use when moving data from an index to another
         :return: True if the document was saved properly
         """
         if " " in key:
@@ -305,6 +303,8 @@ class Collection(object):
 
                 if isinstance(value, Model):
                     value = value.as_primitives()
+                elif isinstance(value, datetime):
+                    value = value.isoformat()
 
             ret_ops.append((op, doc_key, value))
 
@@ -430,6 +430,7 @@ class Collection(object):
         >>>     fl[x]: value
         >>> }
 
+        :param use_archive: Query also the archive
         :param as_obj: Return objects instead of dictionaries
         :param query: lucene query to search for
         :param fl: list of fields to return from the search
