@@ -13,6 +13,7 @@ class Status(odm.Model):
     dynamic_maximum = odm.Integer()
     queue = odm.Integer()
     pressure = odm.Float()
+    duty_cycle = odm.Float()
 
 
 @odm.model()
