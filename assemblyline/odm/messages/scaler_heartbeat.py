@@ -13,12 +13,15 @@ class Status(odm.Model):
     dynamic_maximum = odm.Integer()
     queue = odm.Integer()
     pressure = odm.Float()
+    duty_cycle = odm.Float()
 
 
 @odm.model()
 class Metrics(odm.Model):
     memory_free = odm.Float()
     cpu_free = odm.Float()
+    memory_total = odm.Float()
+    cpu_total = odm.Float()
 
 
 # Scaler heartbeats aren't sent
