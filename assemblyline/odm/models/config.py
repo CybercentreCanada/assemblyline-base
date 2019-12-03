@@ -395,6 +395,9 @@ class ScalerServiceDefaults(odm.Model):
 @odm.model()
 class Scaler(odm.Model):
     service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
+    # only available for docker hosts, not kubernetes
+    cpu_overallocation: float = odm.Float(default=1)
+    memory_overallocation: float = odm.Float(default=1)
 
 
 DEFAULT_SCALER = {
