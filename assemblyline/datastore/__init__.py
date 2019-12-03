@@ -384,7 +384,8 @@ class Collection(object):
             return self._save(key, data)
 
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
-               filters=(), access_control=None, deep_paging_id=None, as_obj=True, use_archive=True):
+               filters=(), access_control=None, deep_paging_id=None, as_obj=True, use_archive=True,
+               track_total_hits=False):
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -401,6 +402,7 @@ class Collection(object):
                     }, ...]
             }
 
+        :param track_total_hits: Return to total matching document count
         :param use_archive: Query also the archive
         :param deep_paging_id: ID of the next page during deep paging searches
         :param as_obj: Return objects instead of dictionaries

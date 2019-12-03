@@ -562,7 +562,7 @@ class ESCollection(Collection):
 
         return {key: val for key, val in source.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None, use_archive=True):
+    def _search(self, args=None, deep_paging_id=None, use_archive=True, track_total_hits=False):
         index = self.name
         if self.archive_access and use_archive:
             index = f"{index},{self.name}-*"
@@ -660,11 +660,12 @@ class ESCollection(Collection):
             elif params is not None:
                 # Run the query
                 result = self.with_retries(self.datastore.client.search, index=index,
-                                           body=json.dumps(query_body), params=params)
+                                           body=json.dumps(query_body), params=params,
+                                           track_total_hits=track_total_hits)
             else:
                 # Run the query
                 result = self.with_retries(self.datastore.client.search, index=index,
-                                           body=json.dumps(query_body))
+                                           body=json.dumps(query_body), track_total_hits=track_total_hits)
 
             return result
 
@@ -683,7 +684,7 @@ class ESCollection(Collection):
 
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, use_archive=True):
+               deep_paging_id=None, as_obj=True, use_archive=True, track_total_hits=False):
 
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
@@ -719,7 +720,8 @@ class ESCollection(Collection):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args, deep_paging_id=deep_paging_id, use_archive=use_archive)
+        result = self._search(args, deep_paging_id=deep_paging_id, use_archive=use_archive,
+                              track_total_hits=track_total_hits)
 
         ret_data = {
             "offset": int(offset),
