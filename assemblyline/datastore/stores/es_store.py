@@ -144,9 +144,6 @@ class ESCollection(Collection):
         if not self._index_list:
             self._index_list = list(self.with_retries(self.datastore.client.indices.get, f"{self.name}-*").keys())
 
-        if self.name not in self._index_list:
-            self._index_list.append(self.name)
-
         return [self.name] + sorted(self._index_list, reverse=True)
 
     @property
@@ -154,9 +151,6 @@ class ESCollection(Collection):
         if self.archive_access:
             if not self._index_list:
                 self._index_list = list(self.with_retries(self.datastore.client.indices.get, f"{self.name}-*").keys())
-
-            if self.name not in self._index_list:
-                self._index_list.append(self.name)
 
             return [self.name] + sorted(self._index_list, reverse=True)
         else:
