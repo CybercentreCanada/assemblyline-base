@@ -28,7 +28,7 @@ class UpdateSource(odm.Model):
     name = odm.Keyword()
     password = odm.Optional(odm.Keyword())
     pattern = odm.Optional(odm.Keyword())
-    public_key = odm.Optional(odm.Keyword())
+    private_key = odm.Optional(odm.Keyword())
     uri = odm.Keyword()
     username = odm.Optional(odm.Keyword())
     headers = odm.List(odm.Compound(EnvironmentVariable), default=[])
