@@ -562,15 +562,16 @@ class ESCollection(Collection):
 
         return {key: val for key, val in source.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None, use_archive=True, track_total_hits=False):
+    def _search(self, args=None, deep_paging_id=None, use_archive=True, track_total_hits=None):
         index = self.name
         if self.archive_access and use_archive:
             index = f"{index},{self.name}-*"
 
-        params = None
+        params = {}
         if deep_paging_id is not None:
-            if deep_paging_id == "*":
-                params = {'scroll': self.SCROLL_TIMEOUT}
+            params = {'scroll': self.SCROLL_TIMEOUT}
+        elif track_total_hits:
+            params['track_total_hits'] = track_total_hits
 
         parsed_values = deepcopy(self.DEFAULT_SEARCH_VALUES)
 
@@ -653,19 +654,13 @@ class ESCollection(Collection):
             }
 
         try:
-            if deep_paging_id is not None and params is None:
+            if deep_paging_id is not None and not deep_paging_id == "*":
                 # Get the next page
-                result = self.with_retries(self.datastore.client.scroll, scroll_id=deep_paging_id,
-                                           params={"scroll": self.SCROLL_TIMEOUT})
-            elif params is not None:
-                # Run the query
-                result = self.with_retries(self.datastore.client.search, index=index,
-                                           body=json.dumps(query_body), params=params,
-                                           track_total_hits=track_total_hits)
+                result = self.with_retries(self.datastore.client.scroll, scroll_id=deep_paging_id, params=params)
             else:
                 # Run the query
                 result = self.with_retries(self.datastore.client.search, index=index,
-                                           body=json.dumps(query_body), track_total_hits=track_total_hits)
+                                           body=json.dumps(query_body), params=params)
 
             return result
 
@@ -684,7 +679,7 @@ class ESCollection(Collection):
 
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, use_archive=True, track_total_hits=False):
+               deep_paging_id=None, as_obj=True, use_archive=True, track_total_hits=None):
 
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
