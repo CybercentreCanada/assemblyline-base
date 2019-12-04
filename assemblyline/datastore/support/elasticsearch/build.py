@@ -79,9 +79,15 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                         'index': True},
                 })
 
-        elif isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
+        elif isinstance(field, (Boolean, Integer, Float, Text)):
             mappings[name.strip(".")] = set_mapping(field, {
                 'type': __type_mapping[field.__class__]
+            })
+
+        elif isinstance(field, Keyword):
+            mappings[name.strip(".")] = set_mapping(field, {
+                'type': __type_mapping[field.__class__],
+                "ignore_above": 8191  # The maximum always safe value in elasticsearch
             })
 
         elif isinstance(field, FlattenedObject):
