@@ -18,11 +18,14 @@ services:
   # Create test data
   create_test_data:
     image: cccs/assemblyline_dev:4.0.11
+    environment:
+      DEV_ADMIN_PASS: $DEV_ADMIN_PASS
+      DEV_USER_PASS: $DEV_USER_PASS
     volumes:
       - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
       - /opt/alv4/:/opt/alv4/
     working_dir: /opt/alv4/alv4/assemblyline/odm/random_data/
-    command: python3 create_test_data.py nosvc
+    command: python3 create_test_data.py nosvc nosigs
 
   # UI
   al_ui:

@@ -273,23 +273,28 @@ def create_submission(ds, fs, log=None):
 
 
 def create_users(ds, log=None):
+    admin_pass = os.getenv("DEV_ADMIN_PASS", 'admin') or 'admin'
+    user_pass = os.getenv("DEV_USER_PASS", 'user') or 'user'
     user_data = User({
         "agrees_with_tos": "NOW",
         "classification": "RESTRICTED",
         "name": "Admin user",
-        "password": get_password_hash("admin"),
+        "password": get_password_hash(admin_pass),
         "uname": "admin",
         "type": ["admin", "user", "signature_importer"]})
     ds.user.save('admin', user_data)
     ds.user_settings.save('admin', UserSettings())
     if log:
-        log.info(f"\tU:{user_data.uname}   P:{user_data.uname}")
+        log.info(f"\tU:{user_data.uname}   P:{admin_pass}")
 
-    user_data = User({"name": "user", "password": get_password_hash("user"), "uname": "user"})
+    user_data = User({
+        "name": "user",
+        "password": get_password_hash(user_pass),
+        "uname": "user"})
     ds.user.save('user', user_data)
     ds.user_settings.save('user', UserSettings())
     if log:
-        log.info(f"\tU:{user_data.uname}   P:{user_data.uname}")
+        log.info(f"\tU:{user_data.uname}   P:{user_pass}")
 
     ds.user.commit()
 
