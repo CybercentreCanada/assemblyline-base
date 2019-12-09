@@ -1,4 +1,6 @@
+
 from assemblyline import odm
+from assemblyline.common.caching import generate_conf_key
 
 STATUSES = {"FAIL_NONRECOVERABLE", "FAIL_RECOVERABLE"}
 ERROR_TYPES = {
@@ -32,18 +34,12 @@ class Error(odm.Model):
     sha256 = odm.Keyword(copyto="__text__")                                # Hash of the file the error is related to
     type = odm.Enum(values=list(ERROR_TYPES.keys()), default="EXCEPTION")  # Type of error
 
-    def build_key(self, conf_key=None):
+    def build_key(self, service_tool_version=None, task=None):
         key_list = [
             self.sha256,
             self.response.service_name.replace('.', '_'),
-            f"v{self.response.service_version.replace('.', '_')}"
-        ]
-
-        if conf_key:
-            key_list.append('c' + conf_key.replace('.', '_'))
-        else:
-            key_list.append("c0")
-
-        key_list.append(f"e{ERROR_TYPES.get(self.type, 0)}")
+            f"v{self.response.service_version.replace('.', '_')}",
+            f"c{generate_conf_key(service_tool_version=service_tool_version, task=task)}",
+            f"e{ERROR_TYPES.get(self.type, 0)}"]
 
         return '.'.join(key_list)

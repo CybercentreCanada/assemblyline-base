@@ -1,7 +1,13 @@
+import hashlib
+import json
 import threading
 import time
 
 from collections import OrderedDict
+
+import baseconv
+
+from assemblyline.common.uid import get_random_id
 
 
 class TimeExpiredCache(object):
@@ -116,3 +122,30 @@ class SizeExpiredCache(object):
     def keys(self):
         with self.lock:
             return self.cache.keys()
+
+
+def generate_conf_key(service_tool_version=None, task=None):
+    ignore_salt = None
+    service_config = None
+    submission_params_str = None
+
+    if task is not None:
+        service_config = json.dumps(sorted(task.service_config.items()))
+        submission_params = {
+            "deep_scan": task.deep_scan,
+            "max_files": task.max_files
+        }
+        submission_params_str = json.dumps(sorted(submission_params.items()))
+
+        if task.ignore_cache:
+            ignore_salt = get_random_id()
+
+    if service_tool_version is None and \
+            service_config is None and \
+            submission_params_str is None and \
+            ignore_salt is None:
+        return "0"
+
+    total_str = f"{service_tool_version}_{service_config}_{submission_params_str}_{ignore_salt}".encode('utf-8')
+    partial_md5 = hashlib.md5((str(total_str).encode('utf-8'))).hexdigest()[:16]
+    return baseconv.base62.encode(int(partial_md5, 16))

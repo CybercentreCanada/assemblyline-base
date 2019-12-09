@@ -1,7 +1,9 @@
 from assemblyline import odm
 from assemblyline.common import forge
+from assemblyline.common.caching import generate_conf_key
 from assemblyline.odm.models.heuristic import PATTERNS
 from assemblyline.odm.models.tagging import Tagging
+
 
 BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE"}
 constants = forge.get_constants()
@@ -69,26 +71,23 @@ class Result(odm.Model):
     sha256 = odm.Keyword(store=False)                          # SHA256 of the file the result object relates to
     drop_file = odm.Boolean(default=False)                     # After this service is done, further stages don't need to run
 
-    def build_key(self, conf_key=None):
+    def build_key(self, service_tool_version=None, task=None):
         return self.help_build_key(
             self.sha256,
             self.response.service_name,
             self.response.service_version,
-            conf_key
+            service_tool_version=service_tool_version,
+            task=task
         )
 
     @staticmethod
-    def help_build_key(sha256, service_name, service_version, conf_key=None):
+    def help_build_key(sha256, service_name, service_version, service_tool_version=None, task=None):
         key_list = [
             sha256,
             service_name.replace('.', '_'),
-            f"v{service_version.replace('.', '_')}"
+            f"v{service_version.replace('.', '_')}",
+            f"c{generate_conf_key(service_tool_version=service_tool_version, task=task)}",
         ]
-
-        if conf_key:
-            key_list.append('c' + conf_key.replace('.', '_'))
-        else:
-            key_list.append("c0")
 
         return '.'.join(key_list)
 
