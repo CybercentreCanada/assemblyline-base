@@ -754,9 +754,12 @@ DEFAULT_TAG_TYPES = {
     ],
     'ioc': [
         'network.email.address',
-        'network.ip',
-        'network.domain',
-        'network.uri',
+        'network.static.ip',
+        'network.static.domain',
+        'network.static.uri',
+        'network.dynamic.ip',
+        'network.dynamic.domain',
+        'network.dynamic.uri',
 
     ]
 }

@@ -340,6 +340,13 @@ class Tagging(odm.Model):
     @odm.model(index=True, store=False)
     class Network(odm.Model):
         @odm.model(index=True, store=False)
+        class NetworkIOCs(odm.Model):
+            domain = odm.Optional(odm.List(odm.Domain(copyto="__text__")))
+            ip = odm.Optional(odm.List(odm.IP(copyto="__text__")))
+            uri = odm.Optional(odm.List(odm.URI(copyto="__text__")))
+            uri_path = odm.Optional(odm.List(odm.URIPath(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
         class NetworkEmail(odm.Model):
             address = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             date = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -357,16 +364,14 @@ class Tagging(odm.Model):
             ja3_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         attack = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-        domain = odm.Optional(odm.List(odm.Domain(copyto="__text__")))
+        dynamic = odm.Optional(odm.Compound(NetworkIOCs))
         email = odm.Optional(odm.Compound(NetworkEmail))
-        ip = odm.Optional(odm.List(odm.IP(copyto="__text__")))
         mac_address = odm.Optional(odm.List(odm.MAC(copyto="__text__")))
         port = odm.Optional(odm.List(odm.Integer()))
         protocol = odm.Optional(odm.List(odm.Integer()))
         signature = odm.Optional(odm.Compound(NetworkSignature))
+        static = odm.Optional(odm.Compound(NetworkIOCs))
         tls = odm.Optional(odm.Compound(NetworkTLS))
-        uri = odm.Optional(odm.List(odm.URI(copyto="__text__")))
-        uri_path = odm.Optional(odm.List(odm.URIPath(copyto="__text__")))
 
     @odm.model(index=True, store=False)
     class Technique(odm.Model):

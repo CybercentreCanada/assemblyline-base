@@ -189,9 +189,12 @@ def get_random_ssdeep() -> str:
 def get_random_tags() -> dict:
     desired_tag_types = [
         'attribution.actor',
-        'network.ip',
-        'network.domain',
-        'network.uri',
+        'network.static.ip',
+        'network.dynamic.ip',
+        'network.static.domain',
+        'network.dynamic.domain',
+        'network.static.uri',
+        'network.dynamic.uri',
         'av.virus_name',
         'attribution.implant',
         'file.rule.yara',
