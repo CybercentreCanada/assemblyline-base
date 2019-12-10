@@ -12,7 +12,9 @@ constants = forge.get_constants()
 @odm.model(index=True, store=False)
 class Heuristic(odm.Model):
     heur_id = odm.Keyword(copyto="__text__")                                 # Triggered heuristic
+    name = odm.Keyword(copyto="__text__")                                    # Name of the heuristics
     attack_id = odm.Optional(odm.Enum(values=PATTERNS, copyto="__text__"))   # Attack matrix ID
+    attack_pattern = odm.Optional(odm.Keyword(copyto="__text__"))            # Attack matrix Pattern Name
     signature = odm.Optional(odm.Keyword())                                  # Signature that triggered the heuristic
     score = odm.Integer()                                                    # Heuristic's score
 

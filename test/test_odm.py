@@ -691,10 +691,6 @@ def test_construct_safe():
         'cats': 'red'
     })
 
-    from pprint import pprint
-    pprint(out.as_primitives())
-    pprint(dropped)
-
     assert out.speed.fast == 1
     assert out.speed.slow == 'abc'
     assert out.speed.count == [100, 100]
