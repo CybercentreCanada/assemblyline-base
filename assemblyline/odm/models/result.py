@@ -15,6 +15,7 @@ class Heuristic(odm.Model):
     name = odm.Keyword(copyto="__text__")                                    # Name of the heuristics
     attack_id = odm.Optional(odm.Enum(values=PATTERNS, copyto="__text__"))   # Attack matrix ID
     attack_pattern = odm.Optional(odm.Keyword(copyto="__text__"))            # Attack matrix Pattern Name
+    attack_categories = odm.Optional(odm.List(odm.Keyword()))                # Attack matrix Categories
     signature = odm.Optional(odm.Keyword())                                  # Signature that triggered the heuristic
     score = odm.Integer()                                                    # Heuristic's score
 

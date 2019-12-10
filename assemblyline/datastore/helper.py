@@ -6,7 +6,6 @@ from typing import Union, List
 import elasticapm
 
 from assemblyline.common import forge
-from assemblyline.common.attack_map import attack_map
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore import Collection
@@ -505,7 +504,6 @@ class AssemblylineDatastore(object):
         if len(keys) == 0:
             return out
 
-        heuristics = self.get_all_heuristics()
         keys = [x for x in list(keys) if not x.endswith(".e")]
         items = self.result.multiget(keys, as_obj=False)
 
@@ -515,45 +513,36 @@ class AssemblylineDatastore(object):
 
                 if section.get('heuristic', False):
                     # Get the heuristics data
-                    h = heuristics.get(section['heuristic']['heur_id'], None)
-                    if h is not None:
-                        if section['heuristic']['score'] < 100:
-                            h_type = "info"
-                        elif section['heuristic']['score'] < 1000:
-                            h_type = "suspicious"
-                        else:
-                            h_type = "malicious"
-
-                        cache_key = f"{h['heur_id']}_{key}"
-                        if cache_key not in done_map['heuristics']:
-                            out['heuristics'][h_type].append({
-                                'heur_id': h['heur_id'],
-                                'name': h['name'],
-                                'key': key
-                            })
-                            done_map['heuristics'].add(cache_key)
+                    if section['heuristic']['score'] < 100:
+                        h_type = "info"
+                    elif section['heuristic']['score'] < 1000:
+                        h_type = "suspicious"
                     else:
-                        # TODO: I need a logger because I need to report this
-                        pass
+                        h_type = "malicious"
+
+                    cache_key = f"{section['heuristic']['heur_id']}_{key}"
+                    if cache_key not in done_map['heuristics']:
+                        out['heuristics'][h_type].append({
+                            'heur_id': section['heuristic']['heur_id'],
+                            'name': section['heuristic']['name'],
+                            'key': key
+                        })
+                        done_map['heuristics'].add(cache_key)
 
                     if section['heuristic'].get('attack_id', False):
                         # Get attack matrix data
                         attack_id = section['heuristic']['attack_id']
-                        attack_pattern_def = attack_map.get(attack_id, {})
-                        if attack_pattern_def:
-                            cache_key = f"{attack_id}_{key}"
-                            if cache_key not in done_map['attack']:
-                                out['attack_matrix'].append({
-                                    "key": key,
-                                    "attack_id": attack_id,
-                                    "h_type": h_type,
-                                    "name": attack_pattern_def['name'],
-                                    "categories": attack_pattern_def['categories']
-                                })
-                                done_map['attack'].add(cache_key)
-                        else:
-                            # TODO: I need a logger because I need to report this.
-                            pass
+
+                        cache_key = f"{attack_id}_{key}"
+                        if cache_key not in done_map['attack']:
+                            out['attack_matrix'].append({
+                                "key": key,
+                                "attack_id": attack_id,
+                                "h_type": h_type,
+                                "name": section['heuristic']['attack_pattern'],
+                                "categories": section['heuristic']['attack_categories']
+                            })
+                            done_map['attack'].add(cache_key)
 
                 # Get tagging data
                 for tag_type, tags in flatten(section.get('tags', {})).items():
@@ -607,17 +596,12 @@ class AssemblylineDatastore(object):
             for section in item.get('result', {}).get('sections', []):
                 attack_id = section.get('heuristic', {}).get('attack_id', None)
                 if attack_id:
-                    attack_pattern_def = attack_map.get(attack_id, {})
-                    if attack_pattern_def:
-                        out.append({
-                            "key": key,
-                            "attack_id": attack_id,
-                            "name": attack_pattern_def['name'],
-                            "categories": attack_pattern_def['categories']
-                        })
-                    else:
-                        # TODO: I need a logger because I need to report this.
-                        pass
+                    out.append({
+                        "key": key,
+                        "attack_id": attack_id,
+                        "name": section['heuristic']['attack_pattern'],
+                        "categories": section['heuristic']['attack_categories']
+                    })
 
         return out
 
