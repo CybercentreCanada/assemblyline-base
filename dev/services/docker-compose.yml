@@ -41,11 +41,11 @@ services:
       - SERVICE_API_HOST=http://al_service_server:5003
 
   # Cleaver service
-  alsvc_cleaver:
-    image: cccs/alsvc_cleaver:latest
-    environment:
-      - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_cleaver
+#  alsvc_cleaver:
+#    image: cccs/alsvc_cleaver:latest
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    working_dir: /opt/al/al_services/alsvc_cleaver
 
   # ConfigDecoder service
 #  alsvc_configdecoder:
@@ -56,10 +56,9 @@ services:
 
   # Espresso service
   alsvc_espresso:
-    image: cccs/alsvc_espresso:latest
+    image: cccs/assemblyline-service-espresso:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_espresso
 
   # Extract service
   alsvc_extract:
@@ -68,11 +67,11 @@ services:
       - SERVICE_API_HOST=http://al_service_server:5003
 
   # FrankenStrings service
-  alsvc_frankenstrings:
-    image: cccs/alsvc_frankenstrings:latest
-    environment:
-      - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_frankenstrings
+#  alsvc_frankenstrings:
+#    image: cccs/alsvc_frankenstrings:latest
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    working_dir: /opt/al/al_services/alsvc_frankenstrings
 
   # FSecure service
 #  alsvc_fsecure:
@@ -83,10 +82,9 @@ services:
 
   # IPArse service
   alsvc_iparse:
-    image: cccs/alsvc_iparse:latest
+    image: cccs/assemblyline-service-iparse:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_iparse
 
   # Lastline service
 #  alsvc_lastline:
@@ -115,25 +113,22 @@ services:
 #    working_dir: /opt/al/al_services/alsvc_nsrl
 
   # Oletools service
-#  alsvc_oletools:
-#    image: cccs/alsvc_oletools:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_oletools
+  alsvc_oletools:
+    image: cccs/assemblyline-service-oletools:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # PDFId service
   alsvc_pdfid:
-    image: cccs/alsvc_pdfid:latest
+    image: cccs/assemblyline-service-pdfid:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_pdfid
 
   # PeePDF service
   alsvc_peepdf:
-    image: cccs/alsvc_peepdf:latest
+    image: cccs/assemblyline-service-peepdf:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_peepdf
 
   # PEFile service
   alsvc_pefile:
@@ -142,11 +137,11 @@ services:
       - SERVICE_API_HOST=http://al_service_server:5003
 
   # Pixaxe service
-  alsvc_pixaxe:
-    image: cccs/alsvc_pixaxe:latest
-    environment:
-      - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_pixaxe
+#  alsvc_pixaxe:
+#    image: cccs/alsvc_pixaxe:latest
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    working_dir: /opt/al/al_services/alsvc_pixaxe
 
   # Suricata service
 #  alsvc_suricata:
@@ -156,11 +151,11 @@ services:
 #    working_dir: /opt/al/al_services/alsvc_suricata
 
   # Swiffer service
-  alsvc_swiffer:
-    image: cccs/alsvc_swiffer:latest
-    environment:
-      - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_swiffer
+#  alsvc_swiffer:
+#    image: cccs/alsvc_swiffer:latest
+#    environment:
+#      - SERVICE_API_HOST=http://al_service_server:5003
+#    working_dir: /opt/al/al_services/alsvc_swiffer
 
   # TagCheck service
 #  alsvc_tagcheck:
@@ -171,17 +166,15 @@ services:
 
   # TorrentSlicer service
   alsvc_torrentslicer:
-    image: cccs/alsvc_torrentslicer:latest
+    image: cccs/assemblyline-service-torrentslicer:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_torrentslicer
 
   # Unpacker service
   alsvc_unpacker:
-    image: cccs/alsvc_unpacker:latest
+    image: cccs/assemblyline-service-unpacker:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-    working_dir: /opt/al/al_services/alsvc_unpacker
 
   # VirusTotalDynamic service
   alsvc_virustotal_dynamic:
