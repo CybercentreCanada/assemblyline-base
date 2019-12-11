@@ -24,6 +24,19 @@ class DockerConfig(odm.Model):
 
 
 @odm.model(index=False, store=False)
+class PersistentVolume(odm.Model):
+    mount_path = odm.Keyword()  # Path into the container to mount volume
+    capacity = odm.Keyword()  # Bytes
+    storage_class = odm.Keyword()
+
+
+@odm.model(index=False, store=False)
+class DependencyConfig(odm.Model):
+    container = odm.Compound(DockerConfig)
+    volumes = odm.Mapping(odm.Compound(PersistentVolume), default={})
+
+
+@odm.model(index=False, store=False)
 class UpdateSource(odm.Model):
     name = odm.Keyword()
     password = odm.Optional(odm.Keyword())
@@ -77,6 +90,6 @@ class Service(odm.Model):
     timeout = odm.Integer(default=60)
 
     docker_config: DockerConfig = odm.Compound(DockerConfig)
-    dependencies = odm.List(odm.Compound(DockerConfig), default=[])    # List of other required Docker container(s)
+    dependencies = odm.Mapping(odm.Compound(DependencyConfig), default={})
 
     update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))

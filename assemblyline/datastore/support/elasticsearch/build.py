@@ -224,5 +224,8 @@ def build_templates(name, field, nested_template=False) -> list:
 
         return out
 
+    elif isinstance(field, Optional):
+        return build_templates(name, field.child_type, nested_template=nested_template)
+
     else:
         raise NotImplementedError(f"Unknown type for elasticsearch dynamic mapping: {field.__class__}")
