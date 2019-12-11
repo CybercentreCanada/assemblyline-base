@@ -3,6 +3,7 @@ import logging.config
 import logging.handlers
 from traceback import format_exception
 
+import json
 import os
 from typing import Optional
 
@@ -20,10 +21,6 @@ log_level_map = {
 }
 
 
-def _tidy(message):
-    return message.replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r')
-
-
 class JsonFormatter(logging.Formatter):
     def formatMessage(self, record):
         if record.exc_info:
@@ -34,11 +31,11 @@ class JsonFormatter(logging.Formatter):
             record.message += '\n' + record.exc_text
             record.exc_text = None
 
-        record.message = _tidy(record.message)
+        record.message = json.dumps(record.message)
         return self._style.format(record)
 
     def formatException(self, exc_info):
-        return _tidy(''.join(format_exception(*exc_info)))
+        return ''.join(format_exception(*exc_info))
 
 
 def init_logging(name: str, config: Optional[Config] = None, log_level=None):
