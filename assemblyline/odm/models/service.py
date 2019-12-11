@@ -27,6 +27,7 @@ class DockerConfig(odm.Model):
 class PersistentVolume(odm.Model):
     mount_path = odm.Keyword()  # Path into the container to mount volume
     capacity = odm.Keyword()  # Bytes
+    storage_class = odm.Keyword()
 
 
 @odm.model(index=False, store=False)
