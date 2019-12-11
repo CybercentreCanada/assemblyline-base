@@ -2,7 +2,7 @@ from assemblyline import odm
 
 
 @odm.model(index=False, store=False)
-class EnvironmentVariableDelta(odm.Model):
+class EnvironmentVariable(odm.Model):
     name = odm.Keyword()
     value = odm.Keyword()
 
@@ -12,20 +12,32 @@ class DockerConfigDelta(odm.Model):
     allow_internet_access = odm.Optional(odm.Boolean())
     command = odm.Optional(odm.List(odm.Keyword()))
     cpu_cores = odm.Optional(odm.Float())
-    environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariableDelta)))
+    environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)))
     image = odm.Optional(odm.Keyword())
     ram_mb = odm.Optional(odm.Integer())
 
 
 @odm.model(index=False, store=False)
 class UpdateSourceDelta(odm.Model):
-    headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariableDelta)))
+    headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)))
     name = odm.Optional(odm.Keyword())
     password = odm.Optional(odm.Keyword())
     pattern = odm.Optional(odm.Keyword())
     private_key = odm.Optional(odm.Keyword())
     uri = odm.Optional(odm.Keyword())
     username = odm.Optional(odm.Keyword())
+
+
+@odm.model(index=False, store=False)
+class PersistentVolumeDelta(odm.Model):
+    mount_path = odm.Optional(odm.Keyword())
+    capacity = odm.Optional(odm.Keyword())
+
+
+@odm.model(index=False, store=False)
+class DependencyConfigDelta(odm.Model):
+    container = odm.Optional(odm.Compound(DockerConfigDelta))
+    volumes = odm.Mapping(odm.Compound(PersistentVolumeDelta), default={})
 
 
 @odm.model(index=False, store=False)
@@ -69,6 +81,6 @@ class ServiceDelta(odm.Model):
     timeout = odm.Optional(odm.Integer())
 
     docker_config: DockerConfigDelta = odm.Optional(odm.Compound(DockerConfigDelta))
-    dependencies = odm.Optional(odm.List(odm.Compound(DockerConfigDelta)))
+    dependencies: DependencyConfigDelta = odm.Optional(odm.List(odm.Compound(DependencyConfigDelta)))
 
     update_config: UpdateConfigDelta = odm.Optional(odm.Compound(UpdateConfigDelta))

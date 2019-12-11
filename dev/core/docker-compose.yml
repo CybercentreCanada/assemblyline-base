@@ -14,6 +14,8 @@ services:
     networks:
       - default
       - svc
+#    environment:
+#      SERVICE_API_AUTH_KEY: abcd1234
 
   # Create test data
   create_test_data:
