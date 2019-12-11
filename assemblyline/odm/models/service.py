@@ -89,6 +89,6 @@ class Service(odm.Model):
     timeout = odm.Integer(default=60)
 
     docker_config: DockerConfig = odm.Compound(DockerConfig)
-    dependencies = odm.List(odm.Compound(DependencyConfig), default=[])    # List of other required Docker container(s)
+    dependencies = odm.Mapping(odm.Compound(DependencyConfig), default={})
 
     update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))

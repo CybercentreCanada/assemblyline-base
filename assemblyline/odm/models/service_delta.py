@@ -32,6 +32,7 @@ class UpdateSourceDelta(odm.Model):
 class PersistentVolumeDelta(odm.Model):
     mount_path = odm.Optional(odm.Keyword())
     capacity = odm.Optional(odm.Keyword())
+    storage_class = odm.Optional(odm.Keyword())
 
 
 @odm.model(index=False, store=False)
@@ -81,6 +82,6 @@ class ServiceDelta(odm.Model):
     timeout = odm.Optional(odm.Integer())
 
     docker_config: DockerConfigDelta = odm.Optional(odm.Compound(DockerConfigDelta))
-    dependencies: DependencyConfigDelta = odm.Optional(odm.List(odm.Compound(DependencyConfigDelta)))
+    dependencies: DependencyConfigDelta = odm.Mapping(odm.Compound(DependencyConfigDelta), default={})
 
     update_config: UpdateConfigDelta = odm.Optional(odm.Compound(UpdateConfigDelta))
