@@ -8,8 +8,7 @@ from datemath import dm
 from datemath.helpers import DateMathException
 from datetime import datetime
 
-from assemblyline.common.exceptions import MultiKeyError
-from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException
+from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, MultiKeyError
 from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model
 from assemblyline.odm.base import _Field
 from assemblyline.remote.datatypes.lock import Lock

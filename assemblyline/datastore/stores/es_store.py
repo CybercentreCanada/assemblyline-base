@@ -12,10 +12,9 @@ from assemblyline.common import forge
 
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
-from assemblyline.common.exceptions import MultiKeyError
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore import Collection, BaseStore, log
-from assemblyline.datastore.exceptions import SearchException, SearchRetryException
+from assemblyline.datastore.exceptions import SearchException, SearchRetryException, MultiKeyError, ILMException
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
     default_dynamic_templates
 from assemblyline.datastore.support.elasticsearch.build import build_mapping, back_mapping
@@ -1019,7 +1018,7 @@ class ESCollection(Collection):
                                    headers={"Content-Type": "application/json"},
                                    data=json.dumps(data_base))
         if not pol_req.ok:
-            raise Exception(f"ERROR: Failed to create ILM policy: {self.name}_policy")
+            raise ILMException(f"ERROR: Failed to create ILM policy: {self.name}_policy")
 
     def _ensure_collection(self):
         def get_index_definition():
@@ -1069,8 +1068,12 @@ class ESCollection(Collection):
 
         if self.ilm_config:
             # Create ILM policy
-            if not self._ilm_policy_exists():
-                self.with_retries(self._create_ilm_policy)
+            while not self._ilm_policy_exists():
+                try:
+                    self.with_retries(self._create_ilm_policy)
+                except ILMException:
+                    time.sleep(0.1)
+                    pass
 
             # Create WARM index template
             if not self.with_retries(self.datastore.client.indices.exists_template, self.name):
