@@ -14,6 +14,7 @@ class DockerConfigDelta(odm.Model):
     cpu_cores = odm.Optional(odm.Float())
     environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)))
     image = odm.Optional(odm.Keyword())
+    ports = odm.Optional(odm.List(odm.Keyword()))
     ram_mb = odm.Optional(odm.Integer())
 
 
