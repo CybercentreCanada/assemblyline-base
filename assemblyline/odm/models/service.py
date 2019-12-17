@@ -20,6 +20,7 @@ class DockerConfig(odm.Model):
     cpu_cores: float = odm.Float(default=1.0)
     environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
     image: str = odm.Keyword()                                 # Complete name of the Docker image with tag
+    ports: List[str] = odm.List(odm.Keyword(), default=[])
     ram_mb: int = odm.Integer(default=1024)
 
 
