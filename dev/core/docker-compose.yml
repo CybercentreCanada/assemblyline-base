@@ -66,6 +66,14 @@ services:
       - /opt/alv4/:/opt/alv4/
     command: python3 /opt/alv4/alv4_core/assemblyline_core/expiry/run_expiry.py
 
+  # Elasticsearch Metrics
+  al_elastic_metrics:
+    image: cccs/assemblyline_dev:4.0.11
+    volumes:
+      - /opt/alv4/alv4/dev/core/config/:/etc/assemblyline/
+      - /opt/alv4/:/opt/alv4/
+    command: python3 /opt/alv4/alv4_core/assemblyline_core/metrics/es_metrics.py
+
   # Metrics aggregator
   al_metrics:
     image: cccs/assemblyline_dev:4.0.11
