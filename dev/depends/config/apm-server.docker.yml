@@ -1,8 +1,13 @@
 apm-server:
   host: "0.0.0.0:8200"
+  kibana:
+    enabled: true
+    host: "http://kibana:5601"
+    username: elastic
+    password: devpass
 
 logging:
-  level: warning
+  level: info
   json: true
 
 output.elasticsearch:
@@ -10,10 +15,7 @@ output.elasticsearch:
   username: elastic
   password: devpass
 
-setup.template.settings:
-  index.number_of_shards: 1
-  index.number_of_replicas: 0
-setup.kibana:
-  host: "http://kibana:5601"
-  username: elastic
-  password: devpass
+setup.template.settings.index:
+  number_of_shards: 1
+  number_of_replicas: 0
+
