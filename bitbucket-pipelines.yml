@@ -93,7 +93,7 @@ pipelines:
 definitions:
   services:
     elasticsearch:
-      image: sgaroncse/elasticsearch:7.5.0
+      image: sgaroncse/elasticsearch:7.5.1
       memory: 1024
       environment:
         ES_JAVA_OPTS: "-Xms256m -Xmx512m"
