@@ -16,12 +16,12 @@ class File(odm.Model):
     entropy = odm.Float()                             # Entropy of the file
     expiry_ts = odm.Optional(odm.Date(store=False))   # Expiry timestamp
     hex = odm.Keyword(index=False, store=False)       # Hex dump of the first 64 bytes of the file
-    md5 = odm.Keyword(copyto="__text__")              # MD5 of the top level file
+    md5 = odm.MD5(copyto="__text__")                  # MD5 of the top level file
     magic = odm.Keyword(store=False)                  # Output from libmagic related to that file
     mime = odm.Optional(odm.Keyword(store=False))     # Mime type of the file as identified by libmagic
     seen = odm.Compound(Seen, default={})             # Attributes about when the file was seen
-    sha1 = odm.Keyword(copyto="__text__")             # SHA1 hash of the file
-    sha256 = odm.Keyword(copyto="__text__")           # SHA256 hash of the file
+    sha1 = odm.SHA1(copyto="__text__")                # SHA1 hash of the file
+    sha256 = odm.SHA256(copyto="__text__")            # SHA256 hash of the file
     size = odm.Integer()                              # Size of the file
-    ssdeep = odm.Keyword(store=False)                 # SSDEEP hash of the file
+    ssdeep = odm.SSDeepHash(store=False)              # SSDEEP hash of the file
     type = odm.Keyword(copyto="__text__")             # Type of file as identified by Assemblyline

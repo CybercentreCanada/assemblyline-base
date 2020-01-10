@@ -31,7 +31,7 @@ class Error(odm.Model):
     created = odm.Date(default="NOW")                                      # Date at which the error was created
     expiry_ts = odm.Optional(odm.Date(store=False))                        # Expiry time stamp
     response: Response = odm.Compound(Response)                            # Response from the service
-    sha256 = odm.Keyword(copyto="__text__")                                # Hash of the file the error is related to
+    sha256 = odm.SHA256(copyto="__text__")                                 # Hash of the file the error is related to
     type = odm.Enum(values=list(ERROR_TYPES.keys()), default="EXCEPTION")  # Type of error
 
     def build_key(self, service_tool_version=None, task=None):

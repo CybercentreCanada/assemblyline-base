@@ -46,7 +46,7 @@ class Milestone(odm.Model):
 @odm.model(index=True, store=False)
 class File(odm.Model):
     name = odm.Keyword(copyto="__text__")      # Name of the file
-    sha256 = odm.Keyword(copyto="__text__")    # SHA256 hash of the file
+    sha256 = odm.SHA256(copyto="__text__")     # SHA256 hash of the file
     description = odm.Text(copyto="__text__")  # Description of the file
     classification = odm.Classification()      # Classification of the file
 
@@ -71,7 +71,7 @@ class Result(odm.Model):
     expiry_ts = odm.Optional(odm.Date(store=False))            # Expiry time stamp
     response: ResponseBody = odm.Compound(ResponseBody)        # The body of the response from the service
     result: ResultBody = odm.Compound(ResultBody, default={})  # The result body
-    sha256 = odm.Keyword(store=False)                          # SHA256 of the file the result object relates to
+    sha256 = odm.SHA256(store=False)                           # SHA256 of the file the result object relates to
     drop_file = odm.Boolean(default=False)                     # After this service is done, further stages don't need to run
 
     def build_key(self, service_tool_version=None, task=None):

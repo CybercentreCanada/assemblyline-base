@@ -13,7 +13,7 @@ DEFAULT_RESUBMIT = ["Dynamic Analysis"]
 class File(odm.Model):
     name = odm.Keyword(copyto="__text__")    # Name of the file
     size = odm.Optional(odm.Integer())       # Size of the file
-    sha256 = odm.Keyword(copyto="__text__")  # SHA256 hash of the file
+    sha256 = odm.SHA256(copyto="__text__")   # SHA256 hash of the file
 
 
 @odm.model(index=False, store=False)

@@ -9,12 +9,12 @@ class ALResults(odm.Model):                 # Assemblyline result block
     attrib = odm.List(odm.Keyword(), default=[], copyto="__text__")          # List of attribution
     av = odm.List(odm.Keyword(), default=[], store=True, copyto="__text__")  # List of AV hits
     behavior = odm.List(odm.Keyword(), default=[], copyto="__text__")        # List of behaviors for the alert
-    domain = odm.List(odm.Keyword(), default=[], copyto="__text__")          # List of all domains
-    domain_dynamic = odm.List(odm.Keyword(), default=[])                 # List of domains found during dynamic analysis
-    domain_static = odm.List(odm.Keyword(), default=[])                  # List of domains foudn during static analysis
-    ip = odm.List(odm.Keyword(), default=[], copyto="__text__")          # List of all IPs
-    ip_dynamic = odm.List(odm.Keyword(), default=[])                     # List of IPs found during dynamic analysis
-    ip_static = odm.List(odm.Keyword(), default=[])                      # List of IPs found during static analysis
+    domain = odm.List(odm.Domain(), default=[], copyto="__text__")          # List of all domains
+    domain_dynamic = odm.List(odm.Domain(), default=[])                  # List of domains found during dynamic analysis
+    domain_static = odm.List(odm.Domain(), default=[])                   # List of domains foudn during static analysis
+    ip = odm.List(odm.IP(), default=[], copyto="__text__")               # List of all IPs
+    ip_dynamic = odm.List(odm.IP(), default=[])                          # List of IPs found during dynamic analysis
+    ip_static = odm.List(odm.IP(), default=[])                           # List of IPs found during static analysis
     request_end_time = odm.Date(index=False)                             # End time of the Assemblyline submission
     score = odm.Integer(store=True)                                      # Maximum score found in the submission
     yara = odm.List(odm.Keyword(), default=[], copyto="__text__")        # List of yara hits
@@ -22,10 +22,10 @@ class ALResults(odm.Model):                 # Assemblyline result block
 
 @odm.model(index=True, store=True)
 class File(odm.Model):    # File block
-    md5 = odm.Keyword(copyto="__text__")                # MD5 of the top level file
+    md5 = odm.MD5(copyto="__text__")                    # MD5 of the top level file
     name = odm.Keyword(store=False, copyto="__text__")  # Name of the file
-    sha1 = odm.Keyword(copyto="__text__")               # SHA1 hash of the file
-    sha256 = odm.Keyword(copyto="__text__")             # SHA256 hash of the file
+    sha1 = odm.SHA1(copyto="__text__")                  # SHA1 hash of the file
+    sha256 = odm.SHA256(copyto="__text__")              # SHA256 hash of the file
     size = odm.Integer(store=False)                     # Size of the file
     type = odm.Keyword(copyto="__text__")               # Type of file as identified by Assemblyline
 

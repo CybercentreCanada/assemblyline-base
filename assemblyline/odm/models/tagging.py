@@ -141,7 +141,7 @@ class Tagging(odm.Model):
 
             @odm.model(index=True, store=False)
             class FileOLEMacro(odm.Model):
-                sha256 = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+                sha256 = odm.Optional(odm.List(odm.SHA256(copyto="__text__")))
                 suspicious_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
             @odm.model(index=True, store=False)
@@ -175,7 +175,7 @@ class Tagging(odm.Model):
             @odm.model(index=True, store=False)
             class FilePEImports(odm.Model):
                 fuzzy = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")))
-                md5 = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+                md5 = odm.Optional(odm.List(odm.MD5(copyto="__text__")))
                 sorted_fuzzy = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")))
                 sorted_sha1 = odm.Optional(odm.List(odm.SHA1(copyto="__text__")))
                 suspicious = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
