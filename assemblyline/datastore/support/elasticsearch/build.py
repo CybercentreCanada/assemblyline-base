@@ -14,22 +14,29 @@ __type_mapping = {
     ClassificationString: 'keyword',
     Enum: 'keyword',
     UUID: 'keyword',
-    IP: 'keyword',
+    IP: 'ip',
     Domain: 'keyword',
     URI: 'keyword',
     URIPath: 'keyword',
     MAC: 'keyword',
     PhoneNumber: 'keyword',
-    SSDeepHash: 'keyword',
-    SHA1: 'keyword',
-    SHA256: 'keyword',
-    MD5: 'keyword',
+    SSDeepHash: 'text',
+    SHA1: 'text',
+    SHA256: 'text',
+    MD5: 'text',
     FlattenedObject: 'nested'
+}
+__analyzer_mapping = {
+    SSDeepHash: 'text_fuzzy',
+    SHA1: 'string_ci',
+    SHA256: 'string_ci',
+    MD5: 'string_ci',
 }
 # TODO: We might want to use custom analyzers for Classification and Enum and not create special backmapping cases
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
                                                                      URIPath, MAC, PhoneNumber, SSDeepHash,
                                                                      SHA1, SHA256, MD5, ClassificationString]}
+back_mapping.update({x: Keyword for x in set(__analyzer_mapping.values())})
 
 
 def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
@@ -84,11 +91,17 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 'type': __type_mapping[field.__class__]
             })
 
-        elif isinstance(field, Keyword):
+        elif field.__class__ in __analyzer_mapping:
             mappings[name.strip(".")] = set_mapping(field, {
                 'type': __type_mapping[field.__class__],
-                "ignore_above": 8191  # The maximum always safe value in elasticsearch
+                "analyzer": __analyzer_mapping[field.__class__]
             })
+
+        elif isinstance(field, Keyword):
+            data = {'type': __type_mapping[field.__class__]}
+            if __type_mapping[field.__class__] == "keyword":
+                data["ignore_above"] = 8191  # The maximum always safe value in elasticsearch
+            mappings[name.strip(".")] = set_mapping(field, data)
 
         elif isinstance(field, FlattenedObject):
             mappings[name.strip(".")] = {
@@ -120,8 +133,10 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
             dynamic.extend(temp_dynamic)
 
         elif isinstance(field, Mapping):
-            if not isinstance(field.child_type, Any):
-                dynamic.extend(build_templates(f'{name}.*', field.child_type))
+            if not field.index or isinstance(field.child_type, Any):
+                mappings[name.strip(".")] = {"type": "object", "enabled": False}
+            else:
+                dynamic.extend(build_templates(f'{name}.*', field.child_type, index=field.index))
 
         elif isinstance(field, Any):
             field_template = {
@@ -158,7 +173,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
     return mappings, dynamic
 
 
-def build_templates(name, field, nested_template=False) -> list:
+def build_templates(name, field, nested_template=False, index=True) -> list:
     if isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
         if nested_template:
             main_template = {
@@ -191,7 +206,7 @@ def build_templates(name, field, nested_template=False) -> list:
 
             return [{f"{name}_tpl": field_template}]
 
-    elif isinstance(field, Any):
+    elif isinstance(field, Any) or not index:
         field_template = {
             "path_match": name,
             "mapping": {

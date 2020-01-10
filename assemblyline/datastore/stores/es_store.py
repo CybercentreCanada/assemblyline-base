@@ -958,7 +958,7 @@ class ESCollection(Collection):
             f_type = self._get_odm_type(p_val.get('analyzer', None) or p_val['type'])
             collection_data[p_name] = {
                 "default": self.DEFAULT_SEARCH_FIELD in p_val.get('copy_to', []),
-                "indexed": p_val.get('index', True),
+                "indexed": p_val.get('index', p_val.get('enabled', True)),
                 "list": field_model.multivalued if field_model else False,
                 "stored": p_val.get('store', False),
                 "type": f_type
