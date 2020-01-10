@@ -9,6 +9,11 @@ filebeat.inputs:
       message_key: message
       ignore_decoding_error: true
     processors:
+      - rename:
+          fields:
+            - from: "error"
+              to: "message"
+          ignore_missing: true
       - script:
           lang: javascript
           id: log_level
