@@ -1,11 +1,31 @@
 filebeat.inputs:
-  - type: docker
-    combine_partial: true
-    containers:
-      path: "/var/lib/docker/containers"
-      stream: "all"
-      ids:
-        - "*"
+  - type: container
+    format: docker
+    paths:
+      - '/var/lib/docker/containers/*/*.log'
+    stream: "all"
+    json:
+      keys_under_root: true
+      message_key: message
+      ignore_decoding_error: true
+    processors:
+      - script:
+          lang: javascript
+          id: log_level
+          source: >
+            function process(event) {
+                var value = event.Get("level");
+                if (value === null){
+                  value = "INFO"
+                }
+                else if (value.toLowerCase() == "warn"){
+                  value = "WARNING"
+                }
+                else if (value.toLowerCase() == "err"){
+                  value = "ERROR"
+                }
+                event.Put("level", value.toUpperCase());
+            }
 
 logging:
   level: warning
@@ -14,11 +34,6 @@ logging:
 processors:
   - add_cloud_metadata: ~
   - add_docker_metadata: ~
-  - decode_json_fields:
-      fields: ["message"]
-      target: ""
-      overwrite_keys: true
-      add_error_key: true
 
 
 output.elasticsearch:

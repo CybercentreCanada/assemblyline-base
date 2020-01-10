@@ -2,12 +2,14 @@ apm-server:
   host: "0.0.0.0:8200"
   kibana:
     enabled: true
-    host: "http://kibana:5601"
+    host: kibana:5601
+    path: kibana
+    protocol: http
     username: elastic
     password: devpass
 
 logging:
-  level: info
+  level: warning
   json: true
 
 output.elasticsearch:
