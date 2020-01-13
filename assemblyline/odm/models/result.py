@@ -79,18 +79,22 @@ class Result(odm.Model):
             self.sha256,
             self.response.service_name,
             self.response.service_version,
+            self.is_empty(),
             service_tool_version=service_tool_version,
             task=task
         )
 
     @staticmethod
-    def help_build_key(sha256, service_name, service_version, service_tool_version=None, task=None):
+    def help_build_key(sha256, service_name, service_version, is_empty, service_tool_version=None, task=None):
         key_list = [
             sha256,
             service_name.replace('.', '_'),
             f"v{service_version.replace('.', '_')}",
             f"c{generate_conf_key(service_tool_version=service_tool_version, task=task)}",
         ]
+
+        if is_empty:
+            key_list.append("e")
 
         return '.'.join(key_list)
 
