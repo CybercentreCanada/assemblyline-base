@@ -27,6 +27,13 @@ default_index = {
                     'tokenizer': 'whitespace',
                     'filters': ['text_ws_dsplit']
                 }
+            },
+            "normalizer": {
+                "lowercase_normalizer": {
+                  "type": "custom",
+                  "char_filter": [],
+                  "filter": ["lowercase"]
+                }
             }
         }
     },

@@ -21,16 +21,18 @@ __type_mapping = {
     MAC: 'keyword',
     PhoneNumber: 'keyword',
     SSDeepHash: 'text',
-    SHA1: 'text',
-    SHA256: 'text',
-    MD5: 'text',
+    SHA1: 'keyword',
+    SHA256: 'keyword',
+    MD5: 'keyword',
     FlattenedObject: 'nested'
 }
 __analyzer_mapping = {
     SSDeepHash: 'text_fuzzy',
-    SHA1: 'string_ci',
-    SHA256: 'string_ci',
-    MD5: 'string_ci',
+}
+__normalizer_mapping = {
+    SHA1: 'lowercase_normalizer',
+    SHA256: 'lowercase_normalizer',
+    MD5: 'lowercase_normalizer',
 }
 # TODO: We might want to use custom analyzers for Classification and Enum and not create special backmapping cases
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
@@ -98,9 +100,12 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
             })
 
         elif isinstance(field, Keyword):
-            data = {'type': __type_mapping[field.__class__]}
-            if __type_mapping[field.__class__] == "keyword":
+            es_data_type = __type_mapping[field.__class__]
+            data = {'type': es_data_type}
+            if es_data_type == "keyword":
                 data["ignore_above"] = 8191  # The maximum always safe value in elasticsearch
+            if field.__class__ in __normalizer_mapping:
+                data['normalizer'] = __normalizer_mapping[field.__class__]
             mappings[name.strip(".")] = set_mapping(field, data)
 
         elif isinstance(field, FlattenedObject):
