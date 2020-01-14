@@ -25,7 +25,7 @@ class UpdateSourceDelta(odm.Model):
     password = odm.Optional(odm.Keyword())
     pattern = odm.Optional(odm.Keyword())
     private_key = odm.Optional(odm.Keyword())
-    uri = odm.Optional(odm.URI())
+    uri = odm.Optional(odm.Keyword())
     username = odm.Optional(odm.Keyword())
 
 
