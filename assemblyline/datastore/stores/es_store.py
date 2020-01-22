@@ -359,7 +359,7 @@ class ESCollection(Collection):
 
             if self.archive_access:
                 query_body = {"query": {"ids": {"values": [key]}}}
-                hits = self.with_retries(self.datastore.client.search, f"{self.name}-*",
+                hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                          body=query_body)['hits']['hits']
                 if len(hits) > 0:
                     return normalize_output(max(hits, key=lambda row: row['_index'])['_source'])
