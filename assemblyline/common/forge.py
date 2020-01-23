@@ -4,7 +4,6 @@ from string import Template
 
 import os
 import time
-import re
 
 import elasticapm
 import yaml
@@ -86,8 +85,8 @@ def _get_config(static=False, yml_config=None):
 
 def get_config(static=False, yml_config=None):
     if (static, yml_config) not in config_singletons:
-         config_singletons[(static, yml_config)] = CachedObject(_get_config, kwargs={'static': static,
-                                                                                     'yml_config': yml_config})
+        config_singletons[(static, yml_config)] = CachedObject(_get_config, kwargs={'static': static,
+                                                                                    'yml_config': yml_config})
     return config_singletons[(static, yml_config)]
 
 

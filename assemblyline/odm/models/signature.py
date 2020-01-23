@@ -8,6 +8,7 @@ STALE_STATUSES = ['INVALID']
 
 RULE_STATUSES = DEPLOYED_STATUSES + DRAFT_STATUSES + STALE_STATUSES
 
+
 @odm.model(index=True, store=True)
 class Signature(odm.Model):
     classification = odm.Classification(store=True, default=Classification.UNRESTRICTED)
