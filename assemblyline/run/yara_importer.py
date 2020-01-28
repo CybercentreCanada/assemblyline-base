@@ -71,7 +71,7 @@ class YaraImporter(object):
             name = self.get_signature_name(signature)
             status = meta.get('al_status', default_status)
 
-            key = f"yara_{signature_id}_{revision}"
+            key = f"yara_{source}_{signature_id}"
 
             sig = Signature({
                 'classification': classification,

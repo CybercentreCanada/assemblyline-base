@@ -51,7 +51,7 @@ class SuricataImporter(object):
             name = meta['msg']
             status = meta.get('al_status', default_status)
 
-            key = f"suricata_{signature_id}_{revision}"
+            key = f"suricata_{source}_{signature_id}"
 
             sig = Signature({
                 'classification': classification,
