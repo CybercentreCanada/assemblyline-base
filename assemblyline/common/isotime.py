@@ -14,7 +14,15 @@ datetime.strptime("2000", "%Y")
 
 def _epoch_to_ms(t: float) -> str:
     try:
-        return str(t - int(t))[1:]
+        # We cannot ensure that float operation will preserve the digit properly therefore we can't do this:
+        #         return str(t - int(t))[1:]
+        # Let's do string manipulation instead...
+
+        ms = ".%s" % repr(t).split(".")[1]
+        if len(ms) < 7:
+            ms += "0" * (7 - len(ms))
+        return ms[:7]
+
     except (ValueError, IndexError, TypeError):
         return ''
 
