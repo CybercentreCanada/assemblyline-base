@@ -5,7 +5,7 @@ from assemblyline.common import forge
 Classification = forge.get_classification()
 
 SUBMISSION_STATES = ['failed', 'submitted', 'completed']
-DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction"]
+DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction", "Networking"]
 DEFAULT_RESUBMIT = ["Dynamic Analysis"]
 
 
