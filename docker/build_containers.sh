@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 # Build core containers
-(cd elasticsearch && docker build -t sgaroncse/elasticsearch:7.5.1 .)
+(cd elasticsearch && docker build -t sgaroncse/elasticsearch:7.6.0 .)
 (cd nginx-ssl && docker build -t sgaroncse/nginx-ssl:1.17.5 .)
 (cd minio && docker build -t sgaroncse/minio .)
 
