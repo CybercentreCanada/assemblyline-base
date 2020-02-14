@@ -21,11 +21,10 @@ services:
       - SERVICE_API_HOST=http://al_service_server:5003
 
   # Beaver service
-#  alsvc_beaver:
-#    image: cccs/alsvc_beaver:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_beaver
+  alsvc_beaver:
+    image: cccs/assemblyline-service-beaver:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # CFMD service
 #  alsvc_cfmd:
@@ -41,11 +40,10 @@ services:
       - SERVICE_API_HOST=http://al_service_server:5003
 
   # Cleaver service
-#  alsvc_cleaver:
-#    image: cccs/alsvc_cleaver:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_cleaver
+  alsvc_cleaver:
+    image: cccs/assemblyline-service-cleaver:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # ConfigDecoder service
 #  alsvc_configdecoder:
@@ -53,6 +51,12 @@ services:
 #    environment:
 #      - SERVICE_API_HOST=http://al_service_server:5003
 #    working_dir: /opt/al/al_services/alsvc_configdecoder
+
+  # Cuckoo service
+  alsvc_cuckoo:
+    image: cccs/assemblyline-service-cuckoo:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # Espresso service
   alsvc_espresso:
@@ -144,11 +148,10 @@ services:
 #    working_dir: /opt/al/al_services/alsvc_pixaxe
 
   # Suricata service
-#  alsvc_suricata:
-#    image: cccs/alsvc_suricata:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_suricata
+  alsvc_suricata:
+    image: cccs/assemblyline-service-suricata:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # Swiffer service
 #  alsvc_swiffer:
@@ -158,11 +161,10 @@ services:
 #    working_dir: /opt/al/al_services/alsvc_swiffer
 
   # TagCheck service
-#  alsvc_tagcheck:
-#    image: cccs/alsvc_tagcheck:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_tagcheck
+  alsvc_tagcheck:
+    image: cccs/assemblyline-service-tagcheck:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # TorrentSlicer service
   alsvc_torrentslicer:
@@ -173,6 +175,12 @@ services:
   # Unpacker service
   alsvc_unpacker:
     image: cccs/assemblyline-service-unpacker:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
+  # ViperMonkey service
+  alsvc_vipermonkey:
+    image: cccs/assemblyline-service-vipermonkey:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
