@@ -599,7 +599,7 @@ DEFAULT_SERVICES = {
     "default_timeout": 60,
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
-    "image_variables": {"REGISTRY": ""}
+    "image_variables": {}
 }
 
 
