@@ -50,6 +50,7 @@ class UpdateConfigDelta(odm.Model):
     run_options = odm.Optional(odm.Compound(DockerConfigDelta))
     sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
     update_interval_seconds = odm.Optional(odm.Integer())
+    wait_for_update = odm.Optional(odm.Boolean())
 
 
 @odm.model(index=False, store=False)
