@@ -1,4 +1,5 @@
 # This file contains the loaders for the different components of the system
+
 import importlib
 from string import Template
 
@@ -8,8 +9,6 @@ import time
 import elasticapm
 import yaml
 from assemblyline.common.constants import service_queue_name
-
-from easydict import EasyDict
 
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
@@ -112,15 +111,6 @@ def get_datastore(config=None, archive_access=False):
         raise DataStoreException(f"Invalid datastore type: {config.datastore.type}")
 
 
-def get_dn_parser(config=None):
-    if config is None:
-        config = get_config()
-    try:
-        return load_module_by_path(config.auth.dn_parser)
-    except ImportError:
-        return None
-
-
 def get_cachestore(component, config=None, datastore=None):
     from assemblyline.cachestore import CacheStore
     return CacheStore(component, config=config, datastore=datastore)
@@ -136,30 +126,6 @@ def get_filestore(config=None):
 def get_process_alert_message():
     config = get_config()
     return load_module_by_path(config.core.alerter.process_alert_message)
-
-
-def get_site_specific_apikey_handler(config=None):
-    if config is None:
-        config = get_config()
-    return load_module_by_path(config.auth.apikey_handler)
-
-
-def get_site_specific_dn_handler(config=None):
-    if config is None:
-        config = get_config()
-    return load_module_by_path(config.auth.dn_handler)
-
-
-def get_site_specific_userpass_handler(config=None):
-    if config is None:
-        config = get_config()
-    return load_module_by_path(config.auth.userpass_handler)
-
-
-def get_ui_context(config=None):
-    if config is None:
-        config = get_config()
-    return EasyDict(load_module_by_path(config.ui.context))
 
 
 def get_metrics_sink(redis=None):

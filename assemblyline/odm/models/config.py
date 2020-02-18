@@ -6,6 +6,7 @@ from assemblyline.odm.models.user import USER_TYPES
 
 # TODO: Apply proper index and store values
 
+
 @odm.model()
 class PasswordRequirement(odm.Model):
     lower: bool = odm.Boolean()
@@ -38,6 +39,7 @@ DEFAULT_NOTIFY = {
     "registration_template": None,
     "password_reset_template": None,
 }
+
 
 @odm.model()
 class SMTP(odm.Model):
@@ -131,22 +133,14 @@ class Auth(odm.Model):
     allow_2fa: bool = odm.Boolean()
     allow_apikeys: bool = odm.Boolean()
     allow_u2f: bool = odm.Boolean()
-    apikey_handler: str = odm.Keyword()
-    dn_handler: str = odm.Keyword()
-    dn_parser: str = odm.Keyword()
     internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
-    userpass_handler: str = odm.Keyword()
 
 
 DEFAULT_AUTH = {
     "allow_2fa": True,
     "allow_apikeys": True,
     "allow_u2f": True,
-    "apikey_handler": 'assemblyline_ui.site_specific.validate_apikey',
-    "dn_handler": 'assemblyline_ui.site_specific.validate_dn',
-    "dn_parser": 'assemblyline_ui.site_specific.basic_dn_parser',
-    "internal": DEFAULT_INTERNAL,
-    "userpass_handler": 'assemblyline_ui.site_specific.validate_userpass'
+    "internal": DEFAULT_INTERNAL
 }
 
 
@@ -307,6 +301,7 @@ class ESMetrics(odm.Model):
     cold: int = odm.Integer()
     delete: int = odm.Integer()
     unit = odm.Enum(['d', 'h', 'm'])
+
 
 DEFAULT_ES_METRICS = {
     'hosts': None,
@@ -578,6 +573,7 @@ SERVICE_STAGES = [
     'POST'
 ]
 
+
 # This is the model definition for the System block
 @odm.model()
 class Services(odm.Model):
@@ -675,8 +671,6 @@ class UI(odm.Model):
     allow_url_submissions: bool = odm.Boolean()
     # Should API calls be audited and saved to a seperate log file?
     audit: bool = odm.Boolean()
-    # UI Context
-    context: str = odm.Keyword()
     # Turn on debugging
     debug: bool = odm.Boolean()
     # Which encoding will be used
@@ -713,7 +707,6 @@ DEFAULT_UI = {
     "allow_raw_downloads": True,
     "allow_url_submissions": True,
     "audit": True,
-    "context": 'assemblyline_ui.site_specific.context',
     "debug": False,
     "download_encoding": "cart",
     "email": 'admin@localhost',
@@ -766,6 +759,7 @@ DEFAULT_TAG_TYPES = {
 
     ]
 }
+
 
 # Options regarding all submissions, regardless of their input method
 @odm.model()
