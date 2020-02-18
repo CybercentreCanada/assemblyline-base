@@ -590,6 +590,8 @@ class Services(odm.Model):
     min_service_workers: int = odm.Integer()
     # Different stages of execution in order
     stages: List[str] = odm.List(odm.Keyword())
+    # Substitution variables for image paths (for custom registry support)
+    image_variables: Dict[str, str] = odm.Mapping(odm.Keyword())
 
 
 DEFAULT_SERVICES = {
@@ -597,6 +599,7 @@ DEFAULT_SERVICES = {
     "default_timeout": 60,
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
+    "image_variables": {}
 }
 
 
