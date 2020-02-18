@@ -110,6 +110,7 @@ DEFAULT_USERS = {
 @odm.model()
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean()
+    auto_sync: bool = odm.Boolean()
     base: str = odm.Keyword()
     classification_groups: List[str] = odm.List(odm.Keyword())
     classification_mappings: Dict[str, str] = odm.Mapping(odm.Keyword())
@@ -123,6 +124,7 @@ class LDAP(odm.Model):
 
 DEFAULT_LDAP = {
     "enabled": False,
+    "auto_sync": True,
     "base": "ou=people,dc=assemblyline,dc=local",
     "classification_groups": [],
     "classification_mappings": {},
