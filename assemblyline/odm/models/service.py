@@ -56,6 +56,7 @@ class UpdateConfig(odm.Model):
     run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
     sources = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
     update_interval_seconds = odm.Integer()                       # Update check interval in seconds
+    wait_for_update = odm.Boolean(default=False)
 
 
 @odm.model(index=False, store=False)
