@@ -108,6 +108,35 @@ DEFAULT_USERS = {
 
 
 @odm.model()
+class LDAP(odm.Model):
+    enabled: bool = odm.Boolean()
+    base: str = odm.Keyword()
+    classification_groups: List[str] = odm.List(odm.Keyword())
+    classification_mappings: Dict[str, str] = odm.Mapping(odm.Keyword())
+    email_field: str = odm.Keyword()
+    image_field: str = odm.Keyword()
+    image_format: str = odm.Keyword()
+    name_field: str = odm.Keyword()
+    uid_field: str = odm.Keyword()
+    uri: str = odm.Keyword()
+
+
+DEFAULT_LDAP = {
+    "enabled": False,
+    "base": "ou=people,dc=assemblyline,dc=local",
+    "classification_groups": [],
+    "classification_mappings": {},
+    "email_field": "mail",
+    "image_field": "jpegPhoto",
+    "image_format": "jpeg",
+    "name_field": "cn",
+    "uid_field": "uid",
+    "uri": "ldap://localhost:389",
+
+}
+
+
+@odm.model()
 class Internal(odm.Model):
     enabled: bool = odm.Boolean()
     failure_ttl: int = odm.Integer()
@@ -134,13 +163,15 @@ class Auth(odm.Model):
     allow_apikeys: bool = odm.Boolean()
     allow_u2f: bool = odm.Boolean()
     internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
+    ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP)
 
 
 DEFAULT_AUTH = {
     "allow_2fa": True,
     "allow_apikeys": True,
     "allow_u2f": True,
-    "internal": DEFAULT_INTERNAL
+    "internal": DEFAULT_INTERNAL,
+    "ldap": DEFAULT_LDAP,
 }
 
 

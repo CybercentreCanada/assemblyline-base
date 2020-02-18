@@ -7,6 +7,7 @@ Classification = forge.get_classification()
 ENCODINGS = {"cart", "raw"}
 VIEWS = {"report", "details"}
 
+
 @odm.model(index=False, store=False)
 class UserSettings(odm.Model):                                      # User's default settings
     classification = odm.Classification(
