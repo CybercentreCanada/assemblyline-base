@@ -5,10 +5,10 @@ RUN passwd -l root
 
 # Get required apt packages
 RUN apt-get update
-RUN apt-get install -yy build-essential libffi-dev libfuzzy-dev
+RUN apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev
 
 # Add assemblyline user
-RUN useradd -b /var/lib -U -m assemblyline
+RUN useradd -s /bin/bash -b /var/lib -U -m assemblyline
 
 # Create assemblyline config directory
 RUN mkdir -p /etc/assemblyline
