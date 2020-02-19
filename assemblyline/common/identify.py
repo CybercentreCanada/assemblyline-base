@@ -236,6 +236,7 @@ sl_patterns = [
     ['linux/elf64', r'^elf 64-bit lsb +executable'],
     ['linux/so32', r'^elf 32-bit lsb +shared object'],
     ['linux/so64', r'^elf 64-bit lsb +shared object'],
+    ['mach-o', r'^Mach-O'],
     ['7-zip', r'^7-zip archive data'],
     ['ace', r'^ACE archive data'],
     ['bzip2', r'^bzip2 compressed data'],
@@ -297,6 +298,7 @@ sl_to_tl = {
     'linux/elf64': 'executable',
     'linux/so32': 'executable',
     'linux/so64': 'executable',
+    'mach-o': 'executable',
     '7-zip': 'archive',
     'bzip2': 'archive',
     'cabinet': 'archive',
@@ -346,6 +348,7 @@ trusted_mimes = {
     'message/rfc822': 'document/email',
     'text/calendar': 'text/calendar',
     'image/svg+xml': 'image/svg',
+    'application/x-mach-binary': 'executable/mach-o',
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
@@ -584,6 +587,7 @@ def zip_ident(path: str, fallback: str = None) -> str:
     tot_class = 0
     tot_jar = 0
 
+    is_ipa = False
     is_jar = False
     is_word = False
     is_excel = False
@@ -601,6 +605,8 @@ def zip_ident(path: str, fallback: str = None) -> str:
             android_manifest = True
         elif file_name == 'classes.dex':
             android_dex = True
+        elif file_name.startswith('Payload/') and file_name.endswith(".app/Info.plist"):
+            is_ipa = True
         elif file_name.endswith(".class"):
             tot_class += 1
         elif file_name.endswith(".jar"):
@@ -625,6 +631,8 @@ def zip_ident(path: str, fallback: str = None) -> str:
 
     if is_jar and android_manifest and android_dex:
         return 'android/apk'
+    elif is_ipa:
+        return 'ios/ipa'
     elif is_jar:
         return 'java/jar'
     elif (doc_props or doc_rels) and doc_types:
