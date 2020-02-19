@@ -620,7 +620,7 @@ class Services(odm.Model):
     # Different stages of execution in order
     stages: List[str] = odm.List(odm.Keyword())
     # Substitution variables for image paths (for custom registry support)
-    image_variables: Dict[str, str] = odm.Mapping(odm.Keyword())
+    image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
 
 
 DEFAULT_SERVICES = {
