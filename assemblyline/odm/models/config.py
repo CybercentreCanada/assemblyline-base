@@ -160,12 +160,58 @@ DEFAULT_INTERNAL = {
 
 
 @odm.model()
+class OAuthProvider(odm.Model):
+    name: str = odm.Keyword()
+    client_id: str = odm.Keyword()
+    client_secret: str = odm.Keyword()
+    request_token_url: str = odm.Optional(odm.Keyword())
+    request_token_params: str = odm.Optional(odm.Keyword())
+    access_token_url: str = odm.Optional(odm.Keyword())
+    access_token_params: str = odm.Optional(odm.Keyword())
+    authorize_url: str = odm.Optional(odm.Keyword())
+    authorize_params: str = odm.Optional(odm.Keyword())
+    api_base_url: str = odm.Optional(odm.Keyword())
+    client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
+    user_get: str = odm.Keyword()
+
+
+DEFAULT_OAUTH_PROVIDER = {
+    "name": "azure",
+    "client_id": "ID_OF_YOUR_CLIENT",
+    "client_secret": "SECRET_OF_YOUR_CLIENT",
+    "request_token_url": None,
+    "request_token_params": None,
+    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
+    "access_token_params": None,
+    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
+    "authorize_params": None,
+    "api_base_url": 'https://graph.microsoft.com',
+    "client_kwargs": {"scope": "openid email profile"},
+    "user_get": "User.Read"
+
+}
+
+
+@odm.model()
+class OAuth(odm.Model):
+    enabled: bool = odm.Boolean()
+    providers: List[OAuthProvider] = odm.List(odm.Compound(OAuthProvider), default=[DEFAULT_OAUTH_PROVIDER])
+
+
+DEFAULT_OAUTH = {
+    "enabled": False,
+    "providers": [DEFAULT_OAUTH_PROVIDER]
+}
+
+
+@odm.model()
 class Auth(odm.Model):
     allow_2fa: bool = odm.Boolean()
     allow_apikeys: bool = odm.Boolean()
     allow_u2f: bool = odm.Boolean()
     internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
     ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP)
+    oauth: OAuth = odm.Compound(OAuth, default=DEFAULT_OAUTH)
 
 
 DEFAULT_AUTH = {
@@ -174,6 +220,7 @@ DEFAULT_AUTH = {
     "allow_u2f": True,
     "internal": DEFAULT_INTERNAL,
     "ldap": DEFAULT_LDAP,
+    "oauth": DEFAULT_OAUTH
 }
 
 
