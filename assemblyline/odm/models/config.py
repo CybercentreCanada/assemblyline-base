@@ -163,8 +163,8 @@ DEFAULT_INTERNAL = {
 class OAuthProvider(odm.Model):
     auto_create: str = odm.Boolean(default=True)
     auto_sync: str = odm.Boolean(default=False)
-    client_id: str = odm.Keyword()
-    client_secret: str = odm.Keyword()
+    client_id: str = odm.Optional(odm.Keyword())
+    client_secret: str = odm.Optional(odm.Keyword())
     request_token_url: str = odm.Optional(odm.Keyword())
     request_token_params: str = odm.Optional(odm.Keyword())
     access_token_url: str = odm.Optional(odm.Keyword())
@@ -179,8 +179,8 @@ class OAuthProvider(odm.Model):
 DEFAULT_OAUTH_PROVIDER_AZURE = {
     "auto_create": True,
     "auto_sync": False,
-    "client_id": "ID_OF_YOUR_CLIENT",
-    "client_secret": "SECRET_OF_YOUR_CLIENT",
+    "client_id": None,
+    "client_secret": None,
     "request_token_url": None,
     "request_token_params": None,
     "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
@@ -196,8 +196,8 @@ DEFAULT_OAUTH_PROVIDER_AZURE = {
 DEFAULT_OAUTH_PROVIDER_GOOGLE = {
     "auto_create": True,
     "auto_sync": False,
-    "client_id": "ID_OF_YOUR_CLIENT",
-    "client_secret": "SECRET_OF_YOUR_CLIENT",
+    "client_id": None,
+    "client_secret": None,
     "request_token_url": None,
     "request_token_params": None,
     "access_token_url": 'https://oauth2.googleapis.com/token',
