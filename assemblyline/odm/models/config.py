@@ -162,6 +162,8 @@ DEFAULT_INTERNAL = {
 @odm.model()
 class OAuthProvider(odm.Model):
     name: str = odm.Keyword()
+    auto_create: str = odm.Boolean(default=True)
+    auto_sync: str = odm.Boolean(default=False)
     client_id: str = odm.Keyword()
     client_secret: str = odm.Keyword()
     request_token_url: str = odm.Optional(odm.Keyword())
@@ -177,6 +179,8 @@ class OAuthProvider(odm.Model):
 
 DEFAULT_OAUTH_PROVIDER = {
     "name": "azure",
+    "auto_create": True,
+    "auto_sync": False,
     "client_id": "ID_OF_YOUR_CLIENT",
     "client_secret": "SECRET_OF_YOUR_CLIENT",
     "request_token_url": None,
