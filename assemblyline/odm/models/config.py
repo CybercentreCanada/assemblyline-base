@@ -161,7 +161,6 @@ DEFAULT_INTERNAL = {
 
 @odm.model()
 class OAuthProvider(odm.Model):
-    name: str = odm.Keyword()
     auto_create: str = odm.Boolean(default=True)
     auto_sync: str = odm.Boolean(default=False)
     client_id: str = odm.Keyword()
@@ -177,8 +176,7 @@ class OAuthProvider(odm.Model):
     user_get: str = odm.Keyword()
 
 
-DEFAULT_OAUTH_PROVIDER = {
-    "name": "azure",
+DEFAULT_OAUTH_PROVIDER_AZURE = {
     "auto_create": True,
     "auto_sync": False,
     "client_id": "ID_OF_YOUR_CLIENT",
@@ -189,22 +187,44 @@ DEFAULT_OAUTH_PROVIDER = {
     "access_token_params": None,
     "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
     "authorize_params": None,
-    "api_base_url": 'https://graph.microsoft.com',
+    "api_base_url": 'https://login.microsoft.com/common/',
     "client_kwargs": {"scope": "openid email profile"},
-    "user_get": "User.Read"
+    "user_get": "openid/userinfo"
 
+}
+
+DEFAULT_OAUTH_PROVIDER_GOOGLE = {
+    "auto_create": True,
+    "auto_sync": False,
+    "client_id": "ID_OF_YOUR_CLIENT",
+    "client_secret": "SECRET_OF_YOUR_CLIENT",
+    "request_token_url": None,
+    "request_token_params": None,
+    "access_token_url": 'https://oauth2.googleapis.com/token',
+    "access_token_params": None,
+    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
+    "authorize_params": None,
+    "api_base_url": 'https://openidconnect.googleapis.com/',
+    "client_kwargs": {"scope": "openid email profile"},
+    "user_get": "v1/userinfo"
+
+}
+
+DEFAULT_OAUTH_PROVIDERS = {
+    'azure_ad': DEFAULT_OAUTH_PROVIDER_AZURE,
+    'google': DEFAULT_OAUTH_PROVIDER_GOOGLE,
 }
 
 
 @odm.model()
 class OAuth(odm.Model):
     enabled: bool = odm.Boolean()
-    providers: List[OAuthProvider] = odm.List(odm.Compound(OAuthProvider), default=[DEFAULT_OAUTH_PROVIDER])
+    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider), default=DEFAULT_OAUTH_PROVIDERS)
 
 
 DEFAULT_OAUTH = {
     "enabled": False,
-    "providers": [DEFAULT_OAUTH_PROVIDER]
+    "providers": DEFAULT_OAUTH_PROVIDERS
 }
 
 
