@@ -33,6 +33,6 @@ class User(odm.Model):
     password = odm.Keyword(index=False, store=False)                      # BCrypt hash of the user's password
     submission_quota = odm.Integer(default=5, store=False)                # Maximum number of concurrent submissions
     type = odm.List(odm.Enum(values=USER_TYPES), default=['user'])        # Type of user
-    u2f_devices = odm.Mapping(odm.Keyword(), index=False,
-                              store=False, default={})                    # Map of u2f security tokens
+    security_tokens = odm.Mapping(odm.Keyword(), index=False,
+                                  store=False, default={})                # Map of security tokens
     uname = odm.Keyword(copyto="__text__")                                # Username
