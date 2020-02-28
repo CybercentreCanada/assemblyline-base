@@ -192,7 +192,6 @@ DEFAULT_OAUTH_PROVIDER_AZURE = {
     "api_base_url": 'https://login.microsoft.com/common/',
     "client_kwargs": {"scope": "openid email profile"},
     "user_get": "openid/userinfo"
-
 }
 
 DEFAULT_OAUTH_PROVIDER_GOOGLE = {
@@ -209,10 +208,26 @@ DEFAULT_OAUTH_PROVIDER_GOOGLE = {
     "api_base_url": 'https://openidconnect.googleapis.com/',
     "client_kwargs": {"scope": "openid email profile"},
     "user_get": "v1/userinfo"
+}
 
+DEFAULT_OAUTH_PROVIDER_AUTH_ZERO = {
+    "auto_create": True,
+    "auto_sync": False,
+    "client_id": None,
+    "client_secret": None,
+    "request_token_url": None,
+    "request_token_params": None,
+    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
+    "access_token_params": None,
+    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
+    "authorize_params": None,
+    "api_base_url": 'https://{TENANT}.auth0.com/',
+    "client_kwargs": {"scope": "openid email profile"},
+    "user_get": "userinfo"
 }
 
 DEFAULT_OAUTH_PROVIDERS = {
+    'auth0': DEFAULT_OAUTH_PROVIDER_AUTH_ZERO,
     'azure_ad': DEFAULT_OAUTH_PROVIDER_AZURE,
     'google': DEFAULT_OAUTH_PROVIDER_GOOGLE,
 }
