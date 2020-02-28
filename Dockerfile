@@ -6,7 +6,7 @@ ARG version
 RUN passwd -l root
 
 # Get required apt packages
-RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-dev libmagic1 && rm -rf /var/lib/apt/lists/*
 
 # Install assemblyline base
 RUN pip3 install "urllib3<1.25,>=1.21.1"
