@@ -236,11 +236,13 @@ DEFAULT_OAUTH_PROVIDERS = {
 @odm.model()
 class OAuth(odm.Model):
     enabled: bool = odm.Boolean()
+    gravatar_enabled: bool = odm.Boolean()
     providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider), default=DEFAULT_OAUTH_PROVIDERS)
 
 
 DEFAULT_OAUTH = {
     "enabled": False,
+    "gravatar_enabled": True,
     "providers": DEFAULT_OAUTH_PROVIDERS
 }
 
