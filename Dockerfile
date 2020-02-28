@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-de
 RUN pip3 install "urllib3<1.25,>=1.21.1"
 RUN pip3 install assemblyline==$version
 
+# clear pip cache
+RUN rm -rf ~/.cache/pip
+
 # Add assemblyline user
 RUN useradd -b /var/lib -U -m assemblyline
 

@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-de
 RUN pip3 install assemblyline assemblyline-core assemblyline-ui assemblyline-service-server
 RUN pip3 uninstall -y assemblyline assemblyline-core assemblyline-ui assemblyline-service-server
 
+# clear pip cache
+RUN rm -rf ~/.cache/pip
+
 # Create Assemblyline source directory
 RUN mkdir -p /etc/assemblyline
 RUN mkdir -p /var/cache/assemblyline
