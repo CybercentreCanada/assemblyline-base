@@ -1,4 +1,4 @@
-FROM python:3.7-slim-buster
+FROM python:3.7-slim-stretch
 
 # Make sure root account is locked so 'su' commands fail all the time
 RUN passwd -l root
