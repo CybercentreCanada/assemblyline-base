@@ -113,9 +113,9 @@ class LDAP(odm.Model):
     auto_create: bool = odm.Boolean()
     auto_sync: bool = odm.Boolean()
     base: str = odm.Keyword()
-    classification_groups: List[str] = odm.List(odm.Keyword())
-    classification_mappings: Dict[str, str] = odm.Mapping(odm.Keyword())
+    classification_mappings: Dict[str, str] = odm.Any()
     email_field: str = odm.Keyword()
+    group_lookup_query: str = odm.Keyword()
     image_field: str = odm.Keyword()
     image_format: str = odm.Keyword()
     name_field: str = odm.Keyword()
@@ -128,9 +128,9 @@ DEFAULT_LDAP = {
     "auto_create": True,
     "auto_sync": True,
     "base": "ou=people,dc=assemblyline,dc=local",
-    "classification_groups": [],
     "classification_mappings": {},
     "email_field": "mail",
+    "group_lookup_query": "(&(objectClass=Group)(member=%s))",
     "image_field": "jpegPhoto",
     "image_format": "jpeg",
     "name_field": "cn",
