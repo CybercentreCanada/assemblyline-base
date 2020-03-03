@@ -110,6 +110,7 @@ DEFAULT_USERS = {
 @odm.model()
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean()
+    admin_dn: str = odm.Optional(odm.Keyword())
     auto_create: bool = odm.Boolean()
     auto_sync: bool = odm.Boolean()
     base: str = odm.Keyword()
@@ -119,12 +120,15 @@ class LDAP(odm.Model):
     image_field: str = odm.Keyword()
     image_format: str = odm.Keyword()
     name_field: str = odm.Keyword()
+    signature_importer_dn: str = odm.Optional(odm.Keyword())
+    signature_manager_dn: str = odm.Optional(odm.Keyword())
     uid_field: str = odm.Keyword()
     uri: str = odm.Keyword()
 
 
 DEFAULT_LDAP = {
     "enabled": False,
+    "admin_dn": None,
     "auto_create": True,
     "auto_sync": True,
     "base": "ou=people,dc=assemblyline,dc=local",
@@ -134,6 +138,8 @@ DEFAULT_LDAP = {
     "image_field": "jpegPhoto",
     "image_format": "jpeg",
     "name_field": "cn",
+    "signature_importer_dn": None,
+    "signature_manager_dn": None,
     "uid_field": "uid",
     "uri": "ldap://localhost:389",
 

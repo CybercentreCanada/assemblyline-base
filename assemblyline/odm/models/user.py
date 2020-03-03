@@ -23,7 +23,7 @@ class User(odm.Model):
     classification = odm.Classification(
         is_user_classification=True, copyto="__text__",
         default=Classification.UNRESTRICTED)                              # Max classification for the user
-    dn = odm.Optional(odm.Keyword(store=False, copyto="__text__"))        # User certificate DN
+    dn = odm.Optional(odm.Keyword(store=False, copyto="__text__"))        # User ldap DN
     email = odm.Optional(odm.Keyword(copyto="__text__"))                  # User's email address
     groups = odm.List(odm.Keyword(), copyto="__text__",
                       default=["USERS"])                                  # List of groups the user submits to
