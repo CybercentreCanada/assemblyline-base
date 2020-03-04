@@ -6,14 +6,13 @@ ARG version
 RUN passwd -l root
 
 # Get required apt packages
-RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-dev libmagic1 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+  && apt-get install -yy build-essential libffi-dev libfuzzy-dev libmagic1 \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install assemblyline base
-RUN pip3 install "urllib3<1.25,>=1.21.1"
-RUN pip3 install assemblyline==$version
-
-# clear pip cache
-RUN rm -rf ~/.cache/pip
+RUN pip3 install "urllib3<1.25,>=1.21.1" && RUN rm -rf ~/.cache/pip
+RUN pip3 install assemblyline==$version && RUN rm -rf ~/.cache/pip
 
 # Add assemblyline user
 RUN useradd -b /var/lib -U -m assemblyline
