@@ -1,18 +1,26 @@
-FROM python:3.7-slim-stretch
+FROM python:3.7-slim-stretch AS base
 
-ARG version
+# Get required apt packages
+RUN apt-get update \
+  && apt-get install -yy libffi6 libfuzzy2 libmagic1 \
+  && rm -rf /var/lib/apt/lists/*
 
 # Make sure root account is locked so 'su' commands fail all the time
 RUN passwd -l root
 
+FROM base AS builder
+ARG version
+
 # Get required apt packages
 RUN apt-get update \
-  && apt-get install -yy build-essential libffi-dev libfuzzy-dev libmagic1 \
+  && apt-get install -yy build-essential libffi-dev libfuzzy-dev \
   && rm -rf /var/lib/apt/lists/*
 
 # Install assemblyline base
-RUN pip3 install "urllib3<1.25,>=1.21.1" && rm -rf ~/.cache/pip
-RUN pip3 install assemblyline==$version && rm -rf ~/.cache/pip
+RUN pip3 install --user "urllib3<1.25,>=1.21.1" && rm -rf ~/.cache/pip
+RUN pip3 install --user assemblyline==$version && rm -rf ~/.cache/pip
+
+FROM base
 
 # Add assemblyline user
 RUN useradd -b /var/lib -U -m assemblyline
@@ -37,8 +45,11 @@ RUN mkdir -p /var/log/assemblyline
 RUN chmod 770 /var/log/assemblyline
 RUN chown assemblyline:assemblyline /var/log/assemblyline
 
+# Install assemblyline base
+COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
+ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
+
 # Switch to assemblyline user
 USER assemblyline
 WORKDIR /var/lib/assemblyline
-
 CMD /bin/bash
