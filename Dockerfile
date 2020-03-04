@@ -11,8 +11,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Install assemblyline base
-RUN pip3 install "urllib3<1.25,>=1.21.1" && RUN rm -rf ~/.cache/pip
-RUN pip3 install assemblyline==$version && RUN rm -rf ~/.cache/pip
+RUN pip3 install "urllib3<1.25,>=1.21.1" && rm -rf ~/.cache/pip
+RUN pip3 install assemblyline==$version && rm -rf ~/.cache/pip
 
 # Add assemblyline user
 RUN useradd -b /var/lib -U -m assemblyline
