@@ -252,6 +252,9 @@ class ESCollection(Collection):
         else:
             return False
 
+    def bulk(self, operations):
+        return self.with_retries(self.datastore.client.bulk, body="\n".join(operations))
+
     def commit(self):
         self.with_retries(self.datastore.client.indices.refresh, self.name)
         self.with_retries(self.datastore.client.indices.clear_cache, self.name)

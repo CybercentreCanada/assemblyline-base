@@ -86,6 +86,14 @@ class Collection(object):
 
         return data
 
+    def bulk(self, operations):
+        """
+        This function should be overloaded to perform a bulk operations on the datastore.
+
+        :return: Results of the bulk operation
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
     def commit(self):
         """
         This function should be overloaded to perform a commit of the index data of all the different hosts
