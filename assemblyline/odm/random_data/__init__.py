@@ -277,6 +277,7 @@ def create_users(ds, log=None):
     user_pass = os.getenv("DEV_USER_PASS", 'user') or 'user'
     user_data = User({
         "agrees_with_tos": "NOW",
+        "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(admin_pass)}},
         "classification": "RESTRICTED",
         "name": "Admin user",
         "password": get_password_hash(admin_pass),
@@ -289,6 +290,7 @@ def create_users(ds, log=None):
 
     user_data = User({
         "name": "user",
+        "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(user_pass)}},
         "password": get_password_hash(user_pass),
         "uname": "user"})
     ds.user.save('user', user_data)
