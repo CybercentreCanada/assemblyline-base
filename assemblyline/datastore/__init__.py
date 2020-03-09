@@ -25,6 +25,25 @@ def get_object(base, key):
         return get_object(base[current], child)
 
 
+class BulkPlan(object):
+    def __init__(self, index, model=None):
+        self.index = index
+        self.model = model
+        self.operations = []
+
+    def add_delete_operation(self, doc_id):
+        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+
+    def add_insert_operation(self, doc_id, doc):
+        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+
+    def add_upsert_operation(self, doc_id, doc):
+        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+
+    def get_plan_data(self):
+        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+
+
 class Collection(object):
     DEFAULT_ROW_SIZE = 25
     DEFAULT_SEARCH_FIELD = '__text__'
@@ -54,6 +73,7 @@ class Collection(object):
         self.name = name
         self.model_class = model_class
         self._ensure_collection()
+        self.bulk_plan_class = BulkPlan
 
     @staticmethod
     def _get_obj_value(obj, field):
@@ -86,13 +106,34 @@ class Collection(object):
 
         return data
 
-    def bulk(self, operations):
+    def _bulk(self, operations):
         """
         This function should be overloaded to perform a bulk operations on the datastore.
 
         :return: Results of the bulk operation
         """
+
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    def bulk(self, operations):
+        """
+        Receives a bulk plan and executes the plan.
+
+        :return: Results of the bulk operation
+        """
+
+        if not isinstance(operations, BulkPlan):
+            return TypeError("Operations must be of type BulkPlan")
+
+        return self._bulk(operations.get_plan_data())
+
+    def get_bulk_plan(self):
+        """
+        Creates a BulkPlan tailored for the current datastore
+
+        :return: The BulkPlan object
+        """
+        return self.bulk_plan_class(self.name, model=self.model_class)
 
     def commit(self):
         """

@@ -13,7 +13,7 @@ from assemblyline.common import forge
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.uid import get_random_id
-from assemblyline.datastore import Collection, BaseStore, log
+from assemblyline.datastore import Collection, BaseStore, log, BulkPlan
 from assemblyline.datastore.exceptions import SearchException, SearchRetryException, MultiKeyError, ILMException
 from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
     default_dynamic_templates
@@ -83,6 +83,43 @@ class RetryableIterator(object):
         return self.collection.with_retries(self._iter.__next__)
 
 
+class ElasticBulkPlan(BulkPlan):
+    def __init__(self, index, model=None):
+        super().__init__(index, model)
+
+    def add_delete_operation(self, doc_id):
+        self.operations.append(json.dumps({"delete": {"_index": self.index, "_id": doc_id}}))
+
+    def add_insert_operation(self, doc_id, doc):
+        if self.model:
+            saved_doc = self.model(doc).as_primitives(hidden_fields=True)
+        else:
+            if not isinstance(doc, dict):
+                saved_doc = {'__non_doc_raw__': doc}
+            else:
+                saved_doc = deepcopy(doc)
+        saved_doc['id'] = doc_id
+
+        self.operations.append(json.dumps({"create": {"_index": self.index, "_id": doc_id}}))
+        self.operations.append(json.dumps(saved_doc))
+
+    def add_upsert_operation(self, doc_id, doc):
+        if self.model:
+            saved_doc = self.model(doc).as_primitives(hidden_fields=True)
+        else:
+            if not isinstance(doc, dict):
+                saved_doc = {'__non_doc_raw__': doc}
+            else:
+                saved_doc = deepcopy(doc)
+        saved_doc['id'] = doc_id
+
+        self.operations.append(json.dumps({"update": {"_index": self.index, "_id": doc_id}}))
+        self.operations.append(json.dumps({"doc": saved_doc, "doc_as_upsert": True}))
+
+    def get_plan_data(self):
+        return "\n".join(self.operations)
+
+
 class ESCollection(Collection):
     DEFAULT_SORT = [{'_id': 'asc'}]
     MAX_SEARCH_ROWS = 500
@@ -126,6 +163,7 @@ class ESCollection(Collection):
 
         super().__init__(datastore, name, model_class=model_class)
 
+        self.bulk_plan_class = ElasticBulkPlan
         self.stored_fields = {}
         if model_class:
             for name, field in model_class.flat_fields().items():
@@ -252,8 +290,8 @@ class ESCollection(Collection):
         else:
             return False
 
-    def bulk(self, operations):
-        return self.with_retries(self.datastore.client.bulk, body="\n".join(operations))
+    def _bulk(self, operations):
+        return self.with_retries(self.datastore.client.bulk, body=operations)
 
     def commit(self):
         self.with_retries(self.datastore.client.indices.refresh, self.name)
