@@ -35,7 +35,7 @@ pipelines:
           image: python:3.8
           script:
             - pip install -U wheel cython pip
-            - python setup.py sdist bdist_wheel
+            - python setup.py bdist_wheel
             - ls dist/
           artifacts:
             - dist/*
