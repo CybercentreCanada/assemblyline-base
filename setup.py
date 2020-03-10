@@ -29,7 +29,7 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
     keywords="assemblyline malware gc canada cse-cst cse cst cyber cccs",
-    packages=find_packages(exclude=['test/*']),
+    packages=find_packages(exclude=['test', 'test/*']),
     ext_modules=cythonize("assemblyline/**/*.pyx"),
     install_requires=[
         'arrow==0.14.4',
