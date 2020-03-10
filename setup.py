@@ -1,7 +1,17 @@
 import os
 
-from setuptools import setup, find_packages
-from Cython.Build import cythonize
+from setuptools import setup, find_packages, Extension
+
+try:
+    from Cython.Build import cythonize
+    USE_CYTHON = True
+    extension = '.pyx'
+except ImportError:
+    # If we don't have cython, its fine as long as we are installing from an sdist that already
+    # has the pyx files cythonized into c files
+    USE_CYTHON = False
+    extension = '.c'
+
 
 # For development and local builds use this version number, but for real builds replace it
 # with the tag found in the environment
@@ -9,6 +19,15 @@ package_version = "4.0.0.dev0"
 for variable_name in ['BITBUCKET_TAG']:
     package_version = os.environ.get(variable_name, package_version)
     package_version = package_version.lstrip('v')
+
+
+# Mark all the modules that need to be compiled here
+extensions = [
+    Extension('assemblyline.common.frequency', [os.path.join('assemblyline', 'common', 'frequency' + extension)])
+]
+
+if USE_CYTHON:
+    extensions = cythonize(extensions)
 
 
 setup(
@@ -30,7 +49,7 @@ setup(
     ],
     keywords="assemblyline malware gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test', 'test/*']),
-    ext_modules=cythonize("assemblyline/**/*.pyx"),
+    ext_modules=extensions,
     install_requires=[
         'arrow==0.14.4',
         'urllib3<1.25',
