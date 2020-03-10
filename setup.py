@@ -1,6 +1,7 @@
 import os
 
 from setuptools import setup, find_packages
+from Cython.Build import cythonize
 
 # For development and local builds use this version number, but for real builds replace it
 # with the tag found in the environment
@@ -29,6 +30,7 @@ setup(
     ],
     keywords="assemblyline malware gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test/*']),
+    ext_modules=cythonize("assemblyline/**/*.pyx"),
     install_requires=[
         'arrow==0.14.4',
         'urllib3<1.25',
