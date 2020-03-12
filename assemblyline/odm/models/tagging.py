@@ -1,7 +1,7 @@
 from assemblyline import odm
 
 
-## Model definition
+# Model definition
 @odm.model(index=True, store=False)
 class Tagging(odm.Model):
     @odm.model(index=True, store=False)
@@ -78,6 +78,11 @@ class Tagging(odm.Model):
     @odm.model(index=True, store=False)
     class File(odm.Model):
         @odm.model(index=True, store=False)
+        class FileDate(odm.Model):
+            creation = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            last_modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
         class FileName(odm.Model):
             anomaly = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             extracted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -135,11 +140,6 @@ class Tagging(odm.Model):
         @odm.model(index=True, store=False)
         class FileOLE(odm.Model):
             @odm.model(index=True, store=False)
-            class FileOLEDate(odm.Model):
-                creation = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-                last_modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-            @odm.model(index=True, store=False)
             class FileOLEMacro(odm.Model):
                 sha256 = odm.Optional(odm.List(odm.SHA256(copyto="__text__")))
                 suspicious_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -158,7 +158,6 @@ class Tagging(odm.Model):
                 subject = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 title = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
-            date = odm.Optional(odm.Compound(FileOLEDate))
             macro = odm.Optional(odm.Compound(FileOLEMacro))
             summary = odm.Optional(odm.Compound(FileOLESummary))
             clsid = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -218,8 +217,6 @@ class Tagging(odm.Model):
         class FilePDF(odm.Model):
             @odm.model(index=True, store=False)
             class FilePDFDate(odm.Model):
-                creation = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-                last_modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 pdfx = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 source_modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -323,6 +320,7 @@ class Tagging(odm.Model):
         behavior = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         compiler = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         config = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+        date = odm.Optional(odm.Compound(FileDate))
         lib = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         name = odm.Optional(odm.Compound(FileName))
         path = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
