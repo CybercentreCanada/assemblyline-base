@@ -16,6 +16,7 @@ pipelines:
             - cp test/bitbucket/config.yml /etc/assemblyline
             - apt update
             - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
+            - pip install -U pip cython
             - pip install -e . -r test/requirements.txt
             - pytest -rsx -vv
           services: &services
@@ -33,8 +34,8 @@ pipelines:
           name: Build Package
           image: python:3.8
           script:
-            - pip install wheel
-            - python setup.py bdist_wheel
+            - pip install -U wheel cython pip
+            - python setup.py sdist
             - ls dist/
           artifacts:
             - dist/*
@@ -46,7 +47,7 @@ pipelines:
               - rm -rf assemblyline setup.py  # Make sure we are running on the package from the prior build
               - apt update
               - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
-              - pip install -f dist assemblyline
+              - pip install -f dist "assemblyline==${BITBUCKET_TAG#v}"
               - mkdir -p /etc/assemblyline/
               - mkdir -p /var/cache/assemblyline/
               - cp test/bitbucket/config.yml /etc/assemblyline
