@@ -59,10 +59,13 @@ tag_map = {
         "phone_number": ['NET_PHONE_NUMBER'],
     },
     "file": {
-        "api_string": ['WIN_API_STRING'],
         "behavior": ['FILE_SUMMARY'],
         "compiler": ['INFO_COMPILER'],
         "config": ['FILE_CONFIG'],
+        "date": {
+            "creation": ['OLE_CREATION_TIME', 'PDF_DATE_CREATION'],
+            "last_modified": ['OLE_LASTMOD_TIME', 'PDF_DATE_LASTMODIFIED']
+        },
         "lib": ['INFO_LIBS'],
         "name": {
             "anomaly": ['FILENAME_ANOMALIES'],
@@ -73,7 +76,8 @@ tag_map = {
             "tagcheck": ['TAGCHECK_RULE'],
             "yara": ['FILE_YARA_RULE'],
         },
-        "string":{
+        "string": {
+            "api": ['WIN_API_STRING'],
             "blacklisted": ['PESTUDIO_BLACKLIST_STRING'],
             "decoded": ['FILE_DECODED_STRING'],
             "extracted": ['FILE_STRING'],
@@ -110,10 +114,6 @@ tag_map = {
         },
         "ole": {
             "clsid": ['OLE_CLSID'],
-            "date": {
-                "creation": ['OLE_CREATION_TIME'],
-                "last_modified": ['OLE_LASTMOD_TIME'],
-            },
             "dde_link": ['OLE_DDE_LINK'],
             "fib_timestamp": ['OLE_FIB_TIMESTAMP'],
             "macro": {
@@ -170,8 +170,6 @@ tag_map = {
         },
         "pdf": {
             "date": {
-                "creation": ['PDF_DATE_CREATION'],
-                "last_modified": ['PDF_DATE_LASTMODIFIED'],
                 "modified": ['PDF_DATE_MOD'],
                 "pdfx": ['PDF_DATE_PDFX'],
                 "source_modified": ['PDF_DATE_SOURCEMODIFIED'],

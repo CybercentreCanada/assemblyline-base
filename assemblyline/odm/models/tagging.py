@@ -95,6 +95,7 @@ class Tagging(odm.Model):
 
         @odm.model(index=True, store=False)
         class FileStrings(odm.Model):
+            api = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             blacklisted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             decoded = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             extracted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -316,7 +317,6 @@ class Tagging(odm.Model):
 
             tags_ssdeep = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")))
 
-        api_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         behavior = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         compiler = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         config = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
