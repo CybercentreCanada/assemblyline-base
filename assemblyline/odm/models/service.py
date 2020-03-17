@@ -46,6 +46,7 @@ class UpdateSource(odm.Model):
     uri = odm.Keyword()
     username = odm.Optional(odm.Keyword())
     headers = odm.List(odm.Compound(EnvironmentVariable), default=[])
+    default_classification = odm.Classification(default=Classification.UNRESTRICTED)
 
 
 @odm.model(index=False, store=False)

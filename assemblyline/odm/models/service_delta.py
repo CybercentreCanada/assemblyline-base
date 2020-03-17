@@ -27,6 +27,7 @@ class UpdateSourceDelta(odm.Model):
     private_key = odm.Optional(odm.Keyword())
     uri = odm.Optional(odm.Keyword())
     username = odm.Optional(odm.Keyword())
+    default_classification = odm.Optional(odm.Classification())
 
 
 @odm.model(index=False, store=False)
