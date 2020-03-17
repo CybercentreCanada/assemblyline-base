@@ -21,6 +21,7 @@ class TransportAzure(Transport):
 
     def __init__(self, base=None, access_key=None, host=None):
         self.log = logging.getLogger('assemblyline.transport.azure')
+        self.read_only = False
 
         # Data
         self.blob_container = base.strip("/")
@@ -36,7 +37,11 @@ class TransportAzure(Transport):
         try:
             self.with_retries(self.container_client.get_container_properties)
         except ResourceNotFoundError:
-            self.with_retries(self.container_client.create_container)
+            try:
+                self.with_retries(self.container_client.create_container)
+            except ResourceNotFoundError:
+                self.log.info('Failed to create container, we\'re most likely in read only mode')
+                self.read_only = True
 
         def azure_normalize(path):
             # flatten path to just the basename
@@ -71,6 +76,9 @@ class TransportAzure(Transport):
                 retries += 1
 
     def delete(self, path):
+        if self.read_only:
+            raise TransportException("READ ONLY TRANSPORT: Method not allowed")
+
         key = self.normalize(path)
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
         self.with_retries(blob_client.download_blob)
@@ -105,6 +113,9 @@ class TransportAzure(Transport):
             blob_data.readinto(my_blob)
 
     def upload(self, src_path, dst_path):
+        if self.read_only:
+            raise TransportException("READ ONLY TRANSPORT: Method not allowed")
+
         key = self.normalize(dst_path)
 
         # if file exists already, it will be overwritten
@@ -126,6 +137,9 @@ class TransportAzure(Transport):
         return my_blob.getvalue()
 
     def put(self, dst_path, content):
+        if self.read_only:
+            raise TransportException("READ ONLY TRANSPORT: Method not allowed")
+
         key = self.normalize(dst_path)
         if isinstance(content, str):
             content = content.encode('utf-8')
