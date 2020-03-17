@@ -6,6 +6,7 @@ from urllib.parse import urlparse, parse_qs, unquote
 import elasticapm
 
 from assemblyline.common.exceptions import get_stacktrace_info
+from assemblyline.filestore.transport.azure import TransportAzure
 from assemblyline.filestore.transport.ftp import TransportFTP
 from assemblyline.filestore.transport.http import TransportHTTP
 from assemblyline.filestore.transport.local import TransportLocal
@@ -122,6 +123,12 @@ def create_transport(url):
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         t = TransportS3(base=base, host=host, port=port, accesskey=user, secretkey=password, **extras)
+
+    elif scheme == 'azure':
+        valid_str_keys = ['access_key']
+        extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys)
+
+        t = TransportAzure(base=base, host=host, **extras)
 
     else:
         raise FileStoreException("Unknown transport: %s" % scheme)

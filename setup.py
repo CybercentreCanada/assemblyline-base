@@ -75,7 +75,8 @@ setup(
         'cython',
         'docker',
         'kubernetes',
-        'notifications-python-client'
+        'notifications-python-client',
+        'azure-storage-blob'
     ],
     package_data={
         '': [

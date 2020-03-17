@@ -3,6 +3,17 @@ import os
 from assemblyline.filestore import FileStore
 
 
+# TODO: We should move our s3 buckets to azure storage blob
+#       This would be an exemple of test if I could figure out how to make the files public...
+# def test_azure():
+#     """
+#     Azure filestore by downloading a file from our public storage blob
+#     """
+#     fs = FileStore("azure://alpytest.blob.core.windows.net/pytest/")
+#     assert fs.exists('test') != []
+#     assert fs.get('test') is not None
+
+
 def test_http():
     """
     Test HTTP FileStore by fetching the assemblyline page on
