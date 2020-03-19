@@ -56,7 +56,6 @@ class AssemblylineDatastore(object):
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_settings', UserSettings)
-        self.ds.register('vm', VM)
         self.ds.register('workflow', Workflow)
 
     def __enter__(self):
