@@ -19,8 +19,16 @@ class PrintLogger(object):
         print(f"{self.indent}[E] {msg}")
 
 
-def create_basic_data(log=None, ds=None, svc=True, sigs=True):
+def create_basic_data(log=None, ds=None, svc=True, sigs=True, reset=False):
     ds = ds or forge.get_datastore()
+
+    if reset:
+        log.info("Wiping all collections...")
+        for name in ds.ds._models:
+            collection = ds.ds.__getattr__(name)
+            collection.wipe()
+            log.info(f"\t{name}")
+
     log.info("\nCreating user objects...")
     create_users(ds, log=log)
 
@@ -56,7 +64,8 @@ def create_extra_data(log=None, ds=None, fs=None):
 if __name__ == "__main__":
     datastore = forge.get_datastore()
     logger = PrintLogger()
-    create_basic_data(log=logger, ds=datastore, svc="nosvc" not in sys.argv, sigs="nosigs" not in sys.argv)
+    create_basic_data(log=logger, ds=datastore, svc="nosvc" not in sys.argv, sigs="nosigs" not in sys.argv,
+                      reset="reset" in sys.argv)
     if "full" in sys.argv:
         create_extra_data(log=logger, ds=datastore)
 
