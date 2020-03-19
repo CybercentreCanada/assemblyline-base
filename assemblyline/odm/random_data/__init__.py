@@ -286,7 +286,7 @@ def create_users(ds, log=None):
         "uname": "admin",
         "type": ["admin", "user", "signature_importer"]})
     ds.user.save('admin', user_data)
-    ds.user_settings.save('admin', UserSettings())
+    ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True}))
     if log:
         log.info(f"\tU:{user_data.uname}   P:{admin_pass}")
 
