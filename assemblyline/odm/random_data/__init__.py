@@ -3,6 +3,7 @@ import json
 import os
 import random
 
+from assemblyline.common import forge
 from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm.models.alert import Alert
@@ -22,6 +23,7 @@ from assemblyline.run.yara_importer import YaraImporter
 from assemblyline.datastore.helper import AssemblylineDatastore
 
 full_file_list = []
+classification = forge.get_classification()
 
 
 class NullLogger(object):
@@ -278,7 +280,7 @@ def create_users(ds, log=None):
     user_data = User({
         "agrees_with_tos": "NOW",
         "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(admin_pass)}},
-        "classification": "RESTRICTED",
+        "classification": classification.RESTRICTED,
         "name": "Admin user",
         "password": get_password_hash(admin_pass),
         "uname": "admin",
