@@ -1,0 +1,58 @@
+enforce: true
+groups:
+- aliases: []
+  auto_select: true
+  description: Employees of CSE
+  name: CSE
+  short_name: CSE
+levels:
+- aliases:
+  - UNRESTRICTED
+  css:
+    banner: alert-default
+    label: label-default
+    text: text-muted
+  description: Data is not classified
+  lvl: 100
+  name: UNCLASSIFIED
+  short_name: U
+- aliases: []
+  css:
+    banner: alert-success
+    label: label-success
+    text: text-success
+  description: Recipients may share TLP:GREEN information with peers and partner organizations
+    within their sector or community, but not via publicly accessible channels. Information
+    in this category can be circulated widely within a particular community. TLP:GREEN
+    information may not be released outside of the community.
+  lvl: 110
+  name: TLP:GREEN
+  short_name: TLP:G
+- aliases: []
+  css:
+    banner: alert-warning2
+    label: label-warning
+    text: text-warning2
+  description: Recipients may only share TLP:AMBER information with members of their
+    own organization and with clients or customers who need to know the information
+    to protect themselves or prevent further harm.
+  lvl: 120
+  name: TLP:AMBER
+  short_name: TLP:A
+required:
+  - aliases: []
+    description: Produced using a commercial tool with limited distribution
+    name: COMMERCIAL
+    short_name: CMR
+subgroups:
+  - aliases: []
+    description: Member of Incident Response team
+    name: IR_TEAM
+    short_name: IR
+  - aliases: []
+    description: Member of the Canadian Centre for Cyber Security
+    require_group: CSE
+    name: CCCS
+    short_name: CCCS
+restricted: TLP:A
+unrestricted: U
