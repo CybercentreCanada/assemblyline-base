@@ -897,7 +897,7 @@ def _construct_field(field, value):
     else:
         try:
             return field.check(value), None
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as _:
             return None, value
 
 
@@ -921,5 +921,5 @@ def construct_safe(mod, data) -> typing.Tuple[typing.Any, typing.Dict]:
 
     try:
         return mod(clean), dropped
-    except ValueError:
+    except ValueError as _:
         return None, recursive_update(dropped, clean)

@@ -310,11 +310,12 @@ class Tagging(odm.Model):
                 @odm.model(index=True, store=False)
                 class FileSWFHeaderFrame(odm.Model):
                     count = odm.Optional(odm.List(odm.Integer()))
-                    rate = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-                    size = odm.Optional(odm.List(odm.Integer()))
+                    rate = odm.Optional(odm.List(odm.Keyword()))
+                    size = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
+                frame = odm.Optional(odm.Compound(FileSWFHeaderFrame))
                 version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
+            header = odm.Optional(odm.Compound(FileSWFHeader))
             tags_ssdeep = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")))
 
         behavior = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
