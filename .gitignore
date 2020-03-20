@@ -19,3 +19,6 @@ build/
 dist/
 *.py[cod]
 *.egg-info
+
+*.c
+*.so
