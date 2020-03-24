@@ -59,7 +59,7 @@ class SubmissionParams(odm.Model):
     service_spec = odm.Mapping(odm.Mapping(odm.Keyword()),
                                default={}, index=False, store=False)    # Service specific parameters
     submitter = odm.Keyword(store=True, copyto="__text__")              # User who submitted the file
-    ttl = odm.Integer(default=15)                                       # Time to live for this submission in days
+    ttl = odm.Integer(default=0)                                        # Time to live for this submission in days
     type = odm.Keyword(default="USER")                                  # Type of submission
 
     def get_hashing_keys(self):

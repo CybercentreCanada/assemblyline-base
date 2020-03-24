@@ -37,7 +37,7 @@ class Task(odm.Model):
     service_config = odm.Mapping(odm.Any(), default={})  # Service specific parameters
     depth = odm.Integer(default=0)
     max_files = odm.Integer()
-    ttl = odm.Integer()
+    ttl = odm.Integer(default=0)
 
     tags = odm.List(odm.Compound(TagItem), default=[])
     temporary_submission_data = odm.List(odm.Compound(DataItem), default=[])
