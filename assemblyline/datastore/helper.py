@@ -678,6 +678,8 @@ class AssemblylineDatastore(object):
             current_expiry = current_fileinfo.get('expiry_ts', expiry)
             if current_expiry and expiry:
                 current_fileinfo['expiry_ts'] = max(current_expiry, expiry)
+            else:
+                current_fileinfo['expiry_ts'] = None
 
             # Update seen counters
             now = now_as_iso()
