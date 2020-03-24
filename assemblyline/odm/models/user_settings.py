@@ -1,6 +1,6 @@
 from assemblyline import odm
 from assemblyline.common import forge
-from assemblyline.odm.models.submission import ServiceSelection, DEFAULT_SRV_SEL
+from assemblyline.odm.models.submission import ServiceSelection
 
 Classification = forge.get_classification()
 
@@ -24,4 +24,4 @@ class UserSettings(odm.Model):                                      # User's def
     service_spec = odm.Mapping(odm.Keyword(), default={})             # Default service specific settings
     services = odm.Compound(ServiceSelection, default={})             # Default service selection
     submission_view = odm.Enum(values=VIEWS, default="report")        # Default view for completed submissions
-    ttl = odm.Integer(default=15)                                     # Default submission Time to Live (days)
+    ttl = odm.Integer(default=0)                                      # Default submission Time to Live (days)

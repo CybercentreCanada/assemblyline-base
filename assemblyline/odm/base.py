@@ -366,7 +366,7 @@ class Integer(_Field):
     """A field storing an integer value."""
 
     def check(self, value, **kwargs):
-        if not value:
+        if value is None or value == "":
             if self.default_set:
                 return self.default
         return int(value)
