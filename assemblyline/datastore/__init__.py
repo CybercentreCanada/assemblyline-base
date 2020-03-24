@@ -7,6 +7,7 @@ from typing import Dict
 from datemath import dm
 from datemath.helpers import DateMathException
 from datetime import datetime
+from urllib.parse import urlparse
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, MultiKeyError
 from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model
@@ -755,8 +756,15 @@ class BaseStore(object):
     def date_separator(self):
         return self.DATE_FORMAT['SEPARATOR']
 
-    def get_hosts(self):
-        return self._hosts
+    def get_hosts(self, safe=False):
+        if not safe:
+            return self._hosts
+        else:
+            out = []
+            for h in self._hosts:
+                parsed = urlparse(h)
+                out.append(parsed.hostname or parsed.path)
+            return out
 
     def close(self):
         self._closed = True

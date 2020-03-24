@@ -235,7 +235,9 @@ class ESCollection(Collection):
                     elasticsearch.exceptions.ConnectionTimeout,
                     elasticsearch.exceptions.AuthenticationException) as e:
                 if not isinstance(e, SearchRetryException):
-                    log.warning(f"No connection to Elasticsearch {' | '.join(self.datastore.get_hosts())}, retrying...")
+                    log.warning(f"No connection to Elasticsearch server(s): "
+                                f"{' | '.join(self.datastore.get_hosts(safe=True))}"
+                                f", retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
