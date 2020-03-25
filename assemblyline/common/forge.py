@@ -138,7 +138,7 @@ def get_service_queue(service: str, redis=None):
     return PriorityQueue(service_queue_name(service), redis)
 
 
-def get_tag_whitelister(yml_config=None):
+def get_tag_whitelister(log=None, yml_config=None):
     from assemblyline.common.tagging import TagWhitelister, InvalidWhitelist
 
     if yml_config is None:
@@ -162,7 +162,7 @@ def get_tag_whitelister(yml_config=None):
     if not tag_whitelist_data:
         raise InvalidWhitelist('Could not find any classification definition to load.')
 
-    return TagWhitelister(tag_whitelist_data)
+    return TagWhitelister(tag_whitelist_data, log=log)
 
 
 class CachedObject:

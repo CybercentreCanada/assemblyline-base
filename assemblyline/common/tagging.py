@@ -30,11 +30,12 @@ class InvalidWhitelist(Exception):
 
 
 class TagWhitelister(object):
-    def __init__(self, data):
+    def __init__(self, data, log=None):
         valid_tags = set(Tagging.flat_fields().keys())
 
         self.match = data.get('match', {})
         self.regex = data.get('regex', {})
+        self.log = log
 
         # Validate matches and regex
         for section, item in {'match': self.match, 'regex': self.regex}.items():
@@ -51,14 +52,24 @@ class TagWhitelister(object):
                 if section == 'regex':
                     self.regex[k] = [re.compile(x) for x in v]
 
-    def is_whitelisted(self, t_type, t_value):
+    def is_whitelisted(self, t_type, t_values):
+        if not isinstance(t_values, list):
+            t_values = [t_values]
+
         for match in self.match.get(t_type, []):
-            if t_value == match:
-                return True
+            for t_value in t_values:
+                if t_value == match:
+                    if self.log:
+                        self.log.info(f"Tag '{t_type}' with value '{t_value}' was whitelisted by match rule.")
+                    return True
 
         for regex in self.regex.get(t_type, []):
-            if regex.match(t_value):
-                return True
+            for t_value in t_values:
+                if regex.match(t_value):
+                    if self.log:
+                        self.log.info(f"Tag '{t_type}' with value '{t_value}' "
+                                      f"was whitelisted by regex '{regex.pattern}'.")
+                    return True
 
         return False
 
