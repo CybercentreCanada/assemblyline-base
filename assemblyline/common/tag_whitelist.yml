@@ -1,9 +1,16 @@
-# Default tag_whitelisting.yml file
+# Default tag_whitelist.yml file
 #
 #    The following tags are whitelisted:
 #     - Domains pointing to localhost
 #     - IPs in the private network IP space
 #     - URI pointing to IPs in the private network IP space
+#
+#    Note: - You can override the default tag_whitelist.yml by putting an
+#            updated version in /etc/assemblyline/tag_whitelist.yml.
+#          - If you want to add values to one of the following tag types,
+#            you have to copy the default values to the new file.
+#          - You can nullify value by putting empty object or empty list
+#            in your new file
 
 # Match section contains tag types and for each tag type
 #  a list of values that should be whitelisted using a direct
