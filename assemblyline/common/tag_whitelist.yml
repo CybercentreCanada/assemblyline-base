@@ -1,17 +1,38 @@
+# Default tag_whitelisting.yml file
+#
+#    The following tags are whitelisted:
+#     - Domains pointing to localhost
+#     - IPs in the private network IP space
+#     - URI pointing to IPs in the private network IP space
+
+# Match section contains tag types and for each tag type
+#  a list of values that should be whitelisted using a direct
+#  string comparison.
 match:
+  # Direct match to dynamic domains (localhost)
   network.dynamic.domain:
     - localhost
+  # Direct match to static domains (localhost)
   network.static.domain:
     - localhost
 
+# Regex section contains tag types and for each tag type
+#  a list of regular expression to be run to whitelist
+#  the associated tags.
 regex:
+  # Regular expression to whitelist dynamic IPs (Private IPs)
+  #  note: Since IPs have already been validated, the regular expression in simpler
   network.dynamic.ip:
     - (127\.|10\.|192\.168|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.).*
+  # Regular expression to whitelist static IPs (Private IPs)
+  #  note: Since IPs have already been validated, the regular expression in simpler
   network.static.ip:
     - (127\.|10\.|192\.168|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.).*
+  # Regular expression to whitelist dynamic URIs (Private IPs and localhost)
   network.dynamic.uri:
-    - https?://localhost/.*
-    - https?://(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))/.*
+    - (?:ftp|http)s?://localhost/.*
+    - (?:ftp|http)s?://(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))/.*
+  # Regular expression to whitelist static URIs (Private IPs and localhost)
   network.static.uri:
-    - https?://localhost/.*
-    - https?://(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))/.*
+    - (?:ftp|http)s?://localhost/.*
+    - (?:ftp|http)s?://(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))/.*
