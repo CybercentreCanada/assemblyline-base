@@ -1,6 +1,9 @@
+import re
+
 from typing import List, Dict
 
 from assemblyline.common.dict_utils import flatten
+from assemblyline.odm.models.tagging import Tagging
 
 
 def tag_list_to_dict(tag_list: List[Dict]) -> Dict:
@@ -20,3 +23,44 @@ def tag_dict_to_list(tag_dict: Dict) -> List[Dict]:
         if v is not None
         for t in v
     ]
+
+
+class InvalidWhitelist(Exception):
+    pass
+
+
+class TagWhitelister(object):
+    def __init__(self, data):
+        valid_tags = set(Tagging.flat_fields().keys())
+
+        self.match = data.get('match', {})
+        self.regex = data.get('regex', {})
+
+        # Validate matches and regex
+        for section, item in {'match': self.match, 'regex': self.regex}.items():
+            if not isinstance(item, dict):
+                raise InvalidWhitelist(f"Section {section} should be of type: DICT")
+
+            for k, v in item.items():
+                if not isinstance(v, list):
+                    raise InvalidWhitelist(f"Values in the {section} section should all be of type: LIST")
+
+                if k not in valid_tags:
+                    raise InvalidWhitelist(f"Key ({k}) in the {section} section is not a valid tag.")
+
+                if section == 'regex':
+                    self.regex[k] = [re.compile(x) for x in v]
+
+    def is_whitelisted(self, t_type, t_value):
+        for match in self.match.get(t_type, []):
+            if t_value == match:
+                return True
+
+        for regex in self.regex.get(t_type, []):
+            if regex.match(t_value):
+                return True
+
+        return False
+
+    def get_validated_tag_map(self, tag_map):
+        return {k: v for k, v in tag_map.items() if not self.is_whitelisted(k, v)}

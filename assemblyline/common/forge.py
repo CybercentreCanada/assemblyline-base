@@ -138,6 +138,33 @@ def get_service_queue(service: str, redis=None):
     return PriorityQueue(service_queue_name(service), redis)
 
 
+def get_tag_whitelister(yml_config=None):
+    from assemblyline.common.tagging import TagWhitelister, InvalidWhitelist
+
+    if yml_config is None:
+        yml_config = "/etc/assemblyline/tag_whitelist.yml"
+
+    tag_whitelist_data = {}
+    default_file = os.path.join(os.path.dirname(__file__), "tag_whitelist.yml")
+    if os.path.exists(default_file):
+        with open(default_file) as default_fh:
+            default_yml_data = yaml.safe_load(default_fh.read())
+            if default_yml_data:
+                tag_whitelist_data.update(default_yml_data)
+
+    # Load modifiers from the yaml config
+    if os.path.exists(yml_config):
+        with open(yml_config) as yml_fh:
+            yml_data = yaml.safe_load(yml_fh.read())
+            if yml_data:
+                tag_whitelist_data = recursive_update(tag_whitelist_data, yml_data)
+
+    if not tag_whitelist_data:
+        raise InvalidWhitelist('Could not find any classification definition to load.')
+
+    return TagWhitelister(tag_whitelist_data)
+
+
 class CachedObject:
     """An object proxy that automatically refreshes its target periodically."""
 
