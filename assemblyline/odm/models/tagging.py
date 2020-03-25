@@ -361,6 +361,7 @@ class Tagging(odm.Model):
         class NetworkTLS(odm.Model):
             ja3_hash = odm.Optional(odm.List(odm.MD5(copyto="__text__")))
             ja3_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            sni = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         attack = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         dynamic = odm.Optional(odm.Compound(NetworkIOCs))
