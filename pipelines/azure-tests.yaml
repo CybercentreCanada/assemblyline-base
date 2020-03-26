@@ -1,0 +1,47 @@
+name: tests
+
+trigger: ["*"]
+pr: ["*"]
+
+pool:
+  vmImage: 'ubuntu-18.04'
+
+resources:
+  containers:
+  - container: redis
+    image: redis
+  - container: elasticsearch
+    image: sgaroncse/elasticsearch:7.6.0
+    env:
+      ES_JAVA_OPTS: "-Xms256m -Xmx512m"
+      DISCOVERY_TYPE: 'single-node'
+
+jobs:
+- job: run_test
+  strategy:
+    matrix:
+      python3_7:
+        python.version: '3.7'
+      Python3_8:
+        python.version: '3.8'
+
+  timeoutInMinutes: 10
+  services:
+    elasticsearch: elasticsearch
+    redis: redis
+
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+    - script: |
+        sudo mkdir -p /etc/assemblyline/
+        sudo mkdir -p /var/cache/assemblyline/
+        sudo cp test/bitbucket/config.yml /etc/assemblyline
+        sudo chmod a+rw /var/cache/assemblyline/
+        sudo apt update
+        sudo apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
+        sudo env "PATH=$PATH" python -m pip install -U pip cython setuptools
+        sudo env "PATH=$PATH" python -m pip install -e .
+        sudo env "PATH=$PATH" python -m pip install -r test/requirements.txt
+        python -m pytest -rsx -vv
