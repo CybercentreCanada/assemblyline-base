@@ -38,8 +38,9 @@ jobs:
         mkdir -p /etc/assemblyline/
         mkdir -p /var/cache/assemblyline/
         cp test/bitbucket/config.yml /etc/assemblyline
-        apt update
-        apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
+        cat /etc/assemblyline/config.yml
+        apt-get update
+        apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
         pip install -U pip cython setuptools
         pip install -e . -r test/requirements.txt
     - name: Test with pytest
