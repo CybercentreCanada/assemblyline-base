@@ -52,26 +52,26 @@ class TagWhitelister(object):
                 if section == 'regex':
                     self.regex[k] = [re.compile(x) for x in v]
 
-    def is_whitelisted(self, t_type, t_values):
-        if not isinstance(t_values, list):
-            t_values = [t_values]
-
+    def is_whitelisted(self, t_type, t_value):
         for match in self.match.get(t_type, []):
-            for t_value in t_values:
-                if t_value == match:
-                    if self.log:
-                        self.log.info(f"Tag '{t_type}' with value '{t_value}' was whitelisted by match rule.")
-                    return True
+            if t_value == match:
+                if self.log:
+                    self.log.info(f"Tag '{t_type}' with value '{t_value}' was whitelisted by match rule.")
+                return True
 
         for regex in self.regex.get(t_type, []):
-            for t_value in t_values:
-                if regex.match(t_value):
-                    if self.log:
-                        self.log.info(f"Tag '{t_type}' with value '{t_value}' "
-                                      f"was whitelisted by regex '{regex.pattern}'.")
-                    return True
+            if regex.match(t_value):
+                if self.log:
+                    self.log.info(f"Tag '{t_type}' with value '{t_value}' "
+                                  f"was whitelisted by regex '{regex.pattern}'.")
+                return True
 
         return False
 
+    def whitelist_many(self, t_type, t_values):
+        if not isinstance(t_values, list):
+            t_values = [t_values]
+        return [x for x in t_values if not self.is_whitelisted(t_type, x)]
+
     def get_validated_tag_map(self, tag_map):
-        return {k: v for k, v in tag_map.items() if not self.is_whitelisted(k, v)}
+        return {k: self.whitelist_many(k, v) for k, v in tag_map.items()}
