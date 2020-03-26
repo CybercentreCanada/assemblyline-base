@@ -1,20 +1,33 @@
+# This the default classification engine provided with Assemblyline,
+#  it showcases all the different features of the classification engine
+#  while providing a useful configuration
+
+# Turn on/off classification enforcement. When this flag is off, this
+#  completely disables the classification engine, any documents added while
+#  the classification engine is off gets the default unrestricted value
 enforce: false
-groups:
-- aliases: []
-  auto_select: true
-  description: Employees of CSE
-  name: CSE
-  short_name: CSE
+
+# List of Classification level:
+#   Graded list were a smaller number is less restricted then an higher number.
 levels:
+  # List of alternate names for the current marking
 - aliases:
   - UNRESTRICTED
+  # Stylesheet applied in the UI for the different levels
   css:
+    # Top banner stylesheet (alert-* because it's based of bootstrap alert dialogs)
     banner: alert-default
+    # Label stylesheet (label-* because it's based of bootstrap label components)
     label: label-default
+    # Text stylesheet (text-* because it's based of bootstrap text color styles)
     text: text-muted
+  # Description of the classification level
   description: Data is not classified
+  # Interger value of the Classification level (higher is more classified)
   lvl: 100
+  # Long name of the classification item
   name: UNCLASSIFIED
+  # Short name of the classification item
   short_name: U
 - aliases: []
   css:
@@ -40,11 +53,38 @@ levels:
   lvl: 120
   name: TLP:AMBER
   short_name: TLP:A
+
+# List of required tokens:
+#   A user requesting access to an item must have all the
+#   required tokens the item has to gain access to it
 required:
   - aliases: []
     description: Produced using a commercial tool with limited distribution
     name: COMMERCIAL
     short_name: CMR
+    # The minimum classification level an item must have
+    #   for this token to be valid. (optional)
+    # require_lvl: 100
+
+# List of groups:
+#   A user requesting access to an item must be part of a least
+#   of one the group the item is part of to gain access
+groups:
+- aliases: []
+  # This is a special flag that when set to true, if any groups are selected
+  #   in a classification. This group will automatically be selected too. (optional)
+  auto_select: true
+  description: Employees of CSE
+  name: CSE
+  short_name: CSE
+  # Assuming that this groups is the only group selected, this is the display name
+  #   that will be used in the classification (that values has to be in the aliases
+  #   of this group and only this group) (optional)
+  # solitary_display_name: ANY
+
+# List of subgroups:
+#   A user requesting access to an item must be part of a least
+#   of one the subgroup the item is part of to gain access
 subgroups:
   - aliases: []
     description: Member of Incident Response team
@@ -52,8 +92,19 @@ subgroups:
     short_name: IR
   - aliases: []
     description: Member of the Canadian Centre for Cyber Security
+    # This is a special flag that auto-select the corresponding group
+    #   when this subgroup is selected (optional)
     require_group: CSE
     name: CCCS
     short_name: CCCS
+    # This is a special flag that makes sure that none other then the
+    #   corresponding group is selected when this subgroup is selected (optional)
+    # limited_to_group: CSE
+
+# Default restricted classification
 restricted: TLP:A//CMR//REL TO CSE/CCCS/IR
+
+# Default unrestricted classification:
+#   When no classification are provided or that the classification engine is
+#   disabled, this is the classification value each items will get
 unrestricted: U
