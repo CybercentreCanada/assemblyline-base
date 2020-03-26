@@ -1,30 +1,27 @@
 
 import os
+import pytest
 import random
 import re
 
 from copy import deepcopy
 from io import BytesIO
 
-from assemblyline.common.security import get_random_password, get_password_hash, verify_password
 from baseconv import BASE62_ALPHABET
-
-from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
-
-from assemblyline.common.str_utils import safe_str, translate_str
-
-from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
-    now_as_local
-
-from assemblyline.common.iprange import is_ip_reserved, is_ip_private
-
-from assemblyline.common.hexdump import hexdump
 
 from assemblyline.common import forge
 from assemblyline.common.chunk import chunked_list, chunk
+from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
 from assemblyline.common.dict_utils import flatten, unflatten, recursive_update, get_recursive_delta
 from assemblyline.common.entropy import calculate_partition_entropy
+from assemblyline.common.hexdump import hexdump
+from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
+    now_as_local
+from assemblyline.common.iprange import is_ip_reserved, is_ip_private
+from assemblyline.common.security import get_random_password, get_password_hash, verify_password
+from assemblyline.common.str_utils import safe_str, translate_str
+from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
 
 
 def test_chunk():
@@ -32,10 +29,29 @@ def test_chunk():
 
 
 def test_classification():
-    # TODO: Need to do some classification tests here
-    #       Also document default classification engine in the YAML file
-    #       Make sure default dict is equal to default yaml
-    pass
+    yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
+    cl_engine = forge.get_classification(yml_config=yml_config)
+
+    u = "U//REL TO DEPTS"
+    r = "R//GOD//REL TO G1"
+
+    assert cl_engine.normalize_classification(r, long_format=True) == "RESTRICTED//ADMIN//ANY/GROUP 1"
+    assert cl_engine.is_accessible(r, u)
+    assert cl_engine.is_accessible(u, u)
+    assert not cl_engine.is_accessible(u, r)
+    assert cl_engine.min_classification(u, r) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
+    assert cl_engine.max_classification(u, r) == "RESTRICTED//ADMIN//ANY/GROUP 1"
+    assert cl_engine.intersect_user_classification(u, r) == "UNRESTRICTED//ANY"
+    assert cl_engine.normalize_classification("UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2", long_format=False) == u
+    with pytest.raises(InvalidClassification):
+        cl_engine.normalize_classification("D//BOB//REL TO SOUP")
+
+    c1 = "U//REL TO D1"
+    c2 = "U//REL TO D2"
+    assert cl_engine.min_classification(c1, c2) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
+    assert cl_engine.intersect_user_classification(c1, c2) == "UNRESTRICTED"
+    with pytest.raises(InvalidClassification):
+        cl_engine.max_classification(c1, c2)
 
 
 def test_compat_tag_map():
@@ -240,5 +256,3 @@ def test_whitelist():
     assert len(safe_tag_map['network.dynamic.domain']) == 2
     assert safe_tag_map['network.static.domain'] == original_tag_map['network.static.domain']
     assert safe_tag_map['file.behavior'] == original_tag_map['file.behavior']
-
-
