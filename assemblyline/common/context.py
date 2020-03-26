@@ -1,3 +1,5 @@
+# TODO: Are we still using this?
+
 class Context(object):
 
     AFFECTS = 'Affects'
