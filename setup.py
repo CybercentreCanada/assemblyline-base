@@ -78,6 +78,13 @@ setup(
         'notifications-python-client',
         'azure-storage-blob'
     ],
+    extras_require={
+        'test': [
+            'pytest',
+            'pytest-cov',
+            'retrying',
+        ]
+    },
     package_data={
         '': [
             "*classification.yml",

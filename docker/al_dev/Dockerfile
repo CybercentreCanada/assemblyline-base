@@ -9,7 +9,7 @@ ENV PYTHONPATH /opt/alv4/alv4:/opt/alv4/alv4_core:/opt/alv4/alv4_service_server:
 RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 && rm -rf /var/lib/apt/lists/*
 
 # Pipy packages requirements
-RUN pip3 install assemblyline assemblyline-core assemblyline-ui assemblyline-service-server
+RUN pip3 install assemblyline[test] assemblyline-core assemblyline-ui assemblyline-service-server
 RUN pip3 uninstall -y assemblyline assemblyline-core assemblyline-ui assemblyline-service-server
 
 # clear pip cache
