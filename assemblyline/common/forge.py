@@ -160,7 +160,7 @@ def get_tag_whitelister(log=None, yml_config=None):
                 tag_whitelist_data = recursive_update(tag_whitelist_data, yml_data)
 
     if not tag_whitelist_data:
-        raise InvalidWhitelist('Could not find any classification definition to load.')
+        raise InvalidWhitelist('Could not find any tag_whitelist file to load.')
 
     return TagWhitelister(tag_whitelist_data, log=log)
 

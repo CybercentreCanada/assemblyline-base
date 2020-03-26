@@ -244,7 +244,7 @@ def test_whitelist():
         "file.behavior": ["Can't touch this !"]
     }
 
-    default_whitelist = os.path.join(os.path.dirname(__file__), "..", "assemblyline", "common", "tag_whitelist.yml")
+    default_whitelist = os.path.join(os.path.dirname(__file__), "tag_whitelist.yml")
     twl = forge.get_tag_whitelister(yml_config=default_whitelist)
 
     safe_tag_map = twl.get_validated_tag_map(original_tag_map)
