@@ -75,8 +75,14 @@ def local_to_iso(ts: str) -> str:
     return epoch_to_iso(local_to_epoch(ts))
 
 
-def now(offset: float = 0.0) -> float:
-    return time() + offset
+def now(offset: float = 0.0, hp: bool = False) -> float:
+    epoch = time() + offset
+
+    if hp:
+        return epoch
+
+    # Make sure that the float precision does not exceed 6 decimals
+    return float(str(epoch)[:17])
 
 
 def now_as_iso(offset: float = 0.0) -> str:

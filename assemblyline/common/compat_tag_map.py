@@ -183,10 +183,10 @@ tag_map = {
         },
         "plist": {
             "installer_url": ['PLIST_APINSTALLERURL'],
-            "build":{
+            "build": {
                 "machine_os": ['PLIST_BUILDMACHINEOSBUILD']
             },
-            "cf_bundle":{
+            "cf_bundle": {
                 "development_region": ['PLIST_CFBUNDLEDEVELOPMENTREGION'],
                 "display_name": ['PLIST_CFBUNDLEDISPLAYNAME'],
                 "executable": ['PLIST_CFBUNDLEEXECUTABLE'],
@@ -226,7 +226,7 @@ tag_map = {
                 "app_bundle_identifier": ['PLIST_WKAPPBUNDLEIDENITIFER'],
             }
         },
-        "powershell":{
+        "powershell": {
             "cmdlet": ['POWERSHELL_CMDLET']
         },
         "swf": {
@@ -251,14 +251,13 @@ tag_map = {
             "msg_id": ['NET_EMAIL_MSG_ID'],
         },
         "ip": ['NET_IP'],
-        "mac_address": [],
         "port": ['NET_PORT'],
         "protocol": ['NET_PROTOCOL', 'NET_PROTOCOL_SUSPICIOUS'],
-        "signature":{
+        "signature": {
             "signature_id": ['SURICATA_SIGNATURE_ID'],
             "message": ['SURICATA_SIGNATURE_MESSAGE']
         },
-        "tls":{
+        "tls": {
             "ja3_hash": ['TLS_JA3_HASH'],
             "ja3_string": ['TLS_JA3_STRING'],
         },
@@ -281,7 +280,7 @@ tag_map = {
     },
 }
 
-UNSUSED = [
+UNUSED = [
     'BASE64_ALPHABET',
     'DISPLAY_SEARCH_STRING',
     'DYNAMIC_MALICIOUSNESS',
@@ -308,4 +307,4 @@ def reverse_map(data: Dict) -> Dict:
 
 
 v3_lookup_map = reverse_map(flatten(tag_map))
-v3_lookup_map.update({k: None for k in UNSUSED})
+v3_lookup_map.update({k: None for k in UNUSED})
