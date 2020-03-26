@@ -7,22 +7,21 @@ from assemblyline.datasource.alert import Alert
 from assemblyline.common import forge
 from assemblyline.odm.random_data import wipe_alerts, create_alerts, wipe_submissions, create_submission, NullLogger
 
-ds = forge.get_datastore()
 fs = forge.get_filestore()
 
 
-def purge_alert():
+def purge_alert(ds):
     wipe_alerts(ds)
     wipe_submissions(ds, fs)
 
 
 @pytest.fixture(scope="module")
-def datastore(request):
-    create_alerts(ds, alert_count=1)
-    create_submission(ds, fs)
+def datastore(request, datastore_connection):
+    create_alerts(datastore_connection, alert_count=1)
+    create_submission(datastore_connection, fs)
 
     request.addfinalizer(purge_alert)
-    return ds
+    return datastore_connection
 
 
 # noinspection PyUnusedLocal

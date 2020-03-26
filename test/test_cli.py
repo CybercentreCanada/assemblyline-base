@@ -10,11 +10,13 @@ from assemblyline.odm.random_data import wipe_alerts, create_alerts, wipe_submis
     wipe_workflows, create_workflows, wipe_users, create_users
 from assemblyline.run.cli import ALCommandLineInterface, NullLogger
 
-ds = forge.get_datastore()
-fs = forge.get_filestore()
+
+@pytest.fixture(scope="module")
+def fs():
+    return forge.get_filestore()
 
 
-def purge_data():
+def purge_data(ds, fs):
     wipe_alerts(ds)
     wipe_heuristics(ds)
     wipe_services(ds)
@@ -25,19 +27,20 @@ def purge_data():
 
 
 @pytest.fixture(scope="module")
-def datastore(request):
-    purge_data()
+def datastore(request, datastore_connection, fs):
+    purge_data(datastore_connection, fs)
 
-    create_alerts(ds, alert_count=1)
-    create_heuristics(ds)
-    create_services(ds)
-    create_signatures(ds)
-    create_submission(ds, fs)
-    create_users(ds)
-    create_workflows(ds)
+    create_alerts(datastore_connection, alert_count=1)
+    create_heuristics(datastore_connection)
+    create_services(datastore_connection)
+    create_signatures(datastore_connection)
+    create_submission(datastore_connection, fs)
+    create_users(datastore_connection)
+    create_workflows(datastore_connection)
 
     request.addfinalizer(purge_data)
-    return ds
+    return datastore_connection
+
 
 @pytest.fixture(scope="module")
 def cli():
@@ -105,7 +108,7 @@ def test_backup_system(datastore, cli):
         assert data == datastore.get_collection(collection).get(key, as_obj=False)
 
 
-def test_restore(datastore, cli):
+def test_restore(datastore, cli, fs):
     # Get a temp directory
     temp_dir = tempfile.mkdtemp()
     os.rmdir(temp_dir)
@@ -120,7 +123,7 @@ def test_restore(datastore, cli):
     cli.do_backup(f"{temp_dir} submission follow force *:*")
 
     # Wipe the database
-    wipe_submissions(ds, fs)
+    wipe_submissions(datastore, fs)
 
     # Test that the DB is empty
     assert datastore.result.search("*:*", rows=0)['total'] == 0
