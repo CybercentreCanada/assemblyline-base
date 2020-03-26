@@ -81,6 +81,7 @@ setup(
     package_data={
         '': [
             "*classification.yml",
+            "*tag_whitelist.yml",
             "*.magic",
             "*sample_rules.yar",
             "*sample_suricata.rules",
