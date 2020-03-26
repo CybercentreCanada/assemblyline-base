@@ -42,7 +42,7 @@ def test_classification():
     assert cl_engine.min_classification(u, r) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
     assert cl_engine.max_classification(u, r) == "RESTRICTED//ADMIN//ANY/GROUP 1"
     assert cl_engine.intersect_user_classification(u, r) == "UNRESTRICTED//ANY"
-    assert cl_engine.normalize_classification("UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2", long_format=False) == u
+    assert cl_engine.normalize_classification("UNRESTRICTED//REL TO DEPARTMENT 2", long_format=False) == "U//REL TO D2"
     with pytest.raises(InvalidClassification):
         cl_engine.normalize_classification("D//BOB//REL TO SOUP")
 
