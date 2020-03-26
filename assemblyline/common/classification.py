@@ -3,139 +3,6 @@ import logging
 from copy import copy
 from typing import Set, List, KeysView, Union, Dict, Optional, Tuple, Any
 
-CLASSIFICATION_DEFINITION_TEMPLATE = {
-    # This is a demonstration classification definition to showcase all the
-    # different features of the classification engine
-
-    # Classification level where a smaller number is lower
-    # classification then higher number.
-    "levels": [
-        # List of classification level items
-        {
-            # Long name of the classification item
-            "name": "UNRESTRICTED",
-            # Classification level (higher is more classified)
-            "lvl": 100,
-            # Short name of the classification level
-            "short_name": "U",
-            # Any aliases that this level can have
-            "aliases": [],
-            # Description of the classification level
-            "description": "No restrictions applied to data.",
-            # Stylesheet applied in the UI for the different levels
-            "css": {
-                # Top banner stylesheet (alert-* because it's based of bootstrap alert dialogs)
-                "banner": "alert-default",
-                # Label stylesheet (label-* because it's based of bootstrap label components)
-                "label": "label-default",
-                # Text stylesheet (text-* because it's based of bootstrap text color styles)
-                "text": "text-muted"
-            }
-        },
-        {
-            "name": "RESTRICTED",
-            "lvl": 200,
-            "short_name": "R",
-            "aliases": ["CLASSIFIED", "DO NOT LOOK"],
-            "description": "Data restricted to a certain few...",
-            "css": {
-                "banner": "alert-info",
-                "label": "label-primary",
-                "text": "text-primary"
-            }
-        }
-    ],
-    # A user requesting access to an item must
-    # have all the required tokens the item has to gain
-    # access to this item
-    "required": [
-        # List of required tokens
-        {
-            # Long display name for the token
-            "name": "SUPER USER",
-            # Short display name for the token
-            "short_name": "SU",
-            # Any aliases this token can have
-            "aliases": [],
-            # Description of the required token
-            "description": "Gotta be a super user to see this!",
-            # The minimum classification level an item must have
-            # for this token to be valid. (optional)
-            "require_lvl": 200
-        },
-        {
-            "name": "ADMIN",
-            "short_name": "ADM",
-            "aliases": ["GOD"],
-            "description": "Gotta be an administrator to see this!"
-        }
-    ],
-    # A user requesting access to an item must
-    # must be part of a least of one the group
-    # the item is part of to gain access
-    "groups": [
-        # List of possible groups
-        {
-            # Long display name for the group
-            "name": "DEPARTMENT 1",
-            # Short display name for the group
-            "short_name": "D1",
-            # Any aliases this group can have
-            "aliases": ["DEPTS", "ANY"],
-            # Description of the group
-            "description": "Users of department 1.",
-            # This is a special flag that when set to true, if any groups are selected
-            # in a classification. This group will automatically be selected too. (optional)
-            "auto_select": True,
-            # Assuming that this groups is the only group selected, this is the display name
-            # that will be used in the classification (that values has to be in the aliases
-            # of this group and only this group) (optional)
-            "solitary_display_name": "ANY"
-        },
-        {
-            "name": "DEPARTMENT 2",
-            "short_name": "D2",
-            "aliases": ["DEPTS"],
-            "description": "Users of department 2.",
-        },
-    ],
-    # A user requesting access to an item must
-    # must be part of a least of one the group
-    # the item is part of to gain access
-    "subgroups": [
-        # List of possible subgroups
-        {
-            # Long display name for the subgroup
-            "name": "GROUP 1",
-            # Short display name for the subgroup
-            "short_name": "G1",
-            # Any aliases this subgroup can have
-            "aliases": [],
-            # Description of the subgroup
-            "description": "Users of group 1 (which are part of deparment 1).",
-            # This is a special flag that when enabled, if this subgroup is selected
-            # this will also automatically select the corresponding group (optional)
-            "require_group": "D1",
-            # This is a special flag that when enabled, if this subgroup is selected
-            # this will make sure that none other then the corresponding group is
-            # selected (optional)
-            "limited_to_group": "D1"
-        },
-        {
-            "name": "GROUP 2",
-            "short_name": "G2",
-            "aliases": [],
-            "description": "Users of group 2 (can be part of any department).",
-        },
-    ],
-    # Default unrestricted classification
-    "unrestricted": "U",
-    # Default restricted classification
-    "restricted": "R//GOD//REL TO D1",
-    # By turning this flag off, this will completely disable the classification engine
-    "enforce": True
-}
-
 log = logging.getLogger('assemblyline.classification')
 
 
@@ -161,7 +28,7 @@ class Classification(object):
 
         Args:
             classification_definition:  The classification definition dictionary,
-                                        see DEFAULT_CLASSIFICATION_DEFINITION for an example.
+                                        see default classification.yml for an example.
         """
         banned_params_keys = ['name', 'short_name', 'lvl', 'aliases', 'auto_select', 'css', 'description']
         self.original_definition = classification_definition
