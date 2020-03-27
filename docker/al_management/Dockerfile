@@ -4,7 +4,7 @@ FROM python:3.7-slim-stretch
 RUN passwd -l root
 
 # Get required apt packages
-RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 && rm -rf /var/lib/apt/lists/*
 
 # Add assemblyline user
 RUN useradd -s /bin/bash -b /var/lib -U -m assemblyline

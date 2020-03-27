@@ -6,7 +6,7 @@ FROM python:3.7-slim-stretch
 ENV PYTHONPATH /opt/alv4/alv4:/opt/alv4/alv4_core:/opt/alv4/alv4_service_server:/opt/alv4/alv4_service_client:/opt/alv4/alv4_ui
 
 # SSDEEP pkg requirments
-RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 && rm -rf /var/lib/apt/lists/*
 
 # Pipy packages requirements
 RUN pip install --no-cache-dir assemblyline[test] assemblyline-core assemblyline-ui assemblyline-service-server
