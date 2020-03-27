@@ -63,7 +63,7 @@ stages:
         set -x  # Echo commands befor ethey are run
         sudo apt-get update
         sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
-        export VERSION=${BUILD_SOURCEBRANCH#"/refs/tags/v"}
+        export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
         sudo -E env "PATH=$PATH" python -m pip install --no-cache-dir -f $(Pipeline.Workspace)/dist/ "assemblyline[test]==${VERSION}"
         sudo mkdir -p /etc/assemblyline/
         sudo mkdir -p /var/cache/assemblyline/
@@ -89,7 +89,7 @@ stages:
         twine upload --skip-existing dist/*
       displayName: Deploy to PyPI
     - script: |
-        export TAG=${BUILD_SOURCEBRANCH#"/refs/tags/v"}
+        export TAG=${BUILD_SOURCEBRANCH#"refs/tags/v"}
         until sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 | grep -q $TAG; do sleep 2; sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 || true; done
         docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
         docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
