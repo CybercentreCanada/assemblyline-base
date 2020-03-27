@@ -34,8 +34,8 @@ stages:
         python setup.py sdist
     - publish: $(System.DefaultWorkingDirectory)/dist/
       artifact: dist
-    - publish: $(System.DefaultWorkingDirectory)/pipeline/
-      artifact: pipeline
+    - publish: $(System.DefaultWorkingDirectory)/pipelines/
+      artifact: pipelines
 - stage: test
   jobs:
   - job: run_test
@@ -58,7 +58,7 @@ stages:
     - download: current
       artifact: dist
     - download: current
-      artifact: pipeline
+      artifact: pipelines
     - script: |
         sudo apt-get update
         sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
@@ -66,7 +66,7 @@ stages:
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -f dist "assemblyline==${VERSION}"
         mkdir -p /etc/assemblyline/
         mkdir -p /var/cache/assemblyline/
-        cp pipeline/config.yml /etc/assemblyline
+        cp pipelines/config.yml /etc/assemblyline
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
       displayName: Install package
     - script: pytest -rsx -vv
