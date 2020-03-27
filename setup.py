@@ -16,10 +16,11 @@ except ImportError:
 # For development and local builds use this version number, but for real builds replace it
 # with the tag found in the environment
 package_version = "4.0.0.dev0"
-for variable_name in ['BITBUCKET_TAG']:
-    package_version = os.environ.get(variable_name, package_version)
-    package_version = package_version.lstrip('v')
-
+if 'BITBUCKET_TAG' in os.environ:
+    package_version = os.environ['BITBUCKET_TAG'].lstrip('v')
+elif 'BUILD_SOURCEBRANCH' in os.environ:
+    full_tag_prefix = '/refs/tags/v'
+    package_version = os.environ['BUILD_SOURCEBRANCH'][len(full_tag_prefix):]
 
 # Mark all the modules that need to be compiled here
 extensions = [

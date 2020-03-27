@@ -60,15 +60,14 @@ stages:
     - download: current
       artifact: pipelines
     - script: |
+        set -x  # Echo commands befor ethey are run
         sudo apt-get update
         sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
         export VERSION=${BUILD_SOURCEBRANCH#"/refs/tags/v"}
-        ls ./dist/
-        ls $(Pipeline.Workspace)/dist/
-        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -f $(Pipeline.Workspace)/dist/ "assemblyline[test]==${VERSION}"
+        sudo -E env "PATH=$PATH" python -m pip install --no-cache-dir -f $(Pipeline.Workspace)/dist/ "assemblyline[test]==${VERSION}"
         sudo mkdir -p /etc/assemblyline/
         sudo mkdir -p /var/cache/assemblyline/
-        sudo cp pipelines/config.yml /etc/assemblyline
+        sudo cp $(Pipeline.Workspace)/pipelines/config.yml /etc/assemblyline
       displayName: Install package
     - script: pytest -rsx -vv
       displayName: Test
