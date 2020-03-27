@@ -14,7 +14,7 @@ original_skip = pytest.skip
 # Check if we are in an unattended build environment where skips won't be noticed
 IN_CI_ENVIRONMENT = any(
     os.environ.get(indicator, '').lower() in {'1', 'y', 'yes', 't', 'true'}
-    for indicator in ['CI', 'BITBUCKET_BUILD_NUMBER']
+    for indicator in ['CI', 'BITBUCKET_BUILD_NUMBER', 'Agent.JobName']
 )
 
 
