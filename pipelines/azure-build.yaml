@@ -91,9 +91,12 @@ stages:
         set -xv  # Echo commands before they are run
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
         ls dist
-        twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
+        twine upload --skip-existing --repository-url $(TEST_REPOSITORY_URL) dist/*
       workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to Test PyPI
+      env:
+        TWINE_USERNAME: $(TWINE_USERNAME)
+        TWINE_PASSWORD: $(TWINE_PASSWORD)
     - script: |
         set -xv  # Echo commands before they are run
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
@@ -101,11 +104,18 @@ stages:
         twine upload --skip-existing dist/*
       workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to PyPI
+      env:
+        TWINE_USERNAME: $(TWINE_USERNAME)
+        TWINE_PASSWORD: $(TWINE_PASSWORD)
+    - task: Docker@2
+      displayName: Login to docker hub
+      inputs:
+        command: login
+        containerRegistry: dockerhub
     - script: |
         set -xv  # Echo commands before they are run
         export TAG=${BUILD_SOURCEBRANCH#"refs/tags/v"}
         until sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 | grep -q $TAG; do sleep 2; sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 || true; done
-        docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
         docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
         docker push cccs/assemblyline
       displayName: Deploy to Docker Hub
