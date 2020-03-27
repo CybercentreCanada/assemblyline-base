@@ -63,7 +63,9 @@ stages:
         sudo apt-get update
         sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
         export VERSION=${BUILD_SOURCEBRANCH#/refs/tags/v}
-        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -f dist "assemblyline[test]==${VERSION}"
+        ls ./dist/
+        ls $(Pipeline.Workspace)/dist/
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -f $(Pipeline.Workspace)/dist/ "assemblyline[test]==${VERSION}"
         sudo mkdir -p /etc/assemblyline/
         sudo mkdir -p /var/cache/assemblyline/
         sudo cp pipelines/config.yml /etc/assemblyline
