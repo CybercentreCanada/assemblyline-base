@@ -7,10 +7,13 @@ from assemblyline.datasource.alert import Alert
 from assemblyline.common import forge
 from assemblyline.odm.random_data import wipe_alerts, create_alerts, wipe_submissions, create_submission, NullLogger
 
-fs = forge.get_filestore()
+
+@pytest.fixture(scope="module")
+def fs():
+    return forge.get_filestore()
 
 
-def purge_alert(ds):
+def purge_alert(ds, fs):
     wipe_alerts(ds)
     wipe_submissions(ds, fs)
 
