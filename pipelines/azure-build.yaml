@@ -88,21 +88,21 @@ stages:
     - download: current
       artifact: dist
     - script: |
-        set -x  # Echo commands before they are run
+        set -xv  # Echo commands before they are run
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
         ls dist
         twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
       workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to Test PyPI
     - script: |
-        set -x  # Echo commands before they are run
+        set -xv  # Echo commands before they are run
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
         ls dist
         twine upload --skip-existing dist/*
       workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to PyPI
     - script: |
-        set -x  # Echo commands before they are run
+        set -xv  # Echo commands before they are run
         export TAG=${BUILD_SOURCEBRANCH#"refs/tags/v"}
         until sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 | grep -q $TAG; do sleep 2; sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 || true; done
         docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
