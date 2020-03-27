@@ -11,9 +11,9 @@ from retrying import retry
 
 from assemblyline import odm
 from assemblyline.datastore import log, SearchException
-from assemblyline.common.testing import skip
 from assemblyline.datastore.support.elasticsearch.build import back_mapping
 from assemblyline.odm import Mapping
+
 
 log.setLevel(logging.INFO)
 yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
@@ -127,7 +127,7 @@ def es_store():
     if ret_val:
         return store
 
-    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+    return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
 @pytest.fixture(scope='module')
@@ -140,7 +140,7 @@ def es_connection(es_store, request):
     if collection:
         return collection
 
-    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+    return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
 def get_obj(obj_map, key, as_obj):

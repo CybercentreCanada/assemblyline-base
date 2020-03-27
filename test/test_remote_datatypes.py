@@ -4,24 +4,8 @@ import random
 import time
 
 from threading import Thread
-from redis.exceptions import ConnectionError
 
-from assemblyline.common.testing import skip
 from assemblyline.common.uid import get_random_id
-
-
-@pytest.fixture(scope='session')
-def redis_connection():
-    from assemblyline.remote.datatypes import get_client
-    c = get_client(None, None, False)
-    try:
-        ret_val = c.ping()
-        if ret_val:
-            return c
-    except ConnectionError:
-        pass
-
-    return skip("Connection to the Redis server failed. This test cannot be performed...")
 
 
 # noinspection PyShadowingNames
