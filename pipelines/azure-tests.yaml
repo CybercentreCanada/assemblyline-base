@@ -31,12 +31,11 @@ jobs:
     redis: redis
 
   steps:
-    - displayName: Set python version
-      task: UsePythonVersion@0
+    - task: UsePythonVersion@0
+      displayName: Set python version
       inputs:
         versionSpec: '$(python.version)'
-    - displayName: Setup environment
-      script: |
+    - script: |
         sudo mkdir -p /etc/assemblyline/
         sudo mkdir -p /var/cache/assemblyline/
         sudo cp test/bitbucket/config.yml /etc/assemblyline
@@ -46,5 +45,6 @@ jobs:
         sudo env "PATH=$PATH" python -m pip install -U pip cython setuptools
         sudo env "PATH=$PATH" python -m pip install -e .
         sudo env "PATH=$PATH" python -m pip install -r test/requirements.txt
-    - displayName: Test
-      script: python -m pytest -rsx -vv
+      displayName: Setup environment
+    - script: python -m pytest -rsx -vv
+      displayName: Test
