@@ -36,6 +36,8 @@ stages:
       artifact: dist
     - publish: $(System.DefaultWorkingDirectory)/pipelines/
       artifact: pipelines
+    - publish: $(System.DefaultWorkingDirectory)/tests/
+      artifact: tests
 - stage: test
   jobs:
   - job: run_test
@@ -59,6 +61,8 @@ stages:
       artifact: dist
     - download: current
       artifact: pipelines
+    - download: current
+      artifact: tests
     - script: |
         set -x  # Echo commands befor ethey are run
         sudo apt-get update
@@ -70,23 +74,25 @@ stages:
         sudo cp $(Pipeline.Workspace)/pipelines/config.yml /etc/assemblyline
       displayName: Install package
     - script: pytest -rsx -vv
+      workingDirectory: $(Pipeline.Workspace)/tests
       displayName: Test
 - stage: deploy
   jobs:
   - job: run_test
     steps:
-    - checkout: none
     - download: current
       artifact: dist
     - script: |
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
         ls dist
         twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
+      workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to Test PyPI
     - script: |
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
         ls dist
         twine upload --skip-existing dist/*
+      workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to PyPI
     - script: |
         export TAG=${BUILD_SOURCEBRANCH#"refs/tags/v"}
