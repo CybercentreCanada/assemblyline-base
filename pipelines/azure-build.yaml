@@ -1,0 +1,97 @@
+name: build
+
+trigger:
+  tags:
+    include: ["v*"]
+
+pool:
+  vmImage: 'ubuntu-18.04'
+
+resources:
+  containers:
+  - container: redis
+    image: redis
+    ports:
+      - 6379:6379
+  - container: elasticsearch
+    image: sgaroncse/elasticsearch:7.6.0
+    env:
+      ES_JAVA_OPTS: "-Xms256m -Xmx512m"
+      DISCOVERY_TYPE: 'single-node'
+    ports:
+      - 9200:9200
+
+stages:
+- stage: build
+  jobs:
+  - job: build_package
+    steps:
+    - task: UsePythonVersion@0
+      displayName: Set python version
+      inputs: {versionSpec: 3.8}
+    - script: |
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U wheel cython pip
+        python setup.py sdist
+    - publish: $(System.DefaultWorkingDirectory)/dist/
+      artifact: dist
+    - publish: $(System.DefaultWorkingDirectory)/pipeline/
+      artifact: pipeline
+- stage: test
+  jobs:
+  - job: run_test
+    strategy:
+      matrix:
+        python3_7:
+          python.version: '3.7'
+        Python3_8:
+          python.version: '3.8'
+    timeoutInMinutes: 10
+    services:
+      elasticsearch: elasticsearch
+      redis: redis
+    steps:
+    - checkout: none
+    - task: UsePythonVersion@0
+      displayName: Set python version
+      inputs:
+        versionSpec: '$(python.version)'
+    - download: current
+      artifact: dist
+    - download: current
+      artifact: pipeline
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
+        export VERSION=${BUILD_SOURCEBRANCH#/refs/tags/v}
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -f dist "assemblyline==${VERSION}"
+        mkdir -p /etc/assemblyline/
+        mkdir -p /var/cache/assemblyline/
+        cp pipeline/config.yml /etc/assemblyline
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
+      displayName: Install package
+    - script: pytest -rsx -vv
+      displayName: Test
+- stage: deploy
+  jobs:
+  - job: run_test
+    steps:
+    - checkout: none
+    - download: current
+      artifact: dist
+    - script: |
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
+        ls dist
+        twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
+      displayName: Deploy to Test PyPI
+    - script: |
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
+        ls dist
+        twine upload --skip-existing dist/*
+      displayName: Deploy to PyPI
+    - script: |
+        export TAG=${BITBUCKET_TAG#v}
+        until sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 | grep -q $TAG; do sleep 2; sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 || true; done
+        docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
+        docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
+        docker push cccs/assemblyline
+      displayName: Deploy to Docker Hub
