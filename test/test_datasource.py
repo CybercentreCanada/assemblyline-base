@@ -20,7 +20,7 @@ def datastore(request, datastore_connection):
     create_alerts(datastore_connection, alert_count=1)
     create_submission(datastore_connection, fs)
 
-    request.addfinalizer(purge_alert)
+    request.addfinalizer(lambda: purge_alert(datastore_connection, fs))
     return datastore_connection
 
 
