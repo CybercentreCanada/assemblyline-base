@@ -1,0 +1,55 @@
+version: '2.4'
+
+services:
+  # Dependancies
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ACCESS_KEY: al_storage_key
+      MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
+    ports:
+      - '9000:9000'
+    command: server /data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    environment:
+      - xpack.security.enabled=true
+      - discovery.type=single-node
+      - logger.level=WARN
+      - "ELASTIC_PASSWORD=devpass"
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+    ports:
+      - '9200:9200'
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail -u elastic:$$ELASTIC_PASSWORD localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  redis:
+    image: redis
+    ports:
+      - '6379:6379'
+      - '6380:6379'
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: sgaroncse/nginx-ssl:1.17.5
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      - UI_HOST=172.17.0.1
+      - SOCKET_HOST=172.17.0.1
+      - KIBANA_HOST=172.17.0.1
+      - FQDN=localhost
+      - MAX_BODY_SIZE=100M
+
+networks:
+  default:
+    name: backend
