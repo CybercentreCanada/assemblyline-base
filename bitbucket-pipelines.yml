@@ -16,8 +16,8 @@ pipelines:
             - cp test/bitbucket/config.yml /etc/assemblyline
             - apt update
             - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
-            - pip install -U pip cython
-            - pip install -e . -r test/requirements.txt
+            - pip install --no-cache-dir -U pip cython
+            - pip install --no-cache-dir -e . -r test/requirements.txt
             - pytest -rsx -vv
           services: &services
             - redis
@@ -34,7 +34,7 @@ pipelines:
           name: Build Package
           image: python:3.8
           script:
-            - pip install -U wheel cython pip
+            - pip install --no-cache-dir -U wheel cython pip
             - python setup.py sdist
             - ls dist/
           artifacts:
@@ -47,11 +47,11 @@ pipelines:
               - rm -rf assemblyline setup.py  # Make sure we are running on the package from the prior build
               - apt update
               - apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
-              - pip install -f dist "assemblyline==${BITBUCKET_TAG#v}"
+              - pip install --no-cache-dir -f dist "assemblyline==${BITBUCKET_TAG#v}"
               - mkdir -p /etc/assemblyline/
               - mkdir -p /var/cache/assemblyline/
               - cp test/bitbucket/config.yml /etc/assemblyline
-              - pip install -r test/requirements.txt
+              - pip install --no-cache-dir -r test/requirements.txt
               - pytest -rsx -vv
             caches: *caches
             services: *services
@@ -67,7 +67,7 @@ pipelines:
           deployment: test_pypi
           caches: *caches
           script:
-            - pip install twine
+            - pip install --no-cache-dir twine
             - ls dist
             - twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
       - step:
@@ -76,7 +76,7 @@ pipelines:
           deployment: pypi
           caches: *caches
           script:
-            - pip install twine
+            - pip install --no-cache-dir twine
             - ls dist
             - twine upload --skip-existing dist/*
       - step:
@@ -86,7 +86,7 @@ pipelines:
           deployment: container
           script:
             - export TAG=${BITBUCKET_TAG#v}
-            - until pip install assemblyline== 2>&1 | grep -q $TAG; do sleep 2; pip install assemblyline== 2>&1 || true; done
+            - until pip install --no-cache-dir assemblyline== 2>&1 | grep -q $TAG; do sleep 2; pip install --no-cache-dir assemblyline== 2>&1 || true; done
             - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
             - docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
             - docker push cccs/assemblyline

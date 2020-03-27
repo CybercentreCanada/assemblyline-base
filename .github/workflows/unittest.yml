@@ -41,7 +41,7 @@ jobs:
         cat /etc/assemblyline/config.yml
         apt-get update
         apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
-        pip install -U pip cython setuptools
-        pip install -e . -r test/requirements.txt
+        pip install --no-cache-dir -U pip cython setuptools
+        pip install --no-cache-dir -e . -r test/requirements.txt
     - name: Test with pytest
       run: pytest -rsx -vv

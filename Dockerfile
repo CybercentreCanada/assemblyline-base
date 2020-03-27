@@ -17,8 +17,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Install assemblyline base
-RUN pip3 install --user "urllib3<1.25,>=1.21.1" && rm -rf ~/.cache/pip
-RUN pip3 install --user assemblyline==$version && rm -rf ~/.cache/pip
+RUN pip install --no-cache-dir --user "urllib3<1.25,>=1.21.1" && rm -rf ~/.cache/pip
+RUN pip install --no-cache-dir --user assemblyline==$version && rm -rf ~/.cache/pip
 
 FROM base
 

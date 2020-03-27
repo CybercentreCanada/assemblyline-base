@@ -41,7 +41,7 @@ jobs:
         sudo chmod a+rw /var/cache/assemblyline/
         sudo apt update
         sudo apt install -y build-essential libffi-dev libfuzzy-dev python3-dev
-        sudo env "PATH=$PATH" python -m pip install -U pip cython setuptools
-        sudo env "PATH=$PATH" python -m pip install -e .
-        sudo env "PATH=$PATH" python -m pip install -r test/requirements.txt
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
+        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
         python -m pytest -rsx -vv
