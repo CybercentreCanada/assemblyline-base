@@ -1,3 +1,6 @@
+"""
+Pytest configuration file, setup global pytest fixtures and functions here.
+"""
 import os
 
 from assemblyline.common import forge
@@ -6,13 +9,13 @@ from assemblyline.datastore.stores.es_store import ESStore
 from redis.exceptions import ConnectionError
 
 import pytest
-
-CI_INDICATORS = ['CI', 'BITBUCKET_BUILD_NUMBER']
-IN_CI_ENVIRONMENT = any(
-    os.environ.get(cii, '').lower() in {'1', 'y', 'yes', 't', 'true'}
-    for cii in CI_INDICATORS
-)
 original_skip = pytest.skip
+
+# Check if we are in an unattended build environment where skips won't be noticed
+IN_CI_ENVIRONMENT = any(
+    os.environ.get(indicator, '').lower() in {'1', 'y', 'yes', 't', 'true'}
+    for indicator in ['CI', 'BITBUCKET_BUILD_NUMBER']
+)
 
 
 def skip_or_fail(message):
@@ -23,6 +26,7 @@ def skip_or_fail(message):
         original_skip(message)
 
 
+# Replace the built in skip function with our own
 pytest.skip = skip_or_fail
 
 
