@@ -80,11 +80,11 @@ stages:
       workingDirectory: $(Pipeline.Workspace)/test
       displayName: Test
 - stage: deploy
+  variables:
+    group: deployment-information
   jobs:
   - job: deploy
     displayName: Deploy packages and containers
-    variables:
-      group: "DeploymentInformation"
     steps:
     - download: current
       artifact: dist
