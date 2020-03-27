@@ -19,7 +19,7 @@ def purge_alert(ds, fs):
 
 
 @pytest.fixture(scope="module")
-def datastore(request, datastore_connection):
+def datastore(request, datastore_connection, fs):
     create_alerts(datastore_connection, alert_count=1)
     create_submission(datastore_connection, fs)
 
