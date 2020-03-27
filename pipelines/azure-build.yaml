@@ -64,9 +64,9 @@ stages:
         sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
         export VERSION=${BUILD_SOURCEBRANCH#/refs/tags/v}
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -f dist "assemblyline[test]==${VERSION}"
-        mkdir -p /etc/assemblyline/
-        mkdir -p /var/cache/assemblyline/
-        cp pipelines/config.yml /etc/assemblyline
+        sudo mkdir -p /etc/assemblyline/
+        sudo mkdir -p /var/cache/assemblyline/
+        sudo cp pipelines/config.yml /etc/assemblyline
       displayName: Install package
     - script: pytest -rsx -vv
       displayName: Test
