@@ -38,7 +38,7 @@ def datastore(request, datastore_connection, fs):
     create_users(datastore_connection)
     create_workflows(datastore_connection)
 
-    request.addfinalizer(purge_data)
+    request.addfinalizer(lambda: purge_data(datastore_connection, fs))
     return datastore_connection
 
 
