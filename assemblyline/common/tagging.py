@@ -74,4 +74,4 @@ class TagWhitelister(object):
         return [x for x in t_values if not self.is_whitelisted(t_type, x)]
 
     def get_validated_tag_map(self, tag_map):
-        return {k: self.whitelist_many(k, v) for k, v in tag_map.items()}
+        return {k: self.whitelist_many(k, v) for k, v in tag_map.items() if v is not None}
