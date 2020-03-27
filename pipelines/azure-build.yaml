@@ -71,6 +71,7 @@ stages:
         sudo -E env "PATH=$PATH" python -m pip install --no-cache-dir -f $(Pipeline.Workspace)/dist/ "assemblyline[test]==${VERSION}"
         sudo mkdir -p /etc/assemblyline/
         sudo mkdir -p /var/cache/assemblyline/
+        sudo chmod a+rw /var/cache/assemblyline/
         sudo cp $(Pipeline.Workspace)/pipelines/config.yml /etc/assemblyline
       displayName: Install package
     - script: pytest -rsx -vv
