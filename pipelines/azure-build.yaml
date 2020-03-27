@@ -49,7 +49,6 @@ stages:
         Python3_8:
           python.version: '3.8'
     timeoutInMinutes: 10
-    displayName: 'Test on python $(python.version)'
     services:
       elasticsearch: elasticsearch
       redis: redis
