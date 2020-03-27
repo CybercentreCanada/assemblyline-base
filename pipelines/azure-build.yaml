@@ -36,8 +36,8 @@ stages:
       artifact: dist
     - publish: $(System.DefaultWorkingDirectory)/pipelines/
       artifact: pipelines
-    - publish: $(System.DefaultWorkingDirectory)/tests/
-      artifact: tests
+    - publish: $(System.DefaultWorkingDirectory)/test/
+      artifact: test
 - stage: test
   jobs:
   - job: run_test
@@ -62,7 +62,7 @@ stages:
     - download: current
       artifact: pipelines
     - download: current
-      artifact: tests
+      artifact: test
     - script: |
         set -x  # Echo commands befor ethey are run
         sudo apt-get update
@@ -74,7 +74,7 @@ stages:
         sudo cp $(Pipeline.Workspace)/pipelines/config.yml /etc/assemblyline
       displayName: Install package
     - script: pytest -rsx -vv
-      workingDirectory: $(Pipeline.Workspace)/tests
+      workingDirectory: $(Pipeline.Workspace)/test
       displayName: Test
 - stage: deploy
   jobs:
