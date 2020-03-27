@@ -2,7 +2,6 @@ import pytest
 
 from retrying import retry
 
-from assemblyline.common.testing import skip
 from assemblyline.datastore import BaseStore, SearchException
 from assemblyline.datastore.stores.es_store import ESStore
 from assemblyline.odm import Model, Mapping, Classification
@@ -26,6 +25,8 @@ from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
+
+# from .conftest import skip_or_fail
 
 
 class SetupException(Exception):
@@ -53,7 +54,7 @@ def es_datastore():
     if document_store:
         return document_store
 
-    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+    return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
 TEST_DATA = [

@@ -6,9 +6,10 @@ import warnings
 
 from datemath import dm
 from retrying import retry
+import pytest
 
-from assemblyline.common.testing import skip
 from assemblyline.datastore import Collection
+
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -96,7 +97,7 @@ def es_connection(request):
     if collection:
         return collection
 
-    return skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+    return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
 def _test_get(c: Collection):

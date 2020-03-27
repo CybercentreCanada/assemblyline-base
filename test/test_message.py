@@ -14,9 +14,6 @@ from assemblyline.odm.messages.task import TaskMessage
 from assemblyline.odm.randomizer import random_model_obj
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 
-# noinspection PyUnresolvedReferences
-from test.test_remote_datatypes import redis_connection
-
 
 def publish_message(queue_name, test_message, redis):
     time.sleep(0.1)
