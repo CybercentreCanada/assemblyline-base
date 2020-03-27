@@ -19,7 +19,7 @@ package_version = "4.0.0.dev0"
 if 'BITBUCKET_TAG' in os.environ:
     package_version = os.environ['BITBUCKET_TAG'].lstrip('v')
 elif 'BUILD_SOURCEBRANCH' in os.environ:
-    full_tag_prefix = '/refs/tags/v'
+    full_tag_prefix = 'refs/tags/v'
     package_version = os.environ['BUILD_SOURCEBRANCH'][len(full_tag_prefix):]
 
 # Mark all the modules that need to be compiled here
