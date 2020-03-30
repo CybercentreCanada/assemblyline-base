@@ -79,11 +79,11 @@ stages:
       workingDirectory: $(Pipeline.Workspace)/test
       displayName: Test
 - stage: deploy
-  variables:
-    group: deployment-information
   jobs:
   - job: deploy
     displayName: Deploy packages and containers
+    variables:
+      group: deployment-information
     steps:
     - download: current
       artifact: dist
@@ -91,13 +91,12 @@ stages:
         set -xv  # Echo commands before they are run
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
         ls dist
-        twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
+        twine upload --skip-existing --repository-url $(testRepoURL) dist/*
       workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to Test PyPI
       env:
-        TWINE_USERNAME: $(TWINE_USERNAME)
-        TWINE_PASSWORD: $(TWINE_PASSWORD)
-        TEST_REPOSITORY_URL: $(TEST_REPOSITORY_URL)
+        TWINE_USERNAME: $(twineUsername)
+        TWINE_PASSWORD: $(twinePassword)
     - script: |
         set -xv  # Echo commands before they are run
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
@@ -106,8 +105,8 @@ stages:
       workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to PyPI
       env:
-        TWINE_USERNAME: $(TWINE_USERNAME)
-        TWINE_PASSWORD: $(TWINE_PASSWORD)
+        TWINE_USERNAME: $(twineUsername)
+        TWINE_PASSWORD: $(twinePassword)
     - task: Docker@2
       displayName: Login to docker hub
       inputs:
