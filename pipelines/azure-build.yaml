@@ -83,7 +83,7 @@ stages:
   - job: deploy
     displayName: Deploy packages and containers
     variables:
-      group: deployment-information
+      - group: deployment-information
     steps:
     - download: current
       artifact: dist
@@ -95,8 +95,8 @@ stages:
       workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to Test PyPI
       env:
-        TWINE_USERNAME: $[variables.twineUsername]
-        TWINE_PASSWORD: $[variables.twinePassword]
+        TWINE_USERNAME: $(twineUsername)
+        TWINE_PASSWORD: $(twinePassword)
     - script: |
         set -xv  # Echo commands before they are run
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
@@ -105,8 +105,8 @@ stages:
       workingDirectory: $(Pipeline.Workspace)
       displayName: Deploy to PyPI
       env:
-        TWINE_USERNAME: $[variables.twineUsername]
-        TWINE_PASSWORD: $[variables.twinePassword]
+        TWINE_USERNAME: $(twineUsername)
+        TWINE_PASSWORD: $(twinePassword)
     - task: Docker@2
       displayName: Login to docker hub
       inputs:
