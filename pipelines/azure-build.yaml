@@ -115,7 +115,7 @@ stages:
     - script: |
         set -xv  # Echo commands before they are run
         export TAG=${BUILD_SOURCEBRANCH#"refs/tags/v"}
-        until sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 | grep -q $TAG; do sleep 2; sudo python3 -m pip install --no-cache-dir assemblyline== 2>&1 || true; done
+        until sudo python3 -m pip search assemblyline 2>&1 | grep -q "assemblyline ($TAG)"; do sleep 2; done
         docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
         docker push cccs/assemblyline
       displayName: Deploy to Docker Hub
