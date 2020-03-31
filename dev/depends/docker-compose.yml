@@ -14,7 +14,7 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:7.6.0
     volumes:
-      - /opt/alv4/alv4/dev/depends/config/kibana.docker.yml:/usr/share/kibana/config/kibana.yml:ro
+      - ./config/kibana.docker.yml:/usr/share/kibana/config/kibana.yml:ro
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -27,7 +27,7 @@ services:
   apm_server:
     image: docker.elastic.co/apm/apm-server:7.6.0
     volumes:
-      - /opt/alv4/alv4/dev/depends/config/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
+      - ./config/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
     command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e -strict.perms=false"
     ports:
       - '8200:8200'
@@ -59,8 +59,8 @@ services:
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /opt/alv4/alv4/dev/depends/config/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
-      - /opt/alv4/alv4/dev/depends/config/filebeat_policy.json:/usr/share/filebeat/filebeat_policy.json:ro
+      - ./config/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./config/filebeat_policy.json:/usr/share/filebeat/filebeat_policy.json:ro
     command: filebeat -e -strict.perms=false
     depends_on:
       elasticsearch:
@@ -73,8 +73,8 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /opt/alv4/alv4/dev/depends/config/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
-      - /opt/alv4/alv4/dev/depends/config/metricbeat_policy.json:/usr/share/metricbeat/metricbeat_policy.json:ro
+      - ./config/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - ./config/metricbeat_policy.json:/usr/share/metricbeat/metricbeat_policy.json:ro
     command: metricbeat -e --strict.perms=false
     depends_on:
       elasticsearch:

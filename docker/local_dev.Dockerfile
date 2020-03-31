@@ -16,11 +16,11 @@ RUN mkdir -p /opt/alv4
 WORKDIR /opt/alv4
 
 #
-COPY alv4 alv4
-RUN cp alv4/test/bitbucket/config.yml /etc/assemblyline/
-RUN pip install -e ./alv4[test]
+COPY assemblyline-base assemblyline-base
+RUN cp assemblyline-base/test/bitbucket/config.yml /etc/assemblyline/
+RUN pip install -e ./assemblyline-base[test]
 RUN pip uninstall -y assemblyline
 
-COPY alv4_core alv4_core
-RUN pip install -e ./alv4_core[test]
+COPY assemblyline-core assemblyline-core
+RUN pip install -e ./assemblyline-core[test]
 RUN pip uninstall -y assemblyline_core

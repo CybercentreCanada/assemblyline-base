@@ -36,7 +36,7 @@ setup(
     version=package_version,
     description="Assemblyline (v4) automated malware analysis framework base package.",
     long_description="This package provides the base functionalities for the different Assemblyline v4 components.",
-    url="https://bitbucket.org/cse-assemblyline/alv4/",
+    url="https://github.com/CybercentreCanada/assemblyline-base",
     author="CCCS Assemblyline development team",
     author_email="assemblyline@cyber.gc.ca",
     license="MIT",
