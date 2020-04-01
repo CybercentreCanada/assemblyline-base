@@ -455,11 +455,20 @@ class Classification(object):
 
         temp_combinations = copy(combinations)
         for p in itertools.product(temp_combinations, sgrp_cbs):
-            cl = "/".join(p)
-            if cl.endswith("/"):
-                combinations.add(cl[:-1])
+            if "//REL TO " in p[0]:
+                cl = "/".join(p)
+
+                if cl.endswith("/"):
+                    combinations.add(cl[:-1])
+                else:
+                    combinations.add(cl)
             else:
-                combinations.add(cl)
+                cl = "//REL TO ".join(p)
+
+                if cl.endswith("//REL TO "):
+                    combinations.add(cl[:-9])
+                else:
+                    combinations.add(cl)
 
         return combinations
 
