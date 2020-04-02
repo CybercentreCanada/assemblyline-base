@@ -1,4 +1,3 @@
-
 import boto3
 import logging
 import os
@@ -29,11 +28,12 @@ class TransportS3(Transport):
     DEFAULT_HOST = "s3.amazonaws.com"
 
     def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket="al-storage",
-                 host=None, port=None, use_ssl=None, verify=True):
+                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
         self.accesskey = accesskey
+        self.retry_limit: int = connection_attempts
 
         if use_ssl is None:
             self.use_ssl = True
@@ -101,7 +101,7 @@ class TransportS3(Transport):
 
     def with_retries(self, func, *args, **kwargs):
         retries = 0
-        while True:
+        while self.retry_limit is None or retries <= self.retry_limit:
             try:
                 ret_val = func(*args, **kwargs)
 
@@ -113,6 +113,7 @@ class TransportS3(Transport):
             except (EndpointConnectionError, ConnectionClosedError):
                 self.log.warning(f"No connection to S3 transport {self.endpoint_url}, retrying...")
                 retries += 1
+        raise ConnectionError(f"Couldn't connect to the requested S3 endpoint {self.endpoint_url} inside retry limit")
 
     def delete(self, path):
         key = self.normalize(path)

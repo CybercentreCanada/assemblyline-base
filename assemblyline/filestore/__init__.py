@@ -41,7 +41,7 @@ def _get_extras(parsed_dict, valid_str_keys=None, valid_bool_keys=None):
     return out
 
 
-def create_transport(url):
+def create_transport(url, connection_attempts=None):
     """
     Transport are being initiated using an URL. They follow the normal url format:
     scheme://user:pass@host:port/path/to/file
@@ -122,7 +122,7 @@ def create_transport(url):
         valid_bool_keys = ['use_ssl', 'verify']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
-        t = TransportS3(base=base, host=host, port=port, accesskey=user, secretkey=password, **extras)
+        t = TransportS3(base=base, host=host, port=port, accesskey=user, secretkey=password, connection_attempts=connection_attempts, **extras)
 
     elif scheme == 'azure':
         valid_str_keys = ['access_key']
@@ -137,9 +137,9 @@ def create_transport(url):
 
 
 class FileStore(object):
-    def __init__(self, *transport_urls):
+    def __init__(self, *transport_urls, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport')
-        self.transports = [create_transport(url) for url in transport_urls]
+        self.transports = [create_transport(url, connection_attempts) for url in transport_urls]
         self.local_transports = [
             t for t in self.transports if isinstance(t, TransportLocal)
         ]

@@ -116,11 +116,11 @@ def get_cachestore(component, config=None, datastore=None):
     return CacheStore(component, config=config, datastore=datastore)
 
 
-def get_filestore(config=None):
+def get_filestore(config=None, connection_attempts=None):
     from assemblyline.filestore import FileStore
     if config is None:
         config = get_config()
-    return FileStore(*config.filestore.storage)
+    return FileStore(*config.filestore.storage, connection_attempts=connection_attempts)
 
 
 def get_process_alert_message():
