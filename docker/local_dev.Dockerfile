@@ -17,10 +17,13 @@ WORKDIR /opt/alv4
 
 #
 COPY assemblyline-base assemblyline-base
-RUN cp assemblyline-base/test/bitbucket/config.yml /etc/assemblyline/
 RUN pip install -e ./assemblyline-base[test]
 RUN pip uninstall -y assemblyline
 
 COPY assemblyline-core assemblyline-core
 RUN pip install -e ./assemblyline-core[test]
 RUN pip uninstall -y assemblyline_core
+
+COPY assemblyline-ui assemblyline-ui
+RUN pip install -e ./assemblyline-ui -r ./assemblyline-ui/test/requirements.txt
+RUN pip uninstall -y assemblyline_ui
