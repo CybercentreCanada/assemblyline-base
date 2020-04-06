@@ -4,10 +4,10 @@ from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable, DockerConfig
 from assemblyline.odm.models.user import USER_TYPES
 
-# TODO: Apply proper index and store values
+OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'role']
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class PasswordRequirement(odm.Model):
     lower: bool = odm.Boolean()
     number: bool = odm.Boolean()
@@ -25,7 +25,7 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Notify(odm.Model):
     base_url: str = odm.Optional(odm.Keyword())
     api_key: str = odm.Optional(odm.Keyword())
@@ -41,7 +41,7 @@ DEFAULT_NOTIFY = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class SMTP(odm.Model):
     from_adr: str = odm.Optional(odm.Keyword())
     host: str = odm.Optional(odm.Keyword())
@@ -61,7 +61,7 @@ DEFAULT_SMTP = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Signup(odm.Model):
     enabled: bool = odm.Boolean()
     smtp: SMTP = odm.Compound(SMTP, default=DEFAULT_SMTP)
@@ -77,7 +77,7 @@ DEFAULT_SIGNUP = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class User(odm.Model):
     uname: str = odm.Keyword()
     name: str = odm.Keyword()
@@ -107,7 +107,7 @@ DEFAULT_USERS = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean()
     admin_dn: str = odm.Optional(odm.Keyword())
@@ -146,7 +146,7 @@ DEFAULT_LDAP = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Internal(odm.Model):
     enabled: bool = odm.Boolean()
     failure_ttl: int = odm.Integer()
@@ -167,10 +167,19 @@ DEFAULT_INTERNAL = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
+class OAuthAutoProperty(odm.Model):
+    field: str = odm.Keyword()
+    pattern: str = odm.Keyword()
+    type: str = odm.Enum(OAUTH_AUTO_PROPERTY_TYPE)
+    value: str = odm.Keyword()
+
+
+@odm.model(index=False, store=False)
 class OAuthProvider(odm.Model):
     auto_create: str = odm.Boolean(default=True)
     auto_sync: str = odm.Boolean(default=False)
+    auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[])
     client_id: str = odm.Optional(odm.Keyword())
     client_secret: str = odm.Optional(odm.Keyword())
     request_token_url: str = odm.Optional(odm.Keyword())
@@ -187,6 +196,7 @@ class OAuthProvider(odm.Model):
 DEFAULT_OAUTH_PROVIDER_AZURE = {
     "auto_create": True,
     "auto_sync": False,
+    "auto_properties": [],
     "client_id": None,
     "client_secret": None,
     "request_token_url": None,
@@ -203,6 +213,7 @@ DEFAULT_OAUTH_PROVIDER_AZURE = {
 DEFAULT_OAUTH_PROVIDER_GOOGLE = {
     "auto_create": True,
     "auto_sync": False,
+    "auto_properties": [],
     "client_id": None,
     "client_secret": None,
     "request_token_url": None,
@@ -219,6 +230,7 @@ DEFAULT_OAUTH_PROVIDER_GOOGLE = {
 DEFAULT_OAUTH_PROVIDER_AUTH_ZERO = {
     "auto_create": True,
     "auto_sync": False,
+    "auto_properties": [],
     "client_id": None,
     "client_secret": None,
     "request_token_url": None,
@@ -239,7 +251,7 @@ DEFAULT_OAUTH_PROVIDERS = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class OAuth(odm.Model):
     enabled: bool = odm.Boolean()
     gravatar_enabled: bool = odm.Boolean()
@@ -253,7 +265,7 @@ DEFAULT_OAUTH = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Auth(odm.Model):
     allow_2fa: bool = odm.Boolean()
     allow_apikeys: bool = odm.Boolean()
@@ -273,7 +285,7 @@ DEFAULT_AUTH = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Alerter(odm.Model):
     alert_ttl: int = odm.Integer()
     constant_alert_fields: List[str] = odm.List(odm.Keyword())
@@ -304,7 +316,7 @@ DEFAULT_ALERTER = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Dispatcher(odm.Model):
     # Time between re-dispatching attempts, as long as some action (submission or any task completion)
     # happens before this timeout ends, the timeout resets.
@@ -319,7 +331,7 @@ DEFAULT_DISPATCHER = {
 
 
 # Configuration options regarding data expiry
-@odm.model()
+@odm.model(index=False, store=False)
 class Expiry(odm.Model):
     # By turning on batch delete, delete queries are rounded by day therefor
     # all delete operation happen at the same time at midnight
@@ -345,7 +357,7 @@ DEFAULT_EXPIRY = {
 
 
 # Configuration options regarding bulk ingestion and unattended submissions
-@odm.model()
+@odm.model(index=False, store=False)
 class Ingester(odm.Model):
     default_user: str = odm.Keyword()
     default_services: List[str] = odm.List(odm.Keyword())
@@ -406,7 +418,7 @@ DEFAULT_INGESTER = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class RedisServer(odm.Model):
     host: str = odm.Keyword()
     port: int = odm.Integer()
@@ -423,7 +435,7 @@ DEFAULT_REDIS_P = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class ESMetrics(odm.Model):
     hosts: str = odm.Optional(odm.List(odm.Keyword()))
     warm: int = odm.Integer()
@@ -441,7 +453,7 @@ DEFAULT_ES_METRICS = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class APMServer(odm.Model):
     server_url: str = odm.Optional(odm.Keyword())
     token: str = odm.Optional(odm.Keyword())
@@ -453,7 +465,7 @@ DEFAULT_APM_SERVER = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Metrics(odm.Model):
     apm_server: APMServer = odm.Compound(APMServer, default=DEFAULT_APM_SERVER)
     elasticsearch: ESMetrics = odm.Compound(ESMetrics, default=DEFAULT_ES_METRICS)
@@ -469,7 +481,7 @@ DEFAULT_METRICS = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Redis(odm.Model):
     nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
     persistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
@@ -481,7 +493,7 @@ DEFAULT_REDIS = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class ScalerProfile(odm.Model):
     """Minimal description for an assemblyline core component controlled by the scaler."""
     growth: int = odm.Optional(odm.Integer())
@@ -493,7 +505,7 @@ class ScalerProfile(odm.Model):
     container_config: DockerConfig = odm.Compound(DockerConfig)
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class ScalerServiceDefaults(odm.Model):
     """A set of default values to be used running a service when no other value is set."""
     growth: int = odm.Integer()
@@ -516,7 +528,7 @@ class ScalerServiceDefaults(odm.Model):
         return data
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Scaler(odm.Model):
     service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
     # only available for docker hosts, not kubernetes
@@ -535,7 +547,7 @@ DEFAULT_SCALER = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
     dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
@@ -557,7 +569,7 @@ DEFAULT_CORE = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class ILMParams(odm.Model):
     warm = odm.Integer()
     cold = odm.Integer()
@@ -573,7 +585,7 @@ DEFAULT_ILM_PARAMS = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class ILMIndexes(odm.Model):
     alert = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
     error = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
@@ -591,7 +603,7 @@ DEFAULT_ILM_INDEXES = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class ILM(odm.Model):
     days_until_archive = odm.Integer()
     indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES)
@@ -603,7 +615,7 @@ DEFAULT_ILM = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword())
     ilm = odm.Compound(ILM, default=DEFAULT_ILM)
@@ -617,7 +629,7 @@ DEFAULT_DATASTORE = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Datasource(odm.Model):
     classpath: str = odm.Keyword()
     config: Dict[str, str] = odm.Mapping(odm.Keyword())
@@ -635,7 +647,7 @@ DEFAULT_DATASOURCES = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Filestore(odm.Model):
     cache: List[str] = odm.List(odm.Keyword())
     storage: List[str] = odm.List(odm.Keyword())
@@ -648,7 +660,7 @@ DEFAULT_FILESTORE = {
 
 
 # This is the model definition for the logging block
-@odm.model()
+@odm.model(index=False, store=False)
 class Logging(odm.Model):
     # What level of logging should we have
     log_level: str = odm.Enum(values=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "DISABLED"])
@@ -704,7 +716,7 @@ SERVICE_STAGES = [
 
 
 # This is the model definition for the System block
-@odm.model()
+@odm.model(index=False, store=False)
 class Services(odm.Model):
     # Different possible categories
     categories: List[str] = odm.List(odm.Keyword())
@@ -729,7 +741,7 @@ DEFAULT_SERVICES = {
 
 
 # This is the model definition for the Yara Block
-@odm.model()
+@odm.model(index=False, store=False)
 class Yara(odm.Model):
     externals: List[str] = odm.List(odm.Keyword())
     importer: str = odm.Keyword()
@@ -744,7 +756,7 @@ DEFAULT_YARA = {
 
 
 # This is the model definition for the System block
-@odm.model()
+@odm.model(index=False, store=False)
 class System(odm.Model):
     # Module path to the assemblyline constants
     constants: str = odm.Keyword()
@@ -765,7 +777,7 @@ DEFAULT_SYSTEM = {
 
 
 # This is the model definition for the System block
-@odm.model()
+@odm.model(index=False, store=False)
 class Statistics(odm.Model):
     # fields to generated statistics from in the alert page
     alert: List[str] = odm.List(odm.Keyword())
@@ -792,7 +804,7 @@ DEFAULT_STATISTICS = {
 
 
 # This is the model definition for the logging block
-@odm.model()
+@odm.model(index=False, store=False)
 class UI(odm.Model):
     # Allow to user to download raw files
     allow_raw_downloads: bool = odm.Boolean()
@@ -855,7 +867,7 @@ DEFAULT_UI = {
 
 
 # Options regarding all submissions, regardless of their input method
-@odm.model()
+@odm.model(index=False, store=False)
 class TagTypes(odm.Model):
     attribution: List[str] = odm.List(odm.Keyword())
     behavior: List[str] = odm.List(odm.Keyword())
@@ -891,7 +903,7 @@ DEFAULT_TAG_TYPES = {
 
 
 # Options regarding all submissions, regardless of their input method
-@odm.model()
+@odm.model(index=False, store=False)
 class Submission(odm.Model):
     # Default values for parameters that may be overridden on a per submission basis
     # How many extracted files may be added to a Submission
@@ -924,7 +936,7 @@ DEFAULT_SUBMISSION = {
 }
 
 
-@odm.model()
+@odm.model(index=False, store=False)
 class Config(odm.Model):
     # Authentication module configuration
     auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH)
