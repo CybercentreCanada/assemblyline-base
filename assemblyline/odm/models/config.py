@@ -180,6 +180,8 @@ class OAuthProvider(odm.Model):
     auto_create: str = odm.Boolean(default=True)
     auto_sync: str = odm.Boolean(default=False)
     auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[])
+    uid_regex: str = odm.Optional(odm.Keyword())
+    uid_format: str = odm.Optional(odm.Keyword())
     client_id: str = odm.Optional(odm.Keyword())
     client_secret: str = odm.Optional(odm.Keyword())
     request_token_url: str = odm.Optional(odm.Keyword())
