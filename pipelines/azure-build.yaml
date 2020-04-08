@@ -3,6 +3,7 @@ name: build
 trigger:
   tags:
     include: ["v*"]
+  pr: none
 
 pool:
   vmImage: 'ubuntu-18.04'
