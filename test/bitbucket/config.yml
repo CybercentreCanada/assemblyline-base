@@ -1,5 +1,0 @@
-filestore:
-  cache:
-    - file:///var/cache/assemblyline/
-  storage:
-    - file:///var/cache/assemblyline/
