@@ -368,7 +368,7 @@ class Tagging(odm.Model):
         email = odm.Optional(odm.Compound(NetworkEmail))
         mac_address = odm.Optional(odm.List(odm.MAC(copyto="__text__")))
         port = odm.Optional(odm.List(odm.Integer()))
-        protocol = odm.Optional(odm.List(odm.Integer()))
+        protocol = odm.Optional(odm.List(odm.Keyword()))
         signature = odm.Optional(odm.Compound(NetworkSignature))
         static = odm.Optional(odm.Compound(NetworkIOCs))
         tls = odm.Optional(odm.Compound(NetworkTLS))
