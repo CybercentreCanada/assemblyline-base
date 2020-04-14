@@ -891,7 +891,7 @@ def _construct_field(field, value):
                 clean.append(_c)
             if _d is not None:
                 dropped.append(_d)
-        return clean, dropped
+        return clean or None, dropped or None
 
     elif isinstance(field, Compound):
         _c, _d = construct_safe(field.child_type, value)
