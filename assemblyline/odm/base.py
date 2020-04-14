@@ -898,6 +898,8 @@ def _construct_field(field, value):
         if len(_d) == 0:
             _d = None
         return _c, _d
+    elif isinstance(field, Optional):
+        return _construct_field(field.child_type, value)
     else:
         try:
             return field.check(value), None
