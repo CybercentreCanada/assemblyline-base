@@ -25,5 +25,5 @@ RUN pip install -e ./assemblyline-core[test]
 RUN pip uninstall -y assemblyline_core
 
 COPY assemblyline-ui assemblyline-ui
-RUN pip install -e ./assemblyline-ui -r ./assemblyline-ui/test/requirements.txt
+RUN pip install -e ./assemblyline-ui[test]
 RUN pip uninstall -y assemblyline_ui
