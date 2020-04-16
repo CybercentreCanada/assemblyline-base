@@ -974,3 +974,9 @@ DEFAULT_CONFIG = {
     "ui": DEFAULT_UI,
     "submission": DEFAULT_SUBMISSION,
 }
+
+
+if __name__ == "__main__":
+    # When executed, the config model will print the default values of the configuration
+    from pprint import pprint
+    pprint(DEFAULT_CONFIG)
