@@ -44,7 +44,7 @@ class NullLogger(object):
 
 
 def create_alerts(ds, alert_count=50, submission_list=None, log=None):
-    for x in range(alert_count):
+    for _ in range(alert_count):
         a = random_model_obj(Alert)
         if isinstance(submission_list, list):
             submission = random.choice(submission_list)
@@ -200,7 +200,6 @@ def _create_results_for_file(ds, f, possible_childs=None, log=None):
                     s.sha256 = random.choice(possible_childs)
             ds.result.save(r_key, r)
 
-
         if log:
             log.info(f"\t\t\t{r_key}")
         r_list.append(r_key)
@@ -304,7 +303,7 @@ def create_users(ds, log=None):
 
 
 def create_workflows(ds, log=None):
-    for x in range(20):
+    for _ in range(20):
         w_id = get_random_id()
         ds.workflow.save(w_id, random_model_obj(Workflow))
         if log:

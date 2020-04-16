@@ -20,8 +20,8 @@ class Response(odm.Model):
     message = odm.Text(copyto="__text__")                                # Error message
     service_debug_info = odm.Optional(odm.Keyword())                     # Info about where the service was processed
     service_name = odm.Keyword(copyto="__text__")                        # Name of the service that had an error
-    service_tool_version = odm.Optional(odm.Keyword(copyto="__text__"))  # Tool version of the service that ran on the file
-    service_version = odm.Keyword()                                      # Version of the service which resulted in an error
+    service_tool_version = odm.Optional(odm.Keyword(copyto="__text__"))  # Tool version of the service
+    service_version = odm.Keyword()                                      # Version of the service
     status = odm.Enum(values=STATUSES)                                   # Status of the error
 
 

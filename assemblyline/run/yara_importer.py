@@ -54,7 +54,6 @@ class YaraImporter(object):
                 val = val.strip().strip('"')
                 meta[key] = safe_str(val)
 
-
         return meta
 
     def _save_signatures(self, signatures, source, default_status="TESTING"):

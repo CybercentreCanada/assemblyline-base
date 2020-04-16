@@ -7,6 +7,7 @@ import time
 
 from requests.exceptions import ConnectionError
 
+
 class SetupException(Exception):
     pass
 
@@ -238,7 +239,7 @@ if __name__ == "__main__":
         if os.getenv("K_PASSWORD"):
             create_user(os.getenv("K_USERNAME"),
                         os.getenv("K_PASSWORD"),
-                        ["kibana_user","apm_user","monitoring_user"])
+                        ["kibana_user", "apm_user", "monitoring_user"])
 
     # Disable temporary password by setting a random one
     char_space = string.ascii_uppercase + string.digits + string.ascii_lowercase

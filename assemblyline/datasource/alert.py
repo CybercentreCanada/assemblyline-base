@@ -20,7 +20,7 @@ class Alert(Datasource):
         )
 
         res = self.datastore.alert.search(query, rows=5, sort="al.score desc",
-                                           access_control=kw['access_control'], as_obj=False)
+                                          access_control=kw['access_control'], as_obj=False)
 
         count = res['total']
         if count <= 0:

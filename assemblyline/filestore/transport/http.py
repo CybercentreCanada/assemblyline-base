@@ -108,4 +108,3 @@ class TransportHTTP(Transport):
 
     def put(self, dst_path, content):
         raise TransportException("READ ONLY TRANSPORT: Method not implemented")
-

@@ -5,6 +5,7 @@ from assemblyline.common.attack_map import attack_map
 Classification = forge.get_classification()
 PATTERNS = list(attack_map.keys())
 
+
 @odm.model(index=True, store=True)
 class Heuristic(odm.Model):
     attack_id = odm.Optional(odm.Enum(values=PATTERNS, copyto="__text__"))       # Att&ck matrix pattern

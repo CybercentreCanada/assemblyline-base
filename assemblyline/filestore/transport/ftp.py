@@ -215,4 +215,3 @@ class TransportFTP(Transport):
             self.log.debug("Rename: %s -> %s", temppath, finalpath)
             self.ftp.rename(temppath, finalpath)
             assert (self.exists(dst_path))
-

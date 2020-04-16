@@ -54,13 +54,13 @@ class File(odm.Model):
 @odm.model(index=True, store=True)
 class ResponseBody(odm.Model):
     milestones = odm.Compound(Milestone, default={})                          # Milestone block
-    service_version = odm.Keyword(store=False)                                # Version of the service that ran on the file
+    service_version = odm.Keyword(store=False)                                # Version of the service
     service_name = odm.Keyword(copyto="__text__")                             # Name of the service that scan the file
     service_tool_version = odm.Optional(odm.Keyword(copyto="__text__"))       # Tool version of the service
     supplementary = odm.List(odm.Compound(File), default=[])                  # List of supplementary files
     extracted = odm.List(odm.Compound(File), default=[])                      # List of extracted files
-    service_context = odm.Optional(odm.Keyword(index=False, store=False))     # Context about the service that was running
-    service_debug_info = odm.Optional(odm.Keyword(index=False, store=False))  # Debug information where the service was processed
+    service_context = odm.Optional(odm.Keyword(index=False, store=False))     # Context about the service
+    service_debug_info = odm.Optional(odm.Keyword(index=False, store=False))  # Debug info about the service
 
 
 @odm.model(index=True, store=True)
@@ -72,7 +72,7 @@ class Result(odm.Model):
     response: ResponseBody = odm.Compound(ResponseBody)        # The body of the response from the service
     result: ResultBody = odm.Compound(ResultBody, default={})  # The result body
     sha256 = odm.SHA256(store=False)                           # SHA256 of the file the result object relates to
-    drop_file = odm.Boolean(default=False)                     # After this service is done, further stages don't need to run
+    drop_file = odm.Boolean(default=False)                     # Do not pass to other stages after this run
 
     def build_key(self, service_tool_version=None, task=None):
         return self.help_build_key(

@@ -4,7 +4,7 @@ hostname = 'unknownhost'
 try:
     from assemblyline.common.net import get_hostname
     hostname = get_hostname()
-except:  # pylint:disable=W0702
+except Exception:  # pylint:disable=W0702
     pass
 
 ip = 'x.x.x.x'

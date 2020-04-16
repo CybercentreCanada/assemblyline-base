@@ -53,7 +53,7 @@ def create_extra_data(log=None, ds=None, fs=None):
 
     log.info("\nCreating 10 Submissions...")
     submissions = []
-    for x in range(10):
+    for _ in range(10):
         s = create_submission(ds, fs, log=log)
         submissions.append(s)
 

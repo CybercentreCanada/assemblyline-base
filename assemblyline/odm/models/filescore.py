@@ -8,4 +8,4 @@ class FileScore(odm.Model):
     score = odm.Integer()                # Maximum score for the associated submission
     errors = odm.Integer()               # Number of errors that occurred during the previous analysis
     sid = odm.UUID()                     # ID of the associated submission
-    time = odm.Float()                   # Epoch time at which the FileScore entry was created, used for cache invalidation.
+    time = odm.Float()                   # Epoch time at which the FileScore entry was created

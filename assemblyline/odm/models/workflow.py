@@ -11,7 +11,7 @@ STATUSES = {None, "MALICIOUS", "NON-MALICIOUS", "ASSESS", "TRIAGE"}
 class Workflow(odm.Model):
     classification = odm.Classification(
         copyto="__text__",
-        default=Classification.UNRESTRICTED)                                 #  Classification of the workflow
+        default=Classification.UNRESTRICTED)                                 # Classification of the workflow
     creation_date = odm.Date(default="NOW")                                  # Creation date of the workflow
     creator = odm.Keyword()                                                  # UID of the creator
     edited_by = odm.Keyword()                                                # UID of the last edit user

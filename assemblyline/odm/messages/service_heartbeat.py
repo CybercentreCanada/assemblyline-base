@@ -15,10 +15,12 @@ class Metrics(odm.Model):
     scored = odm.Integer()
     not_scored = odm.Integer()
 
+
 @odm.model()
 class Activity(odm.Model):
     busy = odm.Integer()
     idle = odm.Integer()
+
 
 @odm.model()
 class Heartbeat(odm.Model):

@@ -445,7 +445,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                         return
                 else:
                     self.logger.warn("You are not in interactive mode therefor the delete was not executed. "
-                          "Add 'force' to your commandline to execute the delete.")
+                                     "Add 'force' to your commandline to execute the delete.")
                     return
 
             if cont:
@@ -628,14 +628,16 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                                 self.logger.warn("\n**ABORTED**\n")
                                 return
                         else:
-                            self.logger.warn("You are not in interactive mode therefor the status change was not executed. "
+                            self.logger.warn("You are not in interactive mode therefor the "
+                                             "status change was not executed. "
                                              "Add 'force' to your commandline to execute the status change.")
                             return
 
                     if cont:
                         updated = signatures.update_by_query(item_id,
                                                              [(signatures.UPDATE_SET, 'meta.al_status', status)])
-                        self.logger.info(f"Signatures matching query '{item_id}' were changed to status '{status}'. [{updated}]")
+                        self.logger.info(f"Signatures matching query '{item_id}' were changed "
+                                         f"to status '{status}'. [{updated}]")
 
                 except KeyboardInterrupt:
                     self.logger.warn("Interrupting jobs...")
@@ -768,8 +770,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 if item.otp_sk:
                     while True:
                         self.logger.info('\r%s OTP Token:   %06d   %s%s' % (item_id, get_totp_token(item.otp_sk),
-                                                                 "█" * int(time.time() % 30),
-                                                                 "░" * (29 - int(time.time() % 30)))),
+                                                                            "█" * int(time.time() % 30),
+                                                                            "░" * (29 - int(time.time() % 30)))),
                         sys.__stdout__.flush()
 
                         time.sleep(1)

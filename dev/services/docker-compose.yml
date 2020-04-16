@@ -7,13 +7,6 @@ services:
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
-  # ApiVector service
-#  alsvc_apivector:
-#    image: cccs/alsvc_apivector:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_apivector
-
   # APKaye service
   alsvc_apkaye:
     image: cccs/assemblyline-service-apkaye:latest
@@ -25,13 +18,6 @@ services:
     image: cccs/assemblyline-service-beaver:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-
-  # CFMD service
-#  alsvc_cfmd:
-#    image: cccs/alsvc_cfmd:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_cfmd
 
   # Characterize service
   alsvc_characterize:
@@ -45,16 +31,21 @@ services:
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
-  # ConfigDecoder service
-#  alsvc_configdecoder:
-#    image: cccs/alsvc_configdecoder:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_configdecoder
+  # Crowbar service
+  alsvc_crowbar:
+    image: cccs/assemblyline-service-crowbar:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # Cuckoo service
   alsvc_cuckoo:
     image: cccs/assemblyline-service-cuckoo:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
+  # EmlParser service
+  alsvc_emlparser:
+    image: cccs/assemblyline-service-emlparser:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
@@ -70,32 +61,29 @@ services:
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
-  # FrankenStrings service
-#  alsvc_frankenstrings:
-#    image: cccs/alsvc_frankenstrings:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_frankenstrings
+  # Floss service
+  alsvc_floss:
+    image: cccs/assemblyline-service-floss:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
+  # Frankenstrings service
+  alsvc_frankenstrings:
+    image: cccs/assemblyline-service-frankenstrings:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # FSecure service
-#  alsvc_fsecure:
-#    image: cccs/alsvc_fsecure:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003/
-#    working_dir: /opt/al/al_services/alsvc_fsecure
+  alsvc_fsecure:
+    image: cccs/assemblyline-service-fsecure:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # IPArse service
   alsvc_iparse:
     image: cccs/assemblyline-service-iparse:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-
-  # Lastline service
-#  alsvc_lastline:
-#    image: cccs/alsvc_lastline:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_lastline
 
   # MetaDefender service
   alsvc_metadefender:
@@ -108,13 +96,6 @@ services:
     image: cccs/assemblyline-service-metapeek:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
-
-  # NSRL service
-#  alsvc_nsrl:
-#    image: cccs/alsvc_nsrl:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_nsrl
 
   # Oletools service
   alsvc_oletools:
@@ -140,13 +121,6 @@ services:
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
-  # Pixaxe service
-#  alsvc_pixaxe:
-#    image: cccs/alsvc_pixaxe:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_pixaxe
-
   # Suricata service
   alsvc_suricata:
     image: cccs/assemblyline-service-suricata:latest
@@ -154,11 +128,10 @@ services:
       - SERVICE_API_HOST=http://al_service_server:5003
 
   # Swiffer service
-#  alsvc_swiffer:
-#    image: cccs/alsvc_swiffer:latest
-#    environment:
-#      - SERVICE_API_HOST=http://al_service_server:5003
-#    working_dir: /opt/al/al_services/alsvc_swiffer
+  alsvc_swiffer:
+    image: cccs/assemblyline-service-swiffer:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
 
   # TagCheck service
   alsvc_tagcheck:

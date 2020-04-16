@@ -72,8 +72,8 @@ def restore_worker(worker_id, instance_id, working_dir):
     done_queue = NamedQueue(f"r-done-{instance_id}", ttl=1800)
 
     with open(os.path.join(working_dir, "backup.part%s" % worker_id), "rb") as input_file:
-        for l in input_file:
-            bucket_name, key, data = json.loads(l)
+        for line in input_file:
+            bucket_name, key, data = json.loads(line)
 
             success = True
             try:
@@ -207,7 +207,8 @@ class DistributedBackup(object):
         for bucket in bucket_list:
             if bucket not in self.VALID_BUCKETS:
                 if self.logger:
-                    self.logger.warn("\n%s is not a valid bucket.\n\nThe list of valid buckets is the following:\n\n\t%s\n" %
+                    self.logger.warn("\n%s is not a valid bucket.\n\n"
+                                     "The list of valid buckets is the following:\n\n\t%s\n" %
                                      (bucket.upper(), "\n\t".join(self.VALID_BUCKETS)))
                 return
 

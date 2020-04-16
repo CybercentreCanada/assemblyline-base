@@ -6,7 +6,7 @@ have no interesting implementation by default.
 """
 
 
-def always_false(*args, **kwargs):
+def always_false(*_, **__):
     return False
 
 

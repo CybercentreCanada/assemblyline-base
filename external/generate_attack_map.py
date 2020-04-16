@@ -2,6 +2,7 @@ import os
 
 CTI_BASE = "/tmp/cti_git"
 
+
 def clone_cti(base=CTI_BASE):
     import subprocess
     import shutil
@@ -53,6 +54,7 @@ def get_map(base=CTI_BASE):
             print(f"[ERR] Ignored {name.upper()}: No attack ID found.")
 
     return attack_map
+
 
 if __name__ == "__main__":
     attack_map_location = "../assemblyline/common/attack_map.py"

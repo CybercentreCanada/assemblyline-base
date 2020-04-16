@@ -11,7 +11,8 @@ def dump(binary: Sequence, size: int = 2, sep: bytes = b" ") -> bytes:
     return sep.join(chunk(hexstr, size))
 
 
-def hexdump(binary: Sequence, length: int = 16, indent: str = "", indent_size: int = 0, newline: str = '\n', prefix_offset: int = 0) -> str:
+def hexdump(binary: Sequence, length: int = 16, indent: str = "", indent_size: int = 0, newline: str = '\n',
+            prefix_offset: int = 0) -> str:
     """
     Create a string buffer that shows the given data in hexdump format.
     

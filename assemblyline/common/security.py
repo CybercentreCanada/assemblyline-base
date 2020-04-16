@@ -52,7 +52,8 @@ def verify_password(password, pw_hash):
         return False
 
 
-def get_password_requirement_message(lower: bool = True, upper: bool = True, number: bool = False, special: bool = False, min_length: int = 12) -> str:
+def get_password_requirement_message(lower: bool = True, upper: bool = True, number: bool = False,
+                                     special: bool = False, min_length: int = 12) -> str:
     msg = f"Password needs to be at least {min_length} characters"
 
     if lower or upper or number or special:
@@ -72,7 +73,8 @@ def get_password_requirement_message(lower: bool = True, upper: bool = True, num
     return msg
 
 
-def check_password_requirements(password: str, lower: bool = True, upper: bool = True, number: bool = False, special: bool = False, min_length: int = 12) -> bool:
+def check_password_requirements(password: str, lower: bool = True, upper: bool = True, number: bool = False,
+                                special: bool = False, min_length: int = 12) -> bool:
     check_upper = re.compile(UPPERCASE)
     check_lower = re.compile(LOWERCASE)
     check_number = re.compile(NUMBER)

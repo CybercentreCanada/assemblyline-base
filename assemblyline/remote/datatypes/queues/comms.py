@@ -43,7 +43,7 @@ class CommsQueue(object):
 
                 if isinstance(v, dict) and v.get('type', None) == 'message':
                     data = decode(v.get('data', 'null'))
-                    yield (data)
+                    yield data
             except redis.ConnectionError:
                 log.warning('No connection to Redis, reconnecting...')
                 self._connected = False

@@ -30,7 +30,7 @@ def _call(cache, data, func, key):
         if not callable(func):
             func = _transform(func)
         return {key: value} if func(value) else {}
-    except:  # pylint: disable=W0702
+    except Exception:  # pylint: disable=W0702
         return {}
 
 
@@ -54,7 +54,7 @@ def _matches(data, sigs):
             if not name:
                 unknown += 1
                 name = "unknown%d" % unknown
-            yield((name, result))
+            yield name, result
     return
 
 
