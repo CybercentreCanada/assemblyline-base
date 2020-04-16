@@ -39,16 +39,16 @@ services:
       retries: 3
 
   nginx:
-    image: sgaroncse/nginx-ssl:1.17.5
+    image: cccs/nginx-ssl
     ports:
       - '80:80'
       - '443:443'
     environment:
       - UI_HOST=172.17.0.1
       - SOCKET_HOST=172.17.0.1
-      - KIBANA_HOST=172.17.0.1
       - FQDN=localhost
       - MAX_BODY_SIZE=100M
+      - TEMPLATE=minimal
 
 networks:
   default:

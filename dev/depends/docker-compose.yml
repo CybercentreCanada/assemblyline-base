@@ -92,7 +92,7 @@ services:
       retries: 3
 
   nginx:
-    image: sgaroncse/nginx-ssl:1.17.5
+    image: cccs/nginx-ssl
     ports:
       - '80:80'
       - '443:443'
