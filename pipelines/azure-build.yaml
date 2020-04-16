@@ -88,6 +88,11 @@ stages:
     steps:
     - download: current
       artifact: dist
+      # Make sure a usable version of python is used for the deployment
+    - task: UsePythonVersion@0
+      displayName: Set python version
+      inputs:
+        versionSpec: '3.8'
     - script: |
         set -xv  # Echo commands before they are run
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
