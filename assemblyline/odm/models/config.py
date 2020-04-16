@@ -2,7 +2,6 @@ from typing import Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable, DockerConfig
-from assemblyline.odm.models.user import USER_TYPES
 
 OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'role']
 
@@ -710,21 +709,6 @@ DEFAULT_SERVICES = {
 }
 
 
-# This is the model definition for the Yara Block
-@odm.model(index=False, store=False)
-class Yara(odm.Model):
-    externals: List[str] = odm.List(odm.Keyword())
-    importer: str = odm.Keyword()
-    parser: str = odm.Keyword()
-
-
-DEFAULT_YARA = {
-    "externals": ['submitter', 'mime', 'tag'],
-    "importer": "assemblyline.common.yara.YaraImporter",
-    "parser": "assemblyline.common.yara.YaraParser"
-}
-
-
 # This is the model definition for the System block
 @odm.model(index=False, store=False)
 class System(odm.Model):
@@ -734,15 +718,12 @@ class System(odm.Model):
     organisation: str = odm.Text()
     # Type of system (production, staging, development)
     type: str = odm.Enum(values=['production', 'staging', 'development'])
-    # Parameter of the yara engine
-    yara: Yara = odm.Compound(Yara)
 
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
-    "type": 'production',
-    "yara": DEFAULT_YARA
+    "type": 'production'
 }
 
 
