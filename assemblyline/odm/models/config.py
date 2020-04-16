@@ -17,10 +17,10 @@ class PasswordRequirement(odm.Model):
 
 
 DEFAULT_PASSWORD_REQUIREMENTS = {
-    "lower": True,
+    "lower": False,
     "number": False,
     "special": False,
-    "upper": True,
+    "upper": False,
     "min_length": 12
 }
 
@@ -78,36 +78,6 @@ DEFAULT_SIGNUP = {
 
 
 @odm.model(index=False, store=False)
-class User(odm.Model):
-    uname: str = odm.Keyword()
-    name: str = odm.Keyword()
-    password: str = odm.Keyword()
-    groups: List[str] = odm.List(odm.Keyword())
-    type: bool = odm.List(odm.Enum(values=USER_TYPES))
-    classification = odm.Classification(is_user_classification=True)
-
-
-DEFAULT_USERS = {
-    "admin": {
-        "uname": "admin",
-        "name": "Default admin user",
-        "password": "changeme",
-        "groups": ["ADMIN", "INTERNAL", "USERS"],
-        "type": ['admin', 'user'],
-        "classification": "UNRESTRICTED"
-    },
-    "internal": {
-        "uname": "internal",
-        "name": "Internal re-submission user",
-        "password": "Int3rn@lP4s$",
-        "groups": ["INTERNAL"],
-        "type": ['user'],
-        "classification": "UNRESTRICTED"
-    }
-}
-
-
-@odm.model(index=False, store=False)
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean()
     admin_dn: str = odm.Optional(odm.Keyword())
@@ -154,7 +124,6 @@ class Internal(odm.Model):
     password_requirements: PasswordRequirement = odm.Compound(PasswordRequirement,
                                                               default=DEFAULT_PASSWORD_REQUIREMENTS)
     signup: Signup = odm.Compound(Signup, default=DEFAULT_SIGNUP)
-    users: Dict[str, User] = odm.Mapping(odm.Compound(User), default=DEFAULT_USERS)
 
 
 DEFAULT_INTERNAL = {
@@ -162,8 +131,7 @@ DEFAULT_INTERNAL = {
     "failure_ttl": 60,
     "max_failures": 5,
     "password_requirements": DEFAULT_PASSWORD_REQUIREMENTS,
-    "signup": DEFAULT_SIGNUP,
-    "users": DEFAULT_USERS
+    "signup": DEFAULT_SIGNUP
 }
 
 
