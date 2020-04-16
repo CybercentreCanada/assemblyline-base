@@ -3,7 +3,7 @@
 # Push core containers
 docker push sgaroncse/elasticsearch
 docker push sgaroncse/minio
-docker push sgaroncse/nginx-ssl
+docker push cccs/nginx-ssl
 
 # Push dev containers
 docker push cccs/assemblyline_dev

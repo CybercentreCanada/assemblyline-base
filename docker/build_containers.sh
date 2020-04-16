@@ -2,7 +2,7 @@
 
 # Build core containers
 (cd elasticsearch && docker build -t sgaroncse/elasticsearch:7.6.0 .)
-(cd nginx-ssl && docker build -t sgaroncse/nginx-ssl:1.17.5 .)
+(cd nginx-ssl && docker build -t cccs/nginx-ssl .)
 (cd minio && docker build -t sgaroncse/minio .)
 
 # Build default dev containers
