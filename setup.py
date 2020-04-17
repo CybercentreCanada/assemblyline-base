@@ -57,7 +57,7 @@ setup(
     packages=find_packages(exclude=['test', 'test/*']),
     ext_modules=extensions,
     install_requires=[
-        'arrow==0.14.4',
+        'arrow==0.15.5',
         'urllib3<1.26',
         'python-baseconv',
         'boto3',
