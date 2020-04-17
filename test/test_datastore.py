@@ -277,6 +277,7 @@ def _test_deepsearch(c: Collection):
 
 def _test_streamsearch(c: Collection):
     items = list(c.stream_search('classification_s:*', filters="lvl_i:400", fl='id,classification_s'))
+    assert len(items) > 0
     for item in items:
         assert item['id'][0] in test_map
         assert item.get('classification_s', None) is not None
@@ -284,6 +285,7 @@ def _test_streamsearch(c: Collection):
 
 def _test_histogram(c: Collection):
     h_int = c.histogram('lvl_i', 0, 1000, 100, mincount=2)
+    assert len(h_int) > 0
     for k, v in h_int.items():
         assert isinstance(k, int)
         assert isinstance(v, int)
@@ -292,6 +294,7 @@ def _test_histogram(c: Collection):
     h_date = c.histogram('expiry_dt', '{n}-10{d}/{d}'.format(n=c.datastore.now, d=c.datastore.day),
                          '{n}+10{d}/{d}'.format(n=c.datastore.now, d=c.datastore.day),
                          '+1{d}'.format(d=c.datastore.day, mincount=2))
+    assert len(h_date) > 0
     for k, v in h_date.items():
         assert isinstance(k, str)
         assert "T00:00:00" in k
@@ -302,6 +305,7 @@ def _test_histogram(c: Collection):
 
 def _test_facet(c: Collection):
     facets = c.facet('classification_s')
+    assert len(facets) > 0
     for k, v in facets.items():
         assert k in ["U", "C", "TS"]
         assert isinstance(v, int)
@@ -310,6 +314,7 @@ def _test_facet(c: Collection):
 
 def _test_stats(c: Collection):
     stats = c.stats('lvl_i')
+    assert len(stats) > 0
     for k, v in stats.items():
         assert k in ['count', 'min', 'max', 'avg', 'sum']
         assert isinstance(v, (int, float))
