@@ -793,6 +793,10 @@ class UI(odm.Model):
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
     # Proxy that will be used by the url_download method
     url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
+    # Validate if the session ip matches the ip the session was created from
+    validate_session_ip: bool = odm.Boolean()
+    # Validate if the session useragent matches the useragent the session was created with
+    validate_session_useragent: bool = odm.Boolean()
 
 
 DEFAULT_UI = {
@@ -813,7 +817,9 @@ DEFAULT_UI = {
     "tos": None,
     "tos_lockout": False,
     "url_submission_headers": {},
-    "url_submission_proxies": {}
+    "url_submission_proxies": {},
+    "validate_session_ip": True,
+    "validate_session_useragent": True,
 }
 
 
