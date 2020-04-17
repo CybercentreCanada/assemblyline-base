@@ -220,12 +220,12 @@ def test_uid():
     id_test_m = get_id_from_data(test_data, length=MEDIUM)
     id_test_s = get_id_from_data(test_data, length=SHORT)
     id_test_t = get_id_from_data(test_data, length=TINY)
-    assert 23 > len(rid) >= 21
-    assert 23 > len(id_test) >= 21
-    assert 44 > len(id_test_l) >= 42
-    assert 23 > len(id_test_m) >= 21
-    assert 13 > len(id_test_s) >= 11
-    assert 8 > len(id_test_t) >= 6
+    assert 23 > len(rid) >= 20
+    assert 23 > len(id_test) >= 20
+    assert 44 > len(id_test_l) >= 41
+    assert 23 > len(id_test_m) >= 20
+    assert 13 > len(id_test_s) >= 10
+    assert 8 > len(id_test_t) >= 5
     assert id_test == id_test_m
     for c_id in [rid, id_test, id_test_l, id_test_m, id_test_s, id_test_t]:
         for x in c_id:
