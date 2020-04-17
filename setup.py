@@ -58,7 +58,7 @@ setup(
     ext_modules=extensions,
     install_requires=[
         'arrow==0.14.4',
-        'urllib3<1.25',
+        'urllib3<1.26',
         'python-baseconv',
         'boto3',
         'pysftp',
