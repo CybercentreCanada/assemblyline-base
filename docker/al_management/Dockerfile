@@ -36,7 +36,7 @@ USER assemblyline
 RUN python -m venv /var/lib/assemblyline/venv
 
 # Install packages in the venv
-RUN /bin/bash -c "source /var/lib/assemblyline/venv/bin/activate && pip install --no-cache-dir --upgrade pip wheel && pip install --no-cache-dir 'urllib3<1.25,>=1.21.1' assemblyline assemblyline_core assemblyline_ui assemblyline-client==4.0.0b4 ipython jupyter"
+RUN /bin/bash -c "source /var/lib/assemblyline/venv/bin/activate && pip install --no-cache-dir --upgrade pip wheel && pip install --no-cache-dir assemblyline assemblyline_core assemblyline_ui assemblyline-client==4.0.0b4 ipython jupyter"
 
 # Setup venv when bash is launched
 RUN echo "source /var/lib/assemblyline/venv/bin/activate" >> /var/lib/assemblyline/.bashrc
