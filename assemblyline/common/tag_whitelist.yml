@@ -16,16 +16,18 @@
 #  a list of values that should be whitelisted using a direct
 #  string comparison.
 match:
-  # Direct match to dynamic domains (localhost)
+  # Direct match to dynamic domains
   network.dynamic.domain:
+    - localhost
     - android.googlesource.com
     - play.google.com
     - schemas.android.com
     - xmlpull.org
     - schemas.openxmlformats.org
     - schemas.microsoft.com
-  # Direct match to static domains (localhost)
+  # Direct match to static domains
   network.static.domain:
+    - localhost
     - android.googlesource.com
     - play.google.com
     - schemas.android.com
@@ -47,6 +49,7 @@ regex:
     - (?:127\.|10\.|192\.168|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.).*
   # Regular expression to whitelist dynamic URIs (Private IPs and localhost)
   network.dynamic.uri:
+    - (?:ftp|http)s?://localhost(?:$|/.*)
     - (?:ftp|http)s?://(?:(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2})))(?:$|/.*)
     - (?:http):\/\/schemas\.android\.com\/apk\/res(-auto|\/android)
     - (?:http):\/\/xmlpull\.org\/v1\/doc\/features\.html(?:$|.*)
@@ -55,6 +58,7 @@ regex:
     - (?:http):\/\/schemas\.openxmlformats\.org(?:$|\/.*)
   # Regular expression to whitelist static URIs (Private IPs and localhost)
   network.static.uri:
+    - (?:ftp|http)s?://localhost(?:$|/.*)
     - (?:ftp|http)s?://(?:(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2})))(?:$|/.*)
     - (?:http):\/\/schemas\.android\.com\/apk\/res(-auto|\/android)
     - (?:http):\/\/xmlpull\.org\/v1\/doc\/features\.html(?:$|.*)
