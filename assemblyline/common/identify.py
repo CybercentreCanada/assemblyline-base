@@ -33,6 +33,7 @@ STRONG_INDICATORS = {
         re.compile(rb'new[ \t]+ActiveXObject\('),
         re.compile(rb'xfa\.((resolve|create)Node|datasets|form)'),
         re.compile(rb'\.oneOfChild'),
+        re.compile(rb'unescape\(')
     ],
     'code/csharp': [
         re.compile(rb'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
@@ -103,12 +104,17 @@ STRONG_INDICATORS = {
         # Check if a tag has an xmlns attribute
         re.compile(rb'<[^>]+xmlns[:=][^>]+>', re.MULTILINE),
     ],
+    'code/ps1': [
+        # Match one of the Common Cmdlets
+        re.compile(rb'(^|\n)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process){1}'),
+    ]
 }
 STRONG_SCORE = 15
 MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
     'code/javascript': [b'var ',
+                        b'document\.write\(',
                         rb'String\.(fromCharCode|raw)\(',
                         rb'Math\.(round|pow|sin|cos)\(',
                         rb'(isNaN|isFinite|parseInt|parseFloat)\(',
@@ -124,6 +130,12 @@ WEAK_INDICATORS = {
     'code/java': [rb'(^|\n)[ \t]*package[ \t]+[\w\.]+;'],
     'code/perl': [rb'(^|\n)[ \t]*package[ \t]+[\w\.]+;', b'@_'],
     'text/markdown': [rb'\[[\w]+\]:[ \t]*http:'],
+    'code/ps1': [
+        # Check for PowerShell Parameters ex.  -Online -FeatureName
+        rb'\s-([A-Z][a-z0-9]+)+',
+        # Check for cmdlet names ex. Disable-WindowsOptionalFeature
+        rb'([A-Z][a-z0-9]+)+-([A-Z][a-z0-9]+)+',
+    ]
 }
 WEAK_SCORE = 1
 
@@ -183,12 +195,14 @@ tag_to_extension = {
     'code/batch': '.bat',
     'code/c': '.c',
     'code/csharp': '.cs',
+    'code/html': '.html',
     'code/java': '.java',
     'code/javascript': '.js',
     'code/jscript': '.js',
     'code/pdfjs': '.js',
     'code/perl': '.pl',
     'code/php': '.php',
+    'code/ps1': '.ps1',
     'code/python': '.py',
     'code/ruby': '.rb',
     'code/vbs': '.vbs',

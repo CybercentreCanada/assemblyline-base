@@ -124,6 +124,7 @@ RECOGNIZED_TYPES = {
     'code/pdfjs': True,
     'code/perl': True,
     'code/php': True,
+    'code/ps1': True,
     'code/python': True,
     'code/ruby': True,
     'code/rust': True,
