@@ -25,6 +25,15 @@ match:
     - xmlpull.org
     - schemas.openxmlformats.org
     - schemas.microsoft.com
+    - settings-win.data.microsoft.com
+    - vortex-win.data.microsoft.com
+    - wpad.reddog.microsoft.com
+    - verisign.com
+    - csc3-2010-crl.verisign.com
+    - csc3-2010-aia.verisign.com
+    - ocsp.verisign.com
+    - logo.verisign.com
+    - crl.verisign.com
   # Direct match to static domains
   network.static.domain:
     - localhost
@@ -34,6 +43,15 @@ match:
     - xmlpull.org
     - schemas.openxmlformats.org
     - schemas.microsoft.com
+    - settings-win.data.microsoft.com
+    - vortex-win.data.microsoft.com
+    - wpad.reddog.microsoft.com
+    - verisign.com
+    - csc3-2010-crl.verisign.com
+    - csc3-2010-aia.verisign.com
+    - ocsp.verisign.com
+    - logo.verisign.com
+    - crl.verisign.com
 
 # Regex section contains tag types and for each tag type
 #  a list of regular expression to be run to whitelist
@@ -56,6 +74,25 @@ regex:
     - (?:http)s:\/\/android\.googlesource\.com\/toolchain\/llvm-project
     - (?:http):\/\/schemas\.microsoft\.com(?:$|\/.*)
     - (?:http):\/\/schemas\.openxmlformats\.org(?:$|\/.*)
+    - (:?http):\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/(image|attachedTemplate|header|footnotes|fontTable|customXml|endnotes|theme|settings|webSettings|glossaryDocument|numbering|footer|styles)
+    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/2010\/(wordml|wordprocessingCanvas|wordprocessingInk|wordprocessingGroup|wordprocessingDrawing)
+    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/(2012|2006)\/wordml
+    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/2015\/wordml\/symex
+    - (:?http):\/\/schemas\.microsoft.com\/office\/drawing\/2014\/chartex
+    - (:?http):\/\/schemas\.microsoft.com\/office\/drawing\/2015\/9\/8\/chartex
+    - (:?http):\/\/schemas\.openxmlformats\.org\/drawingml\/2006\/(main|wordprocessingDrawing)
+    - (:?http):\/\/schemas\.openxmlformats\.org\/package\/2006\/relationships
+    - (:?http):\/\/schemas\.openxmlformats\.org\/markup-compatibility\/2006
+    - (:?http):\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/(relationships|math)
+    - (:?http):\/\/schemas\.openxmlformats\.org\/word\/2010\/wordprocessingShape
+    - (:?http):\/\/schemas\.openxmlformats\.org\/wordprocessingml\/2006\/main
+    - (?:https):\/\/www.verisign.com\/(rpa0|rpa|cps0)
+    - (?:http):\/\/wpad.reddog.microsoft.com\/wpad.dat
+    - (?:http):\/\/ocsp.verisign.com
+    - (?:http):\/\/logo.verisign.com\/vslogo.gif04
+    - (?:http):\/\/crl.verisign.com\/pca3-g5.crl04
+    - (?:http):\/\/csc3-2010-crl.verisign.com\/CSC3-2010\.crl0D
+    - (?:http):\/\/csc3-2010-aia.verisign.com\/CSC3-2010\.cer0
   # Regular expression to whitelist static URIs (Private IPs and localhost)
   network.static.uri:
     - (?:ftp|http)s?://localhost(?:$|/.*)
@@ -65,3 +102,22 @@ regex:
     - (?:http)s:\/\/android\.googlesource\.com\/toolchain\/llvm-project
     - (?:http):\/\/schemas\.microsoft\.com(?:$|\/.*)
     - (?:http):\/\/schemas\.openxmlformats\.org(?:$|\/.*)
+    - (:?http):\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/(image|attachedTemplate|header|footnotes|fontTable|customXml|endnotes|theme|settings|webSettings|glossaryDocument|numbering|footer|styles)
+    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/2010\/(wordml|wordprocessingCanvas|wordprocessingInk|wordprocessingGroup|wordprocessingDrawing)
+    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/(2012|2006)\/wordml
+    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/2015\/wordml\/symex
+    - (:?http):\/\/schemas\.microsoft.com\/office\/drawing\/2014\/chartex
+    - (:?http):\/\/schemas\.microsoft.com\/office\/drawing\/2015\/9\/8\/chartex
+    - (:?http):\/\/schemas\.openxmlformats\.org\/drawingml\/2006\/(main|wordprocessingDrawing)
+    - (:?http):\/\/schemas\.openxmlformats\.org\/package\/2006\/relationships
+    - (:?http):\/\/schemas\.openxmlformats\.org\/markup-compatibility\/2006
+    - (:?http):\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/(relationships|math)
+    - (:?http):\/\/schemas\.openxmlformats\.org\/word\/2010\/wordprocessingShape
+    - (:?http):\/\/schemas\.openxmlformats\.org\/wordprocessingml\/2006\/main
+    - (?:https):\/\/www.verisign.com\/(rpa0|rpa|cps0)
+    - (?:http):\/\/wpad.reddog.microsoft.com\/wpad.dat
+    - (?:http):\/\/ocsp.verisign.com
+    - (?:http):\/\/logo.verisign.com\/vslogo.gif04
+    - (?:http):\/\/crl.verisign.com\/pca3-g5.crl04
+    - (?:http):\/\/csc3-2010-crl.verisign.com\/CSC3-2010\.crl0D
+    - (?:http):\/\/csc3-2010-aia.verisign.com\/CSC3-2010\.cer0
