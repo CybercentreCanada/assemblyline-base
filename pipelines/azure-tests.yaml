@@ -50,5 +50,7 @@ jobs:
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
       displayName: Setup environment
-    - script: python -m pytest -rsx -vv
+    - script: python -m pytest -rsx -vv --cov-report=xml --cov=assemblyline
       displayName: Test
+    - script: python -m codecov
+      displayName: Upload Coverage
