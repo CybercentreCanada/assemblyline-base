@@ -6210,5 +6210,18 @@ attack_map = {
                           '<code>~/.config/systemd/user/</code> to achieve user-level persistence.(Citation: Rapid7 '
                           'Service Persistence 22JUNE2016)',
            'name': 'Systemd Service',
-           'platforms': ['Linux']}
+           'platforms': ['Linux']},
+ 'T1526': {'attack_id': 'T1526',
+           'categories': ['defense-evasion'],
+           'description': 'An adversary may attempt to enumerate the cloud services running on a system after gaining '
+                          'access. These methods can differ depending on if it\'s platform-as-a-service (PaaS), '
+                          'infrastructure-as-a-service (IaaS), or software-as-a-service (SaaS). Many different services '
+                          'exist throughout the various cloud providers and can include continuous integration and '
+                          'continuous delivery (CI/CD), Lambda Functions, Azure AD, etc. Adversaries may attempt to '
+                          'discover information about the services enabled throughout the environment.\n'
+                          '\n'
+                          'Pacu, an open source AWS exploitation framework, supports several methods for discovering cloud'
+                          ' services.(Citation: Rhino Security Labs 22AUGUST2019)',
+           'name': 'Cloud Service Discovery ',
+           'platforms': ['Linux', 'macOS', 'Windows']},
 }
