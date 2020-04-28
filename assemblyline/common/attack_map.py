@@ -6212,7 +6212,7 @@ attack_map = {
            'name': 'Systemd Service',
            'platforms': ['Linux']},
  'T1526': {'attack_id': 'T1526',
-           'categories': ['defense-evasion'],
+           'categories': ['discovery'],
            'description': 'An adversary may attempt to enumerate the cloud services running on a system after gaining '
                           'access. These methods can differ depending on if it\'s platform-as-a-service (PaaS), '
                           'infrastructure-as-a-service (IaaS), or software-as-a-service (SaaS). Many different services '
@@ -6223,5 +6223,5 @@ attack_map = {
                           'Pacu, an open source AWS exploitation framework, supports several methods for discovering cloud'
                           ' services.(Citation: Rhino Security Labs 22AUGUST2019)',
            'name': 'Cloud Service Discovery ',
-           'platforms': ['Linux', 'macOS', 'Windows']},
+           'platforms': ['AWS', 'GCP', 'Azure', 'Azure AD', 'Office 365', 'SaaS']},
 }
