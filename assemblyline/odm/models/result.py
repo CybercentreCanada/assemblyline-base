@@ -1,7 +1,7 @@
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.caching import generate_conf_key
-from assemblyline.odm.models.heuristic import PATTERNS
+from assemblyline.odm.models.heuristic import ATTACK_ID_LIST
 from assemblyline.odm.models.tagging import Tagging
 
 
@@ -10,25 +10,36 @@ constants = forge.get_constants()
 
 
 @odm.model(index=True, store=False)
+class Attack(odm.Model):
+    id = odm.Enum(values=ATTACK_ID_LIST, copyto="__text__")  # Attack matrix ID
+    pattern = odm.Keyword(copyto="__text__")                 # Attack matrix Pattern Name
+    categories = odm.List(odm.Keyword())                     # Attack matrix Categories
+
+
+@odm.model(index=True, store=False)
+class Signature(odm.Model):
+    name = odm.Keyword(copyto="__text__")   # Name of the signature that triggered the heuristic
+    frequency = odm.Integer(default=1)      # Number of times this signature triggered the heuristic
+
+
+@odm.model(index=True, store=False)
 class Heuristic(odm.Model):
-    heur_id = odm.Keyword(copyto="__text__")                                 # Triggered heuristic
-    name = odm.Keyword(copyto="__text__")                                    # Name of the heuristics
-    attack_id = odm.Optional(odm.Enum(values=PATTERNS, copyto="__text__"))   # Attack matrix ID
-    attack_pattern = odm.Optional(odm.Keyword(copyto="__text__"))            # Attack matrix Pattern Name
-    attack_categories = odm.Optional(odm.List(odm.Keyword()))                # Attack matrix Categories
-    signature = odm.Optional(odm.Keyword())                                  # Signature that triggered the heuristic
-    score = odm.Integer()                                                    # Heuristic's score
+    heur_id = odm.Keyword(copyto="__text__")                    # ID of th heuristic triggered
+    name = odm.Keyword(copyto="__text__")                       # Name of the heuristic
+    attack = odm.List(odm.Compound(Attack), default=[])         # List of Att&ck IDs related to this heuristic
+    signature = odm.List(odm.Compound(Signature), default=[])   # List of signatures that triggered the heuristic
+    score = odm.Integer()                                       # Computed Heuristic's score
 
 
 @odm.model(index=True, store=False)
 class Section(odm.Model):
-    body = odm.Optional(odm.Text(copyto="__text__"))        # Text body of the result section
-    classification = odm.Classification()                   # Classification of the section
+    body = odm.Optional(odm.Text(copyto="__text__"))         # Text body of the result section
+    classification = odm.Classification()                    # Classification of the section
     body_format = odm.Enum(values=BODY_FORMAT, index=False)  # Type of body in this section
-    depth = odm.Integer(index=False)                        # Depth of the section
-    heuristic = odm.Optional(odm.Compound(Heuristic))       # Heuristic used to score result section
-    tags = odm.Compound(Tagging, default={})                # List of tags associated to this section
-    title_text = odm.Text(copyto="__text__")                # Title of the section
+    depth = odm.Integer(index=False)                         # Depth of the section
+    heuristic = odm.Optional(odm.Compound(Heuristic))        # Heuristic used to score result section
+    tags = odm.Compound(Tagging, default={})                 # List of tags associated to this section
+    title_text = odm.Text(copyto="__text__")                 # Title of the section
 
 
 @odm.model(index=True, store=True)
