@@ -16,7 +16,7 @@ class Signature(odm.Model):
     last_modified = odm.Date(default="NOW")
     name = odm.Keyword(copyto="__text__")
     order = odm.Integer(default=1, store=False)
-    revision = odm.Integer(default=1)
+    revision = odm.Keyword(default="1")
     signature_id = odm.Optional(odm.Keyword())
     source = odm.Keyword()
     state_change_date = odm.Optional(odm.Date(store=False))
