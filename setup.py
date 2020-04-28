@@ -12,15 +12,13 @@ except ImportError:
     USE_CYTHON = False
     extension = '.c'
 
-
-# For development and local builds use this version number, but for real builds replace it
-# with the tag found in the environment
+# Try to load the version from a datafile in the package
 package_version = "4.0.0.dev0"
-if 'BITBUCKET_TAG' in os.environ:
-    package_version = os.environ['BITBUCKET_TAG'].lstrip('v')
-elif 'BUILD_SOURCEBRANCH' in os.environ:
-    full_tag_prefix = 'refs/tags/v'
-    package_version = os.environ['BUILD_SOURCEBRANCH'][len(full_tag_prefix):]
+package_version_path = os.path.join(os.path.dirname(__file__), 'assemblyline', 'VERSION')
+if os.path.exists(package_version_path):
+    with open(package_version_path) as package_version_file:
+        package_version = package_version_file.read().strip()
+
 
 # Mark all the modules that need to be compiled here
 extensions = [
@@ -100,6 +98,7 @@ setup(
             "*sample_suricata.rules",
             "*.pyx",
             "*.pxd",
+            "VERSION",
         ]
     }
 )

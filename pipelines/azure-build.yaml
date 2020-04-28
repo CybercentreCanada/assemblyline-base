@@ -32,6 +32,7 @@ stages:
       displayName: Set python version
       inputs: {versionSpec: 3.8}
     - script: |
+        echo $BUILD_SOURCEBRANCH > assemblyline/VERSION
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U wheel cython pip
         python setup.py sdist
     - publish: $(System.DefaultWorkingDirectory)/dist/
