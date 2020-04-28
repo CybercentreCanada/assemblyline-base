@@ -2,8 +2,10 @@
 #
 #    The following tags are whitelisted:
 #     - Domains pointing to localhost
+#     - Domain commonly found in XML files, certificates and during dynamic Analysis runs
 #     - IPs in the private network IP space
 #     - URI pointing to IPs in the private network IP space
+#     - URIs commonly found in XML files, certificates and during dynamic Analysis runs
 #
 #    Note: - You can override the default tag_whitelist.yml by putting an
 #            updated version in /etc/assemblyline/tag_whitelist.yml.
@@ -34,6 +36,7 @@ match:
     - ocsp.verisign.com
     - logo.verisign.com
     - crl.verisign.com
+    - ctldl.windowsupdate.com
   # Direct match to static domains
   network.static.domain:
     - localhost
@@ -52,6 +55,7 @@ match:
     - ocsp.verisign.com
     - logo.verisign.com
     - crl.verisign.com
+    - ctldl.windowsupdate.com
 
 # Regex section contains tag types and for each tag type
 #  a list of regular expression to be run to whitelist
@@ -65,59 +69,61 @@ regex:
   #  note: Since IPs have already been validated, the regular expression in simpler
   network.static.ip:
     - (?:127\.|10\.|192\.168|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.).*
-  # Regular expression to whitelist dynamic URIs (Private IPs and localhost)
+  # Regular expression to whitelist dynamic URIs
   network.dynamic.uri:
     - (?:ftp|http)s?://localhost(?:$|/.*)
     - (?:ftp|http)s?://(?:(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2})))(?:$|/.*)
-    - (?:http):\/\/schemas\.android\.com\/apk\/res(-auto|\/android)
-    - (?:http):\/\/xmlpull\.org\/v1\/doc\/features\.html(?:$|.*)
-    - (?:http)s:\/\/android\.googlesource\.com\/toolchain\/llvm-project
-    - (?:http):\/\/schemas\.microsoft\.com(?:$|\/.*)
-    - (?:http):\/\/schemas\.openxmlformats\.org(?:$|\/.*)
-    - (:?http):\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/(image|attachedTemplate|header|footnotes|fontTable|customXml|endnotes|theme|settings|webSettings|glossaryDocument|numbering|footer|styles)
-    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/2010\/(wordml|wordprocessingCanvas|wordprocessingInk|wordprocessingGroup|wordprocessingDrawing)
-    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/(2012|2006)\/wordml
-    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/2015\/wordml\/symex
-    - (:?http):\/\/schemas\.microsoft.com\/office\/drawing\/2014\/chartex
-    - (:?http):\/\/schemas\.microsoft.com\/office\/drawing\/2015\/9\/8\/chartex
-    - (:?http):\/\/schemas\.openxmlformats\.org\/drawingml\/2006\/(main|wordprocessingDrawing)
-    - (:?http):\/\/schemas\.openxmlformats\.org\/package\/2006\/relationships
-    - (:?http):\/\/schemas\.openxmlformats\.org\/markup-compatibility\/2006
-    - (:?http):\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/(relationships|math)
-    - (:?http):\/\/schemas\.openxmlformats\.org\/word\/2010\/wordprocessingShape
-    - (:?http):\/\/schemas\.openxmlformats\.org\/wordprocessingml\/2006\/main
-    - (?:https):\/\/www.verisign.com\/(rpa0|rpa|cps0)
-    - (?:http):\/\/wpad.reddog.microsoft.com\/wpad.dat
-    - (?:http):\/\/ocsp.verisign.com
-    - (?:http):\/\/logo.verisign.com\/vslogo.gif04
-    - (?:http):\/\/crl.verisign.com\/pca3-g5.crl04
-    - (?:http):\/\/csc3-2010-crl.verisign.com\/CSC3-2010\.crl0D
-    - (?:http):\/\/csc3-2010-aia.verisign.com\/CSC3-2010\.cer0
-  # Regular expression to whitelist static URIs (Private IPs and localhost)
+    - https?://schemas\.android\.com/apk/res(-auto|/android)
+    - https?://xmlpull\.org/v1/doc/features\.html(?:$|.*)
+    - https?://android\.googlesource\.com/toolchain/llvm-project
+    - https?://schemas\.microsoft\.com(?:$|/.*)
+    - https?://schemas\.openxmlformats\.org(?:$|/.*)
+    - https?://schemas\.openxmlformats\.org/officeDocument/2006/relationships/(image|attachedTemplate|header|footnotes|fontTable|customXml|endnotes|theme|settings|webSettings|glossaryDocument|numbering|footer|styles)
+    - https?://schemas\.microsoft\.com/office/word/2010/(wordml|wordprocessingCanvas|wordprocessingInk|wordprocessingGroup|wordprocessingDrawing)
+    - https?://schemas\.microsoft\.com/office/word/(2012|2006)/wordml
+    - https?://schemas\.microsoft\.com/office/word/2015/wordml/symex
+    - https?://schemas\.microsoft\.com/office/drawing/2014/chartex
+    - https?://schemas\.microsoft\.com/office/drawing/2015/9/8/chartex
+    - https?://schemas\.openxmlformats\.org/drawingml/2006/(main|wordprocessingDrawing)
+    - https?://schemas\.openxmlformats\.org/package/2006/relationships
+    - https?://schemas\.openxmlformats\.org/markup-compatibility/2006
+    - https?://schemas\.openxmlformats\.org/officeDocument/2006/(relationships|math)
+    - https?://schemas\.openxmlformats\.org/word/2010/wordprocessingShape
+    - https?://schemas\.openxmlformats\.org/wordprocessingml/2006/main
+    - https?://www\.verisign\.com/(rpa0|rpa|cps0)
+    - https?://wpad\.reddog\.microsoft\.com/wpad\.dat
+    - https?://ocsp\.verisign\.com
+    - https?://logo\.verisign\.com/vslogo\.gif04
+    - https?://crl\.verisign\.com/pca3-g5\.crl04
+    - https?://csc3-2010-crl\.verisign\.com/CSC3-2010\.crl0D
+    - https?://csc3-2010-aia\.verisign\.com/CSC3-2010\.cer0
+    - https?://ctldl\.windowsupdate\.com/.*
+  # Regular expression to whitelist static URIs
   network.static.uri:
     - (?:ftp|http)s?://localhost(?:$|/.*)
     - (?:ftp|http)s?://(?:(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2})))(?:$|/.*)
-    - (?:http):\/\/schemas\.android\.com\/apk\/res(-auto|\/android)
-    - (?:http):\/\/xmlpull\.org\/v1\/doc\/features\.html(?:$|.*)
-    - (?:http)s:\/\/android\.googlesource\.com\/toolchain\/llvm-project
-    - (?:http):\/\/schemas\.microsoft\.com(?:$|\/.*)
-    - (?:http):\/\/schemas\.openxmlformats\.org(?:$|\/.*)
-    - (:?http):\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/(image|attachedTemplate|header|footnotes|fontTable|customXml|endnotes|theme|settings|webSettings|glossaryDocument|numbering|footer|styles)
-    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/2010\/(wordml|wordprocessingCanvas|wordprocessingInk|wordprocessingGroup|wordprocessingDrawing)
-    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/(2012|2006)\/wordml
-    - (:?http):\/\/schemas\.microsoft.com\/office\/word\/2015\/wordml\/symex
-    - (:?http):\/\/schemas\.microsoft.com\/office\/drawing\/2014\/chartex
-    - (:?http):\/\/schemas\.microsoft.com\/office\/drawing\/2015\/9\/8\/chartex
-    - (:?http):\/\/schemas\.openxmlformats\.org\/drawingml\/2006\/(main|wordprocessingDrawing)
-    - (:?http):\/\/schemas\.openxmlformats\.org\/package\/2006\/relationships
-    - (:?http):\/\/schemas\.openxmlformats\.org\/markup-compatibility\/2006
-    - (:?http):\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/(relationships|math)
-    - (:?http):\/\/schemas\.openxmlformats\.org\/word\/2010\/wordprocessingShape
-    - (:?http):\/\/schemas\.openxmlformats\.org\/wordprocessingml\/2006\/main
-    - (?:https):\/\/www.verisign.com\/(rpa0|rpa|cps0)
-    - (?:http):\/\/wpad.reddog.microsoft.com\/wpad.dat
-    - (?:http):\/\/ocsp.verisign.com
-    - (?:http):\/\/logo.verisign.com\/vslogo.gif04
-    - (?:http):\/\/crl.verisign.com\/pca3-g5.crl04
-    - (?:http):\/\/csc3-2010-crl.verisign.com\/CSC3-2010\.crl0D
-    - (?:http):\/\/csc3-2010-aia.verisign.com\/CSC3-2010\.cer0
+    - https?://schemas\.android\.com/apk/res(-auto|/android)
+    - https?://xmlpull\.org/v1/doc/features\.html(?:$|.*)
+    - https?://android\.googlesource\.com/toolchain/llvm-project
+    - https?://schemas\.microsoft\.com(?:$|/.*)
+    - https?://schemas\.openxmlformats\.org(?:$|/.*)
+    - https?://schemas\.openxmlformats\.org/officeDocument/2006/relationships/(image|attachedTemplate|header|footnotes|fontTable|customXml|endnotes|theme|settings|webSettings|glossaryDocument|numbering|footer|styles)
+    - https?://schemas\.microsoft\.com/office/word/2010/(wordml|wordprocessingCanvas|wordprocessingInk|wordprocessingGroup|wordprocessingDrawing)
+    - https?://schemas\.microsoft\.com/office/word/(2012|2006)/wordml
+    - https?://schemas\.microsoft\.com/office/word/2015/wordml/symex
+    - https?://schemas\.microsoft\.com/office/drawing/2014/chartex
+    - https?://schemas\.microsoft\.com/office/drawing/2015/9/8/chartex
+    - https?://schemas\.openxmlformats\.org/drawingml/2006/(main|wordprocessingDrawing)
+    - https?://schemas\.openxmlformats\.org/package/2006/relationships
+    - https?://schemas\.openxmlformats\.org/markup-compatibility/2006
+    - https?://schemas\.openxmlformats\.org/officeDocument/2006/(relationships|math)
+    - https?://schemas\.openxmlformats\.org/word/2010/wordprocessingShape
+    - https?://schemas\.openxmlformats\.org/wordprocessingml/2006/main
+    - https?://www\.verisign\.com/(rpa0|rpa|cps0)
+    - https?://wpad\.reddog\.microsoft\.com/wpad\.dat
+    - https?://ocsp\.verisign\.com
+    - https?://logo\.verisign\.com/vslogo\.gif04
+    - https?://crl\.verisign\.com/pca3-g5\.crl04
+    - https?://csc3-2010-crl\.verisign\.com/CSC3-2010\.crl0D
+    - https?://csc3-2010-aia\.verisign\.com/CSC3-2010\.cer0
+    - https?://ctldl\.windowsupdate\.com/.*
