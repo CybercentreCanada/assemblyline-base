@@ -8,7 +8,8 @@ ATTACK_ID_LIST = list(attack_map.keys())
 
 @odm.model(index=True, store=True)
 class Heuristic(odm.Model):
-    attack_id = odm.List(odm.Enum(values=ATTACK_ID_LIST, copyto="__text__"))  # Att&ck matrix pattern
+    attack_id = odm.List(odm.Enum(values=ATTACK_ID_LIST, copyto="__text__"),
+                         default=[])                                          # List of all associated Att&ck IDs
     classification = odm.Classification(default=Classification.UNRESTRICTED)  # Classification of the heuristic
     description = odm.Text(copyto="__text__")                                 # Description of the heuristic
     filetype = odm.Keyword(copyto="__text__")                                 # Type of file targeted

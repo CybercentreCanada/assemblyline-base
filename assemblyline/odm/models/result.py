@@ -11,9 +11,9 @@ constants = forge.get_constants()
 
 @odm.model(index=True, store=False)
 class Attack(odm.Model):
-    id = odm.Enum(values=ATTACK_ID_LIST, copyto="__text__")  # Attack matrix ID
-    pattern = odm.Keyword(copyto="__text__")                 # Attack matrix Pattern Name
-    categories = odm.List(odm.Keyword())                     # Attack matrix Categories
+    attack_id = odm.Enum(values=ATTACK_ID_LIST, copyto="__text__")  # Attack matrix ID
+    pattern = odm.Keyword(copyto="__text__")                        # Attack matrix Pattern Name
+    categories = odm.List(odm.Keyword())                            # Attack matrix Categories
 
 
 @odm.model(index=True, store=False)
