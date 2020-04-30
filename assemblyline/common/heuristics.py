@@ -8,7 +8,7 @@ heur_logger = logging.getLogger("assemblyline.heuristics")
 def service_heuristic_to_result_heuristic(srv_heuristic, heuristics):
     heur_id = srv_heuristic['heur_id']
     attack_ids = srv_heuristic.pop('attack_ids', [])
-    signatures = srv_heuristic.pop('signatures', [])
+    signatures = srv_heuristic.pop('signatures', {})
     frequency = srv_heuristic.pop('frequency', 0)
     score_map = srv_heuristic.pop('score_map', {})
 
