@@ -528,9 +528,9 @@ class AssemblylineDatastore(object):
                         })
                         done_map['heuristics'].add(cache_key)
 
-                    if section['heuristic'].get('attack_id', False):
+                    for attack in section['heuristic'].get('attack', []):
                         # Get attack matrix data
-                        attack_id = section['heuristic']['attack_id']
+                        attack_id = attack['attack_id']
 
                         cache_key = f"{attack_id}_{key}"
                         if cache_key not in done_map['attack']:
@@ -538,8 +538,8 @@ class AssemblylineDatastore(object):
                                 "key": key,
                                 "attack_id": attack_id,
                                 "h_type": h_type,
-                                "name": section['heuristic']['attack_pattern'],
-                                "categories": section['heuristic']['attack_categories']
+                                "name": attack['pattern'],
+                                "categories": attack['categories']
                             })
                             done_map['attack'].add(cache_key)
 
