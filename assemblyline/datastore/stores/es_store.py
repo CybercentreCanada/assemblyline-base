@@ -91,7 +91,9 @@ class ElasticBulkPlan(BulkPlan):
         self.operations.append(json.dumps({"delete": {"_index": self.index, "_id": doc_id}}))
 
     def add_insert_operation(self, doc_id, doc):
-        if self.model:
+        if isinstance(doc, self.model):
+            saved_doc = doc.as_primitives(hidden_fields=True)
+        elif self.model:
             saved_doc = self.model(doc).as_primitives(hidden_fields=True)
         else:
             if not isinstance(doc, dict):
@@ -104,7 +106,9 @@ class ElasticBulkPlan(BulkPlan):
         self.operations.append(json.dumps(saved_doc))
 
     def add_upsert_operation(self, doc_id, doc):
-        if self.model:
+        if isinstance(doc, self.model):
+            saved_doc = doc.as_primitives(hidden_fields=True)
+        elif self.model:
             saved_doc = self.model(doc).as_primitives(hidden_fields=True)
         else:
             if not isinstance(doc, dict):

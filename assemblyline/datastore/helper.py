@@ -27,7 +27,6 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
-from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
 
@@ -528,9 +527,9 @@ class AssemblylineDatastore(object):
                         })
                         done_map['heuristics'].add(cache_key)
 
-                    if section['heuristic'].get('attack_id', False):
+                    for attack in section['heuristic'].get('attack', []):
                         # Get attack matrix data
-                        attack_id = section['heuristic']['attack_id']
+                        attack_id = attack['attack_id']
 
                         cache_key = f"{attack_id}_{key}"
                         if cache_key not in done_map['attack']:
@@ -538,8 +537,8 @@ class AssemblylineDatastore(object):
                                 "key": key,
                                 "attack_id": attack_id,
                                 "h_type": h_type,
-                                "name": section['heuristic']['attack_pattern'],
-                                "categories": section['heuristic']['attack_categories']
+                                "name": attack['pattern'],
+                                "categories": attack['categories']
                             })
                             done_map['attack'].add(cache_key)
 
