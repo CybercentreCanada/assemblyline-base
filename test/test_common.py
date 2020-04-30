@@ -7,14 +7,17 @@ import re
 from copy import deepcopy
 from io import BytesIO
 
+from assemblyline.odm.models.heuristic import Heuristic
 from baseconv import BASE62_ALPHABET
 
 from assemblyline.common import forge
+from assemblyline.common.attack_map import attack_map
 from assemblyline.common.chunk import chunked_list, chunk
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
 from assemblyline.common.dict_utils import flatten, unflatten, recursive_update, get_recursive_delta
 from assemblyline.common.entropy import calculate_partition_entropy
+from assemblyline.common.heuristics import InvalidHeuristicException, service_heuristic_to_result_heuristic
 from assemblyline.common.hexdump import hexdump
 from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
     now_as_local
@@ -22,6 +25,7 @@ from assemblyline.common.iprange import is_ip_reserved, is_ip_private
 from assemblyline.common.security import get_random_password, get_password_hash, verify_password
 from assemblyline.common.str_utils import safe_str, translate_str
 from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
+from assemblyline.odm.randomizer import random_model_obj, get_random_word
 
 
 def test_chunk():
@@ -121,6 +125,45 @@ def test_entropy():
     assert e1 == parts1[0]
     assert e2 > 7.5
     assert e2 == parts2[0]
+
+
+def test_heuristics_valid():
+    heuristic_list = [random_model_obj(Heuristic) for _ in range(4)]
+    heuristics = {x.heur_id: x for x in heuristic_list}
+
+    attack_ids = list(set([random.choice(list(attack_map.keys())) for _ in range(random.randint(1, 3))]))
+    signatures = {}
+    score_map = {}
+    for x in range(random.randint(2, 4)):
+        name = get_random_word()
+        if x >= 2:
+            score_map[name] = random.randint(10, 100)
+
+        signatures[name] = random.randint(1, 3)
+
+    service_heur = dict(
+        heur_id=random.choice(list(heuristics.keys())),
+        score=0,
+        attack_ids=attack_ids,
+        signatures=signatures,
+        frequency=0,
+        score_map=score_map
+    )
+
+    result_heur = service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
+    assert result_heur is not None
+    assert service_heur['heur_id'] == result_heur['heur_id']
+    assert service_heur['score'] != result_heur['score']
+    for attack in result_heur['attack']:
+        assert attack['attack_id'] in attack_ids
+    for signature in result_heur['signature']:
+        assert signature['name'] in signatures
+        assert signature['frequency'] == signatures[signature['name']]
+
+
+def test_heuristics_invalid():
+    with pytest.raises(InvalidHeuristicException):
+        service_heuristic_to_result_heuristic({'heur_id': "my_id"}, {})
 
 
 def test_hexdump():
