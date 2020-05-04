@@ -366,7 +366,8 @@ class AssemblylineDatastore(object):
             if self._is_valid_tree(tree, num_files, max_score):
                 return {
                     "tree": tree,
-                    "classification": cached_tree['classification']
+                    "classification": cached_tree['classification'],
+                    "filtered": cached_tree['filtered']
                 }
 
         files = {}
@@ -478,13 +479,15 @@ class AssemblylineDatastore(object):
         cached_tree = {
             'expiry_ts': now_as_iso(days_until_archive * 24 * 60 * 60),
             'tree': json.dumps(tree),
-            'classification': max_classification
+            'classification': max_classification,
+            'filtered': len(forbidden_files) > 0
         }
 
         self.submission_tree.save(cache_key, cached_tree)
         return {
             'tree': tree,
-            'classification': max_classification
+            'classification': max_classification,
+            'filtered': len(forbidden_files) > 0
         }
 
     @staticmethod
@@ -519,7 +522,8 @@ class AssemblylineDatastore(object):
                 "suspicious": [],
                 "malicious": []
             },
-            "classification": cl_engine.UNRESTRICTED
+            "classification": cl_engine.UNRESTRICTED,
+            "filtered": False
         }
         done_map = {
             "heuristics": set(),
@@ -539,8 +543,10 @@ class AssemblylineDatastore(object):
             for section in item.get('result', {}).get('sections', []):
                 if user_classification:
                     if not cl_engine.is_accessible(user_classification, section['classification']):
+                        out["filtered"] = True
                         continue
                     if not cl_engine.is_accessible(user_classification, files[key[:64]]['classification']):
+                        out["filtered"] = True
                         continue
 
                 out["classification"] = cl_engine.max_classification(out["classification"], section['classification'])
