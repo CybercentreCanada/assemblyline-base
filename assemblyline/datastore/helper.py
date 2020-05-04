@@ -344,14 +344,23 @@ class AssemblylineDatastore(object):
         return '1970-01-01T00:00:00.000000Z'
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_or_create_file_tree(self, submission, max_depth):
+    def get_or_create_file_tree(self, submission, max_depth, cl_engine=forge.get_classification(),
+                                user_classification=None):
+        if user_classification is not None:
+            user_classification = cl_engine.normalize_classification(user_classification, long_format=False)
+            cache_key = f"{submission['sid']}_{user_classification}"
+            for illegal_char in [" ", ":", "/"]:
+                cache_key = cache_key.replace(illegal_char, "")
+        else:
+            cache_key = submission['sid']
+
         if isinstance(submission, Model):
             submission = submission.as_primitives()
 
         num_files = len(list(set([x[:64] for x in submission['results']])))
         max_score = submission['max_score']
 
-        cached_tree = self.submission_tree.get_if_exists(submission['sid'], as_obj=False)
+        cached_tree = self.submission_tree.get_if_exists(cache_key, as_obj=False)
         if cached_tree:
             tree = json.loads(cached_tree['tree'])
             if self._is_valid_tree(tree, num_files, max_score):
@@ -362,7 +371,17 @@ class AssemblylineDatastore(object):
         file_hashes = [x[:64] for x in submission['results']]
         file_hashes.extend([x[:64] for x in submission['errors']])
         file_hashes.extend([f['sha256'] for f in submission['files']])
-        file_data_map = self.file.multiget(list(set(file_hashes)), as_dictionary=True, as_obj=False)
+        temp_file_data_map = self.file.multiget(list(set(file_hashes)), as_dictionary=True, as_obj=False)
+        forbidden_files = set()
+
+        max_classification = cl_engine.UNRESTRICTED
+        file_data_map = {}
+        for key, value in temp_file_data_map.items():
+            if user_classification and not cl_engine.is_accessible(user_classification, value['classification']):
+                forbidden_files.add(key)
+                continue
+            file_data_map[key] = value
+            max_classification = cl_engine.max_classification(max_classification, value['classification'])
 
         for key, item in self.result.multiget([x for x in submission['results'] if not x.endswith(".e")],
                                               as_obj=False).items():
@@ -416,16 +435,17 @@ class AssemblylineDatastore(object):
                     }
                 except KeyError as e:
                     missing_key = str(e).strip("'")
-                    file_data_map[missing_key] = self.file.get(missing_key, as_obj=False)
-                    placeholder[child_p['sha256']] = {
-                        "name": [child_p['name']],
-                        "type": file_data_map[child_p['sha256']]['type'],
-                        "sha256": file_data_map[child_p['sha256']]['sha256'],
-                        "size": file_data_map[child_p['sha256']]['size'],
-                        "children": children_list,
-                        "truncated": truncated,
-                        "score": scores.get(child_p['sha256'], 0),
-                    }
+                    if missing_key not in forbidden_files:
+                        file_data_map[missing_key] = self.file.get(missing_key, as_obj=False)
+                        placeholder[child_p['sha256']] = {
+                            "name": [child_p['name']],
+                            "type": file_data_map[child_p['sha256']]['type'],
+                            "sha256": file_data_map[child_p['sha256']]['sha256'],
+                            "size": file_data_map[child_p['sha256']]['size'],
+                            "children": children_list,
+                            "truncated": truncated,
+                            "score": scores.get(child_p['sha256'], 0),
+                        }
 
         tree = {}
         for f in submission['files']:
@@ -454,10 +474,11 @@ class AssemblylineDatastore(object):
 
         cached_tree = {
             'expiry_ts': now_as_iso(days_until_archive * 24 * 60 * 60),
-            'tree': json.dumps(tree)
+            'tree': json.dumps(tree),
+            'classification': max_classification
         }
 
-        self.submission_tree.save(submission['sid'], cached_tree)
+        self.submission_tree.save(cache_key, cached_tree)
         return tree
 
     @staticmethod
@@ -504,15 +525,21 @@ class AssemblylineDatastore(object):
             return out
 
         keys = [x for x in list(keys) if not x.endswith(".e")]
+        file_keys = list(set([x[:64] for x in keys]))
         items = self.result.multiget(keys, as_obj=False)
+        files = self.file.multiget(file_keys, as_obj=False)
 
         for key, item in items.items():
             for section in item.get('result', {}).get('sections', []):
                 if user_classification:
                     if not cl_engine.is_accessible(user_classification, section['classification']):
                         continue
+                    if not cl_engine.is_accessible(user_classification, files[key[:64]]['classification']):
+                        continue
 
                 out["classification"] = cl_engine.max_classification(out["classification"], section['classification'])
+                out["classification"] = cl_engine.max_classification(out["classification"],
+                                                                     files[key[:64]]['classification'])
 
                 h_type = "info"
 
