@@ -483,7 +483,7 @@ class AssemblylineDatastore(object):
         return True
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_summary_from_keys(self, keys):
+    def get_summary_from_keys(self, keys, cl_engine=forge.get_classification(), user_classification=None):
         out = {
             "tags": [],
             "attack_matrix": [],
@@ -491,7 +491,8 @@ class AssemblylineDatastore(object):
                 "info": [],
                 "suspicious": [],
                 "malicious": []
-            }
+            },
+            "classification": cl_engine.UNRESTRICTED
         }
         done_map = {
             "heuristics": set(),
@@ -507,6 +508,12 @@ class AssemblylineDatastore(object):
 
         for key, item in items.items():
             for section in item.get('result', {}).get('sections', []):
+                if user_classification:
+                    if not cl_engine.is_accessible(user_classification, section['classification']):
+                        continue
+
+                out["classification"] = cl_engine.max_classification(out["classification"], section['classification'])
+
                 h_type = "info"
 
                 if section.get('heuristic', False):
