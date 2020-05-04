@@ -102,7 +102,7 @@ subgroups:
     # limited_to_group: CSE
 
 # Default restricted classification
-restricted: TLP:A//CMR//REL TO CSE/CCCS/IR
+restricted: TLP:A//CMR
 
 # Default unrestricted classification:
 #   When no classification are provided or that the classification engine is

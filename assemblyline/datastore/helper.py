@@ -364,7 +364,10 @@ class AssemblylineDatastore(object):
         if cached_tree:
             tree = json.loads(cached_tree['tree'])
             if self._is_valid_tree(tree, num_files, max_score):
-                return tree
+                return {
+                    "tree": tree,
+                    "classification": cached_tree['classification']
+                }
 
         files = {}
         scores = {}
@@ -479,7 +482,10 @@ class AssemblylineDatastore(object):
         }
 
         self.submission_tree.save(cache_key, cached_tree)
-        return tree
+        return {
+            'tree': tree,
+            'classification': max_classification
+        }
 
     @staticmethod
     def _is_valid_tree(tree, num_files, max_score):
