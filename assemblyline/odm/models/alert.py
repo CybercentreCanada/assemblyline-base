@@ -57,6 +57,7 @@ class Alert(odm.Model):
     expiry_ts = odm.Optional(odm.Date(store=False))                     # Expiry timestamp
     extended_scan = odm.Enum(values=EXTENDED_SCAN_VALUES, store=False)  # Status of the extended scan
     file = odm.Compound(File)                                           # File block
+    filtered = odm.Boolean(default=False)                               # Are the alert result filtered
     heuristic = odm.Compound(Heuristic)                                 # Heuristic result block
     label = odm.List(odm.Keyword(), copyto="__text__", default=[])      # List of labels applied to the alert
     metadata = odm.Mapping(odm.Keyword(), store=False)                  # Metadata submitted with the file
