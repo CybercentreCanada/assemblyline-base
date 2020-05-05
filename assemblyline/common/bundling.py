@@ -135,7 +135,8 @@ def create_bundle(sid, working_dir=WORK_DIR):
                     pass
 
                 # Create file information data
-                file_tree = datastore.get_or_create_file_tree(submission, config.submission.max_extraction_depth)
+                file_tree = datastore.get_or_create_file_tree(submission,
+                                                              config.submission.max_extraction_depth)['tree']
                 flatten_tree = list(set(recursive_flatten_tree(file_tree) +
                                         [r[:64] for r in submission.get("results", [])]))
                 file_infos = get_file_infos(flatten_tree, datastore)
