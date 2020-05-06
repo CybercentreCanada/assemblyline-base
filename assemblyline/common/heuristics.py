@@ -62,7 +62,6 @@ class Heuristic(object):
         # Set defaults
         self.heur_id = heur_id
         self.attack_ids = []
-        self.score = 0
         self.name = definition.name
         self.classification = definition.classification
 
@@ -76,14 +75,16 @@ class Heuristic(object):
 
         # Calculate the score for the signatures
         self.signatures = signatures or {}
-        for sig_name, freq in signatures.items():
-            sig_score = definition.signature_score_map.get(sig_name, score_map.get(sig_name, definition.score))
-            self.score += sig_score * freq
-
-        # Calculate the score for the heuristic frequency
-        self.score += definition.score * frequency
+        if len(self.signatures) > 0:
+            self.score = 0
+            for sig_name, freq in signatures.items():
+                sig_score = definition.signature_score_map.get(sig_name, score_map.get(sig_name, definition.score))
+                self.score += sig_score * freq
+        else:
+            # Calculate the score for the heuristic frequency
+            frequency = frequency or 1
+            self.score = definition.score * frequency
 
         # Check scoring boundaries
-        self.score = max(definition.score, self.score)
         if definition.max_score:
             self.score = min(self.score, definition.max_score)
