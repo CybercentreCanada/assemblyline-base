@@ -1,6 +1,6 @@
 import logging
 
-from assemblyline.common.attack_map import attack_map
+from assemblyline.common.attack_map import attack_map, software_map
 
 heur_logger = logging.getLogger("assemblyline.heuristics")
 
@@ -68,10 +68,18 @@ class Heuristic(object):
         # Show only attack_ids that are valid
         attack_ids = attack_ids or []
         for a_id in attack_ids:
-            if a_id in set(attack_map.keys()):
+            if a_id in attack_map:
                 self.attack_ids.append(a_id)
+            elif a_id in software_map:
+                for s_a_id in software_map[a_id]['attack_ids']:
+                    if s_a_id in attack_map:
+                        self.attack_ids.append(s_a_id)
+                    else:
+                        heur_logger.warning(f"Invalid related attack_id '{s_a_id}' for software '{a_id}' "
+                                            f"in heuristic '{heur_id}'. Ignoring it.")
             else:
-                heur_logger.warning(f"Invalid attack_id '{a_id}' for heuristic '{heur_id}'. Ignoring it.")
+                heur_logger.warning(f"Invalid attack_id '{a_id}' in heuristic '{heur_id}'. Ignoring it.")
+        self.attack_ids = list(set(self.attack_ids))
 
         # Calculate the score for the signatures
         self.signatures = signatures or {}
