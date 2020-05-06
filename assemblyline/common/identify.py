@@ -106,15 +106,18 @@ STRONG_INDICATORS = {
     ],
     'code/ps1': [
         # Match one of the Common Cmdlets
-        re.compile(rb'(^|\n)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process){1}'),
+        re.compile(rb'(^|\n)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|'
+                   rb'Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|'
+                   rb'New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|'
+                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process)'),
     ]
 }
 STRONG_SCORE = 15
 MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
-    'code/javascript': [b'var ',
-                        b'document\.write\(',
+    'code/javascript': [rb'var ',
+                        rb'document\.write\(',
                         rb'String\.(fromCharCode|raw)\(',
                         rb'Math\.(round|pow|sin|cos)\(',
                         rb'(isNaN|isFinite|parseInt|parseFloat)\(',
@@ -590,7 +593,7 @@ def zip_ident(path: str, fallback: str = None) -> str:
                                          stderr=subprocess.PIPE,
                                          stdout=subprocess.PIPE).communicate()
             lines = stdout.splitlines()
-            index = lines[1].index("Name")
+            index = lines[1].index(b"Name")
             for file_name in lines[3:-2]:
                 file_list.append(file_name[index:])
         except Exception:
@@ -619,21 +622,21 @@ def zip_ident(path: str, fallback: str = None) -> str:
             android_manifest = True
         elif file_name == 'classes.dex':
             android_dex = True
-        elif file_name.startswith('Payload/') and file_name.endswith(".app/Info.plist"):
+        elif file_name.startswith(b'Payload/') and file_name.endswith(b".app/Info.plist"):
             is_ipa = True
-        elif file_name.endswith(".class"):
+        elif file_name.endswith(b".class"):
             tot_class += 1
-        elif file_name.endswith(".jar"):
+        elif file_name.endswith(b".jar"):
             tot_jar += 1
-        elif file_name.startswith('word/'):
+        elif file_name.startswith(b'word/'):
             is_word = True
-        elif file_name.startswith('xl/'):
+        elif file_name.startswith(b'xl/'):
             is_excel = True
-        elif file_name.startswith('ppt/'):
+        elif file_name.startswith(b'ppt/'):
             is_ppt = True
-        elif file_name.startswith('docProps/'):
+        elif file_name.startswith(b'docProps/'):
             doc_props = True
-        elif file_name.startswith('_rels/'):
+        elif file_name.startswith(b'_rels/'):
             doc_rels = True
         elif file_name == '[Content_Types].xml':
             doc_types = True
