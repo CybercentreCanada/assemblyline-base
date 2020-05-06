@@ -18,12 +18,17 @@ WORKDIR /opt/alv4
 #
 COPY assemblyline-base assemblyline-base
 RUN pip install -e ./assemblyline-base[test]
-RUN pip uninstall -y assemblyline
 
 COPY assemblyline-core assemblyline-core
 RUN pip install -e ./assemblyline-core[test]
-RUN pip uninstall -y assemblyline_core
 
 COPY assemblyline-ui assemblyline-ui
 RUN pip install -e ./assemblyline-ui[test]
+
+COPY assemblyline_client assemblyline_client
+RUN pip install -e ./assemblyline_client[test]
+
+RUN pip uninstall -y assemblyline
+RUN pip uninstall -y assemblyline_core
 RUN pip uninstall -y assemblyline_ui
+RUN pip uninstall -y assemblyline_client
