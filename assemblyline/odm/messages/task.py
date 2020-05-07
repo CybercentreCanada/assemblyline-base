@@ -1,4 +1,6 @@
 from assemblyline import odm
+from assemblyline.common import forge
+Classification = forge.get_classification()
 
 MSG_TYPES = {"Task"}
 LOADER_CLASS = "assemblyline.odm.messages.task.TaskMessage"
@@ -6,6 +8,7 @@ LOADER_CLASS = "assemblyline.odm.messages.task.TaskMessage"
 
 @odm.model()
 class FileInfo(odm.Model):
+    classification = odm.Classification()  # Classification of the file being scanned
     magic = odm.Keyword()  # The output from libmagic which was used to determine the tag
     md5 = odm.MD5()        # MD5 of the file
     mime = odm.Optional(odm.Keyword())  # The libmagic mime type
