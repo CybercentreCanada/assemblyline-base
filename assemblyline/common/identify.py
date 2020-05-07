@@ -595,7 +595,7 @@ def zip_ident(path: str, fallback: str = None) -> str:
             lines = stdout.splitlines()
             index = lines[1].index(b"Name")
             for file_name in lines[3:-2]:
-                file_list.append(file_name[index:])
+                file_list.append(safe_str(file_name[index:]))
         except Exception:
             if fallback is not None:
                 return fallback
@@ -622,21 +622,21 @@ def zip_ident(path: str, fallback: str = None) -> str:
             android_manifest = True
         elif file_name == 'classes.dex':
             android_dex = True
-        elif file_name.startswith(b'Payload/') and file_name.endswith(b".app/Info.plist"):
+        elif file_name.startswith('Payload/') and file_name.endswith(".app/Info.plist"):
             is_ipa = True
-        elif file_name.endswith(b".class"):
+        elif file_name.endswith(".class"):
             tot_class += 1
-        elif file_name.endswith(b".jar"):
+        elif file_name.endswith(".jar"):
             tot_jar += 1
-        elif file_name.startswith(b'word/'):
+        elif file_name.startswith('word/'):
             is_word = True
-        elif file_name.startswith(b'xl/'):
+        elif file_name.startswith('xl/'):
             is_excel = True
-        elif file_name.startswith(b'ppt/'):
+        elif file_name.startswith('ppt/'):
             is_ppt = True
-        elif file_name.startswith(b'docProps/'):
+        elif file_name.startswith('docProps/'):
             doc_props = True
-        elif file_name.startswith(b'_rels/'):
+        elif file_name.startswith('_rels/'):
             doc_rels = True
         elif file_name == '[Content_Types].xml':
             doc_types = True
