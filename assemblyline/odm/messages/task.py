@@ -8,7 +8,6 @@ LOADER_CLASS = "assemblyline.odm.messages.task.TaskMessage"
 
 @odm.model()
 class FileInfo(odm.Model):
-    classification = odm.Classification()  # Classification of the file being scanned
     magic = odm.Keyword()  # The output from libmagic which was used to determine the tag
     md5 = odm.MD5()        # MD5 of the file
     mime = odm.Optional(odm.Keyword())  # The libmagic mime type
@@ -34,6 +33,7 @@ class DataItem(odm.Model):
 @odm.model()
 class Task(odm.Model):
     sid = odm.UUID()
+    min_classification = odm.Classification()  # Minimum classification of the file being scanned
     fileinfo: FileInfo = odm.Compound(FileInfo)          # File info block
     filename = odm.Keyword()
     service_name = odm.Keyword()
