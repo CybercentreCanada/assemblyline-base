@@ -1,4 +1,6 @@
 from assemblyline import odm
+from assemblyline.common import forge
+Classification = forge.get_classification()
 
 MSG_TYPES = {"Task"}
 LOADER_CLASS = "assemblyline.odm.messages.task.TaskMessage"
@@ -31,6 +33,7 @@ class DataItem(odm.Model):
 @odm.model()
 class Task(odm.Model):
     sid = odm.UUID()
+    min_classification = odm.Classification()  # Minimum classification of the file being scanned
     fileinfo: FileInfo = odm.Compound(FileInfo)          # File info block
     filename = odm.Keyword()
     service_name = odm.Keyword()
