@@ -10,7 +10,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, MultiKeyError
-from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model
+from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model, ClassificationObject
 from assemblyline.odm.base import _Field
 from assemblyline.remote.datatypes.lock import Lock
 
@@ -39,6 +39,9 @@ class BulkPlan(object):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
     def add_upsert_operation(self, doc_id, doc):
+        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+
+    def add_update_operation(self, doc_id, doc):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
     def get_plan_data(self):
@@ -354,6 +357,8 @@ class Collection(object):
                     value = value.as_primitives()
                 elif isinstance(value, datetime):
                     value = value.isoformat()
+                elif isinstance(value, ClassificationObject):
+                    value = str(value)
 
             ret_ops.append((op, doc_key, value))
 
