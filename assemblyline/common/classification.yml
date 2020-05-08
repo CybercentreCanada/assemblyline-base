@@ -13,6 +13,8 @@ levels:
   # List of alternate names for the current marking
 - aliases:
   - UNRESTRICTED
+  - UNCLASSIFIED
+  - U
   # Stylesheet applied in the UI for the different levels
   css:
     # Top banner stylesheet (alert-* because it's based of bootstrap alert dialogs)
@@ -22,13 +24,13 @@ levels:
     # Text stylesheet (text-* because it's based of bootstrap text color styles)
     text: text-muted
   # Description of the classification level
-  description: Data is not classified
+  description: Subject to standard copyright rules, TLP:WHITE information may be distributed without restriction.
   # Interger value of the Classification level (higher is more classified)
   lvl: 100
   # Long name of the classification item
-  name: UNCLASSIFIED
+  name: TLP:WHITE
   # Short name of the classification item
-  short_name: U
+  short_name: TLP:W
 - aliases: []
   css:
     banner: alert-success
@@ -107,4 +109,4 @@ restricted: TLP:A//CMR
 # Default unrestricted classification:
 #   When no classification are provided or that the classification engine is
 #   disabled, this is the classification value each items will get
-unrestricted: U
+unrestricted: TLP:W
