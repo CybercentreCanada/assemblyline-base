@@ -1,14 +1,16 @@
 
 import concurrent.futures
 import json
+import time
 from typing import Union, List
 
 import elasticapm
+import elasticsearch
 
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
-from assemblyline.datastore import Collection
+from assemblyline.datastore import Collection, log
 from assemblyline.odm import Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
@@ -178,6 +180,154 @@ class AssemblylineDatastore(object):
             return data
         else:
             return data.as_primitives()
+
+    @elasticapm.capture_span(span_type='datastore')
+    def multi_index_bulk(self, bulk_plans):
+        max_retry_backoff = 10
+        retries = 0
+        while True:
+            try:
+                plan = "\n".join([p.get_plan_data() for p in bulk_plans])
+                ret_val = self.ds.client.bulk(body=plan)
+                return ret_val
+            except (elasticsearch.exceptions.ConnectionError,
+                    elasticsearch.exceptions.ConnectionTimeout,
+                    elasticsearch.exceptions.AuthenticationException) as e:
+                log.warning(f"No connection to Elasticsearch server(s): "
+                            f"{' | '.join(self.ds.get_hosts(safe=True))}"
+                            f", retrying...")
+                time.sleep(min(retries, max_retry_backoff))
+                self.ds.connection_reset()
+                retries += 1
+
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, msg, cause = e.args
+                if err_code == 503 or err_code == '503':
+                    log.warning("Looks like index is not ready yet, retrying...")
+                    time.sleep(min(retries, max_retry_backoff))
+                    self.ds.connection_reset()
+                    retries += 1
+                elif err_code == 429 or err_code == '429':
+                    log.warning("Elasticsearch is too busy to perform the requested task, "
+                                "we will wait a bit and retry...")
+                    time.sleep(min(retries, max_retry_backoff))
+                    self.ds.connection_reset()
+                    retries += 1
+
+                else:
+                    raise
+
+    @elasticapm.capture_span(span_type='datastore')
+    def delete_submission_tree_bulk(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
+        submission = self.submission.get(sid, as_obj=False)
+        if not submission:
+            return
+
+        # Create plans
+        s_plan = self.submission.get_bulk_plan()
+        st_plan = self.submission_tree.get_bulk_plan()
+        ss_plan = self.submission_summary.get_bulk_plan()
+        e_plan = self.error.get_bulk_plan()
+        er_plan = self.emptyresult.get_bulk_plan()
+        r_plan = self.result.get_bulk_plan()
+        f_plan = self.file.get_bulk_plan()
+
+        # Add delete operation for submission and cache
+        s_plan.add_delete_operation(sid)
+        for t in [x['id'] for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
+            st_plan.add_delete_operation(t)
+        for s in [x['id'] for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
+            ss_plan.add_delete_operation(s)
+
+        # Gather file list
+        errors = submission['errors']
+        results = submission["results"]
+        files = set()
+        fix_classification_files = set()
+        supp_map = {}
+
+        temp_files = [x[:64] for x in errors]
+        temp_files.extend([x[:64] for x in results])
+        temp_files = set(temp_files)
+
+        # Inspect each files to see if they are reused
+        for temp in temp_files:
+            # Hunt for supplementary files
+            supp_list = set()
+            for res in self.result.stream_search(f"id:{temp}* AND response.supplementary.sha256:*",
+                                                 fl="id", as_obj=False):
+                if res['id'] in results:
+                    result = self.result.get(res['id'], as_obj=False)
+                    for supp in result['response']['supplementary']:
+                        supp_list.add(supp['sha256'])
+
+            # Check if we delete or update classification
+            if self.submission.search(f"errors:{temp}* OR results:{temp}*", rows=0, as_obj=False)["total"] < 2:
+                files.add(temp)
+                files = files.union(supp_list)
+            else:
+                fix_classification_files.add(temp)
+                supp_map[temp] = supp_list
+
+        # Filter results and errors
+        errors = [x for x in errors if x[:64] in files]
+        results = [x for x in results if x[:64] in files]
+
+        # Delete files, errors, results that were only used once
+        for e in errors:
+            e_plan.add_delete_operation(e)
+        for r in results:
+            if r.endswith(".e"):
+                er_plan.add_delete_operation(r)
+            else:
+                r_plan.add_delete_operation(r)
+        for f in files:
+            f_plan.add_delete_operation(f)
+            if transport:
+                transport.delete(f)
+
+        if fix_classification_files and cleanup:
+            # Fix classification for the files that remain in the system
+            for f in fix_classification_files:
+                cur_file = self.file.get(f, as_obj=False)
+                if cur_file:
+                    # Find possible classification for the file in the system
+                    query = f"NOT id:{sid} AND (files.sha256:{f} OR results:{f}* OR errors:{f}*)"
+                    classifications = list(self.submission.facet('classification', query=query).keys())
+
+                    if len(classifications) > 0:
+                        new_file_class = classifications[0]
+                    else:
+                        new_file_class = cl_engine.UNRESTRICTED
+
+                    for c in classifications:
+                        new_file_class = cl_engine.min_classification(new_file_class, c)
+
+                    # Find the results for that classification and alter them if the new classification does not match
+                    for item in self.result.stream_search(f"id:{f}*", fl="classification,id", as_obj=False):
+                        new_class = cl_engine.max_classification(
+                            item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
+                            data = cl_engine.get_access_control_parts(new_class)
+                            data['classification'] = new_class
+                            r_plan.add_update_operation(item['id'], data)
+
+                    # Alter the file classification if the new classification does not match
+                    if cur_file['classification'] != new_file_class:
+                        data = cl_engine.get_access_control_parts(new_file_class)
+                        data['classification'] = new_file_class
+                        f_plan.add_update_operation(f, data)
+                    # Fix associated supplementary files
+                    for supp in supp_map.get(f, set()):
+                        cur_supp = self.file.get(supp, as_obj=False)
+                        if cur_supp:
+                            if cur_supp['classification'] != new_file_class:
+                                data = cl_engine.get_access_control_parts(new_file_class)
+                                data['classification'] = new_file_class
+                                f_plan.add_update_operation(supp, data)
+
+        # Proceed with plan
+        self.multi_index_bulk([s_plan, st_plan, ss_plan, e_plan, er_plan, r_plan, f_plan])
 
     @elasticapm.capture_span(span_type='datastore')
     def delete_submission_tree(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
