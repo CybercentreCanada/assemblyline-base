@@ -332,24 +332,44 @@ class AssemblylineDatastore(object):
     @elasticapm.capture_span(span_type='datastore')
     def delete_submission_tree(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
         submission = self.submission.get(sid, as_obj=False)
+        if not submission:
+            return
+
+        # Gather file list
         errors = submission['errors']
         results = submission["results"]
-        files = []
-        fix_classification_files = []
+        files = set()
+        fix_classification_files = set()
+        supp_map = {}
 
         temp_files = [x[:64] for x in errors]
         temp_files.extend([x[:64] for x in results])
-        temp_files = list(set(temp_files))
+        temp_files = set(temp_files)
+
+        # Inspect each files to see if they are reused
         for temp in temp_files:
-            query = f"errors:{temp}* OR results:{temp}*"
-            if self.submission.search(query, rows=0, as_obj=False)["total"] < 2:
-                files.append(temp)
+            # Hunt for supplementary files
+            supp_list = set()
+            for res in self.result.stream_search(f"id:{temp}* AND response.supplementary.sha256:*",
+                                                 fl="id", as_obj=False):
+                if res['id'] in results:
+                    result = self.result.get(res['id'], as_obj=False)
+                    for supp in result['response']['supplementary']:
+                        supp_list.add(supp['sha256'])
+
+            # Check if we delete or update classification
+            if self.submission.search(f"errors:{temp}* OR results:{temp}*", rows=0, as_obj=False)["total"] < 2:
+                files.add(temp)
+                files = files.union(supp_list)
             else:
-                fix_classification_files.append(temp)
+                fix_classification_files.add(temp)
+                supp_map[temp] = supp_list
+
+        # Filter results and errors
         errors = [x for x in errors if x[:64] in files]
         results = [x for x in results if x[:64] in files]
 
-        # Delete childs
+        # Delete files, errors, results that were only used once
         for e in errors:
             self.error.delete(e)
         for r in results:
@@ -367,13 +387,10 @@ class AssemblylineDatastore(object):
             for f in fix_classification_files:
                 cur_file = self.file.get(f, as_obj=False)
                 if cur_file:
-                    classifications = []
-                    # Find possible submissions that uses that file and the min classification for those submissions
-                    for item in self.submission.stream_search(f"files.sha256:{f} OR results:{f}* OR errors:{f}*",
-                                                              fl="classification,id", as_obj=False):
-                        if item['id'] != sid:
-                            classifications.append(item['classification'])
-                    classifications = list(set(classifications))
+                    # Find possible classification for the file in the system
+                    query = f"NOT id:{sid} AND (files.sha256:{f} OR results:{f}* OR errors:{f}*)"
+                    classifications = list(self.submission.facet('classification', query=query).keys())
+
                     if len(classifications) > 0:
                         new_file_class = classifications[0]
                     else:
@@ -392,12 +409,6 @@ class AssemblylineDatastore(object):
                             update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
                             self.result.update(item['id'], update_params)
 
-                            # cur_res = self.result.get(item['id'], as_obj=False)
-                            # if cur_res:
-                            #     Old way
-                            #     cur_res['classification'] = new_class
-                            #     self.result.save(item['id'], cur_res)
-
                     # Alter the file classification if the new classification does not match
                     if cur_file['classification'] != new_file_class:
                         parts = cl_engine.get_access_control_parts(new_file_class)
@@ -405,13 +416,22 @@ class AssemblylineDatastore(object):
                         update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
                         self.file.update(f, update_params)
 
-                        # Old way
-                        # cur_file['classification'] = new_file_class
-                        # self.file.save(f, cur_file)
+                    # Fix associated supplementary files
+                    for supp in supp_map.get(f, set()):
+                        cur_supp = self.file.get(supp, as_obj=False)
+                        if cur_supp:
+                            if cur_supp['classification'] != new_file_class:
+                                parts = cl_engine.get_access_control_parts(new_file_class)
+                                update_params = [(Collection.UPDATE_SET, 'classification', new_file_class)]
+                                update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
+                                self.file.update(supp, update_params)
 
+        # Delete the submission and cached trees and summaries
         self.submission.delete(sid)
-        self.submission_tree.delete(sid)
-        self.submission_summary.delete(sid)
+        for t in [x['id'] for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
+            self.submission_tree.delete(t)
+        for s in [x['id'] for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
+            self.submission_summary.delete(s)
 
     @elasticapm.capture_span(span_type='datastore')
     def get_all_heuristics(self):
