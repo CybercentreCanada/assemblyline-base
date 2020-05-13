@@ -206,13 +206,13 @@ class Keyword(_Field):
         # We have a special case for bytes here due to how often strings and bytes
         # get mixed up in python apis
         if isinstance(value, bytes):
-            raise ValueError(f"Keyword ({self.name}) doesn't accept bytes values")
+            raise ValueError(f"[{self.name}] Keyword doesn't accept bytes values")
 
         if value == '' or value is None:
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"Empty strings are not allow without defaults for field '{self.name}'")
+                raise ValueError(f"[{self.name}] Empty strings are not allow without defaults")
 
         if value is None:
             return None
@@ -243,13 +243,13 @@ class ValidatedKeyword(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"Empty strings are not allow without defaults (field: {self.name})")
+                raise ValueError(f"[{self.name}] Empty strings are not allow without defaults")
 
         if value is None:
             return value
 
         if not self.validation_regex.match(value):
-            raise ValueError(f"'{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name}] '{value}' not match the validator: {self.validation_regex.pattern}")
 
         return str(value)
 
@@ -317,10 +317,10 @@ class Enum(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError("Empty enums are not allow without defaults")
+                raise ValueError(f"[{self.name}] Empty enums are not allow without defaults")
 
         if value not in self.values:
-            raise ValueError(f"{value} not in the possible values: {self.values}")
+            raise ValueError(f"[{self.name}] {value} not in the possible values: {self.values}")
 
         if value is None:
             return value
@@ -351,7 +351,7 @@ class Text(_Field):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError("Empty strings are not allow without defaults")
+                raise ValueError(f"[{self.name}] Empty strings are not allow without defaults")
 
         if value is None:
             return None
@@ -468,10 +468,10 @@ class ClassificationString(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError("Empty classification is not allowed without defaults")
+                raise ValueError(f"[{self.name}] Empty classification is not allowed without defaults")
 
         if not self.engine.is_valid(value):
-            raise ValueError(f"Invalid classification: {value}")
+            raise ValueError(f"[{self.name}] Invalid classification: {value}")
 
         return str(value)
 
