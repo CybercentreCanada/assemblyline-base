@@ -2,7 +2,9 @@
 import concurrent.futures
 import json
 import time
+
 from typing import Union, List
+from datetime import datetime
 
 import elasticapm
 import elasticsearch
@@ -11,7 +13,7 @@ from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore import Collection, log
-from assemblyline.odm import Model
+from assemblyline.odm import Model, DATEFORMAT
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
@@ -192,7 +194,7 @@ class AssemblylineDatastore(object):
                 return ret_val
             except (elasticsearch.exceptions.ConnectionError,
                     elasticsearch.exceptions.ConnectionTimeout,
-                    elasticsearch.exceptions.AuthenticationException) as e:
+                    elasticsearch.exceptions.AuthenticationException):
                 log.warning(f"No connection to Elasticsearch server(s): "
                             f"{' | '.join(self.ds.get_hosts(safe=True))}"
                             f", retrying...")
@@ -890,6 +892,8 @@ class AssemblylineDatastore(object):
             current_fileinfo['archive_ts'] = now_as_iso(days_until_archive * 24 * 60 * 60)
 
             # Update expiry time
+            if isinstance(expiry, datetime):
+                expiry = expiry.strftime(DATEFORMAT)
             current_expiry = current_fileinfo.get('expiry_ts', expiry)
             if current_expiry and expiry:
                 current_fileinfo['expiry_ts'] = max(current_expiry, expiry)
