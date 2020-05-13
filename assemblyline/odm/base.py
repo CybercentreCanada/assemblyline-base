@@ -212,7 +212,7 @@ class Keyword(_Field):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name}] Empty strings are not allow without defaults")
+                raise ValueError(f"[{self.name}] Empty strings are not allowed without defaults")
 
         if value is None:
             return None
@@ -243,7 +243,7 @@ class ValidatedKeyword(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name}] Empty strings are not allow without defaults")
+                raise ValueError(f"[{self.name}] Empty strings are not allowed without defaults")
 
         if value is None:
             return value
@@ -254,9 +254,19 @@ class ValidatedKeyword(Keyword):
         return str(value)
 
 
-class IP(ValidatedKeyword):
+class IP(Keyword):
     def __init__(self, *args, **kwargs):
-        super().__init__(IP_ONLY_REGEX, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.validation_regex = re.compile(IP_ONLY_REGEX)
+
+    def check(self, value, **kwargs):
+        if not value:
+            return None
+
+        if not self.validation_regex.match(value):
+            raise ValueError(f"[{self.name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+
+        return ".".join([str(int(x)) for x in value.split(".")])
 
 
 class Domain(ValidatedKeyword):
@@ -351,7 +361,7 @@ class Text(_Field):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name}] Empty strings are not allow without defaults")
+                raise ValueError(f"[{self.name}] Empty strings are not allowed without defaults")
 
         if value is None:
             return None
