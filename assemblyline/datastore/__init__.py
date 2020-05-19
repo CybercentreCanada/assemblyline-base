@@ -47,6 +47,10 @@ class BulkPlan(object):
     def get_plan_data(self):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
+    @property
+    def empty(self):
+        return len(self.operations) == 0
+
 
 class Collection(object):
     DEFAULT_ROW_SIZE = 25
