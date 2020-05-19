@@ -5,7 +5,7 @@ from assemblyline.odm.models.heuristic import ATTACK_ID_LIST
 from assemblyline.odm.models.tagging import Tagging
 
 
-BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE"}
+BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "NESTED_CARDS"}
 constants = forge.get_constants()
 
 
