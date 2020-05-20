@@ -14,6 +14,7 @@ import copy
 import json
 import re
 import typing
+import sys
 from datetime import datetime
 
 import arrow
@@ -23,6 +24,14 @@ from dateutil.tz import tzutc
 from assemblyline.common import forge
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.uid import get_random_id
+
+# Python 3.6 deepcopy patch
+if sys.version_info <= (3, 7):
+    import warnings
+    warnings.warn("You should never use assemblyline on a version of python < 3.7! "
+                  "Monkey patching deepcopy so we can test assemblyline_client on python 3.6...")
+    # noinspection PyProtectedMember
+    copy._deepcopy_dispatch[type(re.compile(''))] = lambda r, _: r
 
 BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "__access_grp2__"}
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
