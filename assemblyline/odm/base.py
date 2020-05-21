@@ -40,8 +40,8 @@ FLATTENED_OBJECT_SANITIZER = re.compile("^[a-z][a-z0-9_.]*$")
 NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ ]*$")
 UTC_TZ = tzutc()
 
-DOMAIN_REGEX = r"(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-" \
-               r"\uffff]{2,}\.?)"
+DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\uffff][A-Za-z0-9\u00a1-\uffff_-]{0,62})?[A-Za-z0-9\u00a1-\uffff]\.)+" \
+               r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\uffff]{2,}\.?)"
 DOMAIN_ONLY_REGEX = f"^{DOMAIN_REGEX}$"
 IP_REGEX = r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
 IP_ONLY_REGEX = f"^{IP_REGEX}$"
@@ -55,7 +55,7 @@ SHA1_REGEX = r"^[a-f0-9]{40}$"
 SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"(?:[/?#]\S*)"
-FULL_URI = f"^(?:(?:(?:https?|ftp):)?//)(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?{URI_PATH}?$"
+FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?){URI_PATH}?$"
 
 
 def flat_to_nested(data: dict):
@@ -278,14 +278,35 @@ class IP(Keyword):
         return ".".join([str(int(x)) for x in value.split(".")])
 
 
-class Domain(ValidatedKeyword):
+class Domain(Keyword):
     def __init__(self, *args, **kwargs):
-        super().__init__(DOMAIN_ONLY_REGEX, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.validation_regex = re.compile(DOMAIN_ONLY_REGEX)
+
+    def check(self, value, **kwargs):
+        if not value:
+            return None
+
+        if not self.validation_regex.match(value):
+            raise ValueError(f"[{self.name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+
+        return value.lower()
 
 
-class URI(ValidatedKeyword):
+class URI(Keyword):
     def __init__(self, *args, **kwargs):
-        super().__init__(FULL_URI, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.validation_regex = re.compile(FULL_URI)
+
+    def check(self, value, **kwargs):
+        if not value:
+            return None
+
+        match = self.validation_regex.match(value)
+        if not match:
+            raise ValueError(f"[{self.name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+
+        return match.group(0).replace(match.group(1), match.group(1).lower())
 
 
 class URIPath(ValidatedKeyword):
@@ -885,17 +906,19 @@ class Model:
 
 
 def model(index=None, store=None):
+    def recursive_set_name(field, name):
+        field.name = name
+
+        if isinstance(field, (Optional, List)):
+            recursive_set_name(field.child_type, name)
+
     """Decorator to create model objects."""
     def _finish_model(cls):
         for name, field_data in cls.fields().items():
             if not FIELD_SANITIZER.match(name) or name in BANNED_FIELDS:
                 raise ValueError(f"Illegal variable name: {name}")
 
-            field_data.name = name
-
-            if isinstance(field_data, Optional):
-                field_data.child_type.name = name
-
+            recursive_set_name(field_data, name)
             field_data.apply_defaults(index=index, store=store)
         return cls
     return _finish_model
