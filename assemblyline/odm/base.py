@@ -98,6 +98,7 @@ class _Field:
             self.copyto.extend(copyto)
 
         self.name = name
+        self.parent_name = None
         self.getter_function = None
         self.setter_function = None
 
@@ -215,13 +216,13 @@ class Keyword(_Field):
         # We have a special case for bytes here due to how often strings and bytes
         # get mixed up in python apis
         if isinstance(value, bytes):
-            raise ValueError(f"[{self.name}] Keyword doesn't accept bytes values")
+            raise ValueError(f"[{self.name or self.parent_name}] Keyword doesn't accept bytes values")
 
         if value == '' or value is None:
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name}] Empty strings are not allowed without defaults")
+                raise ValueError(f"[{self.name or self.parent_name}] Empty strings are not allowed without defaults")
 
         if value is None:
             return None
@@ -252,13 +253,13 @@ class ValidatedKeyword(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name}] Empty strings are not allowed without defaults")
+                raise ValueError(f"[{self.name or self.parent_name}] Empty strings are not allowed without defaults")
 
         if value is None:
             return value
 
         if not self.validation_regex.match(value):
-            raise ValueError(f"[{self.name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the validator: {self.validation_regex.pattern}")
 
         return str(value)
 
@@ -273,7 +274,7 @@ class IP(Keyword):
             return None
 
         if not self.validation_regex.match(value):
-            raise ValueError(f"[{self.name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the validator: {self.validation_regex.pattern}")
 
         return ".".join([str(int(x)) for x in value.split(".")])
 
@@ -288,7 +289,7 @@ class Domain(Keyword):
             return None
 
         if not self.validation_regex.match(value):
-            raise ValueError(f"[{self.name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the validator: {self.validation_regex.pattern}")
 
         return value.lower()
 
@@ -304,7 +305,7 @@ class URI(Keyword):
 
         match = self.validation_regex.match(value)
         if not match:
-            raise ValueError(f"[{self.name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the validator: {self.validation_regex.pattern}")
 
         return match.group(0).replace(match.group(1), match.group(1).lower())
 
@@ -357,10 +358,10 @@ class Enum(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name}] Empty enums are not allow without defaults")
+                raise ValueError(f"[{self.name or self.parent_name}] Empty enums are not allow without defaults")
 
         if value not in self.values:
-            raise ValueError(f"[{self.name}] {value} not in the possible values: {self.values}")
+            raise ValueError(f"[{self.name or self.parent_name}] {value} not in the possible values: {self.values}")
 
         if value is None:
             return value
@@ -391,7 +392,7 @@ class Text(_Field):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name}] Empty strings are not allowed without defaults")
+                raise ValueError(f"[{self.name or self.parent_name}] Empty strings are not allowed without defaults")
 
         if value is None:
             return None
@@ -508,10 +509,10 @@ class ClassificationString(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name}] Empty classification is not allowed without defaults")
+                raise ValueError(f"[{self.name or self.parent_name}] Empty classification is not allowed without defaults")
 
         if not self.engine.is_valid(value):
-            raise ValueError(f"[{self.name}] Invalid classification: {value}")
+            raise ValueError(f"[{self.name or self.parent_name}] Invalid classification: {value}")
 
         return str(value)
 
@@ -906,11 +907,16 @@ class Model:
 
 
 def model(index=None, store=None):
-    def recursive_set_name(field, name):
-        field.name = name
+    def recursive_set_name(field, name, to_parent=False):
+        if not to_parent:
+            field.name = name
+        else:
+            field.parent_name = name
 
-        if isinstance(field, (Optional, List)):
+        if isinstance(field, Optional):
             recursive_set_name(field.child_type, name)
+        if isinstance(field, List):
+            recursive_set_name(field.child_type, name, to_parent=True)
 
     """Decorator to create model objects."""
     def _finish_model(cls):
