@@ -1,0 +1,31 @@
+version: '2.4'
+
+services:
+  al_scaler:
+    image: cccs/assemblyline_dev:4.0.17
+    environment:
+      FILE_UPDATE_VOLUME: /tmp/update_data
+      FILE_UPDATE_DIRECTORY: /mount/update_root/
+    volumes:
+      - /tmp/update_data:/mount/update_root/
+      - ./config/:/etc/assemblyline/
+      - ../../../:/opt/alv4/
+      - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
+    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/scaler/run_scaler.py
+
+  al_updater:
+    image: cccs/assemblyline_dev:4.0.17
+    environment:
+      FILE_UPDATE_VOLUME: /tmp/update_data
+      FILE_UPDATE_DIRECTORY: /mount/update_root/
+    volumes:
+      - /tmp/update_data:/mount/update_root/
+      - ./config/:/etc/assemblyline/
+      - ../../../:/opt/alv4/
+      - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
+    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/updater/run_updater.py
+
+networks:
+  default:
+    external: true
+    name: backend
