@@ -28,4 +28,4 @@ services:
 networks:
   default:
     external: true
-    name: backend
+    name: external

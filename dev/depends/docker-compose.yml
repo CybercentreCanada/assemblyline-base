@@ -107,4 +107,4 @@ services:
 
 networks:
   default:
-    name: backend
+    name: external
