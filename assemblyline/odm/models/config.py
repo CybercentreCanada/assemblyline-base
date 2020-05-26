@@ -29,7 +29,9 @@ class Notify(odm.Model):
     base_url: str = odm.Optional(odm.Keyword())
     api_key: str = odm.Optional(odm.Keyword())
     registration_template: str = odm.Optional(odm.Keyword())
-    password_reset_template: int = odm.Optional(odm.Keyword())
+    password_reset_template: str = odm.Optional(odm.Keyword())
+    authorization_template: str = odm.Optional(odm.Keyword())
+    activated_template: str = odm.Optional(odm.Keyword())
 
 
 DEFAULT_NOTIFY = {
@@ -37,6 +39,8 @@ DEFAULT_NOTIFY = {
     "api_key": None,
     "registration_template": None,
     "password_reset_template": None,
+    "authorization_template": None,
+    "activated_template": None,
 }
 
 
@@ -768,7 +772,7 @@ class UI(odm.Model):
     # Which encoding will be used
     download_encoding = odm.Enum(values=["raw", "cart"])
     # Assemblyline admins email address
-    email: str = odm.Keyword()
+    email: str = odm.Optional(odm.Keyword())
     # Enforce the user's quotas
     enforce_quota: bool = odm.Boolean()
     # Fully qualified domain name to use for the 2-factor authentication validation
@@ -789,6 +793,8 @@ class UI(odm.Model):
     tos: str = odm.Optional(odm.Text())
     # Lock out user after accepting the terms of service
     tos_lockout: bool = odm.Boolean()
+    # List of admins to notify when a user gets locked out
+    tos_lockout_notify: bool = odm.Optional(odm.List(odm.Keyword()))
     # Headers that will be used by the url_download method
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
     # Proxy that will be used by the url_download method
@@ -805,7 +811,7 @@ DEFAULT_UI = {
     "audit": True,
     "debug": False,
     "download_encoding": "cart",
-    "email": 'admin@localhost',
+    "email": None,
     "enforce_quota": True,
     "fqdn": "localhost",
     "ingest_max_priority": 250,
@@ -816,6 +822,7 @@ DEFAULT_UI = {
     "statistics": DEFAULT_STATISTICS,
     "tos": None,
     "tos_lockout": False,
+    "tos_lockout_notify": None,
     "url_submission_headers": {},
     "url_submission_proxies": {},
     "validate_session_ip": True,

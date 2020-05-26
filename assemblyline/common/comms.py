@@ -52,7 +52,7 @@ def send_reset_email(to: str, reset_id: str):
         If you did not make this request, you can safely ignore this email and your password will remain the same.
         """)
 
-        title = f"Password reset request for {config.ui.fqdn}"
+        title = f"Assemblyline password reset request for {config.ui.fqdn}"
 
         send_email(title, message, to)
 
@@ -74,6 +74,52 @@ def send_signup_email(to: str, registration_key: str):
         If you did not make this request, you can safely ignore this email.
         """)
 
-        title = f"Confirm your account registration for {config.ui.fqdn}"
+        title = f"Confirm your Assemblyline account registration for {config.ui.fqdn}"
+
+        send_email(title, message, to)
+
+
+def send_authorize_email(to: str, user: str, email: str):
+    if config.auth.internal.signup.notify.base_url is not None:
+        nc = NotificationsAPIClient(config.auth.internal.signup.notify.api_key,
+                                    base_url=config.auth.internal.signup.notify.base_url)
+        nc.send_email_notification(to, config.auth.internal.signup.notify.authorization_template,
+                                   personalisation={"fqdn": config.ui.fqdn, "user": user, "email": email})
+    else:
+        message = dedent(f"""
+        The following user has created an account and is waiting that his account gets activated.
+        
+        User: {user}
+        Email: {email}
+        
+        You can browse to the link below to activate the account:
+        https://{config.ui.fqdn}/admin/users.html
+        """)
+
+        title = f"A new {config.ui.fqdn} user is waiting for your authorization"
+
+        send_email(title, message, to)
+
+
+def send_activated_email(to: str, user: str, email: str, admin: str):
+    if config.auth.internal.signup.notify.base_url is not None:
+        nc = NotificationsAPIClient(config.auth.internal.signup.notify.api_key,
+                                    base_url=config.auth.internal.signup.notify.base_url)
+        nc.send_email_notification(to, config.auth.internal.signup.notify.activated_template,
+                                   personalisation={"fqdn": config.ui.fqdn, "user": user,
+                                                    "admin": admin, "email": email})
+    else:
+        message = dedent(f"""
+        The following account was activated on {config.ui.fqdn}.
+        
+        Username: {user}
+        Email: {email}
+
+        The account was activated by: {admin}
+        
+        Login at https://{config.ui.fqdn}/login.html
+        """)
+
+        title = f"Account for {user} now active on {config.ui.fqdn}"
 
         send_email(title, message, to)
