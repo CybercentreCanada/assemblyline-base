@@ -33,6 +33,7 @@ class DataItem(odm.Model):
 @odm.model()
 class Task(odm.Model):
     sid = odm.UUID()
+    metadata = odm.FlattenedObject()  # Metadata associated to the submission
     min_classification = odm.Classification()  # Minimum classification of the file being scanned
     fileinfo: FileInfo = odm.Compound(FileInfo)          # File info block
     filename = odm.Keyword()
