@@ -12,7 +12,7 @@ services:
     command: server /data
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.6.0
+    image: docker.elastic.co/kibana/kibana:7.7.0
     volumes:
       - ./config/kibana.docker.yml:/usr/share/kibana/config/kibana.yml:ro
     depends_on:
@@ -25,7 +25,7 @@ services:
       retries: 5
 
   apm_server:
-    image: docker.elastic.co/apm/apm-server:7.6.0
+    image: docker.elastic.co/apm/apm-server:7.7.0
     volumes:
       - ./config/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
     command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e -strict.perms=false"
@@ -36,7 +36,7 @@ services:
         condition: service_healthy
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
     environment:
       - xpack.security.enabled=true
       - discovery.type=single-node
@@ -52,7 +52,7 @@ services:
       retries: 3
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:7.6.0
+    image: docker.elastic.co/beats/filebeat:7.7.0
     user: root
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
@@ -67,7 +67,7 @@ services:
         condition: service_healthy
 
   metricbeat:
-    image: docker.elastic.co/beats/metricbeat:7.6.0
+    image: docker.elastic.co/beats/metricbeat:7.7.0
     user: root
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200

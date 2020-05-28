@@ -173,21 +173,21 @@ if __name__ == "__main__":
             time.sleep(1)
 
     # Setup APM ILM policies
-    create_ilm_policy("apm-7.6.0-error", rollover_age="1d", rollover_size="5gb",
+    create_ilm_policy("apm-7.7.0-error", rollover_age="1d", rollover_size="5gb",
                       warm_readonly=True, delete_age=APM_DELETE_AFTER)
-    create_ilm_policy("apm-7.6.0-metric", rollover_age="1d", rollover_size="5gb",
+    create_ilm_policy("apm-7.7.0-metric", rollover_age="1d", rollover_size="5gb",
                       warm_readonly=True, delete_age=APM_DELETE_AFTER)
-    create_ilm_policy("apm-7.6.0-span", rollover_age="1d", rollover_size="5gb",
+    create_ilm_policy("apm-7.7.0-span", rollover_age="1d", rollover_size="5gb",
                       warm_readonly=True, delete_age=APM_DELETE_AFTER)
-    create_ilm_policy("apm-7.6.0-transaction", rollover_age="1d", rollover_size="5gb",
+    create_ilm_policy("apm-7.7.0-transaction", rollover_age="1d", rollover_size="5gb",
                       warm_readonly=True, delete_age=APM_DELETE_AFTER)
 
     # Setup filebeat ILM policies
-    create_ilm_policy("filebeat-7.6.0", rollover_age="1d", rollover_size="20gb",
+    create_ilm_policy("filebeat-7.7.0", rollover_age="1d", rollover_size="20gb",
                       warm_readonly=True, delete_age=FILEBEAT_DELETE_AFTER)
 
     # Setup metricbeat ILM policies
-    create_ilm_policy("metricbeat-7.6.0", rollover_age="1d", rollover_size="5gb",
+    create_ilm_policy("metricbeat-7.7.0", rollover_age="1d", rollover_size="5gb",
                       warm_readonly=True, delete_age=METRICBEAT_DELETE_AFTER)
 
     # Creating kibana user
