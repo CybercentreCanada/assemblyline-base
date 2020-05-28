@@ -51,6 +51,9 @@ class Task(odm.Model):
     # Whether the service cache should be ignored during the processing of this task
     ignore_cache = odm.Boolean(default=False)
 
+    # Whether the service should ignore the dynamic recursion prevention or not
+    ignore_dynamic_recursion_prevention = odm.Boolean(default=False)
+
     # Priority for processing order
     priority = odm.Integer(default=0)
 

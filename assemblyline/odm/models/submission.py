@@ -18,21 +18,22 @@ class File(odm.Model):
 
 @odm.model(index=False, store=False)
 class ServiceSelection(odm.Model):
-    selected = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL)   # List of selected services for the submission
-    excluded = odm.List(odm.Keyword(), default=[])                # List of excluded services for the submission
+    selected = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL)   # List of selected services
+    excluded = odm.List(odm.Keyword(), default=[])                # List of excluded services
     resubmit = odm.List(odm.Keyword(), default=DEFAULT_RESUBMIT)  # Add to service selection when resubmitting
+    runtime_excluded = odm.List(odm.Keyword(), default=[])        # List of runtime excluded services
 
 
 # Fields in the parameters used to calculate hashes used for result caching
 _KEY_HASHED_FIELDS = {
+    'classification',
     'deep_scan',
-    'eligible_parents',
+    'ignore_cache',
+    'ignore_dynamic_recursion_prevention',
     'ignore_filtering',
     'ignore_size',
     'max_extracted',
     'max_supplementary',
-    'classification',
-    'ignore_cache',
 }
 
 
