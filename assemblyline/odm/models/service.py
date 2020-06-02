@@ -97,5 +97,5 @@ class Service(odm.Model):
     docker_config: DockerConfig = odm.Compound(DockerConfig)
     dependencies = odm.Mapping(odm.Compound(DependencyConfig), default={})
 
-    update_channel: str = odm.Enum(values=['prd', 'stg', 'beta', 'dev'], default='prd')
+    update_channel: str = odm.Enum(values=["stable", "rc", "beta", "dev"], default='stable')
     update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))
