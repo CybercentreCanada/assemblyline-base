@@ -89,4 +89,5 @@ class ServiceDelta(odm.Model):
     docker_config: DockerConfigDelta = odm.Optional(odm.Compound(DockerConfigDelta))
     dependencies: DependencyConfigDelta = odm.Mapping(odm.Compound(DependencyConfigDelta), default={})
 
+    update_channel = odm.Optional(odm.Enum(values=["stable", "rc", "beta", "dev"]))
     update_config: UpdateConfigDelta = odm.Optional(odm.Compound(UpdateConfigDelta))
