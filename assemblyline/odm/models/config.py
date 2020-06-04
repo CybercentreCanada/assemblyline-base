@@ -702,6 +702,8 @@ class Services(odm.Model):
     stages: List[str] = odm.List(odm.Keyword())
     # Substitution variables for image paths (for custom registry support)
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
+    # Default update channel to be used for new services
+    preferred_update_channel: str = odm.Keyword()
 
 
 DEFAULT_SERVICES = {
@@ -709,7 +711,8 @@ DEFAULT_SERVICES = {
     "default_timeout": 60,
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
-    "image_variables": {}
+    "image_variables": {},
+    "preferred_update_channel": "stable"
 }
 
 
