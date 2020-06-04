@@ -178,4 +178,4 @@ services:
 networks:
   default:
     external: true
-    name: al_svc
+    name: al_registration

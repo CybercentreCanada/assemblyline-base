@@ -159,4 +159,4 @@ networks:
     name: external
   svc:
     driver: bridge
-    name: svc
+    name: al_registration
