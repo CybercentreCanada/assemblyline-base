@@ -27,5 +27,8 @@ logging:
   log_to_file: false
   log_to_syslog: false
 
+services:
+  preferred_update_channel: dev
+
 ui:
   enforce_quota: false
