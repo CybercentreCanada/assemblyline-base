@@ -851,3 +851,42 @@ class Classification(object):
             self._classification_cache_short.add(new_c12n)
 
         return new_c12n
+
+    def build_user_classification(self, c12n_1: str, c12n_2: str, long_format: bool = True) -> str:
+        """
+        Mixes to classification and return the classification marking that would give access to the most data
+
+        Args:
+            c12n_1: First classification
+            c12n_2: Second classification
+            long_format: True/False in long format
+
+        Returns:
+            The classification that would give access to the most data
+        """
+        if not self.enforce or self.invalid_mode:
+            return self.UNRESTRICTED
+
+        # Normalize classifications before comparing them
+        if c12n_1 is not None:
+            c12n_1 = self.normalize_classification(c12n_1)
+        if c12n_2 is not None:
+            c12n_2 = self.normalize_classification(c12n_2)
+
+        if c12n_1 is None:
+            return c12n_2
+        if c12n_2 is None:
+            return c12n_1
+
+        lvl_idx_1, req_1, groups_1, subgroups_1 = self._get_classification_parts(c12n_1, long_format=long_format)
+        lvl_idx_2, req_2, groups_2, subgroups_2 = self._get_classification_parts(c12n_2, long_format=long_format)
+
+        req = list(set(req_1) | set(req_2))
+        groups = list(set(groups_1) | set(groups_2))
+        subgroups = list(set(subgroups_1) | set(subgroups_2))
+
+        return self._get_normalized_classification_text(max(lvl_idx_1, lvl_idx_2),
+                                                        req,
+                                                        groups,
+                                                        subgroups,
+                                                        long_format=long_format)
