@@ -164,6 +164,9 @@ class OAuthProvider(odm.Model):
     api_base_url: str = odm.Optional(odm.Keyword())
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
     user_get: str = odm.Keyword()
+    user_groups: str = odm.Optional(odm.Keyword())
+    user_groups_data_field: str = odm.Optional(odm.Keyword())
+    user_groups_name_field: str = odm.Optional(odm.Keyword())
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
