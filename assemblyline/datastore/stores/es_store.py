@@ -375,8 +375,11 @@ class ESCollection(Collection):
                 if 'found' in row and not row['found']:
                     continue
 
-                key_list.remove(row['_id'])
-                add_to_output(row['_source'], row['_id'])
+                try:
+                    key_list.remove(row['_id'])
+                    add_to_output(row['_source'], row['_id'])
+                except ValueError:
+                    log.error(f'MGet returned multiple documents for id: {row["_id"]}')
 
             if key_list and self.archive_access:
                 query_body = {"query": {"ids": {"values": key_list}}}
@@ -391,8 +394,11 @@ class ESCollection(Collection):
                 )
 
                 for row in iterator:
-                    key_list.remove(row['_id'])
-                    add_to_output(row['_source'], row['_id'])
+                    try:
+                        key_list.remove(row['_id'])
+                        add_to_output(row['_source'], row['_id'])
+                    except ValueError:
+                        log.error(f'MGet returned multiple documents for id: {row["_id"]}')
 
         if key_list and error_on_missing:
             raise MultiKeyError(key_list, out)
