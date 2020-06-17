@@ -629,8 +629,8 @@ class AssemblylineDatastore(object):
                         "truncated": truncated,
                         "score": scores.get(child_p['sha256'], 0),
                     }
-                except KeyError as e:
-                    missing_key = str(e).strip("'")
+                except KeyError as ke:
+                    missing_key = str(ke).strip("'")
                     if missing_key not in forbidden_files and missing_key not in missing_files:
                         file_data_map[missing_key] = self.file.get(missing_key, as_obj=False)
                         placeholder[child_p['sha256']] = {
@@ -748,8 +748,8 @@ class AssemblylineDatastore(object):
 
         for key, item in items.items():
             for section in item.get('result', {}).get('sections', []):
+                file_classification = files.get(key[:64], {}).get('classification', section['classification'])
                 if user_classification:
-                    file_classification = files.get(key[:64], {}).get('classification', section['classification'])
                     if not cl_engine.is_accessible(user_classification, section['classification']):
                         out["filtered"] = True
                         continue
