@@ -8,6 +8,7 @@ from datetime import datetime
 
 import elasticapm
 import elasticsearch
+from assemblyline.datastore.exceptions import MultiKeyError
 
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
@@ -441,11 +442,14 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_multiple_results(self, keys, cl_engine=forge.get_classification(), as_obj=False):
-        empties = {k: self.create_empty_result_from_key(k, cl_engine, as_obj=as_obj)
+        results = {k: self.create_empty_result_from_key(k, cl_engine, as_obj=as_obj)
                    for k in keys if k.endswith(".e")}
         keys = [k for k in keys if not k.endswith(".e")]
-        results = self.result.multiget(keys, as_dictionary=True, as_obj=as_obj)
-        results.update(empties)
+        try:
+            results.update(self.result.multiget(keys, as_dictionary=True, as_obj=as_obj))
+        except MultiKeyError as e:
+            log.warning(f"Trying to get multiple results but some are missing: {str(e.keys)}")
+            results.update(e.partial_output)
         return results
 
     @elasticapm.capture_span(span_type='datastore')
@@ -539,15 +543,24 @@ class AssemblylineDatastore(object):
                 return {
                     "tree": tree,
                     "classification": cached_tree['classification'],
-                    "filtered": cached_tree['filtered']
+                    "filtered": cached_tree['filtered'],
+                    "partial": False
                 }
 
+        partial = False
         files = {}
         scores = {}
+        missing_files = []
         file_hashes = [x[:64] for x in submission['results']]
         file_hashes.extend([x[:64] for x in submission['errors']])
         file_hashes.extend([f['sha256'] for f in submission['files']])
-        temp_file_data_map = self.file.multiget(list(set(file_hashes)), as_dictionary=True, as_obj=False)
+        try:
+            temp_file_data_map = self.file.multiget(list(set(file_hashes)), as_dictionary=True, as_obj=False)
+        except MultiKeyError as e:
+            log.warning(f"Trying to generate file tree but we are missing file(s): {str(e.keys)}")
+            temp_file_data_map = e.partial_output
+            missing_files = e.keys
+            partial = True
         forbidden_files = set()
 
         max_classification = cl_engine.UNRESTRICTED
@@ -559,8 +572,15 @@ class AssemblylineDatastore(object):
             file_data_map[key] = value
             max_classification = cl_engine.max_classification(max_classification, value['classification'])
 
-        for key, item in self.result.multiget([x for x in submission['results'] if not x.endswith(".e")],
-                                              as_obj=False).items():
+        try:
+            results_data = self.result.multiget([x for x in submission['results'] if not x.endswith(".e")],
+                                                as_obj=False)
+        except MultiKeyError as e:
+            log.warning(f"Trying to generate file tree but we are missing result(s): {str(e.keys)}")
+            results_data = e.partial_output
+            partial = True
+
+        for key, item in results_data.items():
             sha256 = key[:64]
 
             # Get scores
@@ -611,7 +631,7 @@ class AssemblylineDatastore(object):
                     }
                 except KeyError as e:
                     missing_key = str(e).strip("'")
-                    if missing_key not in forbidden_files:
+                    if missing_key not in forbidden_files and missing_key not in missing_files:
                         file_data_map[missing_key] = self.file.get(missing_key, as_obj=False)
                         placeholder[child_p['sha256']] = {
                             "name": [child_p['name']],
@@ -648,18 +668,21 @@ class AssemblylineDatastore(object):
                     "score": scores.get(sha256, 0),
                 }
 
-        cached_tree = {
-            'expiry_ts': now_as_iso(days_until_archive * 24 * 60 * 60),
-            'tree': json.dumps(tree),
-            'classification': max_classification,
-            'filtered': len(forbidden_files) > 0
-        }
+        if not partial:
+            cached_tree = {
+                'expiry_ts': now_as_iso(days_until_archive * 24 * 60 * 60),
+                'tree': json.dumps(tree),
+                'classification': max_classification,
+                'filtered': len(forbidden_files) > 0
+            }
 
-        self.submission_tree.save(cache_key, cached_tree)
+            self.submission_tree.save(cache_key, cached_tree)
+
         return {
             'tree': tree,
             'classification': max_classification,
-            'filtered': len(forbidden_files) > 0
+            'filtered': len(forbidden_files) > 0,
+            'partial': partial
         }
 
     @staticmethod
@@ -708,22 +731,34 @@ class AssemblylineDatastore(object):
 
         keys = [x for x in list(keys) if not x.endswith(".e")]
         file_keys = list(set([x[:64] for x in keys]))
-        items = self.result.multiget(keys, as_obj=False)
-        files = self.file.multiget(file_keys, as_obj=False)
+        try:
+            items = self.result.multiget(keys, as_obj=False)
+        except MultiKeyError as e:
+            # Generate partial summaries even if results are missing
+            log.warning(f"Trying to generate summary but we are missing result(s): {str(e.keys)}")
+            items = e.partial_output
+            out['missing_results'] = e.keys
+        try:
+            files = self.file.multiget(file_keys, as_obj=False)
+        except MultiKeyError as e:
+            # Generate partial summaries even if results are missing
+            log.warning(f"Trying to generate summary but we are missing file(s): {str(e.keys)}")
+            files = e.partial_output
+            out['missing_files'] = e.keys
 
         for key, item in items.items():
             for section in item.get('result', {}).get('sections', []):
                 if user_classification:
+                    file_classification = files.get(key[:64], {}).get('classification', section['classification'])
                     if not cl_engine.is_accessible(user_classification, section['classification']):
                         out["filtered"] = True
                         continue
-                    if not cl_engine.is_accessible(user_classification, files[key[:64]]['classification']):
+                    if not cl_engine.is_accessible(user_classification, file_classification):
                         out["filtered"] = True
                         continue
 
                 out["classification"] = cl_engine.max_classification(out["classification"], section['classification'])
-                out["classification"] = cl_engine.max_classification(out["classification"],
-                                                                     files[key[:64]]['classification'])
+                out["classification"] = cl_engine.max_classification(out["classification"], file_classification)
 
                 h_type = "info"
 

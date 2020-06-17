@@ -1,10 +1,14 @@
 
 import json
+import logging
 import os
 import subprocess
 import time
 
 import shutil
+from copy import copy
+
+from assemblyline.datastore.exceptions import MultiKeyError
 
 from assemblyline.common import forge
 from assemblyline.common.uid import get_random_id
@@ -15,6 +19,8 @@ Classification = forge.get_classification()
 MAX_RETRY = 10
 WORK_DIR = "/tmp/bundling"
 BUNDLE_MAGIC = b'\x1f\x8b\x08'
+
+log = logging.getLogger('assemblyline.bundling')
 
 
 class BundlingException(Exception):
@@ -52,12 +58,18 @@ def format_result(r):
 def get_results(keys, file_infos_p, storage_p):
     out = {}
     res = {}
+    missing = []
     retry = 0
     while keys and retry < MAX_RETRY:
         if retry:
             time.sleep(2 ** (retry - 7))
-        res.update(storage_p.get_multiple_results(keys, Classification, as_obj=False))
-        keys = [x for x in keys if x not in res]
+        try:
+            res.update(storage_p.get_multiple_results(keys, Classification, as_obj=False))
+        except MultiKeyError as e:
+            log.warning(f"Trying to get multiple results but some are missing: {str(e.keys)}")
+            res.update(e.partial_output)
+            missing.extend(e.keys)
+        keys = [x for x in keys if x not in res and x not in missing]
         retry += 1
 
     results = {}
@@ -69,7 +81,7 @@ def get_results(keys, file_infos_p, storage_p):
                 results[k] = v
 
     out["results"] = results
-    out["missing_result_keys"] = keys
+    out["missing_result_keys"] = keys + missing
 
     return out
 
@@ -77,42 +89,54 @@ def get_results(keys, file_infos_p, storage_p):
 def get_errors(keys, storage_p):
     out = {}
     err = {}
+    missing = []
     retry = 0
     while keys and retry < MAX_RETRY:
         if retry:
             time.sleep(2 ** (retry - 7))
-        err.update(storage_p.error.multiget(keys, as_obj=False))
-        keys = [x for x in keys if x not in err]
+        try:
+            err.update(storage_p.error.multiget(keys, as_obj=False))
+        except MultiKeyError as e:
+            log.warning(f"Trying to get multiple errors but some are missing: {str(e.keys)}")
+            err.update(e.partial_output)
+            missing.extend(e.keys)
+        keys = [x for x in keys if x not in err and x not in missing]
         retry += 1
 
     out["errors"] = err
-    out["missing_error_keys"] = keys
+    out["missing_error_keys"] = keys + missing
 
     return out
 
 
 def get_file_infos(keys, storage_p):
     infos = {}
+    missing = []
     retry = 0
     while keys and retry < MAX_RETRY:
         if retry:
             time.sleep(2 ** (retry - 7))
-        infos.update(storage_p.file.multiget(keys, as_obj=False))
-        keys = [x for x in keys if x not in infos]
+        try:
+            infos.update(storage_p.file.multiget(keys, as_obj=False))
+        except MultiKeyError as e:
+            log.warning(f"Trying to get multiple files but some are missing: {str(e.keys)}")
+            infos.update(e.partial_output)
+            missing.extend(e.keys)
+        keys = [x for x in keys if x not in infos and x not in missing]
         retry += 1
 
-    return infos
+    return infos, missing
 
 
 def recursive_flatten_tree(tree):
-    srls = []
+    sha256s = []
 
     for key, val in tree.items():
-        srls.extend(recursive_flatten_tree(val.get('children', {})))
-        if key not in srls:
-            srls.append(key)
+        sha256s.extend(recursive_flatten_tree(val.get('children', {})))
+        if key not in sha256s:
+            sha256s.append(key)
 
-    return list(set(srls))
+    return list(set(sha256s))
 
 
 # noinspection PyBroadException
@@ -139,7 +163,7 @@ def create_bundle(sid, working_dir=WORK_DIR):
                                                               config.submission.max_extraction_depth)['tree']
                 flatten_tree = list(set(recursive_flatten_tree(file_tree) +
                                         [r[:64] for r in submission.get("results", [])]))
-                file_infos = get_file_infos(flatten_tree, datastore)
+                file_infos, _ = get_file_infos(copy(flatten_tree), datastore)
 
                 # Add bundling metadata
                 if 'bundle.source' not in submission['metadata']:
@@ -160,9 +184,9 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
                 # Download all related files
                 with forge.get_filestore() as filestore:
-                    for srl in flatten_tree:
+                    for sha256 in flatten_tree:
                         try:
-                            filestore.download(srl, os.path.join(current_working_dir, srl))
+                            filestore.download(sha256, os.path.join(current_working_dir, sha256))
                         except FileStoreException:
                             pass
 
@@ -179,7 +203,7 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
 
 # noinspection PyBroadException,PyProtectedMember
-def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED):
+def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False):
     with forge.get_datastore() as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -206,17 +230,17 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
             sid = submission['sid']
             # Check if we have all the service results
             for res_key in submission['results']:
-                if res_key not in results['results'].keys():
+                if res_key not in results['results'].keys() and not allow_incomplete:
                     raise IncompleteBundle("Incomplete results in bundle. Skipping %s..." % sid)
 
             # Check if we have all files
-            for srl in list(set([x[:64] for x in submission['results']])):
-                if srl not in files['infos'].keys():
+            for sha256 in list(set([x[:64] for x in submission['results']])):
+                if sha256 not in files['infos'].keys() and not allow_incomplete:
                     raise IncompleteBundle("Incomplete files in bundle. Skipping %s..." % sid)
 
             # Check if we all errors
             for err_key in submission['errors']:
-                if err_key not in errors['errors'].keys():
+                if err_key not in errors['errors'].keys() and not allow_incomplete:
                     raise IncompleteBundle("Incomplete errors in bundle. Skipping %s..." % sid)
 
             if datastore.submission.get(sid, as_obj=False):
