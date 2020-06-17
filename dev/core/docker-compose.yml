@@ -89,6 +89,14 @@ services:
       - ../../../:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/run_heartbeat_manager.py
 
+  # Stats aggregator
+  al_stats:
+    image: cccs/assemblyline_dev:4.0.17
+    volumes:
+      - ./config/:/etc/assemblyline/
+      - ../../../:/opt/alv4/
+    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/run_statistics_aggregator.py
+
   # Workflow
   al_workflow:
     image: cccs/assemblyline_dev:4.0.17

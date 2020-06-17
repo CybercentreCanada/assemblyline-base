@@ -877,6 +877,85 @@ class AssemblylineDatastore(object):
             return svc_version_data
 
     @elasticapm.capture_span(span_type='datastore')
+    def get_stat_for_heuristic(self, p_id, p_name, p_classification):
+        stats = self.ds.result.stats("result.score",
+                                     query=f"result.sections.heuristic.heur_id:{p_id}")
+        if stats['count'] == 0:
+            return {
+                'heur_id': p_id,
+                'name': p_name,
+                'classification': p_classification,
+                'count': stats['count'],
+                'min': 0,
+                'max': 0,
+                'avg': 0,
+            }
+        else:
+            return {
+                'heur_id': p_id,
+                'name': p_name,
+                'classification': p_classification,
+                'count': stats['count'],
+                'min': int(stats['min']),
+                'max': int(stats['max']),
+                'avg': int(stats['avg']),
+            }
+
+    @elasticapm.capture_span(span_type='datastore')
+    def calculate_heuristic_stats(self):
+        heur_list = sorted([(x['heur_id'], x['name'], x['classification'])
+                            for x in self.ds.heuristic.stream_search("heur_id:*", fl="heur_id,name,classification",
+                                                                     as_obj=False)])
+
+        with concurrent.futures.ThreadPoolExecutor(max(min(len(heur_list), 20), 1)) as executor:
+            res = [executor.submit(self.get_stat_for_heuristic, heur_id, name, classification)
+                   for heur_id, name, classification in heur_list]
+
+        return sorted([r.result() for r in res], key=lambda i: i['heur_id'])
+
+    @elasticapm.capture_span(span_type='datastore')
+    def get_stat_for_signature(self, p_id, p_source, p_name, p_type, p_classification):
+        stats = self.ds.result.stats("result.score",
+                                     query=f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"')
+        if stats['count'] == 0:
+            return {
+                'id': p_id,
+                'source': p_source,
+                'name': p_name,
+                'type': p_type,
+                'classification': p_classification,
+                'count': stats['count'],
+                'min': 0,
+                'max': 0,
+                'avg': 0,
+            }
+        else:
+            return {
+                'id': p_id,
+                'source': p_source,
+                'name': p_name,
+                'type': p_type,
+                'classification': p_classification,
+                'count': stats['count'],
+                'min': int(stats['min']),
+                'max': int(stats['max']),
+                'avg': int(stats['avg']),
+            }
+
+    @elasticapm.capture_span(span_type='datastore')
+    def calculate_signature_stats(self):
+        sig_list = sorted([(x['id'], x['source'], x['name'], x['type'], x['classification'])
+                           for x in self.ds.signature.stream_search("id:*",
+                                                                    fl="id,name,type,source,classification",
+                                                                    as_obj=False)])
+
+        with concurrent.futures.ThreadPoolExecutor(max(min(len(sig_list), 20), 1)) as executor:
+            res = [executor.submit(self.get_stat_for_signature, sid, source, name, sig_type, classification)
+                   for sid, source, name, sig_type, classification in sig_list]
+
+        return sorted([r.result() for r in res], key=lambda i: i['type'])
+
+    @elasticapm.capture_span(span_type='datastore')
     def list_all_services(self, as_obj=True, full=False) -> Union[List[dict], List[Service]]:
         """
         :param as_obj: Return ODM objects rather than dicts
