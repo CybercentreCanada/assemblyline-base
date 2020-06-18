@@ -6,7 +6,7 @@ from typing import Optional as _Optional, Dict, Any as _Any
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
     Classification, ClassificationString, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, \
-    URIPath, URI, SSDeepHash
+    URIPath, URI, SSDeepHash, Email
 from assemblyline.odm.models.tagging import Tagging
 
 config = forge.get_config()
@@ -134,6 +134,10 @@ def get_random_directory(smin: int = 2, smax: int = 6) -> str:
 
 def get_random_string(smin: int = 4, smax: int = 24) -> str:
     return "".join([random.choice(ALPHA) for _ in range(random.randint(smin, smax))])
+
+
+def get_random_email() -> str:
+    return f"{get_random_word()}@{get_random_word()}{random.choice(DOM)}"
 
 
 def get_random_host() -> str:
@@ -283,6 +287,8 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         return get_random_ip()
     elif isinstance(field, Domain):
         return get_random_host()
+    elif isinstance(field, Email):
+        return get_random_email()
     elif isinstance(field, Keyword):
         if name:
             if "sha256" in name:
