@@ -518,7 +518,10 @@ DEFAULT_SCALER = {
         'shrink': 30,
         'backlog': 100,
         'min_instances': 0,
-        'environment': [{'name': 'SERVICE_API_HOST', 'value': 'http://al_service_server:5003'}],
+        'environment': [
+            {'name': 'SERVICE_API_HOST', 'value': 'http://al_service_server:5003'},
+            {'name': 'AL_SERVICE_TASK_LIMIT', 'value': 'inf'},
+        ],
     }
 }
 
