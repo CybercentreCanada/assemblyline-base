@@ -778,7 +778,7 @@ class UI(odm.Model):
     # Which encoding will be used
     download_encoding = odm.Enum(values=["raw", "cart"])
     # Assemblyline admins email address
-    email: str = odm.Optional(odm.Keyword())
+    email: str = odm.Optional(odm.Email())
     # Enforce the user's quotas
     enforce_quota: bool = odm.Boolean()
     # Fully qualified domain name to use for the 2-factor authentication validation

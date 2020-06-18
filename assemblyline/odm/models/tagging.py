@@ -347,7 +347,7 @@ class Tagging(odm.Model):
 
         @odm.model(index=True, store=False)
         class NetworkEmail(odm.Model):
-            address = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            address = odm.Optional(odm.List(odm.Email(copyto="__text__")))
             date = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             subject = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             msg_id = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))

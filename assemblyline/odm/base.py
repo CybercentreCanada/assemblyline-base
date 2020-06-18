@@ -43,6 +43,7 @@ UTC_TZ = tzutc()
 DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\uffff][A-Za-z0-9\u00a1-\uffff_-]{0,62})?[A-Za-z0-9\u00a1-\uffff]\.)+" \
                r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\uffff]{2,}\.?)"
 DOMAIN_ONLY_REGEX = f"^{DOMAIN_REGEX}$"
+EMAIL_REGEX = f"^[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+)*@{DOMAIN_REGEX}$"
 IP_REGEX = r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
 IP_ONLY_REGEX = f"^{IP_REGEX}$"
 PRIVATE_IP = r"(?:(?:127|10)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|" \
@@ -259,7 +260,8 @@ class ValidatedKeyword(Keyword):
             return value
 
         if not self.validation_regex.match(value):
-            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
+                             f"validator: {self.validation_regex.pattern}")
 
         return str(value)
 
@@ -274,7 +276,8 @@ class IP(Keyword):
             return None
 
         if not self.validation_regex.match(value):
-            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
+                             f"validator: {self.validation_regex.pattern}")
 
         return ".".join([str(int(x)) for x in value.split(".")])
 
@@ -289,7 +292,24 @@ class Domain(Keyword):
             return None
 
         if not self.validation_regex.match(value):
-            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
+                             f"validator: {self.validation_regex.pattern}")
+
+        return value.lower()
+
+
+class Email(Keyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.validation_regex = re.compile(EMAIL_REGEX)
+
+    def check(self, value, **kwargs):
+        if not value:
+            return None
+
+        if not self.validation_regex.match(value):
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
+                             f"validator: {self.validation_regex.pattern}")
 
         return value.lower()
 
@@ -305,7 +325,8 @@ class URI(Keyword):
 
         match = self.validation_regex.match(value)
         if not match:
-            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the validator: {self.validation_regex.pattern}")
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
+                             f"validator: {self.validation_regex.pattern}")
 
         return match.group(0).replace(match.group(1), match.group(1).lower())
 
@@ -509,7 +530,8 @@ class ClassificationString(Keyword):
             if self.default_set:
                 value = self.default
             else:
-                raise ValueError(f"[{self.name or self.parent_name}] Empty classification is not allowed without defaults")
+                raise ValueError(f"[{self.name or self.parent_name}] Empty classification is not allowed "
+                                 f"without defaults")
 
         if not self.engine.is_valid(value):
             raise ValueError(f"[{self.name or self.parent_name}] Invalid classification: {value}")
