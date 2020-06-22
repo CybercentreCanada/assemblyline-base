@@ -23,7 +23,8 @@ class DockerConfig(odm.Model):
     registry_username = odm.Optional(odm.Keyword())  # The username to use when pulling the image
     registry_password = odm.Optional(odm.Keyword())  # The password or token to use when pulling the image
     ports: List[str] = odm.List(odm.Keyword(), default=[])
-    ram_mb: int = odm.Integer(default=1024)
+    ram_mb: int = odm.Integer(default=512)
+    ram_mb_min: int = odm.Integer(default=128)
 
 
 @odm.model(index=False, store=False)

@@ -18,6 +18,7 @@ class DockerConfigDelta(odm.Model):
     registry_password = odm.Optional(odm.Keyword())  # The password or token to use when pulling the image
     ports = odm.Optional(odm.List(odm.Keyword()))
     ram_mb = odm.Optional(odm.Integer())
+    ram_mb_min = odm.Optional(odm.Integer())
 
 
 @odm.model(index=False, store=False)
