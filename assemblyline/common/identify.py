@@ -398,7 +398,7 @@ def subtype(label: str) -> str:
     return 'unknown'
 
 
-def ident(buf, length: int) -> Dict:
+def ident(buf, length: int, path) -> Dict:
     data = {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}
 
     if length <= 0:
@@ -414,13 +414,13 @@ def ident(buf, length: int) -> Dict:
         labels = []
         if file_type:
             with magic_lock:
-                labels = magic.magic_buffer(file_type, buf).split(b'\n')
+                labels = magic.magic_file(file_type, path).split(b'\n')
                 labels = [label[2:] if label.startswith(b'- ') else label for label in labels]
 
         mimes = []
         if mime_type:
             with magic_lock:
-                mimes = magic.magic_buffer(mime_type, buf).split(b'\n')
+                mimes = magic.magic_file(mime_type, path).split(b'\n')
                 mimes = [mime[2:] if mime.startswith(b'- ') else mime for mime in mimes]
 
         # For user feedback set the mime and magic meta data to always be the primary

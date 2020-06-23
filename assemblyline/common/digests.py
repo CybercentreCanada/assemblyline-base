@@ -8,7 +8,7 @@ DEFAULT_BLOCKSIZE = 65536
 
 # noinspection PyBroadException
 def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculate_entropy: bool = True,
-                         on_first_block=lambda b, l: {}) -> Dict:
+                         on_first_block=lambda b, l, p: {}) -> Dict:
     """ Generate digests for file reading only 'blocksize bytes at a time."""
     bc = None
     if calculate_entropy:
@@ -29,7 +29,7 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
         length = len(data)
 
         if not size:
-            result.update(on_first_block(data, length))
+            result.update(on_first_block(data, length, path))
 
         while length > 0:
             if calculate_entropy:
