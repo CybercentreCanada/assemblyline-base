@@ -414,6 +414,7 @@ DEFAULT_REDIS_P = {
 @odm.model(index=False, store=False)
 class ESMetrics(odm.Model):
     hosts: str = odm.Optional(odm.List(odm.Keyword()))
+    host_certificates: str = odm.Optional(odm.Keyword())
     warm: int = odm.Integer()
     cold: int = odm.Integer()
     delete: int = odm.Integer()
@@ -422,6 +423,7 @@ class ESMetrics(odm.Model):
 
 DEFAULT_ES_METRICS = {
     'hosts': None,
+    'host_certificates': None,
     'warm': 2,
     'cold': 30,
     'delete': 90,
