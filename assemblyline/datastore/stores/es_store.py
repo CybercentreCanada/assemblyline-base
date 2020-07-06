@@ -785,9 +785,14 @@ class ESCollection(Collection):
             "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
         }
 
-        deep_paging_id = result.get("_scroll_id", None)
-        if deep_paging_id is not None:
-            ret_data['next_deep_paging_id'] = deep_paging_id
+        new_deep_paging_id = result.get("_scroll_id", None)
+
+        # Check if the scroll is finished and close it
+        if deep_paging_id is not None and new_deep_paging_id is None:
+            self.with_retries(self.datastore.client.clear_scroll, body={"scroll_id": [deep_paging_id]}, ignore=(404,))
+
+        if new_deep_paging_id is not None:
+            ret_data['next_deep_paging_id'] = new_deep_paging_id
 
         return ret_data
 
