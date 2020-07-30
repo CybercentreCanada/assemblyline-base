@@ -472,18 +472,6 @@ DEFAULT_REDIS = {
 
 
 @odm.model(index=False, store=False)
-class ScalerProfile(odm.Model):
-    """Minimal description for an assemblyline core component controlled by the scaler."""
-    growth: int = odm.Optional(odm.Integer())
-    shrink: int = odm.Optional(odm.Integer())
-    backlog: int = odm.Optional(odm.Integer())
-    min_instances: int = odm.Optional(odm.Integer())
-    max_instances: int = odm.Optional(odm.Integer())
-    queue: str = odm.Keyword()
-    container_config: DockerConfig = odm.Compound(DockerConfig)
-
-
-@odm.model(index=False, store=False)
 class ScalerServiceDefaults(odm.Model):
     """A set of default values to be used running a service when no other value is set."""
     growth: int = odm.Integer()
@@ -491,19 +479,6 @@ class ScalerServiceDefaults(odm.Model):
     backlog: int = odm.Integer()
     min_instances: int = odm.Integer()
     environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
-
-    def apply(self, profile: ScalerProfile) -> dict:
-        data = profile.as_primitives(strip_null=True)
-        data.setdefault('growth', self.growth)
-        data.setdefault('shrink', self.shrink)
-        data.setdefault('backlog', self.backlog)
-        data.setdefault('min_instances', self.min_instances)
-        data['container_config'] = DockerConfig(data['container_config'])
-        set_keys = set(var.name for var in profile.container_config.environment)
-        for var in self.environment:
-            if var.name not in set_keys:
-                data['container_config'].environment.append(var)
-        return data
 
 
 @odm.model(index=False, store=False)
