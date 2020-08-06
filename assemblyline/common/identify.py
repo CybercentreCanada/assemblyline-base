@@ -194,6 +194,7 @@ OLE_CLSID_GUIDs = {
 recognized = constants.RECOGNIZED_TYPES
 
 tag_to_extension = {
+    'archive/chm': '.chm',
     'audiovisual/flash': '.swf',
     'code/batch': '.bat',
     'code/c': '.c',
