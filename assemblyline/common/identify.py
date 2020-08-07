@@ -198,6 +198,7 @@ tag_to_extension = {
     'code/batch': '.bat',
     'code/c': '.c',
     'code/csharp': '.cs',
+    'code/hta': '.hta',
     'code/html': '.html',
     'code/java': '.java',
     'code/javascript': '.js',
@@ -744,6 +745,12 @@ def fileinfo(path: str) -> Dict:
     elif data['type'] == 'executable/windows/dos':
         # The default magic file misidentifies PE files with a munged DOS header
         data['type'] = dos_ident(path)
+    elif data['type'] == 'code/html':
+        # Magic detects .hta files as .html, guess_language detects .hta files as .js/.vbs
+        # If both conditions are met, it's fair to say that the file is an .hta
+        lang, _ = guess_language(path)
+        if lang in ["code/javascript", "code/vbs"]:
+            data['type'] = 'code/hta'
 
     if not recognized.get(data['type'], False) and not cart_metadata_set:
         data['type'] = 'unknown'
