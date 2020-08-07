@@ -67,7 +67,6 @@ STRONG_INDICATORS = {
     'code/java': [
         re.compile(rb'(^|\n)[ \t]*public[ \t]+class[ \t]+\w+[ \t]+(extends[ \t]+\w+[ \t]+)?{'),
         re.compile(rb'(^|\n)[\w \t]+\([^)]+\)[ \t]+throws[ \t]+[\w, \t]+[ \t]+{'),
-        re.compile(rb'(^|\n)[ \t]*(private|public)[ \t]*static[ \t]*\w+'),
     ],
     'code/perl': [
         re.compile(rb'(^|\n)[ \t]*my[ \t]*\$\w+[ \t]*='),
@@ -105,11 +104,13 @@ STRONG_INDICATORS = {
         re.compile(rb'<[^>]+xmlns[:=][^>]+>', re.MULTILINE),
     ],
     'code/ps1': [
-        # Match one of the Common Cmdlets
+        # Match one of the common Cmdlets
         re.compile(rb'(^|\n)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|'
                    rb'Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|'
                    rb'New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|'
-                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process)'),
+                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type)'),
+        # Match one of the common Classes
+        re.compile(rb'(-memberDefinition|-Name|-namespace|-passthru)'),
     ]
 }
 STRONG_SCORE = 15
