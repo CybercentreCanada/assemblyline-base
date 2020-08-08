@@ -280,7 +280,8 @@ def create_users(ds, log=None):
         "agrees_with_tos": "NOW",
         "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(admin_pass)}},
         "classification": classification.RESTRICTED,
-        "name": "Admin user",
+        "name": "Administrator",
+        "email": "admin@assemblyline.local",
         "password": get_password_hash(admin_pass),
         "uname": "admin",
         "type": ["admin", "user", "signature_importer"]})
@@ -290,7 +291,8 @@ def create_users(ds, log=None):
         log.info(f"\tU:{user_data.uname}   P:{admin_pass}")
 
     user_data = User({
-        "name": "user",
+        "name": "User",
+        "email": "user@assemblyline.local",
         "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(user_pass)}},
         "password": get_password_hash(user_pass),
         "uname": "user"})
