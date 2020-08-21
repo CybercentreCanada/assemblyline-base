@@ -791,6 +791,12 @@ class ESCollection(Collection):
         if deep_paging_id is not None and new_deep_paging_id is None:
             self.with_retries(self.datastore.client.clear_scroll, body={"scroll_id": [deep_paging_id]}, ignore=(404,))
 
+        # Check if we can tell from inspection that we have finished the scroll
+        if new_deep_paging_id is not None and len(ret_data["items"]) < ret_data["rows"]:
+            self.with_retries(self.datastore.client.clear_scroll,
+                              body={"scroll_id": [new_deep_paging_id]}, ignore=(404,))
+            new_deep_paging_id = None
+
         if new_deep_paging_id is not None:
             ret_data['next_deep_paging_id'] = new_deep_paging_id
 

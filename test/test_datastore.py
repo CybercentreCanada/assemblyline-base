@@ -346,3 +346,23 @@ TEST_FUNCTIONS = [
 def test_es(es_connection: Collection, function):
     if es_connection:
         function(es_connection)
+
+
+def test_empty_cursor_exhaustion(es_connection: Collection):
+    """Test for a bug where short or empty searches with paging active would leak scroll cursors."""
+    # By default 500 scroll cursors are the limit, so try to create 1000
+    for _ in range(1000):
+        result = es_connection.search('id: "TEST STRING THAT IS NOT AN ID"', deep_paging_id='*')
+        assert result['total'] == 0
+
+
+def test_short_cursor_exhaustion(es_connection: Collection):
+    """Test for a bug where short or empty searches with paging active would leak scroll cursors."""
+    result = es_connection.search("*:*")
+    doc = result['items'][0]['id'][0]
+    query = f'id: {doc}'
+
+    for _ in range(1000):
+        result = es_connection.search(query, rows=2, deep_paging_id='*')
+        assert result['total'] == 1
+
