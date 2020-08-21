@@ -51,7 +51,7 @@ stages:
           python.version: '3.7'
         Python3_8:
           python.version: '3.8'
-    timeoutInMinutes: 10
+    timeoutInMinutes: 15
     services:
       elasticsearch: elasticsearch
       redis: redis
