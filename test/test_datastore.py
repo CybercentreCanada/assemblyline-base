@@ -1,4 +1,3 @@
-import pytest
 import random
 import string
 import time
@@ -365,4 +364,3 @@ def test_short_cursor_exhaustion(es_connection: Collection):
     for _ in range(1000):
         result = es_connection.search(query, rows=2, deep_paging_id='*')
         assert result['total'] == 1
-
