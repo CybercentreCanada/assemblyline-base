@@ -19,9 +19,10 @@ This class assumes a flat file structure in the Azure storage blob.
 @ChainAll(TransportException)
 class TransportAzure(Transport):
 
-    def __init__(self, base=None, access_key=None, host=None):
+    def __init__(self, base=None, access_key=None, host=None, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
+        self.connection_attempts: int = connection_attempts
 
         # Data
         self.blob_container = base.strip("/")
@@ -54,7 +55,7 @@ class TransportAzure(Transport):
 
     def with_retries(self, func, *args, **kwargs):
         retries = 0
-        while True:
+        while self.connection_attempts is None or retries <= self.connection_attempts:
             try:
                 ret_val = func(*args, **kwargs)
 
@@ -74,6 +75,7 @@ class TransportAzure(Transport):
                                  f"[{e.__class__.__name__}: {str(e)}]")
                 time.sleep(0.25)
                 retries += 1
+        raise ConnectionError(f"Couldn't reach the requested azure endpoint {self.endpoint_url} inside retry limit")
 
     def delete(self, path):
         if self.read_only:

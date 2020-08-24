@@ -80,7 +80,8 @@ setup(
         'docker',
         'kubernetes',
         'notifications-python-client',
-        'azure-storage-blob'
+        # Blacklist a bad release of the azure library until a release newer than that comes out
+        'azure-storage-blob!=12.4.0'
     ],
     extras_require={
         'test': [
