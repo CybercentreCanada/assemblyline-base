@@ -75,6 +75,7 @@ class TransportAzure(Transport):
                                  f"[{e.__class__.__name__}: {str(e)}]")
                 time.sleep(0.25)
                 retries += 1
+        raise ConnectionError(f"Couldn't reach the requested azure endpoint {self.endpoint_url} inside retry limit")
 
     def delete(self, path):
         if self.read_only:
