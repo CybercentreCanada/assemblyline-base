@@ -10,7 +10,7 @@ def test_azure():
     """
     Azure filestore by downloading a file from our public storage blob
     """
-    fs = FileStore("azure://alpytest.blob.core.windows.net/pytest/")
+    fs = FileStore("azure://alpytest.blob.core.windows.net/pytest/", connection_attempts=2)
     assert fs.exists('test') != []
     assert fs.get('test') is not None
     with pytest.raises(TransportException):
