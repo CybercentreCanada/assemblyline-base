@@ -24,8 +24,9 @@ constants = get_constants()
 STRONG_INDICATORS = {
     'code/vbs': [
         re.compile(rb'(^|\n)On Error Resume Next'),
-        re.compile(rb'(^|\n)(?:Private)?[ \t]*Sub[ \t]+\w+\('),
+        re.compile(rb'(^|\n)(?:Private)?[ \t]*Sub[ \t]+\w+\(*'),
         re.compile(rb'(^|\n)End Module'),
+        re.compile(rb'(^|\n)ExecuteGlobal'),
     ],
     'code/javascript': [
         re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
@@ -124,7 +125,14 @@ WEAK_INDICATORS = {
                         ],
     'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
     'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
-    'code/vbs': [rb'(^|\n)[ \t]*(Dim |Sub |Loop |Attribute )', b'CreateObject', b'WScript'],
+    'code/vbs': [
+        rb'(^|\n)*[ \t]*(Dim |Sub |Loop |Attribute |End Sub|Function |End Function )',
+        b'CreateObject',
+        b'WScript',
+        b'window_onload',
+        b'.SpawnInstance_',
+        b'.Security_',
+    ],
     'code/csharp': [rb'(^|\n)(protected)?[ \t]*override'],
     'code/sql': [rb'(^|\n)(create |drop |select |returns |declare )'],
     'code/php': [rb'\$this\->'],
@@ -198,6 +206,7 @@ tag_to_extension = {
     'code/batch': '.bat',
     'code/c': '.c',
     'code/csharp': '.cs',
+    'code/hta': '.hta',
     'code/html': '.html',
     'code/java': '.java',
     'code/javascript': '.js',
@@ -744,6 +753,12 @@ def fileinfo(path: str) -> Dict:
     elif data['type'] == 'executable/windows/dos':
         # The default magic file misidentifies PE files with a munged DOS header
         data['type'] = dos_ident(path)
+    elif data['type'] == 'code/html':
+        # Magic detects .hta files as .html, guess_language detects .hta files as .js/.vbs
+        # If both conditions are met, it's fair to say that the file is an .hta
+        lang, _ = guess_language(path)
+        if lang in ["code/javascript", "code/vbs"]:
+            data['type'] = 'code/hta'
 
     if not recognized.get(data['type'], False) and not cart_metadata_set:
         data['type'] = 'unknown'

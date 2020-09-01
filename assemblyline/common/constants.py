@@ -114,6 +114,7 @@ RECOGNIZED_TYPES = {
     'code/gles': True,
     'code/glsl': True,
     'code/go': True,
+    'code/hta': True,
     'code/html': True,
     'code/java': True,
     'code/javascript': True,
