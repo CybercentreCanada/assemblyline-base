@@ -25,18 +25,6 @@ services:
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
-  # Cleaver service
-  alsvc_cleaver:
-    image: cccs/assemblyline-service-cleaver:latest
-    environment:
-      - SERVICE_API_HOST=http://al_service_server:5003
-
-  # Crowbar service
-  alsvc_crowbar:
-    image: cccs/assemblyline-service-crowbar:latest
-    environment:
-      - SERVICE_API_HOST=http://al_service_server:5003
-
   # Cuckoo service
   alsvc_cuckoo:
     image: cccs/assemblyline-service-cuckoo:latest
