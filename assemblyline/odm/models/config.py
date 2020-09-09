@@ -642,6 +642,10 @@ class Logging(odm.Model):
     # Log in JSON format
     log_as_json: bool = odm.Boolean()
 
+    # If set, core components will touch this path regularly to tell the container
+    # environment it is healthy
+    heartbeat_file: str = odm.Optional(odm.Keyword())
+
 
 DEFAULT_LOGGING = {
     "log_directory": "/var/log/assemblyline/",
@@ -651,7 +655,8 @@ DEFAULT_LOGGING = {
     "log_to_file": False,
     "log_to_syslog": False,
     "syslog_host": "localhost",
-    "export_interval": 5
+    "export_interval": 5,
+    "heartbeat_file": "/tmp/heartbeat"
 }
 
 SERVICE_CATEGORIES = [
