@@ -60,7 +60,7 @@ class Alert(odm.Model):
     filtered = odm.Boolean(default=False)                               # Are the alert result filtered
     heuristic = odm.Compound(Heuristic)                                 # Heuristic result block
     label = odm.List(odm.Keyword(), copyto="__text__", default=[])      # List of labels applied to the alert
-    metadata = odm.Mapping(odm.Keyword(), store=False)                  # Metadata submitted with the file
+    metadata = odm.FlattenedObject(default={}, store=False)             # Metadata submitted with the file
     owner = odm.Optional(odm.Keyword())                                 # Owner of the alert
     priority = odm.Optional(odm.Enum(values=PRIORITIES))                # Priority applied to the alert
     reporting_ts = odm.Date()                                           # Time at which the alert was created

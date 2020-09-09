@@ -109,16 +109,17 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 data['normalizer'] = __normalizer_mapping[field.__class__]
             mappings[name.strip(".")] = set_mapping(field, data)
 
-        elif isinstance(field, FlattenedObject):
-            mappings[name.strip(".")] = {
-                'type': __type_mapping[field.__class__]
-            }
-
         elif isinstance(field, Date):
             mappings[name.strip(".")] = set_mapping(field, {
                 'type': __type_mapping[field.__class__],
                 'format': 'date_optional_time||epoch_millis',
             })
+
+        elif isinstance(field, FlattenedObject):
+            if not field.index or isinstance(field.child_type, Any):
+                mappings[name.strip(".")] = {"type": "object", "enabled": False}
+            else:
+                dynamic.extend(build_templates(f'{name}.*', field.child_type, nested_template=True, index=field.index))
 
         elif isinstance(field, List):
             temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=path,
