@@ -161,6 +161,16 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/ingester/run_submit.py
 
+# You can use this if you want a jupyter notebook to debug something in development
+#  notebook:
+#    image: cccs/assemblyline_management:latest
+#    volumes:
+#      - ./config/:/etc/assemblyline/
+#      - ../../../:/opt/alv4/
+#      - ../../../notebook_data/:/var/lib/assemblyline/jupyter/data/
+#    ports:
+#      - "8888:8888"
+
 networks:
   default:
     external: true
