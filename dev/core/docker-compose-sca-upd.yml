@@ -14,7 +14,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/scaler/run_scaler.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_updater:
     image: cccs/assemblyline_dev:4.0.17
@@ -29,7 +29,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/updater/run_updater.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
 networks:
   default:
