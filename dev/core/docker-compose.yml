@@ -57,7 +57,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/alerter/run_alerter.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Expiry
   al_expiry:
@@ -67,7 +67,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/expiry/run_expiry.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Elasticsearch Metrics
   al_elastic_metrics:
@@ -77,7 +77,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/es_metrics.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Metrics aggregator
   al_metrics:
@@ -87,7 +87,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/run_metrics_aggregator.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Hearbeat manager
   al_heartbeat:
@@ -97,7 +97,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/run_heartbeat_manager.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Stats aggregator
   al_stats:
@@ -107,7 +107,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/run_statistics_aggregator.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Workflow
   al_workflow:
@@ -117,7 +117,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/workflow/run_workflow.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Watcher
   al_watcher:
@@ -127,7 +127,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/watcher/run_watcher.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_plumber:
     image: cccs/assemblyline_dev:4.0.17
@@ -136,7 +136,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/plumber/run_plumber.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Dispatcher processes
   al_dispatcher_files:
@@ -148,7 +148,7 @@ services:
       SKIP_SERVICE_SETUP: 'true'
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/dispatching/run_files.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_dispatcher_submissions:
     image: cccs/assemblyline_dev:4.0.17
@@ -159,7 +159,7 @@ services:
       SKIP_SERVICE_SETUP: 'true'
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/dispatching/run_submissions.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Ingester Processes
   al_ingester_ingest:
@@ -169,7 +169,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/ingester/run_ingest.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_ingester_internal:
     image: cccs/assemblyline_dev:4.0.17
@@ -178,7 +178,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/ingester/run_internal.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_ingester_submit:
     image: cccs/assemblyline_dev:4.0.17
@@ -187,7 +187,7 @@ services:
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/ingester/run_submit.py
     healthcheck:
-      test: ["CMD", "find", "/tmp/heartbeat", "-newermt", "-30 seconds"]
+      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
 # You can use this if you want a jupyter notebook to debug something in development
 #  notebook:
