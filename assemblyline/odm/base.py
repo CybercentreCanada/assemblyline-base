@@ -672,6 +672,13 @@ class FlattenedObject(Mapping):
     def check(self, value, **kwargs):
         return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
 
+    def apply_defaults(self, index, store):
+        """Initialize the default settings for the child field."""
+        # First apply the default to the list itself
+        super().apply_defaults(index, store)
+        # Then pass through the initialized values on the list to the child type
+        self.child_type.apply_defaults(self.index, self.store)
+
 
 class Compound(_Field):
     def __init__(self, field_type, **kwargs):

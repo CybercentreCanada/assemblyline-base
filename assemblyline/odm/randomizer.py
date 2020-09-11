@@ -26,7 +26,8 @@ laboratory to the marketplace For certain cyber security innovations the Cyber C
 authority We evaluate participating companies new technology and provide feedback in order to assist them in bringing 
 their product to market To learn more about selling or testing an innovation visit the BCIP website""".split()
 WORDS = list(set(WORDS))
-META_KEYS = ["key_a", "key_b", "key_c", "key_d", "key_e", "key_f"]
+MAPPING_KEYS = ["key_a", "key_b", "key_c", "key_d", "key_e", "key_f"]
+META_KEYS = ["ingest.name", "ingest.id", "date", "source", "file.original_ext", "file.original_name"]
 EXT = [
     ".jpg",
     ".doc",
@@ -164,6 +165,10 @@ def get_random_iso_date(epoch: _Optional[float] = None) -> str:
 
 
 def get_random_mapping(field) -> Dict[str, _Any]:
+    return {MAPPING_KEYS[i]: random_data_for_field(field, MAPPING_KEYS[i]) for i in range(random.randint(0, 5))}
+
+
+def get_random_meta(field) -> Dict[str, _Any]:
     return {META_KEYS[i]: random_data_for_field(field, META_KEYS[i]) for i in range(random.randint(0, 5))}
 
 
@@ -253,7 +258,10 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         else:
             return random_model_obj(field.child_type, as_json=True)
     elif isinstance(field, Mapping):
-        return get_random_mapping(field.child_type)
+        if name == 'metadata':
+            return get_random_meta(field.child_type)
+        else:
+            return get_random_mapping(field.child_type)
     elif isinstance(field, Optional):
         if not minimal:
             return random_data_for_field(field.child_type, name)
