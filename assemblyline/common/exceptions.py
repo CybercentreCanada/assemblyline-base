@@ -1,4 +1,4 @@
-from inspect import getmembers, ismethod
+from inspect import getmembers, isfunction
 from sys import exc_info
 from traceback import format_tb
 
@@ -51,7 +51,7 @@ class Chain(object):
             raise type(e)(e).with_traceback(exc_info()[2])
 
 
-class ChainAll(object):
+class ChainAll:
     """
     This class can be used as a decorator to override the type of exceptions returned by every method of a class
     """
@@ -61,7 +61,7 @@ class ChainAll(object):
 
     def __call__(self, cls):
         """We can use an instance of this class as a decorator."""
-        for method in getmembers(cls, predicate=ismethod):
+        for method in getmembers(cls, predicate=isfunction):
             setattr(cls, method[0], self.exception(method[1]))
 
         return cls
