@@ -125,9 +125,10 @@ class TransportS3(Transport):
         self.log.debug('Checking for existence of %s', key)
         try:
             self.with_retries(self.client.head_object, Bucket=self.bucket, Key=key)
-        except ClientError:
-            return False
-
+        except TransportException as error:
+            if isinstance(error.cause, ClientError):
+                return False
+            raise
         return True
 
     def makedirs(self, path):
