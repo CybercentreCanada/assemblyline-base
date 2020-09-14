@@ -34,8 +34,8 @@ class Chain(object):
             try:
                 return self.execute(original, *args, **kwargs)
             except Exception as e:
-                e = self.exception(str(e), e)
-                raise type(e)(e).with_traceback(exc_info()[2])
+                wrapped = self.exception(str(e), e)
+                raise wrapped.with_traceback(exc_info()[2])
 
         wrapper.__name__ = original.__name__
         wrapper.__doc__ = original.__doc__
@@ -47,8 +47,8 @@ class Chain(object):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            e = self.exception(str(e), e)
-            raise type(e)(e).with_traceback(exc_info()[2])
+            wrapped = self.exception(str(e), e)
+            raise wrapped.with_traceback(exc_info()[2])
 
 
 class ChainAll:
