@@ -32,7 +32,7 @@ class Chain(object):
     def __call__(self, original):
         def wrapper(*args, **kwargs):
             try:
-                return self.execute(original, *args, **kwargs)
+                return original(*args, **kwargs)
             except Exception as e:
                 wrapped = self.exception(str(e), e)
                 raise wrapped.with_traceback(exc_info()[2])
