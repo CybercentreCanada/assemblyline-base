@@ -69,4 +69,7 @@ if __name__ == "__main__":
     if "full" in sys.argv:
         create_extra_data(log=logger, ds=datastore)
 
+    if "alerts" in sys.argv:
+        create_alerts(datastore, alert_count=1000, log=logger)
+
     logger.info("\nDone.")
