@@ -151,8 +151,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 "mapping": {
                     "type": "keyword",
                     "index": False,
-                    "store": False,
-                    "ignore_malformed": True,
+                    "store": False
                 }
             }
 
@@ -188,8 +187,7 @@ def build_templates(name, field, nested_template=False, index=True) -> list:
                 "mapping": {
                     "type": "nested",
                     "index": field.index,
-                    "store": field.store,
-                    "ignore_malformed": not (field.index or field.store),
+                    "store": field.store
                 }
             }
             if field.copyto:
@@ -219,8 +217,7 @@ def build_templates(name, field, nested_template=False, index=True) -> list:
             "mapping": {
                 "type": "keyword",
                 "index": False,
-                "store": False,
-                "ignore_malformed": True,
+                "store": False
             }
         }
 
