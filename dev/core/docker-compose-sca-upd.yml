@@ -8,8 +8,8 @@ services:
       FILE_UPDATE_DIRECTORY: /mount/update_root/
     volumes:
       - /tmp/update_data:/mount/update_root/
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
       - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/scaler/run_scaler.py
 
@@ -21,8 +21,8 @@ services:
       FILE_UPDATE_DIRECTORY: /mount/update_root/
     volumes:
       - /tmp/update_data:/mount/update_root/
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
       - /var/run/docker.sock:/var/run/docker.sock  # NOTE, this container has access to docker socket (this is like root)
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/updater/run_updater.py
 

@@ -7,8 +7,8 @@ services:
     ports:
       - '5003:5003'
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     working_dir: /opt/alv4/
     command: python3 /opt/alv4/assemblyline-service-server/assemblyline_service_server/app.py
     networks:
@@ -22,8 +22,8 @@ services:
       DEV_ADMIN_PASS: $DEV_ADMIN_PASS
       DEV_USER_PASS: $DEV_USER_PASS
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     working_dir: /opt/alv4/assemblyline-base/assemblyline/odm/random_data/
     command: python3 create_test_data.py nosvc nosigs
 
@@ -33,8 +33,8 @@ services:
     ports:
       - '5000:5000'
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     working_dir: /opt/alv4/assemblyline-ui/assemblyline_ui/
     command: python3 app.py
 
@@ -44,8 +44,8 @@ services:
     ports:
       - '5002:5002'
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     working_dir: /opt/alv4/assemblyline-ui/assemblyline_ui/
     command: python3 socketsrv.py
 
@@ -53,79 +53,79 @@ services:
   al_alerter:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/alerter/run_alerter.py
 
   # Expiry
   al_expiry:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/expiry/run_expiry.py
 
   # Elasticsearch Metrics
   al_elastic_metrics:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/es_metrics.py
 
   # Metrics aggregator
   al_metrics:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/run_metrics_aggregator.py
 
   # Hearbeat manager
   al_heartbeat:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/run_heartbeat_manager.py
 
   # Stats aggregator
   al_stats:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/metrics/run_statistics_aggregator.py
 
   # Workflow
   al_workflow:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/workflow/run_workflow.py
 
   # Watcher
   al_watcher:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/watcher/run_watcher.py
 
   al_plumber:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/plumber/run_plumber.py
 
   # Dispatcher processes
   al_dispatcher_files:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     environment:
       SKIP_SERVICE_SETUP: 'true'
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/dispatching/run_files.py
@@ -133,8 +133,8 @@ services:
   al_dispatcher_submissions:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     environment:
       SKIP_SERVICE_SETUP: 'true'
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/dispatching/run_submissions.py
@@ -143,22 +143,22 @@ services:
   al_ingester_ingest:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/ingester/run_ingest.py
 
   al_ingester_internal:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/ingester/run_internal.py
 
   al_ingester_submit:
     image: cccs/assemblyline_dev:4.0.17
     volumes:
-      - ./config/:/etc/assemblyline/
-      - ../../../:/opt/alv4/
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     command: python3 /opt/alv4/assemblyline-core/assemblyline_core/ingester/run_submit.py
 
 networks:

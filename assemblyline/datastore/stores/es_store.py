@@ -1251,8 +1251,13 @@ class ESStore(BaseStore):
     }
 
     def __init__(self, hosts, collection_class=ESCollection, archive_access=True):
-        super(ESStore, self).__init__(hosts, collection_class,
-                                      ilm_config=forge.get_config().datastore.ilm.indexes.as_primitives())
+        config = forge.get_config()
+        if config.datastore.ilm.enabled:
+            ilm_config = config.datastore.ilm.indexes.as_primitives()
+        else:
+            ilm_config = {}
+
+        super(ESStore, self).__init__(hosts, collection_class, ilm_config=ilm_config)
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
 
