@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from assemblyline import odm
-from assemblyline.odm.models.service import EnvironmentVariable, DockerConfig
+from assemblyline.odm.models.service import EnvironmentVariable
 
 OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'role']
 
@@ -309,7 +309,7 @@ DEFAULT_DISPATCHER = {
 # Configuration options regarding data expiry
 @odm.model(index=False, store=False)
 class Expiry(odm.Model):
-    # By turning on batch delete, delete queries are rounded by day therefor
+    # By turning on batch delete, delete queries are rounded by day therefore
     # all delete operation happen at the same time at midnight
     batch_delete = odm.Boolean()
     # Delay in hours that will be applied to the expiry query so we can keep
@@ -353,7 +353,7 @@ class Ingester(odm.Model):
     # How many supplementary files may be added to a submission
     default_max_supplementary: int = odm.Integer()
 
-    # Drop a task altogeather after this many seconds
+    # Drop a task altogether after this many seconds
     expire_after: int = odm.Integer()
     stale_after_seconds: int = odm.Integer()
 
@@ -561,12 +561,14 @@ DEFAULT_ILM_INDEXES = {
 
 @odm.model(index=False, store=False)
 class ILM(odm.Model):
+    enabled = odm.Boolean()
     days_until_archive = odm.Integer()
     indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES)
 
 
 DEFAULT_ILM = {
     "days_until_archive": 5,
+    "enabled": True,
     "indexes": DEFAULT_ILM_INDEXES
 }
 
@@ -751,7 +753,7 @@ class UI(odm.Model):
     allow_raw_downloads: bool = odm.Boolean()
     # Allow file submissions via url
     allow_url_submissions: bool = odm.Boolean()
-    # Should API calls be audited and saved to a seperate log file?
+    # Should API calls be audited and saved to a separate log file?
     audit: bool = odm.Boolean()
     # Turn on debugging
     debug: bool = odm.Boolean()
@@ -834,7 +836,7 @@ DEFAULT_TAG_TYPES = {
         'attribution.network',
         'av.virus_name',
         'file.config',
-        'techinique.obfuscation',
+        'technique.obfuscation',
     ],
     'behavior': [
         'file.behavior'
