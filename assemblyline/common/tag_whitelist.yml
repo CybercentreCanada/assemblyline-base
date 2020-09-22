@@ -37,6 +37,9 @@ match:
     - logo.verisign.com
     - crl.verisign.com
     - ctldl.windowsupdate.com
+    - ns.adobe.com
+    - www.w3.org
+    - purl.org
   # Direct match to static domains
   network.static.domain:
     - localhost
@@ -56,6 +59,9 @@ match:
     - logo.verisign.com
     - crl.verisign.com
     - ctldl.windowsupdate.com
+    - ns.adobe.com
+    - www.w3.org
+    - purl.org
 
 # Regex section contains tag types and for each tag type
 #  a list of regular expression to be run to whitelist
@@ -98,6 +104,12 @@ regex:
     - https?://csc3-2010-crl\.verisign\.com/CSC3-2010\.crl0D
     - https?://csc3-2010-aia\.verisign\.com/CSC3-2010\.cer0
     - https?://ctldl\.windowsupdate\.com/.*
+    - https?://ns\.adobe\.com/photoshop/1\.0/
+    - https?://ns\.adobe\.com/xap/1\.0/
+    - https?://ns\.adobe\.com/xap/1\.0/mm/
+    - https?://ns\.adobe\.com/xap/1\.0/sType/ResourceEvent#
+    - https?://purl\.org/dc/elements/1\.1/
+    - https?://www\.w3\.org/1999/02/22-rdf-syntax-ns#
   # Regular expression to whitelist static URIs
   network.static.uri:
     - (?:ftp|http)s?://localhost(?:$|/.*)
@@ -127,3 +139,9 @@ regex:
     - https?://csc3-2010-crl\.verisign\.com/CSC3-2010\.crl0D
     - https?://csc3-2010-aia\.verisign\.com/CSC3-2010\.cer0
     - https?://ctldl\.windowsupdate\.com/.*
+    - https?://ns\.adobe\.com/photoshop/1\.0/
+    - https?://ns\.adobe\.com/xap/1\.0/
+    - https?://ns\.adobe\.com/xap/1\.0/mm/
+    - https?://ns\.adobe\.com/xap/1\.0/sType/ResourceEvent#
+    - https?://purl\.org/dc/elements/1\.1/
+    - https?://www\.w3\.org/1999/02/22-rdf-syntax-ns#
