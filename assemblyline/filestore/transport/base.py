@@ -97,3 +97,32 @@ class Transport(object):
         Put the content of the file in memory directly to the filestore dst_path
         """
         raise TransportException("Not Implemented")
+
+class TransportFile(object):
+    """
+        TransportFile base class.
+
+        - Subclasses should override all methods.
+        - Except as noted, TransportFile methods do not return value and raise
+        - TransportException on failure.
+        - Methods should only raise TransportExceptions. (The decorators
+          Chain and ChainAll can be applied to a function/method and class,
+          respectively, to ensure that any exceptions raised are converted to
+          TransportExceptions.
+    """
+
+    def __init__(self, file):
+        self.file = file
+
+
+    def iterator(self):
+        """
+        Returns the iterator associated with this TransportFile
+        """
+        raise TransportException("Not Implemented")
+
+    def read(self):
+        """
+        Returns the next chunk of a streamed file
+        """
+        raise TransportException("Not Implemented")

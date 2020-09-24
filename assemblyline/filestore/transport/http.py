@@ -4,7 +4,7 @@ import posixpath
 import requests
 
 from assemblyline.common.exceptions import ChainAll
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportFile
 
 
 @ChainAll(TransportException)
@@ -108,3 +108,16 @@ class TransportHTTP(Transport):
 
     def put(self, dst_path, content):
         raise TransportException("READ ONLY TRANSPORT: Method not implemented")
+
+
+# TODO: Create an extension of the base class TransportFile
+
+class TransportFileHTTP(TransportFile):
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+    def iterator(self):
+        pass
+
+    def read(self):
+        pass

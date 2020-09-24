@@ -4,7 +4,7 @@ import shutil
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportFile
 
 
 @ChainAll(TransportException)
@@ -139,3 +139,18 @@ def _join(base, path):
     if base is None:
         return path
     return os.path.join(base, path.lstrip("/")).replace("\\", "/")
+
+
+# TODO: Create an extension of the base class TransportFile
+
+class TransportFileLocal(TransportFile):
+    def __init__(self, file, chunk_size = 1024):
+        super().__init__(file)
+        self.chunk_size = chunk_size
+        self.iterator = iter(partial(self.file.read, self.chunk_size), b'')
+
+    def iterator(self):
+        return self.iterator
+
+    def read(self):
+        return self.file.read(self.chunk_size)

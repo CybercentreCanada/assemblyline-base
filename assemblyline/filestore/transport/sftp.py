@@ -4,14 +4,12 @@ import posixpath
 import pysftp
 import tempfile
 import warnings
-
 from io import BytesIO
-
 from paramiko import SSHException
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportFile
 
 
 def reconnect_retry_on_fail(func):
@@ -147,6 +145,9 @@ class TransportSFTP(Transport):
             bio.write(sftp_handle.read())
         return bio.getvalue()
 
+    def read(self, path):
+        pass
+
     @reconnect_retry_on_fail
     def put(self, dst_path, content):
         dst_path = self.normalize(dst_path)
@@ -170,3 +171,17 @@ class TransportSFTP(Transport):
 
         # Cleanup
         os.unlink(src_path)
+
+
+# TODO: Create an extension of the base class TransportFile
+
+class TransportFileSFTP(TransportFile):
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+    def iterator(self):
+        return self.iterator
+
+    def read(self):
+        #TODO: actually get a chunk
+        pass
