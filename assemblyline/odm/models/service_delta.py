@@ -63,6 +63,7 @@ class SubmissionParamsDelta(odm.Model):
     name = odm.Optional(odm.Keyword())
     type = odm.Optional(odm.Enum(values=['str', 'int', 'list', 'bool']))
     value = odm.Optional(odm.Any())
+    list = odm.Optional(odm.Any())
 
 
 @odm.model(index=True, store=False)

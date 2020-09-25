@@ -69,6 +69,7 @@ class SubmissionParams(odm.Model):
     name = odm.Keyword()
     type = odm.Enum(values=['str', 'int', 'list', 'bool'])
     value = odm.Any()
+    list = odm.Optional(odm.Any())
 
 
 @odm.model(index=True, store=False)
