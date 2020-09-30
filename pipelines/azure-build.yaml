@@ -33,6 +33,8 @@ stages:
       inputs: {versionSpec: 3.8}
     - script: |
         export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
+        export VERSION=${VERSION/stable}
+        export VERSION=${VERSION/beta/b}
         echo $VERSION > assemblyline/VERSION
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U wheel cython pip
         python setup.py sdist
@@ -72,6 +74,8 @@ stages:
         sudo apt-get update
         sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
         export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
+        export VERSION=${VERSION/stable}
+        export VERSION=${VERSION/beta/b}
         sudo -E env "PATH=$PATH" python -m pip install --no-cache-dir -f $(Pipeline.Workspace)/dist/ "assemblyline[test]==${VERSION}"
         sudo mkdir -p /etc/assemblyline/
         sudo mkdir -p /var/cache/assemblyline/
@@ -123,7 +127,9 @@ stages:
     - script: |
         set -xv  # Echo commands before they are run
         export TAG=${BUILD_SOURCEBRANCH#"refs/tags/v"}
+        export VERSION=${TAG/stable}
+        export VERSION=${VERSION/beta/b}
         until sudo env "PATH=$PATH" python -m pip download "assemblyline==$TAG" --pre --no-deps &> /dev/null; do sleep 2; done
-        docker build --build-arg version=$TAG -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
+        docker build --build-arg version=$VERSION -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
         docker push cccs/assemblyline
       displayName: Deploy to Docker Hub
