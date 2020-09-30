@@ -129,7 +129,7 @@ stages:
         export TAG=${BUILD_SOURCEBRANCH#"refs/tags/v"}
         export VERSION=${TAG/stable}
         export VERSION=${VERSION/beta/b}
-        until sudo env "PATH=$PATH" python -m pip download "assemblyline==$TAG" --pre --no-deps &> /dev/null; do sleep 2; done
+        until sudo env "PATH=$PATH" python -m pip download "assemblyline==$VERSION" --pre --no-deps &> /dev/null; do sleep 2; done
         docker build --build-arg version=$VERSION -t cccs/assemblyline:$TAG -t cccs/assemblyline:latest .
         docker push cccs/assemblyline
       displayName: Deploy to Docker Hub
