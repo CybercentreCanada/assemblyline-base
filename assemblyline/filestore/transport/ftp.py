@@ -14,7 +14,7 @@ from typing import Union, AnyStr
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.path import splitpath
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportFile
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportReadStream
 
 
 def reconnect_retry_on_fail(func):
@@ -228,15 +228,30 @@ class TransportFTP(Transport):
             self.ftp.rename(temppath, finalpath)
             assert (self.exists(dst_path))
 
+    def read(self, path):
+        path = self.normalize(path)
+        callbackqueue = queue.Queue()
+        def retrbinary(chunk_size = 8192):
+            self.ftp.retrbinary('RETR ' + path, callback = callbackqueue.put, blocksize = chunk_size)
+            callbackqueue.put(None)
+        return TransportReadStreamFTP(path, callbackqueue, retrbinary)
 
-# TODO: Create an extension of the base class TransportFile
 
-class TransportFileFTP(TransportFile):
-    def __init__(self, iterator):
-        self.iterator = iterator
+class TransportReadStreamFTP(TransportReadStream):
+    def __init__(self, filepath, filequeue, retrMethod):
+        self.filepath = filepath
+        self.filequeue = filequeue
+        self.retrMethod = retrMethod
 
-    def iterator(self):
+    def close(self):
         pass
 
-    def read(self):
-        pass
+    def read(self, chunk_size = 8192):
+        if self.readthread is None:
+            self.readthread = threading.Thread(target=self.retrMethod(chunk_size), daemon=True)
+            self.readthread.start()
+        chunk = self.filequeue.get()
+        if chunk is not None:
+            yield chunk
+        else:
+            return
