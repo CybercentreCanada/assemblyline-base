@@ -4,7 +4,7 @@ import shutil
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportFile
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportReadStream
 
 
 @ChainAll(TransportException)
@@ -126,6 +126,17 @@ class TransportLocal(Transport):
                 pass
             assert(self.exists(path))
 
+    def read(self, path):
+        path = self.normalize(path)
+        fh = None
+        try:
+            fh = open(path, "rb")
+            return TransportReadStreamLocal(fh)
+        finally:
+            if fh:
+                fh.close()
+
+
     def __str__(self):
         return 'file://{}'.format(self.base)
 
@@ -140,17 +151,15 @@ def _join(base, path):
         return path
     return os.path.join(base, path.lstrip("/")).replace("\\", "/")
 
+class TransportReadStreamLocal(TransportReadStream):
+    def __init__(self, file):
+        self.file = file
 
-# TODO: Create an extension of the base class TransportFile
+    def close(self):
+        self.file.close()
 
-class TransportFileLocal(TransportFile):
-    def __init__(self, file, chunk_size = 1024):
-        super().__init__(file)
-        self.chunk_size = chunk_size
-        self.iterator = iter(partial(self.file.read, self.chunk_size), b'')
-
-    def iterator(self):
-        return self.iterator
-
-    def read(self):
-        return self.file.read(self.chunk_size)
+    def read(self, chunk_size = -1):
+        if chunk_size > 0:
+            return self.file.read(chunk_size)
+        else:
+            return self.file.read()

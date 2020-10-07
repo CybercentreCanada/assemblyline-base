@@ -1,10 +1,11 @@
 import logging
 import os
 import posixpath
+
 import requests
 
 from assemblyline.common.exceptions import ChainAll
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportFile
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportReadStream
 
 
 @ChainAll(TransportException)
@@ -112,11 +113,11 @@ class TransportHTTP(Transport):
 
 # TODO: Create an extension of the base class TransportFile
 
-class TransportFileHTTP(TransportFile):
-    def __init__(self, iterator):
-        self.iterator = iterator
+class TransportReadStreamHTTP(TransportReadStream):
+    def __init__(self, file):
+        self.file = file
 
-    def iterator(self):
+    def close(self):
         pass
 
     def read(self):

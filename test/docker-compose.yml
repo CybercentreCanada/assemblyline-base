@@ -24,3 +24,12 @@ services:
     image: redis
     ports:
       - '6379:6379'
+
+  ftpServer:
+    image: fauria/vsftpd
+    environment:
+      - FTP_USER=al_test_user
+      - FTP_PASS=Th!sP@33w0rd15Temp0rary!
+    ports:
+      - '21110:21110'
+    command: --rm

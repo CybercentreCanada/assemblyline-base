@@ -1,13 +1,14 @@
 import logging
 import os
 import time
+from io import BytesIO
+
 # noinspection PyProtectedMember
 from azure.core.exceptions import *
 from azure.storage.blob import BlobServiceClient
-from io import BytesIO
 
 from assemblyline.common.exceptions import ChainAll
-from assemblyline.filestore.transport.base import Transport, TransportException, TransportFile
+from assemblyline.filestore.transport.base import Transport, TransportException, TransportReadStream
 
 """
 This class assumes a flat file structure in the Azure storage blob.
@@ -148,7 +149,7 @@ class TransportAzure(Transport):
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
         blob_data = self.with_retries(blob_client.download_blob)
 
-        file = TransportFileAzure(blob_data)
+        return TransportReadStreamAzure(blob_data)
 
     def put(self, dst_path, content):
         if self.read_only:
@@ -167,12 +168,11 @@ class TransportAzure(Transport):
                     raise
 
 
-# TODO: Create an extension of the base class TransportFile
-class TransportFileAzure(TransportFile):
+class TransportReadStreamAzure(TransportReadStream):
     def __init__(self, streamFile):
         self.file = streamFile
 
-    def iterator(self):
+    def close(self):
         pass
 
     def read(self):

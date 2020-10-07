@@ -98,7 +98,13 @@ class Transport(object):
         """
         raise TransportException("Not Implemented")
 
-class TransportFile(object):
+    def read(self, path):
+        """
+        Returns a file-like object for the file.
+        """
+        raise TransportException("Not Implemented")
+
+class TransportReadStream(object):
     """
         TransportFile base class.
 
@@ -111,18 +117,21 @@ class TransportFile(object):
           TransportExceptions.
     """
 
-    def __init__(self, file):
-        self.file = file
-
-
-    def iterator(self):
+    def read(self, chunk_size = -1):
         """
-        Returns the iterator associated with this TransportFile
+        Returns the next chunk of a streamed file, to the maximum that is currently available
+        should never return an empty string, always > 0
         """
         raise TransportException("Not Implemented")
 
-    def read(self):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
         """
-        Returns the next chunk of a streamed file
+        Ends the use of the file, requiring the user to create another read stream to access the same file
         """
         raise TransportException("Not Implemented")
