@@ -149,7 +149,7 @@ class TransportAzure(Transport):
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
         blob_data = self.with_retries(blob_client.download_blob)
 
-        return TransportReadStreamAzure(blob_data)
+        return TransportReadStreamAzure(blob_data.chunks())
 
     def put(self, dst_path, content):
         if self.read_only:
@@ -175,5 +175,5 @@ class TransportReadStreamAzure(TransportReadStream):
     def close(self):
         pass
 
-    def read(self):
-        pass
+    def read(self, chunk_size=-1):
+        return next(self.file)

@@ -110,15 +110,23 @@ class TransportHTTP(Transport):
     def put(self, dst_path, content):
         raise TransportException("READ ONLY TRANSPORT: Method not implemented")
 
+    def read(self, path):
+        path = self.normalize(path)
+        resp = self.session.get(path, auth=self.auth, cert=self.pki, verify=self.verify, stream=True)
+        if resp.ok:
+            return TransportReadStreamHTTP(resp)
+        else:
+            raise TransportException("[%s] %s: %s" % (resp.status_code, resp.reason, path))
+
 
 # TODO: Create an extension of the base class TransportFile
 
 class TransportReadStreamHTTP(TransportReadStream):
-    def __init__(self, file):
-        self.file = file
+    def __init__(self, response):
+        self.response = response
 
     def close(self):
-        pass
+        self.response.close()
 
-    def read(self):
-        pass
+    def read(self, chunk_size=1024):
+        return next(self.response.iter_content(chunk_size=chunk_size))

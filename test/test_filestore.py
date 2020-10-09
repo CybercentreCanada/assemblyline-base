@@ -14,6 +14,7 @@ def test_azure():
     fs = FileStore("azure://alpytest.blob.core.windows.net/pytest/", connection_attempts=2)
     assert fs.exists('test') != []
     assert fs.get('test') is not None
+    assert fs.read('test').read() is not None
     with pytest.raises(TransportException):
         fs.put('bob', 'bob')
 
@@ -33,6 +34,7 @@ def test_http():
     tempf = tempfile.NamedTemporaryFile()
     fs.download('assembyline', tempf.name)
     assert open(tempf.name, 'r').read() is not None
+    assert fs.read('assemblyline').read(chunk_size=24) is not None
 
 
 def test_https():
@@ -50,6 +52,7 @@ def test_https():
     tempf = tempfile.NamedTemporaryFile()
     fs.download('assembyline', tempf.name)
     assert open(tempf.name, 'r').read() is not None
+    assert fs.read('assemblyline').read(chunk_size=24) is not None
 
 
 # def test_sftp():
@@ -93,6 +96,7 @@ def test_file():
     fs = FileStore('file://%s' % os.path.dirname(__file__))
     assert fs.exists(os.path.basename(__file__)) != []
     assert fs.get(os.path.basename(__file__)) is not None
+    assert fs.read(os.path.basename(__file__)) is not None
 
 
 def test_s3():

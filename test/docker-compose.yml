@@ -31,5 +31,6 @@ services:
       - FTP_USER=al_test_user
       - FTP_PASS=Th!sP@33w0rd15Temp0rary!
     ports:
+      - '20:20'
+      - '21:21'
       - '21110:21110'
-    command: --rm
