@@ -43,11 +43,13 @@ class DependencyConfig(odm.Model):
 @odm.model(index=False, store=False)
 class UpdateSource(odm.Model):
     name = odm.Keyword()
-    password = odm.Optional(odm.Keyword())
-    pattern = odm.Optional(odm.Keyword())
-    private_key = odm.Optional(odm.Keyword())
+    password = odm.Optional(odm.Keyword(default=""))
+    pattern = odm.Optional(odm.Keyword(default=""))
+    private_key = odm.Optional(odm.Keyword(default=""))
+    ca_cert = odm.Optional(odm.Keyword(default=""))
+    ssl_ignore_errors = odm.Boolean(default=False)
     uri = odm.Keyword()
-    username = odm.Optional(odm.Keyword())
+    username = odm.Optional(odm.Keyword(default=""))
     headers = odm.List(odm.Compound(EnvironmentVariable), default=[])
     default_classification = odm.Classification(default=Classification.UNRESTRICTED)
 
