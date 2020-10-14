@@ -25,13 +25,13 @@ class DockerConfigDelta(odm.Model):
 class UpdateSourceDelta(odm.Model):
     headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)))
     name = odm.Optional(odm.Keyword())
-    password = odm.Optional(odm.Keyword())
-    pattern = odm.Optional(odm.Keyword())
+    password = odm.Optional(odm.Keyword(default=""))
+    pattern = odm.Optional(odm.Keyword(default=""))
     private_key = odm.Optional(odm.Keyword(default=""))
     ca_cert = odm.Optional(odm.Keyword(default=""))
     ssl_ignore_errors = odm.Boolean(default=False)
     uri = odm.Optional(odm.Keyword())
-    username = odm.Optional(odm.Keyword())
+    username = odm.Optional(odm.Keyword(default=""))
     default_classification = odm.Optional(odm.Classification())
 
 
