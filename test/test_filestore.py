@@ -22,9 +22,9 @@ def test_http():
     Test HTTP FileStore by fetching the assemblyline page on
     CSE's cyber center page.
     """
-    fs = FileStore('http://cyber.gc.ca/en/')
-    assert fs.exists('assemblyline') != []
-    assert fs.get('assemblyline') is not None
+    fs = FileStore('http://github.com/CybercentreCanada/')
+    assert fs.exists('assemblyline-base') != []
+    assert fs.get('assemblyline-base') is not None
 
 
 def test_https():
@@ -32,9 +32,9 @@ def test_https():
     Test HTTPS FileStore by fetching the assemblyline page on
     CSE's cyber center page.
     """
-    fs = FileStore('https://cyber.gc.ca/en/')
-    assert fs.exists('assemblyline') != []
-    assert fs.get('assemblyline') is not None
+    fs = FileStore('https://github.com/CybercentreCanada/')
+    assert fs.exists('assemblyline-base') != []
+    assert fs.get('assemblyline-base') is not None
 
 
 # def test_sftp():
