@@ -3,6 +3,11 @@ import logging
 import pprint
 import threading
 
+# use pytz (as demanded by apschedular) to ensure the timezone is set,
+# boxes with weird/new/different default timezone values can break things
+# if a value APS likes isn't set explicitly
+import pytz
+
 from assemblyline.common import forge
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm.messages import PerformanceTimer
@@ -62,7 +67,7 @@ class AutoExportingCounters(object):
         from apscheduler.schedulers.background import BackgroundScheduler
         import atexit
 
-        self.scheduler = BackgroundScheduler(daemon=True)
+        self.scheduler = BackgroundScheduler(daemon=True, timezone=pytz.utc)
         self.scheduler.add_job(self.export, 'interval', seconds=self.export_interval)
         self.scheduler.start()
 
