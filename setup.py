@@ -74,6 +74,7 @@ setup(
         'cart',
         'ssdeep',
         'python-magic',
+        'pytz',
         'apscheduler',
         'elastic-apm[flask]',
         'cython',
