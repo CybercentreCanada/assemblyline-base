@@ -16,7 +16,7 @@ SPECIAL = r'[ !#$@%&\'()*+,-./[\\\]^_`{|}~"]'
 PASS_BASIC = [chr(x + 65) for x in range(26)] + \
              [chr(x + 97) for x in range(26)] + \
              [str(x) for x in range(10)] + \
-             ["!", "@", "$", "%", "^", "?", "&", "*", "(", ")"]
+             ["!", "@", "$", "^", "?", "&", "*", "(", ")"]
 
 
 def get_hotp_token(secret, intervals_no):
