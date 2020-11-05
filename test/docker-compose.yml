@@ -29,8 +29,8 @@ services:
     image: fauria/vsftpd
     environment:
       - FTP_USER=al_test_user
-      - FTP_PASS=Th!sP@33w0rd15Temp0rary!
+      - FTP_PASS=password
     ports:
-      - '20:20'
       - '21:21'
-      - '21110:21110'
+      - '20:20'
+      - '21100-21110:21100-21110'

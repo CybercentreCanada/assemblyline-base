@@ -65,14 +65,18 @@ def test_https():
 #     assert fs.get('readme.txt') is not None
 
 
-# def test_ftp():
-#     """
-#     Test FTP FileStore by fetching the readme.txt file from
-#     Rebex test server.
-#     """
-#     fs = FileStore('ftp://demo:password@test.rebex.net')
-#     assert fs.exists('readme.txt') != []
-#     assert fs.get('readme.txt') is not None
+def test_ftp():
+    """
+    Test FTP FileStore by fetching the readme.txt file from
+    Rebex test server.
+    """
+    fs = FileStore('ftp://al_test_user:password@localhost')
+
+    # fs = FileStore('ftp://demo:password@test.rebex.net')
+    assert fs.exists('readme.txt') != []
+    assert fs.get('readme.txt') is not None
+    asdf = fs.read('readme.txt')
+    assert asdf.read() is not None
 
 
 # def test_ftps():
