@@ -62,7 +62,7 @@ class SubmissionParams(odm.Model):
     submitter = odm.Keyword(store=True, copyto="__text__")              # User who submitted the file
     ttl = odm.Integer(default=0)                                        # Time to live for this submission in days
     type = odm.Keyword(default="USER")                                  # Type of submission
-    initial_data = odm.Mapping(odm.Any(), index=False, default={})      # Initialization for auxiliary 'temporary_data'
+    initial_data = odm.Optional(odm.Text(index=False))                  # Initialization for auxiliary 'temporary_data'
 
     def get_hashing_keys(self):
         """Get the sections of the submission parameters that should be used in result hashes."""
