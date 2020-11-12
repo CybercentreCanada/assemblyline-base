@@ -6,7 +6,7 @@ Classification = forge.get_classification()
 
 SUBMISSION_STATES = ['failed', 'submitted', 'completed']
 DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction", "Networking"]
-DEFAULT_RESUBMIT = ["Dynamic Analysis"]
+DEFAULT_RESUBMIT = []
 
 
 @odm.model(index=True, store=False)
