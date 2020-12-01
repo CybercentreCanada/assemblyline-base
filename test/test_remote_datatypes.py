@@ -178,8 +178,10 @@ def test_priority_queue(redis_connection):
         for x in range(10):
             pq.push(100, x)
 
-        pq.push(101, 'a')
-        pq.push(99, 'z')
+        a_key = pq.push(101, 'a')
+        z_key = pq.push(99, 'z')
+        assert pq.rank(a_key) == 0
+        assert pq.rank(z_key) == pq.length() - 1
 
         assert pq.pop() == 'a'
         assert pq.unpush() == 'z'
