@@ -40,7 +40,9 @@ return result
 pq_push_script = """
 local seq = string.format('%020d', redis.call('incr', 'global-sequence'))
 local vip = string.format('%1d', ARGV[3])
-redis.call('zadd', ARGV[1], 0 - ARGV[2], vip..seq..ARGV[4])
+local value = vip..seq..ARGV[4]
+redis.call('zadd', ARGV[1], 0 - ARGV[2], value)
+return value
 """
 
 # ARGV[1]: <queue name>
@@ -113,7 +115,10 @@ class PriorityQueue(object):
 
     def push(self, priority: int, data, vip=None):
         vip = 0 if vip else 9
-        retry_call(self.s, args=[self.name, priority, vip, json.dumps(data)])
+        return retry_call(self.s, args=[self.name, priority, vip, json.dumps(data)])
+
+    def rank(self, raw_value):
+        return retry_call(self.c.zrank, self.name, raw_value)
 
     def unpush(self, num=None):
         if num is not None and num <= 0:
