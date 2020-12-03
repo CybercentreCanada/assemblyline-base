@@ -130,7 +130,8 @@ stages:
         if [[ "$TAG" == *stable* ]]; then export BUILD_TYPE=stable; else export BUILD_TYPE=latest; fi
         export VERSION=${TAG/stable}
         export VERSION=${VERSION/beta/b}
+        export SERIES="`expr $TAG : '\([0-9]\+\.[0-9]\+\.\)'`${BUILD_TYPE}"
         until sudo env "PATH=$PATH" python -m pip download "assemblyline==$VERSION" --pre --no-deps &> /dev/null; do sleep 2; done
-        docker build --build-arg version=$VERSION -t cccs/assemblyline:$TAG -t cccs/assemblyline:$BUILD_TYPE .
+        docker build --build-arg version=$VERSION -t cccs/assemblyline:$TAG -t cccs/assemblyline:$BUILD_TYPE -t cccs/assemblyline:$SERIES .
         docker push cccs/assemblyline
       displayName: Deploy to Docker Hub
