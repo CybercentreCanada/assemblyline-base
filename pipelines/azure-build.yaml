@@ -132,7 +132,7 @@ stages:
         export VERSION=${VERSION/beta/b}
         export SERIES="`expr $TAG : '\([0-9]\+\.[0-9]\+\.\)'`${BUILD_TYPE}"
         until sudo env "PATH=$PATH" python -m pip download "assemblyline==$VERSION" --pre --no-deps &> /dev/null; do sleep 2; done
-        for IMAGE in "cccs/assemblyline" "docker.pkg.github.com/cybercentrecanada/assemblyline-base/assemblyline"
+        for IMAGE in "cccs/assemblyline" "docker.pkg.github.com/cybercentrecanada/assemblyline/assemblyline"
         do
           docker build --build-arg version=$VERSION -t $IMAGE:$TAG -t $IMAGE:$BUILD_TYPE -t $IMAGE:$SERIES .
           docker push $IMAGE
