@@ -7,7 +7,7 @@ from azure.core.exceptions import *
 from azure.storage.blob import BlobServiceClient
 from io import BytesIO
 
-from assemblyline.common.exceptions import ChainAll
+from assemblyline.common.exceptions import Chain
 from assemblyline.filestore.transport.base import Transport, TransportException
 
 
@@ -16,9 +16,9 @@ This class assumes a flat file structure in the Azure storage blob.
 """
 
 
-@ChainAll(TransportException)
 class TransportAzure(Transport):
 
+    @Chain(TransportException)
     def __init__(self, base=None, access_key=None, host=None, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
@@ -77,6 +77,7 @@ class TransportAzure(Transport):
                 retries += 1
         raise ConnectionError(f"Couldn't reach the requested azure endpoint {self.endpoint_url} inside retry limit")
 
+    @Chain(TransportException)
     def delete(self, path):
         if self.read_only:
             raise TransportException("READ ONLY TRANSPORT: Method not allowed")
@@ -85,6 +86,7 @@ class TransportAzure(Transport):
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
         self.with_retries(blob_client.download_blob)
 
+    @Chain(TransportException)
     def exists(self, path):
         key = self.normalize(path)
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
@@ -95,11 +97,13 @@ class TransportAzure(Transport):
 
         return True
 
+    @Chain(TransportException)
     def makedirs(self, path):
         # Does not need to do anything as azurestorage blob has a flat layout.
         pass
 
     # File based functions
+    @Chain(TransportException)
     def download(self, src_path, dst_path):
         key = self.normalize(src_path)
         dir_path = os.path.dirname(dst_path)
@@ -114,6 +118,7 @@ class TransportAzure(Transport):
             blob_data = self.with_retries(blob_client.download_blob)
             blob_data.readinto(my_blob)
 
+    @Chain(TransportException)
     def upload(self, src_path, dst_path):
         if self.read_only:
             raise TransportException("READ ONLY TRANSPORT: Method not allowed")
@@ -129,6 +134,7 @@ class TransportAzure(Transport):
                 pass
 
     # Buffer based functions
+    @Chain(TransportException)
     def get(self, path):
         key = self.normalize(path)
         my_blob = BytesIO()
@@ -138,6 +144,7 @@ class TransportAzure(Transport):
         blob_data.readinto(my_blob)
         return my_blob.getvalue()
 
+    @Chain(TransportException)
     def put(self, dst_path, content):
         if self.read_only:
             raise TransportException("READ ONLY TRANSPORT: Method not allowed")
