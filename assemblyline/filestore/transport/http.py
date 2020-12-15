@@ -124,9 +124,12 @@ class TransportHTTP(Transport):
 class TransportReadStreamHTTP(TransportReadStream):
     def __init__(self, response):
         self.response = response
+        self.iter = None
 
     def close(self):
         self.response.close()
 
     def read(self, chunk_size=1024):
-        return next(self.response.iter_content(chunk_size=chunk_size))
+        if self.iter is None:
+            self.iter = self.response.iter_content(chunk_size=chunk_size)
+        return next(self.iter)

@@ -28,6 +28,15 @@ resources:
       MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
     ports:
       - 9000:9000
+  - container: ftpserver
+      image: fauria/vsftpd
+        environment:
+          - FTP_USER=al_test_user
+          - FTP_PASS=password
+        ports:
+          - '21:21'
+          - '20:20'
+          - '21100-21110:21100-21110'
 
 stages:
 - stage: build
@@ -71,6 +80,7 @@ stages:
       elasticsearch: elasticsearch
       redis: redis
       minio: minio
+      ftpserver: ftpserver
     steps:
     - checkout: none
     - task: UsePythonVersion@0

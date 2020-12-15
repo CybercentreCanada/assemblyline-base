@@ -34,7 +34,8 @@ def test_http():
     tempf = tempfile.NamedTemporaryFile()
     fs.download('assembyline', tempf.name)
     assert open(tempf.name, 'r').read() is not None
-    assert fs.read('assemblyline').read(chunk_size=24) is not None
+    httpObject = fs.read('assemblyline')
+    assert httpObject.read(chunk_size=32) is not None
 
 
 def test_https():
@@ -75,8 +76,8 @@ def test_ftp():
     # fs = FileStore('ftp://demo:password@test.rebex.net')
     assert fs.exists('readme.txt') != []
     assert fs.get('readme.txt') is not None
-    asdf = fs.read('readme.txt')
-    assert asdf.read() is not None
+    ftpfile = fs.read('readme.txt')
+    assert ftpfile.read() is not None
 
 
 # def test_ftps():

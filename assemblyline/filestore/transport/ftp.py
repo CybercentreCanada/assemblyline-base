@@ -4,6 +4,7 @@ import ftplib
 import logging
 import os
 import posixpath
+import queue
 import threading
 import time
 import weakref
@@ -242,16 +243,22 @@ class TransportReadStreamFTP(TransportReadStream):
         self.filepath = filepath
         self.filequeue = filequeue
         self.retrMethod = retrMethod
+        self.readThread = None
+        self.generator = None
 
     def close(self):
         pass
 
-    def read(self, chunk_size = 8192):
-        if self.readthread is None:
-            self.readthread = threading.Thread(target=self.retrMethod(chunk_size), daemon=True)
-            self.readthread.start()
+    def read(self, chunk_size=8192):
+        if self.generator is None:
+            self.generator = self.getGen(chunk_size=chunk_size)
+        return next(self.generator)
+
+    def getGen(self, chunk_size=8192):
+        self.readThread = threading.Thread(target=self.retrMethod(chunk_size), daemon=True)
+        self.readThread.start()
         chunk = self.filequeue.get()
         if chunk is not None:
             yield chunk
         else:
-            return
+            raise StopIteration()

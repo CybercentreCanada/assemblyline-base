@@ -4,7 +4,7 @@ import shutil
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportReadStream
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
 
 
 @ChainAll(TransportException)
@@ -131,7 +131,7 @@ class TransportLocal(Transport):
         fh = None
         try:
             fh = open(path, "rb")
-            return TransportReadStreamLocal(fh)
+            return fh
         finally:
             if fh:
                 fh.close()
@@ -150,16 +150,3 @@ def _join(base, path):
     if base is None:
         return path
     return os.path.join(base, path.lstrip("/")).replace("\\", "/")
-
-class TransportReadStreamLocal(TransportReadStream):
-    def __init__(self, file):
-        self.file = file
-
-    def close(self):
-        self.file.close()
-
-    def read(self, chunk_size = -1):
-        if chunk_size > 0:
-            return self.file.read(chunk_size)
-        else:
-            return self.file.read()
