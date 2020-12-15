@@ -286,6 +286,7 @@ sl_patterns = [
     ['jpg', r'^jpeg image data'],
     ['png', r'^png image data'],
     ['installer/windows', r'(Installation Database|Windows Installer)'],
+    ['office/passwordprotected', r'(Security: 1|CDFV2 Encrypted)'],
     ['office/excel', r'Microsoft.*Excel'],
     ['office/powerpoint', r'Microsoft.*PowerPoint'],
     ['office/word', r'Microsoft.*Word'],

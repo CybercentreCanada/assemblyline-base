@@ -145,6 +145,7 @@ RECOGNIZED_TYPES = {
     'document/office/paintbrush': True,
     'document/office/package': True,
     'document/office/powerpoint': True,
+    'document/office/passwordprotected': True,
     'document/office/ole': True,
     'document/office/rtf': True,
     'document/office/unknown': True,
