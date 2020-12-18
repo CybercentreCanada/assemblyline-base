@@ -34,3 +34,9 @@ services:
       - '21:21'
       - '20:20'
       - '21100-21110:21100-21110'
+
+  sftpServer:
+    image: atmoz/sftp
+    ports:
+      - '2222:22'
+    command: sftp_test_user:password:1001::test

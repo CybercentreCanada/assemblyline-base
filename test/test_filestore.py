@@ -62,22 +62,28 @@ def test_https():
 #     Rebex test server.
 #     """
 #     fs = FileStore('sftp://demo:password@test.rebex.net')
+#     # fs = FileStore('sftp://sftp_test_user:password@localhost:2222')
+#     # fs.upload('readme.txt', 'readme.txt')
 #     assert fs.exists('readme.txt') != []
 #     assert fs.get('readme.txt') is not None
+#     sftpfile = fs.read('readme.txt')
+#     assert sftpfile.read() is not None
 
 
 def test_ftp():
     """
     Test FTP FileStore by fetching the readme.txt file from
-    Rebex test server.
+    containerized server.
     """
     fs = FileStore('ftp://al_test_user:password@localhost')
-
+    fs.upload('readme.txt', 'readme.txt')
     # fs = FileStore('ftp://demo:password@test.rebex.net')
     assert fs.exists('readme.txt') != []
     assert fs.get('readme.txt') is not None
     ftpfile = fs.read('readme.txt')
     assert ftpfile.read() is not None
+    fs.delete('readme.txt')
+    assert fs.exists('readme.txt') == []
 
 
 # def test_ftps():
@@ -88,6 +94,8 @@ def test_ftp():
 #     fs = FileStore('ftps://demo:password@test.rebex.net')
 #     assert fs.exists('readme.txt') != []
 #     assert fs.get('readme.txt') is not None
+#     ftpsfile = fs.read('readme.txt')
+#     assert ftpsfile.read() is not None
 
 
 def test_file():
