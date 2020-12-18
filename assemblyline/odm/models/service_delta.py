@@ -30,6 +30,7 @@ class UpdateSourceDelta(odm.Model):
     private_key = odm.Optional(odm.Keyword(default=""))
     ca_cert = odm.Optional(odm.Keyword(default=""))
     ssl_ignore_errors = odm.Boolean(default=False)
+    proxy = odm.Optional(odm.Keyword(default=""))
     uri = odm.Optional(odm.Keyword())
     username = odm.Optional(odm.Keyword(default=""))
     default_classification = odm.Optional(odm.Classification())
