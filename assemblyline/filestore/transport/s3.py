@@ -66,7 +66,7 @@ class TransportS3(Transport):
 
         bucket_exist = False
         try:
-            self.client.head_bucket(Bucket=self.bucket)
+            self.with_retries(self.client.head_bucket, Bucket=self.bucket)
             bucket_exist = True
         except ClientError as e:
             if "404" not in str(e):
