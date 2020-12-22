@@ -372,20 +372,9 @@ attack_map = {
                           'order to discover the hostname to IP address mappings of remote systems. \n'
                           '\n'
                           'Specific to macOS, the <code>bonjour</code> protocol exists to discover additional '
-                          'Mac-based systems within the same broadcast domain.\n'
-                          '\n'
-                          'Within IaaS (Infrastructure as a Service) environments, remote systems include instances '
-                          'and virtual machines in various states, including the running or stopped state. Cloud '
-                          'providers have created methods to serve information about remote systems, such as APIs and '
-                          'CLIs. For example, AWS provides a <code>DescribeInstances</code> API within the Amazon EC2 '
-                          'API and a <code>describe-instances</code> command within the AWS CLI that can return '
-                          'information about all instances within an account.(Citation: Amazon Describe Instances '
-                          "API)(Citation: Amazon Describe Instances CLI) Similarly, GCP's Cloud SDK CLI provides the "
-                          '<code>gcloud compute instances list</code> command to list all Google Compute Engine '
-                          "instances in a project, and Azure's CLI <code>az vm list</code> lists details of virtual "
-                          'machines.(Citation: Google Compute Instances)(Citation: Azure VM List)',
+                          'Mac-based systems within the same broadcast domain.',
            'name': 'Remote System Discovery',
-           'platforms': ['Linux', 'macOS', 'Windows', 'GCP', 'Azure', 'AWS']},
+           'platforms': ['Linux', 'macOS', 'Windows']},
  'T1020': {'attack_id': 'T1020',
            'categories': ['exfiltration'],
            'description': 'Adversaries may exfiltrate data, such as sensitive documents, through the use of automated '
@@ -396,7 +385,29 @@ attack_map = {
                           'Channel](https://attack.mitre.org/techniques/T1041) and [Exfiltration Over Alternative '
                           'Protocol](https://attack.mitre.org/techniques/T1048).',
            'name': 'Automated Exfiltration',
-           'platforms': ['Linux', 'macOS', 'Windows']},
+           'platforms': ['Linux', 'macOS', 'Windows', 'Network']},
+ 'T1020.001': {'attack_id': 'T1020.001',
+               'categories': ['exfiltration'],
+               'description': 'Adversaries may leverage traffic mirroring in order to automate data exfiltration over '
+                              'compromised network infrastructure.  Traffic mirroring is a native feature for some '
+                              'network devices and used for network analysis and may be configured to duplicate '
+                              'traffic and forward to one or more destinations for analysis by a network analyzer or '
+                              'other monitoring device. (Citation: Cisco Traffic Mirroring) (Citation: Juniper Traffic '
+                              'Mirroring)\n'
+                              '\n'
+                              'Adversaries may abuse traffic mirroring to mirror or redirect network traffic through '
+                              'other network infrastructure they control. Malicious modifications to network devices '
+                              'to enable traffic redirection may be possible through '
+                              '[ROMMONkit](https://attack.mitre.org/techniques/T1542/004) or [Patch System '
+                              'Image](https://attack.mitre.org/techniques/T1601/001).(Citation: '
+                              'US-CERT-TA18-106A)(Citation: Cisco Blog Legacy Device Attacks) Adversaries may use '
+                              'traffic duplication in conjunction with [Network '
+                              'Sniffing](https://attack.mitre.org/techniques/T1040), [Input '
+                              'Capture](https://attack.mitre.org/techniques/T1056), or '
+                              '[Man-in-the-Middle](https://attack.mitre.org/techniques/T1557) depending on the goals '
+                              'and objectives of the adversary.',
+               'name': 'Traffic Duplication',
+               'platforms': ['Network']},
  'T1021': {'attack_id': 'T1021',
            'categories': ['lateral-movement'],
            'description': 'Adversaries may use [Valid Accounts](https://attack.mitre.org/techniques/T1078) to log into '
@@ -890,7 +901,7 @@ attack_map = {
                           'An adversary may also be able to escalate their privileges since some boot or logon '
                           'initialization scripts run with higher privileges.',
            'name': 'Boot or Logon Initialization Scripts',
-           'platforms': ['macOS', 'Windows']},
+           'platforms': ['macOS', 'Windows', 'Linux']},
  'T1037.001': {'attack_id': 'T1037.001',
                'categories': ['persistence', 'privilege-escalation'],
                'description': 'Adversaries may use Windows logon scripts automatically executed at logon '
@@ -1290,6 +1301,32 @@ attack_map = {
                               'context of a specified account (such as SYSTEM).',
                'name': 'Scheduled Task',
                'platforms': ['Windows']},
+ 'T1053.006': {'attack_id': 'T1053.006',
+               'categories': ['execution', 'persistence', 'privilege-escalation'],
+               'description': 'Adversaries may abuse systemd timers to perform task scheduling for initial or '
+                              'recurring execution of malicious code. Systemd timers are unit files with file '
+                              'extension <code>.timer</code> that control services. Timers can be set to run on a '
+                              'calendar event or after a time span relative to a starting point. They can be used as '
+                              'an alternative to [Cron](https://attack.mitre.org/techniques/T1053/003) in Linux '
+                              'environments.(Citation: archlinux Systemd Timers Aug 2020)\n'
+                              '\n'
+                              'Each <code>.timer</code> file must have a corresponding <code>.service</code> file with '
+                              'the same name, e.g., <code>example.timer</code> and <code>example.service</code>. '
+                              '<code>.service</code> files are [Systemd '
+                              'Service](https://attack.mitre.org/techniques/T1543/002) unit files that are managed by '
+                              'the systemd system and service manager.(Citation: Linux man-pages: systemd January '
+                              '2014) Privileged timers are written to <code>/etc/systemd/system/</code> and '
+                              '<code>/usr/lib/systemd/system</code> while user level are written to '
+                              '<code>~/.config/systemd/user/</code>.\n'
+                              '\n'
+                              'An adversary may use systemd timers to execute malicious code at system startup or on a '
+                              'scheduled basis for persistence.(Citation: Arch Linux Package Systemd Compromise '
+                              'BleepingComputer 10JUL2018)(Citation: gist Arch package compromise 10JUL2018)(Citation: '
+                              'acroread package compromised Arch Linux Mail 8JUL2018) Timers installed using '
+                              'privileged paths may be used to maintain root level persistence. Adversaries may also '
+                              'install user level timers to achieve user level persistence.',
+               'name': 'Systemd Timers',
+               'platforms': ['Linux']},
  'T1055': {'attack_id': 'T1055',
            'categories': ['defense-evasion', 'privilege-escalation'],
            'description': 'Adversaries may inject code into processes in order to evade process-based defenses as well '
@@ -1631,7 +1668,7 @@ attack_map = {
                           'providing input into what they believe to be a genuine service (e.g. [Web Portal '
                           'Capture](https://attack.mitre.org/techniques/T1056/003)).',
            'name': 'Input Capture',
-           'platforms': ['Linux', 'macOS', 'Windows']},
+           'platforms': ['Linux', 'macOS', 'Windows', 'Network']},
  'T1056.001': {'attack_id': 'T1056.001',
                'categories': ['collection', 'credential-access'],
                'description': 'Adversaries may log user keystrokes to intercept credentials as the user types them. '
@@ -1648,16 +1685,19 @@ attack_map = {
                               'functions intended for processing keystroke data.\n'
                               '* Reading raw keystroke data from the hardware buffer.\n'
                               '* Windows Registry modifications.\n'
-                              '* Custom drivers.',
+                              '* Custom drivers.\n'
+                              '* [Modify System Image](https://attack.mitre.org/techniques/T1601) may provide '
+                              'adversaries with hooks into the operating system of network devices to read raw '
+                              'keystrokes for login sessions.(Citation: Cisco Blog Legacy Device Attacks) ',
                'name': 'Keylogging',
-               'platforms': ['Windows', 'macOS', 'Linux']},
+               'platforms': ['Windows', 'macOS', 'Linux', 'Network']},
  'T1056.002': {'attack_id': 'T1056.002',
                'categories': ['collection', 'credential-access'],
                'description': 'Adversaries may mimic common operating system GUI components to prompt users for '
                               'credentials with a seemingly legitimate prompt. When programs are executed that need '
                               'additional privileges than are present in the current user context, it is common for '
                               'the operating system to prompt the user for proper credentials to authorize the '
-                              'elevated privileges for the task (ex: [Bypass User Access '
+                              'elevated privileges for the task (ex: [Bypass User Account '
                               'Control](https://attack.mitre.org/techniques/T1548/002)).\n'
                               '\n'
                               'Adversaries may mimic this functionality to prompt users for credentials with a '
@@ -1748,7 +1788,7 @@ attack_map = {
                           'documents or as secondary payloads downloaded from an existing C2. Adversaries may also '
                           'execute commands through interactive terminals/shells.',
            'name': 'Command and Scripting Interpreter',
-           'platforms': ['Linux', 'macOS', 'Windows']},
+           'platforms': ['Linux', 'macOS', 'Windows', 'Network']},
  'T1059.001': {'attack_id': 'T1059.001',
                'categories': ['execution'],
                'description': 'Adversaries may abuse PowerShell commands and scripts for execution. PowerShell is a '
@@ -1781,24 +1821,35 @@ attack_map = {
                'categories': ['execution'],
                'description': 'Adversaries may abuse AppleScript for execution. AppleScript is a macOS scripting '
                               'language designed to control applications and parts of the OS via inter-application '
-                              'messages called AppleEvents. (Citation: Apple AppleScript) These AppleEvent messages '
-                              'can be easily scripted with AppleScript for local or remote execution.\n'
+                              'messages called AppleEvents.(Citation: Apple AppleScript) These AppleEvent messages can '
+                              'be sent independently or easily scripted with AppleScript. These events can locate open '
+                              'windows, send keystrokes, and interact with almost any open application locally or '
+                              'remotely.\n'
                               '\n'
-                              '<code>osascript</code> executes AppleScript and any other Open Scripting Architecture '
-                              '(OSA) language scripts. A list of OSA languages installed on a system can be found by '
-                              'using the <code>osalang</code> program. AppleEvent messages can be sent independently '
-                              'or as part of a script. These events can locate open windows, send keystrokes, and '
-                              'interact with almost any open application locally or remotely.\n'
+                              'Scripts can be run from the command-line via <code>osascript /path/to/script</code> or '
+                              '<code>osascript -e "script here"</code>. Aside from the command line, scripts can be '
+                              'executed in numerous ways including Mail rules, Calendar.app alarms, and Automator '
+                              'workflows. AppleScripts can also be executed as plain text shell scripts by adding '
+                              '<code>#!/usr/bin/osascript</code> to the start of the script file.(Citation: '
+                              'SentinelOne AppleScript)\n'
                               '\n'
-                              'Adversaries can use this to execute various behaviors, such as interacting with an open '
-                              'SSH connection, moving to remote machines, and even presenting users with fake dialog '
-                              'boxes. These events cannot start applications remotely (they can start them locally '
-                              "though), but can interact with applications if they're already running remotely. Since "
-                              'this is a scripting language, it can be used to launch more common techniques as well '
-                              'such as a reverse shell via '
-                              '[Python](https://attack.mitre.org/techniques/T1059/006)(Citation: Macro Malware Targets '
-                              'Macs). Scripts can be run from the command-line via <code>osascript '
-                              '/path/to/script</code> or <code>osascript -e "script here"</code>.',
+                              'AppleScripts do not need to call <code>osascript</code> to execute, however. They may '
+                              'be executed from within mach-O binaries by using the macOS [Native '
+                              'API](https://attack.mitre.org/techniques/T1106)s\xa0<code>NSAppleScript</code>\xa0or\xa0'
+                              '<code>OSAScript</code>, both of which execute code independent of the '
+                              '<code>/usr/bin/osascript</code> command line utility.\n'
+                              '\n'
+                              'Adversaries may abuse AppleScript to execute various behaviors, such as interacting '
+                              'with an open SSH connection, moving to remote machines, and even presenting users with '
+                              'fake dialog boxes. These events cannot start applications remotely (they can start them '
+                              "locally), but they can interact with applications if they're already running remotely. "
+                              'On macOS 10.10 Yosemite and higher, AppleScript has the ability to execute [Native '
+                              'API](https://attack.mitre.org/techniques/T1106)s, which otherwise would require '
+                              'compilation and execution in a mach-O binary file format.(Citation: SentinelOne macOS '
+                              'Red Team). Since this is a scripting language, it can be used to launch more common '
+                              'techniques as well such as a reverse shell via '
+                              '[Python](https://attack.mitre.org/techniques/T1059/006).(Citation: Macro Malware '
+                              'Targets Macs)',
                'name': 'AppleScript',
                'platforms': ['macOS']},
  'T1059.003': {'attack_id': 'T1059.003',
@@ -1851,9 +1902,10 @@ attack_map = {
                               '\n'
                               'Derivative languages based on VB have also been created, such as Visual Basic for '
                               'Applications (VBA) and VBScript. VBA is an event-driven programming language built into '
-                              'Office applications.(Citation: Microsoft VBA)  VBA enables documents to contain macros '
-                              'used to automate the execution of tasks and other functionality on the host. VBScript '
-                              'is a default scripting language on Windows hosts and can also be used in place of '
+                              'Microsoft Office, as well as several third-party applications.(Citation: Microsoft '
+                              'VBA)(Citation: Wikipedia VBA) VBA enables documents to contain macros used to automate '
+                              'the execution of tasks and other functionality on the host. VBScript is a default '
+                              'scripting language on Windows hosts and can also be used in place of '
                               '[JavaScript/JScript](https://attack.mitre.org/techniques/T1059/007) on HTML Application '
                               '(HTA) webpages served to Internet Explorer (though most modern browsers do not come '
                               'with VBScript support).(Citation: Microsoft VBScript)\n'
@@ -1899,6 +1951,27 @@ attack_map = {
                               'Files or Information](https://attack.mitre.org/techniques/T1027).',
                'name': 'JavaScript/JScript',
                'platforms': ['Windows', 'macOS', 'Linux']},
+ 'T1059.008': {'attack_id': 'T1059.008',
+               'categories': ['execution'],
+               'description': 'Adversaries may abuse scripting or built-in command line interpreters (CLI) on network '
+                              'devices to execute malicious command and payloads. The CLI is the primary means through '
+                              'which users and administrators interact with the device in order to view system '
+                              'information, modify device operations, or perform diagnostic and administrative '
+                              'functions. CLIs typically contain various permission levels required for different '
+                              'commands. \n'
+                              '\n'
+                              'Scripting interpreters automate tasks and extend functionality beyond the command set '
+                              'included in the network OS. The CLI and scripting interpreter are accessible through a '
+                              'direct console connection, or through remote means, such as telnet or secure shell '
+                              '(SSH).\n'
+                              '\n'
+                              'Adversaries can use the network CLI to change how network devices behave and operate. '
+                              'The CLI may be used to manipulate traffic flows to intercept or manipulate data, modify '
+                              'startup configuration parameters to load malicious system software, or to disable '
+                              'security features or logging to avoid detection. (Citation: Cisco Synful Knock '
+                              'Evolution)',
+               'name': 'Network Device CLI',
+               'platforms': ['Network']},
  'T1061': {'attack_id': 'T1061',
            'categories': ['execution'],
            'description': '**This technique has been deprecated. Please use [Remote '
@@ -2025,7 +2098,7 @@ attack_map = {
                               'will list groups associated to a user account.(Citation: Microsoft AZ CLI)(Citation: '
                               'Black Hills Red Teaming MS AD Azure, 2018)',
                'name': 'Cloud Groups',
-               'platforms': ['Office 365', 'Azure AD']},
+               'platforms': ['Office 365', 'Azure AD', 'GCP', 'SaaS', 'Azure', 'AWS']},
  'T1070': {'attack_id': 'T1070',
            'categories': ['defense-evasion'],
            'description': 'Adversaries may delete or alter generated artifacts on a host system, including logs or '
@@ -2077,24 +2150,41 @@ attack_map = {
  'T1070.003': {'attack_id': 'T1070.003',
                'categories': ['defense-evasion'],
                'description': 'In addition to clearing system logs, an adversary may clear the command history of a '
-                              'compromised account to conceal the actions undertaken during an intrusion. macOS and '
-                              'Linux both keep track of the commands users type in their terminal so that users can '
-                              "retrace what they've done.\n"
+                              'compromised account to conceal the actions undertaken during an intrusion. Various '
+                              'command interpreters keep track of the commands users type in their terminal so that '
+                              "users can retrace what they've done.\n"
                               '\n'
-                              'These logs can be accessed in a few different ways. While logged in, this command '
-                              'history is tracked in a file pointed to by the environment variable '
-                              '<code>HISTFILE</code>. When a user logs off a system, this information is flushed to a '
-                              "file in the user's home directory called <code>~/.bash_history</code>. The benefit of "
-                              "this is that it allows users to go back to commands they've used before in different "
-                              'sessions.\n'
+                              'On Linux and macOS, these command histories can be accessed in a few different ways. '
+                              'While logged in, this command history is tracked in a file pointed to by the '
+                              'environment variable <code>HISTFILE</code>. When a user logs off a system, this '
+                              "information is flushed to a file in the user's home directory called "
+                              '<code>~/.bash_history</code>. The benefit of this is that it allows users to go back to '
+                              "commands they've used before in different sessions.\n"
                               '\n'
-                              'Adversaries can use a variety of methods to prevent their own commands from appear in '
-                              'these logs, such as clearing the history environment variable (<code>unset '
-                              'HISTFILE</code>), setting the command history size to zero (<code>export '
-                              'HISTFILESIZE=0</code>), manually clearing the history (<code>history -c</code>), or '
-                              'deleting the bash history file <code>rm ~/.bash_history</code>.',
+                              'Adversaries may delete their commands from these logs by manually clearing the history '
+                              '(<code>history -c</code>) or deleting the bash history file <code>rm '
+                              '~/.bash_history</code>.\n'
+                              '\n'
+                              'On Windows hosts, PowerShell has two different command history providers: the built-in '
+                              'history and the command history managed by the <code>PSReadLine</code> module. The '
+                              'built-in history only tracks the commands used in the current session. This command '
+                              'history is not available to other sessions and is deleted when the session ends.\n'
+                              '\n'
+                              'The <code>PSReadLine</code> command history tracks the commands used in all PowerShell '
+                              'sessions and writes them to a file '
+                              '(<code>$env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt</code> '
+                              'by default). This history file is available to all sessions and contains all past '
+                              'history since the file is not deleted when the session ends.(Citation: Microsoft '
+                              'PowerShell Command History)\n'
+                              '\n'
+                              'Adversaries may run the PowerShell command <code>Clear-History</code> to flush the '
+                              'entire command history from a current PowerShell session. This, however, will not '
+                              'delete/flush the <code>ConsoleHost_history.txt</code> file. Adversaries may also delete '
+                              'the <code>ConsoleHost_history.txt</code> file or edit its contents to hide PowerShell '
+                              'commands they have run.(Citation: Sophos PowerShell command audit)(Citation: Sophos '
+                              'PowerShell Command History Forensics)',
                'name': 'Clear Command History',
-               'platforms': ['Linux', 'macOS']},
+               'platforms': ['Linux', 'macOS', 'Windows']},
  'T1070.004': {'attack_id': 'T1070.004',
                'categories': ['defense-evasion'],
                'description': 'Adversaries may delete files left behind by the actions of their intrusion activity. '
@@ -2166,7 +2256,7 @@ attack_map = {
                               'traffic. Commands to the remote system, and often the results of those commands, will '
                               'be embedded within the protocol traffic between the client and server. \n'
                               '\n'
-                              'Protocols such as FTP, FTPS, and TFPT that transfer files may be very common in '
+                              'Protocols such as FTP, FTPS, and TFTP that transfer files may be very common in '
                               'environments.  Packets produced from these protocols may have many fields and headers '
                               'in which data can be concealed. Data could also be concealed within the transferred '
                               'files. An adversary may abuse these protocols to communicate with systems under their '
@@ -2176,7 +2266,7 @@ attack_map = {
  'T1071.003': {'attack_id': 'T1071.003',
                'categories': ['command-and-control'],
                'description': 'Adversaries may communicate using application layer protocols associated with '
-                              'electronic map delivery to avoid detection/network filtering by blending in with '
+                              'electronic mail delivery to avoid detection/network filtering by blending in with '
                               'existing traffic. Commands to the remote system, and often the results of those '
                               'commands, will be embedded within the protocol traffic between the client and server. \n'
                               '\n'
@@ -2342,7 +2432,7 @@ attack_map = {
                               'are those created and configured by an organization for use by users, remote support, '
                               'services, or for administration of resources within a cloud service provider or SaaS '
                               'application. In some cases, cloud accounts may be federated with traditional identity '
-                              'management system, such as Window Active Directory.(Citation: AWS Identity '
+                              'management system, such as Window Active Directory. (Citation: AWS Identity '
                               'Federation)(Citation: Google Federating GC)(Citation: Microsoft Deploying AD '
                               'Federation)\n'
                               '\n'
@@ -2466,18 +2556,23 @@ attack_map = {
                'categories': ['discovery'],
                'description': 'Adversaries may attempt to get a listing of cloud accounts. Cloud accounts are those '
                               'created and configured by an organization for use by users, remote support, services, '
-                              'or for administration of resources within a cloud service provider of SaaS '
+                              'or for administration of resources within a cloud service provider or SaaS '
                               'application.\n'
                               '\n'
                               'With authenticated access there are several tools that can be used to find accounts. '
                               'The <code>Get-MsolRoleMember</code> PowerShell cmdlet can be used to obtain account '
-                              'names given a role or permissions group.(Citation: Microsoft msolrolemember)(Citation: '
-                              'GitHub Raindance)\n'
+                              'names given a role or permissions group in Office 365.(Citation: Microsoft '
+                              'msolrolemember)(Citation: GitHub Raindance) The Azure CLI (AZ CLI) also provides an '
+                              'interface to obtain user accounts with authenticated access to a domain. The command '
+                              '<code>az ad user list</code> will list all users within a domain.(Citation: Microsoft '
+                              'AZ CLI)(Citation: Black Hills Red Teaming MS AD Azure, 2018) \n'
                               '\n'
-                              'Azure CLI (AZ CLI) also provides an interface to obtain user accounts with '
-                              'authenticated access to a domain. The command <code>az ad user list</code> will list '
-                              'all users within a domain.(Citation: Microsoft AZ CLI)(Citation: Black Hills Red '
-                              'Teaming MS AD Azure, 2018) ',
+                              'The AWS command <code>aws iam list-users</code> may be used to obtain a list of users '
+                              'in the current account while <code>aws iam list-roles</code> can obtain IAM roles that '
+                              'have a specified path prefix.(Citation: AWS List Roles)(Citation: AWS List Users) In '
+                              'GCP, <code>gcloud iam service-accounts list</code> and <code>gcloud projects '
+                              'get-iam-policy</code> may be used to obtain a listing of service accounts and users in '
+                              'a project.(Citation: Google Cloud - IAM Servie Accounts List API)',
                'name': 'Cloud Account',
                'platforms': ['AWS', 'GCP', 'Azure', 'Office 365', 'Azure AD', 'SaaS']},
  'T1090': {'attack_id': 'T1090',
@@ -2496,7 +2591,7 @@ attack_map = {
                           'Adversaries can also take advantage of routing schemes in Content Delivery Networks (CDNs) '
                           'to proxy command and control traffic.',
            'name': 'Proxy',
-           'platforms': ['Linux', 'macOS', 'Windows']},
+           'platforms': ['Linux', 'macOS', 'Windows', 'Network']},
  'T1090.001': {'attack_id': 'T1090.001',
                'categories': ['command-and-control'],
                'description': 'Adversaries may use an internal proxy to direct command and control traffic between two '
@@ -2543,9 +2638,22 @@ attack_map = {
                               'identify any previous proxies before the last-hop proxy. This technique makes '
                               'identifying the original source of the malicious traffic even more difficult by '
                               'requiring the defender to trace malicious traffic through several proxies to identify '
-                              'its source.',
+                              'its source. A particular variant of this behavior is to use onion routing networks, '
+                              'such as the publicly available TOR network. (Citation: Onion Routing)\n'
+                              '\n'
+                              'In the case of network infrastructure, particularly routers, it is possible for an '
+                              'adversary to leverage multiple compromised devices to create a multi-hop proxy chain '
+                              'within the Wide-Area Network (WAN) of the enterprise.  By leveraging [Patch System '
+                              'Image](https://attack.mitre.org/techniques/T1601/001), adversaries can add custom code '
+                              'to the affected network devices that will implement onion routing between those nodes.  '
+                              'This custom onion routing network will transport the encrypted C2 traffic through the '
+                              'compromised population, allowing adversaries to communicate with any device within the '
+                              'onion routing network.  This method is dependent upon the [Network Boundary '
+                              'Bridging](https://attack.mitre.org/techniques/T1599) method in order to allow the '
+                              'adversaries to cross the protected network boundary of the Internet perimeter and into '
+                              'the organization’s WAN. Protocols such as ICMP may be used as a transport.',
                'name': 'Multi-hop Proxy',
-               'platforms': ['Linux', 'macOS', 'Windows']},
+               'platforms': ['Linux', 'macOS', 'Windows', 'Network']},
  'T1090.004': {'attack_id': 'T1090.004',
                'categories': ['command-and-control'],
                'description': 'Adversaries may take advantage of routing schemes in Content Delivery Networks (CDNs) '
@@ -2596,12 +2704,13 @@ attack_map = {
                           'such as the User Datagram Protocol (UDP), session layer protocols, such as Socket Secure '
                           '(SOCKS), as well as redirected/tunneled protocols, such as Serial over LAN (SOL).\n'
                           '\n'
-                          'ICMP communication between hosts is one example. Because ICMP is part of the Internet '
-                          'Protocol Suite, it is required to be implemented by all IP-compatible hosts; (Citation: '
-                          'Microsoft ICMP) however, it is not as commonly monitored as other Internet Protocols such '
-                          'as TCP or UDP and may be used by adversaries to hide communications.',
+                          'ICMP communication between hosts is one example.(Citation: Cisco Synful Knock Evolution)\n'
+                          ' Because ICMP is part of the Internet Protocol Suite, it is required to be implemented by '
+                          'all IP-compatible hosts; (Citation: Microsoft ICMP) however, it is not as commonly '
+                          'monitored as other Internet Protocols such as TCP or UDP and may be used by adversaries to '
+                          'hide communications.',
            'name': 'Non-Application Layer Protocol',
-           'platforms': ['Windows', 'Linux', 'macOS']},
+           'platforms': ['Windows', 'Linux', 'macOS', 'Network']},
  'T1098': {'attack_id': 'T1098',
            'categories': ['persistence'],
            'description': 'Adversaries may manipulate accounts to maintain access to victim systems. Account '
@@ -2615,17 +2724,27 @@ attack_map = {
            'platforms': ['Windows', 'Office 365', 'Azure', 'GCP', 'Azure AD', 'AWS', 'Linux', 'macOS']},
  'T1098.001': {'attack_id': 'T1098.001',
                'categories': ['persistence'],
-               'description': 'Adversaries may add adversary-controlled credentials for Azure Service Principals in '
-                              'addition to existing legitimate credentials(Citation: Create Azure Service Principal) '
-                              'to maintain persistent access to victim Azure accounts.(Citation: Blue Cloud of '
-                              'Death)(Citation: Blue Cloud of Death Video) Azure Service Principals support both '
-                              'password and certificate credentials.(Citation: Why AAD Service Principals) With '
-                              'sufficient permissions, there are a variety of ways to add credentials including the '
-                              'Azure Portal, Azure command line interface, and Azure or Az '
+               'description': 'Adversaries may add adversary-controlled credentials to a cloud account to maintain '
+                              'persistent access to victim accounts and instances within the environment.\n'
+                              '\n'
+                              'Adversaries may add credentials for Azure Service Principals in addition to existing '
+                              'legitimate credentials(Citation: Create Azure Service Principal) to victim Azure '
+                              'accounts.(Citation: Blue Cloud of Death)(Citation: Blue Cloud of Death Video) Azure '
+                              'Service Principals support both password and certificate credentials.(Citation: Why AAD '
+                              'Service Principals) With sufficient permissions, there are a variety of ways to add '
+                              'credentials including the Azure Portal, Azure command line interface, and Azure or Az '
                               '[PowerShell](https://attack.mitre.org/techniques/T1059/001) modules.(Citation: '
-                              'Demystifying Azure AD Service Principals)',
-               'name': 'Additional Azure Service Principal Credentials',
-               'platforms': ['Azure AD', 'Azure']},
+                              'Demystifying Azure AD Service Principals)\n'
+                              '\n'
+                              'After gaining access through [Cloud '
+                              'Accounts](https://attack.mitre.org/techniques/T1078/004), adversaries may generate or '
+                              'import their own SSH keys using either the <code>CreateKeyPair</code> or '
+                              '<code>ImportKeyPair</code> API in AWS or the <code>gcloud compute os-login ssh-keys '
+                              'add</code> command in GCP.(Citation: GCP SSH Key Add) This allows persistent access to '
+                              'instances within the cloud environment without further usage of the compromised cloud '
+                              'accounts.(Citation: Expel IO Evil in AWS)(Citation: Expel Behind the Scenes)',
+               'name': 'Additional Cloud Credentials',
+               'platforms': ['Azure AD', 'Azure', 'AWS', 'GCP']},
  'T1098.002': {'attack_id': 'T1098.002',
                'categories': ['persistence'],
                'description': 'Adversaries may grant additional permission levels, such as ReadPermission or '
@@ -3394,15 +3513,9 @@ attack_map = {
                           'Shared Resource) (Citation: TechNet Shared Folder) '
                           '[Net](https://attack.mitre.org/software/S0039) can be used to query a remote system for '
                           'available shared drives using the <code>net view \\\\remotesystem</code> command. It can '
-                          'also be used to query shared drives on the local system using <code>net share</code>.\n'
-                          '\n'
-                          'Cloud virtual networks may contain remote network shares or file storage services '
-                          'accessible to an adversary after they have obtained access to a system. For example, AWS, '
-                          'GCP, and Azure support creation of Network File System (NFS) shares and Server Message '
-                          'Block (SMB) shares that may be mapped on endpoint or cloud-based systems.(Citation: Amazon '
-                          'Creating an NFS File Share)(Citation: Google File servers on Compute Engine)',
+                          'also be used to query shared drives on the local system using <code>net share</code>.',
            'name': 'Network Share Discovery',
-           'platforms': ['macOS', 'Windows', 'AWS', 'GCP', 'Azure', 'Linux']},
+           'platforms': ['macOS', 'Windows', 'Linux']},
  'T1136': {'attack_id': 'T1136',
            'categories': ['persistence'],
            'description': 'Adversaries may create an account to maintain access to victim systems. With a sufficient '
@@ -3818,10 +3931,12 @@ attack_map = {
                           'behavior. The weakness in the system can be a bug, a glitch, or a design vulnerability. '
                           'These applications are often websites, but can include databases (like SQL)(Citation: NVD '
                           'CVE-2016-6662), standard services (like SMB(Citation: CIS Multiple SMB Vulnerabilities) or '
-                          'SSH), and any other applications with Internet accessible open sockets, such as web servers '
-                          'and related services.(Citation: NVD CVE-2014-7169) Depending on the flaw being exploited '
-                          'this may include [Exploitation for Defense '
-                          'Evasion](https://attack.mitre.org/techniques/T1211).\n'
+                          'SSH), network device administration and management protocols (like SNMP and Smart '
+                          'Install(Citation: US-CERT TA18-106A Network Infrastructure Devices 2018)(Citation: Cisco '
+                          'Blog Legacy Device Attacks)), and any other applications with Internet accessible open '
+                          'sockets, such as web servers and related services.(Citation: NVD CVE-2014-7169) Depending '
+                          'on the flaw being exploited this may include [Exploitation for Defense '
+                          'Evasion](https://attack.mitre.org/techniques/T1211). \n'
                           '\n'
                           'If an application is hosted on cloud-based infrastructure, then exploiting it may lead to '
                           'compromise of the underlying instance. This can allow an adversary a path to access the '
@@ -3830,7 +3945,7 @@ attack_map = {
                           'For websites and databases, the OWASP top 10 and CWE top 25 highlight the most common '
                           'web-based vulnerabilities.(Citation: OWASP Top 10)(Citation: CWE top 25)',
            'name': 'Exploit Public-Facing Application',
-           'platforms': ['Linux', 'Windows', 'macOS', 'AWS', 'GCP', 'Azure']},
+           'platforms': ['Linux', 'Windows', 'macOS', 'AWS', 'GCP', 'Azure', 'Network']},
  'T1195': {'attack_id': 'T1195',
            'categories': ['initial-access'],
            'description': 'Adversaries may manipulate products or product delivery mechanisms prior to receipt by a '
@@ -3967,10 +4082,10 @@ attack_map = {
                           'set to 6 as to not lock out accounts).\n'
                           '\n'
                           'Password policies can be set and discovered on Windows, Linux, and macOS systems via '
-                          'various command shell utilities such as <code>net accounts (/domain)</code>, <code>chage -l '
-                          '<username></code>, <code>cat /etc/pam.d/common-password</code>, and <code>pwpolicy '
-                          'getaccountpolicies</code>.(Citation: Superuser Linux Password Policies) (Citation: Jamf '
-                          'User Password Policies)',
+                          'various command shell utilities such as <code>net accounts (/domain)</code>, '
+                          '<code>Get-ADDefaultDomainPasswordPolicy</code>, <code>chage -l <username></code>, <code>cat '
+                          '/etc/pam.d/common-password</code>, and <code>pwpolicy getaccountpolicies</code>.(Citation: '
+                          'Superuser Linux Password Policies) (Citation: Jamf User Password Policies)',
            'name': 'Password Policy Discovery',
            'platforms': ['Windows', 'Linux', 'macOS']},
  'T1202': {'attack_id': 'T1202',
@@ -4101,9 +4216,19 @@ attack_map = {
                           'different methods. One means, originally implemented by Cd00r (Citation: Hartrell cd00r '
                           '2002), is to use the libpcap libraries to sniff for the packets in question. Another method '
                           'leverages raw sockets, which enables the malware to use ports that are already open for use '
-                          'by other programs.',
+                          'by other programs.\n'
+                          '\n'
+                          'On network devices, adversaries may use crafted packets to enable [Network Device '
+                          'Authentication](https://attack.mitre.org/techniques/T1556/004) for standard services '
+                          'offered by the device such as telnet.  Such signaling may also be used to open a closed '
+                          'service port such as telnet, or to trigger module modification of malware implants on the '
+                          'device, adding, removing, or changing malicious capabilities.(Citation: Cisco Synful Knock '
+                          'Evolution) (Citation: FireEye - Synful Knock) (Citation: Cisco Blog Legacy Device Attacks)  '
+                          'To enable this traffic signaling on embedded devices, adversaries must first achieve and '
+                          'leverage [Patch System Image](https://attack.mitre.org/techniques/T1601/001) due to the '
+                          'monolithic nature of the architecture.',
            'name': 'Traffic Signaling',
-           'platforms': ['Linux', 'macOS', 'Windows']},
+           'platforms': ['Linux', 'macOS', 'Windows', 'Network']},
  'T1205.001': {'attack_id': 'T1205.001',
                'categories': ['defense-evasion', 'persistence', 'command-and-control'],
                'description': 'Adversaries may use port knocking to hide open ports used for persistence or command '
@@ -4121,7 +4246,7 @@ attack_map = {
                               'question. Another method leverages raw sockets, which enables the malware to use ports '
                               'that are already open for use by other programs.',
                'name': 'Port Knocking',
-               'platforms': ['Linux', 'macOS', 'Windows']},
+               'platforms': ['Linux', 'macOS', 'Windows', 'Network']},
  'T1207': {'attack_id': 'T1207',
            'categories': ['defense-evasion'],
            'description': 'Adversaries may register a rogue Domain Controller to enable manipulation of Active '
@@ -4210,10 +4335,6 @@ attack_map = {
                           'that may aid adversaries in further objectives, or direct access to the target '
                           'information.\n'
                           '\n'
-                          'Adversaries may also collect information from shared storage repositories hosted on cloud '
-                          'infrastructure or in software-as-a-service (SaaS) applications, as storage is one of the '
-                          'more fundamental requirements for cloud services and systems.\n'
-                          '\n'
                           'The following is a brief list of example information that may hold potential value to an '
                           'adversary and may also be found on an information repository:\n'
                           '\n'
@@ -4232,7 +4353,7 @@ attack_map = {
                           '[Confluence](https://attack.mitre.org/techniques/T1213/001), and enterprise databases such '
                           'as SQL Server.',
            'name': 'Data from Information Repositories',
-           'platforms': ['Linux', 'Windows', 'macOS', 'SaaS', 'AWS', 'GCP', 'Azure', 'Office 365']},
+           'platforms': ['Linux', 'Windows', 'macOS', 'SaaS', 'Office 365']},
  'T1213.001': {'attack_id': 'T1213.001',
                'categories': ['collection'],
                'description': '\n'
@@ -4338,24 +4459,33 @@ attack_map = {
                'categories': ['defense-evasion'],
                'description': 'Adversaries may abuse control.exe to proxy execution of malicious payloads. The Windows '
                               'Control Panel process binary (control.exe) handles execution of Control Panel items, '
-                              'which are utilities that allow users to view and adjust computer settings. Control '
-                              'Panel items are registered executable (.exe) or Control Panel (.cpl) files, the latter '
-                              'are actually renamed dynamic-link library (.dll) files that export a '
-                              '<code>CPlApplet</code> function. (Citation: Microsoft Implementing CPL) (Citation: '
-                              'TrendMicro CPL Malware Jan 2014) Control Panel items can be executed directly from the '
-                              'command line, programmatically via an application programming interface (API) call, or '
-                              'by simply double-clicking the file. (Citation: Microsoft Implementing CPL) (Citation: '
-                              'TrendMicro CPL Malware Jan 2014) (Citation: TrendMicro CPL Malware Dec 2013)\n'
+                              'which are utilities that allow users to view and adjust computer settings.\n'
                               '\n'
-                              'For ease of use, Control Panel items typically include graphical menus available to '
-                              'users after being registered and loaded into the Control Panel. (Citation: Microsoft '
-                              'Implementing CPL)\n'
+                              'Control Panel items are registered executable (.exe) or Control Panel (.cpl) files, the '
+                              'latter are actually renamed dynamic-link library (.dll) files that export a '
+                              '<code>CPlApplet</code> function.(Citation: Microsoft Implementing CPL)(Citation: '
+                              'TrendMicro CPL Malware Jan 2014) For ease of use, Control Panel items typically include '
+                              'graphical menus available to users after being registered and loaded into the Control '
+                              'Panel.(Citation: Microsoft Implementing CPL) Control Panel items can be executed '
+                              'directly from the command line, programmatically via an application programming '
+                              'interface (API) call, or by simply double-clicking the file.(Citation: Microsoft '
+                              'Implementing CPL) (Citation: TrendMicro CPL Malware Jan 2014)(Citation: TrendMicro CPL '
+                              'Malware Dec 2013)\n'
                               '\n'
                               'Malicious Control Panel items can be delivered via '
-                              '[Phishing](https://attack.mitre.org/techniques/T1566) campaigns (Citation: TrendMicro '
-                              'CPL Malware Jan 2014) (Citation: TrendMicro CPL Malware Dec 2013) or executed as part '
-                              'of multi-stage malware. (Citation: Palo Alto Reaver Nov 2017) Control Panel items, '
-                              'specifically CPL files, may also bypass application and/or file extension allow lists.',
+                              '[Phishing](https://attack.mitre.org/techniques/T1566) campaigns(Citation: TrendMicro '
+                              'CPL Malware Jan 2014)(Citation: TrendMicro CPL Malware Dec 2013) or executed as part of '
+                              'multi-stage malware.(Citation: Palo Alto Reaver Nov 2017) Control Panel items, '
+                              'specifically CPL files, may also bypass application and/or file extension allow lists.\n'
+                              '\n'
+                              'Adversaries may also rename malicious DLL files (.dll) with Control Panel file '
+                              'extensions (.cpl) and register them to '
+                              '<code>HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Control Panel\\Cpls</code>. '
+                              'Even when these registered DLLs do not comply with the CPL file specification and do '
+                              'not export <code>CPlApplet</code> functions, they are loaded and executed through its '
+                              '<code>DllEntryPoint</code> when Control Panel is executed. CPL files not exporting '
+                              '<code>CPlApplet</code> are not directly executable.(Citation: ESET InvisiMole June '
+                              '2020)',
                'name': 'Control Panel',
                'platforms': ['Windows']},
  'T1218.003': {'attack_id': 'T1218.003',
@@ -4375,7 +4505,7 @@ attack_map = {
                               'execution may also bypass AppLocker and other application control defenses since '
                               'CMSTP.exe is a legitimate, signed Microsoft application.\n'
                               '\n'
-                              'CMSTP.exe can also be abused to [Bypass User Access '
+                              'CMSTP.exe can also be abused to [Bypass User Account '
                               'Control](https://attack.mitre.org/techniques/T1548/002) and execute arbitrary commands '
                               'from a malicious INF through an auto-elevated COM interface. (Citation: MSitPros CMSTP '
                               'Aug 2017) (Citation: GitHub Ultimate AppLocker Bypass List) (Citation: Endurant CMSTP '
@@ -4518,6 +4648,25 @@ attack_map = {
                               'Security Command Line Confusion)',
                'name': 'Rundll32',
                'platforms': ['Windows']},
+ 'T1218.012': {'attack_id': 'T1218.012',
+               'categories': ['defense-evasion'],
+               'description': 'Adversaries may abuse verclsid.exe to proxy execution of malicious code. Verclsid.exe '
+                              'is known as the Extension CLSID Verification Host and is responsible for verifying each '
+                              'shell extension before they are used by Windows Explorer or the Windows '
+                              'Shell.(Citation: WinOSBite verclsid.exe)\n'
+                              '\n'
+                              'Adversaries may abuse verclsid.exe to execute malicious payloads. This may be achieved '
+                              'by running <code>verclsid.exe /S /C {CLSID}</code>, where the file is referenced by a '
+                              'Class ID (CLSID), a unique identification number used to identify COM objects. COM '
+                              'payloads executed by verclsid.exe may be able to perform various malicious actions, '
+                              'such as loading and executing COM scriptlets (SCT) from remote servers (similar to '
+                              '[Regsvr32](https://attack.mitre.org/techniques/T1218/010)). Since it is signed and '
+                              'native on Windows systems, proxying execution via verclsid.exe may bypass application '
+                              'control solutions that do not account for its potential abuse.(Citation: LOLBAS '
+                              'Verclsid)(Citation: Red Canary Verclsid.exe)(Citation: BOHOPS Abusing the COM '
+                              'Registry)(Citation: Nick Tyrer GitHub) ',
+               'name': 'Verclsid',
+               'platforms': ['Windows']},
  'T1219': {'attack_id': 'T1219',
            'categories': ['command-and-control'],
            'description': 'An adversary may use legitimate desktop support and remote access software, such as Team '
@@ -4651,8 +4800,8 @@ attack_map = {
                               'Otherwise, access is denied.(Citation: Microsoft Access Control Lists May 2018)\n'
                               '\n'
                               'Adversaries can interact with the DACLs using built-in Windows commands, such as '
-                              '`icacls`, `takeown`, and `attrib`, which can grant adversaries higher permissions on '
-                              'specific files and folders. Further, '
+                              '`icacls`, `cacls`, `takeown`, and `attrib`, which can grant adversaries higher '
+                              'permissions on specific files and folders. Further, '
                               '[PowerShell](https://attack.mitre.org/techniques/T1059/001) provides cmdlets that can '
                               'be used to retrieve or modify file and directory DACLs. Specific file and directory '
                               'modifications may be a required step for many techniques, such as establishing '
@@ -4940,21 +5089,21 @@ attack_map = {
                           'method editor (IME).(Citation: Android 10 Privacy Changes)',
            'name': 'Capture Clipboard Data',
            'platforms': ['Android', 'iOS']},
- 'T1415': {'attack_id': 'T1415',
-           'categories': ['credential-access'],
-           'description': 'An iOS application may be able to maliciously claim a URL scheme, allowing it to intercept '
-                          'calls that are meant for a different application(Citation: FireEye-Masque2)(Citation: '
-                          'Dhanjani-URLScheme). This technique, for example, could be used to capture OAuth '
-                          'authorization codes(Citation: IETF-PKCE) or to phish user credentials(Citation: '
-                          'MobileIron-XARA).',
-           'name': 'URL Scheme Hijacking',
-           'platforms': ['iOS']},
  'T1416': {'attack_id': 'T1416',
            'categories': ['credential-access'],
-           'description': 'A malicious app can register to receive intents meant for other applications and may then '
-                          'be able to receive sensitive values such as OAuth authorization codes(Citation: IETF-PKCE).',
-           'name': 'Android Intent Hijacking',
-           'platforms': ['Android']},
+           'description': 'Adversaries may register Uniform Resource Identifiers (URIs) to intercept sensitive data.\n'
+                          '\n'
+                          'Applications regularly register URIs with the operating system to act as a response handler '
+                          'for various actions, such as logging into an app using an external account via single '
+                          'sign-on. This allows redirections to that specific URI to be intercepted by the '
+                          'application. If a malicious application were to register for a URI that was already in use '
+                          'by a genuine application, the malicious application may be able to intercept data intended '
+                          'for the genuine application or perform a phishing attack against the genuine application. '
+                          'Intercepted data may include OAuth authorization codes or tokens that could be used by the '
+                          'malicious application to gain access to resources.(Citation: Trend Micro iOS URL '
+                          'Hijacking)(Citation: IETF-PKCE)',
+           'name': 'URI Hijacking',
+           'platforms': ['Android', 'iOS']},
  'T1417': {'attack_id': 'T1417',
            'categories': ['collection', 'credential-access'],
            'description': 'Adversaries may capture user input to obtain credentials or other information from the user '
@@ -5195,11 +5344,16 @@ attack_map = {
            'name': 'Device Lockout',
            'platforms': ['Android', 'iOS']},
  'T1447': {'attack_id': 'T1447',
-           'categories': ['impact'],
-           'description': 'An adversary could wipe the entire device contents or delete specific files. A malicious '
-                          'application could obtain and abuse Android device administrator access to wipe the entire '
-                          'device.(Citation: Android DevicePolicyManager 2019) Access to external storage directories '
-                          'or escalated privileges could be used to delete individual files.',
+           'categories': ['impact', 'defense-evasion'],
+           'description': 'Adversaries may wipe a device or delete individual files in order to manipulate external '
+                          'outcomes or hide activity. An application must have administrator access to fully wipe the '
+                          'device, while individual files may not require special permissions to delete depending on '
+                          'their storage location. (Citation: Android DevicePolicyManager 2019)\n'
+                          '\n'
+                          'Stored data could include a variety of file formats, such as Office files, databases, '
+                          'stored emails, and custom file formats. The impact file deletion will have depends on the '
+                          'type of data as well as the goals and objectives of the adversary, but can include deleting '
+                          'update files to evade detection or deleting attacker-specified files for impact.',
            'name': 'Delete Device Data',
            'platforms': ['Android']},
  'T1448': {'attack_id': 'T1448',
@@ -5434,21 +5588,11 @@ attack_map = {
                           'difficult to be certain whether exploitable functionality is due to malicious intent or '
                           'simply inadvertent mistake.\n'
                           '\n'
-                          'Related PRE-ATT&CK techniques include:\n'
-                          '\n'
-                          '* [Identify vulnerabilities in third-party software '
-                          'libraries](https://attack.mitre.org/techniques/T1389) - Third-party libraries incorporated '
-                          'into mobile apps could contain malicious behavior, privacy-invasive behavior, or '
-                          'exploitable vulnerabilities. An adversary could deliberately insert malicious behavior or '
-                          'could exploit inadvertent vulnerabilities. For example, Ryan Welton of NowSecure identified '
-                          'exploitable remote code execution vulnerabilities in a third-party advertisement library '
-                          '(Citation: NowSecure-RemoteCode). Grace et al. identified security issues in mobile '
-                          'advertisement libraries (Citation: Grace-Advertisement).\n'
-                          '* [Distribute malicious software development '
-                          'tools](https://attack.mitre.org/techniques/T1394) - As demonstrated by the XcodeGhost '
-                          'attack (Citation: PaloAlto-XcodeGhost1), app developers could be provided with modified '
-                          'versions of software development tools (e.g. compilers) that automatically inject malicious '
-                          'or exploitable code into applications.',
+                          'Third-party libraries incorporated into mobile apps could contain malicious behavior, '
+                          'privacy-invasive behavior, or exploitable vulnerabilities. An adversary could deliberately '
+                          'insert malicious behavior or could exploit inadvertent vulnerabilities. For example, '
+                          'security issues have previously been identified in third-party advertising libraries '
+                          'incorporated into apps.(Citation: NowSecure-RemoteCode)(Citation: Grace-Advertisement).',
            'name': 'Supply Chain Compromise',
            'platforms': ['Android', 'iOS']},
  'T1475': {'attack_id': 'T1475',
@@ -5769,7 +5913,7 @@ attack_map = {
                           'Impact](https://attack.mitre.org/techniques/T1486) on the data stores of services like '
                           'Exchange and SQL Server.(Citation: SecureWorks WannaCry Analysis)',
            'name': 'Service Stop',
-           'platforms': ['Windows']},
+           'platforms': ['Windows', 'Linux', 'macOS']},
  'T1490': {'attack_id': 'T1490',
            'categories': ['impact'],
            'description': 'Adversaries may delete or remove built-in operating system data and turn off services '
@@ -6690,7 +6834,7 @@ attack_map = {
                           'layer below the operating system. This can be particularly difficult to detect as malware '
                           'at this level will not be detected by host software-based defenses.',
            'name': 'Pre-OS Boot',
-           'platforms': ['Linux', 'Windows']},
+           'platforms': ['Linux', 'Windows', 'Network']},
  'T1542.001': {'attack_id': 'T1542.001',
                'categories': ['persistence', 'defense-evasion'],
                'description': 'Adversaries may modify system firmware to persist on systems.The BIOS (Basic '
@@ -6740,6 +6884,42 @@ attack_map = {
                               'execution during startup to adversary code.',
                'name': 'Bootkit',
                'platforms': ['Linux', 'Windows']},
+ 'T1542.004': {'attack_id': 'T1542.004',
+               'categories': ['defense-evasion', 'persistence'],
+               'description': 'Adversaries may abuse the ROM Monitor (ROMMON) by loading an unauthorized firmware with '
+                              'adversary code to provide persistent access and manipulate device behavior that is '
+                              'difficult to detect. (Citation: Cisco Synful Knock Evolution)(Citation: Cisco Blog '
+                              'Legacy Device Attacks)\n'
+                              '\n'
+                              '\n'
+                              'ROMMON is a Cisco network device firmware that functions as a boot loader, boot image, '
+                              'or boot helper to initialize hardware and software when the platform is powered on or '
+                              'reset. Similar to [TFTP Boot](https://attack.mitre.org/techniques/T1542/005), an '
+                              'adversary may upgrade the ROMMON image locally or remotely (for example, through TFTP) '
+                              'with adversary code and restart the device in order to overwrite the existing ROMMON '
+                              'image. This provides adversaries with the means to update the ROMMON to gain '
+                              'persistence on a system in a way that may be difficult to detect.',
+               'name': 'ROMMONkit',
+               'platforms': ['Network']},
+ 'T1542.005': {'attack_id': 'T1542.005',
+               'categories': ['defense-evasion', 'persistence'],
+               'description': 'Adversaries may abuse netbooting to load an unauthorized network device operating '
+                              'system from a Trivial File Transfer Protocol (TFTP) server. TFTP boot (netbooting) is '
+                              'commonly used by network administrators to load configuration-controlled network device '
+                              'images from a centralized management server. Netbooting is one option in the boot '
+                              'sequence and can be used to centralize, manage, and control device images.\n'
+                              '\n'
+                              'Adversaries may manipulate the configuration on the network device specifying use of a '
+                              'malicious TFTP server, which may be used in conjunction with [Modify System '
+                              'Image](https://attack.mitre.org/techniques/T1601) to load a modified image on device '
+                              'startup or reset. The unauthorized image allows adversaries to modify device '
+                              'configuration, add malicious capabilities to the device, and introduce backdoors to '
+                              'maintain control of the network device while minimizing detection through use of a '
+                              'standard functionality. This technique is similar to '
+                              '[ROMMONkit](https://attack.mitre.org/techniques/T1542/004) and may result in the '
+                              'network device running a modified image. (Citation: Cisco Blog Legacy Device Attacks)',
+               'name': 'TFTP Boot',
+               'platforms': ['Network']},
  'T1543': {'attack_id': 'T1543',
            'categories': ['persistence', 'privilege-escalation'],
            'description': 'Adversaries may create or modify system-level processes to repeatedly execute malicious '
@@ -6810,10 +6990,7 @@ attack_map = {
                               '\n'
                               'Adversaries have used systemd functionality to establish persistent access to victim '
                               'systems by creating and/or modifying service unit files that cause systemd to execute '
-                              'malicious commands at recurring intervals, such as at system boot.(Citation: Anomali '
-                              'Rocke March 2019)(Citation: gist Arch package compromise 10JUL2018)(Citation: Arch '
-                              'Linux Package Systemd Compromise BleepingComputer 10JUL2018)(Citation: acroread package '
-                              'compromised Arch Linux Mail 8JUL2018)\n'
+                              'malicious commands at system boot.(Citation: Anomali Rocke March 2019)\n'
                               '\n'
                               'While adversaries typically require root privileges to create/modify service unit files '
                               'in the <code>/etc/systemd/system</code> and <code>/usr/lib/systemd/system</code> '
@@ -6893,7 +7070,8 @@ attack_map = {
                           'Adversaries may abuse these mechanisms as a means of maintaining persistent access to a '
                           'victim via repeatedly executing malicious code. After gaining access to a victim system, '
                           'adversaries may create/modify event triggers to point to malicious content that will be '
-                          'executed whenever the event trigger is invoked. \n'
+                          'executed whenever the event trigger is invoked.(Citation: FireEye WMI 2015)(Citation: '
+                          'Malware Persistence on OS X)(Citation: amnesia malware)\n'
                           '\n'
                           'Since the execution can be proxied by an account with higher permissions, such as SYSTEM or '
                           'service accounts, an adversary may be able to abuse these triggered execution mechanisms to '
@@ -7158,7 +7336,7 @@ attack_map = {
                               '\n'
                               'To keep shims secure, Windows designed them to run in user mode so they cannot modify '
                               'the kernel and you must have administrator privileges to install a shim. However, '
-                              'certain shims can be used to [Bypass User Access '
+                              'certain shims can be used to [Bypass User Account '
                               'Control](https://attack.mitre.org/techniques/T1548/002) (UAC and RedirectEXE), inject '
                               'DLLs into processes (InjectDLL), disable Data Execution Prevention (DisableNX) and '
                               'Structure Exception Handling (DisableSEH), and intercept memory addresses '
@@ -7173,7 +7351,7 @@ attack_map = {
  'T1546.012': {'attack_id': 'T1546.012',
                'categories': ['privilege-escalation', 'persistence'],
                'description': 'Adversaries may establish persistence and/or elevate privileges by executing malicious '
-                              'content triggered by Image File Execution Options (IEFO) debuggers. IEFOs enable a '
+                              'content triggered by Image File Execution Options (IFEO) debuggers. IFEOs enable a '
                               'developer to attach a debugger to an application. When a process is created, a debugger '
                               'present in an application’s IFEO will be prepended to the application’s name, '
                               'effectively launching the new process under the debugger (e.g., <code>C:\\dbg\\ntsd.exe '
@@ -7190,7 +7368,7 @@ attack_map = {
                               'program silently exits (i.e. is prematurely terminated by itself or a second, non '
                               'kernel-mode process). (Citation: Microsoft Silent Process Exit NOV 2017) (Citation: '
                               'Oddvar Moe IFEO APR 2018) Similar to debuggers, silent exit monitoring can be enabled '
-                              'through GFlags and/or by directly modifying IEFO and silent process exit Registry '
+                              'through GFlags and/or by directly modifying IFEO and silent process exit Registry '
                               'values in <code>HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows '
                               'NT\\CurrentVersion\\SilentProcessExit\\</code>. (Citation: Microsoft Silent Process '
                               'Exit NOV 2017) (Citation: Oddvar Moe IFEO APR 2018)\n'
@@ -7322,6 +7500,7 @@ attack_map = {
                               '<code>C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp</code>.\n'
                               '\n'
                               'The following run keys are created by default on Windows systems:\n'
+                              '\n'
                               '* <code>HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run</code>\n'
                               '* '
                               '<code>HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce</code>\n'
@@ -7329,7 +7508,8 @@ attack_map = {
                               '* '
                               '<code>HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce</code>\n'
                               '\n'
-                              'The '
+                              'Run keys may exist under multiple hives.(Citation: Microsoft Wow6432Node '
+                              '2018)(Citation: Malwarebytes Wow6432Node 2016) The '
                               '<code>HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnceEx</code> '
                               'is also available but is not created by default on Windows Vista and newer. Registry '
                               'run key entries can reference programs directly or list them as a dependency. '
@@ -7339,6 +7519,7 @@ attack_map = {
                               '"C:\\temp\\evil[.]dll"</code> (Citation: Oddvar Moe RunOnceEx Mar 2018)\n'
                               '\n'
                               'The following Registry keys can be used to set startup folder items for persistence:\n'
+                              '\n'
                               '* <code>HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User '
                               'Shell Folders</code>\n'
                               '* '
@@ -7352,6 +7533,7 @@ attack_map = {
                               'Shell Folders</code>\n'
                               '\n'
                               'The following Registry keys can control automatic startup of services during boot:\n'
+                              '\n'
                               '* '
                               '<code>HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce</code>\n'
                               '* '
@@ -7363,6 +7545,7 @@ attack_map = {
                               '\n'
                               'Using policy settings to specify startup programs creates corresponding values in '
                               'either of two Registry keys:\n'
+                              '\n'
                               '* '
                               '<code>HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run</code>\n'
                               '* '
@@ -7598,6 +7781,29 @@ attack_map = {
                               'can do this as well. (Citation: Adding Login Items)',
                'name': 'Plist Modification',
                'platforms': ['macOS']},
+ 'T1547.012': {'attack_id': 'T1547.012',
+               'categories': ['persistence', 'privilege-escalation'],
+               'description': 'Adversaries may abuse print processors to run malicious DLLs during system boot for '
+                              'persistence and/or privilege escalation. Print processors are DLLs that are loaded by '
+                              'the print spooler service, spoolsv.exe, during boot. \n'
+                              '\n'
+                              'Adversaries may abuse the print spooler service by adding print processors that load '
+                              'malicious DLLs at startup. A print processor can be installed through the '
+                              '<code>AddPrintProcessor</code> API call with an account that has '
+                              '<code>SeLoadDriverPrivilege</code> enabled. Alternatively, a print processor can be '
+                              'registered to the print spooler service by adding the '
+                              '<code>HKLM\\SYSTEM\\\\[CurrentControlSet or '
+                              'ControlSet001]\\Control\\Print\\Environments\\\\[Windows architecture: e.g., Windows '
+                              'x64]\\Print Processors\\\\[user defined]\\Driver</code> Registry key that points to the '
+                              'DLL. For the print processor to be correctly installed, it must be located in the '
+                              'system print-processor directory that can be found with the '
+                              '<code>GetPrintProcessorDirectory</code> API call.(Citation: Microsoft AddPrintProcessor '
+                              'May 2018) After the print processors are installed, the print spooler service, which '
+                              'starts during boot, must be restarted in order for them to run.(Citation: ESET PipeMon '
+                              'May 2020) The print spooler service runs under SYSTEM level permissions, therefore '
+                              'print processors installed by an adversary may run under elevated privileges.',
+               'name': 'Print Processors',
+               'platforms': ['Windows']},
  'T1548': {'attack_id': 'T1548',
            'categories': ['privilege-escalation', 'defense-evasion'],
            'description': 'Adversaries may circumvent mechanisms designed to control elevate privileges to gain '
@@ -7666,7 +7872,7 @@ attack_map = {
                               'security mechanism, and the privilege or integrity of a process running on one system '
                               'will be unknown on remote systems and default to high integrity.(Citation: SANS UAC '
                               'Bypass)',
-               'name': 'Bypass User Access Control',
+               'name': 'Bypass User Account Control',
                'platforms': ['Windows']},
  'T1548.003': {'attack_id': 'T1548.003',
                'categories': ['privilege-escalation', 'defense-evasion'],
@@ -8270,22 +8476,22 @@ attack_map = {
                           'used for persistent access to remote systems and externally available services, such as '
                           'VPNs, Outlook Web Access and remote desktop. ',
            'name': 'Modify Authentication Process',
-           'platforms': ['Windows', 'Linux', 'macOS']},
+           'platforms': ['Windows', 'Linux', 'macOS', 'Network']},
  'T1556.001': {'attack_id': 'T1556.001',
                'categories': ['credential-access', 'defense-evasion'],
-               'description': 'Adversaries may patch the authentication process on a domain control to bypass the '
+               'description': 'Adversaries may patch the authentication process on a domain controller to bypass the '
                               'typical authentication mechanisms and enable access to accounts. \n'
                               '\n'
                               'Malware may be used to inject false credentials into the authentication process on a '
-                              'domain control with the intent of creating a backdoor used to access any user’s account '
-                              'and/or credentials (ex: [Skeleton Key](https://attack.mitre.org/software/S0007)). '
-                              'Skeleton key works through a patch on an enterprise domain controller authentication '
-                              'process (LSASS) with credentials that adversaries may use to bypass the standard '
-                              'authentication system. Once patched, an adversary can use the injected password to '
-                              'successfully authenticate as any domain user account (until the the skeleton key is '
-                              'erased from memory by a reboot of the domain controller). Authenticated access may '
-                              'enable unfettered access to hosts and/or resources within single-factor authentication '
-                              'environments.(Citation: Dell Skeleton)',
+                              'domain controller with the intent of creating a backdoor used to access any user’s '
+                              'account and/or credentials (ex: [Skeleton '
+                              'Key](https://attack.mitre.org/software/S0007)). Skeleton key works through a patch on '
+                              'an enterprise domain controller authentication process (LSASS) with credentials that '
+                              'adversaries may use to bypass the standard authentication system. Once patched, an '
+                              'adversary can use the injected password to successfully authenticate as any domain user '
+                              'account (until the the skeleton key is erased from memory by a reboot of the domain '
+                              'controller). Authenticated access may enable unfettered access to hosts and/or '
+                              'resources within single-factor authentication environments.(Citation: Dell Skeleton)',
                'name': 'Domain Controller Authentication',
                'platforms': ['Windows']},
  'T1556.002': {'attack_id': 'T1556.002',
@@ -8328,6 +8534,21 @@ attack_map = {
                               'passwords.(Citation: PAM Creds)(Citation: Apple PAM)',
                'name': 'Pluggable Authentication Modules',
                'platforms': ['Linux', 'macOS']},
+ 'T1556.004': {'attack_id': 'T1556.004',
+               'categories': ['credential-access', 'defense-evasion'],
+               'description': 'Adversaries may use [Patch System Image](https://attack.mitre.org/techniques/T1601/001) '
+                              'to hard code a password in the operating system, thus bypassing of native '
+                              'authentication mechanisms for local accounts on network devices.\n'
+                              '\n'
+                              '[Modify System Image](https://attack.mitre.org/techniques/T1601) may include implanted '
+                              'code to the operating system for network devices to provide access for adversaries '
+                              'using a specific password.  The modification includes a specific password which is '
+                              'implanted in the operating system image via the patch.  Upon authentication attempts, '
+                              'the inserted code will first check to see if the user input is the password. If so, '
+                              'access is granted. Otherwise, the implanted code will pass the credentials on for '
+                              'verification of potentially valid credentials.(Citation: FireEye - Synful Knock)',
+               'name': 'Network Device Authentication',
+               'platforms': ['Network']},
  'T1557': {'attack_id': 'T1557',
            'categories': ['credential-access', 'collection'],
            'description': 'Adversaries may attempt to position themselves between two or more networked devices using '
@@ -8381,6 +8602,41 @@ attack_map = {
                               'Responder)',
                'name': 'LLMNR/NBT-NS Poisoning and SMB Relay',
                'platforms': ['Windows']},
+ 'T1557.002': {'attack_id': 'T1557.002',
+               'categories': ['credential-access', 'collection'],
+               'description': 'Adversaries may poison Address Resolution Protocol (ARP) caches to position themselves '
+                              'between the communication of two or more networked devices. This activity may be used '
+                              'to enable follow-on behaviors such as [Network '
+                              'Sniffing](https://attack.mitre.org/techniques/T1040) or [Transmitted Data '
+                              'Manipulation](https://attack.mitre.org/techniques/T1565/002).\n'
+                              '\n'
+                              'The ARP protocol is used to resolve IPv4 addresses to link layer addresses, such as a '
+                              'media access control (MAC) address.(Citation: RFC826 ARP) Devices in a local network '
+                              'segment communicate with each other by using link layer addresses. If a networked '
+                              'device does not have the link layer address of a particular networked device, it may '
+                              'send out a broadcast ARP request to the local network to translate the IP address to a '
+                              'MAC address. The device with the associated IP address directly replies with its MAC '
+                              'address. The networked device that made the ARP request will then use as well as store '
+                              'that information in its ARP cache.\n'
+                              '\n'
+                              'An adversary may passively wait for an ARP request to poison the ARP cache of the '
+                              'requesting device. The adversary may reply with their MAC address, thus deceiving the '
+                              'victim by making them believe that they are communicating with the intended networked '
+                              'device. For the adversary to poison the ARP cache, their reply must be faster than the '
+                              'one made by the legitimate IP address owner. Adversaries may also send a gratuitous ARP '
+                              'reply that maliciously announces the ownership of a particular IP address to all the '
+                              'devices in the local network segment.\n'
+                              '\n'
+                              'The ARP protocol is stateless and does not require authentication. Therefore, devices '
+                              'may wrongly add or update the MAC address of the IP address in their ARP '
+                              'cache.(Citation: Sans ARP Spoofing Aug 2003)(Citation: Cylance Cleaver)\n'
+                              '\n'
+                              'Adversaries may use ARP cache poisoning as a means to man-in-the-middle (MiTM) network '
+                              'traffic. This activity may be used to collect and/or relay data such as credentials, '
+                              'especially those sent over an insecure, unencrypted protocol.(Citation: Sans ARP '
+                              'Spoofing Aug 2003)\n',
+               'name': 'ARP Cache Poisoning',
+               'platforms': ['Linux', 'Windows', 'macOS']},
  'T1558': {'attack_id': 'T1558',
            'categories': ['credential-access'],
            'description': 'Adversaries may attempt to subvert Kerberos authentication by stealing or forging Kerberos '
@@ -8468,6 +8724,46 @@ attack_map = {
                               'Accounts](https://attack.mitre.org/techniques/T1078).(Citation: SANS Attacking Kerberos '
                               'Nov 2014)',
                'name': 'Kerberoasting',
+               'platforms': ['Windows']},
+ 'T1558.004': {'attack_id': 'T1558.004',
+               'categories': ['credential-access'],
+               'description': 'Adversaries may reveal credentials of accounts that have disabled Kerberos '
+                              'preauthentication by [Password Cracking](https://attack.mitre.org/techniques/T1110/002) '
+                              'Kerberos messages.(Citation: Harmj0y Roasting AS-REPs Jan 2017) \n'
+                              '\n'
+                              'Preauthentication offers protection against offline [Password '
+                              'Cracking](https://attack.mitre.org/techniques/T1110/002). When enabled, a user '
+                              'requesting access to a resource initiates communication with the Domain Controller (DC) '
+                              'by sending an Authentication Server Request (AS-REQ) message with a timestamp that is '
+                              'encrypted with the hash of their password. If and only if the DC is able to '
+                              'successfully decrypt the timestamp with the hash of the user’s password, it will then '
+                              'send an Authentication Server Response (AS-REP) message that contains the Ticket '
+                              'Granting Ticket (TGT) to the user. Part of the AS-REP message is signed with the user’s '
+                              'password.(Citation: Microsoft Kerberos Preauth 2014)\n'
+                              '\n'
+                              'For each account found without preauthentication, an adversary may send an AS-REQ '
+                              'message without the encrypted timestamp and receive an AS-REP message with TGT data '
+                              'which may be encrypted with an insecure algorithm such as RC4. The recovered encrypted '
+                              'data may be vulnerable to offline [Password '
+                              'Cracking](https://attack.mitre.org/techniques/T1110/002) attacks similarly to '
+                              '[Kerberoasting](https://attack.mitre.org/techniques/T1558/003) and expose plaintext '
+                              'credentials. (Citation: Harmj0y Roasting AS-REPs Jan 2017)(Citation: Stealthbits '
+                              'Cracking AS-REP Roasting Jun 2019) \n'
+                              '\n'
+                              'An account registered to a domain, with or without special privileges, can be abused to '
+                              'list all domain accounts that have preauthentication disabled by utilizing Windows '
+                              'tools like [PowerShell](https://attack.mitre.org/techniques/T1059/001) with an LDAP '
+                              'filter. Alternatively, the adversary may send an AS-REQ message for each user. If the '
+                              'DC responds without errors, the account does not require preauthentication and the '
+                              'AS-REP message will already contain the encrypted data. (Citation: Harmj0y Roasting '
+                              'AS-REPs Jan 2017)(Citation: Stealthbits Cracking AS-REP Roasting Jun 2019)\n'
+                              '\n'
+                              'Cracked hashes may enable [Persistence](https://attack.mitre.org/tactics/TA0003), '
+                              '[Privilege Escalation](https://attack.mitre.org/tactics/TA0004), and [Lateral '
+                              'Movement](https://attack.mitre.org/tactics/TA0008) via access to [Valid '
+                              'Accounts](https://attack.mitre.org/techniques/T1078).(Citation: SANS Attacking Kerberos '
+                              'Nov 2014)',
+               'name': 'AS-REP Roasting',
                'platforms': ['Windows']},
  'T1559': {'attack_id': 'T1559',
            'categories': ['execution'],
@@ -8686,22 +8982,40 @@ attack_map = {
                'platforms': ['Windows']},
  'T1562.003': {'attack_id': 'T1562.003',
                'categories': ['defense-evasion'],
-               'description': 'Adversaries may configure <code>HISTCONTROL</code> to not log all command history. The '
+               'description': 'Adversaries may impair command history logging to hide commands they run on a '
+                              'compromised system. Various command interpreters keep track of the commands users type '
+                              "in their terminal so that users can retrace what they've done. \n"
+                              '\n'
+                              'On Linux and macOS, command history is tracked in a file pointed to by the environment '
+                              'variable <code>HISTFILE</code>. When a user logs off a system, this information is '
+                              "flushed to a file in the user's home directory called <code>~/.bash_history</code>. The "
                               '<code>HISTCONTROL</code> environment variable keeps track of what should be saved by '
                               'the <code>history</code> command and eventually into the <code>~/.bash_history</code> '
                               'file when a user logs out. <code>HISTCONTROL</code> does not exist by default on macOS, '
                               'but can be set by the user and will be respected.\n'
                               '\n'
-                              'This setting can be configured to ignore commands that start with a space by simply '
-                              'setting it to "ignorespace". <code>HISTCONTROL</code> can also be set to ignore '
-                              'duplicate commands by setting it to "ignoredups". In some Linux systems, this is set by '
-                              'default to "ignoreboth" which covers both of the previous examples. This means that “ '
-                              'ls” will not be saved, but “ls” would be saved by history.\n'
+                              'Adversaries may clear the history environment variable (<code>unset HISTFILE</code>) or '
+                              'set the command history size to zero (<code>export HISTFILESIZE=0</code>) to prevent '
+                              'logging of commands. Additionally, <code>HISTCONTROL</code> can be configured to ignore '
+                              'commands that start with a space by simply setting it to "ignorespace". '
+                              '<code>HISTCONTROL</code> can also be set to ignore duplicate commands by setting it to '
+                              '"ignoredups". In some Linux systems, this is set by default to "ignoreboth" which '
+                              'covers both of the previous examples. This means that ”ls” will not be saved, but ”ls” '
+                              'would be saved by history. Adversaries can abuse this to operate without leaving traces '
+                              'by simply prepending a space to all of their terminal commands.\n'
                               '\n'
-                              ' Adversaries can abuse this to operate without leaving traces by simply prepending a '
-                              'space to all of their terminal commands.',
-               'name': 'HISTCONTROL',
-               'platforms': ['Linux', 'macOS']},
+                              'On Windows systems, the <code>PSReadLine</code> module tracks commands used in all '
+                              'PowerShell sessions and writes them to a file '
+                              '(<code>$env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt</code> '
+                              'by default). Adversaries may change where these logs are saved using '
+                              '<code>Set-PSReadLineOption -HistorySavePath {File Path}</code>. This will cause '
+                              '<code>ConsoleHost_history.txt</code> to stop receiving logs. Additionally, it is '
+                              'possible to turn off logging to this file using the PowerShell command '
+                              '<code>Set-PSReadlineOption -HistorySaveStyle SaveNothing</code>.(Citation: Microsoft '
+                              'PowerShell Command History)(Citation: Sophos PowerShell command audit)(Citation: Sophos '
+                              'PowerShell Command History Forensics)',
+               'name': 'Impair Command History Logging',
+               'platforms': ['Linux', 'macOS', 'Windows']},
  'T1562.004': {'attack_id': 'T1562.004',
                'categories': ['defense-evasion'],
                'description': 'Adversaries may disable or modify system firewalls in order to bypass controls limiting '
@@ -8756,6 +9070,19 @@ attack_map = {
                               'movement, and/or data exfiltration that would otherwise not be allowed.',
                'name': 'Disable or Modify Cloud Firewall',
                'platforms': ['AWS', 'GCP', 'Azure']},
+ 'T1562.008': {'attack_id': 'T1562.008',
+               'categories': ['defense-evasion'],
+               'description': 'An adversary may disable cloud logging capabilities and integrations to limit what data '
+                              'is collected on their activities and avoid detection. \n'
+                              '\n'
+                              'Cloud environments allow for collection and analysis of audit and application logs that '
+                              'provide insight into what activities a user does within the environment. If an attacker '
+                              'has sufficient permissions, they can disable logging to avoid detection of their '
+                              'activities. For example, in AWS an adversary may disable CloudWatch/CloudTrail '
+                              'integrations prior to conducting further malicious activity.(Citation: Following the '
+                              'CloudTrail: Generating strong AWS security signals with Sumo Logic)',
+               'name': 'Disable Cloud Logs',
+               'platforms': ['GCP', 'Azure', 'AWS']},
  'T1563': {'attack_id': 'T1563',
            'categories': ['lateral-movement'],
            'description': 'Adversaries may take control of preexisting sessions with remote services to move laterally '
@@ -8959,6 +9286,32 @@ attack_map = {
                               'system.(Citation: Sophos Ragnar May 2020)',
                'name': 'Run Virtual Instance',
                'platforms': ['Linux', 'macOS', 'Windows']},
+ 'T1564.007': {'attack_id': 'T1564.007',
+               'categories': ['defense-evasion'],
+               'description': 'Adversaries may hide malicious Visual Basic for Applications (VBA) payloads embedded '
+                              'within MS Office documents by replacing the VBA source code with benign data.(Citation: '
+                              'FireEye VBA stomp Feb 2020)\n'
+                              '\n'
+                              'MS Office documents with embedded VBA content store source code inside of module '
+                              'streams. Each module stream has a <code>PerformanceCache</code> that stores a separate '
+                              'compiled version of the VBA source code known as p-code. The p-code is executed when '
+                              'the MS Office version specified in the <code>_VBA_PROJECT</code> stream (which contains '
+                              'the version-dependent description of the VBA project) matches the version of the host '
+                              'MS Office application.(Citation: Evil Clippy May 2019)(Citation: Microsoft _VBA_PROJECT '
+                              'Stream)\n'
+                              '\n'
+                              'An adversary may hide malicious VBA code by overwriting the VBA source code location '
+                              'with zero’s, benign code, or random bytes while leaving the previously compiled '
+                              'malicious p-code. Tools that scan for malicious VBA source code may be bypassed as the '
+                              'unwanted code is hidden in the compiled p-code. If the VBA source code is removed, some '
+                              'tools might even think that there are no macros present. If there is a version match '
+                              'between the <code>_VBA_PROJECT</code> stream and host MS Office application, the p-code '
+                              'will be executed, otherwise the benign VBA source code will be decompressed and '
+                              'recompiled to p-code, thus removing malicious p-code and potentially bypassing dynamic '
+                              'analysis.(Citation: Walmart Roberts Oct 2018)(Citation: FireEye VBA stomp Feb '
+                              '2020)(Citation: pcodedmp Bontchev)',
+               'name': 'VBA Stomping',
+               'platforms': ['Linux', 'Windows', 'macOS']},
  'T1565': {'attack_id': 'T1565',
            'categories': ['impact'],
            'description': 'Adversaries may insert, delete, or manipulate data in order to manipulate external outcomes '
@@ -9023,14 +9376,14 @@ attack_map = {
                'platforms': ['Linux', 'macOS', 'Windows']},
  'T1566': {'attack_id': 'T1566',
            'categories': ['initial-access'],
-           'description': 'Adversaries may send phishing messages to elicit sensitive information and/or gain access '
-                          'to victim systems. All forms of phishing are electronically delivered social engineering. '
-                          'Phishing can be targeted, known as spearphishing. In spearphishing, a specific individual, '
-                          'company, or industry will be targeted by the adversary. More generally, adversaries can '
-                          'conduct non-targeted phishing, such as in mass malware spam campaigns.\n'
+           'description': 'Adversaries may send phishing messages to gain access to victim systems. All forms of '
+                          'phishing are electronically delivered social engineering. Phishing can be targeted, known '
+                          'as spearphishing. In spearphishing, a specific individual, company, or industry will be '
+                          'targeted by the adversary. More generally, adversaries can conduct non-targeted phishing, '
+                          'such as in mass malware spam campaigns.\n'
                           '\n'
-                          'Adversaries may send victim’s emails containing malicious attachments or links, typically '
-                          'to execute malicious code on victim systems or to gather credentials for use of [Valid '
+                          'Adversaries may send victims emails containing malicious attachments or links, typically to '
+                          'execute malicious code on victim systems or to gather credentials for use of [Valid '
                           'Accounts](https://attack.mitre.org/techniques/T1078). Phishing may also be conducted via '
                           'third-party services, like social media platforms.',
            'name': 'Phishing',
@@ -9038,13 +9391,13 @@ attack_map = {
  'T1566.001': {'attack_id': 'T1566.001',
                'categories': ['initial-access'],
                'description': 'Adversaries may send spearphishing emails with a malicious attachment in an attempt to '
-                              'elicit sensitive information and/or gain access to victim systems. Spearphishing '
-                              'attachment is a specific variant of spearphishing. Spearphishing attachment is '
-                              'different from other forms of spearphishing in that it employs the use of malware '
-                              'attached to an email. All forms of spearphishing are electronically delivered social '
-                              'engineering targeted at a specific individual, company, or industry. In this scenario, '
-                              'adversaries attach a file to the spearphishing email and usually rely upon [User '
-                              'Execution](https://attack.mitre.org/techniques/T1204) to gain execution.\n'
+                              'gain access to victim systems. Spearphishing attachment is a specific variant of '
+                              'spearphishing. Spearphishing attachment is different from other forms of spearphishing '
+                              'in that it employs the use of malware attached to an email. All forms of spearphishing '
+                              'are electronically delivered social engineering targeted at a specific individual, '
+                              'company, or industry. In this scenario, adversaries attach a file to the spearphishing '
+                              'email and usually rely upon [User Execution](https://attack.mitre.org/techniques/T1204) '
+                              'to gain execution.\n'
                               '\n'
                               'There are many options for the attachment such as Microsoft Office documents, '
                               'executables, PDFs, or archived files. Upon opening the attachment (and potentially '
@@ -9060,12 +9413,11 @@ attack_map = {
                'platforms': ['macOS', 'Windows', 'Linux']},
  'T1566.002': {'attack_id': 'T1566.002',
                'categories': ['initial-access'],
-               'description': 'Adversaries may send spearphishing emails with a malicious link in an attempt to elicit '
-                              'sensitive information and/or gain access to victim systems. Spearphishing with a link '
-                              'is a specific variant of spearphishing. It is different from other forms of '
-                              'spearphishing in that it employs the use of links to download malware contained in '
-                              'email, instead of attaching malicious files to the email itself, to avoid defenses that '
-                              'may inspect email attachments. \n'
+               'description': 'Adversaries may send spearphishing emails with a malicious link in an attempt to gain '
+                              'access to victim systems. Spearphishing with a link is a specific variant of '
+                              'spearphishing. It is different from other forms of spearphishing in that it employs the '
+                              'use of links to download malware contained in email, instead of attaching malicious '
+                              'files to the email itself, to avoid defenses that may inspect email attachments. \n'
                               '\n'
                               'All forms of spearphishing are electronically delivered social engineering targeted at '
                               'a specific individual, company, or industry. In this case, the malicious emails contain '
@@ -9086,10 +9438,9 @@ attack_map = {
  'T1566.003': {'attack_id': 'T1566.003',
                'categories': ['initial-access'],
                'description': 'Adversaries may send spearphishing messages via third-party services in an attempt to '
-                              'elicit sensitive information and/or gain access to victim systems. Spearphishing via '
-                              'service is a specific variant of spearphishing. It is different from other forms of '
-                              'spearphishing in that it employs the use of third party services rather than directly '
-                              'via enterprise email channels. \n'
+                              'gain access to victim systems. Spearphishing via service is a specific variant of '
+                              'spearphishing. It is different from other forms of spearphishing in that it employs the '
+                              'use of third party services rather than directly via enterprise email channels. \n'
                               '\n'
                               'All forms of spearphishing are electronically delivered social engineering targeted at '
                               'a specific individual, company, or industry. In this scenario, adversaries send '
@@ -9463,7 +9814,7 @@ attack_map = {
                               'Adversaries may use this technique to replace legitimate binaries with malicious ones '
                               'as a means of executing code at a higher permissions level. Some installers may also '
                               'require elevated privileges that will result in privilege escalation when executing '
-                              'adversary controlled code. This behavior is related to [Bypass User Access '
+                              'adversary controlled code. This behavior is related to [Bypass User Account '
                               'Control](https://attack.mitre.org/techniques/T1548/002). Several examples of this '
                               'weakness in existing common installers have been reported to software '
                               'vendors.(Citation: mozilla_sec_adv_2012)  (Citation: Executable Installers are '
@@ -9643,7 +9994,7 @@ attack_map = {
                               '\n'
                               'Adversaries may abuse COR_PROFILER to establish persistence that executes a malicious '
                               'DLL in the context of all .NET processes every time the CLR is invoked. The '
-                              'COR_PROFILER can also be used to elevate privileges (ex: [Bypass User Access '
+                              'COR_PROFILER can also be used to elevate privileges (ex: [Bypass User Account '
                               'Control](https://attack.mitre.org/techniques/T1548/002)) if the victim .NET process '
                               'executes at a higher permission level, as well as to hook and [Impair '
                               'Defenses](https://attack.mitre.org/techniques/T1562) provided by .NET '
@@ -9793,32 +10144,1934 @@ attack_map = {
                           'existing root access, an adversary can access the entire encrypted database.(Citation: '
                           'Apple Keychain Services)(Citation: Elcomsoft Decrypt Keychain)',
            'name': 'Keychain',
-           'platforms': ['iOS']}
+           'platforms': ['iOS']},
+ 'T1580': {'attack_id': 'T1580',
+           'categories': ['discovery'],
+           'description': 'An adversary may attempt to discover resources that are available within an '
+                          'infrastructure-as-a-service (IaaS) environment. This includes compute service resources '
+                          'such as instances, virtual machines, and snapshots as well as resources of other services '
+                          'including the storage and database services.\n'
+                          '\n'
+                          'Cloud providers offer methods such as APIs and commands issued through CLIs to serve '
+                          'information about infrastructure. For example, AWS provides a '
+                          '<code>DescribeInstances</code> API within the Amazon EC2 API that can return information '
+                          'about one or more instances within an account, as well as the <code>ListBuckets</code> API '
+                          'that returns a list of all buckets owned by the authenticated sender of the '
+                          'request.(Citation: Amazon Describe Instance)(Citation: Amazon Describe Instances API) '
+                          "Similarly, GCP's Cloud SDK CLI provides the <code>gcloud compute instances list</code> "
+                          'command to list all Google Compute Engine instances in a project(Citation: Google Compute '
+                          "Instances), and Azure's CLI command <code>az vm list</code> lists details of virtual "
+                          'machines.(Citation: Microsoft AZ CLI)\n'
+                          '\n'
+                          "An adversary may enumerate resources using a compromised user's access keys to determine "
+                          'which are available to that user.(Citation: Expel IO Evil in AWS) The discovery of these '
+                          'available resources may help adversaries determine their next steps in the Cloud '
+                          'environment, such as establishing Persistence.(Citation: Mandiant M-Trends 2020) Unlike in '
+                          '[Cloud Service Discovery](https://attack.mitre.org/techniques/T1526), this technique '
+                          'focuses on the discovery of components of the provided services rather than the services '
+                          'themselves.',
+           'name': 'Cloud Infrastructure Discovery',
+           'platforms': ['AWS', 'Azure', 'GCP']},
+ 'T1581': {'attack_id': 'T1581',
+           'categories': ['defense-evasion'],
+           'description': 'Adversaries may use a device’s geographical location to limit certain malicious behaviors. '
+                          'For example, malware operators may limit the distribution of a second stage payload to '
+                          'certain geographic regions.(Citation: Lookout eSurv)\n'
+                          '\n'
+                          '[Geofencing](https://attack.mitre.org/techniques/T1581) is accomplished by persuading the '
+                          'user to grant the application permission to access location services. The application can '
+                          'then collect, process, and exfiltrate the device’s location to perform location-based '
+                          'actions, such as ceasing malicious behavior or showing region-specific advertisements.\n'
+                          '\n'
+                          'One method to accomplish [Geofencing](https://attack.mitre.org/techniques/T1581) on Android '
+                          'is to use the built-in Geofencing API to automatically trigger certain behaviors when the '
+                          'device enters or exits a specified radius around a geographical location. Similar to other '
+                          '[Geofencing](https://attack.mitre.org/techniques/T1581) methods, this requires that the '
+                          'user has granted the `ACCESS_FINE_LOCATION` and `ACCESS_BACKGROUND_LOCATION` permissions. '
+                          'The latter is only required if the application targets Android 10 (API level 29) or higher. '
+                          'However, Android 11 introduced additional permission controls that may restrict background '
+                          'location collection based on user permission choices at runtime. These additional controls '
+                          'include ’Allow only while using the app’, which will effectively prohibit background '
+                          'location collection.(Citation: Android Geofencing API)\n'
+                          '\n'
+                          'Similarly, on iOS, developers can use built-in APIs to setup and execute geofencing. '
+                          'Depending on the use case, the app will either need to call '
+                          '`requestWhenInUseAuthorization()` or `requestAlwaysAuthorization()`, depending on when '
+                          'access to the location services is required. Similar to Android, users also have the option '
+                          'to limit when the application can access the device’s location, including one-time use and '
+                          'only when the application is running in the foreground.(Citation: Apple Location Services)\n'
+                          '\n'
+                          '[Geofencing](https://attack.mitre.org/techniques/T1581) can be used to prevent exposure of '
+                          'capabilities in environments that are not intended to be compromised or operated within. '
+                          'For example, location data could be used to limit malware spread and/or capabilities, which '
+                          'could also potentially evade application analysis environments (ex: malware analysis '
+                          'outside of the target geographic area). Other malicious usages could include showing '
+                          'language-specific [Input Prompt](https://attack.mitre.org/techniques/T1411)s and/or '
+                          'advertisements.',
+           'name': 'Geofencing',
+           'platforms': ['Android', 'iOS']},
+ 'T1582': {'attack_id': 'T1582',
+           'categories': ['impact'],
+           'description': 'Adversaries may delete, alter, or send SMS messages without user authorization. This could '
+                          'be used to hide C2 SMS messages, spread malware, or various external effects.\n'
+                          '\n'
+                          'This can be accomplished by requesting the `RECEIVE_SMS` or `SEND_SMS` permissions '
+                          'depending on what the malware is attempting to do. If the app is set as the default SMS '
+                          'handler on the device, the `SMS_DELIVER` broadcast intent can be registered, which allows '
+                          'the app to write to the SMS content provider. The content provider directly modifies the '
+                          'messaging database on the device, which could allow malicious applications with this '
+                          'ability to insert, modify, or delete arbitrary messages on the device.(Citation: SMS '
+                          'KitKat)(Citation: Android SmsProvider)',
+           'name': 'SMS Control',
+           'platforms': ['Android']},
+ 'T1583': {'attack_id': 'T1583',
+           'categories': ['resource-development'],
+           'description': 'Before compromising a victim, adversaries may buy, lease, or rent infrastructure that can '
+                          'be used during targeting. A wide variety of infrastructure exists for hosting and '
+                          'orchestrating adversary operations. Infrastructure solutions include physical or cloud '
+                          'servers, domains, and third-party web services.(Citation: TrendmicroHideoutsLease) '
+                          'Additionally, botnets are available for rent or purchase.\n'
+                          '\n'
+                          'Use of these infrastructure solutions allows an adversary to stage, launch, and execute an '
+                          'operation. Solutions may help adversary operations blend in with traffic that is seen as '
+                          'normal, such as contact to third-party web services. Depending on the implementation, '
+                          'adversaries may use infrastructure that makes it difficult to physically tie back to them '
+                          'as well as utilize infrastructure that can be rapidly provisioned, modified, and shut down.',
+           'name': 'Acquire Infrastructure',
+           'platforms': ['PRE']},
+ 'T1583.001': {'attack_id': 'T1583.001',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may purchase domains that can be used during '
+                              'targeting. Domain names are the human readable names used to represent one or more IP '
+                              'addresses. They can be purchased or, in some cases, acquired for free.\n'
+                              '\n'
+                              'Adversaries can use purchased domains for a variety of purposes, including for '
+                              '[Phishing](https://attack.mitre.org/techniques/T1566), [Drive-by '
+                              'Compromise](https://attack.mitre.org/techniques/T1189), and Command and '
+                              'Control.(Citation: CISA MSS Sep 2020) Adversaries may choose domains that are similar '
+                              'to legitimate domains, including through use of homoglyphs or use of a different '
+                              'top-level domain (TLD).(Citation: FireEye APT28)(Citation: PaypalScam) Typosquatting '
+                              'may be used to aid in delivery of payloads via [Drive-by '
+                              'Compromise](https://attack.mitre.org/techniques/T1189). Adversaries can also use '
+                              'internationalized domain names (IDNs) to create visually similar lookalike domains for '
+                              'use in operations.(Citation: CISA IDN ST05-016)\n'
+                              '\n'
+                              'Domain registrars each maintain a publicly viewable database that displays contact '
+                              'information for every registered domain. Private WHOIS services display alternative '
+                              'information, such as their own company data, rather than the owner of the domain. '
+                              'Adversaries may use such private WHOIS services to obscure information about who owns a '
+                              'purchased domain. Adversaries may further interrupt efforts to track their '
+                              'infrastructure by using varied registration information and purchasing domains with '
+                              'different domain registrars.(Citation: Mandiant APT1)',
+               'name': 'Domains',
+               'platforms': ['PRE']},
+ 'T1583.002': {'attack_id': 'T1583.002',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may set up their own Domain Name System (DNS) '
+                              'servers that can be used during targeting. During post-compromise activity, adversaries '
+                              'may utilize DNS traffic for various tasks, including for Command and Control (ex: '
+                              '[Application Layer Protocol](https://attack.mitre.org/techniques/T1071)). Instead of '
+                              'hijacking existing DNS servers, adversaries may opt to configure and run their own DNS '
+                              'servers in support of operations.\n'
+                              '\n'
+                              'By running their own DNS servers, adversaries can have more control over how they '
+                              'administer server-side DNS C2 traffic '
+                              '([DNS](https://attack.mitre.org/techniques/T1071/004)). With control over a DNS server, '
+                              'adversaries can configure DNS applications to provide conditional responses to malware '
+                              'and, generally, have more flexibility in the structure of the DNS-based C2 '
+                              'channel.(Citation: Unit42 DNS Mar 2019)',
+               'name': 'DNS Server',
+               'platforms': ['PRE']},
+ 'T1583.003': {'attack_id': 'T1583.003',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may rent Virtual Private Servers (VPSs)\xa0'
+                              'that can be used during targeting. There exist a variety of cloud service providers '
+                              'that will sell virtual machines/containers as a service. By utilizing a VPS, '
+                              'adversaries can make it difficult to physically tie back operations to them. The use of '
+                              'cloud infrastructure can also make it easier for adversaries to rapidly provision, '
+                              'modify, and shut down their infrastructure.\n'
+                              '\n'
+                              'Acquiring a VPS for use in later stages of the adversary lifecycle, such as Command and '
+                              'Control, can allow adversaries to benefit from the ubiquity and trust associated with '
+                              'higher reputation cloud service providers. Adversaries may also acquire infrastructure '
+                              'from VPS service providers that are known for renting VPSs with minimal registration '
+                              'information, allowing for more anonymous acquisitions of infrastructure.(Citation: '
+                              'TrendmicroHideoutsLease)',
+               'name': 'Virtual Private Server',
+               'platforms': ['PRE']},
+ 'T1583.004': {'attack_id': 'T1583.004',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may buy, lease, or rent physical servers\xa0'
+                              'that can be used during targeting. Use of servers allows an adversary to stage, launch, '
+                              'and execute an operation. During post-compromise activity, adversaries may utilize '
+                              'servers for various tasks, including for Command and Control. Instead of compromising a '
+                              'third-party [Server](https://attack.mitre.org/techniques/T1584/004) or renting a '
+                              '[Virtual Private Server](https://attack.mitre.org/techniques/T1583/003), adversaries '
+                              'may opt to configure and run their own servers in support of operations.\n'
+                              '\n'
+                              'Adversaries may only need a lightweight setup if most of their activities will take '
+                              'place using online infrastructure. Or, they may need to build extensive infrastructure '
+                              'if they want to test, communicate, and control other aspects of their activities on '
+                              'their own systems.(Citation: NYTStuxnet)',
+               'name': 'Server',
+               'platforms': ['PRE']},
+ 'T1583.005': {'attack_id': 'T1583.005',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may buy, lease, or rent a network of '
+                              'compromised systems\xa0that can be used during targeting. A botnet is a network of '
+                              'compromised systems that can be instructed to perform coordinated tasks.(Citation: '
+                              'Norton Botnet) Adversaries may purchase a subscription to use an existing botnet from a '
+                              'booter/stresser service. With a botnet at their disposal, adversaries may perform '
+                              'follow-on activity such as large-scale '
+                              '[Phishing](https://attack.mitre.org/techniques/T1566) or Distributed Denial of Service '
+                              '(DDoS).(Citation: Imperva DDoS for Hire)(Citation: Krebs-Anna)(Citation: '
+                              'Krebs-Bazaar)(Citation: Krebs-Booter)',
+               'name': 'Botnet',
+               'platforms': ['PRE']},
+ 'T1583.006': {'attack_id': 'T1583.006',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may register for web services\xa0that can be '
+                              'used during targeting. A variety of popular websites exist for adversaries to register '
+                              'for a web-based service that can be abused during later stages of the adversary '
+                              'lifecycle, such as during Command and Control ([Web '
+                              'Service](https://attack.mitre.org/techniques/T1102)) or [Exfiltration Over Web '
+                              'Service](https://attack.mitre.org/techniques/T1567). Using common services, such as '
+                              'those offered by Google or Twitter, makes it easier for adversaries to hide in expected '
+                              'noise. By utilizing a web service, adversaries can make it difficult to physically tie '
+                              'back operations to them.',
+               'name': 'Web Services',
+               'platforms': ['PRE']},
+ 'T1584': {'attack_id': 'T1584',
+           'categories': ['resource-development'],
+           'description': 'Before compromising a victim, adversaries may compromise third-party infrastructure that '
+                          'can be used during targeting. Infrastructure solutions include physical or cloud servers, '
+                          'domains, and third-party web services. Instead of buying, leasing, or renting '
+                          'infrastructure an adversary may compromise infrastructure and use it during other phases of '
+                          'the adversary lifecycle.(Citation: Mandiant APT1)(Citation: '
+                          'ICANNDomainNameHijacking)(Citation: Talos DNSpionage Nov 2018)(Citation: FireEye EPS '
+                          'Awakens Part 2) Additionally, adversaries may compromise numerous machines to form a botnet '
+                          'they can leverage.\n'
+                          '\n'
+                          'Use of compromised infrastructure allows an adversary to stage, launch, and execute an '
+                          'operation. Compromised infrastructure can help adversary operations blend in with traffic '
+                          'that is seen as normal, such as contact with high reputation or trusted sites. By using '
+                          'compromised infrastructure, adversaries may make it difficult to tie their actions back to '
+                          'them. Prior to targeting, adversaries may compromise the infrastructure of other '
+                          'adversaries.(Citation: NSA NCSC Turla OilRig)',
+           'name': 'Compromise Infrastructure',
+           'platforms': ['PRE']},
+ 'T1584.001': {'attack_id': 'T1584.001',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may hijack domains and/or subdomains that can '
+                              'be used during targeting. Domain registration hijacking is the act of changing the '
+                              'registration of a domain name without the permission of the original '
+                              'registrant.(Citation: ICANNDomainNameHijacking) An adversary may gain access to an '
+                              'email account for the person listed as the owner of the domain. The adversary can then '
+                              'claim that they forgot their password in order to make changes to the domain '
+                              'registration. Other possibilities include social engineering a domain registration help '
+                              'desk to gain access to an account or taking advantage of renewal process gaps.\n'
+                              '\n'
+                              'Subdomain hijacking can occur when organizations have DNS entries that point to '
+                              'non-existent or deprovisioned resources. In such cases, an adversary may take control '
+                              'of a subdomain to conduct operations with the benefit of the trust associated with that '
+                              'domain.(Citation: Microsoft Sub Takeover 2020)',
+               'name': 'Domains',
+               'platforms': ['PRE']},
+ 'T1584.002': {'attack_id': 'T1584.002',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may compromise third-party DNS servers that '
+                              'can be used during targeting. During post-compromise activity, adversaries may utilize '
+                              'DNS traffic for various tasks, including for Command and Control (ex: [Application '
+                              'Layer Protocol](https://attack.mitre.org/techniques/T1071)). Instead of setting up '
+                              'their own DNS servers, adversaries may compromise third-party DNS servers in support of '
+                              'operations.\n'
+                              '\n'
+                              'By compromising DNS servers, adversaries can alter DNS records. Such control can allow '
+                              "for redirection of an organization's traffic, facilitating Collection and Credential "
+                              'Access efforts for the adversary.(Citation: Talos DNSpionage Nov 2018)(Citation: '
+                              'FireEye DNS Hijack 2019) Adversaries may also be able to silently create subdomains '
+                              'pointed at malicious servers without tipping off the actual owner of the DNS '
+                              'server.(Citation: CiscoAngler)(Citation: Proofpoint Domain Shadowing)',
+               'name': 'DNS Server',
+               'platforms': ['PRE']},
+ 'T1584.003': {'attack_id': 'T1584.003',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may compromise third-party Virtual Private '
+                              'Servers (VPSs) that can be used during targeting. There exist a variety of cloud '
+                              'service providers that will sell virtual machines/containers as a service. Adversaries '
+                              'may compromise VPSs purchased by third-party entities. By compromising a VPS to use as '
+                              'infrastructure, adversaries can make it difficult to physically tie back operations to '
+                              'themselves.(Citation: NSA NCSC Turla OilRig)\n'
+                              '\n'
+                              'Compromising a VPS for use in later stages of the adversary lifecycle, such as Command '
+                              'and Control, can allow adversaries to benefit from the ubiquity and trust associated '
+                              'with higher reputation cloud service providers as well as that added by the compromised '
+                              'third-party.',
+               'name': 'Virtual Private Server',
+               'platforms': ['PRE']},
+ 'T1584.004': {'attack_id': 'T1584.004',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may compromise third-party servers that can '
+                              'be used during targeting. Use of servers allows an adversary to stage, launch, and '
+                              'execute an operation. During post-compromise activity, adversaries may utilize servers '
+                              'for various tasks, including for Command and Control. Instead of purchasing a '
+                              '[Server](https://attack.mitre.org/techniques/T1583/004) or [Virtual Private '
+                              'Server](https://attack.mitre.org/techniques/T1583/003), adversaries may compromise '
+                              'third-party servers in support of operations.\n'
+                              '\n'
+                              'Adversaries may also compromise web servers to support watering hole operations, as in '
+                              '[Drive-by Compromise](https://attack.mitre.org/techniques/T1189).',
+               'name': 'Server',
+               'platforms': ['PRE']},
+ 'T1584.005': {'attack_id': 'T1584.005',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may compromise numerous third-party systems '
+                              'to form a botnet\xa0that can be used during targeting. A botnet is a network of '
+                              'compromised systems that can be instructed to perform coordinated tasks.(Citation: '
+                              'Norton Botnet) Instead of purchasing/renting a botnet from a booter/stresser '
+                              'service(Citation: Imperva DDoS for Hire), adversaries may build their own botnet by '
+                              'compromising numerous third-party systems. Adversaries may also conduct a takeover of '
+                              'an existing botnet, such as redirecting bots to adversary-controlled C2 '
+                              'servers.(Citation: Dell Dridex Oct 2015) With a botnet at their disposal, adversaries '
+                              'may perform follow-on activity such as large-scale '
+                              '[Phishing](https://attack.mitre.org/techniques/T1566) or Distributed Denial of Service '
+                              '(DDoS).',
+               'name': 'Botnet',
+               'platforms': ['PRE']},
+ 'T1584.006': {'attack_id': 'T1584.006',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may compromise access to third-party web '
+                              'services\xa0that can be used during targeting. A variety of popular websites exist for '
+                              'legitimate users to register for web-based services, such as GitHub, Twitter, Dropbox, '
+                              "Google, etc. Adversaries may try to take ownership of a legitimate user's access to a "
+                              'web service and use that web service as infrastructure in support of cyber operations. '
+                              'Such web services can be abused during later stages of the adversary lifecycle, such as '
+                              'during Command and Control ([Web Service](https://attack.mitre.org/techniques/T1102)) '
+                              'or [Exfiltration Over Web '
+                              'Service](https://attack.mitre.org/techniques/T1567).(Citation: Recorded Future Turla '
+                              'Infra 2020) Using common services, such as those offered by Google or Twitter, makes it '
+                              'easier for adversaries to hide in expected noise. By utilizing a web service, '
+                              'particularly when access is stolen from legitimate users, adversaries can make it '
+                              'difficult to physically tie back operations to them.',
+               'name': 'Web Services',
+               'platforms': ['PRE']},
+ 'T1585': {'attack_id': 'T1585',
+           'categories': ['resource-development'],
+           'description': 'Before compromising a victim, adversaries may create and cultivate accounts with services '
+                          'that can be used during targeting. Adversaries can create accounts that can be used to '
+                          'build a persona to further operations. Persona development consists of the development of '
+                          'public information, presence, history and appropriate affiliations. This development could '
+                          'be applied to social media, website, or other publicly available information that could be '
+                          'referenced and scrutinized for legitimacy over the course of an operation using that '
+                          'persona or identity.(Citation: NEWSCASTER2014)(Citation: BlackHatRobinSage)\n'
+                          '\n'
+                          'For operations incorporating social engineering, the utilization of an online persona may '
+                          'be important. These personas may be fictitious or impersonate real people. The persona may '
+                          'exist on a single site or across multiple sites (ex: Facebook, LinkedIn, Twitter, Google, '
+                          'etc.). Establishing a persona may require development of additional documentation to make '
+                          'them seem real. This could include filling out profile information, developing social '
+                          'networks, or incorporating photos.(Citation: NEWSCASTER2014)(Citation: BlackHatRobinSage)\n'
+                          '\n'
+                          'Establishing accounts can also include the creation of accounts with email providers, which '
+                          'may be directly leveraged for [Phishing for '
+                          'Information](https://attack.mitre.org/techniques/T1598) or '
+                          '[Phishing](https://attack.mitre.org/techniques/T1566).(Citation: Mandiant APT1)',
+           'name': 'Establish Accounts',
+           'platforms': ['PRE']},
+ 'T1585.001': {'attack_id': 'T1585.001',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may create and cultivate social media '
+                              'accounts that can be used during targeting. Adversaries can create social media '
+                              'accounts that can be used to build a persona to further operations. Persona development '
+                              'consists of the development of public information, presence, history and appropriate '
+                              'affiliations.(Citation: NEWSCASTER2014)(Citation: BlackHatRobinSage)\n'
+                              '\n'
+                              'For operations incorporating social engineering, the utilization of a persona on social '
+                              'media may be important. These personas may be fictitious or impersonate real people. '
+                              'The persona may exist on a single social media site or across multiple sites (ex: '
+                              'Facebook, LinkedIn, Twitter, etc.). Establishing a persona  on social media may require '
+                              'development of additional documentation to make them seem real. This could include '
+                              'filling out profile information, developing social networks, or incorporating photos. \n'
+                              '\n'
+                              'Once a persona has been developed an adversary can use it to create connections to '
+                              'targets of interest. These connections may be direct or may include trying to connect '
+                              'through others.(Citation: NEWSCASTER2014)(Citation: BlackHatRobinSage) These accounts '
+                              'may be leveraged during other phases of the adversary lifecycle, such as during Initial '
+                              'Access (ex: [Spearphishing via '
+                              'Service](https://attack.mitre.org/techniques/T1566/003)).',
+               'name': 'Social Media Accounts',
+               'platforms': ['PRE']},
+ 'T1585.002': {'attack_id': 'T1585.002',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may create email accounts that can be used '
+                              'during targeting. Adversaries can use accounts created with email providers to further '
+                              'their operations, such as leveraging them to conduct [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or '
+                              '[Phishing](https://attack.mitre.org/techniques/T1566).(Citation: Mandiant APT1) '
+                              'Adversaries may also take steps to cultivate a persona around the email account, such '
+                              'as through use of [Social Media '
+                              'Accounts](https://attack.mitre.org/techniques/T1585/001), to increase the chance of '
+                              'success of follow-on behaviors. Created email accounts can also be used in the '
+                              'acquisition of infrastructure (ex: '
+                              '[Domains](https://attack.mitre.org/techniques/T1583/001)).(Citation: Mandiant APT1)\n'
+                              '\n'
+                              'To decrease the chance of physically tying back operations to themselves, adversaries '
+                              'may make use of disposable email services.(Citation: Trend Micro R980 2016)',
+               'name': 'Email Accounts',
+               'platforms': ['PRE']},
+ 'T1586': {'attack_id': 'T1586',
+           'categories': ['resource-development'],
+           'description': 'Before compromising a victim, adversaries may compromise accounts with services that can be '
+                          'used during targeting. For operations incorporating social engineering, the utilization of '
+                          'an online persona may be important. Rather than creating and cultivating accounts (i.e. '
+                          '[Establish Accounts](https://attack.mitre.org/techniques/T1585)), adversaries may '
+                          'compromise existing accounts. Utilizing an existing persona may engender a level of trust '
+                          'in a potential victim if they have a relationship, or knowledge of, the compromised '
+                          'persona. \n'
+                          '\n'
+                          'A variety of methods exist for compromising accounts, such as gathering credentials via '
+                          '[Phishing for Information](https://attack.mitre.org/techniques/T1598), purchasing '
+                          'credentials from third-party sites, or by brute forcing credentials (ex: password reuse '
+                          'from breach credential dumps).(Citation: AnonHBGary) Prior to compromising accounts, '
+                          'adversaries may conduct Reconnaissance to inform decisions about which accounts to '
+                          'compromise to further their operation.\n'
+                          '\n'
+                          'Personas may exist on a single site or across multiple sites (ex: Facebook, LinkedIn, '
+                          'Twitter, Google, etc.). Compromised accounts may require additional development, this could '
+                          'include filling out or modifying profile information, further developing social networks, '
+                          'or incorporating photos.\n'
+                          '\n'
+                          'Adversaries may directly leverage compromised email accounts for [Phishing for '
+                          'Information](https://attack.mitre.org/techniques/T1598) or '
+                          '[Phishing](https://attack.mitre.org/techniques/T1566).',
+           'name': 'Compromise Accounts',
+           'platforms': ['PRE']},
+ 'T1586.001': {'attack_id': 'T1586.001',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may compromise social media accounts that can '
+                              'be used during targeting. For operations incorporating social engineering, the '
+                              'utilization of an online persona may be important. Rather than creating and cultivating '
+                              'social media profiles (i.e. [Social Media '
+                              'Accounts](https://attack.mitre.org/techniques/T1585/001)), adversaries may compromise '
+                              'existing social media accounts. Utilizing an existing persona may engender a level of '
+                              'trust in a potential victim if they have a relationship, or knowledge of, the '
+                              'compromised persona. \n'
+                              '\n'
+                              'A variety of methods exist for compromising social media accounts, such as gathering '
+                              'credentials via [Phishing for Information](https://attack.mitre.org/techniques/T1598), '
+                              'purchasing credentials from third-party sites, or by brute forcing credentials (ex: '
+                              'password reuse from breach credential dumps).(Citation: AnonHBGary) Prior to '
+                              'compromising social media accounts, adversaries may conduct Reconnaissance to inform '
+                              'decisions about which accounts to compromise to further their operation.\n'
+                              '\n'
+                              'Personas may exist on a single site or across multiple sites (ex: Facebook, LinkedIn, '
+                              'Twitter, etc.). Compromised social media accounts may require additional development, '
+                              'this could include filling out or modifying profile information, further developing '
+                              'social networks, or incorporating photos.\n'
+                              '\n'
+                              'Adversaries can use a compromised social media profile to create new, or hijack '
+                              'existing, connections to targets of interest. These connections may be direct or may '
+                              'include trying to connect through others.(Citation: NEWSCASTER2014)(Citation: '
+                              'BlackHatRobinSage) Compromised profiles may be leveraged during other phases of the '
+                              'adversary lifecycle, such as during Initial Access (ex: [Spearphishing via '
+                              'Service](https://attack.mitre.org/techniques/T1566/003)).',
+               'name': 'Social Media Accounts',
+               'platforms': ['PRE']},
+ 'T1586.002': {'attack_id': 'T1586.002',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may compromise email accounts that can be '
+                              'used during targeting. Adversaries can use compromised email accounts to further their '
+                              'operations, such as leveraging them to conduct [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or '
+                              '[Phishing](https://attack.mitre.org/techniques/T1566). Utilizing an existing persona '
+                              'with a compromised email account may engender a level of trust in a potential victim if '
+                              'they have a relationship, or knowledge of, the compromised persona. Compromised email '
+                              'accounts can also be used in the acquisition of infrastructure (ex: '
+                              '[Domains](https://attack.mitre.org/techniques/T1583/001)).\n'
+                              '\n'
+                              'A variety of methods exist for compromising email accounts, such as gathering '
+                              'credentials via [Phishing for Information](https://attack.mitre.org/techniques/T1598), '
+                              'purchasing credentials from third-party sites, or by brute forcing credentials (ex: '
+                              'password reuse from breach credential dumps).(Citation: AnonHBGary) Prior to '
+                              'compromising email accounts, adversaries may conduct Reconnaissance to inform decisions '
+                              'about which accounts to compromise to further their operation.\n'
+                              '\n'
+                              'Adversaries can use a compromised email account to hijack existing email threads with '
+                              'targets of interest.',
+               'name': 'Email Accounts',
+               'platforms': ['PRE']},
+ 'T1587': {'attack_id': 'T1587',
+           'categories': ['resource-development'],
+           'description': 'Before compromising a victim, adversaries may build capabilities that can be used during '
+                          'targeting. Rather than purchasing, freely downloading, or stealing capabilities, '
+                          'adversaries may develop their own capabilities in-house. This is the process of identifying '
+                          'development requirements and building solutions such as malware, exploits, and self-signed '
+                          'certificates. Adversaries may develop capabilities to support their operations throughout '
+                          'numerous phases of the adversary lifecycle.(Citation: Mandiant APT1)(Citation: Kaspersky '
+                          'Sofacy)(Citation: Bitdefender StrongPity June 2020)(Citation: Talos Promethium June 2020)\n'
+                          '\n'
+                          'As with legitimate development efforts, different skill sets may be required for developing '
+                          'capabilities. The skills needed may be located in-house, or may need to be contracted out. '
+                          "Use of a contractor may be considered an extension of that adversary's development "
+                          'capabilities, provided the adversary plays a role in shaping requirements and maintains a '
+                          'degree of exclusivity to the capability.',
+           'name': 'Develop Capabilities',
+           'platforms': ['PRE']},
+ 'T1587.001': {'attack_id': 'T1587.001',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may develop malware and malware components '
+                              'that can be used during targeting. Building malicious software can include the '
+                              'development of payloads, droppers, post-compromise tools, backdoors, packers, C2 '
+                              'protocols, and the creation of infected removable media. Adversaries may develop '
+                              'malware to support their operations, creating a means for maintaining control of remote '
+                              'machines, evading defenses, and executing post-compromise behaviors.(Citation: Mandiant '
+                              'APT1)(Citation: Kaspersky Sofacy)(Citation: ActiveMalwareEnergy)(Citation: FBI Flash '
+                              'FIN7 USB)\n'
+                              '\n'
+                              'As with legitimate development efforts, different skill sets may be required for '
+                              'developing malware. The skills needed may be located in-house, or may need to be '
+                              "contracted out. Use of a contractor may be considered an extension of that adversary's "
+                              'malware development capabilities, provided the adversary plays a role in shaping '
+                              'requirements and maintains a degree of exclusivity to the malware.\n'
+                              '\n'
+                              'Some aspects of malware development, such as C2 protocol development, may require '
+                              'adversaries to obtain additional infrastructure. For example, malware developed that '
+                              'will communicate with Twitter for C2, may require use of [Web '
+                              'Services](https://attack.mitre.org/techniques/T1583/006).(Citation: FireEye APT29)',
+               'name': 'Malware',
+               'platforms': ['PRE']},
+ 'T1587.002': {'attack_id': 'T1587.002',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may create self-signed code signing '
+                              'certificates that can be used during targeting. Code signing is the process of '
+                              'digitally signing executables and scripts to confirm the software author and guarantee '
+                              'that the code has not been altered or corrupted. Code signing provides a level of '
+                              'authenticity for a program from the developer and a guarantee that the program has not '
+                              'been tampered with.(Citation: Wikipedia Code Signing) Users and/or security tools may '
+                              "trust a signed piece of code more than an unsigned piece of code even if they don't "
+                              'know who issued the certificate or who the author is.\n'
+                              '\n'
+                              'Prior to [Code Signing](https://attack.mitre.org/techniques/T1553/002), adversaries may '
+                              'develop self-signed code signing certificates for use in operations.',
+               'name': 'Code Signing Certificates',
+               'platforms': ['PRE']},
+ 'T1587.003': {'attack_id': 'T1587.003',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may create self-signed SSL/TLS certificates '
+                              'that can be used during targeting. SSL/TLS certificates are designed to instill trust. '
+                              "They include information about the key, information about its owner's identity, and the "
+                              "digital signature of an entity that has verified the certificate's contents are "
+                              'correct. If the signature is valid, and the person examining the certificate trusts the '
+                              'signer, then they know they can use that key to communicate with its owner. In the case '
+                              'of self-signing, digital certificates will lack the element of trust associated with '
+                              'the signature of a third-party certificate authority (CA).\n'
+                              '\n'
+                              'Adversaries may create self-signed SSL/TLS certificates that can be used to further '
+                              'their operations, such as encrypting C2 traffic (ex: [Web '
+                              'Protocols](https://attack.mitre.org/techniques/T1071/001)) or even enabling '
+                              '[Man-in-the-Middle](https://attack.mitre.org/techniques/T1557) if added to the root of '
+                              'trust (i.e. [Install Root Certificate](https://attack.mitre.org/techniques/T1553/004)).',
+               'name': 'Digital Certificates',
+               'platforms': ['PRE']},
+ 'T1587.004': {'attack_id': 'T1587.004',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may develop exploits that can be used during '
+                              'targeting. An exploit takes advantage of a bug or vulnerability in order to cause '
+                              'unintended or unanticipated behavior to occur on computer hardware or software. Rather '
+                              'than finding/modifying exploits from online or purchasing them from exploit vendors, an '
+                              'adversary may develop their own exploits.(Citation: NYTStuxnet) Adversaries may use '
+                              'information acquired via '
+                              '[Vulnerabilities](https://attack.mitre.org/techniques/T1588/006) to focus exploit '
+                              'development efforts. As part of the exploit development process, adversaries may '
+                              'uncover exploitable vulnerabilities through methods such as fuzzing and patch '
+                              'analysis.(Citation: Irongeek Sims BSides 2017)\n'
+                              '\n'
+                              'As with legitimate development efforts, different skill sets may be required for '
+                              'developing exploits. The skills needed may be located in-house, or may need to be '
+                              "contracted out. Use of a contractor may be considered an extension of that adversary's "
+                              'exploit development capabilities, provided the adversary plays a role in shaping '
+                              'requirements and maintains an initial degree of exclusivity to the exploit.\n'
+                              '\n'
+                              'Adversaries may use exploits during various phases of the adversary lifecycle (i.e. '
+                              '[Exploit Public-Facing Application](https://attack.mitre.org/techniques/T1190), '
+                              '[Exploitation for Client Execution](https://attack.mitre.org/techniques/T1203), '
+                              '[Exploitation for Privilege Escalation](https://attack.mitre.org/techniques/T1068), '
+                              '[Exploitation for Defense Evasion](https://attack.mitre.org/techniques/T1211), '
+                              '[Exploitation for Credential Access](https://attack.mitre.org/techniques/T1212), '
+                              '[Exploitation of Remote Services](https://attack.mitre.org/techniques/T1210), and '
+                              '[Application or System Exploitation](https://attack.mitre.org/techniques/T1499/004)).',
+               'name': 'Exploits',
+               'platforms': ['PRE']},
+ 'T1588': {'attack_id': 'T1588',
+           'categories': ['resource-development'],
+           'description': 'Before compromising a victim, adversaries may buy and/or steal capabilities that can be '
+                          'used during targeting. Rather than developing their own capabilities in-house, adversaries '
+                          'may purchase, freely download, or steal them. Activities may include the acquisition of '
+                          'malware, software (including licenses), exploits, certificates, and information relating to '
+                          'vulnerabilities. Adversaries may obtain capabilities to support their operations throughout '
+                          'numerous phases of the adversary lifecycle.\n'
+                          '\n'
+                          'In addition to downloading free malware, software, and exploits from the internet, '
+                          'adversaries may purchase these capabilities from third-party entities. Third-party entities '
+                          'can include technology companies that specialize in malware and exploits, criminal '
+                          'marketplaces, or from individuals.(Citation: NationsBuying)(Citation: PegasusCitizenLab)\n'
+                          '\n'
+                          'In addition to purchasing capabilities, adversaries may steal capabilities from third-party '
+                          'entities (including other adversaries). This can include stealing software licenses, '
+                          'malware, SSL/TLS and code-signing certificates, or raiding closed databases of '
+                          'vulnerabilities or exploits.(Citation: DiginotarCompromise)',
+           'name': 'Obtain Capabilities',
+           'platforms': ['PRE']},
+ 'T1588.001': {'attack_id': 'T1588.001',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may buy, steal, or download malware that can '
+                              'be used during targeting. Malicious software can include payloads, droppers, '
+                              'post-compromise tools, backdoors, packers, and C2 protocols. Adversaries may acquire '
+                              'malware to support their operations, obtaining a means for maintaining control of '
+                              'remote machines, evading defenses, and executing post-compromise behaviors.\n'
+                              '\n'
+                              'In addition to downloading free malware from the internet, adversaries may purchase '
+                              'these capabilities from third-party entities. Third-party entities can include '
+                              'technology companies that specialize in malware development, criminal marketplaces '
+                              '(including Malware-as-a-Service, or MaaS), or from individuals. In addition to '
+                              'purchasing malware, adversaries may steal and repurpose malware from third-party '
+                              'entities (including other adversaries).',
+               'name': 'Malware',
+               'platforms': ['PRE']},
+ 'T1588.002': {'attack_id': 'T1588.002',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may buy, steal, or download software tools '
+                              'that can be used during targeting. Tools can be open or closed source, free or '
+                              'commercial. A tool can be used for malicious purposes by an adversary, but (unlike '
+                              'malware) were not intended to be used for those purposes (ex: '
+                              '[PsExec](https://attack.mitre.org/software/S0029)). Tool acquisition can involve the '
+                              'procurement of commercial software licenses, including for red teaming tools such as '
+                              '[Cobalt Strike](https://attack.mitre.org/software/S0154). Commercial software may be '
+                              'obtained through purchase, stealing licenses (or licensed copies of the software), or '
+                              'cracking trial versions.(Citation: Recorded Future Beacon 2019)\n'
+                              '\n'
+                              'Adversaries may obtain tools to support their operations, including to support '
+                              'execution of post-compromise behaviors. In addition to freely downloading or purchasing '
+                              'software, adversaries may steal software and/or software licenses from third-party '
+                              'entities (including other adversaries).',
+               'name': 'Tool',
+               'platforms': ['PRE']},
+ 'T1588.003': {'attack_id': 'T1588.003',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may buy and/or steal code signing '
+                              'certificates that can be used during targeting. Code signing is the process of '
+                              'digitally signing executables and scripts to confirm the software author and guarantee '
+                              'that the code has not been altered or corrupted. Code signing provides a level of '
+                              'authenticity for a program from the developer and a guarantee that the program has not '
+                              'been tampered with.(Citation: Wikipedia Code Signing) Users and/or security tools may '
+                              "trust a signed piece of code more than an unsigned piece of code even if they don't "
+                              'know who issued the certificate or who the author is.\n'
+                              '\n'
+                              'Prior to [Code Signing](https://attack.mitre.org/techniques/T1553/002), adversaries may '
+                              'purchase or steal code signing certificates for use in operations. The purchase of code '
+                              'signing certificates may be done using a front organization or using information stolen '
+                              'from a previously compromised entity that allows the adversary to validate to a '
+                              'certificate provider as that entity. Adversaries may also steal code signing materials '
+                              'directly from a compromised third-party.',
+               'name': 'Code Signing Certificates',
+               'platforms': ['PRE']},
+ 'T1588.004': {'attack_id': 'T1588.004',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may buy and/or steal SSL/TLS certificates '
+                              'that can be used during targeting. SSL/TLS certificates are designed to instill trust. '
+                              "They include information about the key, information about its owner's identity, and the "
+                              "digital signature of an entity that has verified the certificate's contents are "
+                              'correct. If the signature is valid, and the person examining the certificate trusts the '
+                              'signer, then they know they can use that key to communicate with its owner.\n'
+                              '\n'
+                              'Adversaries may purchase or steal SSL/TLS certificates to further their operations, '
+                              'such as encrypting C2 traffic (ex: [Web '
+                              'Protocols](https://attack.mitre.org/techniques/T1071/001)) or even enabling '
+                              '[Man-in-the-Middle](https://attack.mitre.org/techniques/T1557) if the certificate is '
+                              'trusted or otherwise added to the root of trust (i.e. [Install Root '
+                              'Certificate](https://attack.mitre.org/techniques/T1553/004)). The purchase of digital '
+                              'certificates may be done using a front organization or using information stolen from a '
+                              'previously compromised entity that allows the adversary to validate to a certificate '
+                              'provider as that entity. Adversaries may also steal certificate materials directly from '
+                              'a compromised third-party, including from certificate authorities.(Citation: '
+                              'DiginotarCompromise)\n'
+                              '\n'
+                              'Certificate authorities exist that allow adversaries to acquire SSL/TLS certificates, '
+                              "such as domain validation certificates, for free.(Citation: Let's Encrypt FAQ)\n"
+                              '\n'
+                              'Adversaries may register or hijack domains that they will later purchase an SSL/TLS '
+                              'certificate for.',
+               'name': 'Digital Certificates',
+               'platforms': ['PRE']},
+ 'T1588.005': {'attack_id': 'T1588.005',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may buy, steal, or download exploits that can '
+                              'be used during targeting. An exploit takes advantage of a bug or vulnerability in order '
+                              'to cause unintended or unanticipated behavior to occur on computer hardware or '
+                              'software. Rather than developing their own exploits, an adversary may find/modify '
+                              'exploits from online or purchase them from exploit vendors.(Citation: Exploit '
+                              'Database)(Citation: TempertonDarkHotel)(Citation: NationsBuying)\n'
+                              '\n'
+                              'In addition to downloading free exploits from the internet, adversaries may purchase '
+                              'exploits from third-party entities. Third-party entities can include technology '
+                              'companies that specialize in exploit development, criminal marketplaces (including '
+                              'exploit kits), or from individuals.(Citation: PegasusCitizenLab)(Citation: Wired '
+                              'SandCat Oct 2019) In addition to purchasing exploits, adversaries may steal and '
+                              'repurpose exploits from third-party entities (including other adversaries).(Citation: '
+                              'TempertonDarkHotel)\n'
+                              '\n'
+                              'An adversary may monitor exploit provider forums to understand the state of existing, '
+                              'as well as newly discovered, exploits. There is usually a delay between when an exploit '
+                              'is discovered and when it is made public. An adversary may target the systems of those '
+                              'known to conduct exploit research and development in order to gain that knowledge for '
+                              'use during a subsequent operation.\n'
+                              '\n'
+                              'Adversaries may use exploits during various phases of the adversary lifecycle (i.e. '
+                              '[Exploit Public-Facing Application](https://attack.mitre.org/techniques/T1190), '
+                              '[Exploitation for Client Execution](https://attack.mitre.org/techniques/T1203), '
+                              '[Exploitation for Privilege Escalation](https://attack.mitre.org/techniques/T1068), '
+                              '[Exploitation for Defense Evasion](https://attack.mitre.org/techniques/T1211), '
+                              '[Exploitation for Credential Access](https://attack.mitre.org/techniques/T1212), '
+                              '[Exploitation of Remote Services](https://attack.mitre.org/techniques/T1210), and '
+                              '[Application or System Exploitation](https://attack.mitre.org/techniques/T1499/004)).',
+               'name': 'Exploits',
+               'platforms': ['PRE']},
+ 'T1588.006': {'attack_id': 'T1588.006',
+               'categories': ['resource-development'],
+               'description': 'Before compromising a victim, adversaries may acquire information about vulnerabilities '
+                              'that can be used during targeting. A vulnerability is a weakness in computer hardware '
+                              'or software that can, potentially, be exploited by an adversary to cause unintended or '
+                              'unanticipated behavior to occur. Adversaries may find vulnerability information by '
+                              'searching open databases or gaining access to closed vulnerability databases.(Citation: '
+                              'National Vulnerability Database)\n'
+                              '\n'
+                              'An adversary may monitor vulnerability disclosures/databases to understand the state of '
+                              'existing, as well as newly discovered, vulnerabilities. There is usually a delay '
+                              'between when a vulnerability is discovered and when it is made public. An adversary may '
+                              'target the systems of those known to conduct vulnerability research (including '
+                              'commercial vendors). Knowledge of a vulnerability may cause an adversary to search for '
+                              'an existing exploit (i.e. [Exploits](https://attack.mitre.org/techniques/T1588/005)) or '
+                              'to attempt to develop one themselves (i.e. '
+                              '[Exploits](https://attack.mitre.org/techniques/T1587/004)).',
+               'name': 'Vulnerabilities',
+               'platforms': ['PRE']},
+ 'T1589': {'attack_id': 'T1589',
+           'categories': ['reconnaissance'],
+           'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                          'identity that can be used during targeting. Information about identities may include a '
+                          'variety of details, including personal data (ex: employee names, email addresses, etc.) as '
+                          'well as sensitive details such as credentials.\n'
+                          '\n'
+                          'Adversaries may gather this information in various ways, such as direct elicitation via '
+                          '[Phishing for Information](https://attack.mitre.org/techniques/T1598). Information about '
+                          'victims may also be exposed to adversaries via online or other accessible data sets (ex: '
+                          '[Social Media](https://attack.mitre.org/techniques/T1593/001) or [Search Victim-Owned '
+                          'Websites](https://attack.mitre.org/techniques/T1594)).(Citation: OPM Leak)(Citation: '
+                          'Register Deloitte)(Citation: Register Uber)(Citation: Detectify Slack Tokens)(Citation: '
+                          'Forbes GitHub Creds)(Citation: GitHub truffleHog)(Citation: GitHub Gitrob)(Citation: CNET '
+                          'Leaks) Gathering this information may reveal opportunities for other forms of '
+                          'reconnaissance (ex: [Search Open '
+                          'Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Phishing for '
+                          'Information](https://attack.mitre.org/techniques/T1598)), establishing operational '
+                          'resources (ex: [Compromise Accounts](https://attack.mitre.org/techniques/T1586)), and/or '
+                          'initial access (ex: [Phishing](https://attack.mitre.org/techniques/T1566) or [Valid '
+                          'Accounts](https://attack.mitre.org/techniques/T1078)).',
+           'name': 'Gather Victim Identity Information',
+           'platforms': ['PRE']},
+ 'T1589.001': {'attack_id': 'T1589.001',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may gather credentials that can be used '
+                              'during targeting. Account credentials gathered by adversaries may be those directly '
+                              'associated with the target victim organization or attempt to take advantage of the '
+                              'tendency for users to use the same passwords across personal and business accounts.\n'
+                              '\n'
+                              'Adversaries may gather credentials from potential victims in various ways, such as '
+                              'direct elicitation via [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598). Adversaries may also '
+                              'compromise sites then include malicious content designed to collect website '
+                              'authentication cookies from visitors.(Citation: ATT ScanBox) Credential information may '
+                              'also be exposed to adversaries via leaks to online or other accessible data sets (ex: '
+                              '[Search Engines](https://attack.mitre.org/techniques/T1593/002), breach dumps, code '
+                              'repositories, etc.).(Citation: Register Deloitte)(Citation: Register Uber)(Citation: '
+                              'Detectify Slack Tokens)(Citation: Forbes GitHub Creds)(Citation: GitHub '
+                              'truffleHog)(Citation: GitHub Gitrob)(Citation: CNET Leaks) Adversaries may also '
+                              'purchase credentials from dark web or other black-markets. Gathering this information '
+                              'may reveal opportunities for other forms of reconnaissance (ex: [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598)), establishing operational '
+                              'resources (ex: [Compromise Accounts](https://attack.mitre.org/techniques/T1586)), '
+                              'and/or initial access (ex: [External Remote '
+                              'Services](https://attack.mitre.org/techniques/T1133) or [Valid '
+                              'Accounts](https://attack.mitre.org/techniques/T1078)).',
+               'name': 'Credentials',
+               'platforms': ['PRE']},
+ 'T1589.002': {'attack_id': 'T1589.002',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may gather email addresses that can be used '
+                              'during targeting. Even if internal instances exist, organizations may have '
+                              'public-facing email infrastructure and addresses for employees.\n'
+                              '\n'
+                              'Adversaries may easily gather email addresses, since they may be readily available and '
+                              'exposed via online or other accessible data sets (ex: [Social '
+                              'Media](https://attack.mitre.org/techniques/T1593/001) or [Search Victim-Owned '
+                              'Websites](https://attack.mitre.org/techniques/T1594)).(Citation: HackersArise '
+                              'Email)(Citation: CNET Leaks) Gathering this information may reveal opportunities for '
+                              'other forms of reconnaissance (ex: [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598)), establishing operational '
+                              'resources (ex: [Email Accounts](https://attack.mitre.org/techniques/T1586/002)), and/or '
+                              'initial access (ex: [Phishing](https://attack.mitre.org/techniques/T1566)).',
+               'name': 'Email Addresses',
+               'platforms': ['PRE']},
+ 'T1589.003': {'attack_id': 'T1589.003',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may gather employee names that can be used '
+                              'during targeting. Employee names be used to derive email addresses as well as to help '
+                              'guide other reconnaissance efforts and/or craft more-believable lures.\n'
+                              '\n'
+                              'Adversaries may easily gather employee names, since they may be readily available and '
+                              'exposed via online or other accessible data sets (ex: [Social '
+                              'Media](https://attack.mitre.org/techniques/T1593/001) or [Search Victim-Owned '
+                              'Websites](https://attack.mitre.org/techniques/T1594)).(Citation: OPM Leak) Gathering '
+                              'this information may reveal opportunities for other forms of reconnaissance (ex: '
+                              '[Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Phishing '
+                              'for Information](https://attack.mitre.org/techniques/T1598)), establishing operational '
+                              'resources (ex: [Compromise Accounts](https://attack.mitre.org/techniques/T1586)), '
+                              'and/or initial access (ex: [Phishing](https://attack.mitre.org/techniques/T1566) or '
+                              '[Valid Accounts](https://attack.mitre.org/techniques/T1078)).',
+               'name': 'Employee Names',
+               'platforms': ['PRE']},
+ 'T1590': {'attack_id': 'T1590',
+           'categories': ['reconnaissance'],
+           'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                          'networks that can be used during targeting. Information about networks may include a '
+                          'variety of details, including administrative data (ex: IP ranges, domain names, etc.) as '
+                          'well as specifics regarding its topology and operations.\n'
+                          '\n'
+                          'Adversaries may gather this information in various ways, such as direct collection actions '
+                          'via [Active Scanning](https://attack.mitre.org/techniques/T1595) or [Phishing for '
+                          'Information](https://attack.mitre.org/techniques/T1598). Information about networks may '
+                          'also be exposed to adversaries via online or other accessible data sets (ex: [Search Open '
+                          'Technical Databases](https://attack.mitre.org/techniques/T1596)).(Citation: '
+                          'WHOIS)(Citation: DNS Dumpster)(Citation: Circl Passive DNS) Gathering this information may '
+                          'reveal opportunities for other forms of reconnaissance (ex: [Active '
+                          'Scanning](https://attack.mitre.org/techniques/T1595) or [Search Open '
+                          'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                          'resources (ex: [Acquire Infrastructure](https://attack.mitre.org/techniques/T1583) or '
+                          '[Compromise Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial '
+                          'access (ex: [Trusted Relationship](https://attack.mitre.org/techniques/T1199)).',
+           'name': 'Gather Victim Network Information',
+           'platforms': ['PRE']},
+ 'T1590.001': {'attack_id': 'T1590.001',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'network domain(s) that can be used during targeting. Information about domains and '
+                              'their properties may include a variety of details, including what domain(s) the victim '
+                              'owns as well as administrative data (ex: name, registrar, etc.) and more directly '
+                              'actionable information such as contacts (email addresses and phone numbers), business '
+                              'addresses, and name servers.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct collection '
+                              'actions via [Active Scanning](https://attack.mitre.org/techniques/T1595) or [Phishing '
+                              'for Information](https://attack.mitre.org/techniques/T1598). Information about victim '
+                              'domains and their properties may also be exposed to adversaries via online or other '
+                              'accessible data sets (ex: '
+                              '[WHOIS](https://attack.mitre.org/techniques/T1596/002)).(Citation: WHOIS)(Citation: DNS '
+                              'Dumpster)(Citation: Circl Passive DNS) Gathering this information may reveal '
+                              'opportunities for other forms of reconnaissance (ex: [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596), [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593), or [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598)), establishing operational '
+                              'resources (ex: [Acquire Infrastructure](https://attack.mitre.org/techniques/T1583) or '
+                              '[Compromise Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial '
+                              'access (ex: [Phishing](https://attack.mitre.org/techniques/T1566)).',
+               'name': 'Domain Properties',
+               'platforms': ['PRE']},
+ 'T1590.002': {'attack_id': 'T1590.002',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's DNS "
+                              'that can be used during targeting. DNS information may include a variety of details, '
+                              'including registered name servers as well as records that outline addressing for a '
+                              'target’s subdomains, mail servers, and other hosts.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as querying or otherwise '
+                              'collecting details via [DNS/Passive '
+                              'DNS](https://attack.mitre.org/techniques/T1596/001). DNS information may also be '
+                              'exposed to adversaries via online or other accessible data sets (ex: [Search Open '
+                              'Technical Databases](https://attack.mitre.org/techniques/T1596)).(Citation: DNS '
+                              'Dumpster)(Citation: Circl Passive DNS) Gathering this information may reveal '
+                              'opportunities for other forms of reconnaissance (ex: [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596), [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593), or [Active '
+                              'Scanning](https://attack.mitre.org/techniques/T1595)), establishing operational '
+                              'resources (ex: [Acquire Infrastructure](https://attack.mitre.org/techniques/T1583) or '
+                              '[Compromise Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial '
+                              'access (ex: [External Remote Services](https://attack.mitre.org/techniques/T1133)).',
+               'name': 'DNS',
+               'platforms': ['PRE']},
+ 'T1590.003': {'attack_id': 'T1590.003',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'network trust dependencies that can be used during targeting. Information about network '
+                              'trusts may include a variety of details, including second or third-party '
+                              'organizations/domains (ex: managed service providers, contractors, etc.) that have '
+                              'connected (and potentially elevated) network access.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct elicitation via '
+                              '[Phishing for Information](https://attack.mitre.org/techniques/T1598). Information '
+                              'about network trusts may also be exposed to adversaries via online or other accessible '
+                              'data sets (ex: [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596)).(Citation: Pentesting AD '
+                              'Forests) Gathering this information may reveal opportunities for other forms of '
+                              'reconnaissance (ex: [Active Scanning](https://attack.mitre.org/techniques/T1595) or '
+                              '[Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593)), '
+                              'establishing operational resources (ex: [Acquire '
+                              'Infrastructure](https://attack.mitre.org/techniques/T1583) or [Compromise '
+                              'Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial access (ex: '
+                              '[Trusted Relationship](https://attack.mitre.org/techniques/T1199)).',
+               'name': 'Network Trust Dependencies',
+               'platforms': ['PRE']},
+ 'T1590.004': {'attack_id': 'T1590.004',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'network topology that can be used during targeting. Information about network '
+                              'topologies may include a variety of details, including the physical and/or logical '
+                              'arrangement of both external-facing and internal network environments. This information '
+                              'may also include specifics regarding network devices (gateways, routers, etc.) and '
+                              'other infrastructure.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct collection '
+                              'actions via [Active Scanning](https://attack.mitre.org/techniques/T1595) or [Phishing '
+                              'for Information](https://attack.mitre.org/techniques/T1598). Information about network '
+                              'topologies may also be exposed to adversaries via online or other accessible data sets '
+                              '(ex: [Search Victim-Owned '
+                              'Websites](https://attack.mitre.org/techniques/T1594)).(Citation: DNS Dumpster) '
+                              'Gathering this information may reveal opportunities for other forms of reconnaissance '
+                              '(ex: [Search Open Technical Databases](https://attack.mitre.org/techniques/T1596) or '
+                              '[Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593)), '
+                              'establishing operational resources (ex: [Acquire '
+                              'Infrastructure](https://attack.mitre.org/techniques/T1583) or [Compromise '
+                              'Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial access (ex: '
+                              '[External Remote Services](https://attack.mitre.org/techniques/T1133)).',
+               'name': 'Network Topology',
+               'platforms': ['PRE']},
+ 'T1590.005': {'attack_id': 'T1590.005',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather the victim's IP addresses that can "
+                              'be used during targeting. Public IP addresses may be allocated to organizations by '
+                              'block, or a range of sequential addresses. Information about assigned IP addresses may '
+                              'include a variety of details, such as which IP addresses are in use. IP addresses may '
+                              'also enable an adversary to derive other details about a victim, such as organizational '
+                              'size, physical location(s), Internet service provider, and or where/how their '
+                              'publicly-facing infrastructure is hosted.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct collection '
+                              'actions via [Active Scanning](https://attack.mitre.org/techniques/T1595) or [Phishing '
+                              'for Information](https://attack.mitre.org/techniques/T1598). Information about assigned '
+                              'IP addresses may also be exposed to adversaries via online or other accessible data '
+                              'sets (ex: [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596)).(Citation: WHOIS)(Citation: DNS '
+                              'Dumpster)(Citation: Circl Passive DNS) Gathering this information may reveal '
+                              'opportunities for other forms of reconnaissance (ex: [Active '
+                              'Scanning](https://attack.mitre.org/techniques/T1595) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Acquire Infrastructure](https://attack.mitre.org/techniques/T1583) or '
+                              '[Compromise Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial '
+                              'access (ex: [External Remote Services](https://attack.mitre.org/techniques/T1133)).',
+               'name': 'IP Addresses',
+               'platforms': ['PRE']},
+ 'T1590.006': {'attack_id': 'T1590.006',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'network security appliances that can be used during targeting. Information about '
+                              'network security appliances may include a variety of details, such as the existence and '
+                              'specifics of deployed firewalls, content filters, and proxies/bastion hosts. '
+                              'Adversaries may also target information about victim network-based intrusion detection '
+                              'systems (NIDS) or other appliances related to defensive cybersecurity operations.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct collection '
+                              'actions via [Active Scanning](https://attack.mitre.org/techniques/T1595) or [Phishing '
+                              'for Information](https://attack.mitre.org/techniques/T1598).(Citation: Nmap Firewalls '
+                              'NIDS) Information about network security appliances may also be exposed to adversaries '
+                              'via online or other accessible data sets (ex: [Search Victim-Owned '
+                              'Websites](https://attack.mitre.org/techniques/T1594)). Gathering this information may '
+                              'reveal opportunities for other forms of reconnaissance (ex: [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or '
+                              '[Obtain Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial '
+                              'access (ex: [External Remote Services](https://attack.mitre.org/techniques/T1133)).',
+               'name': 'Network Security Appliances',
+               'platforms': ['PRE']},
+ 'T1591': {'attack_id': 'T1591',
+           'categories': ['reconnaissance'],
+           'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                          'organization that can be used during targeting. Information about an organization may '
+                          'include a variety of details, including the names of divisions/departments, specifics of '
+                          'business operations, as well as the roles and responsibilities of key employees.\n'
+                          '\n'
+                          'Adversaries may gather this information in various ways, such as direct elicitation via '
+                          '[Phishing for Information](https://attack.mitre.org/techniques/T1598). Information about an '
+                          'organization may also be exposed to adversaries via online or other accessible data sets '
+                          '(ex: [Social Media](https://attack.mitre.org/techniques/T1593/001) or [Search Victim-Owned '
+                          'Websites](https://attack.mitre.org/techniques/T1594)).(Citation: ThreatPost Broadvoice '
+                          'Leak)(Citation: DOB Business Lookup) Gathering this information may reveal opportunities '
+                          'for other forms of reconnaissance (ex: [Phishing for '
+                          'Information](https://attack.mitre.org/techniques/T1598) or [Search Open '
+                          'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                          'resources (ex: [Establish Accounts](https://attack.mitre.org/techniques/T1585) or '
+                          '[Compromise Accounts](https://attack.mitre.org/techniques/T1586)), and/or initial access '
+                          '(ex: [Phishing](https://attack.mitre.org/techniques/T1566) or [Trusted '
+                          'Relationship](https://attack.mitre.org/techniques/T1199)).',
+           'name': 'Gather Victim Org Information',
+           'platforms': ['PRE']},
+ 'T1591.001': {'attack_id': 'T1591.001',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather the victim's physical location(s) "
+                              'that can be used during targeting. Information about physical locations of a target '
+                              'organization may include a variety of details, including where key resources and '
+                              'infrastructure are housed. Physical locations may also indicate what legal jurisdiction '
+                              'and/or authorities the victim operates within.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct elicitation via '
+                              '[Phishing for Information](https://attack.mitre.org/techniques/T1598). Physical '
+                              'locations of a target organization may also be exposed to adversaries via online or '
+                              'other accessible data sets (ex: [Search Victim-Owned '
+                              'Websites](https://attack.mitre.org/techniques/T1594) or [Social '
+                              'Media](https://attack.mitre.org/techniques/T1593/001)).(Citation: ThreatPost Broadvoice '
+                              'Leak)(Citation: DOB Business Lookup) Gathering this information may reveal '
+                              'opportunities for other forms of reconnaissance (ex: [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or '
+                              '[Obtain Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial '
+                              'access (ex: [Phishing](https://attack.mitre.org/techniques/T1566) or [Hardware '
+                              'Additions](https://attack.mitre.org/techniques/T1200)).',
+               'name': 'Determine Physical Locations',
+               'platforms': ['PRE']},
+ 'T1591.002': {'attack_id': 'T1591.002',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'business relationships that can be used during targeting. Information about an '
+                              'organization’s business relationships may include a variety of details, including '
+                              'second or third-party organizations/domains (ex: managed service providers, '
+                              'contractors, etc.) that have connected (and potentially elevated) network access. This '
+                              'information may also reveal supply chains and shipment paths for the victim’s hardware '
+                              'and software resources.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct elicitation via '
+                              '[Phishing for Information](https://attack.mitre.org/techniques/T1598). Information '
+                              'about business relationships may also be exposed to adversaries via online or other '
+                              'accessible data sets (ex: [Social Media](https://attack.mitre.org/techniques/T1593/001) '
+                              'or [Search Victim-Owned '
+                              'Websites](https://attack.mitre.org/techniques/T1594)).(Citation: ThreatPost Broadvoice '
+                              'Leak) Gathering this information may reveal opportunities for other forms of '
+                              'reconnaissance (ex: [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Establish Accounts](https://attack.mitre.org/techniques/T1585) or '
+                              '[Compromise Accounts](https://attack.mitre.org/techniques/T1586)), and/or initial '
+                              'access (ex: [Supply Chain Compromise](https://attack.mitre.org/techniques/T1195), '
+                              '[Drive-by Compromise](https://attack.mitre.org/techniques/T1189), or [Trusted '
+                              'Relationship](https://attack.mitre.org/techniques/T1199)).',
+               'name': 'Business Relationships',
+               'platforms': ['PRE']},
+ 'T1591.003': {'attack_id': 'T1591.003',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'business tempo that can be used during targeting. Information about an organization’s '
+                              'business tempo may include a variety of details, including operational hours/days of '
+                              'the week. This information may also reveal times/dates of purchases and shipments of '
+                              'the victim’s hardware and software resources.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct elicitation via '
+                              '[Phishing for Information](https://attack.mitre.org/techniques/T1598). Information '
+                              'about business tempo may also be exposed to adversaries via online or other accessible '
+                              'data sets (ex: [Social Media](https://attack.mitre.org/techniques/T1593/001) or [Search '
+                              'Victim-Owned Websites](https://attack.mitre.org/techniques/T1594)).(Citation: '
+                              'ThreatPost Broadvoice Leak) Gathering this information may reveal opportunities for '
+                              'other forms of reconnaissance (ex: [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Establish Accounts](https://attack.mitre.org/techniques/T1585) or '
+                              '[Compromise Accounts](https://attack.mitre.org/techniques/T1586)), and/or initial '
+                              'access (ex: [Supply Chain Compromise](https://attack.mitre.org/techniques/T1195) or '
+                              '[Trusted Relationship](https://attack.mitre.org/techniques/T1199))',
+               'name': 'Identify Business Tempo',
+               'platforms': ['PRE']},
+ 'T1591.004': {'attack_id': 'T1591.004',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may gather information about identities and '
+                              'roles within the victim organization that can be used during targeting. Information '
+                              'about business roles may reveal a variety of targetable details, including identifiable '
+                              'information for key personnel as well as what data/resources they have access to.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct elicitation via '
+                              '[Phishing for Information](https://attack.mitre.org/techniques/T1598). Information '
+                              'about business roles may also be exposed to adversaries via online or other accessible '
+                              'data sets (ex: [Social Media](https://attack.mitre.org/techniques/T1593/001) or [Search '
+                              'Victim-Owned Websites](https://attack.mitre.org/techniques/T1594)).(Citation: '
+                              'ThreatPost Broadvoice Leak) Gathering this information may reveal opportunities for '
+                              'other forms of reconnaissance (ex: [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Establish Accounts](https://attack.mitre.org/techniques/T1585) or '
+                              '[Compromise Accounts](https://attack.mitre.org/techniques/T1586)), and/or initial '
+                              'access (ex: [Phishing](https://attack.mitre.org/techniques/T1566)).',
+               'name': 'Identify Roles',
+               'platforms': ['PRE']},
+ 'T1592': {'attack_id': 'T1592',
+           'categories': ['reconnaissance'],
+           'description': "Before compromising a victim, adversaries may gather information about the victim's hosts "
+                          'that can be used during targeting. Information about hosts may include a variety of '
+                          'details, including administrative data (ex: name, assigned IP, functionality, etc.) as well '
+                          'as specifics regarding its configuration (ex: operating system, language, etc.).\n'
+                          '\n'
+                          'Adversaries may gather this information in various ways, such as direct collection actions '
+                          'via [Active Scanning](https://attack.mitre.org/techniques/T1595) or [Phishing for '
+                          'Information](https://attack.mitre.org/techniques/T1598). Adversaries may also compromise '
+                          'sites then include malicious content designed to collect host information from '
+                          'visitors.(Citation: ATT ScanBox) Information about hosts may also be exposed to adversaries '
+                          'via online or other accessible data sets (ex: [Social '
+                          'Media](https://attack.mitre.org/techniques/T1593/001) or [Search Victim-Owned '
+                          'Websites](https://attack.mitre.org/techniques/T1594)). Gathering this information may '
+                          'reveal opportunities for other forms of reconnaissance (ex: [Search Open '
+                          'Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search Open Technical '
+                          'Databases](https://attack.mitre.org/techniques/T1596)), establishing operational resources '
+                          '(ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or [Obtain '
+                          'Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial access (ex: '
+                          '[Supply Chain Compromise](https://attack.mitre.org/techniques/T1195) or [External Remote '
+                          'Services](https://attack.mitre.org/techniques/T1133)).',
+           'name': 'Gather Victim Host Information',
+           'platforms': ['PRE']},
+ 'T1592.001': {'attack_id': 'T1592.001',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'host hardware that can be used during targeting. Information about hardware '
+                              'infrastructure may include a variety of details such as types and versions on specific '
+                              'hosts, as well as the presence of additional components that might be indicative of '
+                              'added defensive protections (ex: card/biometric readers, dedicated encryption hardware, '
+                              'etc.).\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct collection '
+                              'actions via [Active Scanning](https://attack.mitre.org/techniques/T1595) (ex: '
+                              'hostnames, server banners, user agent strings) or [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598). Adversaries may also '
+                              'compromise sites then include malicious content designed to collect host information '
+                              'from visitors.(Citation: ATT ScanBox) Information about the hardware infrastructure may '
+                              'also be exposed to adversaries via online or other accessible data sets (ex: job '
+                              'postings, network maps, assessment reports, resumes, or purchase invoices). Gathering '
+                              'this information may reveal opportunities for other forms of reconnaissance (ex: '
+                              '[Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search '
+                              'Open Technical Databases](https://attack.mitre.org/techniques/T1596)), establishing '
+                              'operational resources (ex: [Develop '
+                              'Capabilities](https://attack.mitre.org/techniques/T1587) or [Obtain '
+                              'Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial access (ex: '
+                              '[Compromise Hardware Supply Chain](https://attack.mitre.org/techniques/T1195/003) or '
+                              '[Hardware Additions](https://attack.mitre.org/techniques/T1200)).',
+               'name': 'Hardware',
+               'platforms': ['PRE']},
+ 'T1592.002': {'attack_id': 'T1592.002',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'host software that can be used during targeting. Information about installed software '
+                              'may include a variety of details such as types and versions on specific hosts, as well '
+                              'as the presence of additional components that might be indicative of added defensive '
+                              'protections (ex: antivirus, SIEMs, etc.).\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct collection '
+                              'actions via [Active Scanning](https://attack.mitre.org/techniques/T1595) (ex: listening '
+                              'ports, server banners, user agent strings) or [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598). Adversaries may also '
+                              'compromise sites then include malicious content designed to collect host information '
+                              'from visitors.(Citation: ATT ScanBox) Information about the installed software may also '
+                              'be exposed to adversaries via online or other accessible data sets (ex: job postings, '
+                              'network maps, assessment reports, resumes, or purchase invoices). Gathering this '
+                              'information may reveal opportunities for other forms of reconnaissance (ex: [Search '
+                              'Open Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search Open '
+                              'Technical Databases](https://attack.mitre.org/techniques/T1596)), establishing '
+                              'operational resources (ex: [Develop '
+                              'Capabilities](https://attack.mitre.org/techniques/T1587) or [Obtain '
+                              'Capabilities](https://attack.mitre.org/techniques/T1588)), and/or for initial access '
+                              '(ex: [Supply Chain Compromise](https://attack.mitre.org/techniques/T1195) or [External '
+                              'Remote Services](https://attack.mitre.org/techniques/T1133)).',
+               'name': 'Software',
+               'platforms': ['PRE']},
+ 'T1592.003': {'attack_id': 'T1592.003',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'host firmware that can be used during targeting. Information about host firmware may '
+                              'include a variety of details such as type and versions on specific hosts, which may be '
+                              'used to infer more information about hosts in the environment (ex: configuration, '
+                              'purpose, age/patch level, etc.).\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct elicitation via '
+                              '[Phishing for Information](https://attack.mitre.org/techniques/T1598). Information '
+                              'about host firmware may only be exposed to adversaries via online or other accessible '
+                              'data sets (ex: job postings, network maps, assessment reports, resumes, or purchase '
+                              'invoices).(Citation: ArsTechnica Intel) Gathering this information may reveal '
+                              'opportunities for other forms of reconnaissance (ex: [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596)), establishing operational '
+                              'resources (ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or '
+                              '[Obtain Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial '
+                              'access (ex: [Supply Chain Compromise](https://attack.mitre.org/techniques/T1195) or '
+                              '[Exploit Public-Facing Application](https://attack.mitre.org/techniques/T1190)).',
+               'name': 'Firmware',
+               'platforms': ['PRE']},
+ 'T1592.004': {'attack_id': 'T1592.004',
+               'categories': ['reconnaissance'],
+               'description': "Before compromising a victim, adversaries may gather information about the victim's "
+                              'client configurations that can be used during targeting. Information about client '
+                              'configurations may include a variety of details and settings, including operating '
+                              'system/version, virtualization, architecture (ex: 32 or 64 bit), language, and/or time '
+                              'zone.\n'
+                              '\n'
+                              'Adversaries may gather this information in various ways, such as direct collection '
+                              'actions via [Active Scanning](https://attack.mitre.org/techniques/T1595) (ex: listening '
+                              'ports, server banners, user agent strings) or [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598). Adversaries may also '
+                              'compromise sites then include malicious content designed to collect host information '
+                              'from visitors.(Citation: ATT ScanBox) Information about the client configurations may '
+                              'also be exposed to adversaries via online or other accessible data sets (ex: job '
+                              'postings, network maps, assessment reports, resumes, or purchase invoices). Gathering '
+                              'this information may reveal opportunities for other forms of reconnaissance (ex: '
+                              '[Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search '
+                              'Open Technical Databases](https://attack.mitre.org/techniques/T1596)), establishing '
+                              'operational resources (ex: [Develop '
+                              'Capabilities](https://attack.mitre.org/techniques/T1587) or [Obtain '
+                              'Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial access (ex: '
+                              '[Supply Chain Compromise](https://attack.mitre.org/techniques/T1195) or [External '
+                              'Remote Services](https://attack.mitre.org/techniques/T1133)).',
+               'name': 'Client Configurations',
+               'platforms': ['PRE']},
+ 'T1593': {'attack_id': 'T1593',
+           'categories': ['reconnaissance'],
+           'description': 'Before compromising a victim, adversaries may search freely available websites and/or '
+                          'domains for information about victims that can be used during targeting. Information about '
+                          'victims may be available in various online sites, such as social media, new sites, or those '
+                          'hosting information about business operations such as hiring or requested/rewarded '
+                          'contracts.(Citation: Cyware Social Media)(Citation: SecurityTrails Google '
+                          'Hacking)(Citation: ExploitDB GoogleHacking)\n'
+                          '\n'
+                          'Adversaries may search in different online sites depending on what information they seek to '
+                          'gather. Information from these sources may reveal opportunities for other forms of '
+                          'reconnaissance (ex: [Phishing for Information](https://attack.mitre.org/techniques/T1598) '
+                          'or [Search Open Technical Databases](https://attack.mitre.org/techniques/T1596)), '
+                          'establishing operational resources (ex: [Establish '
+                          'Accounts](https://attack.mitre.org/techniques/T1585) or [Compromise '
+                          'Accounts](https://attack.mitre.org/techniques/T1586)), and/or initial access (ex: [External '
+                          'Remote Services](https://attack.mitre.org/techniques/T1133) or '
+                          '[Phishing](https://attack.mitre.org/techniques/T1566)).',
+           'name': 'Search Open Websites/Domains',
+           'platforms': ['PRE']},
+ 'T1593.001': {'attack_id': 'T1593.001',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may search social media for information about '
+                              'victims that can be used during targeting. Social media sites may contain various '
+                              'information about a victim organization, such as business announcements as well as '
+                              'information about the roles, locations, and interests of staff.\n'
+                              '\n'
+                              'Adversaries may search in different social media sites depending on what information '
+                              'they seek to gather. Threat actors may passively harvest data from these sites, as well '
+                              'as use information gathered to create fake profiles/groups to elicit victim’s into '
+                              'revealing specific information (i.e. [Spearphishing '
+                              'Service](https://attack.mitre.org/techniques/T1598/001)).(Citation: Cyware Social '
+                              'Media) Information from these sources may reveal opportunities for other forms of '
+                              'reconnaissance (ex: [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596)), establishing operational '
+                              'resources (ex: [Establish Accounts](https://attack.mitre.org/techniques/T1585) or '
+                              '[Compromise Accounts](https://attack.mitre.org/techniques/T1586)), and/or initial '
+                              'access (ex: [Spearphishing via '
+                              'Service](https://attack.mitre.org/techniques/T1566/003)).',
+               'name': 'Social Media',
+               'platforms': ['PRE']},
+ 'T1593.002': {'attack_id': 'T1593.002',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may use search engines to collect information '
+                              'about victims that can be used during targeting. Search engine services typical crawl '
+                              'online sites to index context and may provide users with specialized syntax to search '
+                              'for specific keywords or specific types of content (i.e. filetypes).(Citation: '
+                              'SecurityTrails Google Hacking)(Citation: ExploitDB GoogleHacking)\n'
+                              '\n'
+                              'Adversaries may craft various search engine queries depending on what information they '
+                              'seek to gather. Threat actors may use search engines to harvest general information '
+                              'about victims, as well as use specialized queries to look for spillages/leaks of '
+                              'sensitive information such as network details or credentials. Information from these '
+                              'sources may reveal opportunities for other forms of reconnaissance (ex: [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596)), establishing operational '
+                              'resources (ex: [Establish Accounts](https://attack.mitre.org/techniques/T1585) or '
+                              '[Compromise Accounts](https://attack.mitre.org/techniques/T1586)), and/or initial '
+                              'access (ex: [Valid Accounts](https://attack.mitre.org/techniques/T1078) or '
+                              '[Phishing](https://attack.mitre.org/techniques/T1566)).',
+               'name': 'Search Engines',
+               'platforms': ['PRE']},
+ 'T1594': {'attack_id': 'T1594',
+           'categories': ['reconnaissance'],
+           'description': 'Before compromising a victim, adversaries may search websites owned by the victim for '
+                          'information that can be used during targeting. Victim-owned websites may contain a variety '
+                          'of details, including names of departments/divisions, physical locations, and data about '
+                          'key employees such as names, roles, and contact info (ex: [Email '
+                          'Addresses](https://attack.mitre.org/techniques/T1589/002)). These sites may also have '
+                          'details highlighting business operations and relationships.(Citation: Comparitech Leak)\n'
+                          '\n'
+                          'Adversaries may search victim-owned websites to gather actionable information. Information '
+                          'from these sources may reveal opportunities for other forms of reconnaissance (ex: '
+                          '[Phishing for Information](https://attack.mitre.org/techniques/T1598) or [Search Open '
+                          'Technical Databases](https://attack.mitre.org/techniques/T1596)), establishing operational '
+                          'resources (ex: [Establish Accounts](https://attack.mitre.org/techniques/T1585) or '
+                          '[Compromise Accounts](https://attack.mitre.org/techniques/T1586)), and/or initial access '
+                          '(ex: [Trusted Relationship](https://attack.mitre.org/techniques/T1199) or '
+                          '[Phishing](https://attack.mitre.org/techniques/T1566)).',
+           'name': 'Search Victim-Owned Websites',
+           'platforms': ['PRE']},
+ 'T1595': {'attack_id': 'T1595',
+           'categories': ['reconnaissance'],
+           'description': 'Before compromising a victim, adversaries may execute active reconnaissance scans to gather '
+                          'information that can be used during targeting. Active scans are those where the adversary '
+                          'probes victim infrastructure via network traffic, as opposed to other forms of '
+                          'reconnaissance that do not involve direct interaction.\n'
+                          '\n'
+                          'Adversaries may perform different forms of active scanning depending on what information '
+                          'they seek to gather. These scans can also be performed in various ways, including using '
+                          'native features of network protocols such as ICMP.(Citation: Botnet Scan)(Citation: OWASP '
+                          'Fingerprinting) Information from these scans may reveal opportunities for other forms of '
+                          'reconnaissance (ex: [Search Open '
+                          'Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search Open Technical '
+                          'Databases](https://attack.mitre.org/techniques/T1596)), establishing operational resources '
+                          '(ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or [Obtain '
+                          'Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial access (ex: '
+                          '[External Remote Services](https://attack.mitre.org/techniques/T1133) or [Exploit '
+                          'Public-Facing Application](https://attack.mitre.org/techniques/T1190)).',
+           'name': 'Active Scanning',
+           'platforms': ['PRE']},
+ 'T1595.001': {'attack_id': 'T1595.001',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may scan victim IP blocks to gather '
+                              'information that can be used during targeting. Public IP addresses may be allocated to '
+                              'organizations by block, or a range of sequential addresses.\n'
+                              '\n'
+                              'Adversaries may scan IP blocks in order to [Gather Victim Network '
+                              'Information](https://attack.mitre.org/techniques/T1590), such as which IP addresses are '
+                              'actively in use as well as more detailed information about hosts assigned these '
+                              'addresses. Scans may range from simple pings (ICMP requests and responses) to more '
+                              'nuanced scans that may reveal host software/versions via server banners or other '
+                              'network artifacts.(Citation: Botnet Scan) Information from these scans may reveal '
+                              'opportunities for other forms of reconnaissance (ex: [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596)), establishing operational '
+                              'resources (ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or '
+                              '[Obtain Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial '
+                              'access (ex: [External Remote Services](https://attack.mitre.org/techniques/T1133)).',
+               'name': 'Scanning IP Blocks',
+               'platforms': ['PRE']},
+ 'T1595.002': {'attack_id': 'T1595.002',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may scan victims for vulnerabilities that can '
+                              'be used during targeting. Vulnerability scans typically check if the configuration of a '
+                              'target host/application (ex: software and version) potentially aligns with the target '
+                              'of a specific exploit the adversary may seek to use.\n'
+                              '\n'
+                              'These scans may also include more broad attempts to [Gather Victim Host '
+                              'Information](https://attack.mitre.org/techniques/T1592) that can be used to identify '
+                              'more commonly known, exploitable vulnerabilities. Vulnerability scans typically harvest '
+                              'running software and version numbers via server banners, listening ports, or other '
+                              'network artifacts.(Citation: OWASP Vuln Scanning) Information from these scans may '
+                              'reveal opportunities for other forms of reconnaissance (ex: [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search Open Technical '
+                              'Databases](https://attack.mitre.org/techniques/T1596)), establishing operational '
+                              'resources (ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or '
+                              '[Obtain Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial '
+                              'access (ex: [Exploit Public-Facing '
+                              'Application](https://attack.mitre.org/techniques/T1190)).',
+               'name': 'Vulnerability Scanning',
+               'platforms': ['PRE']},
+ 'T1596': {'attack_id': 'T1596',
+           'categories': ['reconnaissance'],
+           'description': 'Before compromising a victim, adversaries may search freely available technical databases '
+                          'for information about victims that can be used during targeting. Information about victims '
+                          'may be available in online databases and repositories, such as registrations of '
+                          'domains/certificates as well as public collections of network data/artifacts gathered from '
+                          'traffic and/or scans.(Citation: WHOIS)(Citation: DNS Dumpster)(Citation: Circl Passive '
+                          'DNS)(Citation: Medium SSL Cert)(Citation: SSLShopper Lookup)(Citation: DigitalShadows '
+                          'CDN)(Citation: Shodan)\n'
+                          '\n'
+                          'Adversaries may search in different open databases depending on what information they seek '
+                          'to gather. Information from these sources may reveal opportunities for other forms of '
+                          'reconnaissance (ex: [Phishing for Information](https://attack.mitre.org/techniques/T1598) '
+                          'or [Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing '
+                          'operational resources (ex: [Acquire '
+                          'Infrastructure](https://attack.mitre.org/techniques/T1583) or [Compromise '
+                          'Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial access (ex: '
+                          '[External Remote Services](https://attack.mitre.org/techniques/T1133) or [Trusted '
+                          'Relationship](https://attack.mitre.org/techniques/T1199)).',
+           'name': 'Search Open Technical Databases',
+           'platforms': ['PRE']},
+ 'T1596.001': {'attack_id': 'T1596.001',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may search DNS data for information about '
+                              'victims that can be used during targeting. DNS information may include a variety of '
+                              'details, including registered name servers as well as records that outline addressing '
+                              'for a target’s subdomains, mail servers, and other hosts.\n'
+                              '\n'
+                              'Adversaries may search DNS data to gather actionable information. Threat actors can '
+                              'query nameservers for a target organization directly, or search through centralized '
+                              'repositories of logged DNS query responses (known as passive DNS).(Citation: DNS '
+                              'Dumpster)(Citation: Circl Passive DNS) Adversaries may also seek and target DNS '
+                              'misconfigurations/leaks that reveal information about internal networks. Information '
+                              'from these sources may reveal opportunities for other forms of reconnaissance (ex: '
+                              '[Search Victim-Owned Websites](https://attack.mitre.org/techniques/T1594) or [Search '
+                              'Open Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing '
+                              'operational resources (ex: [Acquire '
+                              'Infrastructure](https://attack.mitre.org/techniques/T1583) or [Compromise '
+                              'Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial access (ex: '
+                              '[External Remote Services](https://attack.mitre.org/techniques/T1133) or [Trusted '
+                              'Relationship](https://attack.mitre.org/techniques/T1199)).',
+               'name': 'DNS/Passive DNS',
+               'platforms': ['PRE']},
+ 'T1596.002': {'attack_id': 'T1596.002',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may search public WHOIS data for information '
+                              'about victims that can be used during targeting. WHOIS data is stored by regional '
+                              'Internet registries (RIR) responsible for allocating and assigning Internet resources '
+                              'such as domain names. Anyone can query WHOIS servers for information about a registered '
+                              'domain, such as assigned IP blocks, contact information, and DNS nameservers.(Citation: '
+                              'WHOIS)\n'
+                              '\n'
+                              'Adversaries may search WHOIS data to gather actionable information. Threat actors can '
+                              'use online resources or command-line utilities to pillage through WHOIS data for '
+                              'information about potential victims. Information from these sources may reveal '
+                              'opportunities for other forms of reconnaissance (ex: [Active '
+                              'Scanning](https://attack.mitre.org/techniques/T1595) or [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598)), establishing operational '
+                              'resources (ex: [Acquire Infrastructure](https://attack.mitre.org/techniques/T1583) or '
+                              '[Compromise Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial '
+                              'access (ex: [External Remote Services](https://attack.mitre.org/techniques/T1133) or '
+                              '[Trusted Relationship](https://attack.mitre.org/techniques/T1199)).',
+               'name': 'WHOIS',
+               'platforms': ['PRE']},
+ 'T1596.003': {'attack_id': 'T1596.003',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may search public digital certificate data '
+                              'for information about victims that can be used during targeting. Digital certificates '
+                              'are issued by a certificate authority (CA) in order to cryptographically verify the '
+                              'origin of signed content. These certificates, such as those used for encrypted web '
+                              'traffic (HTTPS SSL/TLS communications), contain information about the registered '
+                              'organization such as name and location.\n'
+                              '\n'
+                              'Adversaries may search digital certificate data to gather actionable information. '
+                              'Threat actors can use online resources and lookup tools to harvest information about '
+                              'certificates.(Citation: SSLShopper Lookup) Digital certificate data may also be '
+                              'available from artifacts signed by the organization (ex: certificates used from '
+                              'encrypted web traffic are served with content).(Citation: Medium SSL Cert) Information '
+                              'from these sources may reveal opportunities for other forms of reconnaissance (ex: '
+                              '[Active Scanning](https://attack.mitre.org/techniques/T1595) or [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598)), establishing operational '
+                              'resources (ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or '
+                              '[Obtain Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial '
+                              'access (ex: [External Remote Services](https://attack.mitre.org/techniques/T1133) or '
+                              '[Trusted Relationship](https://attack.mitre.org/techniques/T1199)).',
+               'name': 'Digital Certificates',
+               'platforms': ['PRE']},
+ 'T1596.004': {'attack_id': 'T1596.004',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may search content delivery network (CDN) '
+                              'data about victims that can be used during targeting. CDNs allow an organization to '
+                              'host content from a distributed, load balanced array of servers. CDNs may also allow '
+                              'organizations to customize content delivery based on the requestor’s geographical '
+                              'region.\n'
+                              '\n'
+                              'Adversaries may search CDN data to gather actionable information. Threat actors can use '
+                              'online resources and lookup tools to harvest information about content servers within a '
+                              'CDN. Adversaries may also seek and target CDN misconfigurations that leak sensitive '
+                              'information not intended to be hosted and/or do not have the same protection mechanisms '
+                              '(ex: login portals) as the content hosted on the organization’s website.(Citation: '
+                              'DigitalShadows CDN) Information from these sources may reveal opportunities for other '
+                              'forms of reconnaissance (ex: [Active '
+                              'Scanning](https://attack.mitre.org/techniques/T1595) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Acquire Infrastructure](https://attack.mitre.org/techniques/T1583) or '
+                              '[Compromise Infrastructure](https://attack.mitre.org/techniques/T1584)), and/or initial '
+                              'access (ex: [Drive-by Compromise](https://attack.mitre.org/techniques/T1189)).',
+               'name': 'CDNs',
+               'platforms': ['PRE']},
+ 'T1596.005': {'attack_id': 'T1596.005',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may search within public scan databases for '
+                              'information about victims that can be used during targeting. Various online services '
+                              'continuously publish the results of Internet scans/surveys, often harvesting '
+                              'information such as active IP addresses, hostnames, open ports, certificates, and even '
+                              'server banners.(Citation: Shodan)\n'
+                              '\n'
+                              'Adversaries may search scan databases to gather actionable information. Threat actors '
+                              'can use online resources and lookup tools to harvest information from these services. '
+                              'Adversaries may seek information about their already identified targets, or use these '
+                              'datasets to discover opportunities for successful breaches. Information from these '
+                              'sources may reveal opportunities for other forms of reconnaissance (ex: [Active '
+                              'Scanning](https://attack.mitre.org/techniques/T1595) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or '
+                              '[Obtain Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial '
+                              'access (ex: [External Remote Services](https://attack.mitre.org/techniques/T1133) or '
+                              '[Exploit Public-Facing Application](https://attack.mitre.org/techniques/T1190)).',
+               'name': 'Scan Databases',
+               'platforms': ['PRE']},
+ 'T1597': {'attack_id': 'T1597',
+           'categories': ['reconnaissance'],
+           'description': 'Before compromising a victim, adversaries may search and gather information about victims '
+                          'from closed sources that can be used during targeting. Information about victims may be '
+                          'available for purchase from reputable private sources and databases, such as paid '
+                          'subscriptions to feeds of technical/threat intelligence data.(Citation: D3Secutrity CTI '
+                          'Feeds) Adversaries may also purchase information from less-reputable sources such as dark '
+                          'web or cybercrime blackmarkets.(Citation: ZDNET Selling Data)\n'
+                          '\n'
+                          'Adversaries may search in different closed databases depending on what information they '
+                          'seek to gather. Information from these sources may reveal opportunities for other forms of '
+                          'reconnaissance (ex: [Phishing for Information](https://attack.mitre.org/techniques/T1598) '
+                          'or [Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing '
+                          'operational resources (ex: [Develop '
+                          'Capabilities](https://attack.mitre.org/techniques/T1587) or [Obtain '
+                          'Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial access (ex: '
+                          '[External Remote Services](https://attack.mitre.org/techniques/T1133) or [Valid '
+                          'Accounts](https://attack.mitre.org/techniques/T1078)).',
+           'name': 'Search Closed Sources',
+           'platforms': ['PRE']},
+ 'T1597.001': {'attack_id': 'T1597.001',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may search private data from threat '
+                              'intelligence vendors for information that can be used during targeting. Threat '
+                              'intelligence vendors may offer paid feeds or portals that offer more data than what is '
+                              'publicly reported. Although sensitive details (such as customer names and other '
+                              'identifiers) may be redacted, this information may contain trends regarding breaches '
+                              'such as target industries, attribution claims, and successful '
+                              'TTPs/countermeasures.(Citation: D3Secutrity CTI Feeds)\n'
+                              '\n'
+                              'Adversaries may search in private threat intelligence vendor data to gather actionable '
+                              'information. Threat actors may seek information/indicators gathered about their own '
+                              'campaigns, as well as those conducted by other adversaries that may align with their '
+                              'target industries, capabilities/objectives, or other operational concerns. Information '
+                              'reported by vendors may also reveal opportunities other forms of reconnaissance (ex: '
+                              '[Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593)), '
+                              'establishing operational resources (ex: [Develop '
+                              'Capabilities](https://attack.mitre.org/techniques/T1587) or [Obtain '
+                              'Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial access (ex: '
+                              '[Exploit Public-Facing Application](https://attack.mitre.org/techniques/T1190) or '
+                              '[External Remote Services](https://attack.mitre.org/techniques/T1133)).',
+               'name': 'Threat Intel Vendors',
+               'platforms': ['PRE']},
+ 'T1597.002': {'attack_id': 'T1597.002',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may purchase technical information about '
+                              'victims that can be used during targeting. Information about victims may be available '
+                              'for purchase within reputable private sources and databases, such as paid subscriptions '
+                              'to feeds of scan databases or other data aggregation services. Adversaries may also '
+                              'purchase information from less-reputable sources such as dark web or cybercrime '
+                              'blackmarkets.\n'
+                              '\n'
+                              'Adversaries may purchase information about their already identified targets, or use '
+                              'purchased data to discover opportunities for successful breaches. Threat actors may '
+                              'gather various technical details from purchased data, including but not limited to '
+                              'employee contact information, credentials, or specifics regarding a victim’s '
+                              'infrastructure.(Citation: ZDNET Selling Data) Information from these sources may reveal '
+                              'opportunities for other forms of reconnaissance (ex: [Phishing for '
+                              'Information](https://attack.mitre.org/techniques/T1598) or [Search Open '
+                              'Websites/Domains](https://attack.mitre.org/techniques/T1593)), establishing operational '
+                              'resources (ex: [Develop Capabilities](https://attack.mitre.org/techniques/T1587) or '
+                              '[Obtain Capabilities](https://attack.mitre.org/techniques/T1588)), and/or initial '
+                              'access (ex: [External Remote Services](https://attack.mitre.org/techniques/T1133) or '
+                              '[Valid Accounts](https://attack.mitre.org/techniques/T1078)).',
+               'name': 'Purchase Technical Data',
+               'platforms': ['PRE']},
+ 'T1598': {'attack_id': 'T1598',
+           'categories': ['reconnaissance'],
+           'description': 'Before compromising a victim, adversaries may send phishing messages to elicit sensitive '
+                          'information that can be used during targeting. Phishing for information is an attempt to '
+                          'trick targets into divulging information, frequently credentials or other actionable '
+                          'information. Phishing for information is different from '
+                          '[Phishing](https://attack.mitre.org/techniques/T1566) in that the objective is gathering '
+                          'data from the victim rather than executing malicious code.\n'
+                          '\n'
+                          'All forms of phishing are electronically delivered social engineering. Phishing can be '
+                          'targeted, known as spearphishing. In spearphishing, a specific individual, company, or '
+                          'industry will be targeted by the adversary. More generally, adversaries can conduct '
+                          'non-targeted phishing, such as in mass credential harvesting campaigns.\n'
+                          '\n'
+                          'Adversaries may also try to obtain information directly through the exchange of emails, '
+                          'instant messages, or other electronic conversation means.(Citation: ThreatPost Social Media '
+                          'Phishing)(Citation: TrendMictro Phishing)(Citation: PCMag FakeLogin)(Citation: Sophos '
+                          'Attachment)(Citation: GitHub Phishery) Phishing for information frequently involves social '
+                          'engineering techniques, such as posing as a source with a reason to collect information '
+                          '(ex: [Establish Accounts](https://attack.mitre.org/techniques/T1585) or [Compromise '
+                          'Accounts](https://attack.mitre.org/techniques/T1586)) and/or sending multiple, seemingly '
+                          'urgent messages.',
+           'name': 'Phishing for Information',
+           'platforms': ['PRE']},
+ 'T1598.001': {'attack_id': 'T1598.001',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may send spearphishing messages via '
+                              'third-party services to elicit sensitive information that can be used during targeting. '
+                              'Spearphishing for information is an attempt to trick targets into divulging '
+                              'information, frequently credentials or other actionable information. Spearphishing for '
+                              'information frequently involves social engineering techniques, such as posing as a '
+                              'source with a reason to collect information (ex: [Establish '
+                              'Accounts](https://attack.mitre.org/techniques/T1585) or [Compromise '
+                              'Accounts](https://attack.mitre.org/techniques/T1586)) and/or sending multiple, '
+                              'seemingly urgent messages.\n'
+                              '\n'
+                              'All forms of spearphishing are electronically delivered social engineering targeted at '
+                              'a specific individual, company, or industry. In this scenario, adversaries send '
+                              'messages through various social media services, personal webmail, and other '
+                              'non-enterprise controlled services.(Citation: ThreatPost Social Media Phishing) These '
+                              'services are more likely to have a less-strict security policy than an enterprise. As '
+                              'with most kinds of spearphishing, the goal is to generate rapport with the target or '
+                              "get the target's interest in some way. Adversaries may create fake social media "
+                              'accounts and message employees for potential job opportunities. Doing so allows a '
+                              'plausible reason for asking about services, policies, and information about their '
+                              'environment. Adversaries may also use information from previous reconnaissance efforts '
+                              '(ex: [Social Media](https://attack.mitre.org/techniques/T1593/001) or [Search '
+                              'Victim-Owned Websites](https://attack.mitre.org/techniques/T1594)) to craft persuasive '
+                              'and believable lures.',
+               'name': 'Spearphishing Service',
+               'platforms': ['PRE']},
+ 'T1598.002': {'attack_id': 'T1598.002',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may send spearphishing messages with a '
+                              'malicious attachment to elicit sensitive information that can be used during targeting. '
+                              'Spearphishing for information is an attempt to trick targets into divulging '
+                              'information, frequently credentials or other actionable information. Spearphishing for '
+                              'information frequently involves social engineering techniques, such as posing as a '
+                              'source with a reason to collect information (ex: [Establish '
+                              'Accounts](https://attack.mitre.org/techniques/T1585) or [Compromise '
+                              'Accounts](https://attack.mitre.org/techniques/T1586)) and/or sending multiple, '
+                              'seemingly urgent messages.\n'
+                              '\n'
+                              'All forms of spearphishing are electronically delivered social engineering targeted at '
+                              'a specific individual, company, or industry. In this scenario, adversaries attach a '
+                              'file to the spearphishing email and usually rely upon the recipient populating '
+                              'information then returning the file.(Citation: Sophos Attachment)(Citation: GitHub '
+                              'Phishery) The text of the spearphishing email usually tries to give a plausible reason '
+                              'why the file should be filled-in, such as a request for information from a business '
+                              'associate. Adversaries may also use information from previous reconnaissance efforts '
+                              '(ex: [Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593) or '
+                              '[Search Victim-Owned Websites](https://attack.mitre.org/techniques/T1594)) to craft '
+                              'persuasive and believable lures.',
+               'name': 'Spearphishing Attachment',
+               'platforms': ['PRE']},
+ 'T1598.003': {'attack_id': 'T1598.003',
+               'categories': ['reconnaissance'],
+               'description': 'Before compromising a victim, adversaries may send spearphishing messages with a '
+                              'malicious link to elicit sensitive information that can be used during targeting. '
+                              'Spearphishing for information is an attempt to trick targets into divulging '
+                              'information, frequently credentials or other actionable information. Spearphishing for '
+                              'information frequently involves social engineering techniques, such as posing as a '
+                              'source with a reason to collect information (ex: [Establish '
+                              'Accounts](https://attack.mitre.org/techniques/T1585) or [Compromise '
+                              'Accounts](https://attack.mitre.org/techniques/T1586)) and/or sending multiple, '
+                              'seemingly urgent messages.\n'
+                              '\n'
+                              'All forms of spearphishing are electronically delivered social engineering targeted at '
+                              'a specific individual, company, or industry. In this scenario, the malicious emails '
+                              'contain links generally accompanied by social engineering text to coax the user to '
+                              'actively click or copy and paste a URL into a browser.(Citation: TrendMictro '
+                              'Phishing)(Citation: PCMag FakeLogin) The given website may closely resemble a '
+                              'legitimate site in appearance and have a URL containing elements from the real site. '
+                              'From the fake website, information is gathered in web forms and sent to the attacker. '
+                              'Adversaries may also use information from previous reconnaissance efforts (ex: [Search '
+                              'Open Websites/Domains](https://attack.mitre.org/techniques/T1593) or [Search '
+                              'Victim-Owned Websites](https://attack.mitre.org/techniques/T1594)) to craft persuasive '
+                              'and believable lures.',
+               'name': 'Spearphishing Link',
+               'platforms': ['PRE']},
+ 'T1599': {'attack_id': 'T1599',
+           'categories': ['defense-evasion'],
+           'description': 'Adversaries may bridge network boundaries by compromising perimeter network devices. '
+                          'Breaching these devices may enable an adversary to bypass restrictions on traffic routing '
+                          'that otherwise separate trusted and untrusted networks.\n'
+                          '\n'
+                          'Devices such as routers and firewalls can be used to create boundaries between trusted and '
+                          'untrusted networks.  They achieve this by restricting traffic types to enforce '
+                          'organizational policy in an attempt to reduce the risk inherent in such connections.  '
+                          'Restriction of traffic can be achieved by prohibiting IP addresses, layer 4 protocol ports, '
+                          'or through deep packet inspection to identify applications.  To participate with the rest '
+                          'of the network, these devices can be directly addressable or transparent, but their mode of '
+                          'operation has no bearing on how the adversary can bypass them when compromised.\n'
+                          '\n'
+                          'When an adversary takes control of such a boundary device, they can bypass its policy '
+                          'enforcement to pass normally prohibited traffic across the trust boundary between the two '
+                          'separated networks without hinderance.  By achieving sufficient rights on the device, an '
+                          'adversary can reconfigure the device to allow the traffic they want, allowing them to then '
+                          'further achieve goals such as command and control via [Multi-hop '
+                          'Proxy](https://attack.mitre.org/techniques/T1090/003) or exfiltration of data via [Traffic '
+                          'Duplication](https://attack.mitre.org/techniques/T1020/001).  In the cases where a border '
+                          'device separates two separate organizations, the adversary can also facilitate lateral '
+                          'movement into new victim environments.',
+           'name': 'Network Boundary Bridging',
+           'platforms': ['Network']},
+ 'T1599.001': {'attack_id': 'T1599.001',
+               'categories': ['defense-evasion'],
+               'description': 'Adversaries may bridge network boundaries by modifying a network device’s Network '
+                              'Address Translation (NAT) configuration. Malicious modifications to NAT may enable an '
+                              'adversary to bypass restrictions on traffic routing that otherwise separate trusted and '
+                              'untrusted networks.\n'
+                              '\n'
+                              'Network devices such as routers and firewalls that connect multiple networks together '
+                              'may implement NAT during the process of passing packets between networks. When '
+                              'performing NAT, the network device will rewrite the source and/or destination addresses '
+                              'of the IP address header. Some network designs require NAT for the packets to cross the '
+                              'border device.  A typical example of this is environments where internal networks make '
+                              'use of non-Internet routable addresses.(Citation: RFC1918)\n'
+                              '\n'
+                              'When an adversary gains control of a network boundary device, they can either leverage '
+                              'existing NAT configurations to send traffic between two separated networks, or they can '
+                              'implement NAT configurations of their own design.  In the case of network designs that '
+                              'require NAT to function, this enables the adversary to overcome inherent routing '
+                              'limitations that would normally prevent them from accessing protected systems behind '
+                              'the border device.  In the case of network designs that do not require NAT, address '
+                              'translation can be used by adversaries to obscure their activities, as changing the '
+                              'addresses of packets that traverse a network boundary device can make monitoring data '
+                              'transmissions more challenging for defenders.  \n'
+                              '\n'
+                              'Adversaries may use [Patch System Image](https://attack.mitre.org/techniques/T1601/001) '
+                              'to change the operating system of a network device, implementing their own custom NAT '
+                              'mechanisms to further obscure their activities',
+               'name': 'Network Address Translation Traversal',
+               'platforms': ['Network']},
+ 'T1600': {'attack_id': 'T1600',
+           'categories': ['defense-evasion'],
+           'description': 'Adversaries may compromise a network device’s encryption capability in order to bypass '
+                          'encryption that would otherwise protect data communications. (Citation: Cisco Synful Knock '
+                          'Evolution)\n'
+                          '\n'
+                          'Encryption can be used to protect transmitted network traffic to maintain its '
+                          'confidentiality (protect against unauthorized disclosure) and integrity (protect against '
+                          'unauthorized changes). Encryption ciphers are used to convert a plaintext message to '
+                          'ciphertext and can be computationally intensive to decipher without the associated '
+                          'decryption key. Typically, longer keys increase the cost of cryptanalysis, or decryption '
+                          'without the key.\n'
+                          '\n'
+                          'Adversaries can compromise and manipulate devices that perform encryption of network '
+                          'traffic. For example, through behaviors such as [Modify System '
+                          'Image](https://attack.mitre.org/techniques/T1601), [Reduce Key '
+                          'Space](https://attack.mitre.org/techniques/T1600/001), and [Disable Crypto '
+                          'Hardware](https://attack.mitre.org/techniques/T1600/002), an adversary can negatively '
+                          'effect and/or eliminate a device’s ability to securely encrypt network traffic. This poses '
+                          'a greater risk of unauthorized disclosure and may help facilitate data manipulation, '
+                          'Credential Access, or Collection efforts. (Citation: Cisco Blog Legacy Device Attacks)',
+           'name': 'Weaken Encryption',
+           'platforms': ['Network']},
+ 'T1600.001': {'attack_id': 'T1600.001',
+               'categories': ['defense-evasion'],
+               'description': 'Adversaries may reduce the level of effort required to decrypt data transmitted over '
+                              'the network by reducing the cipher strength of encrypted communications.(Citation: '
+                              'Cisco Synful Knock Evolution)\n'
+                              '\n'
+                              'Adversaries can weaken the encryption software on a compromised network device by '
+                              'reducing the key size used by the software to convert plaintext to ciphertext (e.g., '
+                              'from hundreds or thousands of bytes to just a couple of bytes). As a result, '
+                              'adversaries dramatically reduce the amount of effort needed to decrypt the protected '
+                              'information without the key.\n'
+                              '\n'
+                              'Adversaries may modify the key size used and other encryption parameters using '
+                              'specialized commands in a [Network Device '
+                              'CLI](https://attack.mitre.org/techniques/T1059/008) introduced to the system through '
+                              '[Modify System Image](https://attack.mitre.org/techniques/T1601) to change the '
+                              'configuration of the device. (Citation: Cisco Blog Legacy Device Attacks)',
+               'name': 'Reduce Key Space',
+               'platforms': ['Network']},
+ 'T1600.002': {'attack_id': 'T1600.002',
+               'categories': ['defense-evasion'],
+               'description': 'Adversaries disable a network device’s dedicated hardware encryption, which may enable '
+                              'them to leverage weaknesses in software encryption in order to reduce the effort '
+                              'involved in collecting, manipulating, and exfiltrating transmitted data.\n'
+                              '\n'
+                              'Many network devices such as routers, switches, and firewalls, perform encryption on '
+                              'network traffic to secure transmission across networks. Often, these devices are '
+                              'equipped with special, dedicated encryption hardware to greatly increase the speed of '
+                              'the encryption process as well as to prevent malicious tampering. When an adversary '
+                              'takes control of such a device, they may disable the dedicated hardware, for example, '
+                              'through use of [Modify System Image](https://attack.mitre.org/techniques/T1601), '
+                              'forcing the use of software to perform encryption on general processors. This is '
+                              'typically used in conjunction with attacks to weaken the strength of the cipher in '
+                              'software (e.g., [Reduce Key Space](https://attack.mitre.org/techniques/T1600/001)). '
+                              '(Citation: Cisco Blog Legacy Device Attacks)',
+               'name': 'Disable Crypto Hardware',
+               'platforms': ['Network']},
+ 'T1601': {'attack_id': 'T1601',
+           'categories': ['defense-evasion'],
+           'description': 'Adversaries may make changes to the operating system of embedded network devices to weaken '
+                          'defenses and provide new capabilities for themselves.  On such devices, the operating '
+                          'systems are typically monolithic and most of the device functionality and capabilities are '
+                          'contained within a single file.\n'
+                          '\n'
+                          'To change the operating system, the adversary typically only needs to affect this one file, '
+                          'replacing or modifying it.  This can either be done live in memory during system runtime '
+                          'for immediate effect, or in storage to implement the change on the next boot of the network '
+                          'device.',
+           'name': 'Modify System Image',
+           'platforms': ['Network']},
+ 'T1601.001': {'attack_id': 'T1601.001',
+               'categories': ['defense-evasion'],
+               'description': 'Adversaries may modify the operating system of a network device to introduce new '
+                              'capabilities or weaken existing defenses.(Citation: Killing the myth of Cisco IOS '
+                              'rootkits) (Citation: Killing IOS diversity myth) (Citation: Cisco IOS Shellcode) '
+                              '(Citation: Cisco IOS Forensics Developments) (Citation: Juniper Netscreen of the Dead) '
+                              'Some network devices are built with a monolithic architecture, where the entire '
+                              'operating system and most of the functionality of the device is contained within a '
+                              'single file.  Adversaries may change this file in storage, to be loaded in a future '
+                              'boot, or in memory during runtime.\n'
+                              '\n'
+                              'To change the operating system in storage, the adversary will typically use the '
+                              'standard procedures available to device operators. This may involve downloading a new '
+                              'file via typical protocols used on network devices, such as TFTP, FTP, SCP, or a '
+                              'console connection.  The original file may be overwritten, or a new file may be written '
+                              'alongside of it and the device reconfigured to boot to the compromised image.\n'
+                              '\n'
+                              'To change the operating system in memory, the adversary typically can use one of two '
+                              'methods. In the first, the adversary would make use of native debug commands in the '
+                              'original, unaltered running operating system that allow them to directly modify the '
+                              'relevant memory addresses containing the running operating system.  This method '
+                              'typically requires administrative level access to the device.\n'
+                              '\n'
+                              'In the second method for changing the operating system in memory, the adversary would '
+                              'make use of the boot loader. The boot loader is the first piece of software that loads '
+                              'when the device starts that, in turn, will launch the operating system.  Adversaries '
+                              'may use malicious code previously implanted in the boot loader, such as through the '
+                              '[ROMMONkit](https://attack.mitre.org/techniques/T1542/004) method, to directly '
+                              'manipulate running operating system code in memory.  This malicious code in the '
+                              'bootloader provides the capability of direct memory manipulation to the adversary, '
+                              'allowing them to patch the live operating system during runtime.\n'
+                              '\n'
+                              'By modifying the instructions stored in the system image file, adversaries may either '
+                              'weaken existing defenses or provision new capabilities that the device did not have '
+                              'before. Examples of existing defenses that can be impeded include encryption, via '
+                              '[Weaken Encryption](https://attack.mitre.org/techniques/T1600), authentication, via '
+                              '[Network Device Authentication](https://attack.mitre.org/techniques/T1556/004), and '
+                              'perimeter defenses, via [Network Boundary '
+                              'Bridging](https://attack.mitre.org/techniques/T1599).  Adding new capabilities for the '
+                              'adversary’s purpose include '
+                              '[Keylogging](https://attack.mitre.org/techniques/T1056/001), [Multi-hop '
+                              'Proxy](https://attack.mitre.org/techniques/T1090/003), and [Port '
+                              'Knocking](https://attack.mitre.org/techniques/T1205/001).\n'
+                              '\n'
+                              'Adversaries may also compromise existing commands in the operating system to produce '
+                              'false output to mislead defenders.   When this method is used in conjunction with '
+                              '[Downgrade System Image](https://attack.mitre.org/techniques/T1601/002), one example of '
+                              'a compromised system command may include changing the output of the command that shows '
+                              'the version of the currently running operating system.  By patching the operating '
+                              'system, the adversary can change this command to instead display the original, higher '
+                              'revision number that they replaced through the system downgrade. \n'
+                              '\n'
+                              'When the operating system is patched in storage, this can be achieved in either the '
+                              'resident storage (typically a form of flash memory, which is non-volatile) or via [TFTP '
+                              'Boot](https://attack.mitre.org/techniques/T1542/005). \n'
+                              '\n'
+                              'When the technique is performed on the running operating system in memory and not on '
+                              'the stored copy, this technique will not survive across reboots.  However, live memory '
+                              'modification of the operating system can be combined with '
+                              '[ROMMONkit](https://attack.mitre.org/techniques/T1542/004) to achieve persistence. ',
+               'name': 'Patch System Image',
+               'platforms': ['Network']},
+ 'T1601.002': {'attack_id': 'T1601.002',
+               'categories': ['defense-evasion'],
+               'description': 'Adversaries may install an older version of the operating system of a network device to '
+                              'weaken security.  Older operating system versions on network devices often have weaker '
+                              'encryption ciphers and, in general, fewer/less updated defensive features. (Citation: '
+                              'Cisco Synful Knock Evolution)\n'
+                              '\n'
+                              'On embedded devices, downgrading the version typically only requires replacing the '
+                              'operating system file in storage.  With most embedded devices, this can be achieved by '
+                              'downloading a copy of the desired version of the operating system file and '
+                              'reconfiguring the device to boot from that file on next system restart.  The adversary '
+                              'could then restart the device to implement the change immediately or they could wait '
+                              'until the next time the system restarts.\n'
+                              '\n'
+                              'Downgrading the system image to an older versions may allow an adversary to evade '
+                              'defenses by enabling behaviors such as [Weaken '
+                              'Encryption](https://attack.mitre.org/techniques/T1600).  Downgrading of a system image '
+                              'can be done on its own, or it can be used in conjunction with [Patch System '
+                              'Image](https://attack.mitre.org/techniques/T1601/001).  ',
+               'name': 'Downgrade System Image',
+               'platforms': ['Network']},
+ 'T1602': {'attack_id': 'T1602',
+           'categories': ['collection'],
+           'description': 'Adversaries may collect data related to managed devices from configuration repositories. '
+                          'Configuration repositories are used by management systems in order to configure, manage, '
+                          'and control data on remote systems. Configuration repositories may also facilitate remote '
+                          'access and administration of devices.\n'
+                          '\n'
+                          'Adversaries may target these repositories in order to collect large quantities of sensitive '
+                          'system administration data. Data from configuration repositories may be exposed by various '
+                          'protocols and software and can store a wide variety of data, much of which may align with '
+                          'adversary Discovery objectives.(Citation: US-CERT-TA18-106A)(Citation: US-CERT TA17-156A '
+                          'SNMP Abuse 2017)',
+           'name': 'Data from Configuration Repository',
+           'platforms': ['Network']},
+ 'T1602.001': {'attack_id': 'T1602.001',
+               'categories': ['collection'],
+               'description': 'Adversaries may target the Management Information Base (MIB) to collect and/or mine '
+                              'valuable information in a network managed using Simple Network Management Protocol '
+                              '(SNMP).\n'
+                              '\n'
+                              'The MIB is a configuration repository that stores variable information accessible via '
+                              'SNMP in the form of object identifiers (OID). Each OID identifies a variable that can '
+                              'be read or set and permits active management tasks, such as configuration changes, '
+                              'through remote modification of these variables. SNMP can give administrators great '
+                              'insight in their systems, such as, system information, description of hardware, '
+                              'physical location, and software packages(Citation: SANS Information Security Reading '
+                              'Room Securing SNMP Securing SNMP). The MIB may also contain device operational '
+                              'information, including running configuration, routing table, and interface details.\n'
+                              '\n'
+                              'Adversaries may use SNMP queries to collect MIB content directly from SNMP-managed '
+                              'devices in order to collect network information that allows the adversary to build '
+                              'network maps and facilitate future targeted exploitation.(Citation: '
+                              'US-CERT-TA18-106A)(Citation: Cisco Blog Legacy Device Attacks) ',
+               'name': 'SNMP (MIB Dump)',
+               'platforms': ['Network']},
+ 'T1602.002': {'attack_id': 'T1602.002',
+               'categories': ['collection'],
+               'description': 'Adversaries may access network configuration files to collect sensitive data about the '
+                              'device and the network. The network configuration is a file containing parameters that '
+                              'determine the operation of the device. The device typically stores an in-memory copy of '
+                              'the configuration while operating, and a separate configuration on non-volatile storage '
+                              'to load after device reset. Adversaries can inspect the configuration files to reveal '
+                              'information about the target network and its layout, the network device and its '
+                              'software, or identifying legitimate accounts and credentials for later use.\n'
+                              '\n'
+                              'Adversaries can use common management tools and protocols, such as Simple Network '
+                              'Management Protocol (SNMP) and Smart Install (SMI), to access network configuration '
+                              'files. (Citation: US-CERT TA18-106A Network Infrastructure Devices 2018) (Citation: '
+                              'Cisco Blog Legacy Device Attacks) These tools may be used to query specific data from a '
+                              'configuration repository or configure the device to export the configuration for later '
+                              'analysis. ',
+               'name': 'Network Device Configuration Dump',
+               'platforms': ['Network']}
 }
 
 software_map = {
- 'S0001': {'attack_ids': ['T1542.001', 'T1019'],
+ 'S0001': {'attack_ids': ['T1019', 'T1542.001'],
            'description': '[Trojan.Mebromi](https://attack.mitre.org/software/S0001) is BIOS-level malware that takes '
                           'control of the victim before MBR. (Citation: Ge 2011)',
            'name': 'Trojan.Mebromi',
            'platforms': ['Windows'],
            'software_id': 'S0001',
            'type': 'malware'},
- 'S0002': {'attack_ids': ['T1003.006',
+ 'S0002': {'attack_ids': ['T1550.003',
+                          'T1550.002',
+                          'T1555',
+                          'T1003.004',
                           'T1207',
-                          'T1550.003',
+                          'T1098',
+                          'T1134.005',
                           'T1003.001',
                           'T1552.004',
                           'T1555.003',
-                          'T1555',
-                          'T1003.004',
-                          'T1098',
-                          'T1547.005',
+                          'T1003.006',
                           'T1003.002',
-                          'T1550.002',
-                          'T1558.001',
                           'T1558.002',
-                          'T1134.005'],
+                          'T1558.001',
+                          'T1547.005'],
            'description': '[Mimikatz](https://attack.mitre.org/software/S0002) is a credential dumper capable of '
                           'obtaining plaintext Windows account logins and passwords, along with many other features '
                           'that make it useful for testing the security of networks. (Citation: Deply Mimikatz) '
@@ -9834,14 +12087,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0003',
            'type': 'malware'},
- 'S0004': {'attack_ids': ['T1115',
+ 'S0004': {'attack_ids': ['T1562.001',
+                          'T1056.001',
                           'T1059.003',
                           'T1113',
-                          'T1543.003',
-                          'T1056.001',
                           'T1547.009',
-                          'T1562.001',
-                          'T1547.001'],
+                          'T1547.001',
+                          'T1543.003',
+                          'T1115'],
            'description': '[TinyZBot](https://attack.mitre.org/software/S0004) is a bot written in C# that was '
                           'developed by [Cleaver](https://attack.mitre.org/groups/G0003). (Citation: Cylance Cleaver)',
            'name': 'TinyZBot',
@@ -9880,7 +12133,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0008',
            'type': 'tool'},
- 'S0009': {'attack_ids': ['T1059.003', 'T1553.004', 'T1573.001', 'T1090.001', 'T1071.001', 'T1574.001', 'T1014'],
+ 'S0009': {'attack_ids': ['T1059.003', 'T1090.001', 'T1071.001', 'T1014', 'T1574.001', 'T1573.001', 'T1553.004'],
            'description': '[Hikit](https://attack.mitre.org/software/S0009) is malware that has been used by '
                           '[Axiom](https://attack.mitre.org/groups/G0001) for late-stage persistence and exfiltration '
                           'after the initial compromise. (Citation: Novetta-Axiom) (Citation: FireEye Hikit Rootkit)',
@@ -9904,20 +12157,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0011',
            'type': 'malware'},
- 'S0012': {'attack_ids': ['T1074.001',
-                          'T1065',
-                          'T1055.001',
-                          'T1005',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1543.003',
+ 'S0012': {'attack_ids': ['T1059.003',
                           'T1056.001',
-                          'T1027',
+                          'T1005',
                           'T1112',
-                          'T1547.001',
+                          'T1065',
+                          'T1074.001',
                           'T1014',
-                          'T1010'],
+                          'T1547.001',
+                          'T1543.003',
+                          'T1573.001',
+                          'T1010',
+                          'T1105',
+                          'T1027',
+                          'T1055.001'],
            'description': '[PoisonIvy](https://attack.mitre.org/software/S0012) is a popular remote access tool (RAT) '
                           'that has been used by many groups. (Citation: FireEye Poison Ivy) (Citation: Symantec '
                           'Elderwood Sept 2012) (Citation: Symantec Darkmoon Aug 2005)',
@@ -9925,31 +12178,31 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0012',
            'type': 'malware'},
- 'S0013': {'attack_ids': ['T1102.001',
-                          'T1497.001',
-                          'T1056.001',
-                          'T1547.001',
+ 'S0013': {'attack_ids': ['T1095',
+                          'T1112',
+                          'T1094',
+                          'T1043',
+                          'T1543.003',
+                          'T1574.002',
+                          'T1071.004',
                           'T1036.004',
+                          'T1056.001',
+                          'T1135',
                           'T1026',
                           'T1105',
-                          'T1543.003',
-                          'T1127.001',
-                          'T1094',
-                          'T1049',
-                          'T1057',
-                          'T1071.004',
-                          'T1095',
-                          'T1012',
-                          'T1071.001',
-                          'T1574.002',
-                          'T1112',
+                          'T1106',
                           'T1140',
-                          'T1043',
-                          'T1059.003',
-                          'T1135',
+                          'T1102.001',
+                          'T1127.001',
                           'T1113',
+                          'T1497.001',
                           'T1083',
-                          'T1106'],
+                          'T1059.003',
+                          'T1049',
+                          'T1071.001',
+                          'T1012',
+                          'T1547.001',
+                          'T1057'],
            'description': '[PlugX](https://attack.mitre.org/software/S0013) is a remote access tool (RAT) that uses '
                           'modular plugins. It has been used by multiple threat groups. (Citation: Lastline PlugX '
                           'Analysis) (Citation: FireEye Clandestine Fox Part 2) (Citation: New DragonOK) (Citation: '
@@ -9966,22 +12219,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0014',
            'type': 'malware'},
- 'S0015': {'attack_ids': ['T1043',
+ 'S0015': {'attack_ids': ['T1059.003',
                           'T1007',
                           'T1082',
-                          'T1005',
                           'T1070.004',
-                          'T1033',
-                          'T1105',
-                          'T1059.003',
-                          'T1132.001',
-                          'T1071.001',
                           'T1564.001',
+                          'T1005',
+                          'T1043',
+                          'T1033',
+                          'T1071.001',
+                          'T1105',
+                          'T1057',
+                          'T1547.001',
                           'T1036.005',
                           'T1083',
-                          'T1547.001',
-                          'T1057',
-                          'T1016'],
+                          'T1016',
+                          'T1132.001'],
            'description': '[Ixeshe](https://attack.mitre.org/software/S0015) is a malware family that has been used '
                           'since at least 2009 against targets in East Asia. (Citation: Moran 2013)',
            'name': 'Ixeshe',
@@ -9996,16 +12249,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0016',
            'type': 'malware'},
- 'S0017': {'attack_ids': ['T1033',
+ 'S0017': {'attack_ids': ['T1059.003',
+                          'T1056.001',
                           'T1082',
                           'T1008',
-                          'T1105',
-                          'T1059.003',
                           'T1113',
-                          'T1056.001',
                           'T1094',
+                          'T1033',
                           'T1573.002',
-                          'T1057'],
+                          'T1057',
+                          'T1105'],
            'description': '[BISCUIT](https://attack.mitre.org/software/S0017) is a backdoor that has been used by '
                           '[APT1](https://attack.mitre.org/groups/G0006) since as early as 2007. (Citation: Mandiant '
                           'APT1)',
@@ -10013,17 +12266,17 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0017',
            'type': 'malware'},
- 'S0018': {'attack_ids': ['T1016',
-                          'T1007',
-                          'T1055.001',
-                          'T1087.002',
+ 'S0018': {'attack_ids': ['T1087.002',
                           'T1056.001',
-                          'T1573.002',
+                          'T1007',
                           'T1049',
-                          'T1111',
+                          'T1573.002',
+                          'T1057',
                           'T1547.001',
                           'T1018',
-                          'T1057'],
+                          'T1016',
+                          'T1055.001',
+                          'T1111'],
            'description': '[Sykipot](https://attack.mitre.org/software/S0018) is malware that has been used in '
                           'spearphishing campaigns since approximately 2007 against victims primarily in the US. One '
                           'variant of [Sykipot](https://attack.mitre.org/software/S0018) hijacks smart cards on '
@@ -10033,18 +12286,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0018',
            'type': 'malware'},
- 'S0019': {'attack_ids': ['T1021.002',
-                          'T1040',
+ 'S0019': {'attack_ids': ['T1056.001',
+                          'T1090.002',
                           'T1564.004',
                           'T1095',
-                          'T1071',
-                          'T1056.001',
-                          'T1112',
-                          'T1036.001',
-                          'T1071.001',
                           'T1564.005',
+                          'T1036.001',
                           'T1094',
-                          'T1090.002'],
+                          'T1071.001',
+                          'T1112',
+                          'T1021.002',
+                          'T1040',
+                          'T1071'],
            'description': '[Regin](https://attack.mitre.org/software/S0019) is a malware platform that has targeted '
                           'victims in a range of industries, including telecom, government, and financial '
                           'institutions. Some [Regin](https://attack.mitre.org/software/S0019) timestamps date back to '
@@ -10053,16 +12306,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0019',
            'type': 'malware'},
- 'S0020': {'attack_ids': ['T1070.006',
+ 'S0020': {'attack_ids': ['T1059.003',
+                          'T1110.001',
                           'T1005',
-                          'T1105',
-                          'T1059.003',
                           'T1505.003',
-                          'T1046',
                           'T1071.001',
                           'T1027.002',
+                          'T1070.006',
+                          'T1105',
                           'T1083',
-                          'T1110.001'],
+                          'T1046'],
            'description': '[China Chopper](https://attack.mitre.org/software/S0020) is a [Web '
                           'Shell](https://attack.mitre.org/techniques/T1100) hosted on Web servers to provide access '
                           'back into an enterprise network that does not rely on an infected system calling back to a '
@@ -10072,26 +12325,26 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0020',
            'type': 'malware'},
- 'S0021': {'attack_ids': ['T1218.010',
+ 'S0021': {'attack_ids': ['T1571',
                           'T1082',
-                          'T1056.001',
-                          'T1125',
-                          'T1033',
-                          'T1008',
-                          'T1059.004',
-                          'T1094',
-                          'T1057',
-                          'T1070.006',
-                          'T1571',
-                          'T1055.001',
-                          'T1070.004',
+                          'T1218.010',
                           'T1095',
-                          'T1012',
-                          'T1123',
+                          'T1094',
+                          'T1033',
                           'T1043',
+                          'T1070.006',
+                          'T1055.001',
+                          'T1125',
+                          'T1056.001',
+                          'T1008',
                           'T1573.001',
+                          'T1123',
                           'T1113',
-                          'T1083'],
+                          'T1059.004',
+                          'T1083',
+                          'T1070.004',
+                          'T1012',
+                          'T1057'],
            'description': '[Derusbi](https://attack.mitre.org/software/S0021) is malware used by multiple Chinese APT '
                           'groups. (Citation: Novetta-Axiom) (Citation: ThreatConnect Anthem) Both Windows and Linux '
                           'variants have been observed. (Citation: Fidelis Turbo)',
@@ -10106,24 +12359,24 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0022',
            'type': 'malware'},
- 'S0023': {'attack_ids': ['T1091',
-                          'T1008',
-                          'T1497',
-                          'T1071.003',
-                          'T1105',
-                          'T1092',
-                          'T1568.002',
-                          'T1573.001',
+ 'S0023': {'attack_ids': ['T1056.001',
                           'T1090.001',
-                          'T1113',
+                          'T1008',
                           'T1518.001',
-                          'T1012',
-                          'T1056.001',
-                          'T1071.001',
                           'T1112',
+                          'T1113',
+                          'T1071.001',
+                          'T1092',
+                          'T1059',
+                          'T1105',
                           'T1573.002',
+                          'T1012',
+                          'T1573.001',
+                          'T1071.003',
+                          'T1497',
                           'T1083',
-                          'T1059'],
+                          'T1568.002',
+                          'T1091'],
            'description': '[CHOPSTICK](https://attack.mitre.org/software/S0023) is a malware family of modular '
                           'backdoors used by [APT28](https://attack.mitre.org/groups/G0007). It has been used since at '
                           'least 2012 and is usually dropped on victims as second-stage malware, though it has been '
@@ -10135,22 +12388,22 @@ software_map = {
            'platforms': ['Windows', 'Linux'],
            'software_id': 'S0023',
            'type': 'malware'},
- 'S0024': {'attack_ids': ['T1497.001',
-                          'T1041',
-                          'T1074.001',
-                          'T1055.001',
-                          'T1082',
-                          'T1033',
+ 'S0024': {'attack_ids': ['T1055',
                           'T1007',
-                          'T1105',
+                          'T1082',
+                          'T1016',
+                          'T1074.001',
                           'T1053.005',
-                          'T1518',
-                          'T1543.003',
-                          'T1055',
-                          'T1071.001',
+                          'T1033',
                           'T1027.002',
-                          'T1140',
-                          'T1016'],
+                          'T1071.001',
+                          'T1041',
+                          'T1497.001',
+                          'T1543.003',
+                          'T1105',
+                          'T1518',
+                          'T1055.001',
+                          'T1140'],
            'description': '[Dyre](https://attack.mitre.org/software/S0024) is a banking Trojan that has been used for '
                           'financial gain. \n'
                           ' (Citation: Symantec Dyre June 2015)(Citation: Malwarebytes Dyreza November 2015)',
@@ -10174,7 +12427,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0026',
            'type': 'malware'},
- 'S0027': {'attack_ids': ['T1014', 'T1564.004'],
+ 'S0027': {'attack_ids': ['T1564.004', 'T1014'],
            'description': '[Zeroaccess](https://attack.mitre.org/software/S0027) is a kernel-mode '
                           '[Rootkit](https://attack.mitre.org/techniques/T1014) that attempts to add victims to the '
                           'ZeroAccess botnet, often for monetary gain. (Citation: Sophos ZeroAccess)',
@@ -10182,7 +12435,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0027',
            'type': 'malware'},
- 'S0028': {'attack_ids': ['T1091', 'T1547.001', 'T1547.009'],
+ 'S0028': {'attack_ids': ['T1547.009', 'T1091', 'T1547.001'],
            'description': '[SHIPSHAPE](https://attack.mitre.org/software/S0028) is malware developed by '
                           '[APT30](https://attack.mitre.org/groups/G0013) that allows propagation and exfiltration of '
                           'data over removable devices. [APT30](https://attack.mitre.org/groups/G0013) may use this '
@@ -10191,7 +12444,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0028',
            'type': 'malware'},
- 'S0029': {'attack_ids': ['T1021.002', 'T1569.002', 'T1570'],
+ 'S0029': {'attack_ids': ['T1569.002', 'T1021.002', 'T1570'],
            'description': '[PsExec](https://attack.mitre.org/software/S0029) is a free Microsoft tool that can be used '
                           'to execute a program on another computer. It is used by IT administrators and attackers. '
                           '(Citation: Russinovich Sysinternals) (Citation: SANS PsExec)',
@@ -10199,26 +12452,26 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0029',
            'type': 'tool'},
- 'S0030': {'attack_ids': ['T1056.001',
-                          'T1027',
-                          'T1136.001',
-                          'T1547.001',
-                          'T1132.001',
-                          'T1055.002',
-                          'T1094',
-                          'T1057',
-                          'T1070.004',
-                          'T1114.001',
-                          'T1219',
-                          'T1012',
-                          'T1071.001',
-                          'T1021.001',
+ 'S0030': {'attack_ids': ['T1055.002',
                           'T1043',
-                          'T1059.003',
+                          'T1094',
+                          'T1021.001',
+                          'T1056.001',
+                          'T1219',
                           'T1573.001',
+                          'T1027',
                           'T1113',
+                          'T1136.001',
+                          'T1003',
+                          'T1132.001',
+                          'T1059.003',
                           'T1030',
-                          'T1003'],
+                          'T1070.004',
+                          'T1071.001',
+                          'T1012',
+                          'T1547.001',
+                          'T1057',
+                          'T1114.001'],
            'description': '[Carbanak](https://attack.mitre.org/software/S0030) is a full-featured, remote backdoor '
                           'used by a group of the same name ([Carbanak](https://attack.mitre.org/groups/G0008)). It is '
                           'intended for espionage, data exfiltration, and providing remote access to infected '
@@ -10227,20 +12480,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0030',
            'type': 'malware'},
- 'S0031': {'attack_ids': ['T1041',
-                          'T1082',
-                          'T1059.003',
+ 'S0031': {'attack_ids': ['T1059.003',
                           'T1090.001',
-                          'T1132.002',
-                          'T1562.004',
-                          'T1012',
-                          'T1071.001',
+                          'T1082',
                           'T1112',
+                          'T1071.001',
+                          'T1104',
+                          'T1562.004',
+                          'T1041',
                           'T1547.009',
-                          'T1083',
+                          'T1012',
+                          'T1132.002',
                           'T1547.001',
                           'T1057',
-                          'T1104'],
+                          'T1083'],
            'description': '[BACKSPACE](https://attack.mitre.org/software/S0031) is a backdoor used by '
                           '[APT30](https://attack.mitre.org/groups/G0013) that dates back to at least 2005. (Citation: '
                           'FireEye APT30)',
@@ -10248,19 +12501,30 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0031',
            'type': 'malware'},
- 'S0032': {'attack_ids': ['T1043',
-                          'T1070.004',
-                          'T1105',
-                          'T1573.001',
-                          'T1113',
-                          'T1543.003',
-                          'T1070.001',
-                          'T1056.001',
-                          'T1574.002',
-                          'T1547.001',
-                          'T1057',
+ 'S0032': {'attack_ids': ['T1082',
+                          'T1095',
+                          'T1112',
+                          'T1129',
                           'T1059',
-                          'T1218.011'],
+                          'T1573',
+                          'T1543.003',
+                          'T1574.002',
+                          'T1218.011',
+                          'T1056.001',
+                          'T1568.001',
+                          'T1573.001',
+                          'T1105',
+                          'T1106',
+                          'T1140',
+                          'T1569.002',
+                          'T1055',
+                          'T1113',
+                          'T1070.001',
+                          'T1132.001',
+                          'T1070.004',
+                          'T1012',
+                          'T1547.001',
+                          'T1057'],
            'description': '[gh0st RAT](https://attack.mitre.org/software/S0032) is a remote access tool (RAT). The '
                           'source code is public and it has been used by multiple groups. (Citation: FireEye Hacking '
                           'Team)(Citation: Arbor Musical Chairs Feb 2018)(Citation: Nccgroup Gh0st April 2018)',
@@ -10277,18 +12541,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0033',
            'type': 'malware'},
- 'S0034': {'attack_ids': ['T1041',
-                          'T1568',
+ 'S0034': {'attack_ids': ['T1059.003',
                           'T1008',
-                          'T1059.003',
-                          'T1573.001',
                           'T1095',
-                          'T1071',
-                          'T1071.001',
                           'T1094',
-                          'T1083',
+                          'T1071.001',
+                          'T1041',
+                          'T1573.001',
                           'T1547.001',
-                          'T1057'],
+                          'T1057',
+                          'T1083',
+                          'T1568',
+                          'T1071'],
            'description': '[NETEAGLE](https://attack.mitre.org/software/S0034) is a backdoor developed by '
                           '[APT30](https://attack.mitre.org/groups/G0013) with compile dates as early as 2008. It has '
                           'two main variants known as “Scout” and “Norton.” (Citation: FireEye APT30)',
@@ -10296,7 +12560,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0034',
            'type': 'malware'},
- 'S0035': {'attack_ids': ['T1074.001', 'T1052.001', 'T1547.009', 'T1083', 'T1547.001', 'T1560.003'],
+ 'S0035': {'attack_ids': ['T1560.003', 'T1074.001', 'T1052.001', 'T1547.009', 'T1547.001', 'T1083'],
            'description': '[SPACESHIP](https://attack.mitre.org/software/S0035) is malware developed by '
                           '[APT30](https://attack.mitre.org/groups/G0013) that allows propagation and exfiltration of '
                           'data over removable devices. [APT30](https://attack.mitre.org/groups/G0013) may use this '
@@ -10305,7 +12569,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0035',
            'type': 'malware'},
- 'S0036': {'attack_ids': ['T1074.001', 'T1005', 'T1025', 'T1083', 'T1547.001', 'T1560.003'],
+ 'S0036': {'attack_ids': ['T1005', 'T1560.003', 'T1074.001', 'T1025', 'T1547.001', 'T1083'],
            'description': '[FLASHFLOOD](https://attack.mitre.org/software/S0036) is malware developed by '
                           '[APT30](https://attack.mitre.org/groups/G0013) that allows propagation and exfiltration of '
                           'data over removable devices. [APT30](https://attack.mitre.org/groups/G0013) may use this '
@@ -10314,7 +12578,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0036',
            'type': 'malware'},
- 'S0037': {'attack_ids': ['T1001.002', 'T1059.001', 'T1564.003', 'T1567.002', 'T1573.001', 'T1071.001', 'T1102.003'],
+ 'S0037': {'attack_ids': ['T1567.002', 'T1102.003', 'T1059.001', 'T1564.003', 'T1071.001', 'T1573.001', 'T1001.002'],
            'description': '[HAMMERTOSS](https://attack.mitre.org/software/S0037) is a backdoor that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) in 2015. (Citation: FireEye APT29) '
                           '(Citation: F-Secure The Dukes)',
@@ -10322,29 +12586,29 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0037',
            'type': 'malware'},
- 'S0038': {'attack_ids': ['T1218.007',
-                          'T1056.001',
-                          'T1074.001',
-                          'T1055.012',
-                          'T1078',
-                          'T1543.003',
-                          'T1071',
-                          'T1094',
-                          'T1572',
-                          'T1049',
-                          'T1057',
-                          'T1001.002',
-                          'T1021.002',
-                          'T1055.001',
-                          'T1090.001',
+ 'S0038': {'attack_ids': ['T1090.001',
+                          'T1218.007',
                           'T1087.001',
-                          'T1010',
-                          'T1560.003',
+                          'T1572',
+                          'T1094',
                           'T1043',
+                          'T1010',
+                          'T1055.001',
+                          'T1056.001',
                           'T1573.001',
+                          'T1078',
+                          'T1021.002',
+                          'T1001.002',
+                          'T1071',
+                          'T1049',
+                          'T1560.003',
+                          'T1074.001',
                           'T1053.005',
                           'T1134',
-                          'T1016'],
+                          'T1057',
+                          'T1543.003',
+                          'T1016',
+                          'T1055.012'],
            'description': '[Duqu](https://attack.mitre.org/software/S0038) is a malware platform that uses a modular '
                           'approach to extend functionality after deployment within a target network. (Citation: '
                           'Symantec W32.Duqu)',
@@ -10352,21 +12616,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0038',
            'type': 'malware'},
- 'S0039': {'attack_ids': ['T1021.002',
-                          'T1007',
-                          'T1201',
-                          'T1124',
-                          'T1069.001',
-                          'T1136.002',
-                          'T1135',
-                          'T1569.002',
+ 'S0039': {'attack_ids': ['T1569.002',
                           'T1087.002',
+                          'T1201',
+                          'T1007',
+                          'T1124',
+                          'T1049',
                           'T1070.005',
-                          'T1069.002',
+                          'T1069.001',
                           'T1087.001',
+                          'T1135',
+                          'T1069.002',
                           'T1136.001',
                           'T1018',
-                          'T1049'],
+                          'T1021.002',
+                          'T1136.002'],
            'description': 'The [Net](https://attack.mitre.org/software/S0039) utility is a component of the Windows '
                           'operating system. It is used in command-line operations for control of users, groups, '
                           'services, and network connections. (Citation: Microsoft Net Utility)\n'
@@ -10381,7 +12645,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0039',
            'type': 'tool'},
- 'S0040': {'attack_ids': ['T1055', 'T1014', 'T1090'],
+ 'S0040': {'attack_ids': ['T1090', 'T1055', 'T1014'],
            'description': '[HTRAN](https://attack.mitre.org/software/S0040) is a tool that proxies connections through '
                           'intermediate hops and aids users in disguising their true geographical location. It can be '
                           'used by adversaries to hide their location when interacting with the victim networks. '
@@ -10398,7 +12662,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0041',
            'type': 'malware'},
- 'S0042': {'attack_ids': ['T1043', 'T1071.001', 'T1102.002', 'T1105'],
+ 'S0042': {'attack_ids': ['T1105', 'T1102.002', 'T1043', 'T1071.001'],
            'description': '[LOWBALL](https://attack.mitre.org/software/S0042) is malware used by '
                           '[admin@338](https://attack.mitre.org/groups/G0018). It was used in August 2015 in email '
                           'messages targeting Hong Kong-based media organizations. (Citation: FireEye admin@338)',
@@ -10406,7 +12670,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0042',
            'type': 'malware'},
- 'S0043': {'attack_ids': ['T1071.001', 'T1082', 'T1095'],
+ 'S0043': {'attack_ids': ['T1095', 'T1071.001', 'T1082'],
            'description': '[BUBBLEWRAP](https://attack.mitre.org/software/S0043) is a full-featured, second-stage '
                           'backdoor used by the [admin@338](https://attack.mitre.org/groups/G0018) group. It is set to '
                           'run when the system boots and includes functionality to check, upload, and register '
@@ -10416,24 +12680,24 @@ software_map = {
            'software_id': 'S0043',
            'type': 'malware'},
  'S0044': {'attack_ids': ['T1082',
-                          'T1027',
-                          'T1547.001',
-                          'T1132.001',
-                          'T1115',
+                          'T1068',
+                          'T1543.003',
+                          'T1218.011',
                           'T1008',
                           'T1105',
-                          'T1543.003',
-                          'T1057',
-                          'T1070.004',
+                          'T1027',
                           'T1037.001',
-                          'T1218.011',
                           'T1055',
-                          'T1071.001',
-                          'T1068',
-                          'T1546.015',
-                          'T1059.003',
-                          'T1053.005',
                           'T1113',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1057',
+                          'T1547.001',
+                          'T1546.015',
+                          'T1115',
                           'T1016'],
            'description': '[JHUHUGIT](https://attack.mitre.org/software/S0044) is malware used by '
                           '[APT28](https://attack.mitre.org/groups/G0007). It is based on Carberp source code and '
@@ -10444,29 +12708,29 @@ software_map = {
            'software_id': 'S0044',
            'type': 'malware'},
  'S0045': {'attack_ids': ['T1082',
-                          'T1120',
-                          'T1056.001',
-                          'T1027',
-                          'T1573.002',
-                          'T1560',
-                          'T1132.001',
-                          'T1547.001',
-                          'T1074.001',
-                          'T1057',
-                          'T1041',
-                          'T1070.004',
-                          'T1029',
-                          'T1012',
-                          'T1071.001',
                           'T1112',
-                          'T1560.003',
-                          'T1546.015',
                           'T1043',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1083',
+                          'T1029',
                           'T1218.011',
-                          'T1106'],
+                          'T1056.001',
+                          'T1120',
+                          'T1041',
+                          'T1573.001',
+                          'T1106',
+                          'T1027',
+                          'T1560',
+                          'T1083',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1560.003',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1573.002',
+                          'T1012',
+                          'T1057',
+                          'T1547.001',
+                          'T1546.015'],
            'description': '[ADVSTORESHELL](https://attack.mitre.org/software/S0045) is a spying backdoor that has been '
                           'used by [APT28](https://attack.mitre.org/groups/G0007) from at least 2012 to 2016. It is '
                           'generally used for long-term espionage and is deployed on targets deemed interesting after '
@@ -10475,19 +12739,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0045',
            'type': 'malware'},
- 'S0046': {'attack_ids': ['T1082',
-                          'T1102.002',
-                          'T1003.001',
-                          'T1497',
-                          'T1059.003',
-                          'T1053.005',
-                          'T1543.003',
-                          'T1518.001',
+ 'S0046': {'attack_ids': ['T1059.003',
                           'T1036.003',
-                          'T1027',
+                          'T1082',
+                          'T1518.001',
+                          'T1053.005',
                           'T1071.001',
-                          'T1003.002',
+                          'T1497',
+                          'T1003.001',
+                          'T1102.002',
                           'T1547.001',
+                          'T1543.003',
+                          'T1027',
+                          'T1003.002',
                           'T1218.011'],
            'description': '[CozyCar](https://attack.mitre.org/software/S0046) is malware that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) from 2010 to 2015. It is a modular malware '
@@ -10497,7 +12761,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0046',
            'type': 'malware'},
- 'S0047': {'attack_ids': ['T1542.001', 'T1014', 'T1019'],
+ 'S0047': {'attack_ids': ['T1019', 'T1542.001', 'T1014'],
            'description': '[Hacking Team UEFI Rootkit](https://attack.mitre.org/software/S0047) is a rootkit developed '
                           'by the company Hacking Team as a method of persistence for remote access software. '
                           '(Citation: TrendMicro Hacking Team UEFI)',
@@ -10505,7 +12769,7 @@ software_map = {
            'platforms': [],
            'software_id': 'S0047',
            'type': 'malware'},
- 'S0048': {'attack_ids': ['T1082', 'T1005', 'T1555.003', 'T1555', 'T1003', 'T1071.001', 'T1083'],
+ 'S0048': {'attack_ids': ['T1555.003', 'T1555', 'T1082', 'T1005', 'T1071.001', 'T1083', 'T1003'],
            'description': '[PinchDuke](https://attack.mitre.org/software/S0048) is malware that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) from 2008 to 2010. (Citation: F-Secure The '
                           'Dukes)',
@@ -10513,7 +12777,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0048',
            'type': 'malware'},
- 'S0049': {'attack_ids': ['T1007', 'T1071.001', 'T1087.001', 'T1083', 'T1057', 'T1016'],
+ 'S0049': {'attack_ids': ['T1007', 'T1087.001', 'T1071.001', 'T1057', 'T1083', 'T1016'],
            'description': '[GeminiDuke](https://attack.mitre.org/software/S0049) is malware that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) from 2009 to 2012. (Citation: F-Secure The '
                           'Dukes)',
@@ -10521,25 +12785,25 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0049',
            'type': 'malware'},
- 'S0050': {'attack_ids': ['T1039',
-                          'T1003.004',
-                          'T1025',
-                          'T1056.001',
-                          'T1003.002',
-                          'T1115',
-                          'T1555',
-                          'T1543.003',
-                          'T1020',
-                          'T1005',
-                          'T1114.001',
-                          'T1071.001',
+ 'S0050': {'attack_ids': ['T1555',
                           'T1068',
-                          'T1555.003',
+                          'T1020',
+                          'T1039',
+                          'T1056.001',
+                          'T1005',
+                          'T1025',
                           'T1573.001',
-                          'T1053.005',
+                          'T1555.003',
+                          'T1003.004',
                           'T1113',
                           'T1083',
-                          'T1048.003'],
+                          'T1053.005',
+                          'T1071.001',
+                          'T1114.001',
+                          'T1543.003',
+                          'T1115',
+                          'T1048.003',
+                          'T1003.002'],
            'description': '[CosmicDuke](https://attack.mitre.org/software/S0050) is malware that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) from 2010 to 2015. (Citation: F-Secure The '
                           'Dukes)',
@@ -10547,7 +12811,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0050',
            'type': 'malware'},
- 'S0051': {'attack_ids': ['T1102.001', 'T1071.001', 'T1008', 'T1105'],
+ 'S0051': {'attack_ids': ['T1027',
+                          'T1102.001',
+                          'T1090.001',
+                          'T1082',
+                          'T1008',
+                          'T1543',
+                          'T1071.001',
+                          'T1105',
+                          'T1083',
+                          'T1568.002'],
            'description': '[MiniDuke](https://attack.mitre.org/software/S0051) is malware that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) from 2010 to 2015. The '
                           '[MiniDuke](https://attack.mitre.org/software/S0051) toolset consists of multiple downloader '
@@ -10559,7 +12832,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0051',
            'type': 'malware'},
- 'S0052': {'attack_ids': ['T1071.001', 'T1003', 'T1102.003'],
+ 'S0052': {'attack_ids': ['T1102.003', 'T1499', 'T1071.001', 'T1003', 'T1140'],
            'description': '[OnionDuke](https://attack.mitre.org/software/S0052) is malware that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) from 2013 to 2015. (Citation: F-Secure The '
                           'Dukes)',
@@ -10567,21 +12840,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0052',
            'type': 'malware'},
- 'S0053': {'attack_ids': ['T1560.002',
-                          'T1114.002',
-                          'T1550.003',
-                          'T1059.001',
-                          'T1070.004',
-                          'T1105',
+ 'S0053': {'attack_ids': ['T1550.003',
                           'T1059.003',
-                          'T1573.001',
-                          'T1078',
-                          'T1547.001',
+                          'T1070.004',
+                          'T1059.001',
                           'T1071.001',
-                          'T1547.009',
+                          'T1114.002',
                           'T1027.002',
-                          'T1132.001',
-                          'T1546.003'],
+                          'T1078',
+                          'T1560.002',
+                          'T1547.009',
+                          'T1573.001',
+                          'T1547.001',
+                          'T1105',
+                          'T1546.003',
+                          'T1132.001'],
            'description': '[SeaDuke](https://attack.mitre.org/software/S0053) is malware that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) from 2014 to 2015. It was used primarily as '
                           'a secondary backdoor for victims that were already compromised with '
@@ -10590,7 +12863,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0053',
            'type': 'malware'},
- 'S0054': {'attack_ids': ['T1071.001', 'T1102.002', 'T1105'],
+ 'S0054': {'attack_ids': ['T1105', 'T1102.002', 'T1071.001'],
            'description': '[CloudDuke](https://attack.mitre.org/software/S0054) is malware that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) in 2015. (Citation: F-Secure The Dukes) '
                           '(Citation: Securelist Minidionis July 2015)',
@@ -10598,7 +12871,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0054',
            'type': 'malware'},
- 'S0055': {'attack_ids': ['T1083', 'T1055.001', 'T1095', 'T1105'],
+ 'S0055': {'attack_ids': ['T1105', 'T1083', 'T1055.001', 'T1095'],
            'description': '[RARSTONE](https://attack.mitre.org/software/S0055) is malware used by the '
                           '[Naikon](https://attack.mitre.org/groups/G0019) group that has some characteristics similar '
                           'to [PlugX](https://attack.mitre.org/software/S0013). (Citation: Aquino RARSTONE)',
@@ -10606,7 +12879,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0055',
            'type': 'malware'},
- 'S0056': {'attack_ids': ['T1110.002', 'T1021.002', 'T1003.001', 'T1569.002'],
+ 'S0056': {'attack_ids': ['T1569.002', 'T1003.001', 'T1021.002', 'T1110.002'],
            'description': '[Net Crawler](https://attack.mitre.org/software/S0056) is an intranet worm capable of '
                           'extracting credentials using credential dumpers and spreading to systems on a network over '
                           'SMB by brute forcing accounts with recovered passwords and using '
@@ -10616,7 +12889,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0056',
            'type': 'malware'},
- 'S0057': {'attack_ids': ['T1007', 'T1057', 'T1518.001'],
+ 'S0057': {'attack_ids': ['T1057', 'T1518.001', 'T1007'],
            'description': 'The [Tasklist](https://attack.mitre.org/software/S0057) utility displays a list of '
                           'applications and services with their Process IDs (PID) for all tasks running on either a '
                           'local or a remote computer. It is packaged with Windows operating systems and can be '
@@ -10625,15 +12898,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0057',
            'type': 'tool'},
- 'S0058': {'attack_ids': ['T1033',
+ 'S0058': {'attack_ids': ['T1562.001',
+                          'T1056.001',
                           'T1082',
                           'T1008',
+                          'T1033',
                           'T1134',
-                          'T1056.001',
                           'T1547.009',
-                          'T1036.005',
-                          'T1562.001',
-                          'T1547.001'],
+                          'T1547.001',
+                          'T1036.005'],
            'description': '[SslMM](https://attack.mitre.org/software/S0058) is a full-featured backdoor used by '
                           '[Naikon](https://attack.mitre.org/groups/G0019) that has multiple variants. (Citation: '
                           'Baumgartner Naikon 2015)',
@@ -10641,14 +12914,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0058',
            'type': 'malware'},
- 'S0059': {'attack_ids': ['T1033', 'T1082', 'T1008', 'T1071.001', 'T1083', 'T1057'],
+ 'S0059': {'attack_ids': ['T1082', 'T1008', 'T1033', 'T1071.001', 'T1057', 'T1083'],
            'description': '[WinMM](https://attack.mitre.org/software/S0059) is a full-featured, simple backdoor used '
                           'by [Naikon](https://attack.mitre.org/groups/G0019). (Citation: Baumgartner Naikon 2015)',
            'name': 'WinMM',
            'platforms': ['Windows'],
            'software_id': 'S0059',
            'type': 'malware'},
- 'S0060': {'attack_ids': ['T1033', 'T1082', 'T1069.001', 'T1573.001', 'T1071.001', 'T1016'],
+ 'S0060': {'attack_ids': ['T1082', 'T1016', 'T1033', 'T1071.001', 'T1573.001', 'T1069.001'],
            'description': '[Sys10](https://attack.mitre.org/software/S0060) is a backdoor that was used throughout '
                           '2013 by [Naikon](https://attack.mitre.org/groups/G0019). (Citation: Baumgartner Naikon '
                           '2015)',
@@ -10664,26 +12937,26 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0061',
            'type': 'malware'},
- 'S0062': {'attack_ids': ['T1082',
-                          'T1120',
-                          'T1518.001',
-                          'T1047',
-                          'T1056.001',
-                          'T1027',
-                          'T1529',
-                          'T1547.001',
-                          'T1074.001',
-                          'T1008',
-                          'T1057',
-                          'T1041',
+ 'S0062': {'attack_ids': ['T1047',
+                          'T1082',
                           'T1560.001',
-                          'T1070.004',
-                          'T1518',
-                          'T1071.001',
-                          'T1091',
+                          'T1529',
+                          'T1518.001',
+                          'T1056.001',
+                          'T1008',
+                          'T1120',
                           'T1570',
+                          'T1041',
+                          'T1518',
+                          'T1027',
                           'T1113',
-                          'T1083'],
+                          'T1083',
+                          'T1091',
+                          'T1070.004',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1547.001',
+                          'T1057'],
            'description': '[DustySky](https://attack.mitre.org/software/S0062) is multi-stage malware written in .NET '
                           'that has been used by [Molerats](https://attack.mitre.org/groups/G0021) since May 2015. '
                           '(Citation: DustySky) (Citation: DustySky2)(Citation: Kaspersky MoleRATs April 2019)',
@@ -10691,14 +12964,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0062',
            'type': 'malware'},
- 'S0063': {'attack_ids': ['T1027', 'T1087.001', 'T1049', 'T1083', 'T1018', 'T1057'],
+ 'S0063': {'attack_ids': ['T1049', 'T1027', 'T1087.001', 'T1018', 'T1057', 'T1083'],
            'description': '[SHOTPUT](https://attack.mitre.org/software/S0063) is a custom backdoor used by '
                           '[APT3](https://attack.mitre.org/groups/G0022). (Citation: FireEye Clandestine Wolf)',
            'name': 'SHOTPUT',
            'platforms': ['Windows'],
            'software_id': 'S0063',
            'type': 'malware'},
- 'S0064': {'attack_ids': ['T1083', 'T1043', 'T1071.001', 'T1057'],
+ 'S0064': {'attack_ids': ['T1057', 'T1083', 'T1043', 'T1071.001'],
            'description': '[ELMER](https://attack.mitre.org/software/S0064) is a non-persistent, proxy-aware HTTP '
                           'backdoor written in Delphi that has been used by '
                           '[APT16](https://attack.mitre.org/groups/G0023). (Citation: FireEye EPS Awakens Part 2)',
@@ -10706,7 +12979,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0064',
            'type': 'malware'},
- 'S0065': {'attack_ids': ['T1082', 'T1059.003', 'T1573.001', 'T1071.001', 'T1083', 'T1057'],
+ 'S0065': {'attack_ids': ['T1059.003', 'T1082', 'T1071.001', 'T1573.001', 'T1057', 'T1083'],
            'description': '[4H RAT](https://attack.mitre.org/software/S0065) is malware that has been used by [Putter '
                           'Panda](https://attack.mitre.org/groups/G0024) since at least 2007. (Citation: CrowdStrike '
                           'Putter Panda)',
@@ -10714,7 +12987,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0065',
            'type': 'malware'},
- 'S0066': {'attack_ids': ['T1083', 'T1070.006', 'T1071.001', 'T1573.001'],
+ 'S0066': {'attack_ids': ['T1083', 'T1070.006', 'T1573.001', 'T1071.001'],
            'description': '[3PARA RAT](https://attack.mitre.org/software/S0066) is a remote access tool (RAT) '
                           'programmed in C++ that has been used by [Putter '
                           'Panda](https://attack.mitre.org/groups/G0024). (Citation: CrowdStrike Putter Panda)',
@@ -10722,7 +12995,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0066',
            'type': 'malware'},
- 'S0067': {'attack_ids': ['T1071.001', 'T1070.004', 'T1552.001'],
+ 'S0067': {'attack_ids': ['T1552.001', 'T1071.001', 'T1070.004'],
            'description': '[pngdowner](https://attack.mitre.org/software/S0067) is malware used by [Putter '
                           'Panda](https://attack.mitre.org/groups/G0024). It is a simple tool with limited '
                           'functionality and no persistence mechanism, suggesting it is used only as a simple '
@@ -10732,7 +13005,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0067',
            'type': 'malware'},
- 'S0068': {'attack_ids': ['T1059.003', 'T1573.001', 'T1071.001'],
+ 'S0068': {'attack_ids': ['T1071.001', 'T1059.003', 'T1573.001'],
            'description': '[httpclient](https://attack.mitre.org/software/S0068) is malware used by [Putter '
                           'Panda](https://attack.mitre.org/groups/G0024). It is a simple tool that provides a limited '
                           'range of functionality, suggesting it is likely used as a second-stage or '
@@ -10741,7 +13014,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0068',
            'type': 'malware'},
- 'S0069': {'attack_ids': ['T1102.001', 'T1102.002', 'T1070.004', 'T1059.003', 'T1083', 'T1057', 'T1104'],
+ 'S0069': {'attack_ids': ['T1059.003', 'T1102.001', 'T1070.004', 'T1104', 'T1102.002', 'T1057', 'T1083'],
            'description': '[BLACKCOFFEE](https://attack.mitre.org/software/S0069) is malware that has been used by '
                           'several Chinese groups since at least 2013. (Citation: FireEye APT17) (Citation: FireEye '
                           'Periscope March 2018)',
@@ -10749,19 +13022,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0069',
            'type': 'malware'},
- 'S0070': {'attack_ids': ['T1043',
-                          'T1071.004',
-                          'T1070.004',
-                          'T1105',
-                          'T1059.003',
+ 'S0070': {'attack_ids': ['T1059.003',
                           'T1056.001',
                           'T1027',
-                          'T1071.001',
+                          'T1070.004',
                           'T1574.002',
+                          'T1043',
+                          'T1071.001',
                           'T1574.001',
+                          'T1105',
+                          'T1547.001',
                           'T1036.005',
                           'T1083',
-                          'T1547.001'],
+                          'T1071.004'],
            'description': '[HTTPBrowser](https://attack.mitre.org/software/S0070) is malware that has been used by '
                           'several threat groups. (Citation: ThreatStream Evasion Analysis) (Citation: Dell TG-3390) '
                           'It is believed to be of Chinese origin. (Citation: ThreatConnect Anthem)',
@@ -10769,7 +13042,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0070',
            'type': 'malware'},
- 'S0071': {'attack_ids': ['T1059.003', 'T1543.003'],
+ 'S0071': {'attack_ids': ['T1543.003', 'T1059.003'],
            'description': '[hcdLoader](https://attack.mitre.org/software/S0071) is a remote access tool (RAT) that has '
                           'been used by [APT18](https://attack.mitre.org/groups/G0026). (Citation: Dell Lateral '
                           'Movement)',
@@ -10777,14 +13050,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0071',
            'type': 'malware'},
- 'S0072': {'attack_ids': ['T1070.006',
+ 'S0072': {'attack_ids': ['T1056.001',
+                          'T1560.003',
                           'T1505.003',
-                          'T1056.001',
                           'T1071.001',
-                          'T1574.002',
+                          'T1070.006',
                           'T1036.005',
-                          'T1083',
-                          'T1560.003'],
+                          'T1574.002',
+                          'T1083'],
            'description': '[OwaAuth](https://attack.mitre.org/software/S0072) is a Web shell and credential stealer '
                           'deployed to Microsoft Exchange servers that appears to be exclusively used by [Threat '
                           'Group-3390](https://attack.mitre.org/groups/G0027). (Citation: Dell TG-3390)',
@@ -10800,16 +13073,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0073',
            'type': 'malware'},
- 'S0074': {'attack_ids': ['T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1543.003',
-                          'T1027',
-                          'T1574.002',
+ 'S0074': {'attack_ids': ['T1059.003',
+                          'T1070.004',
                           'T1071.001',
+                          'T1105',
                           'T1548.002',
+                          'T1543.003',
+                          'T1573.001',
                           'T1547.001',
+                          'T1574.002',
+                          'T1027',
                           'T1218.011'],
            'description': '[Sakula](https://attack.mitre.org/software/S0074) is a remote access tool (RAT) that first '
                           'surfaced in 2012 and was used in intrusions throughout 2015. (Citation: Dell Sakula)',
@@ -10817,7 +13090,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0074',
            'type': 'malware'},
- 'S0075': {'attack_ids': ['T1012', 'T1112', 'T1552.002'],
+ 'S0075': {'attack_ids': ['T1112', 'T1012', 'T1552.002'],
            'description': '[Reg](https://attack.mitre.org/software/S0075) is a Windows utility used to interact with '
                           'the Windows Registry. It can be used at the command-line interface to query, add, modify, '
                           'and remove information. (Citation: Microsoft Reg)\n'
@@ -10828,7 +13101,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0075',
            'type': 'tool'},
- 'S0076': {'attack_ids': ['T1573.001', 'T1001.003', 'T1095', 'T1056.001'],
+ 'S0076': {'attack_ids': ['T1001.003', 'T1095', 'T1056.001', 'T1573.001'],
            'description': '[FakeM](https://attack.mitre.org/software/S0076) is a shellcode-based Windows backdoor that '
                           'has been used by [Scarlet Mimic](https://attack.mitre.org/groups/G0029). (Citation: Scarlet '
                           'Mimic Jan 2016)',
@@ -10836,7 +13109,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0076',
            'type': 'malware'},
- 'S0077': {'attack_ids': ['T1041', 'T1573.001', 'T1059.004', 'T1105'],
+ 'S0077': {'attack_ids': ['T1105', 'T1041', 'T1573.001', 'T1059.004'],
            'description': '[CallMe](https://attack.mitre.org/software/S0077) is a Trojan designed to run on Apple OSX. '
                           'It is based on a publicly available tool called Tiny SHell. (Citation: Scarlet Mimic Jan '
                           '2016)',
@@ -10844,7 +13117,7 @@ software_map = {
            'platforms': ['macOS'],
            'software_id': 'S0077',
            'type': 'malware'},
- 'S0078': {'attack_ids': ['T1070.006', 'T1041', 'T1105', 'T1071.001', 'T1083'],
+ 'S0078': {'attack_ids': ['T1071.001', 'T1041', 'T1070.006', 'T1105', 'T1083'],
            'description': '[Psylo](https://attack.mitre.org/software/S0078) is a shellcode-based Trojan that has been '
                           'used by [Scarlet Mimic](https://attack.mitre.org/groups/G0029). It has similar '
                           'characteristics as [FakeM](https://attack.mitre.org/software/S0076). (Citation: Scarlet '
@@ -10853,7 +13126,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0078',
            'type': 'malware'},
- 'S0079': {'attack_ids': ['T1065', 'T1041', 'T1082', 'T1005', 'T1105', 'T1032', 'T1217', 'T1083', 'T1057'],
+ 'S0079': {'attack_ids': ['T1217', 'T1082', 'T1005', 'T1032', 'T1065', 'T1105', 'T1041', 'T1057', 'T1083'],
            'description': '[MobileOrder](https://attack.mitre.org/software/S0079) is a Trojan intended to compromise '
                           'Android mobile devices. It has been used by [Scarlet '
                           'Mimic](https://attack.mitre.org/groups/G0029). (Citation: Scarlet Mimic Jan 2016)',
@@ -10861,7 +13134,7 @@ software_map = {
            'platforms': [],
            'software_id': 'S0079',
            'type': 'malware'},
- 'S0080': {'attack_ids': ['T1043', 'T1105', 'T1059.003', 'T1003.002', 'T1547.001'],
+ 'S0080': {'attack_ids': ['T1059.003', 'T1043', 'T1547.001', 'T1105', 'T1003.002'],
            'description': '[Mivast](https://attack.mitre.org/software/S0080) is a backdoor that has been used by [Deep '
                           'Panda](https://attack.mitre.org/groups/G0009). It was reportedly used in the Anthem breach. '
                           '(Citation: Symantec Black Vine)',
@@ -10870,23 +13143,23 @@ software_map = {
            'software_id': 'S0080',
            'type': 'malware'},
  'S0081': {'attack_ids': ['T1082',
-                          'T1027',
-                          'T1547.001',
-                          'T1132.001',
-                          'T1074.001',
-                          'T1007',
-                          'T1105',
-                          'T1543.003',
-                          'T1057',
-                          'T1070.006',
-                          'T1055.001',
-                          'T1070.004',
-                          'T1218.011',
-                          'T1071.001',
-                          'T1036.005',
                           'T1087.001',
+                          'T1070.006',
+                          'T1543.003',
+                          'T1055.001',
+                          'T1218.011',
                           'T1573.001',
+                          'T1105',
+                          'T1027',
+                          'T1007',
+                          'T1036.005',
                           'T1083',
+                          'T1132.001',
+                          'T1070.004',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1547.001',
+                          'T1057',
                           'T1016'],
            'description': '[Elise](https://attack.mitre.org/software/S0081) is a custom backdoor Trojan that appears '
                           'to be used exclusively by [Lotus Blossom](https://attack.mitre.org/groups/G0030). It is '
@@ -10897,19 +13170,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0081',
            'type': 'malware'},
- 'S0082': {'attack_ids': ['T1007',
-                          'T1082',
-                          'T1055.001',
+ 'S0082': {'attack_ids': ['T1059.003',
                           'T1069.001',
+                          'T1007',
+                          'T1082',
+                          'T1027.001',
+                          'T1071.001',
                           'T1105',
-                          'T1059.003',
                           'T1573.001',
+                          'T1547.001',
                           'T1543.003',
                           'T1027',
-                          'T1071.001',
-                          'T1027.001',
                           'T1016',
-                          'T1547.001',
+                          'T1055.001',
                           'T1218.011'],
            'description': '[Emissary](https://attack.mitre.org/software/S0082) is a Trojan that has been used by '
                           '[Lotus Blossom](https://attack.mitre.org/groups/G0030). It shares code with '
@@ -10919,18 +13192,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0082',
            'type': 'malware'},
- 'S0083': {'attack_ids': ['T1070.006',
-                          'T1043',
+ 'S0083': {'attack_ids': ['T1059.003',
                           'T1082',
                           'T1070.004',
-                          'T1105',
-                          'T1059.003',
                           'T1095',
-                          'T1094',
                           'T1036.005',
+                          'T1094',
+                          'T1043',
+                          'T1070.006',
+                          'T1070',
+                          'T1105',
                           'T1083',
-                          'T1132.001',
-                          'T1070'],
+                          'T1132.001'],
            'description': '[Misdat](https://attack.mitre.org/software/S0083) is a backdoor that was used by [Dust '
                           'Storm](https://attack.mitre.org/groups/G0031) from 2010 to 2011. (Citation: Cylance Dust '
                           'Storm)',
@@ -10938,35 +13211,35 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0083',
            'type': 'malware'},
- 'S0084': {'attack_ids': ['T1043',
-                          'T1033',
+ 'S0084': {'attack_ids': ['T1059.003',
                           'T1082',
                           'T1008',
-                          'T1059.003',
                           'T1095',
-                          'T1071.001',
-                          'T1094',
                           'T1087.001',
-                          'T1036.005',
+                          'T1094',
+                          'T1071.001',
+                          'T1033',
+                          'T1043',
                           'T1136.001',
-                          'T1132.001',
-                          'T1016'],
+                          'T1036.005',
+                          'T1016',
+                          'T1132.001'],
            'description': '[Mis-Type](https://attack.mitre.org/software/S0084) is a backdoor hybrid that was used by '
                           '[Dust Storm](https://attack.mitre.org/groups/G0031) in 2012. (Citation: Cylance Dust Storm)',
            'name': 'Mis-Type',
            'platforms': ['Windows'],
            'software_id': 'S0084',
            'type': 'malware'},
- 'S0085': {'attack_ids': ['T1043',
-                          'T1007',
+ 'S0085': {'attack_ids': ['T1007',
                           'T1082',
                           'T1008',
-                          'T1547.001',
-                          'T1071.001',
-                          'T1547.009',
-                          'T1036.005',
                           'T1087.001',
+                          'T1043',
+                          'T1071.001',
                           'T1136.001',
+                          'T1547.009',
+                          'T1547.001',
+                          'T1036.005',
                           'T1132.001'],
            'description': '[S-Type](https://attack.mitre.org/software/S0085) is a backdoor that was used by [Dust '
                           'Storm](https://attack.mitre.org/groups/G0031) from 2013 to 2014. (Citation: Cylance Dust '
@@ -10975,15 +13248,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0085',
            'type': 'malware'},
- 'S0086': {'attack_ids': ['T1560.002',
+ 'S0086': {'attack_ids': ['T1059.003',
                           'T1007',
                           'T1082',
-                          'T1105',
-                          'T1059.003',
                           'T1113',
-                          'T1543.003',
                           'T1071.001',
+                          'T1105',
+                          'T1560.002',
                           'T1036.005',
+                          'T1543.003',
                           'T1083'],
            'description': '[ZLib](https://attack.mitre.org/software/S0086) is a full-featured backdoor that was used '
                           'as a second-stage implant by [Dust Storm](https://attack.mitre.org/groups/G0031) from 2014 '
@@ -10993,16 +13266,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0086',
            'type': 'malware'},
- 'S0087': {'attack_ids': ['T1043',
-                          'T1218.010',
+ 'S0087': {'attack_ids': ['T1059.003',
                           'T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
+                          'T1218.010',
+                          'T1043',
                           'T1071.001',
-                          'T1027',
                           'T1573.002',
-                          'T1547.001'],
+                          'T1573.001',
+                          'T1547.001',
+                          'T1105',
+                          'T1027'],
            'description': '[Hi-Zor](https://attack.mitre.org/software/S0087) is a remote access tool (RAT) that has '
                           'characteristics similar to [Sakula](https://attack.mitre.org/software/S0074). It was used '
                           'in a campaign named INOCNATION. (Citation: Fidelis Hi-Zor)',
@@ -11010,44 +13283,44 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0087',
            'type': 'malware'},
- 'S0088': {'attack_ids': ['T1082',
-                          'T1105',
-                          'T1059.003',
-                          'T1113',
-                          'T1518.001',
-                          'T1562.004',
+ 'S0088': {'attack_ids': ['T1059.003',
                           'T1056.001',
-                          'T1083',
+                          'T1082',
+                          'T1113',
+                          'T1562.004',
+                          'T1057',
                           'T1547.001',
-                          'T1057'],
+                          'T1105',
+                          'T1083',
+                          'T1518.001'],
            'description': '[Kasidet](https://attack.mitre.org/software/S0088) is a backdoor that has been dropped by '
                           'using malicious VBA macros. (Citation: Zscaler Kasidet)',
            'name': 'Kasidet',
            'platforms': ['Windows'],
            'software_id': 'S0088',
            'type': 'malware'},
- 'S0089': {'attack_ids': ['T1082',
-                          'T1120',
-                          'T1046',
-                          'T1070.001',
-                          'T1047',
-                          'T1056.001',
-                          'T1547.001',
-                          'T1008',
-                          'T1543.003',
-                          'T1574.010',
-                          'T1049',
-                          'T1057',
-                          'T1021.002',
+ 'S0089': {'attack_ids': ['T1047',
+                          'T1082',
                           'T1055.001',
+                          'T1056.001',
+                          'T1008',
+                          'T1120',
+                          'T1021.002',
                           'T1552.001',
-                          'T1071.001',
-                          'T1547.009',
-                          'T1548.002',
-                          'T1485',
-                          'T1555.003',
                           'T1113',
+                          'T1548.002',
+                          'T1070.001',
                           'T1083',
+                          'T1574.010',
+                          'T1046',
+                          'T1049',
+                          'T1071.001',
+                          'T1485',
+                          'T1547.009',
+                          'T1057',
+                          'T1547.001',
+                          'T1543.003',
+                          'T1555.003',
                           'T1016'],
            'description': '[BlackEnergy](https://attack.mitre.org/software/S0089) is a malware toolkit that has been '
                           'used by both criminal and APT actors. It dates back to at least 2007 and was originally '
@@ -11060,16 +13333,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0089',
            'type': 'malware'},
- 'S0090': {'attack_ids': ['T1074.001',
-                          'T1020',
-                          'T1005',
-                          'T1113',
-                          'T1025',
+ 'S0090': {'attack_ids': ['T1056.001',
                           'T1119',
-                          'T1056.001',
+                          'T1005',
+                          'T1074.001',
+                          'T1025',
+                          'T1113',
                           'T1112',
-                          'T1083',
-                          'T1547.001'],
+                          'T1020',
+                          'T1547.001',
+                          'T1083'],
            'description': '[Rover](https://attack.mitre.org/software/S0090) is malware suspected of being used for '
                           'espionage purposes. It was used in 2015 in a targeted email sent to an Indian Ambassador to '
                           'Afghanistan. (Citation: Palo Alto Rover)',
@@ -11077,26 +13350,26 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0090',
            'type': 'malware'},
- 'S0091': {'attack_ids': ['T1055.011',
-                          'T1082',
-                          'T1518.001',
-                          'T1027',
-                          'T1560',
-                          'T1033',
-                          'T1007',
-                          'T1553.002',
-                          'T1049',
-                          'T1018',
-                          'T1057',
-                          'T1560.002',
-                          'T1070.004',
-                          'T1069.001',
-                          'T1012',
-                          'T1071.001',
+ 'S0091': {'attack_ids': ['T1082',
                           'T1087.001',
-                          'T1124',
+                          'T1033',
+                          'T1018',
+                          'T1553.002',
+                          'T1518.001',
                           'T1573.001',
+                          'T1027',
+                          'T1069.001',
+                          'T1055.011',
+                          'T1007',
                           'T1083',
+                          'T1560',
+                          'T1049',
+                          'T1124',
+                          'T1070.004',
+                          'T1071.001',
+                          'T1560.002',
+                          'T1012',
+                          'T1057',
                           'T1016'],
            'description': '[Epic](https://attack.mitre.org/software/S0091) is a backdoor that has been used by '
                           '[Turla](https://attack.mitre.org/groups/G0010). (Citation: Kaspersky Turla)',
@@ -11104,7 +13377,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0091',
            'type': 'malware'},
- 'S0092': {'attack_ids': ['T1033', 'T1091', 'T1105', 'T1052.001', 'T1016', 'T1560.003'],
+ 'S0092': {'attack_ids': ['T1560.003', 'T1033', 'T1052.001', 'T1105', 'T1016', 'T1091'],
            'description': '[Agent.btz](https://attack.mitre.org/software/S0092) is a worm that primarily spreads '
                           'itself via removable devices such as USB drives. It reportedly infected U.S. military '
                           'networks in 2008. (Citation: Securelist Agent.btz)',
@@ -11112,18 +13385,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0092',
            'type': 'malware'},
- 'S0093': {'attack_ids': ['T1033',
-                          'T1560',
-                          'T1087.003',
+ 'S0093': {'attack_ids': ['T1555.003',
+                          'T1055',
                           'T1082',
                           'T1070.004',
-                          'T1555.003',
+                          'T1087.003',
+                          'T1033',
+                          'T1560',
                           'T1547.001',
-                          'T1055',
-                          'T1083',
-                          'T1132.001',
                           'T1057',
-                          'T1016'],
+                          'T1083',
+                          'T1016',
+                          'T1132.001'],
            'description': '[Backdoor.Oldrea](https://attack.mitre.org/software/S0093) is a backdoor used by '
                           '[Dragonfly](https://attack.mitre.org/groups/G0035). It appears to be custom malware '
                           'authored by the group or specifically for it. (Citation: Symantec Dragonfly)',
@@ -11131,15 +13404,39 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0093',
            'type': 'malware'},
- 'S0094': {'attack_ids': ['T1074.001', 'T1105', 'T1113', 'T1003', 'T1027.002', 'T1547.001', 'T1057'],
-           'description': '[Trojan.Karagany](https://attack.mitre.org/software/S0094) is a backdoor primarily used for '
-                          'recon. The source code for it was leaked in 2010 and it is sold on underground forums. '
-                          '(Citation: Symantec Dragonfly)',
+ 'S0094': {'attack_ids': ['T1082',
+                          'T1033',
+                          'T1027.002',
+                          'T1010',
+                          'T1056.001',
+                          'T1105',
+                          'T1027',
+                          'T1055.003',
+                          'T1113',
+                          'T1497.001',
+                          'T1083',
+                          'T1003',
+                          'T1049',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1573.002',
+                          'T1547.001',
+                          'T1057',
+                          'T1555.003',
+                          'T1016'],
+           'description': '[Trojan.Karagany](https://attack.mitre.org/software/S0094) is a modular remote access tool '
+                          'used for recon and linked to [Dragonfly](https://attack.mitre.org/groups/G0035) and '
+                          '[Dragonfly 2.0](https://attack.mitre.org/groups/G0074). The source code for '
+                          '[Trojan.Karagany](https://attack.mitre.org/software/S0094) originated from Dream Loader '
+                          'malware which was leaked in 2010 and sold on underground forums. (Citation: Symantec '
+                          'Dragonfly)(Citation: Secureworks Karagany July 2019)(Citation: Dragos DYMALLOY )',
            'name': 'Trojan.Karagany',
            'platforms': ['Windows'],
            'software_id': 'S0094',
            'type': 'malware'},
- 'S0095': {'attack_ids': ['T1043', 'T1048.003'],
+ 'S0095': {'attack_ids': ['T1048.003', 'T1043'],
            'description': '[FTP](https://attack.mitre.org/software/S0095) is a utility commonly available with '
                           'operating systems to transfer information over the File Transfer Protocol (FTP). '
                           'Adversaries can use it to transfer other tools onto a system or to exfiltrate data. '
@@ -11162,19 +13459,19 @@ software_map = {
            'platforms': ['Linux', 'Windows', 'macOS'],
            'software_id': 'S0097',
            'type': 'tool'},
- 'S0098': {'attack_ids': ['T1124',
-                          'T1546.010',
+ 'S0098': {'attack_ids': ['T1546.010',
+                          'T1123',
+                          'T1124',
+                          'T1119',
                           'T1082',
+                          'T1016',
+                          'T1560.003',
+                          'T1113',
                           'T1033',
                           'T1120',
-                          'T1113',
-                          'T1119',
-                          'T1518.001',
-                          'T1123',
                           'T1574.002',
-                          'T1016',
-                          'T1125',
-                          'T1560.003'],
+                          'T1518.001',
+                          'T1125'],
            'description': '[T9000](https://attack.mitre.org/software/S0098) is a backdoor that is a newer variant of '
                           'the T5000 malware family, also known as Plat1. Its primary function is to gather '
                           'information about the victim. It has been used in multiple targeted attacks against '
@@ -11207,7 +13504,7 @@ software_map = {
            'platforms': ['Linux'],
            'software_id': 'S0101',
            'type': 'tool'},
- 'S0102': {'attack_ids': ['T1016', 'T1049'],
+ 'S0102': {'attack_ids': ['T1049', 'T1016'],
            'description': '[nbtstat](https://attack.mitre.org/software/S0102) is a utility used to troubleshoot '
                           'NetBIOS name resolution. (Citation: TechNet Nbtstat)',
            'name': 'nbtstat',
@@ -11229,7 +13526,7 @@ software_map = {
            'platforms': ['Windows', 'Linux', 'macOS'],
            'software_id': 'S0104',
            'type': 'tool'},
- 'S0105': {'attack_ids': ['T1069.002', 'T1482', 'T1087.002'],
+ 'S0105': {'attack_ids': ['T1482', 'T1087.002', 'T1069.002'],
            'description': '[dsquery](https://attack.mitre.org/software/S0105) is a command-line utility that can be '
                           'used to query Active Directory for information from a system within a domain. (Citation: '
                           'TechNet Dsquery) It is typically installed only on Windows Server versions but can be '
@@ -11239,7 +13536,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0105',
            'type': 'tool'},
- 'S0106': {'attack_ids': ['T1570', 'T1082', 'T1070.004', 'T1105', 'T1059.003', 'T1083'],
+ 'S0106': {'attack_ids': ['T1059.003', 'T1082', 'T1070.004', 'T1570', 'T1105', 'T1083'],
            'description': '[cmd](https://attack.mitre.org/software/S0106) is the Windows command-line interpreter that '
                           'can be used to interact with systems and execute other processes and utilities. (Citation: '
                           'TechNet Cmd)\n'
@@ -11252,24 +13549,26 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0106',
            'type': 'tool'},
- 'S0107': {'attack_ids': ['T1546.010', 'T1070.004', 'T1048.003'],
+ 'S0107': {'attack_ids': ['T1546.010', 'T1048.003', 'T1070.004'],
            'description': '[Cherry Picker](https://attack.mitre.org/software/S0107) is a point of sale (PoS) memory '
                           'scraper. (Citation: Trustwave Cherry Picker)',
            'name': 'Cherry Picker',
            'platforms': ['Windows'],
            'software_id': 'S0107',
            'type': 'malware'},
- 'S0108': {'attack_ids': ['T1546.007', 'T1090', 'T1562.004', 'T1518.001'],
+ 'S0108': {'attack_ids': ['T1562.004', 'T1090', 'T1546.007', 'T1518.001'],
            'description': '[netsh](https://attack.mitre.org/software/S0108) is a scripting utility used to interact '
                           'with networking components on local or remote systems. (Citation: TechNet Netsh)',
            'name': 'netsh',
            'platforms': ['Windows'],
            'software_id': 'S0108',
            'type': 'tool'},
- 'S0109': {'attack_ids': ['T1059.003', 'T1574.001', 'T1105'],
-           'description': '[WEBC2](https://attack.mitre.org/software/S0109) is a backdoor used by '
-                          '[APT1](https://attack.mitre.org/groups/G0006) to retrieve a Web page from a predetermined '
-                          'C2 server. (Citation: Mandiant APT1 Appendix)(Citation: Mandiant APT1)',
+ 'S0109': {'attack_ids': ['T1105', 'T1059.003', 'T1574.001'],
+           'description': '[WEBC2](https://attack.mitre.org/software/S0109) is a family of backdoor malware used by '
+                          '[APT1](https://attack.mitre.org/groups/G0006) as early as July 2006. '
+                          '[WEBC2](https://attack.mitre.org/software/S0109) backdoors are designed to retrieve a '
+                          'webpage, with commands hidden in HTML comments or special tags, from a predetermined C2 '
+                          'server. (Citation: Mandiant APT1 Appendix)(Citation: Mandiant APT1)',
            'name': 'WEBC2',
            'platforms': ['Windows'],
            'software_id': 'S0109',
@@ -11297,26 +13596,26 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0112',
            'type': 'malware'},
- 'S0113': {'attack_ids': ['T1082',
-                          'T1120',
-                          'T1025',
-                          'T1518.001',
-                          'T1056.001',
-                          'T1027',
-                          'T1560',
-                          'T1132.001',
-                          'T1547.001',
-                          'T1074.001',
+ 'S0113': {'attack_ids': ['T1555',
+                          'T1082',
                           'T1033',
-                          'T1555',
+                          'T1518.001',
+                          'T1218.011',
+                          'T1056.001',
+                          'T1025',
+                          'T1120',
                           'T1574.001',
-                          'T1070',
-                          'T1016',
-                          'T1555.003',
                           'T1573.001',
+                          'T1070',
+                          'T1027',
                           'T1113',
                           'T1083',
-                          'T1218.011'],
+                          'T1560',
+                          'T1132.001',
+                          'T1074.001',
+                          'T1547.001',
+                          'T1555.003',
+                          'T1016'],
            'description': '[Prikormka](https://attack.mitre.org/software/S0113) is a malware family used in a campaign '
                           'known as Operation Groundbait. It has predominantly been observed in Ukraine and was used '
                           'as early as 2008. (Citation: ESET Operation Groundbait)',
@@ -11324,7 +13623,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0113',
            'type': 'malware'},
- 'S0114': {'attack_ids': ['T1564.005', 'T1542.003'],
+ 'S0114': {'attack_ids': ['T1542.003', 'T1564.005'],
            'description': '[BOOTRASH](https://attack.mitre.org/software/S0114) is a '
                           '[Bootkit](https://attack.mitre.org/techniques/T1067) that targets Windows operating '
                           'systems. It has been used by threat actors that target the financial sector.(Citation: '
@@ -11333,17 +13632,17 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0114',
            'type': 'malware'},
- 'S0115': {'attack_ids': ['T1082',
+ 'S0115': {'attack_ids': ['T1083',
+                          'T1082',
+                          'T1095',
+                          'T1518.001',
+                          'T1025',
+                          'T1113',
+                          'T1094',
+                          'T1057',
                           'T1105',
                           'T1555.003',
                           'T1114.001',
-                          'T1113',
-                          'T1025',
-                          'T1518.001',
-                          'T1095',
-                          'T1094',
-                          'T1083',
-                          'T1057',
                           'T1016'],
            'description': '[Crimson](https://attack.mitre.org/software/S0115) is malware used as part of a campaign '
                           'known as Operation Transparent Tribe that targeted Indian diplomatic and military victims. '
@@ -11360,7 +13659,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0116',
            'type': 'tool'},
- 'S0117': {'attack_ids': ['T1008', 'T1090', 'T1059.003', 'T1046', 'T1552.001', 'T1027', 'T1027.001', 'T1573.002'],
+ 'S0117': {'attack_ids': ['T1059.003', 'T1552.001', 'T1008', 'T1027.001', 'T1090', 'T1573.002', 'T1027', 'T1046'],
            'description': '[XTunnel](https://attack.mitre.org/software/S0117) a VPN-like network proxy tool that can '
                           'relay traffic between a C2 server and a victim. It was first seen in May 2013 and '
                           'reportedly used by [APT28](https://attack.mitre.org/groups/G0007) during the compromise of '
@@ -11370,7 +13669,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0117',
            'type': 'malware'},
- 'S0118': {'attack_ids': ['T1043', 'T1036.004', 'T1105', 'T1543.003', 'T1032'],
+ 'S0118': {'attack_ids': ['T1036.004', 'T1043', 'T1105', 'T1543.003', 'T1032'],
            'description': '[Nidiran](https://attack.mitre.org/software/S0118) is a custom backdoor developed and used '
                           'by [Suckfly](https://attack.mitre.org/groups/G0039). It has been delivered via strategic '
                           'web compromise. (Citation: Symantec Suckfly March 2016)',
@@ -11415,15 +13714,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0123',
            'type': 'tool'},
- 'S0124': {'attack_ids': ['T1071.004',
-                          'T1082',
-                          'T1105',
-                          'T1059.003',
-                          'T1547.001',
+ 'S0124': {'attack_ids': ['T1059.003',
                           'T1027',
+                          'T1082',
+                          'T1547.001',
+                          'T1105',
                           'T1083',
+                          'T1016',
                           'T1132.001',
-                          'T1016'],
+                          'T1071.004'],
            'description': '[Pisloader](https://attack.mitre.org/software/S0124) is a malware family that is notable '
                           'due to its use of DNS as a C2 protocol as well as its use of anti-analysis tactics. It has '
                           'been used by [APT18](https://attack.mitre.org/groups/G0026) and is similar to another '
@@ -11434,36 +13733,36 @@ software_map = {
            'software_id': 'S0124',
            'type': 'malware'},
  'S0125': {'attack_ids': ['T1082',
-                          'T1071.003',
-                          'T1046',
-                          'T1025',
-                          'T1518.001',
-                          'T1056.001',
-                          'T1027',
-                          'T1003.002',
+                          'T1068',
+                          'T1087.001',
+                          'T1095',
+                          'T1094',
                           'T1033',
                           'T1053',
-                          'T1105',
-                          'T1094',
-                          'T1049',
+                          'T1071.003',
                           'T1018',
-                          'T1057',
-                          'T1065',
+                          'T1518.001',
                           'T1055.001',
                           'T1071.004',
-                          'T1070.004',
-                          'T1032',
-                          'T1095',
-                          'T1071.001',
-                          'T1036.005',
-                          'T1087.001',
-                          'T1068',
+                          'T1056.001',
                           'T1556.002',
-                          'T1562.004',
-                          'T1052.001',
-                          'T1083',
                           'T1016',
-                          'T1048.003'],
+                          'T1025',
+                          'T1562.004',
+                          'T1105',
+                          'T1032',
+                          'T1027',
+                          'T1065',
+                          'T1036.005',
+                          'T1083',
+                          'T1046',
+                          'T1049',
+                          'T1070.004',
+                          'T1071.001',
+                          'T1052.001',
+                          'T1057',
+                          'T1048.003',
+                          'T1003.002'],
            'description': '[Remsec](https://attack.mitre.org/software/S0125) is a modular backdoor that has been used '
                           'by [Strider](https://attack.mitre.org/groups/G0041) and appears to have been designed '
                           'primarily for espionage purposes. Many of its modules are written in Lua. (Citation: '
@@ -11472,24 +13771,24 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0125',
            'type': 'malware'},
- 'S0126': {'attack_ids': ['T1546.015',
+ 'S0126': {'attack_ids': ['T1059.003',
                           'T1036.004',
-                          'T1055.001',
-                          'T1102.002',
-                          'T1059.001',
-                          'T1071.003',
-                          'T1029',
-                          'T1059.003',
-                          'T1053.005',
-                          'T1518',
-                          'T1012',
                           'T1027',
+                          'T1059.001',
                           'T1112',
-                          'T1071.001',
                           'T1564.005',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1029',
+                          'T1102.002',
                           'T1573.002',
-                          'T1140',
-                          'T1106'],
+                          'T1012',
+                          'T1106',
+                          'T1071.003',
+                          'T1546.015',
+                          'T1518',
+                          'T1055.001',
+                          'T1140'],
            'description': '[ComRAT](https://attack.mitre.org/software/S0126) is a second stage implant suspected of '
                           'being a descendant of [Agent.btz](https://attack.mitre.org/software/S0092) and used by '
                           '[Turla](https://attack.mitre.org/groups/G0010). The first version of '
@@ -11500,21 +13799,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0126',
            'type': 'malware'},
- 'S0127': {'attack_ids': ['T1546.015',
-                          'T1043',
-                          'T1007',
-                          'T1055.012',
-                          'T1560.002',
-                          'T1070.004',
-                          'T1573.001',
-                          'T1543.003',
-                          'T1569.002',
-                          'T1071.001',
-                          'T1574.002',
-                          'T1083',
-                          'T1547.001',
+ 'S0127': {'attack_ids': ['T1569.002',
                           'T1140',
-                          'T1057'],
+                          'T1007',
+                          'T1070.004',
+                          'T1574.002',
+                          'T1043',
+                          'T1071.001',
+                          'T1560.002',
+                          'T1543.003',
+                          'T1057',
+                          'T1573.001',
+                          'T1547.001',
+                          'T1546.015',
+                          'T1083',
+                          'T1055.012'],
            'description': '[BBSRAT](https://attack.mitre.org/software/S0127) is malware with remote access tool '
                           'functionality that has been used in targeted compromises. (Citation: Palo Alto Networks '
                           'BBSRAT)',
@@ -11522,30 +13821,30 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0127',
            'type': 'malware'},
- 'S0128': {'attack_ids': ['T1102.001',
-                          'T1120',
-                          'T1039',
-                          'T1025',
-                          'T1056.001',
-                          'T1547.001',
-                          'T1132.001',
-                          'T1074.001',
-                          'T1055.012',
-                          'T1105',
-                          'T1553.002',
-                          'T1119',
-                          'T1005',
-                          'T1071.001',
+ 'S0128': {'attack_ids': ['T1039',
                           'T1574.002',
-                          'T1036.005',
-                          'T1102.002',
-                          'T1059.003',
+                          'T1056.001',
+                          'T1005',
+                          'T1025',
+                          'T1120',
                           'T1573.001',
-                          'T1053.005',
-                          'T1113',
                           'T1106',
+                          'T1105',
+                          'T1119',
+                          'T1102.001',
+                          'T1113',
+                          'T1036.005',
                           'T1083',
-                          'T1132'],
+                          'T1132.001',
+                          'T1059.003',
+                          'T1132',
+                          'T1053.005',
+                          'T1036.001',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1102.002',
+                          'T1547.001',
+                          'T1055.012'],
            'description': '[BADNEWS](https://attack.mitre.org/software/S0128) is malware that has been used by the '
                           'actors responsible for the [Patchwork](https://attack.mitre.org/groups/G0040) campaign. Its '
                           'name was given due to its use of RSS feeds, forums, and blogs for command and control. '
@@ -11554,7 +13853,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0128',
            'type': 'malware'},
- 'S0129': {'attack_ids': ['T1083', 'T1132.001', 'T1548.002', 'T1059.001'],
+ 'S0129': {'attack_ids': ['T1059.001', 'T1083', 'T1548.002', 'T1132.001'],
            'description': '[AutoIt backdoor](https://attack.mitre.org/software/S0129) is malware that has been used by '
                           'the actors responsible for the MONSOON campaign. The actors frequently used it in '
                           'weaponized .pps files exploiting CVE-2014-6352. (Citation: Forcepoint Monsoon) This malware '
@@ -11564,7 +13863,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0129',
            'type': 'malware'},
- 'S0130': {'attack_ids': ['T1033', 'T1091', 'T1082', 'T1555.003', 'T1105', 'T1056.001', 'T1562.001', 'T1016'],
+ 'S0130': {'attack_ids': ['T1562.001', 'T1056.001', 'T1082', 'T1033', 'T1105', 'T1555.003', 'T1016', 'T1091'],
            'description': '[Unknown Logger](https://attack.mitre.org/software/S0130) is a publicly released, free '
                           'backdoor. Version 1.5 of the backdoor has been used by the actors responsible for the '
                           'MONSOON campaign. (Citation: Forcepoint Monsoon)',
@@ -11580,19 +13879,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0131',
            'type': 'malware'},
- 'S0132': {'attack_ids': ['T1091',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1555.003',
-                          'T1080',
-                          'T1562.004',
-                          'T1027',
-                          'T1027.002',
-                          'T1548.002',
+ 'S0132': {'attack_ids': ['T1555.003',
                           'T1562.001',
                           'T1132',
-                          'T1490'],
+                          'T1059.003',
+                          'T1027.002',
+                          'T1080',
+                          'T1562.004',
+                          'T1548.002',
+                          'T1573.001',
+                          'T1105',
+                          'T1027',
+                          'T1490',
+                          'T1091'],
            'description': '[H1N1](https://attack.mitre.org/software/S0132) is a malware variant that has been '
                           'distributed via a campaign using VBA macros to infect victims. Although it initially had '
                           'only loader capabilities, it has evolved to include information-stealing functionality. '
@@ -11609,7 +13908,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0133',
            'type': 'malware'},
- 'S0134': {'attack_ids': ['T1105', 'T1573.001', 'T1001.001', 'T1548.002', 'T1574.001'],
+ 'S0134': {'attack_ids': ['T1574.001', 'T1001.001', 'T1548.002', 'T1573.001', 'T1105'],
            'description': '[Downdelph](https://attack.mitre.org/software/S0134) is a first-stage downloader written in '
                           'Delphi that has been used by [APT28](https://attack.mitre.org/groups/G0007) in rare '
                           'instances between 2013 and 2015. (Citation: ESET Sednit Part 3)',
@@ -11626,20 +13925,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0135',
            'type': 'malware'},
- 'S0136': {'attack_ids': ['T1074.001',
-                          'T1091',
-                          'T1020',
-                          'T1070.006',
-                          'T1070.004',
-                          'T1092',
-                          'T1120',
-                          'T1025',
+ 'S0136': {'attack_ids': ['T1083',
                           'T1119',
-                          'T1027',
+                          'T1070.004',
+                          'T1074.001',
+                          'T1025',
+                          'T1120',
+                          'T1092',
                           'T1052.001',
+                          'T1070.006',
+                          'T1020',
+                          'T1547.001',
                           'T1036.005',
-                          'T1083',
-                          'T1547.001'],
+                          'T1027',
+                          'T1091'],
            'description': '[USBStealer](https://attack.mitre.org/software/S0136) is malware that has used by '
                           '[APT28](https://attack.mitre.org/groups/G0007) since at least 2005 to extract information '
                           'from air-gapped networks. It does not have the capability to communicate over the Internet '
@@ -11651,14 +13950,14 @@ software_map = {
            'software_id': 'S0136',
            'type': 'malware'},
  'S0137': {'attack_ids': ['T1082',
-                          'T1105',
-                          'T1071.003',
-                          'T1573.001',
-                          'T1132.001',
-                          'T1027',
-                          'T1071.001',
                           'T1027.001',
+                          'T1071.003',
+                          'T1071.001',
+                          'T1573.001',
                           'T1547.001',
+                          'T1105',
+                          'T1027',
+                          'T1132.001',
                           'T1218.011'],
            'description': '[CORESHELL](https://attack.mitre.org/software/S0137) is a downloader used by '
                           '[APT28](https://attack.mitre.org/groups/G0007). The older versions of this malware are '
@@ -11668,7 +13967,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0137',
            'type': 'malware'},
- 'S0138': {'attack_ids': ['T1071.003', 'T1555.003', 'T1555', 'T1027', 'T1071.001', 'T1036.005'],
+ 'S0138': {'attack_ids': ['T1027', 'T1555', 'T1071.001', 'T1071.003', 'T1036.005', 'T1555.003'],
            'description': '[OLDBAIT](https://attack.mitre.org/software/S0138) is a credential harvester used by '
                           '[APT28](https://attack.mitre.org/groups/G0007). (Citation: FireEye APT28) (Citation: '
                           'FireEye APT28 January 2017)',
@@ -11676,22 +13975,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0138',
            'type': 'malware'},
- 'S0139': {'attack_ids': ['T1043',
-                          'T1033',
-                          'T1082',
+ 'S0139': {'attack_ids': ['T1059.003',
                           'T1124',
-                          'T1070.004',
                           'T1027.003',
+                          'T1564.004',
+                          'T1082',
+                          'T1070.004',
+                          'T1043',
+                          'T1033',
                           'T1105',
-                          'T1059.003',
-                          'T1016',
-                          'T1083',
                           'T1485',
                           'T1547.001',
+                          'T1010',
                           'T1057',
-                          'T1218.011',
-                          'T1564.004',
-                          'T1010'],
+                          'T1083',
+                          'T1016',
+                          'T1218.011'],
            'description': '[PowerDuke](https://attack.mitre.org/software/S0139) is a backdoor that was used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) in 2016. It has primarily been delivered '
                           'through Microsoft Word or Excel attachments containing malicious macros. (Citation: '
@@ -11701,28 +14000,28 @@ software_map = {
            'software_id': 'S0139',
            'type': 'malware'},
  'S0140': {'attack_ids': ['T1082',
-                          'T1561.002',
-                          'T1027',
-                          'T1529',
-                          'T1134.001',
-                          'T1036.004',
-                          'T1105',
-                          'T1543.003',
-                          'T1018',
-                          'T1486',
-                          'T1070.006',
-                          'T1021.002',
-                          'T1012',
-                          'T1071.001',
-                          'T1112',
-                          'T1548.002',
-                          'T1485',
-                          'T1140',
                           'T1078.002',
+                          'T1112',
+                          'T1529',
+                          'T1070.006',
+                          'T1018',
+                          'T1036.004',
                           'T1570',
+                          'T1105',
+                          'T1027',
+                          'T1021.002',
+                          'T1140',
+                          'T1569.002',
+                          'T1134.001',
+                          'T1548.002',
+                          'T1561.002',
                           'T1124',
                           'T1053.005',
-                          'T1569.002',
+                          'T1071.001',
+                          'T1486',
+                          'T1485',
+                          'T1012',
+                          'T1543.003',
                           'T1016'],
            'description': '[Shamoon](https://attack.mitre.org/software/S0140) is wiper malware that was first used by '
                           'an Iranian group known as the "Cutting Sword of Justice" in 2012. Other versions known as '
@@ -11750,14 +14049,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0141',
            'type': 'malware'},
- 'S0142': {'attack_ids': ['T1082',
+ 'S0142': {'attack_ids': ['T1083',
                           'T1059.003',
-                          'T1543.003',
-                          'T1518.001',
+                          'T1082',
                           'T1112',
-                          'T1027',
-                          'T1083',
                           'T1057',
+                          'T1543.003',
+                          'T1027',
+                          'T1518.001',
                           'T1218.011'],
            'description': '[StreamEx](https://attack.mitre.org/software/S0142) is a malware family that has been used '
                           'by [Deep Panda](https://attack.mitre.org/groups/G0009) since at least 2015. In 2016, it was '
@@ -11767,14 +14066,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0142',
            'type': 'malware'},
- 'S0143': {'attack_ids': ['T1091',
-                          'T1210',
+ 'S0143': {'attack_ids': ['T1011.001',
+                          'T1123',
                           'T1547.002',
                           'T1113',
-                          'T1518.001',
-                          'T1011.001',
-                          'T1123',
+                          'T1210',
                           'T1136.001',
+                          'T1518.001',
+                          'T1091',
                           'T1218.011'],
            'description': 'Flame is a sophisticated toolkit that has been used to collect information since at least '
                           '2010, largely targeting Middle East countries. (Citation: Kaspersky Flame)',
@@ -11782,18 +14081,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0143',
            'type': 'malware'},
- 'S0144': {'attack_ids': ['T1082',
-                          'T1105',
-                          'T1555.003',
-                          'T1573.001',
+ 'S0144': {'attack_ids': ['T1555.003',
+                          'T1562.001',
+                          'T1082',
                           'T1553.002',
-                          'T1132.001',
                           'T1071.001',
+                          'T1105',
+                          'T1057',
+                          'T1573.001',
+                          'T1547.001',
                           'T1036.005',
                           'T1083',
-                          'T1562.001',
-                          'T1547.001',
-                          'T1057'],
+                          'T1132.001'],
            'description': '[ChChes](https://attack.mitre.org/software/S0144) is a Trojan that appears to be used '
                           'exclusively by [menuPass](https://attack.mitre.org/groups/G0045). It was used to target '
                           'Japanese organizations in 2016. Its lack of persistence methods suggests it may be intended '
@@ -11803,7 +14102,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0144',
            'type': 'malware'},
- 'S0145': {'attack_ids': ['T1071.004', 'T1059.001', 'T1105', 'T1012', 'T1547.001', 'T1564.004'],
+ 'S0145': {'attack_ids': ['T1564.004', 'T1059.001', 'T1012', 'T1547.001', 'T1105', 'T1071.004'],
            'description': '[POWERSOURCE](https://attack.mitre.org/software/S0145) is a PowerShell backdoor that is a '
                           'heavily obfuscated and modified version of the publicly available tool DNS_TXT_Pwnage. It '
                           'was observed in February 2017 in spearphishing campaigns against personnel involved with '
@@ -11823,16 +14122,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0146',
            'type': 'malware'},
- 'S0147': {'attack_ids': ['T1074.001',
-                          'T1041',
+ 'S0147': {'attack_ids': ['T1059.003',
                           'T1070.004',
-                          'T1105',
-                          'T1059.003',
+                          'T1074.001',
                           'T1053.005',
                           'T1113',
                           'T1071.001',
-                          'T1083',
+                          'T1041',
                           'T1547.001',
+                          'T1105',
+                          'T1083',
                           'T1218.011'],
            'description': '[Pteranodon](https://attack.mitre.org/software/S0147) is a custom backdoor used by '
                           '[Gamaredon Group](https://attack.mitre.org/groups/G0047). (Citation: Palo Alto Gamaredon '
@@ -11841,44 +14140,44 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0147',
            'type': 'malware'},
- 'S0148': {'attack_ids': ['T1102.001',
+ 'S0148': {'attack_ids': ['T1571',
                           'T1082',
-                          'T1559.002',
-                          'T1120',
-                          'T1518.001',
-                          'T1056.001',
-                          'T1027',
-                          'T1204.002',
-                          'T1566.001',
-                          'T1547.001',
-                          'T1033',
-                          'T1115',
-                          'T1036.004',
-                          'T1105',
-                          'T1553.002',
-                          'T1119',
-                          'T1094',
-                          'T1057',
-                          'T1070',
-                          'T1571',
-                          'T1568',
-                          'T1070.004',
-                          'T1497',
-                          'T1219',
-                          'T1518',
-                          'T1071.001',
                           'T1112',
-                          'T1548.002',
-                          'T1124',
-                          'T1059.003',
-                          'T1553.004',
-                          'T1053.005',
-                          'T1113',
-                          'T1036',
-                          'T1573.001',
-                          'T1083',
+                          'T1559.002',
+                          'T1094',
+                          'T1033',
+                          'T1497',
+                          'T1204.002',
+                          'T1553.002',
+                          'T1518.001',
+                          'T1568',
                           'T1218.011',
-                          'T1106'],
+                          'T1036',
+                          'T1056.001',
+                          'T1036.004',
+                          'T1219',
+                          'T1566.001',
+                          'T1120',
+                          'T1573.001',
+                          'T1070',
+                          'T1106',
+                          'T1105',
+                          'T1027',
+                          'T1518',
+                          'T1119',
+                          'T1102.001',
+                          'T1113',
+                          'T1548.002',
+                          'T1083',
+                          'T1553.004',
+                          'T1059.003',
+                          'T1124',
+                          'T1070.004',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1547.001',
+                          'T1057',
+                          'T1115'],
            'description': '[RTM](https://attack.mitre.org/software/S0148) is custom malware written in Delphi. It is '
                           'used by the group of the same name ([RTM](https://attack.mitre.org/groups/G0048)). Newer '
                           'versions of the malware have been reported publicly as Redaman.(Citation: ESET RTM Feb '
@@ -11887,22 +14186,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0148',
            'type': 'malware'},
- 'S0149': {'attack_ids': ['T1074.001',
-                          'T1571',
+ 'S0149': {'attack_ids': ['T1571',
+                          'T1059.003',
+                          'T1056.001',
                           'T1124',
                           'T1082',
-                          'T1043',
                           'T1070.004',
-                          'T1033',
-                          'T1059.003',
-                          'T1120',
-                          'T1573.001',
-                          'T1543.003',
                           'T1095',
-                          'T1056.001',
+                          'T1074.001',
                           'T1094',
-                          'T1083',
+                          'T1043',
+                          'T1033',
+                          'T1120',
+                          'T1543.003',
+                          'T1573.001',
                           'T1057',
+                          'T1083',
                           'T1016'],
            'description': '[MoonWind](https://attack.mitre.org/software/S0149) is a remote access tool (RAT) that was '
                           'used in 2016 to target organizations in Thailand. (Citation: Palo Alto MoonWind March 2017)',
@@ -11910,7 +14209,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0149',
            'type': 'malware'},
- 'S0150': {'attack_ids': ['T1070.006', 'T1059.001', 'T1105', 'T1568.002', 'T1030', 'T1027', 'T1573.002', 'T1546.003'],
+ 'S0150': {'attack_ids': ['T1030', 'T1059.001', 'T1070.006', 'T1573.002', 'T1105', 'T1027', 'T1546.003', 'T1568.002'],
            'description': '[POSHSPY](https://attack.mitre.org/software/S0150) is a backdoor that has been used by '
                           '[APT29](https://attack.mitre.org/groups/G0016) since at least 2015. It appears to be used '
                           'as a secondary backdoor used if the actors lost access to their primary backdoors. '
@@ -11919,7 +14218,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0150',
            'type': 'malware'},
- 'S0151': {'attack_ids': ['T1082', 'T1070.004', 'T1059.001', 'T1113', 'T1047', 'T1057'],
+ 'S0151': {'attack_ids': ['T1047', 'T1082', 'T1059.001', 'T1070.004', 'T1113', 'T1057'],
            'description': '[HALFBAKED](https://attack.mitre.org/software/S0151) is a malware family consisting of '
                           'multiple components intended to establish persistence in victim networks. (Citation: '
                           'FireEye FIN7 April 2017)',
@@ -11927,7 +14226,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0151',
            'type': 'malware'},
- 'S0152': {'attack_ids': ['T1043', 'T1113', 'T1123', 'T1056.001', 'T1547.001', 'T1125'],
+ 'S0152': {'attack_ids': ['T1056.001', 'T1123', 'T1043', 'T1113', 'T1547.001', 'T1125'],
            'description': '[EvilGrab](https://attack.mitre.org/software/S0152) is a malware family with common '
                           'reconnaissance capabilities. It has been deployed by '
                           '[menuPass](https://attack.mitre.org/groups/G0045) via malicious Microsoft Office documents '
@@ -11936,25 +14235,25 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0152',
            'type': 'malware'},
- 'S0153': {'attack_ids': ['T1082',
-                          'T1027',
-                          'T1547.001',
-                          'T1033',
-                          'T1105',
+ 'S0153': {'attack_ids': ['T1571',
+                          'T1082',
                           'T1094',
+                          'T1043',
+                          'T1033',
                           'T1574.001',
-                          'T1049',
-                          'T1571',
+                          'T1573.001',
+                          'T1105',
+                          'T1027',
                           'T1065',
+                          'T1113',
+                          'T1083',
+                          'T1059.003',
+                          'T1049',
                           'T1070.004',
                           'T1071.001',
                           'T1547.009',
-                          'T1043',
+                          'T1547.001',
                           'T1555.003',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1113',
-                          'T1083',
                           'T1016'],
            'description': '[RedLeaves](https://attack.mitre.org/software/S0153) is a malware family used by '
                           '[menuPass](https://attack.mitre.org/groups/G0045). The code overlaps with '
@@ -11965,50 +14264,52 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0153',
            'type': 'malware'},
- 'S0154': {'attack_ids': ['T1134.004',
-                          'T1046',
-                          'T1047',
-                          'T1056.001',
-                          'T1003.002',
-                          'T1134.001',
-                          'T1026',
-                          'T1055.012',
-                          'T1059.001',
-                          'T1021.004',
-                          'T1134.003',
-                          'T1543.003',
-                          'T1027.005',
-                          'T1071',
-                          'T1094',
-                          'T1572',
-                          'T1550.002',
-                          'T1057',
-                          'T1018',
-                          'T1021.003',
-                          'T1070.006',
-                          'T1021.002',
-                          'T1071.004',
-                          'T1005',
-                          'T1029',
+ 'S0154': {'attack_ids': ['T1047',
                           'T1090.001',
-                          'T1059.005',
-                          'T1055',
-                          'T1071.001',
-                          'T1197',
-                          'T1078.003',
-                          'T1548.002',
+                          'T1078.002',
                           'T1068',
                           'T1185',
-                          'T1021.001',
-                          'T1078.002',
+                          'T1197',
+                          'T1572',
                           'T1043',
-                          'T1059.003',
+                          'T1094',
+                          'T1029',
+                          'T1070.006',
+                          'T1021.001',
+                          'T1018',
+                          'T1071.004',
+                          'T1087.002',
+                          'T1056.001',
+                          'T1021.004',
+                          'T1027.005',
+                          'T1005',
+                          'T1016',
+                          'T1059.005',
                           'T1135',
-                          'T1113',
+                          'T1026',
+                          'T1106',
+                          'T1021.002',
                           'T1569.002',
+                          'T1055',
+                          'T1055.012',
+                          'T1134.001',
+                          'T1134.004',
+                          'T1113',
+                          'T1548.002',
+                          'T1046',
+                          'T1078.003',
+                          'T1071',
+                          'T1550.002',
+                          'T1059.003',
+                          'T1059.001',
                           'T1059.006',
                           'T1021.006',
-                          'T1106'],
+                          'T1071.001',
+                          'T1057',
+                          'T1543.003',
+                          'T1134.003',
+                          'T1003.002',
+                          'T1021.003'],
            'description': '[Cobalt Strike](https://attack.mitre.org/software/S0154) is a commercial, full-featured, '
                           'penetration testing tool which bills itself as “adversary simulation software designed to '
                           'execute targeted attacks and emulate the post-exploitation actions of advanced threat '
@@ -12023,15 +14324,15 @@ software_map = {
            'name': 'Cobalt Strike',
            'platforms': ['Windows'],
            'software_id': 'S0154',
-           'type': 'tool'},
- 'S0155': {'attack_ids': ['T1033', 'T1082', 'T1070.004', 'T1095', 'T1012', 'T1094'],
+           'type': 'malware'},
+ 'S0155': {'attack_ids': ['T1070.004', 'T1082', 'T1095', 'T1094', 'T1033', 'T1012'],
            'description': '[WINDSHIELD](https://attack.mitre.org/software/S0155) is a signature backdoor used by '
                           '[APT32](https://attack.mitre.org/groups/G0050). (Citation: FireEye APT32 May 2017)',
            'name': 'WINDSHIELD',
            'platforms': ['Windows'],
            'software_id': 'S0155',
            'type': 'malware'},
- 'S0156': {'attack_ids': ['T1059.003', 'T1082', 'T1047'],
+ 'S0156': {'attack_ids': ['T1059.003', 'T1047', 'T1082'],
            'description': '[KOMPROGO](https://attack.mitre.org/software/S0156) is a signature backdoor used by '
                           '[APT32](https://attack.mitre.org/groups/G0050) that is capable of process, file, and '
                           'registry management. (Citation: FireEye APT32 May 2017)',
@@ -12039,21 +14340,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0156',
            'type': 'malware'},
- 'S0157': {'attack_ids': ['T1082', 'T1071.004', 'T1112', 'T1083', 'T1010'],
+ 'S0157': {'attack_ids': ['T1082', 'T1112', 'T1010', 'T1083', 'T1071.004'],
            'description': '[SOUNDBITE](https://attack.mitre.org/software/S0157) is a signature backdoor used by '
                           '[APT32](https://attack.mitre.org/groups/G0050). (Citation: FireEye APT32 May 2017)',
            'name': 'SOUNDBITE',
            'platforms': ['Windows'],
            'software_id': 'S0157',
            'type': 'malware'},
- 'S0158': {'attack_ids': ['T1059.003', 'T1112', 'T1094', 'T1095'],
+ 'S0158': {'attack_ids': ['T1095', 'T1059.003', 'T1112', 'T1094'],
            'description': '[PHOREAL](https://attack.mitre.org/software/S0158) is a signature backdoor used by '
                           '[APT32](https://attack.mitre.org/groups/G0050). (Citation: FireEye APT32 May 2017)',
            'name': 'PHOREAL',
            'platforms': ['Windows'],
            'software_id': 'S0158',
            'type': 'malware'},
- 'S0159': {'attack_ids': ['T1059.003', 'T1573.001', 'T1547.001', 'T1071.001'],
+ 'S0159': {'attack_ids': ['T1071.001', 'T1059.003', 'T1573.001', 'T1547.001'],
            'description': '[SNUGRIDE](https://attack.mitre.org/software/S0159) is a backdoor that has been used by '
                           '[menuPass](https://attack.mitre.org/groups/G0045) as first stage malware. (Citation: '
                           'FireEye APT10 April 2017)',
@@ -12061,7 +14362,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0159',
            'type': 'malware'},
- 'S0160': {'attack_ids': ['T1553.004', 'T1140', 'T1105'],
+ 'S0160': {'attack_ids': ['T1105', 'T1553.004', 'T1140'],
            'description': '[certutil](https://attack.mitre.org/software/S0160) is a command-line utility that can be '
                           'used to obtain certificate authority information and configure Certificate Services. '
                           '(Citation: TechNet Certutil)',
@@ -12069,16 +14370,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0160',
            'type': 'tool'},
- 'S0161': {'attack_ids': ['T1033',
-                          'T1082',
-                          'T1070.004',
-                          'T1555.003',
-                          'T1113',
-                          'T1071.002',
+ 'S0161': {'attack_ids': ['T1555.003',
                           'T1056.001',
-                          'T1083',
+                          'T1070.004',
+                          'T1082',
+                          'T1113',
+                          'T1033',
+                          'T1071.002',
                           'T1057',
-                          'T1106'],
+                          'T1106',
+                          'T1083'],
            'description': '[XAgentOSX](https://attack.mitre.org/software/S0161) is a trojan that has been used by '
                           '[APT28](https://attack.mitre.org/groups/G0007)  on OS X and appears to be a port of their '
                           'standard [CHOPSTICK](https://attack.mitre.org/software/S0023) or XAgent trojan. (Citation: '
@@ -12087,7 +14388,7 @@ software_map = {
            'platforms': ['macOS'],
            'software_id': 'S0161',
            'type': 'malware'},
- 'S0162': {'attack_ids': ['T1033', 'T1070.004', 'T1573.001', 'T1071.001', 'T1564.001', 'T1543.001', 'T1057'],
+ 'S0162': {'attack_ids': ['T1070.004', 'T1564.001', 'T1033', 'T1071.001', 'T1543.001', 'T1573.001', 'T1057'],
            'description': '[Komplex](https://attack.mitre.org/software/S0162) is a backdoor that has been used by '
                           '[APT28](https://attack.mitre.org/groups/G0007) on OS X and appears to be developed in a '
                           'similar manner to [XAgentOSX](https://attack.mitre.org/software/S0161) (Citation: XAgentOSX '
@@ -12096,14 +14397,14 @@ software_map = {
            'platforms': ['macOS'],
            'software_id': 'S0162',
            'type': 'malware'},
- 'S0163': {'attack_ids': ['T1123', 'T1553.002', 'T1113', 'T1053.003'],
+ 'S0163': {'attack_ids': ['T1553.002', 'T1123', 'T1053.003', 'T1113'],
            'description': '[Janicab](https://attack.mitre.org/software/S0163) is an OS X trojan that relied on a valid '
                           'developer ID and oblivious users to install it. (Citation: Janicab)',
            'name': 'Janicab',
            'platforms': ['macOS'],
            'software_id': 'S0163',
            'type': 'malware'},
- 'S0164': {'attack_ids': ['T1070.006', 'T1070.004', 'T1105', 'T1059.003', 'T1543.003'],
+ 'S0164': {'attack_ids': ['T1059.003', 'T1070.004', 'T1105', 'T1070.006', 'T1543.003'],
            'description': '[TDTESS](https://attack.mitre.org/software/S0164) is a 64-bit .NET binary backdoor used by '
                           '[CopyKittens](https://attack.mitre.org/groups/G0052). (Citation: ClearSky Wilted Tulip July '
                           '2017)',
@@ -12111,14 +14412,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0164',
            'type': 'malware'},
- 'S0165': {'attack_ids': ['T1082',
-                          'T1069.001',
-                          'T1135',
-                          'T1087.002',
-                          'T1012',
-                          'T1069.002',
-                          'T1087.001',
+ 'S0165': {'attack_ids': ['T1087.002',
                           'T1049',
+                          'T1069.001',
+                          'T1082',
+                          'T1087.001',
+                          'T1135',
+                          'T1069.002',
+                          'T1012',
                           'T1018',
                           'T1016'],
            'description': '[OSInfo](https://attack.mitre.org/software/S0165) is a custom tool used by '
@@ -12128,7 +14429,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0165',
            'type': 'malware'},
- 'S0166': {'attack_ids': ['T1053.005', 'T1569.002', 'T1105'],
+ 'S0166': {'attack_ids': ['T1569.002', 'T1053.005', 'T1105'],
            'description': '[RemoteCMD](https://attack.mitre.org/software/S0166) is a custom tool used by '
                           '[APT3](https://attack.mitre.org/groups/G0022) to execute commands on a remote system '
                           "similar to SysInternal's PSEXEC functionality. (Citation: Symantec Buckeye)",
@@ -12136,15 +14437,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0166',
            'type': 'malware'},
- 'S0167': {'attack_ids': ['T1055.001',
-                          'T1071.004',
+ 'S0167': {'attack_ids': ['T1056.001',
                           'T1555',
                           'T1053.005',
+                          'T1071.004',
                           'T1113',
-                          'T1056.001',
-                          'T1027',
-                          'T1547.001',
                           'T1059',
+                          'T1547.001',
+                          'T1027',
+                          'T1055.001',
                           'T1218.011'],
            'description': '[Matroyshka](https://attack.mitre.org/software/S0167) is a malware framework used by '
                           '[CopyKittens](https://attack.mitre.org/groups/G0052) that consists of a dropper, loader, '
@@ -12155,23 +14456,23 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0167',
            'type': 'malware'},
- 'S0168': {'attack_ids': ['T1070.006',
-                          'T1033',
-                          'T1547.004',
-                          'T1070.004',
-                          'T1105',
-                          'T1573.001',
-                          'T1053.005',
-                          'T1553.002',
+ 'S0168': {'attack_ids': ['T1547.004',
                           'T1055',
-                          'T1027',
-                          'T1071.001',
-                          'T1547.009',
-                          'T1573.002',
+                          'T1564.004',
+                          'T1070.004',
+                          'T1053.005',
                           'T1546.002',
+                          'T1033',
+                          'T1071.001',
+                          'T1105',
+                          'T1070.006',
+                          'T1573.002',
+                          'T1547.009',
+                          'T1573.001',
                           'T1547.001',
-                          'T1055.003',
-                          'T1564.004'],
+                          'T1553.002',
+                          'T1027',
+                          'T1055.003'],
            'description': '[Gazer](https://attack.mitre.org/software/S0168) is a backdoor used by '
                           '[Turla](https://attack.mitre.org/groups/G0010) since at least 2016. (Citation: ESET Gazer '
                           'Aug 2017)',
@@ -12179,7 +14480,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0168',
            'type': 'malware'},
- 'S0169': {'attack_ids': ['T1074.001', 'T1036.004', 'T1005', 'T1543.003', 'T1560.003'],
+ 'S0169': {'attack_ids': ['T1036.004', 'T1005', 'T1560.003', 'T1074.001', 'T1543.003'],
            'description': '[RawPOS](https://attack.mitre.org/software/S0169) is a point-of-sale (POS) malware family '
                           'that searches for cardholder data on victims. It has been in use since at least 2008. '
                           '(Citation: Kroll RawPOS Jan 2017) (Citation: TrendMicro RawPOS April 2015) (Citation: Visa '
@@ -12190,27 +14491,27 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0169',
            'type': 'malware'},
- 'S0170': {'attack_ids': ['T1056.001',
-                          'T1027',
-                          'T1547.001',
-                          'T1132.001',
-                          'T1074.001',
-                          'T1115',
-                          'T1059.001',
-                          'T1105',
+ 'S0170': {'attack_ids': ['T1069.002',
                           'T1553.002',
-                          'T1119',
-                          'T1057',
                           'T1071.004',
-                          'T1069.001',
-                          'T1069.002',
+                          'T1056.001',
                           'T1059.005',
+                          'T1573.001',
+                          'T1105',
+                          'T1027',
+                          'T1069.001',
+                          'T1119',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1030',
+                          'T1059.001',
+                          'T1053.005',
+                          'T1074.001',
                           'T1071.001',
                           'T1547.009',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1053.005',
-                          'T1030'],
+                          'T1547.001',
+                          'T1057',
+                          'T1115'],
            'description': '[Helminth](https://attack.mitre.org/software/S0170) is a backdoor that has at least two '
                           'variants - one written in VBScript and PowerShell that is delivered via a macros in Excel '
                           'spreadsheets, and one that is a standalone Windows executable. (Citation: Palo Alto OilRig '
@@ -12219,16 +14520,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0170',
            'type': 'malware'},
- 'S0171': {'attack_ids': ['T1033',
+ 'S0171': {'attack_ids': ['T1059.003',
                           'T1082',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
                           'T1518.001',
+                          'T1033',
                           'T1071.001',
+                          'T1573.001',
                           'T1036.005',
-                          'T1132.001',
-                          'T1016'],
+                          'T1105',
+                          'T1016',
+                          'T1132.001'],
            'description': '[Felismus](https://attack.mitre.org/software/S0171) is a modular backdoor that has been '
                           'used by [Sowbug](https://attack.mitre.org/groups/G0054). (Citation: Symantec Sowbug Nov '
                           '2017) (Citation: Forcepoint Felismus Mar 2017)',
@@ -12236,20 +14537,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0171',
            'type': 'malware'},
- 'S0172': {'attack_ids': ['T1033',
+ 'S0172': {'attack_ids': ['T1218.002',
                           'T1082',
                           'T1070.004',
-                          'T1218.002',
-                          'T1543.003',
                           'T1095',
-                          'T1012',
-                          'T1071.001',
+                          'T1560.003',
                           'T1094',
-                          'T1027',
+                          'T1071.001',
+                          'T1033',
                           'T1547.009',
+                          'T1012',
                           'T1547.001',
-                          'T1016',
-                          'T1560.003'],
+                          'T1543.003',
+                          'T1027',
+                          'T1016'],
            'description': '[Reaver](https://attack.mitre.org/software/S0172) is a malware family that has been in the '
                           'wild since at least late 2016. Reporting indicates victims have primarily been associated '
                           'with the "Five Poisons," which are movements the Chinese government considers dangerous. '
@@ -12267,7 +14568,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0173',
            'type': 'malware'},
- 'S0174': {'attack_ids': ['T1040', 'T1557.001'],
+ 'S0174': {'attack_ids': ['T1557.001', 'T1040'],
            'description': 'Responder is an open source tool used for LLMNR, NBT-NS and MDNS poisoning, with built-in '
                           'HTTP/SMB/MSSQL/FTP/LDAP rogue authentication server supporting NTLMv1/NTLMv2/LMv2, Extended '
                           'Security NTLMSSP and Basic HTTP authentication. (Citation: GitHub Responder)',
@@ -12282,15 +14583,15 @@ software_map = {
            'platforms': ['Linux', 'Windows', 'macOS'],
            'software_id': 'S0175',
            'type': 'tool'},
- 'S0176': {'attack_ids': ['T1547.008',
+ 'S0176': {'attack_ids': ['T1569.002',
+                          'T1055',
                           'T1082',
                           'T1070.004',
-                          'T1569.002',
+                          'T1068',
+                          'T1574.002',
                           'T1543.003',
                           'T1518.001',
-                          'T1055',
-                          'T1574.002',
-                          'T1068'],
+                          'T1547.008'],
            'description': '[Wingbird](https://attack.mitre.org/software/S0176) is a backdoor that appears to be a '
                           'version of commercial software [FinFisher](https://attack.mitre.org/software/S0182). It is '
                           'reportedly used to attack individual computers instead of networks. It was used by '
@@ -12309,7 +14610,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0177',
            'type': 'malware'},
- 'S0178': {'attack_ids': ['T1547.001', 'T1036.004'],
+ 'S0178': {'attack_ids': ['T1036.004', 'T1547.001'],
            'description': '[Truvasys](https://attack.mitre.org/software/S0178) is first-stage malware that has been '
                           'used by [PROMETHIUM](https://attack.mitre.org/groups/G0056). It is a collection of modules '
                           'written in the Delphi programming language. (Citation: Microsoft Win Defender Truvasys Sep '
@@ -12327,26 +14628,26 @@ software_map = {
            'software_id': 'S0179',
            'type': 'tool'},
  'S0180': {'attack_ids': ['T1082',
-                          'T1027',
-                          'T1573.002',
-                          'T1007',
-                          'T1036.004',
-                          'T1105',
-                          'T1543.003',
-                          'T1094',
-                          'T1049',
-                          'T1057',
-                          'T1065',
-                          'T1070.004',
-                          'T1012',
                           'T1112',
-                          'T1140',
                           'T1043',
-                          'T1059.003',
+                          'T1094',
+                          'T1543.003',
+                          'T1036.004',
                           'T1573.001',
+                          'T1106',
+                          'T1027',
+                          'T1105',
+                          'T1140',
+                          'T1007',
+                          'T1065',
                           'T1083',
-                          'T1016',
-                          'T1106'],
+                          'T1059.003',
+                          'T1049',
+                          'T1070.004',
+                          'T1573.002',
+                          'T1012',
+                          'T1057',
+                          'T1016'],
            'description': '[Volgmer](https://attack.mitre.org/software/S0180) is a backdoor Trojan designed to provide '
                           'covert access to a compromised system. It has been used since at least 2013 to target the '
                           'government, financial, automotive, and media industries. Its primary delivery mechanism is '
@@ -12355,7 +14656,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0180',
            'type': 'malware'},
- 'S0181': {'attack_ids': ['T1070.006', 'T1082', 'T1070.004', 'T1573.001', 'T1001.003', 'T1083', 'T1016'],
+ 'S0181': {'attack_ids': ['T1082', 'T1070.004', 'T1001.003', 'T1070.006', 'T1573.001', 'T1083', 'T1016'],
            'description': '[FALLCHILL](https://attack.mitre.org/software/S0181) is a RAT that has been used by '
                           '[Lazarus Group](https://attack.mitre.org/groups/G0032) since at least 2016 to target the '
                           'aerospace, telecommunications, and finance industries. It is usually dropped by other '
@@ -12365,34 +14666,34 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0181',
            'type': 'malware'},
- 'S0182': {'attack_ids': ['T1497.001',
-                          'T1082',
-                          'T1070.001',
-                          'T1518.001',
-                          'T1056.004',
-                          'T1027',
+ 'S0182': {'attack_ids': ['T1082',
                           'T1027.002',
-                          'T1547.001',
-                          'T1134.001',
-                          'T1543.003',
-                          'T1574.001',
-                          'T1057',
-                          'T1055.001',
-                          'T1012',
                           'T1574.002',
-                          'T1548.002',
-                          'T1027.001',
-                          'T1036.005',
-                          'T1140',
+                          'T1518.001',
+                          'T1055.001',
                           'T1542.003',
+                          'T1574.001',
+                          'T1027',
+                          'T1140',
+                          'T1134.001',
                           'T1113',
+                          'T1548.002',
+                          'T1497.001',
+                          'T1070.001',
+                          'T1036.005',
                           'T1083',
-                          'T1429',
+                          'T1027.001',
+                          'T1056.004',
+                          'T1057',
+                          'T1012',
+                          'T1547.001',
+                          'T1543.003',
                           'T1430',
-                          'T1404',
-                          'T1412',
                           'T1433',
-                          'T1436'],
+                          'T1412',
+                          'T1436',
+                          'T1429',
+                          'T1404'],
            'description': '[FinFisher](https://attack.mitre.org/software/S0182) is a government-grade commercial '
                           'surveillance spyware reportedly sold exclusively to government agencies for use in targeted '
                           'and lawful criminal investigations. It is heavily obfuscated and uses multiple '
@@ -12416,25 +14717,25 @@ software_map = {
            'platforms': ['Linux', 'Windows', 'macOS'],
            'software_id': 'S0183',
            'type': 'tool'},
- 'S0184': {'attack_ids': ['T1082',
-                          'T1087.002',
-                          'T1518.001',
-                          'T1047',
-                          'T1132.001',
+ 'S0184': {'attack_ids': ['T1047',
+                          'T1082',
                           'T1033',
-                          'T1059.001',
-                          'T1105',
-                          'T1049',
-                          'T1057',
-                          'T1071.004',
-                          'T1069.001',
                           'T1069.002',
-                          'T1012',
-                          'T1071.001',
-                          'T1059.003',
-                          'T1053.005',
+                          'T1518.001',
+                          'T1071.004',
+                          'T1087.002',
+                          'T1105',
+                          'T1069.001',
                           'T1113',
                           'T1083',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1049',
+                          'T1059.001',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1012',
+                          'T1057',
                           'T1016'],
            'description': '[POWRUNER](https://attack.mitre.org/software/S0184) is a PowerShell script that sends and '
                           'receives commands to and from the C2 server. (Citation: FireEye APT34 Dec 2017)',
@@ -12442,14 +14743,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0184',
            'type': 'malware'},
- 'S0185': {'attack_ids': ['T1059.003', 'T1070.006', 'T1505.003', 'T1105'],
+ 'S0185': {'attack_ids': ['T1105', 'T1070.006', 'T1505.003', 'T1059.003'],
            'description': '[SEASHARPEE](https://attack.mitre.org/software/S0185) is a Web shell that has been used by '
                           '[APT34](https://attack.mitre.org/groups/G0057). (Citation: FireEye APT34 Webinar Dec 2017)',
            'name': 'SEASHARPEE',
            'platforms': ['Windows'],
            'software_id': 'S0185',
            'type': 'malware'},
- 'S0186': {'attack_ids': ['T1033', 'T1082', 'T1059.001', 'T1059.003', 'T1012', 'T1071.001', 'T1547.001'],
+ 'S0186': {'attack_ids': ['T1059.003', 'T1082', 'T1059.001', 'T1033', 'T1071.001', 'T1012', 'T1547.001'],
            'description': '[DownPaper](https://attack.mitre.org/software/S0186) is a backdoor Trojan; its main '
                           'functionality is to download and run second stage malware. (Citation: ClearSky Charming '
                           'Kitten Dec 2017)',
@@ -12457,22 +14758,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0186',
            'type': 'malware'},
- 'S0187': {'attack_ids': ['T1001.002',
-                          'T1560.001',
-                          'T1003.001',
-                          'T1105',
-                          'T1059.003',
-                          'T1553.002',
-                          'T1573.001',
-                          'T1113',
-                          'T1027.005',
+ 'S0187': {'attack_ids': ['T1059.003',
                           'T1056.001',
                           'T1027',
+                          'T1027.005',
+                          'T1553.002',
+                          'T1560.001',
+                          'T1113',
                           'T1071.001',
                           'T1027.002',
+                          'T1105',
+                          'T1003.001',
+                          'T1573.001',
                           'T1036.005',
                           'T1560',
-                          'T1132.001'],
+                          'T1132.001',
+                          'T1001.002'],
            'description': '[Daserf](https://attack.mitre.org/software/S0187) is a backdoor that has been used to spy '
                           'on and steal from Japanese, South Korean, Russian, Singaporean, and Chinese victims. '
                           'Researchers have identified versions written in both Visual C and Delphi. (Citation: Trend '
@@ -12481,7 +14782,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0187',
            'type': 'malware'},
- 'S0188': {'attack_ids': ['T1140', 'T1036.005'],
+ 'S0188': {'attack_ids': ['T1036.005', 'T1140'],
            'description': '[Starloader](https://attack.mitre.org/software/S0188) is a loader component that has been '
                           'observed loading [Felismus](https://attack.mitre.org/software/S0171) and associated tools. '
                           '(Citation: Symantec Sowbug Nov 2017)',
@@ -12489,7 +14790,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0188',
            'type': 'malware'},
- 'S0189': {'attack_ids': ['T1055.012', 'T1053.005', 'T1140', 'T1027'],
+ 'S0189': {'attack_ids': ['T1140', 'T1027', 'T1053.005', 'T1055.012'],
            'description': '[ISMInjector](https://attack.mitre.org/software/S0189) is a Trojan used to install another '
                           '[OilRig](https://attack.mitre.org/groups/G0049) backdoor, ISMAgent. (Citation: OilRig New '
                           'Delivery Oct 2017)',
@@ -12497,7 +14798,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0189',
            'type': 'malware'},
- 'S0190': {'attack_ids': ['T1570', 'T1197', 'T1105', 'T1048.003'],
+ 'S0190': {'attack_ids': ['T1105', 'T1048.003', 'T1197', 'T1570'],
            'description': '[BITSAdmin](https://attack.mitre.org/software/S0190) is a command line tool used to create '
                           'and manage [BITS Jobs](https://attack.mitre.org/techniques/T1197). (Citation: Microsoft '
                           'BITSAdmin)',
@@ -12515,45 +14816,45 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0191',
            'type': 'tool'},
- 'S0192': {'attack_ids': ['T1497.001',
+ 'S0192': {'attack_ids': ['T1555',
                           'T1082',
-                          'T1550.003',
-                          'T1046',
-                          'T1070.001',
-                          'T1003.004',
-                          'T1056.001',
-                          'T1003.005',
-                          'T1573.002',
-                          'T1136.001',
-                          'T1547.001',
-                          'T1134.001',
-                          'T1125',
-                          'T1033',
-                          'T1059.001',
-                          'T1105',
-                          'T1543.002',
-                          'T1555',
-                          'T1049',
-                          'T1057',
-                          'T1041',
-                          'T1055.001',
-                          'T1560.001',
-                          'T1114.001',
-                          'T1552.001',
-                          'T1123',
-                          'T1071.001',
                           'T1087.001',
-                          'T1548.002',
-                          'T1021.001',
+                          'T1560.001',
+                          'T1033',
+                          'T1543.002',
                           'T1003.001',
-                          'T1557.001',
-                          'T1136.002',
-                          'T1555.003',
+                          'T1003.005',
+                          'T1021.001',
+                          'T1055.001',
+                          'T1125',
+                          'T1056.001',
                           'T1135',
-                          'T1113',
+                          'T1041',
+                          'T1105',
+                          'T1136.002',
                           'T1569.002',
-                          'T1059.006',
+                          'T1123',
+                          'T1552.001',
+                          'T1134.001',
+                          'T1003.004',
+                          'T1113',
+                          'T1548.002',
+                          'T1136.001',
+                          'T1497.001',
+                          'T1070.001',
                           'T1083',
+                          'T1046',
+                          'T1550.003',
+                          'T1049',
+                          'T1557.001',
+                          'T1059.001',
+                          'T1059.006',
+                          'T1071.001',
+                          'T1573.002',
+                          'T1547.001',
+                          'T1057',
+                          'T1555.003',
+                          'T1114.001',
                           'T1016'],
            'description': '[Pupy](https://attack.mitre.org/software/S0192) is an open source, cross-platform (Windows, '
                           'Linux, OSX, Android) remote administration and post-exploitation tool. (Citation: GitHub '
@@ -12565,7 +14866,7 @@ software_map = {
            'platforms': ['Linux', 'Windows', 'macOS', 'Android'],
            'software_id': 'S0192',
            'type': 'tool'},
- 'S0193': {'attack_ids': ['T1083', 'T1005', 'T1202'],
+ 'S0193': {'attack_ids': ['T1202', 'T1083', 'T1005'],
            'description': '[Forfiles](https://attack.mitre.org/software/S0193) is a Windows utility commonly used in '
                           'batch jobs to execute commands on one or more selected files or directories (ex: list all '
                           'directories in a drive, read the first line of all files created yesterday, etc.). Forfiles '
@@ -12575,35 +14876,35 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0193',
            'type': 'tool'},
- 'S0194': {'attack_ids': ['T1574.009',
-                          'T1574.007',
+ 'S0194': {'attack_ids': ['T1555',
                           'T1047',
-                          'T1574.008',
-                          'T1558.003',
-                          'T1027',
-                          'T1056.001',
-                          'T1547.001',
                           'T1055.002',
-                          'T1059.001',
-                          'T1555',
-                          'T1543.003',
-                          'T1027.005',
-                          'T1552.006',
-                          'T1574.001',
-                          'T1057',
-                          'T1055.001',
-                          'T1005',
-                          'T1123',
-                          'T1012',
-                          'T1547.005',
-                          'T1552.002',
+                          'T1558.003',
                           'T1087.001',
-                          'T1482',
                           'T1003.001',
-                          'T1053.005',
-                          'T1113',
+                          'T1552.006',
+                          'T1055.001',
+                          'T1547.005',
+                          'T1574.007',
+                          'T1056.001',
+                          'T1574.008',
+                          'T1027.005',
+                          'T1005',
+                          'T1482',
+                          'T1574.001',
+                          'T1574.009',
+                          'T1027',
                           'T1034',
-                          'T1134'],
+                          'T1123',
+                          'T1113',
+                          'T1059.001',
+                          'T1053.005',
+                          'T1134',
+                          'T1057',
+                          'T1012',
+                          'T1547.001',
+                          'T1543.003',
+                          'T1552.002'],
            'description': '[PowerSploit](https://attack.mitre.org/software/S0194) is an open source, offensive '
                           'security framework comprised of [PowerShell](https://attack.mitre.org/techniques/T1086) '
                           'modules and scripts that perform a wide range of tasks related to penetration testing such '
@@ -12614,7 +14915,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0194',
            'type': 'tool'},
- 'S0195': {'attack_ids': ['T1485', 'T1070.004', 'T1553.002'],
+ 'S0195': {'attack_ids': ['T1485', 'T1070.004'],
            'description': '[SDelete](https://attack.mitre.org/software/S0195) is an application that securely deletes '
                           'data in a way that makes it unrecoverable. It is part of the Microsoft Sysinternals suite '
                           'of tools. (Citation: Microsoft SDelete July 2016)',
@@ -12622,23 +14923,23 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0195',
            'type': 'tool'},
- 'S0196': {'attack_ids': ['T1074.001',
-                          'T1560.001',
+ 'S0196': {'attack_ids': ['T1546.009',
                           'T1082',
                           'T1070.004',
-                          'T1059.001',
-                          'T1105',
-                          'T1518.001',
-                          'T1546.009',
-                          'T1027',
-                          'T1071.001',
-                          'T1036.005',
-                          'T1087.001',
                           'T1059.006',
+                          'T1087.001',
+                          'T1560.001',
+                          'T1059.001',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1129',
+                          'T1105',
                           'T1547.001',
+                          'T1036.005',
+                          'T1027',
+                          'T1518.001',
                           'T1140',
-                          'T1218.011',
-                          'T1129'],
+                          'T1218.011'],
            'description': '[PUNCHBUGGY](https://attack.mitre.org/software/S0196) is a backdoor malware used by '
                           '[FIN8](https://attack.mitre.org/groups/G0061) that has been observed targeting POS networks '
                           'in the hospitality industry. (Citation: Morphisec ShellTea June 2019)(Citation: FireEye '
@@ -12647,7 +14948,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0196',
            'type': 'malware'},
- 'S0197': {'attack_ids': ['T1074.001', 'T1027', 'T1005'],
+ 'S0197': {'attack_ids': ['T1005', 'T1027', 'T1074.001'],
            'description': '[PUNCHTRACK](https://attack.mitre.org/software/S0197) is non-persistent point of sale (POS) '
                           'system malware utilized by [FIN8](https://attack.mitre.org/groups/G0061) to scrape payment '
                           'card data. (Citation: FireEye Fin8 May 2016) (Citation: FireEye Know Your Enemy FIN8 Aug '
@@ -12656,7 +14957,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0197',
            'type': 'malware'},
- 'S0198': {'attack_ids': ['T1082', 'T1553.002', 'T1113', 'T1056.001', 'T1547.001'],
+ 'S0198': {'attack_ids': ['T1056.001', 'T1082', 'T1036.001', 'T1113', 'T1547.001'],
            'description': '[NETWIRE](https://attack.mitre.org/software/S0198) is a publicly available, multiplatform '
                           'remote administration tool (RAT) that has been used by criminal and APT groups since at '
                           'least 2012. (Citation: FireEye APT33 Sept 2017) (Citation: McAfee Netwire Mar 2015) '
@@ -12665,7 +14966,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0198',
            'type': 'malware'},
- 'S0199': {'attack_ids': ['T1082', 'T1105', 'T1059.003', 'T1113', 'T1547.001', 'T1055.004'],
+ 'S0199': {'attack_ids': ['T1059.003', 'T1082', 'T1055.004', 'T1113', 'T1547.001', 'T1105'],
            'description': '[TURNEDUP](https://attack.mitre.org/software/S0199) is a non-public backdoor. It has been '
                           "dropped by [APT33](https://attack.mitre.org/groups/G0064)'s "
                           '[StoneDrill](https://attack.mitre.org/software/S0380) malware. (Citation: FireEye APT33 '
@@ -12674,7 +14975,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0199',
            'type': 'malware'},
- 'S0200': {'attack_ids': ['T1547.004', 'T1105', 'T1059.003', 'T1573.001', 'T1029', 'T1071.001', 'T1094', 'T1132.001'],
+ 'S0200': {'attack_ids': ['T1547.004', 'T1059.003', 'T1094', 'T1071.001', 'T1029', 'T1573.001', 'T1105', 'T1132.001'],
            'description': '[Dipsind](https://attack.mitre.org/software/S0200) is a malware family of backdoors that '
                           'appear to be used exclusively by [PLATINUM](https://attack.mitre.org/groups/G0068). '
                           '(Citation: Microsoft PLATINUM April 2016)',
@@ -12682,25 +14983,25 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0200',
            'type': 'malware'},
- 'S0201': {'attack_ids': ['T1222.001',
-                          'T1082',
+ 'S0201': {'attack_ids': ['T1082',
+                          'T1197',
+                          'T1033',
                           'T1071.003',
                           'T1518.001',
-                          'T1056.001',
-                          'T1027',
-                          'T1033',
-                          'T1007',
-                          'T1105',
-                          'T1057',
-                          'T1070.004',
-                          'T1069.001',
-                          'T1012',
-                          'T1055',
-                          'T1197',
                           'T1562.001',
-                          'T1059.003',
-                          'T1071.002',
+                          'T1056.001',
+                          'T1105',
+                          'T1027',
+                          'T1069.001',
+                          'T1055',
+                          'T1007',
                           'T1083',
+                          'T1059.003',
+                          'T1222.001',
+                          'T1070.004',
+                          'T1071.002',
+                          'T1012',
+                          'T1057',
                           'T1016'],
            'description': '[JPIN](https://attack.mitre.org/software/S0201) is a custom-built backdoor family used by '
                           '[PLATINUM](https://attack.mitre.org/groups/G0068). Evidence suggests developers of '
@@ -12721,23 +15022,23 @@ software_map = {
            'software_id': 'S0202',
            'type': 'malware'},
  'S0203': {'attack_ids': ['T1082',
-                          'T1070.001',
-                          'T1027',
-                          'T1129',
-                          'T1007',
-                          'T1105',
-                          'T1543.003',
-                          'T1057',
-                          'T1005',
-                          'T1070.004',
-                          'T1012',
                           'T1112',
+                          'T1129',
+                          'T1543.003',
+                          'T1005',
                           'T1573.001',
-                          'T1113',
-                          'T1569.002',
-                          'T1134',
+                          'T1105',
+                          'T1027',
                           'T1048',
+                          'T1569.002',
+                          'T1007',
+                          'T1113',
+                          'T1070.001',
                           'T1083',
+                          'T1070.004',
+                          'T1134',
+                          'T1012',
+                          'T1057',
                           'T1016'],
            'description': '[Hydraq](https://attack.mitre.org/software/S0203) is a data-theft trojan first used by '
                           '[Elderwood](https://attack.mitre.org/groups/G0066) in the 2009 Google intrusion known as '
@@ -12751,7 +15052,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0203',
            'type': 'malware'},
- 'S0204': {'attack_ids': ['T1043', 'T1105', 'T1543.003', 'T1547.001', 'T1218.011'],
+ 'S0204': {'attack_ids': ['T1043', 'T1105', 'T1547.001', 'T1543.003', 'T1218.011'],
            'description': '[Briba](https://attack.mitre.org/software/S0204) is a trojan used by '
                           '[Elderwood](https://attack.mitre.org/groups/G0066) to open a backdoor and download files on '
                           'to compromised hosts. (Citation: Symantec Elderwood Sept 2012) (Citation: Symantec Briba '
@@ -12760,7 +15061,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0204',
            'type': 'malware'},
- 'S0205': {'attack_ids': ['T1043', 'T1082', 'T1543.003', 'T1112', 'T1094', 'T1016'],
+ 'S0205': {'attack_ids': ['T1082', 'T1112', 'T1094', 'T1043', 'T1543.003', 'T1016'],
            'description': '[Naid](https://attack.mitre.org/software/S0205) is a trojan used by '
                           '[Elderwood](https://attack.mitre.org/groups/G0066) to open a backdoor on compromised hosts. '
                           '(Citation: Symantec Elderwood Sept 2012) (Citation: Symantec Naid June 2012)',
@@ -12768,7 +15069,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0205',
            'type': 'malware'},
- 'S0206': {'attack_ids': ['T1043', 'T1105', 'T1059.003', 'T1543.003', 'T1055'],
+ 'S0206': {'attack_ids': ['T1059.003', 'T1055', 'T1043', 'T1105', 'T1543.003'],
            'description': '[Wiarp](https://attack.mitre.org/software/S0206) is a trojan used by '
                           '[Elderwood](https://attack.mitre.org/groups/G0066) to open a backdoor on compromised hosts. '
                           '(Citation: Symantec Elderwood Sept 2012) (Citation: Symantec Wiarp May 2012)',
@@ -12776,7 +15077,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0206',
            'type': 'malware'},
- 'S0207': {'attack_ids': ['T1071.001', 'T1547.001', 'T1090', 'T1105'],
+ 'S0207': {'attack_ids': ['T1105', 'T1090', 'T1071.001', 'T1547.001'],
            'description': '[Vasport](https://attack.mitre.org/software/S0207) is a trojan used by '
                           '[Elderwood](https://attack.mitre.org/groups/G0066) to open a backdoor on compromised hosts. '
                           '(Citation: Symantec Elderwood Sept 2012) (Citation: Symantec Vasport May 2012)',
@@ -12784,7 +15085,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0207',
            'type': 'malware'},
- 'S0208': {'attack_ids': ['T1547.008', 'T1043', 'T1082', 'T1005', 'T1070.004', 'T1105', 'T1083', 'T1057'],
+ 'S0208': {'attack_ids': ['T1070.004', 'T1005', 'T1082', 'T1043', 'T1057', 'T1105', 'T1083', 'T1547.008'],
            'description': '[Pasam](https://attack.mitre.org/software/S0208) is a trojan used by '
                           '[Elderwood](https://attack.mitre.org/groups/G0066) to open a backdoor on compromised hosts. '
                           '(Citation: Symantec Elderwood Sept 2012) (Citation: Symantec Pasam May 2012)',
@@ -12792,7 +15093,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0208',
            'type': 'malware'},
- 'S0210': {'attack_ids': ['T1553.002', 'T1112', 'T1543.003', 'T1105'],
+ 'S0210': {'attack_ids': ['T1105', 'T1553.002', 'T1112', 'T1543.003'],
            'description': '[Nerex](https://attack.mitre.org/software/S0210) is a Trojan used by '
                           '[Elderwood](https://attack.mitre.org/groups/G0066) to open a backdoor on compromised hosts. '
                           '(Citation: Symantec Elderwood Sept 2012) (Citation: Symantec Nerex May 2012)',
@@ -12800,7 +15101,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0210',
            'type': 'malware'},
- 'S0211': {'attack_ids': ['T1082', 'T1008', 'T1070.004', 'T1005', 'T1105', 'T1029', 'T1059.003', 'T1083', 'T1057'],
+ 'S0211': {'attack_ids': ['T1059.003', 'T1082', 'T1008', 'T1005', 'T1070.004', 'T1105', 'T1029', 'T1057', 'T1083'],
            'description': '[Linfo](https://attack.mitre.org/software/S0211) is a rootkit trojan used by '
                           '[Elderwood](https://attack.mitre.org/groups/G0066) to open a backdoor on compromised hosts. '
                           '(Citation: Symantec Elderwood Sept 2012) (Citation: Symantec Linfo May 2012)',
@@ -12808,14 +15109,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0211',
            'type': 'malware'},
- 'S0212': {'attack_ids': ['T1083', 'T1560.001', 'T1048.003'],
+ 'S0212': {'attack_ids': ['T1083', 'T1048.003', 'T1560.001'],
            'description': '[CORALDECK](https://attack.mitre.org/software/S0212) is an exfiltration tool used by '
                           '[APT37](https://attack.mitre.org/groups/G0067). (Citation: FireEye APT37 Feb 2018)',
            'name': 'CORALDECK',
            'platforms': ['Windows'],
            'software_id': 'S0212',
            'type': 'malware'},
- 'S0213': {'attack_ids': ['T1102.002', 'T1105', 'T1113', 'T1123', 'T1056.001', 'T1027'],
+ 'S0213': {'attack_ids': ['T1123', 'T1056.001', 'T1113', 'T1102.002', 'T1105', 'T1027'],
            'description': '[DOGCALL](https://attack.mitre.org/software/S0213) is a backdoor used by '
                           '[APT37](https://attack.mitre.org/groups/G0067) that has been used to target South Korean '
                           'government and military organizations in 2017. It is typically dropped using a Hangul Word '
@@ -12824,7 +15125,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0213',
            'type': 'malware'},
- 'S0214': {'attack_ids': ['T1033', 'T1082', 'T1105'],
+ 'S0214': {'attack_ids': ['T1105', 'T1033', 'T1082'],
            'description': '[HAPPYWORK](https://attack.mitre.org/software/S0214) is a downloader used by '
                           '[APT37](https://attack.mitre.org/groups/G0067) to target South Korean government and '
                           'financial victims in November 2016. (Citation: FireEye APT37 Feb 2018)',
@@ -12832,7 +15133,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0214',
            'type': 'malware'},
- 'S0215': {'attack_ids': ['T1189', 'T1082', 'T1105', 'T1102.002'],
+ 'S0215': {'attack_ids': ['T1105', 'T1189', 'T1102.002', 'T1082'],
            'description': '[KARAE](https://attack.mitre.org/software/S0215) is a backdoor typically used by '
                           '[APT37](https://attack.mitre.org/groups/G0067) as first-stage malware. (Citation: FireEye '
                           'APT37 Feb 2018)',
@@ -12840,7 +15141,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0215',
            'type': 'malware'},
- 'S0216': {'attack_ids': ['T1189', 'T1082', 'T1102.002', 'T1113', 'T1083', 'T1057'],
+ 'S0216': {'attack_ids': ['T1082', 'T1113', 'T1102.002', 'T1057', 'T1083', 'T1189'],
            'description': '[POORAIM](https://attack.mitre.org/software/S0216) is a backdoor used by '
                           '[APT37](https://attack.mitre.org/groups/G0067) in campaigns since at least 2014. (Citation: '
                           'FireEye APT37 Feb 2018)',
@@ -12848,14 +15149,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0216',
            'type': 'malware'},
- 'S0217': {'attack_ids': ['T1082', 'T1105', 'T1113'],
+ 'S0217': {'attack_ids': ['T1105', 'T1113', 'T1082'],
            'description': '[SHUTTERSPEED](https://attack.mitre.org/software/S0217) is a backdoor used by '
                           '[APT37](https://attack.mitre.org/groups/G0067). (Citation: FireEye APT37 Feb 2018)',
            'name': 'SHUTTERSPEED',
            'platforms': ['Windows'],
            'software_id': 'S0217',
            'type': 'malware'},
- 'S0218': {'attack_ids': ['T1082', 'T1105', 'T1102.002'],
+ 'S0218': {'attack_ids': ['T1105', 'T1102.002', 'T1082'],
            'description': '[SLOWDRIFT](https://attack.mitre.org/software/S0218) is a backdoor used by '
                           '[APT37](https://attack.mitre.org/groups/G0067) against academic and strategic victims in '
                           'South Korea. (Citation: FireEye APT37 Feb 2018)',
@@ -12863,14 +15164,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0218',
            'type': 'malware'},
- 'S0219': {'attack_ids': ['T1033', 'T1007', 'T1082', 'T1083', 'T1057', 'T1059', 'T1010'],
+ 'S0219': {'attack_ids': ['T1007', 'T1082', 'T1033', 'T1059', 'T1010', 'T1057', 'T1083'],
            'description': '[WINERACK](https://attack.mitre.org/software/S0219) is a backdoor used by '
                           '[APT37](https://attack.mitre.org/groups/G0067). (Citation: FireEye APT37 Feb 2018)',
            'name': 'WINERACK',
            'platforms': ['Windows'],
            'software_id': 'S0219',
            'type': 'malware'},
- 'S0220': {'attack_ids': ['T1110', 'T1059.004', 'T1573.001', 'T1205', 'T1094', 'T1104'],
+ 'S0220': {'attack_ids': ['T1094', 'T1104', 'T1059.004', 'T1205', 'T1110', 'T1573.001'],
            'description': '[Chaos](https://attack.mitre.org/software/S0220) is Linux malware that compromises systems '
                           'by brute force attacks against SSH services. Once installed, it provides a reverse shell to '
                           'its controllers, triggered by unsolicited packets. (Citation: Chaos Stolen Backdoor)',
@@ -12878,7 +15179,7 @@ software_map = {
            'platforms': ['Linux'],
            'software_id': 'S0220',
            'type': 'malware'},
- 'S0221': {'attack_ids': ['T1059.003', 'T1205', 'T1095', 'T1078.003', 'T1014'],
+ 'S0221': {'attack_ids': ['T1059.003', 'T1095', 'T1014', 'T1205', 'T1078.003'],
            'description': 'A Linux rootkit that provides backdoor access and hides from defenders.',
            'name': 'Umbreon',
            'platforms': ['Linux'],
@@ -12892,34 +15193,34 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0222',
            'type': 'malware'},
- 'S0223': {'attack_ids': ['T1082',
-                          'T1559.002',
-                          'T1518.001',
-                          'T1047',
-                          'T1027',
-                          'T1573.002',
-                          'T1132.001',
-                          'T1059.007',
-                          'T1033',
-                          'T1036.004',
-                          'T1059.001',
-                          'T1105',
-                          'T1559.001',
-                          'T1057',
-                          'T1090.002',
-                          'T1065',
-                          'T1005',
-                          'T1070.004',
-                          'T1029',
-                          'T1059.005',
+ 'S0223': {'attack_ids': ['T1047',
+                          'T1082',
                           'T1087.001',
-                          'T1027.001',
-                          'T1218.005',
-                          'T1562.001',
-                          'T1140',
+                          'T1559.002',
                           'T1043',
-                          'T1053.005',
+                          'T1033',
+                          'T1029',
+                          'T1518.001',
+                          'T1562.001',
+                          'T1036.004',
+                          'T1005',
+                          'T1059.005',
+                          'T1105',
+                          'T1027',
+                          'T1559.001',
+                          'T1140',
+                          'T1065',
+                          'T1059.007',
                           'T1113',
+                          'T1132.001',
+                          'T1090.002',
+                          'T1070.004',
+                          'T1059.001',
+                          'T1053.005',
+                          'T1027.001',
+                          'T1573.002',
+                          'T1218.005',
+                          'T1057',
                           'T1016'],
            'description': '[POWERSTATS](https://attack.mitre.org/software/S0223) is a PowerShell-based first stage '
                           'backdoor used by [MuddyWater](https://attack.mitre.org/groups/G0069). (Citation: Unit 42 '
@@ -12944,20 +15245,20 @@ software_map = {
            'platforms': ['Linux', 'Windows', 'macOS'],
            'software_id': 'S0225',
            'type': 'tool'},
- 'S0226': {'attack_ids': ['T1497.001',
-                          'T1055.012',
-                          'T1105',
-                          'T1555.003',
-                          'T1114.001',
-                          'T1053.005',
-                          'T1552.001',
-                          'T1059.005',
+ 'S0226': {'attack_ids': ['T1555.003',
                           'T1055',
-                          'T1071.001',
                           'T1027',
-                          'T1083',
+                          'T1552.001',
+                          'T1140',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1059.005',
+                          'T1497.001',
                           'T1547.001',
-                          'T1140'],
+                          'T1105',
+                          'T1083',
+                          'T1114.001',
+                          'T1055.012'],
            'description': '[Smoke Loader](https://attack.mitre.org/software/S0226) is a malicious bot application that '
                           'can be used to load other malware.\n'
                           '[Smoke Loader](https://attack.mitre.org/software/S0226) has been seen in the wild since at '
@@ -12976,18 +15277,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0227',
            'type': 'tool'},
- 'S0228': {'attack_ids': ['T1033',
-                          'T1071.004',
+ 'S0228': {'attack_ids': ['T1562.001',
                           'T1082',
                           'T1070.004',
-                          'T1105',
-                          'T1059.005',
-                          'T1027',
-                          'T1218.005',
-                          'T1562.001',
-                          'T1547.001',
                           'T1059.007',
-                          'T1016'],
+                          'T1033',
+                          'T1059.005',
+                          'T1218.005',
+                          'T1547.001',
+                          'T1105',
+                          'T1027',
+                          'T1016',
+                          'T1071.004'],
            'description': '[NanHaiShu](https://attack.mitre.org/software/S0228) is a remote access tool and JScript '
                           'backdoor used by [Leviathan](https://attack.mitre.org/groups/G0065). '
                           '[NanHaiShu](https://attack.mitre.org/software/S0228) has been used to target government and '
@@ -12997,18 +15298,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0228',
            'type': 'malware'},
- 'S0229': {'attack_ids': ['T1218.010',
-                          'T1055.012',
-                          'T1082',
-                          'T1102.002',
-                          'T1105',
+ 'S0229': {'attack_ids': ['T1083',
                           'T1059.003',
+                          'T1082',
+                          'T1218.010',
                           'T1518',
-                          'T1027',
-                          'T1083',
-                          'T1070',
+                          'T1102.002',
                           'T1057',
-                          'T1016'],
+                          'T1070',
+                          'T1105',
+                          'T1027',
+                          'T1016',
+                          'T1055.012'],
            'description': '[Orz](https://attack.mitre.org/software/S0229) is a custom JavaScript backdoor used by '
                           '[Leviathan](https://attack.mitre.org/groups/G0065). It was observed being used in 2014 as '
                           'well as in August 2017 when it was dropped by Microsoft Publisher files. (Citation: '
@@ -13017,19 +15318,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0229',
            'type': 'malware'},
- 'S0230': {'attack_ids': ['T1001.002',
-                          'T1082',
-                          'T1105',
-                          'T1573.001',
-                          'T1543.003',
-                          'T1027',
-                          'T1071.001',
-                          'T1574.002',
+ 'S0230': {'attack_ids': ['T1082',
                           'T1027.001',
+                          'T1071.001',
                           'T1027.002',
+                          'T1105',
                           'T1548.002',
+                          'T1543.003',
+                          'T1573.001',
+                          'T1574.002',
+                          'T1027',
+                          'T1016',
                           'T1140',
-                          'T1016'],
+                          'T1001.002'],
            'description': '[ZeroT](https://attack.mitre.org/software/S0230) is a Trojan used by '
                           '[TA459](https://attack.mitre.org/groups/G0062), often in conjunction with '
                           '[PlugX](https://attack.mitre.org/software/S0013). (Citation: Proofpoint TA459 April 2017) '
@@ -13050,7 +15351,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0231',
            'type': 'tool'},
- 'S0232': {'attack_ids': ['T1059.003', 'T1027', 'T1003'],
+ 'S0232': {'attack_ids': ['T1027', 'T1003', 'T1059.003'],
            'description': '[HOMEFRY](https://attack.mitre.org/software/S0232) is a 64-bit Windows password '
                           'dumper/cracker that has previously been used in conjunction with other '
                           '[Leviathan](https://attack.mitre.org/groups/G0065) backdoors. (Citation: FireEye Periscope '
@@ -13059,15 +15360,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0232',
            'type': 'malware'},
- 'S0233': {'attack_ids': ['T1082',
+ 'S0233': {'attack_ids': ['T1059.003',
+                          'T1082',
                           'T1070.004',
-                          'T1053.002',
-                          'T1059.003',
-                          'T1069',
-                          'T1046',
-                          'T1135',
                           'T1087.001',
-                          'T1018'],
+                          'T1135',
+                          'T1053.002',
+                          'T1069',
+                          'T1018',
+                          'T1046'],
            'description': '[MURKYTOP](https://attack.mitre.org/software/S0233) is a reconnaissance tool used by '
                           '[Leviathan](https://attack.mitre.org/groups/G0065). (Citation: FireEye Periscope March '
                           '2018)',
@@ -13075,7 +15376,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0233',
            'type': 'malware'},
- 'S0234': {'attack_ids': ['T1055.012', 'T1059.003', 'T1113', 'T1123', 'T1056.001', 'T1125'],
+ 'S0234': {'attack_ids': ['T1059.003', 'T1056.001', 'T1123', 'T1113', 'T1125', 'T1055.012'],
            'description': '[Bandook](https://attack.mitre.org/software/S0234) is a commercially available RAT, written '
                           'in Delphi, which has been available since roughly 2007  (Citation: EFF Manul Aug 2016) '
                           '(Citation: Lookout Dark Caracal Jan 2018).',
@@ -13083,33 +15384,33 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0234',
            'type': 'malware'},
- 'S0235': {'attack_ids': ['T1083', 'T1547.001', 'T1113', 'T1543.001'],
+ 'S0235': {'attack_ids': ['T1083', 'T1113', 'T1543.001', 'T1547.001'],
            'description': '[CrossRAT](https://attack.mitre.org/software/S0235) is a cross platform RAT.',
            'name': 'CrossRAT',
            'platforms': ['Linux', 'Windows', 'macOS'],
            'software_id': 'S0235',
            'type': 'malware'},
- 'S0236': {'attack_ids': ['T1201',
-                          'T1082',
-                          'T1027',
-                          'T1033',
-                          'T1007',
-                          'T1036.004',
-                          'T1008',
-                          'T1105',
-                          'T1543.003',
-                          'T1049',
-                          'T1018',
-                          'T1057',
-                          'T1021.002',
-                          'T1218.011',
-                          'T1069.001',
-                          'T1069.002',
+ 'S0236': {'attack_ids': ['T1082',
                           'T1087.001',
-                          'T1027.001',
-                          'T1140',
+                          'T1033',
+                          'T1069.002',
+                          'T1543.003',
+                          'T1018',
+                          'T1218.011',
+                          'T1036.004',
+                          'T1201',
+                          'T1008',
                           'T1135',
+                          'T1105',
+                          'T1027',
+                          'T1069.001',
+                          'T1021.002',
+                          'T1140',
+                          'T1007',
                           'T1083',
+                          'T1049',
+                          'T1027.001',
+                          'T1057',
                           'T1016'],
            'description': '[Kwampirs](https://attack.mitre.org/software/S0236) is a backdoor Trojan used by '
                           '[Orangeworm](https://attack.mitre.org/groups/G0071). It has been found on machines which '
@@ -13119,25 +15420,25 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0236',
            'type': 'malware'},
- 'S0237': {'attack_ids': ['T1497.001',
+ 'S0237': {'attack_ids': ['T1571',
+                          'T1047',
                           'T1082',
                           'T1559.002',
-                          'T1025',
-                          'T1047',
-                          'T1027',
                           'T1033',
-                          'T1007',
                           'T1027.005',
-                          'T1049',
-                          'T1057',
-                          'T1571',
-                          'T1065',
                           'T1005',
-                          'T1071.001',
+                          'T1025',
+                          'T1027',
+                          'T1007',
+                          'T1065',
+                          'T1497.001',
+                          'T1083',
+                          'T1049',
                           'T1124',
                           'T1059.003',
                           'T1053.005',
-                          'T1083',
+                          'T1071.001',
+                          'T1057',
                           'T1016'],
            'description': '[GravityRAT](https://attack.mitre.org/software/S0237) is a remote access tool (RAT) and has '
                           'been in ongoing development since 2016. The actor behind the tool remains unknown, but two '
@@ -13149,20 +15450,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0237',
            'type': 'malware'},
- 'S0238': {'attack_ids': ['T1043',
-                          'T1124',
-                          'T1082',
-                          'T1005',
-                          'T1070.004',
-                          'T1041',
+ 'S0238': {'attack_ids': ['T1569.002',
                           'T1059.003',
-                          'T1569.002',
                           'T1119',
-                          'T1012',
+                          'T1124',
+                          'T1070.004',
+                          'T1005',
+                          'T1082',
+                          'T1043',
                           'T1071.001',
-                          'T1083',
+                          'T1041',
                           'T1485',
+                          'T1012',
                           'T1057',
+                          'T1083',
                           'T1016'],
            'description': '[Proxysvc](https://attack.mitre.org/software/S0238) is a malicious DLL used by [Lazarus '
                           'Group](https://attack.mitre.org/groups/G0032) in a campaign known as Operation GhostSecret. '
@@ -13175,31 +15476,31 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0238',
            'type': 'malware'},
- 'S0239': {'attack_ids': ['T1082',
-                          'T1087.002',
-                          'T1105',
+ 'S0239': {'attack_ids': ['T1571',
+                          'T1082',
+                          'T1087.001',
+                          'T1112',
+                          'T1070.006',
                           'T1543.003',
-                          'T1119',
-                          'T1001.003',
+                          'T1203',
+                          'T1087.002',
+                          'T1005',
+                          'T1041',
                           'T1134.002',
                           'T1070',
-                          'T1057',
-                          'T1070.006',
-                          'T1571',
-                          'T1065',
-                          'T1005',
-                          'T1070.004',
-                          'T1041',
-                          'T1132.002',
-                          'T1012',
-                          'T1112',
-                          'T1071.001',
-                          'T1087.001',
+                          'T1106',
+                          'T1105',
                           'T1140',
-                          'T1203',
-                          'T1059.003',
+                          'T1119',
+                          'T1065',
+                          'T1001.003',
                           'T1083',
-                          'T1106'],
+                          'T1059.003',
+                          'T1070.004',
+                          'T1071.001',
+                          'T1012',
+                          'T1132.002',
+                          'T1057'],
            'description': '[Bankshot](https://attack.mitre.org/software/S0239) is a remote access tool (RAT) that was '
                           'first reported by the Department of Homeland Security in December of 2017. In 2018, '
                           '[Lazarus Group](https://attack.mitre.org/groups/G0032) used the '
@@ -13209,23 +15510,23 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0239',
            'type': 'malware'},
- 'S0240': {'attack_ids': ['T1497.001',
-                          'T1041',
-                          'T1082',
-                          'T1005',
-                          'T1070.004',
-                          'T1102.002',
-                          'T1555.003',
-                          'T1105',
-                          'T1555',
-                          'T1113',
-                          'T1518.001',
-                          'T1012',
+ 'S0240': {'attack_ids': ['T1555.003',
                           'T1123',
-                          'T1071.001',
+                          'T1555',
                           'T1056.001',
+                          'T1082',
+                          'T1070.004',
+                          'T1005',
+                          'T1113',
+                          'T1071.001',
+                          'T1105',
+                          'T1041',
+                          'T1497.001',
+                          'T1102.002',
+                          'T1012',
+                          'T1057',
                           'T1083',
-                          'T1057'],
+                          'T1518.001'],
            'description': '[ROKRAT](https://attack.mitre.org/software/S0240) is a cloud-based remote access tool (RAT) '
                           'used by [APT37](https://attack.mitre.org/groups/G0067). This software has been used to '
                           'target victims in South Korea. [APT37](https://attack.mitre.org/groups/G0067) used ROKRAT '
@@ -13235,22 +15536,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0240',
            'type': 'malware'},
- 'S0241': {'attack_ids': ['T1043',
-                          'T1007',
-                          'T1082',
-                          'T1055.001',
-                          'T1033',
-                          'T1059.001',
-                          'T1105',
+ 'S0241': {'attack_ids': ['T1049',
                           'T1059.003',
+                          'T1007',
                           'T1047',
-                          'T1012',
-                          'T1071.001',
+                          'T1082',
+                          'T1059.001',
+                          'T1016',
                           'T1087.001',
-                          'T1049',
+                          'T1043',
+                          'T1033',
+                          'T1071.001',
+                          'T1105',
                           'T1057',
+                          'T1012',
                           'T1018',
-                          'T1016'],
+                          'T1055.001'],
            'description': '[RATANKBA](https://attack.mitre.org/software/S0241) is a remote controller tool used by '
                           '[Lazarus Group](https://attack.mitre.org/groups/G0032). '
                           '[RATANKBA](https://attack.mitre.org/software/S0241) has been used in attacks targeting '
@@ -13264,19 +15565,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0241',
            'type': 'malware'},
- 'S0242': {'attack_ids': ['T1497.001',
-                          'T1033',
+ 'S0242': {'attack_ids': ['T1027',
                           'T1007',
+                          'T1055.013',
                           'T1082',
+                          'T1112',
+                          'T1033',
+                          'T1486',
+                          'T1106',
+                          'T1497.001',
                           'T1070.001',
                           'T1012',
-                          'T1112',
-                          'T1027',
-                          'T1055.013',
-                          'T1083',
                           'T1057',
-                          'T1486',
-                          'T1106'],
+                          'T1083'],
            'description': '[SynAck](https://attack.mitre.org/software/S0242) is variant of Trojan ransomware targeting '
                           'mainly English-speaking users since at least fall 2017. (Citation: SecureList SynAck '
                           'Doppelgänging May 2018) (Citation: Kaspersky Lab SynAck May 2018)',
@@ -13284,7 +15585,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0242',
            'type': 'malware'},
- 'S0243': {'attack_ids': ['T1059.003', 'T1071.001', 'T1203'],
+ 'S0243': {'attack_ids': ['T1059.003', 'T1203', 'T1071.001'],
            'description': '[DealersChoice](https://attack.mitre.org/software/S0243) is a Flash exploitation framework '
                           'used by [APT28](https://attack.mitre.org/groups/G0007). (Citation: Sofacy DealersChoice)',
            'name': 'DealersChoice',
@@ -13292,24 +15593,24 @@ software_map = {
            'software_id': 'S0243',
            'type': 'malware'},
  'S0244': {'attack_ids': ['T1082',
-                          'T1518.001',
-                          'T1027',
-                          'T1547.001',
-                          'T1007',
-                          'T1119',
-                          'T1049',
+                          'T1087.001',
+                          'T1043',
                           'T1018',
-                          'T1057',
+                          'T1518.001',
                           'T1218.011',
                           'T1059.005',
-                          'T1071.001',
-                          'T1547.009',
-                          'T1087.001',
-                          'T1027.001',
-                          'T1043',
-                          'T1102.002',
-                          'T1059.003',
                           'T1573.001',
+                          'T1027',
+                          'T1119',
+                          'T1007',
+                          'T1059.003',
+                          'T1049',
+                          'T1027.001',
+                          'T1071.001',
+                          'T1102.002',
+                          'T1547.009',
+                          'T1547.001',
+                          'T1057',
                           'T1016'],
            'description': '[Comnie](https://attack.mitre.org/software/S0244) is a remote backdoor which has been used '
                           'in attacks in East Asia. (Citation: Palo Alto Comnie)',
@@ -13317,27 +15618,27 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0244',
            'type': 'malware'},
- 'S0245': {'attack_ids': ['T1571', 'T1043', 'T1082', 'T1090', 'T1573.001', 'T1562.004', 'T1112', 'T1001.003', 'T1016'],
+ 'S0245': {'attack_ids': ['T1571', 'T1082', 'T1112', 'T1043', 'T1562.004', 'T1090', 'T1001.003', 'T1573.001', 'T1016'],
            'description': '[BADCALL](https://attack.mitre.org/software/S0245) is a Trojan malware variant used by the '
                           'group [Lazarus Group](https://attack.mitre.org/groups/G0032). (Citation: US-CERT BADCALL)',
            'name': 'BADCALL',
            'platforms': ['Windows'],
            'software_id': 'S0245',
            'type': 'malware'},
- 'S0246': {'attack_ids': ['T1571', 'T1043', 'T1090', 'T1059.003', 'T1562.004', 'T1001.003'],
+ 'S0246': {'attack_ids': ['T1571', 'T1059.003', 'T1043', 'T1001.003', 'T1090', 'T1562.004'],
            'description': '[HARDRAIN](https://attack.mitre.org/software/S0246) is a Trojan malware variant reportedly '
                           'used by the North Korean government. (Citation: US-CERT HARDRAIN March 2018)',
            'name': 'HARDRAIN',
            'platforms': ['Windows'],
            'software_id': 'S0246',
            'type': 'malware'},
- 'S0247': {'attack_ids': ['T1074.001',
-                          'T1082',
-                          'T1105',
-                          'T1059.003',
-                          'T1071.003',
-                          'T1055',
+ 'S0247': {'attack_ids': ['T1059.003',
                           'T1056.001',
+                          'T1055',
+                          'T1082',
+                          'T1074.001',
+                          'T1071.003',
+                          'T1105',
                           'T1547.001',
                           'T1057'],
            'description': '[NavRAT](https://attack.mitre.org/software/S0247) is a remote access tool designed to '
@@ -13347,20 +15648,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0247',
            'type': 'malware'},
- 'S0248': {'attack_ids': ['T1497.001',
-                          'T1033',
-                          'T1102.002',
+ 'S0248': {'attack_ids': ['T1056.001',
                           'T1082',
                           'T1005',
                           'T1053.005',
-                          'T1113',
-                          'T1056.001',
                           'T1027.001',
+                          'T1113',
+                          'T1033',
                           'T1027.002',
-                          'T1083',
-                          'T1016',
                           'T1018',
-                          'T1057'],
+                          'T1102.002',
+                          'T1497.001',
+                          'T1057',
+                          'T1083',
+                          'T1016'],
            'description': '[yty](https://attack.mitre.org/software/S0248) is a modular, plugin-based malware '
                           'framework. The components of the framework are written in a variety of programming '
                           'languages. (Citation: ASERT Donot March 2018)',
@@ -13368,20 +15669,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0248',
            'type': 'malware'},
- 'S0249': {'attack_ids': ['T1074.001',
-                          'T1033',
-                          'T1083',
+ 'S0249': {'attack_ids': ['T1562.001',
+                          'T1059.003',
                           'T1082',
                           'T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1518.001',
-                          'T1012',
+                          'T1074.001',
+                          'T1033',
                           'T1071.001',
+                          'T1105',
                           'T1560',
-                          'T1562.001',
+                          'T1012',
                           'T1547.001',
-                          'T1057'],
+                          'T1057',
+                          'T1083',
+                          'T1518.001'],
            'description': '[Gold Dragon](https://attack.mitre.org/software/S0249) is a Korean-language, data gathering '
                           'implant that was first observed in the wild in South Korea in July 2017. [Gold '
                           'Dragon](https://attack.mitre.org/software/S0249) was used along with [Brave '
@@ -13392,26 +15693,26 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0249',
            'type': 'malware'},
- 'S0250': {'attack_ids': ['T1218.010',
-                          'T1046',
-                          'T1047',
-                          'T1003.002',
-                          'T1573.002',
+ 'S0250': {'attack_ids': ['T1047',
+                          'T1218.010',
                           'T1003.003',
                           'T1033',
-                          'T1115',
-                          'T1105',
+                          'T1021.001',
                           'T1055.001',
+                          'T1218.011',
                           'T1005',
                           'T1059.005',
-                          'T1548.002',
-                          'T1218.005',
-                          'T1021.001',
-                          'T1016',
-                          'T1059.003',
                           'T1135',
+                          'T1105',
                           'T1569.002',
-                          'T1218.011'],
+                          'T1548.002',
+                          'T1003.002',
+                          'T1046',
+                          'T1059.003',
+                          'T1573.002',
+                          'T1218.005',
+                          'T1115',
+                          'T1016'],
            'description': '[Koadic](https://attack.mitre.org/software/S0250) is a Windows post-exploitation framework '
                           'and penetration testing tool. [Koadic](https://attack.mitre.org/software/S0250) is publicly '
                           'available on GitHub and the tool is executed via the command-line. '
@@ -13423,36 +15724,36 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0250',
            'type': 'tool'},
- 'S0251': {'attack_ids': ['T1082',
+ 'S0251': {'attack_ids': ['T1047',
+                          'T1082',
+                          'T1094',
+                          'T1033',
+                          'T1027.002',
                           'T1071.003',
                           'T1120',
-                          'T1047',
-                          'T1056.004',
-                          'T1027.002',
-                          'T1573.002',
-                          'T1560',
-                          'T1547.001',
-                          'T1132.001',
-                          'T1074.001',
-                          'T1033',
-                          'T1105',
-                          'T1119',
-                          'T1094',
-                          'T1049',
-                          'T1057',
-                          'T1041',
-                          'T1065',
-                          'T1070.004',
-                          'T1037.001',
-                          'T1012',
-                          'T1071.001',
-                          'T1140',
-                          'T1124',
-                          'T1555.003',
-                          'T1059.003',
-                          'T1113',
                           'T1135',
+                          'T1041',
+                          'T1105',
+                          'T1037.001',
+                          'T1140',
+                          'T1119',
+                          'T1065',
+                          'T1113',
                           'T1083',
+                          'T1560',
+                          'T1132.001',
+                          'T1049',
+                          'T1124',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1056.004',
+                          'T1573.002',
+                          'T1012',
+                          'T1547.001',
+                          'T1057',
+                          'T1555.003',
                           'T1016'],
            'description': '[Zebrocy](https://attack.mitre.org/software/S0251) is a Trojan that has been used by '
                           '[APT28](https://attack.mitre.org/groups/G0007) since at least November 2015. The malware '
@@ -13463,7 +15764,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0251',
            'type': 'malware'},
- 'S0252': {'attack_ids': ['T1082', 'T1012', 'T1083', 'T1562.001', 'T1057', 'T1016', 'T1048.003'],
+ 'S0252': {'attack_ids': ['T1562.001', 'T1082', 'T1012', 'T1057', 'T1083', 'T1048.003', 'T1016'],
            'description': '[Brave Prince](https://attack.mitre.org/software/S0252) is a Korean-language implant that '
                           'was first observed in the wild in December 2017. It contains similar code and behavior to '
                           '[Gold Dragon](https://attack.mitre.org/software/S0249), and was seen along with [Gold '
@@ -13474,15 +15775,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0252',
            'type': 'malware'},
- 'S0253': {'attack_ids': ['T1115',
-                          'T1082',
-                          'T1070.004',
-                          'T1059.003',
-                          'T1070.001',
+ 'S0253': {'attack_ids': ['T1562.001',
                           'T1056.001',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1082',
                           'T1560',
-                          'T1562.001',
-                          'T1547.001'],
+                          'T1070.001',
+                          'T1547.001',
+                          'T1115'],
            'description': '[RunningRAT](https://attack.mitre.org/software/S0253) is a remote access tool that appeared '
                           'in operations surrounding the 2018 Pyeongchang Winter Olympics along with [Gold '
                           'Dragon](https://attack.mitre.org/software/S0249) and [Brave '
@@ -13491,15 +15792,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0253',
            'type': 'malware'},
- 'S0254': {'attack_ids': ['T1082',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
+ 'S0254': {'attack_ids': ['T1059.003',
+                          'T1082',
                           'T1112',
                           'T1094',
                           'T1548.002',
-                          'T1547.001',
                           'T1057',
+                          'T1573.001',
+                          'T1547.001',
+                          'T1105',
                           'T1016'],
            'description': '[PLAINTEE](https://attack.mitre.org/software/S0254) is a malware sample that has been used '
                           'by [Rancor](https://attack.mitre.org/groups/G0075) in targeted attacks in Singapore and '
@@ -13508,7 +15809,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0254',
            'type': 'malware'},
- 'S0255': {'attack_ids': ['T1105', 'T1094', 'T1083', 'T1140', 'T1218.011'],
+ 'S0255': {'attack_ids': ['T1094', 'T1105', 'T1083', 'T1140', 'T1218.011'],
            'description': '[DDKONG](https://attack.mitre.org/software/S0255) is a malware sample that was part of a '
                           'campaign by [Rancor](https://attack.mitre.org/groups/G0075). '
                           '[DDKONG](https://attack.mitre.org/software/S0255) was first seen used in February 2017. '
@@ -13517,22 +15818,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0255',
            'type': 'malware'},
- 'S0256': {'attack_ids': ['T1546.015',
-                          'T1033',
+ 'S0256': {'attack_ids': ['T1059.003',
+                          'T1047',
                           'T1070.004',
                           'T1059.001',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1218.011',
-                          'T1518.001',
-                          'T1047',
-                          'T1112',
-                          'T1027',
-                          'T1547.001',
-                          'T1057',
                           'T1016',
-                          'T1106'],
+                          'T1112',
+                          'T1546.015',
+                          'T1033',
+                          'T1106',
+                          'T1057',
+                          'T1573.001',
+                          'T1547.001',
+                          'T1105',
+                          'T1027',
+                          'T1518.001',
+                          'T1218.011'],
            'description': '[Mosquito](https://attack.mitre.org/software/S0256) is a Win32 backdoor that has been used '
                           'by [Turla](https://attack.mitre.org/groups/G0010). '
                           '[Mosquito](https://attack.mitre.org/software/S0256) is made up of three parts: the '
@@ -13542,23 +15843,23 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0256',
            'type': 'malware'},
- 'S0257': {'attack_ids': ['T1033',
-                          'T1115',
-                          'T1082',
-                          'T1070.004',
-                          'T1105',
-                          'T1113',
-                          'T1518.001',
-                          'T1119',
+ 'S0257': {'attack_ids': ['T1115',
                           'T1123',
+                          'T1119',
                           'T1056.001',
                           'T1027',
-                          'T1071.001',
-                          'T1027.002',
-                          'T1560',
+                          'T1082',
+                          'T1070.004',
                           'T1016',
-                          'T1140',
-                          'T1057'],
+                          'T1113',
+                          'T1033',
+                          'T1027.002',
+                          'T1071.001',
+                          'T1057',
+                          'T1105',
+                          'T1560',
+                          'T1518.001',
+                          'T1140'],
            'description': '[VERMIN](https://attack.mitre.org/software/S0257) is a remote access tool written in the '
                           'Microsoft .NET framework. It is mostly composed of original code, but also has some open '
                           'source code. (Citation: Unit 42 VERMIN Jan 2018)',
@@ -13566,7 +15867,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0257',
            'type': 'malware'},
- 'S0258': {'attack_ids': ['T1033', 'T1105', 'T1059.003', 'T1071.001', 'T1140', 'T1560.003'],
+ 'S0258': {'attack_ids': ['T1059.003', 'T1560.003', 'T1033', 'T1071.001', 'T1105', 'T1140'],
            'description': '[RGDoor](https://attack.mitre.org/software/S0258) is a malicious Internet Information '
                           'Services (IIS) backdoor developed in the C++ language. '
                           '[RGDoor](https://attack.mitre.org/software/S0258) has been seen deployed on webservers '
@@ -13577,17 +15878,17 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0258',
            'type': 'malware'},
- 'S0259': {'attack_ids': ['T1065',
+ 'S0259': {'attack_ids': ['T1059.003',
                           'T1036.004',
+                          'T1027',
                           'T1082',
                           'T1070.004',
-                          'T1059.003',
+                          'T1065',
+                          'T1106',
                           'T1543.003',
-                          'T1027',
-                          'T1036.005',
-                          'T1083',
                           'T1547.001',
-                          'T1106'],
+                          'T1036.005',
+                          'T1083'],
            'description': '[InnaputRAT](https://attack.mitre.org/software/S0259) is a remote access tool that can '
                           'exfiltrate files from a victim’s machine. '
                           '[InnaputRAT](https://attack.mitre.org/software/S0259) has been seen out in the wild since '
@@ -13596,76 +15897,119 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0259',
            'type': 'malware'},
- 'S0260': {'attack_ids': ['T1082',
-                          'T1027',
-                          'T1125',
-                          'T1074.001',
-                          'T1033',
-                          'T1007',
-                          'T1105',
-                          'T1119',
-                          'T1094',
-                          'T1574.001',
-                          'T1057',
-                          'T1070.006',
-                          'T1560.001',
-                          'T1070.004',
+ 'S0260': {'attack_ids': ['T1055.002',
+                          'T1082',
                           'T1090.001',
-                          'T1123',
-                          'T1012',
+                          'T1095',
+                          'T1560.001',
                           'T1112',
-                          'T1071.001',
+                          'T1068',
+                          'T1094',
+                          'T1033',
                           'T1087.001',
-                          'T1036.005',
-                          'T1548.002',
-                          'T1140',
-                          'T1560.003',
-                          'T1124',
                           'T1043',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1113',
+                          'T1204.002',
+                          'T1070.006',
+                          'T1543.003',
+                          'T1010',
+                          'T1518.001',
+                          'T1125',
+                          'T1203',
+                          'T1071.004',
+                          'T1218.011',
+                          'T1056.001',
+                          'T1036.004',
+                          'T1070.005',
+                          'T1008',
+                          'T1005',
+                          'T1027.005',
+                          'T1025',
                           'T1135',
+                          'T1574.001',
                           'T1562.004',
+                          'T1080',
+                          'T1573.001',
+                          'T1106',
+                          'T1518',
+                          'T1490',
+                          'T1105',
+                          'T1559.001',
+                          'T1140',
+                          'T1027',
+                          'T1569.002',
+                          'T1480.001',
+                          'T1055',
+                          'T1123',
+                          'T1119',
+                          'T1007',
+                          'T1059.007',
+                          'T1113',
+                          'T1001.003',
+                          'T1548.002',
+                          'T1497.001',
+                          'T1036.005',
                           'T1083',
+                          'T1046',
+                          'T1059.003',
+                          'T1124',
+                          'T1218.002',
+                          'T1090.002',
+                          'T1070.004',
+                          'T1055.004',
+                          'T1560.003',
+                          'T1564.001',
+                          'T1074.001',
+                          'T1053.005',
+                          'T1564.003',
+                          'T1071.001',
+                          'T1210',
+                          'T1560.002',
+                          'T1547.009',
+                          'T1012',
+                          'T1132.002',
+                          'T1547.001',
+                          'T1057',
                           'T1016'],
            'description': '[InvisiMole](https://attack.mitre.org/software/S0260) is a modular spyware program that has '
-                          'been used by threat actors since at least 2013. '
+                          'been used by the InvisiMole Group since at least 2013. '
                           '[InvisiMole](https://attack.mitre.org/software/S0260) has two backdoor modules called RC2FM '
                           'and RC2CL that are used to perform post-exploitation activities. It has been discovered on '
-                          'compromised victims in the Ukraine and Russia. (Citation: ESET InvisiMole June 2018)',
+                          'compromised victims in the Ukraine and Russia. [Gamaredon '
+                          'Group](https://attack.mitre.org/groups/G0047) infrastructure has been used to download and '
+                          'execute [InvisiMole](https://attack.mitre.org/software/S0260) against a small number of '
+                          'victims.(Citation: ESET InvisiMole June 2018)(Citation: ESET InvisiMole June 2020)',
            'name': 'InvisiMole',
            'platforms': ['Windows'],
            'software_id': 'S0260',
            'type': 'malware'},
- 'S0261': {'attack_ids': ['T1074.001',
-                          'T1115',
+ 'S0261': {'attack_ids': ['T1056.001',
                           'T1036.004',
-                          'T1113',
-                          'T1543.003',
-                          'T1056.001',
                           'T1112',
-                          'T1016',
-                          'T1010'],
+                          'T1074.001',
+                          'T1113',
+                          'T1010',
+                          'T1543.003',
+                          'T1115',
+                          'T1016'],
            'description': '[Catchamas](https://attack.mitre.org/software/S0261) is a Windows Trojan that steals '
                           'information from compromised systems. (Citation: Symantec Catchamas April 2018)',
            'name': 'Catchamas',
            'platforms': ['Windows'],
            'software_id': 'S0261',
            'type': 'malware'},
- 'S0262': {'attack_ids': ['T1082',
-                          'T1090',
-                          'T1555.003',
-                          'T1105',
-                          'T1553.002',
-                          'T1053.005',
-                          'T1555',
-                          'T1573.001',
-                          'T1059.003',
-                          'T1552.001',
+ 'S0262': {'attack_ids': ['T1059.003',
                           'T1056.001',
+                          'T1555',
+                          'T1552.001',
+                          'T1082',
                           'T1112',
+                          'T1053.005',
+                          'T1105',
+                          'T1090',
                           'T1021.001',
+                          'T1573.001',
+                          'T1553.002',
+                          'T1555.003',
                           'T1125'],
            'description': '[QuasarRAT](https://attack.mitre.org/software/S0262) is an open-source, remote access tool '
                           'that is publicly available on GitHub. [QuasarRAT](https://attack.mitre.org/software/S0262) '
@@ -13676,20 +16020,20 @@ software_map = {
            'software_id': 'S0262',
            'type': 'tool'},
  'S0263': {'attack_ids': ['T1571',
-                          'T1065',
-                          'T1082',
-                          'T1043',
-                          'T1070.004',
-                          'T1090',
-                          'T1105',
                           'T1059.003',
-                          'T1543.003',
-                          'T1562.004',
-                          'T1059.005',
-                          'T1204.002',
                           'T1027',
+                          'T1082',
+                          'T1070.004',
                           'T1112',
+                          'T1065',
+                          'T1043',
                           'T1094',
+                          'T1059.005',
+                          'T1562.004',
+                          'T1204.002',
+                          'T1090',
+                          'T1543.003',
+                          'T1105',
                           'T1083',
                           'T1140'],
            'description': '[TYPEFRAME](https://attack.mitre.org/software/S0263) is a remote access tool that has been '
@@ -13699,25 +16043,25 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0263',
            'type': 'malware'},
- 'S0264': {'attack_ids': ['T1497.001',
+ 'S0264': {'attack_ids': ['T1047',
                           'T1082',
-                          'T1047',
-                          'T1027',
-                          'T1027.002',
-                          'T1132.001',
-                          'T1074.001',
-                          'T1105',
-                          'T1041',
                           'T1560.001',
-                          'T1070.004',
+                          'T1027.002',
                           'T1059.005',
-                          'T1071.001',
+                          'T1041',
+                          'T1105',
+                          'T1027',
                           'T1140',
-                          'T1560.003',
-                          'T1124',
+                          'T1497.001',
+                          'T1132.001',
                           'T1059.003',
+                          'T1124',
+                          'T1030',
+                          'T1070.004',
+                          'T1560.003',
+                          'T1074.001',
                           'T1053.005',
-                          'T1030'],
+                          'T1071.001'],
            'description': '[OopsIE](https://attack.mitre.org/software/S0264) is a Trojan used by '
                           '[OilRig](https://attack.mitre.org/groups/G0049) to remotely execute commands as well as '
                           'upload/download files to/from victims. (Citation: Unit 42 OopsIE! Feb 2018)',
@@ -13725,34 +16069,34 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0264',
            'type': 'malware'},
- 'S0265': {'attack_ids': ['T1082',
-                          'T1047',
-                          'T1027',
-                          'T1547.001',
-                          'T1132.001',
-                          'T1125',
-                          'T1074.001',
-                          'T1033',
-                          'T1008',
-                          'T1105',
-                          'T1059.004',
-                          'T1543.003',
-                          'T1057',
-                          'T1055.001',
-                          'T1005',
-                          'T1070.004',
-                          'T1069.001',
-                          'T1029',
-                          'T1071.001',
-                          'T1547.009',
+ 'S0265': {'attack_ids': ['T1047',
+                          'T1082',
                           'T1087.001',
-                          'T1485',
+                          'T1033',
+                          'T1029',
+                          'T1543.003',
                           'T1010',
-                          'T1102.002',
-                          'T1059.003',
+                          'T1055.001',
+                          'T1125',
+                          'T1008',
+                          'T1005',
+                          'T1105',
+                          'T1027',
+                          'T1069.001',
                           'T1113',
-                          'T1071.002',
+                          'T1059.004',
                           'T1083',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1485',
+                          'T1071.002',
+                          'T1102.002',
+                          'T1547.009',
+                          'T1547.001',
+                          'T1057',
                           'T1016'],
            'description': '[Kazuar](https://attack.mitre.org/software/S0265) is a fully featured, multi-platform '
                           'backdoor Trojan written using the Microsoft .NET framework. (Citation: Unit 42 Kazuar May '
@@ -13761,37 +16105,47 @@ software_map = {
            'platforms': ['Windows', 'macOS'],
            'software_id': 'S0265',
            'type': 'malware'},
- 'S0266': {'attack_ids': ['T1082',
-                          'T1056.004',
-                          'T1204.002',
-                          'T1027',
-                          'T1027.002',
-                          'T1566.001',
-                          'T1547.001',
-                          'T1007',
-                          'T1055.012',
-                          'T1105',
-                          'T1571',
-                          'T1065',
-                          'T1005',
-                          'T1552.001',
-                          'T1071.001',
-                          'T1112',
-                          'T1552.002',
-                          'T1087.001',
+ 'S0266': {'attack_ids': ['T1571',
+                          'T1555',
+                          'T1082',
                           'T1185',
-                          'T1562.001',
-                          'T1482',
-                          'T1140',
-                          'T1043',
+                          'T1087.001',
                           'T1087.003',
-                          'T1555.003',
-                          'T1059.003',
+                          'T1112',
+                          'T1043',
+                          'T1033',
+                          'T1027.002',
+                          'T1204.002',
+                          'T1553.002',
+                          'T1018',
+                          'T1562.001',
+                          'T1036',
+                          'T1008',
+                          'T1482',
+                          'T1566.001',
+                          'T1005',
+                          'T1041',
+                          'T1069',
                           'T1573.001',
-                          'T1053.005',
+                          'T1106',
+                          'T1027',
+                          'T1105',
+                          'T1140',
+                          'T1007',
+                          'T1552.001',
+                          'T1065',
                           'T1083',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1056.004',
+                          'T1543.003',
+                          'T1555.003',
+                          'T1566.002',
                           'T1016',
-                          'T1106'],
+                          'T1055.012',
+                          'T1552.002'],
            'description': '[TrickBot](https://attack.mitre.org/software/S0266) is a Trojan spyware program that has '
                           'mainly been used for targeting banking sites in United States, Canada, UK, Germany, '
                           'Australia, Austria, Ireland, London, Switzerland, and Scotland. TrickBot first emerged in '
@@ -13804,43 +16158,43 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0266',
            'type': 'malware'},
- 'S0267': {'attack_ids': ['T1082',
+ 'S0267': {'attack_ids': ['T1047',
+                          'T1082',
+                          'T1112',
+                          'T1043',
+                          'T1033',
                           'T1518.001',
-                          'T1047',
+                          'T1218.011',
+                          'T1105',
                           'T1027',
                           'T1560',
-                          'T1547.001',
-                          'T1033',
-                          'T1105',
-                          'T1057',
+                          'T1059.003',
+                          'T1124',
                           'T1070.004',
-                          'T1012',
-                          'T1112',
                           'T1071.001',
                           'T1547.009',
-                          'T1016',
-                          'T1043',
-                          'T1124',
-                          'T1059.003',
-                          'T1218.011'],
+                          'T1012',
+                          'T1547.001',
+                          'T1057',
+                          'T1016'],
            'description': '[FELIXROOT](https://attack.mitre.org/software/S0267) is a backdoor that has been used to '
                           'target Ukrainian victims. (Citation: FireEye FELIXROOT July 2018)',
            'name': 'FELIXROOT',
            'platforms': ['Windows'],
            'software_id': 'S0267',
            'type': 'malware'},
- 'S0268': {'attack_ids': ['T1043',
+ 'S0268': {'attack_ids': ['T1059.003',
                           'T1082',
-                          'T1057',
                           'T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1059.005',
+                          'T1043',
                           'T1071.001',
+                          'T1059.005',
+                          'T1057',
+                          'T1573.001',
+                          'T1547.001',
+                          'T1105',
                           'T1027',
                           'T1016',
-                          'T1547.001',
                           'T1140',
                           'T1218.011'],
            'description': '[Bisonal](https://attack.mitre.org/software/S0268) is malware that has been used in attacks '
@@ -13850,46 +16204,46 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0268',
            'type': 'malware'},
- 'S0269': {'attack_ids': ['T1033',
-                          'T1071.004',
-                          'T1008',
+ 'S0269': {'attack_ids': ['T1059.003',
+                          'T1140',
                           'T1070.004',
                           'T1059.001',
-                          'T1059.003',
+                          'T1008',
+                          'T1112',
                           'T1053.005',
+                          'T1033',
+                          'T1071.001',
                           'T1059.005',
                           'T1012',
-                          'T1027',
-                          'T1112',
-                          'T1071.001',
                           'T1036.005',
+                          'T1027',
+                          'T1016',
                           'T1132.001',
-                          'T1140',
-                          'T1016'],
+                          'T1071.004'],
            'description': '[QUADAGENT](https://attack.mitre.org/software/S0269) is a PowerShell backdoor used by '
                           '[OilRig](https://attack.mitre.org/groups/G0049). (Citation: Unit 42 QUADAGENT July 2018)',
            'name': 'QUADAGENT',
            'platforms': ['Windows'],
            'software_id': 'S0269',
            'type': 'malware'},
- 'S0270': {'attack_ids': ['T1497.001',
-                          'T1218.010',
+ 'S0270': {'attack_ids': ['T1047',
                           'T1082',
-                          'T1518.001',
-                          'T1047',
-                          'T1027',
-                          'T1132.001',
-                          'T1547.001',
-                          'T1033',
-                          'T1059.001',
-                          'T1105',
+                          'T1218.010',
                           'T1094',
-                          'T1057',
-                          'T1547.009',
+                          'T1033',
+                          'T1518.001',
+                          'T1105',
+                          'T1027',
                           'T1140',
-                          'T1102.002',
-                          'T1059.003',
                           'T1113',
+                          'T1497.001',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1059.001',
+                          'T1102.002',
+                          'T1547.009',
+                          'T1547.001',
+                          'T1057',
                           'T1016'],
            'description': '[RogueRobin](https://attack.mitre.org/software/S0270) is a payload used by '
                           '[DarkHydrus](https://attack.mitre.org/groups/G0079) that has been developed in PowerShell '
@@ -13898,16 +16252,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0270',
            'type': 'malware'},
- 'S0271': {'attack_ids': ['T1043',
-                          'T1082',
+ 'S0271': {'attack_ids': ['T1059.003',
                           'T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1113',
+                          'T1082',
                           'T1112',
-                          'T1083',
+                          'T1043',
+                          'T1113',
                           'T1057',
+                          'T1573.001',
+                          'T1105',
+                          'T1083',
                           'T1016'],
            'description': '[KEYMARBLE](https://attack.mitre.org/software/S0271) is a Trojan that has reportedly been '
                           'used by the North Korean government. (Citation: US-CERT KEYMARBLE Aug 2018)',
@@ -13915,7 +16269,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0271',
            'type': 'malware'},
- 'S0272': {'attack_ids': ['T1033', 'T1082', 'T1105', 'T1573.001', 'T1083'],
+ 'S0272': {'attack_ids': ['T1082', 'T1033', 'T1573.001', 'T1105', 'T1083'],
            'description': '[NDiskMonitor](https://attack.mitre.org/software/S0272) is a custom backdoor written in '
                           '.NET that appears to be unique to [Patchwork](https://attack.mitre.org/groups/G0040). '
                           '(Citation: TrendMicro Patchwork Dec 2017)',
@@ -13923,28 +16277,28 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0272',
            'type': 'malware'},
- 'S0273': {'attack_ids': ['T1055.001', 'T1090', 'T1059.001', 'T1113', 'T1057'],
+ 'S0273': {'attack_ids': ['T1059.001', 'T1113', 'T1090', 'T1057', 'T1055.001'],
            'description': '[Socksbot](https://attack.mitre.org/software/S0273) is a backdoor that  abuses Socket '
                           'Secure (SOCKS) proxies. (Citation: TrendMicro Patchwork Dec 2017)',
            'name': 'Socksbot',
            'platforms': ['Windows'],
            'software_id': 'S0273',
            'type': 'malware'},
- 'S0274': {'attack_ids': ['T1074.001',
-                          'T1043',
-                          'T1560.001',
-                          'T1005',
-                          'T1070.004',
-                          'T1056.002',
-                          'T1105',
-                          'T1098',
-                          'T1564.001',
+ 'S0274': {'attack_ids': ['T1569.001',
                           'T1217',
-                          'T1036.005',
-                          'T1543.001',
+                          'T1070.004',
+                          'T1005',
+                          'T1564.001',
+                          'T1098',
+                          'T1560.001',
+                          'T1074.001',
+                          'T1043',
+                          'T1105',
                           'T1136.001',
-                          'T1569.001',
+                          'T1543.001',
                           'T1555.001',
+                          'T1036.005',
+                          'T1056.002',
                           'T1016'],
            'description': '[Calisto](https://attack.mitre.org/software/S0274) is a macOS Trojan that opens a backdoor '
                           'on the compromised machine. [Calisto](https://attack.mitre.org/software/S0274) is believed '
@@ -13954,14 +16308,14 @@ software_map = {
            'platforms': ['macOS'],
            'software_id': 'S0274',
            'type': 'malware'},
- 'S0275': {'attack_ids': ['T1124',
-                          'T1033',
+ 'S0275': {'attack_ids': ['T1059.003',
+                          'T1124',
                           'T1082',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
                           'T1113',
                           'T1071.001',
+                          'T1033',
+                          'T1573.001',
+                          'T1105',
                           'T1083',
                           'T1016'],
            'description': '[UPPERCUT](https://attack.mitre.org/software/S0275) is a backdoor that has been used by '
@@ -13970,55 +16324,55 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0275',
            'type': 'malware'},
- 'S0276': {'attack_ids': ['T1036.006',
-                          'T1056.002',
-                          'T1548.001',
-                          'T1555.002',
-                          'T1090.003',
+ 'S0276': {'attack_ids': ['T1555.002',
+                          'T1059.006',
                           'T1071.001',
+                          'T1090.003',
+                          'T1548.001',
                           'T1543.001',
-                          'T1059.006'],
+                          'T1036.006',
+                          'T1056.002'],
            'description': "This piece of malware steals the content of the user's keychain while maintaining a "
                           'permanent backdoor  (Citation: OSX Keydnap malware).',
            'name': 'Keydnap',
            'platforms': ['macOS'],
            'software_id': 'S0276',
            'type': 'malware'},
- 'S0277': {'attack_ids': ['T1070.004', 'T1113', 'T1027', 'T1564.001', 'T1543.001', 'T1083', 'T1057'],
+ 'S0277': {'attack_ids': ['T1083', 'T1070.004', 'T1564.001', 'T1113', 'T1543.001', 'T1057', 'T1027'],
            'description': 'FruitFly is designed to spy on mac users  (Citation: objsee mac malware 2017).',
            'name': 'FruitFly',
            'platforms': ['macOS'],
            'software_id': 'S0277',
            'type': 'malware'},
- 'S0278': {'attack_ids': ['T1560.001', 'T1037.004', 'T1056.002', 'T1564.001', 'T1016', 'T1057', 'T1555.001'],
+ 'S0278': {'attack_ids': ['T1564.001', 'T1560.001', 'T1037.004', 'T1555.001', 'T1057', 'T1056.002', 'T1016'],
            'description': '[iKitten](https://attack.mitre.org/software/S0278) is a macOS exfiltration agent  '
                           '(Citation: objsee mac malware 2017).',
            'name': 'iKitten',
            'platforms': ['macOS'],
            'software_id': 'S0278',
            'type': 'malware'},
- 'S0279': {'attack_ids': ['T1560',
-                          'T1070.004',
-                          'T1056.002',
-                          'T1059.004',
-                          'T1555.003',
-                          'T1555',
-                          'T1113',
-                          'T1548.003',
+ 'S0279': {'attack_ids': ['T1555.003',
+                          'T1562.001',
                           'T1056.001',
+                          'T1555',
+                          'T1070.004',
+                          'T1113',
+                          'T1059.004',
                           'T1543.001',
                           'T1070.002',
-                          'T1562.001',
-                          'T1140',
                           'T1555.001',
-                          'T1021.005'],
+                          'T1021.005',
+                          'T1560',
+                          'T1548.003',
+                          'T1056.002',
+                          'T1140'],
            'description': '[Proton](https://attack.mitre.org/software/S0279) is a macOS backdoor focusing on data '
                           'theft and credential access  (Citation: objsee mac malware 2017).',
            'name': 'Proton',
            'platforms': ['macOS'],
            'software_id': 'S0279',
            'type': 'malware'},
- 'S0280': {'attack_ids': ['T1043', 'T1033', 'T1082', 'T1059.003', 'T1574.001', 'T1140'],
+ 'S0280': {'attack_ids': ['T1059.003', 'T1082', 'T1043', 'T1033', 'T1574.001', 'T1140'],
            'description': '[MirageFox](https://attack.mitre.org/software/S0280) is a remote access tool used against '
                           'Windows systems. It appears to be an upgraded version of a tool known as Mirage, which is a '
                           'RAT believed to originate in 2012. (Citation: APT15 Intezer June 2018)',
@@ -14026,55 +16380,55 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0280',
            'type': 'malware'},
- 'S0281': {'attack_ids': ['T1059.002', 'T1056.002', 'T1553.004', 'T1090.003', 'T1543.001', 'T1547.011'],
+ 'S0281': {'attack_ids': ['T1090.003', 'T1056.002', 'T1547.011', 'T1543.001', 'T1059.002', 'T1553.004'],
            'description': '[Dok](https://attack.mitre.org/software/S0281) steals banking information through '
                           'man-in-the-middle  (Citation: objsee mac malware 2017).',
            'name': 'Dok',
            'platforms': ['macOS'],
            'software_id': 'S0281',
            'type': 'malware'},
- 'S0282': {'attack_ids': ['T1115',
-                          'T1070.004',
-                          'T1113',
-                          'T1090.003',
+ 'S0282': {'attack_ids': ['T1056.001',
                           'T1123',
-                          'T1056.001',
-                          'T1071.001',
+                          'T1070.004',
                           'T1564.001',
-                          'T1543.001'],
+                          'T1113',
+                          'T1071.001',
+                          'T1090.003',
+                          'T1543.001',
+                          'T1115'],
            'description': '[MacSpy](https://attack.mitre.org/software/S0282) is a malware-as-a-service offered on the '
                           'darkweb  (Citation: objsee mac malware 2017).',
            'name': 'MacSpy',
            'platforms': ['macOS'],
            'software_id': 'S0282',
            'type': 'malware'},
- 'S0283': {'attack_ids': ['T1082',
-                          'T1552.004',
-                          'T1120',
-                          'T1518.001',
-                          'T1047',
-                          'T1037.005',
-                          'T1056.001',
-                          'T1027',
+ 'S0283': {'attack_ids': ['T1047',
+                          'T1082',
                           'T1027.002',
-                          'T1059.007',
-                          'T1125',
-                          'T1007',
-                          'T1115',
-                          'T1105',
-                          'T1049',
-                          'T1057',
-                          'T1070.004',
-                          'T1029',
-                          'T1552.001',
-                          'T1123',
-                          'T1059.005',
-                          'T1021.001',
                           'T1090',
-                          'T1555.003',
-                          'T1059.003',
+                          'T1029',
+                          'T1021.001',
+                          'T1518.001',
+                          'T1125',
+                          'T1115',
+                          'T1056.001',
+                          'T1120',
+                          'T1059.005',
+                          'T1105',
+                          'T1027',
+                          'T1123',
+                          'T1007',
+                          'T1552.001',
+                          'T1059.007',
                           'T1113',
+                          'T1552.004',
                           'T1083',
+                          'T1037.005',
+                          'T1059.003',
+                          'T1049',
+                          'T1070.004',
+                          'T1057',
+                          'T1555.003',
                           'T1016'],
            'description': '[jRAT](https://attack.mitre.org/software/S0283) is a cross-platform, Java-based backdoor '
                           'originally available for purchase in 2012. Variants of '
@@ -14085,19 +16439,19 @@ software_map = {
            'platforms': ['Linux', 'Windows', 'macOS', 'Android'],
            'software_id': 'S0283',
            'type': 'malware'},
- 'S0284': {'attack_ids': ['T1033',
-                          'T1218.010',
-                          'T1082',
+ 'S0284': {'attack_ids': ['T1059.003',
+                          'T1140',
                           'T1070.004',
+                          'T1082',
+                          'T1218.010',
+                          'T1016',
+                          'T1071.001',
+                          'T1033',
                           'T1105',
-                          'T1059.003',
                           'T1573.001',
                           'T1553.002',
                           'T1518.001',
-                          'T1071.001',
-                          'T1132.001',
-                          'T1140',
-                          'T1016'],
+                          'T1132.001'],
            'description': '[More_eggs](https://attack.mitre.org/software/S0284) is a JScript backdoor used by [Cobalt '
                           'Group](https://attack.mitre.org/groups/G0080) and '
                           '[FIN6](https://attack.mitre.org/groups/G0037). Its name was given based on the variable '
@@ -14115,13 +16469,13 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0285',
            'type': 'malware'},
- 'S0286': {'attack_ids': ['T1406', 'T1401'],
+ 'S0286': {'attack_ids': ['T1401', 'T1406'],
            'description': 'OBAD is an Android malware family. (Citation: TrendMicro-Obad)',
            'name': 'OBAD',
            'platforms': ['Android'],
            'software_id': 'S0286',
            'type': 'malware'},
- 'S0287': {'attack_ids': ['T1475', 'T1407', 'T1476'],
+ 'S0287': {'attack_ids': ['T1476', 'T1475', 'T1407'],
            'description': '[ZergHelper](https://attack.mitre.org/software/S0287) is iOS riskware that was unique due '
                           "to its apparent evasion of Apple's App Store review process. No malicious functionality was "
                           'identified in the app, but it presents security risks. (Citation: Xiao-ZergHelper)',
@@ -14129,7 +16483,7 @@ software_map = {
            'platforms': ['iOS'],
            'software_id': 'S0287',
            'type': 'malware'},
- 'S0288': {'attack_ids': ['T1410', 'T1426', 'T1446'],
+ 'S0288': {'attack_ids': ['T1410', 'T1446', 'T1426'],
            'description': '[KeyRaider](https://attack.mitre.org/software/S0288) is malware that steals Apple account '
                           'credentials and other data from jailbroken iOS devices. It also has ransomware '
                           'functionality. (Citation: Xiao-KeyRaider)',
@@ -14137,19 +16491,19 @@ software_map = {
            'platforms': ['iOS'],
            'software_id': 'S0288',
            'type': 'malware'},
- 'S0289': {'attack_ids': ['T1412',
-                          'T1422',
-                          'T1432',
-                          'T1409',
-                          'T1430',
-                          'T1477',
-                          'T1400',
+ 'S0289': {'attack_ids': ['T1433',
+                          'T1412',
                           'T1404',
-                          'T1456',
-                          'T1433',
-                          'T1438',
+                          'T1409',
+                          'T1432',
+                          'T1429',
                           'T1426',
-                          'T1429'],
+                          'T1477',
+                          'T1422',
+                          'T1456',
+                          'T1438',
+                          'T1400',
+                          'T1430'],
            'description': '[Pegasus for iOS](https://attack.mitre.org/software/S0289) is the iOS version of malware '
                           'that has reportedly been linked to the NSO Group. It has been advertised and sold to target '
                           'high-value victims. (Citation: Lookout-Pegasus) (Citation: PegasusCitizenLab) The Android '
@@ -14159,7 +16513,7 @@ software_map = {
            'platforms': ['iOS'],
            'software_id': 'S0289',
            'type': 'malware'},
- 'S0290': {'attack_ids': ['T1404', 'T1533', 'T1472'],
+ 'S0290': {'attack_ids': ['T1404', 'T1472', 'T1533'],
            'description': '[Gooligan](https://attack.mitre.org/software/S0290) is a malware family that runs privilege '
                           'escalation exploits on Android devices and then uses its escalated privileges to steal '
                           'authentication tokens that can be used to access data from many Google applications. '
@@ -14170,21 +16524,21 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0290',
            'type': 'malware'},
- 'S0291': {'attack_ids': ['T1422', 'T1430', 'T1448'],
+ 'S0291': {'attack_ids': ['T1422', 'T1448', 'T1430'],
            'description': '[PJApps](https://attack.mitre.org/software/S0291) is an Android malware family. (Citation: '
                           'Lookout-EnterpriseApps)',
            'name': 'PJApps',
            'platforms': ['Android'],
            'software_id': 'S0291',
            'type': 'malware'},
- 'S0292': {'attack_ids': ['T1412', 'T1432', 'T1430', 'T1433', 'T1429'],
+ 'S0292': {'attack_ids': ['T1433', 'T1412', 'T1429', 'T1432', 'T1430'],
            'description': '[AndroRAT](https://attack.mitre.org/software/S0292) is malware that allows a third party to '
                           'control the device and collect information. (Citation: Lookout-EnterpriseApps)',
            'name': 'AndroRAT',
            'platforms': ['Android'],
            'software_id': 'S0292',
            'type': 'malware'},
- 'S0293': {'attack_ids': ['T1452', 'T1406', 'T1407', 'T1400', 'T1404'],
+ 'S0293': {'attack_ids': ['T1404', 'T1400', 'T1452', 'T1407', 'T1406'],
            'description': '[BrainTest](https://attack.mitre.org/software/S0293) is a family of Android malware. '
                           '(Citation: CheckPoint-BrainTest) (Citation: Lookout-BrainTest)',
            'name': 'BrainTest',
@@ -14200,14 +16554,14 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0294',
            'type': 'malware'},
- 'S0295': {'attack_ids': ['T1412', 'T1409', 'T1414', 'T1407', 'T1512', 'T1430', 'T1438', 'T1429', 'T1533'],
+ 'S0295': {'attack_ids': ['T1412', 'T1533', 'T1409', 'T1429', 'T1512', 'T1438', 'T1407', 'T1414', 'T1430'],
            'description': '[RCSAndroid](https://attack.mitre.org/software/S0295) is Android malware. (Citation: '
                           'TrendMicro-RCSAndroid)',
            'name': 'RCSAndroid',
            'platforms': ['Android'],
            'software_id': 'S0295',
            'type': 'malware'},
- 'S0297': {'attack_ids': ['T1411', 'T1474', 'T1414'],
+ 'S0297': {'attack_ids': ['T1414', 'T1474', 'T1411'],
            'description': '[XcodeGhost](https://attack.mitre.org/software/S0297) is iOS malware that infected at least '
                           '39 iOS apps in 2015 and potentially affected millions of users. (Citation: '
                           'PaloAlto-XcodeGhost1) (Citation: PaloAlto-XcodeGhost)',
@@ -14215,7 +16569,7 @@ software_map = {
            'platforms': ['iOS'],
            'software_id': 'S0297',
            'type': 'malware'},
- 'S0298': {'attack_ids': ['T1411', 'T1471', 'T1446', 'T1412'],
+ 'S0298': {'attack_ids': ['T1446', 'T1411', 'T1412', 'T1471'],
            'description': '[Xbot](https://attack.mitre.org/software/S0298) is an Android malware family that was '
                           'observed in 2016 primarily targeting Android users in Russia and Australia. (Citation: '
                           'PaloAlto-Xbot)',
@@ -14238,28 +16592,30 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0300',
            'type': 'malware'},
- 'S0301': {'attack_ids': ['T1512', 'T1429'],
-           'description': '[Dendroid](https://attack.mitre.org/software/S0301) is an Android malware family. '
-                          '(Citation: Lookout-Dendroid)',
+ 'S0301': {'attack_ids': ['T1533', 'T1412', 'T1429', 'T1523', 'T1475', 'T1512', 'T1411', 'T1582', 'T1444'],
+           'description': '[Dendroid](https://attack.mitre.org/software/S0301) is an Android remote access tool (RAT) '
+                          'primarily targeting Western countries. The RAT was available for purchase for $300 and came '
+                          'bundled with a utility to inject the RAT into legitimate applications.(Citation: '
+                          'Lookout-Dendroid)',
            'name': 'Dendroid',
            'platforms': ['Android'],
            'software_id': 'S0301',
            'type': 'malware'},
- 'S0302': {'attack_ids': ['T1102.002'],
-           'description': '[Twitoor](https://attack.mitre.org/software/S0302) is an Android malware family that likely '
-                          'spreads by SMS or via malicious URLs. (Citation: ESET-Twitoor)',
+ 'S0302': {'attack_ids': ['T1476', 'T1521', 'T1508', 'T1481'],
+           'description': '[Twitoor](https://attack.mitre.org/software/S0302) is a dropper application capable of '
+                          'receiving commands from social media.(Citation: ESET-Twitoor)',
            'name': 'Twitoor',
            'platforms': ['Android'],
            'software_id': 'S0302',
            'type': 'malware'},
- 'S0303': {'attack_ids': ['T1412', 'T1476', 'T1448'],
+ 'S0303': {'attack_ids': ['T1476', 'T1448', 'T1412'],
            'description': '[MazarBOT](https://attack.mitre.org/software/S0303) is Android malware that was distributed '
                           'via SMS in Denmark in 2016. (Citation: Tripwire-MazarBOT)',
            'name': 'MazarBOT',
            'platforms': ['Android'],
            'software_id': 'S0303',
            'type': 'malware'},
- 'S0304': {'attack_ids': ['T1412', 'T1476', 'T1432', 'T1430', 'T1433', 'T1438', 'T1437', 'T1426'],
+ 'S0304': {'attack_ids': ['T1476', 'T1433', 'T1412', 'T1432', 'T1426', 'T1438', 'T1437', 'T1430'],
            'description': '[Android/Chuli.A](https://attack.mitre.org/software/S0304) is Android malware that was '
                           'delivered to activist groups via a spearphishing email with an attachment. (Citation: '
                           'Kaspersky-WUC)',
@@ -14267,7 +16623,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0304',
            'type': 'malware'},
- 'S0305': {'attack_ids': ['T1412', 'T1402', 'T1432', 'T1430', 'T1429', 'T1533'],
+ 'S0305': {'attack_ids': ['T1402', 'T1412', 'T1533', 'T1429', 'T1432', 'T1430'],
            'description': '[SpyNote RAT](https://attack.mitre.org/software/S0305) (Remote Access Trojan) is a family '
                           'of malicious Android apps. The [SpyNote RAT](https://attack.mitre.org/software/S0305) '
                           "builder tool can be used to develop malicious apps with the malware's functionality. "
@@ -14297,7 +16653,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0308',
            'type': 'malware'},
- 'S0309': {'attack_ids': ['T1412', 'T1474', 'T1432', 'T1430', 'T1433'],
+ 'S0309': {'attack_ids': ['T1474', 'T1433', 'T1412', 'T1432', 'T1430'],
            'description': '[Adups](https://attack.mitre.org/software/S0309) is software that was pre-installed onto '
                           'Android devices, including those made by BLU Products. The software was reportedly designed '
                           'to help a Chinese phone manufacturer monitor user behavior, transferring sensitive data to '
@@ -14306,7 +16662,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0309',
            'type': 'malware'},
- 'S0310': {'attack_ids': ['T1481', 'T1422', 'T1426'],
+ 'S0310': {'attack_ids': ['T1426', 'T1481', 'T1422'],
            'description': '[ANDROIDOS_ANSERVER.A](https://attack.mitre.org/software/S0310) is Android malware that is '
                           'unique because it uses encrypted content within a blog site for command and control. '
                           '(Citation: TrendMicro-Anserver)',
@@ -14322,21 +16678,21 @@ software_map = {
            'platforms': ['iOS'],
            'software_id': 'S0311',
            'type': 'malware'},
- 'S0312': {'attack_ids': ['T1458', 'T1406'],
+ 'S0312': {'attack_ids': ['T1406', 'T1458'],
            'description': '[WireLurker](https://attack.mitre.org/software/S0312) is a family of macOS malware that '
                           'targets iOS devices connected over USB. (Citation: PaloAlto-WireLurker)',
            'name': 'WireLurker',
            'platforms': ['iOS'],
            'software_id': 'S0312',
            'type': 'malware'},
- 'S0313': {'attack_ids': ['T1422', 'T1412', 'T1476', 'T1437', 'T1426'],
+ 'S0313': {'attack_ids': ['T1476', 'T1412', 'T1426', 'T1437', 'T1422'],
            'description': '[RuMMS](https://attack.mitre.org/software/S0313) is an Android malware family. (Citation: '
                           'FireEye-RuMMS)',
            'name': 'RuMMS',
            'platforms': ['Android'],
            'software_id': 'S0313',
            'type': 'malware'},
- 'S0314': {'attack_ids': ['T1430', 'T1444'],
+ 'S0314': {'attack_ids': ['T1444', 'T1430'],
            'description': '[X-Agent for Android](https://attack.mitre.org/software/S0314) is Android malware that was '
                           'placed in a repackaged version of a Ukrainian artillery targeting application. The malware '
                           'reportedly retrieved general location data on where the victim device was used, and '
@@ -14355,19 +16711,19 @@ software_map = {
            'platforms': ['Android', 'iOS'],
            'software_id': 'S0315',
            'type': 'malware'},
- 'S0316': {'attack_ids': ['T1422',
-                          'T1402',
-                          'T1432',
+ 'S0316': {'attack_ids': ['T1402',
+                          'T1433',
+                          'T1404',
                           'T1409',
+                          'T1429',
+                          'T1435',
+                          'T1432',
                           'T1475',
+                          'T1418',
                           'T1512',
                           'T1400',
-                          'T1404',
                           'T1438',
-                          'T1433',
-                          'T1418',
-                          'T1429',
-                          'T1435'],
+                          'T1422'],
            'description': '[Pegasus for Android](https://attack.mitre.org/software/S0316) is the Android version of '
                           'malware that has reportedly been linked to the NSO Group. (Citation: '
                           'Lookout-PegasusAndroid) (Citation: Google-Chrysaor) The iOS version is tracked separately '
@@ -14376,18 +16732,20 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0316',
            'type': 'malware'},
- 'S0317': {'attack_ids': ['T1411', 'T1476', 'T1401'],
+ 'S0317': {'attack_ids': ['T1476', 'T1401', 'T1411'],
            'description': '[Marcher](https://attack.mitre.org/software/S0317) is Android malware that is used for '
                           'financial fraud. (Citation: Proofpoint-Marcher)',
            'name': 'Marcher',
            'platforms': ['Android'],
            'software_id': 'S0317',
            'type': 'malware'},
- 'S0318': {'attack_ids': ['T1406', 'T1412', 'T1401', 'T1429'],
-           'description': '[XLoader](https://attack.mitre.org/software/S0318) is a malicious Android app that was '
-                          'observed targeting Japan, Korea, China, Taiwan, and Hong Kong in 2018. (Citation: '
-                          'TrendMicro-XLoader)',
-           'name': 'XLoader',
+ 'S0318': {'attack_ids': ['T1476', 'T1481', 'T1412', 'T1429', 'T1401', 'T1426', 'T1406', 'T1444', 'T1422'],
+           'description': '[XLoader for Android](https://attack.mitre.org/software/S0318) is a malicious Android app '
+                          'first observed targeting Japan, Korea, China, Taiwan, and Hong Kong in 2018. It has more '
+                          'recently been observed targeting South Korean users as a pornography application.(Citation: '
+                          'TrendMicro-XLoader-FakeSpy)(Citation: TrendMicro-XLoader) It is tracked separately from the '
+                          '[XLoader for iOS](https://attack.mitre.org/software/S0490).',
+           'name': 'XLoader for Android',
            'platforms': ['Android'],
            'software_id': 'S0318',
            'type': 'malware'},
@@ -14400,7 +16758,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0319',
            'type': 'malware'},
- 'S0320': {'attack_ids': ['T1412', 'T1512', 'T1444', 'T1433', 'T1429'],
+ 'S0320': {'attack_ids': ['T1433', 'T1412', 'T1429', 'T1512', 'T1444'],
            'description': '[DroidJack](https://attack.mitre.org/software/S0320) is an Android remote access tool that '
                           'has been observed posing as legitimate applications including the Super Mario Run and '
                           'Pokemon GO games. (Citation: Zscaler-SuperMarioRun) (Citation: Proofpoint-Droidjack)',
@@ -14415,7 +16773,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0321',
            'type': 'malware'},
- 'S0322': {'attack_ids': ['T1404', 'T1452', 'T1472'],
+ 'S0322': {'attack_ids': ['T1472', 'T1452', 'T1404'],
            'description': '[HummingBad](https://attack.mitre.org/software/S0322) is a family of Android malware that '
                           'generates fraudulent advertising revenue and has the ability to obtain root access on '
                           'older, vulnerable versions of Android. (Citation: ArsTechnica-HummingBad)',
@@ -14423,7 +16781,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0322',
            'type': 'malware'},
- 'S0323': {'attack_ids': ['T1406', 'T1430', 'T1446', 'T1432'],
+ 'S0323': {'attack_ids': ['T1432', 'T1446', 'T1406', 'T1430'],
            'description': '[Charger](https://attack.mitre.org/software/S0323) is Android malware that steals steals '
                           "contacts and SMS messages from the user's device. It can also lock the device and demand "
                           'ransom payment if it receives admin permissions. (Citation: CheckPoint-Charger)',
@@ -14431,60 +16789,61 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0323',
            'type': 'malware'},
- 'S0324': {'attack_ids': ['T1422',
-                          'T1412',
-                          'T1402',
-                          'T1432',
-                          'T1409',
-                          'T1512',
-                          'T1407',
-                          'T1430',
-                          'T1400',
+ 'S0324': {'attack_ids': ['T1402',
                           'T1433',
-                          'T1438',
+                          'T1430',
+                          'T1412',
                           'T1404',
+                          'T1409',
+                          'T1432',
                           'T1429',
-                          'T1513'],
+                          'T1512',
+                          'T1400',
+                          'T1438',
+                          'T1513',
+                          'T1407',
+                          'T1422'],
            'description': '[SpyDealer](https://attack.mitre.org/software/S0324) is Android malware that exfiltrates '
                           'sensitive data from Android devices. (Citation: PaloAlto-SpyDealer)',
            'name': 'SpyDealer',
            'platforms': ['Android'],
            'software_id': 'S0324',
            'type': 'malware'},
- 'S0325': {'attack_ids': ['T1407', 'T1472'],
+ 'S0325': {'attack_ids': ['T1472', 'T1407'],
            'description': '[Judy](https://attack.mitre.org/software/S0325) is auto-clicking adware that was '
                           'distributed through multiple apps in the Google Play Store. (Citation: CheckPoint-Judy)',
            'name': 'Judy',
            'platforms': ['Android'],
            'software_id': 'S0325',
            'type': 'malware'},
- 'S0326': {'attack_ids': ['T1422', 'T1476', 'T1437', 'T1426', 'T1429', 'T1448'],
+ 'S0326': {'attack_ids': ['T1476', 'T1429', 'T1426', 'T1448', 'T1437', 'T1422'],
            'description': '[RedDrop](https://attack.mitre.org/software/S0326) is an Android malware family that '
                           'exfiltrates sensitive data from devices. (Citation: Wandera-RedDrop)',
            'name': 'RedDrop',
            'platforms': ['Android'],
            'software_id': 'S0326',
            'type': 'malware'},
- 'S0327': {'attack_ids': ['T1409', 'T1512', 'T1407', 'T1430', 'T1404', 'T1438', 'T1437', 'T1429'],
+ 'S0327': {'attack_ids': ['T1404', 'T1409', 'T1429', 'T1512', 'T1438', 'T1437', 'T1407', 'T1430'],
            'description': '[Skygofree](https://attack.mitre.org/software/S0327) is Android spyware that is believed to '
                           'have been developed in 2014 and used through at least 2017. (Citation: Kaspersky-Skygofree)',
            'name': 'Skygofree',
            'platforms': ['Android'],
            'software_id': 'S0327',
            'type': 'malware'},
- 'S0328': {'attack_ids': ['T1412',
+ 'S0328': {'attack_ids': ['T1433',
                           'T1474',
-                          'T1422',
-                          'T1432',
-                          'T1430',
-                          'T1512',
-                          'T1438',
-                          'T1433',
-                          'T1456',
-                          'T1418',
+                          'T1533',
                           'T1429',
+                          'T1418',
                           'T1435',
-                          'T1533'],
+                          'T1432',
+                          'T1412',
+                          'T1422',
+                          'T1512',
+                          'T1456',
+                          'T1438',
+                          'T1582',
+                          'T1430'],
            'description': '[Stealth Mango](https://attack.mitre.org/software/S0328) is Android malware that has '
                           'reportedly been used to successfully compromise the mobile devices of government officials, '
                           'members of the military, medical professionals, and civilians. The iOS malware known as '
@@ -14494,7 +16853,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0328',
            'type': 'malware'},
- 'S0329': {'attack_ids': ['T1422', 'T1412', 'T1430', 'T1409', 'T1433', 'T1429', 'T1533'],
+ 'S0329': {'attack_ids': ['T1433', 'T1412', 'T1409', 'T1429', 'T1533', 'T1422', 'T1430'],
            'description': '[Tangelo](https://attack.mitre.org/software/S0329) is iOS malware that is believed to be '
                           'from the same developers as the [Stealth Mango](https://attack.mitre.org/software/S0328) '
                           'Android malware. It is not a mobile application, but rather a Debian package that can only '
@@ -14503,27 +16862,27 @@ software_map = {
            'platforms': ['iOS'],
            'software_id': 'S0329',
            'type': 'malware'},
- 'S0330': {'attack_ids': ['T1082',
-                          'T1518.001',
-                          'T1056.004',
-                          'T1056.001',
-                          'T1027',
-                          'T1547.001',
-                          'T1115',
-                          'T1055.002',
-                          'T1059.001',
-                          'T1105',
-                          'T1057',
-                          'T1070.004',
-                          'T1012',
-                          'T1071.001',
+ 'S0330': {'attack_ids': ['T1055.002',
+                          'T1082',
                           'T1112',
+                          'T1059',
+                          'T1518.001',
+                          'T1056.001',
+                          'T1105',
+                          'T1027',
                           'T1140',
-                          'T1124',
-                          'T1059.003',
                           'T1113',
                           'T1083',
-                          'T1059'],
+                          'T1059.003',
+                          'T1124',
+                          'T1070.004',
+                          'T1059.001',
+                          'T1071.001',
+                          'T1056.004',
+                          'T1012',
+                          'T1547.001',
+                          'T1057',
+                          'T1115'],
            'description': '[Zeus Panda](https://attack.mitre.org/software/S0330) is a Trojan designed to steal banking '
                           'information and other sensitive credentials for exfiltration. [Zeus '
                           'Panda](https://attack.mitre.org/software/S0330)’s original source code was leaked in 2011, '
@@ -14534,31 +16893,31 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0330',
            'type': 'malware'},
- 'S0331': {'attack_ids': ['T1082',
-                          'T1564.003',
-                          'T1071.003',
-                          'T1056.001',
-                          'T1027',
-                          'T1204.002',
-                          'T1560',
-                          'T1547.001',
-                          'T1125',
-                          'T1033',
-                          'T1115',
-                          'T1105',
-                          'T1555',
-                          'T1057',
-                          'T1065',
-                          'T1497',
-                          'T1071.001',
-                          'T1087.001',
+ 'S0331': {'attack_ids': ['T1555',
+                          'T1082',
                           'T1185',
+                          'T1087.001',
+                          'T1033',
+                          'T1497',
+                          'T1204.002',
+                          'T1071.003',
+                          'T1125',
                           'T1562.001',
+                          'T1056.001',
+                          'T1105',
+                          'T1027',
                           'T1140',
-                          'T1124',
+                          'T1065',
                           'T1113',
-                          'T1016',
-                          'T1048.003'],
+                          'T1560',
+                          'T1124',
+                          'T1564.003',
+                          'T1071.001',
+                          'T1547.001',
+                          'T1057',
+                          'T1115',
+                          'T1048.003',
+                          'T1016'],
            'description': '[Agent Tesla](https://attack.mitre.org/software/S0331) is a spyware Trojan written for the '
                           '.NET framework that has been observed since at least 2014.(Citation: Fortinet Agent Tesla '
                           'April 2018)(Citation: Bitdefender Agent Tesla April 2020)(Citation: Malwarebytes Agent '
@@ -14567,21 +16926,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0331',
            'type': 'malware'},
- 'S0332': {'attack_ids': ['T1497.001',
-                          'T1115',
-                          'T1090',
-                          'T1105',
-                          'T1059.003',
-                          'T1113',
+ 'S0332': {'attack_ids': ['T1059.003',
                           'T1123',
-                          'T1056.001',
-                          'T1112',
                           'T1055',
+                          'T1056.001',
+                          'T1115',
                           'T1027',
-                          'T1548.002',
                           'T1059.006',
-                          'T1083',
+                          'T1112',
+                          'T1113',
+                          'T1090',
+                          'T1548.002',
+                          'T1497.001',
                           'T1547.001',
+                          'T1105',
+                          'T1083',
                           'T1125'],
            'description': '[Remcos](https://attack.mitre.org/software/S0332) is a closed-source tool that is marketed '
                           'as a remote control and surveillance software by a company called Breaking Security. '
@@ -14591,39 +16950,39 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0332',
            'type': 'tool'},
- 'S0333': {'attack_ids': ['T1497.001',
-                          'T1043',
-                          'T1102.002',
-                          'T1105',
-                          'T1059.003',
-                          'T1027',
-                          'T1094',
+ 'S0333': {'attack_ids': ['T1059.003',
                           'T1197',
+                          'T1043',
                           'T1071.001',
-                          'T1057'],
+                          'T1094',
+                          'T1102.002',
+                          'T1497.001',
+                          'T1057',
+                          'T1105',
+                          'T1027'],
            'description': '[UBoatRAT](https://attack.mitre.org/software/S0333) is a remote access tool that was '
                           'identified in May 2017.(Citation: PaloAlto UBoatRAT Nov 2017)',
            'name': 'UBoatRAT',
            'platforms': ['Windows'],
            'software_id': 'S0333',
            'type': 'malware'},
- 'S0334': {'attack_ids': ['T1033',
-                          'T1115',
-                          'T1082',
-                          'T1105',
-                          'T1059.003',
-                          'T1562.004',
+ 'S0334': {'attack_ids': ['T1059.003',
                           'T1123',
-                          'T1056.001',
-                          'T1071.001',
-                          'T1112',
-                          'T1036.005',
-                          'T1027.002',
-                          'T1021.001',
                           'T1562.001',
-                          'T1547.001',
-                          'T1057',
+                          'T1056.001',
+                          'T1082',
+                          'T1112',
+                          'T1033',
+                          'T1027.002',
                           'T1059',
+                          'T1071.001',
+                          'T1105',
+                          'T1562.004',
+                          'T1057',
+                          'T1021.001',
+                          'T1547.001',
+                          'T1036.005',
+                          'T1115',
                           'T1125'],
            'description': '[DarkComet](https://attack.mitre.org/software/S0334) is a Windows remote administration '
                           'tool and backdoor.(Citation: TrendMicro DarkComet Sept 2014)(Citation: Malwarebytes '
@@ -14632,22 +16991,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0334',
            'type': 'malware'},
- 'S0335': {'attack_ids': ['T1074.001',
-                          'T1043',
+ 'S0335': {'attack_ids': ['T1049',
                           'T1124',
-                          'T1055.001',
-                          'T1018',
-                          'T1053.005',
-                          'T1543.003',
-                          'T1095',
-                          'T1012',
-                          'T1027',
-                          'T1087.001',
-                          'T1049',
-                          'T1057',
-                          'T1140',
                           'T1016',
-                          'T1048.003'],
+                          'T1095',
+                          'T1087.001',
+                          'T1053.005',
+                          'T1074.001',
+                          'T1018',
+                          'T1043',
+                          'T1057',
+                          'T1012',
+                          'T1543.003',
+                          'T1027',
+                          'T1048.003',
+                          'T1055.001',
+                          'T1140'],
            'description': '[Carbon](https://attack.mitre.org/software/S0335) is a sophisticated, second-stage backdoor '
                           'and framework that can be used to steal sensitive information from victims. '
                           '[Carbon](https://attack.mitre.org/software/S0335) has been selectively used by '
@@ -14658,18 +17017,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0335',
            'type': 'malware'},
- 'S0336': {'attack_ids': ['T1065',
-                          'T1105',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1562.004',
-                          'T1123',
-                          'T1059.005',
-                          'T1112',
-                          'T1027',
+ 'S0336': {'attack_ids': ['T1562.001',
                           'T1056.001',
-                          'T1562.001',
+                          'T1059.003',
+                          'T1123',
+                          'T1112',
+                          'T1065',
+                          'T1059.005',
+                          'T1562.004',
+                          'T1573.001',
                           'T1547.001',
+                          'T1105',
+                          'T1027',
                           'T1016',
                           'T1125'],
            'description': '[NanoCore](https://attack.mitre.org/software/S0336) is a modular remote access tool '
@@ -14681,55 +17040,55 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0336',
            'type': 'malware'},
- 'S0337': {'attack_ids': ['T1074.001',
-                          'T1043',
-                          'T1497.001',
+ 'S0337': {'attack_ids': ['T1056.001',
                           'T1082',
                           'T1005',
+                          'T1074.001',
                           'T1071.003',
-                          'T1105',
                           'T1113',
-                          'T1518.001',
-                          'T1056.001',
                           'T1071.001',
+                          'T1043',
+                          'T1497.001',
+                          'T1547.001',
+                          'T1105',
                           'T1083',
-                          'T1547.001'],
+                          'T1518.001'],
            'description': '[BadPatch](https://attack.mitre.org/software/S0337) is a Windows Trojan that was used in a '
                           'Gaza Hackers-linked campaign.(Citation: Unit 42 BadPatch Oct 2017)',
            'name': 'BadPatch',
            'platforms': ['Windows'],
            'software_id': 'S0337',
            'type': 'malware'},
- 'S0338': {'attack_ids': ['T1071.004', 'T1547.001', 'T1059.003', 'T1113', 'T1123', 'T1056.001', 'T1132.001', 'T1125'],
+ 'S0338': {'attack_ids': ['T1059.003', 'T1056.001', 'T1123', 'T1113', 'T1125', 'T1547.001', 'T1132.001', 'T1071.004'],
            'description': '[Cobian RAT](https://attack.mitre.org/software/S0338) is a backdoor, remote access tool '
                           'that has been observed since 2016.(Citation: Zscaler Cobian Aug 2017)',
            'name': 'Cobian RAT',
            'platforms': ['Windows'],
            'software_id': 'S0338',
            'type': 'malware'},
- 'S0339': {'attack_ids': ['T1033',
-                          'T1560.001',
-                          'T1082',
-                          'T1105',
-                          'T1059.003',
-                          'T1113',
-                          'T1518.001',
-                          'T1047',
+ 'S0339': {'attack_ids': ['T1059.003',
                           'T1123',
-                          'T1056.001',
-                          'T1027',
-                          'T1564.001',
-                          'T1547.009',
-                          'T1071.001',
                           'T1119',
-                          'T1083'],
+                          'T1047',
+                          'T1056.001',
+                          'T1082',
+                          'T1564.001',
+                          'T1027',
+                          'T1560.001',
+                          'T1113',
+                          'T1033',
+                          'T1071.001',
+                          'T1547.009',
+                          'T1105',
+                          'T1083',
+                          'T1518.001'],
            'description': '[Micropsia](https://attack.mitre.org/software/S0339) is a remote access tool written in '
                           'Delphi.(Citation: Talos Micropsia June 2017)(Citation: Radware Micropsia July 2018)',
            'name': 'Micropsia',
            'platforms': ['Windows'],
            'software_id': 'S0339',
            'type': 'malware'},
- 'S0340': {'attack_ids': ['T1033', 'T1082', 'T1105', 'T1113', 'T1047', 'T1071.001', 'T1083', 'T1132.001', 'T1016'],
+ 'S0340': {'attack_ids': ['T1047', 'T1082', 'T1113', 'T1071.001', 'T1033', 'T1105', 'T1083', 'T1016', 'T1132.001'],
            'description': '[Octopus](https://attack.mitre.org/software/S0340) is a Windows Trojan.(Citation: '
                           'Securelist Octopus Oct 2018)',
            'name': 'Octopus',
@@ -14737,21 +17096,21 @@ software_map = {
            'software_id': 'S0340',
            'type': 'malware'},
  'S0341': {'attack_ids': ['T1102.001',
-                          'T1218.010',
-                          'T1486',
-                          'T1059.001',
-                          'T1105',
-                          'T1046',
-                          'T1059.005',
-                          'T1071.001',
                           'T1053.003',
-                          'T1218.005',
-                          'T1485',
-                          'T1547.001',
                           'T1110.001',
-                          'T1059.007',
+                          'T1059.001',
+                          'T1218.010',
                           'T1016',
-                          'T1203'],
+                          'T1059.007',
+                          'T1071.001',
+                          'T1059.005',
+                          'T1486',
+                          'T1485',
+                          'T1218.005',
+                          'T1547.001',
+                          'T1105',
+                          'T1203',
+                          'T1046'],
            'description': '[Xbash](https://attack.mitre.org/software/S0341) is a malware family that has targeted '
                           'Linux and Microsoft Windows servers. The malware has been tied to the Iron Group, a threat '
                           'actor group known for previous ransomware attacks. '
@@ -14762,22 +17121,22 @@ software_map = {
            'platforms': ['Windows', 'Linux'],
            'software_id': 'S0341',
            'type': 'malware'},
- 'S0342': {'attack_ids': ['T1007',
-                          'T1003.001',
-                          'T1070.004',
-                          'T1055.002',
-                          'T1105',
-                          'T1059.003',
-                          'T1553.002',
-                          'T1573.001',
-                          'T1543.003',
-                          'T1090.003',
+ 'S0342': {'attack_ids': ['T1059.003',
                           'T1056.001',
+                          'T1007',
+                          'T1055.002',
+                          'T1070.004',
+                          'T1553.002',
                           'T1112',
                           'T1071.001',
-                          'T1027',
                           'T1027.002',
+                          'T1090.003',
+                          'T1105',
+                          'T1003.001',
                           'T1573.002',
+                          'T1573.001',
+                          'T1543.003',
+                          'T1027',
                           'T1218.011'],
            'description': '[GreyEnergy](https://attack.mitre.org/software/S0342) is a backdoor written in C and '
                           'compiled in Visual Studio. [GreyEnergy](https://attack.mitre.org/software/S0342) shares '
@@ -14787,7 +17146,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0342',
            'type': 'malware'},
- 'S0343': {'attack_ids': ['T1074.001', 'T1036.004', 'T1059.003', 'T1543.003', 'T1059.005', 'T1112', 'T1560'],
+ 'S0343': {'attack_ids': ['T1059.003', 'T1036.004', 'T1074.001', 'T1112', 'T1059.005', 'T1543.003', 'T1560'],
            'description': '[Exaramel for Windows](https://attack.mitre.org/software/S0343) is a backdoor used for '
                           'targeting Windows systems. The Linux version is tracked separately under [Exaramel for '
                           'Linux](https://attack.mitre.org/software/S0401).(Citation: ESET TeleBots Oct 2018)',
@@ -14795,22 +17154,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0343',
            'type': 'malware'},
- 'S0344': {'attack_ids': ['T1033',
+ 'S0344': {'attack_ids': ['T1555.003',
                           'T1124',
-                          'T1082',
-                          'T1055.012',
-                          'T1070.004',
-                          'T1555.003',
-                          'T1105',
-                          'T1573.001',
-                          'T1113',
+                          'T1140',
                           'T1552.001',
+                          'T1082',
+                          'T1070.004',
+                          'T1113',
+                          'T1033',
+                          'T1057',
                           'T1012',
+                          'T1573.001',
                           'T1134.002',
+                          'T1105',
                           'T1083',
                           'T1016',
-                          'T1140',
-                          'T1057'],
+                          'T1055.012'],
            'description': '[Azorult](https://attack.mitre.org/software/S0344) is a commercial Trojan that is used to '
                           'steal information from compromised hosts. '
                           '[Azorult](https://attack.mitre.org/software/S0344) has been observed in the wild as early '
@@ -14823,17 +17182,17 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0344',
            'type': 'malware'},
- 'S0345': {'attack_ids': ['T1036.004',
-                          'T1070.004',
-                          'T1105',
+ 'S0345': {'attack_ids': ['T1083',
                           'T1059.003',
-                          'T1543.003',
-                          'T1027',
+                          'T1036.004',
+                          'T1070.004',
                           'T1094',
                           'T1071.001',
-                          'T1083',
+                          'T1543.003',
+                          'T1057',
                           'T1547.001',
-                          'T1057'],
+                          'T1105',
+                          'T1027'],
            'description': '[Seasalt](https://attack.mitre.org/software/S0345) is malware that has been linked to '
                           "[APT1](https://attack.mitre.org/groups/G0006)'s 2010 operations. It shares some code "
                           'similarities with [OceanSalt](https://attack.mitre.org/software/S0346).(Citation: Mandiant '
@@ -14842,14 +17201,14 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0345',
            'type': 'malware'},
- 'S0346': {'attack_ids': ['T1043',
+ 'S0346': {'attack_ids': ['T1059.003',
                           'T1082',
                           'T1070.004',
-                          'T1059.003',
-                          'T1132.002',
                           'T1566.001',
-                          'T1083',
+                          'T1043',
+                          'T1132.002',
                           'T1057',
+                          'T1083',
                           'T1016'],
            'description': '[OceanSalt](https://attack.mitre.org/software/S0346) is a Trojan that was used in a '
                           'campaign targeting victims in South Korea, United States, and Canada. '
@@ -14860,15 +17219,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0346',
            'type': 'malware'},
- 'S0347': {'attack_ids': ['T1043',
-                          'T1090',
-                          'T1070.004',
-                          'T1105',
+ 'S0347': {'attack_ids': ['T1083',
                           'T1059.003',
-                          'T1543.003',
                           'T1055',
+                          'T1070.004',
+                          'T1043',
+                          'T1105',
+                          'T1090',
+                          'T1543.003',
                           'T1027',
-                          'T1083',
                           'T1140'],
            'description': '[AuditCred](https://attack.mitre.org/software/S0347) is a malicious DLL that has been used '
                           'by [Lazarus Group](https://attack.mitre.org/groups/G0032) during their 2018 '
@@ -14878,28 +17237,28 @@ software_map = {
            'software_id': 'S0347',
            'type': 'malware'},
  'S0348': {'attack_ids': ['T1082',
-                          'T1204.002',
-                          'T1027',
-                          'T1027.004',
-                          'T1056.001',
-                          'T1547.001',
-                          'T1033',
-                          'T1008',
-                          'T1105',
-                          'T1057',
-                          'T1560.002',
-                          'T1070.004',
-                          'T1012',
-                          'T1055',
                           'T1112',
-                          'T1071.001',
-                          'T1140',
                           'T1043',
+                          'T1033',
+                          'T1204.002',
                           'T1090',
-                          'T1059.003',
+                          'T1056.001',
+                          'T1008',
                           'T1573.001',
+                          'T1105',
+                          'T1027',
+                          'T1140',
+                          'T1055',
                           'T1113',
-                          'T1083'],
+                          'T1027.004',
+                          'T1083',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1071.001',
+                          'T1560.002',
+                          'T1012',
+                          'T1547.001',
+                          'T1057'],
            'description': '[Cardinal RAT](https://attack.mitre.org/software/S0348) is a potentially low volume remote '
                           'access trojan (RAT) observed since December 2015. [Cardinal '
                           'RAT](https://attack.mitre.org/software/S0348) is notable for its unique utilization of '
@@ -14909,15 +17268,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0348',
            'type': 'malware'},
- 'S0349': {'attack_ids': ['T1003.001',
-                          'T1555.003',
-                          'T1555',
-                          'T1003.004',
+ 'S0349': {'attack_ids': ['T1555',
                           'T1552.001',
+                          'T1003.004',
                           'T1003.005',
+                          'T1003.001',
                           'T1003.007',
-                          'T1003.008',
-                          'T1555.001'],
+                          'T1555.001',
+                          'T1555.003',
+                          'T1003.008'],
            'description': '[LaZagne](https://attack.mitre.org/software/S0349) is a post-exploitation, open-source tool '
                           'used to recover stored passwords on a system. It has modules for Windows, Linux, and OSX, '
                           'but is mainly focused on Windows systems. '
@@ -14927,15 +17286,15 @@ software_map = {
            'platforms': ['Linux', 'macOS', 'Windows'],
            'software_id': 'S0349',
            'type': 'tool'},
- 'S0350': {'attack_ids': ['T1033',
-                          'T1021.002',
+ 'S0350': {'attack_ids': ['T1059.003',
                           'T1082',
                           'T1070.004',
-                          'T1059.003',
                           'T1053.005',
-                          'T1543.003',
                           'T1112',
+                          'T1033',
                           'T1021.001',
+                          'T1021.002',
+                          'T1543.003',
                           'T1083',
                           'T1016'],
            'description': '[zwShell](https://attack.mitre.org/software/S0350) is a remote access tool (RAT) written in '
@@ -14945,17 +17304,17 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0350',
            'type': 'malware'},
- 'S0351': {'attack_ids': ['T1033',
-                          'T1065',
-                          'T1547.004',
-                          'T1082',
+ 'S0351': {'attack_ids': ['T1547.004',
                           'T1124',
-                          'T1041',
-                          'T1105',
-                          'T1071.003',
+                          'T1082',
+                          'T1065',
                           'T1113',
-                          'T1083',
-                          'T1057'],
+                          'T1033',
+                          'T1041',
+                          'T1057',
+                          'T1071.003',
+                          'T1105',
+                          'T1083'],
            'description': '[Cannon](https://attack.mitre.org/software/S0351) is a Trojan with variants written in C# '
                           'and Delphi. It was first observed in April 2018. (Citation: Unit42 Cannon Nov '
                           '2018)(Citation: Unit42 Sofacy Dec 2018)',
@@ -14963,17 +17322,17 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0351',
            'type': 'malware'},
- 'S0352': {'attack_ids': ['T1497.001',
-                          'T1082',
+ 'S0352': {'attack_ids': ['T1027',
                           'T1070.004',
-                          'T1059.001',
-                          'T1105',
-                          'T1059.005',
-                          'T1027',
                           'T1564.001',
-                          'T1543.004',
-                          'T1543.001',
+                          'T1059.001',
+                          'T1082',
+                          'T1059.005',
                           'T1027.002',
+                          'T1543.004',
+                          'T1497.001',
+                          'T1543.001',
+                          'T1105',
                           'T1560'],
            'description': '[OSX_OCEANLOTUS.D](https://attack.mitre.org/software/S0352) is a MacOS backdoor that has '
                           'been used by [APT32](https://attack.mitre.org/groups/G0050).(Citation: TrendMicro MacOS '
@@ -14982,21 +17341,21 @@ software_map = {
            'platforms': ['macOS'],
            'software_id': 'S0352',
            'type': 'malware'},
- 'S0353': {'attack_ids': ['T1074.001',
-                          'T1124',
-                          'T1033',
+ 'S0353': {'attack_ids': ['T1124',
                           'T1082',
                           'T1070.004',
-                          'T1218.011',
-                          'T1105',
-                          'T1071.002',
-                          'T1056.004',
+                          'T1074.001',
+                          'T1033',
                           'T1071.001',
-                          'T1027',
-                          'T1036.005',
+                          'T1105',
+                          'T1056.004',
+                          'T1071.002',
                           'T1547.001',
+                          'T1036.005',
+                          'T1027',
+                          'T1016',
                           'T1140',
-                          'T1016'],
+                          'T1218.011'],
            'description': '[NOKKI](https://attack.mitre.org/software/S0353) is a modular remote access tool. The '
                           'earliest observed attack using [NOKKI](https://attack.mitre.org/software/S0353) was in '
                           'January 2018. [NOKKI](https://attack.mitre.org/software/S0353) has significant code overlap '
@@ -15008,25 +17367,25 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0353',
            'type': 'malware'},
- 'S0354': {'attack_ids': ['T1497.001',
-                          'T1082',
+ 'S0354': {'attack_ids': ['T1082',
                           'T1574',
-                          'T1027',
-                          'T1132.001',
                           'T1033',
-                          'T1055.012',
-                          'T1059.001',
-                          'T1105',
-                          'T1560.002',
-                          'T1071.004',
-                          'T1070.004',
-                          'T1012',
                           'T1574.002',
+                          'T1071.004',
+                          'T1105',
+                          'T1027',
+                          'T1106',
                           'T1140',
-                          'T1059.003',
+                          'T1497.001',
                           'T1083',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1059.001',
+                          'T1560.002',
+                          'T1012',
                           'T1016',
-                          'T1106'],
+                          'T1055.012'],
            'description': '[Denis](https://attack.mitre.org/software/S0354) is a Windows backdoor and Trojan used by '
                           '[APT32](https://attack.mitre.org/groups/G0050). '
                           '[Denis](https://attack.mitre.org/software/S0354) shares several similarities to the '
@@ -15037,7 +17396,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0354',
            'type': 'malware'},
- 'S0355': {'attack_ids': ['T1082', 'T1027', 'T1071.001', 'T1547.001', 'T1140', 'T1057'],
+ 'S0355': {'attack_ids': ['T1082', 'T1071.001', 'T1547.001', 'T1057', 'T1027', 'T1140'],
            'description': '[Final1stspy](https://attack.mitre.org/software/S0355) is a dropper family that has been '
                           'used to deliver [DOGCALL](https://attack.mitre.org/software/S0213).(Citation: Unit 42 Nokki '
                           'Oct 2018)',
@@ -15046,30 +17405,30 @@ software_map = {
            'software_id': 'S0355',
            'type': 'malware'},
  'S0356': {'attack_ids': ['T1082',
-                          'T1056.001',
-                          'T1132.001',
-                          'T1547.001',
-                          'T1033',
-                          'T1115',
-                          'T1059.001',
-                          'T1105',
-                          'T1134.002',
-                          'T1057',
-                          'T1070.004',
-                          'T1218.011',
                           'T1112',
-                          'T1071.001',
-                          'T1547.009',
+                          'T1033',
+                          'T1218.011',
+                          'T1056.001',
+                          'T1546.015',
+                          'T1134.002',
+                          'T1105',
+                          'T1555.003',
+                          'T1140',
+                          'T1113',
                           'T1548.002',
                           'T1036.005',
-                          'T1140',
-                          'T1546.015',
-                          'T1555.003',
-                          'T1059.003',
-                          'T1113',
                           'T1083',
-                          'T1016',
-                          'T1048.003'],
+                          'T1132.001',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1059.001',
+                          'T1071.001',
+                          'T1547.009',
+                          'T1547.001',
+                          'T1057',
+                          'T1115',
+                          'T1048.003',
+                          'T1016'],
            'description': '[KONNI](https://attack.mitre.org/software/S0356) is a Windows remote administration too '
                           'that has been seen in use since 2014 and evolved in its capabilities through at least 2017. '
                           '[KONNI](https://attack.mitre.org/software/S0356) has been linked to several campaigns '
@@ -15083,15 +17442,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0356',
            'type': 'malware'},
- 'S0357': {'attack_ids': ['T1040',
-                          'T1003.001',
+ 'S0357': {'attack_ids': ['T1569.002',
                           'T1557.001',
-                          'T1569.002',
-                          'T1003.004',
                           'T1047',
+                          'T1003.004',
                           'T1558.003',
+                          'T1003.003',
+                          'T1003.001',
                           'T1003.002',
-                          'T1003.003'],
+                          'T1040'],
            'description': '[Impacket](https://attack.mitre.org/software/S0357) is an open source collection of modules '
                           'written in Python for programmatically constructing and manipulating network protocols. '
                           '[Impacket](https://attack.mitre.org/software/S0357) contains several tools for remote '
@@ -15101,7 +17460,7 @@ software_map = {
            'platforms': ['Linux', 'macOS', 'Windows'],
            'software_id': 'S0357',
            'type': 'tool'},
- 'S0358': {'attack_ids': ['T1087.003', 'T1137.005', 'T1137.004', 'T1137.003'],
+ 'S0358': {'attack_ids': ['T1087.003', 'T1137.003', 'T1137.005', 'T1137.004'],
            'description': '[Ruler](https://attack.mitre.org/software/S0358) is a tool to abuse Microsoft Exchange '
                           'services. It is publicly available on GitHub and the tool is executed via the command line. '
                           'The creators of [Ruler](https://attack.mitre.org/software/S0358) have also released a '
@@ -15111,14 +17470,14 @@ software_map = {
            'platforms': ['Windows', 'Office 365'],
            'software_id': 'S0358',
            'type': 'tool'},
- 'S0359': {'attack_ids': ['T1482', 'T1018', 'T1016'],
+ 'S0359': {'attack_ids': ['T1482', 'T1016', 'T1018'],
            'description': '[Nltest](https://attack.mitre.org/software/S0359) is a Windows command-line utility used to '
                           'list domain controllers and enumerate domain trusts.(Citation: Nltest Manual)',
            'name': 'Nltest',
            'platforms': ['Windows'],
            'software_id': 'S0359',
            'type': 'tool'},
- 'S0360': {'attack_ids': ['T1071.004', 'T1059.001', 'T1564.003', 'T1105', 'T1059.003', 'T1568.002', 'T1053.005'],
+ 'S0360': {'attack_ids': ['T1059.003', 'T1059.001', 'T1053.005', 'T1564.003', 'T1105', 'T1568.002', 'T1071.004'],
            'description': '[BONDUPDATER](https://attack.mitre.org/software/S0360) is a PowerShell backdoor used by '
                           '[OilRig](https://attack.mitre.org/groups/G0049). It was first observed in November 2017 '
                           'during targeting of a Middle Eastern government organization, and an updated version was '
@@ -15137,7 +17496,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0361',
            'type': 'tool'},
- 'S0362': {'attack_ids': ['T1033', 'T1043', 'T1546.004', 'T1078', 'T1110.003', 'T1133', 'T1132'],
+ 'S0362': {'attack_ids': ['T1132', 'T1043', 'T1033', 'T1110.003', 'T1133', 'T1078', 'T1546.004'],
            'description': '[Linux Rabbit](https://attack.mitre.org/software/S0362) is malware that targeted Linux '
                           'servers and IoT devices in a campaign lasting from August to October 2018. It shares code '
                           'with another strain of malware known as Rabbot. The goal of the campaign was to install '
@@ -15147,74 +17506,74 @@ software_map = {
            'platforms': ['Linux'],
            'software_id': 'S0362',
            'type': 'malware'},
- 'S0363': {'attack_ids': ['T1082',
-                          'T1574.009',
-                          'T1552.004',
-                          'T1046',
-                          'T1574.007',
-                          'T1087.002',
-                          'T1518.001',
-                          'T1047',
-                          'T1056.004',
-                          'T1056.001',
-                          'T1558.003',
-                          'T1027',
-                          'T1574.008',
-                          'T1573.002',
-                          'T1136.001',
-                          'T1560',
-                          'T1558.001',
-                          'T1547.001',
-                          'T1125',
-                          'T1115',
-                          'T1021.004',
-                          'T1484',
-                          'T1040',
-                          'T1059.001',
-                          'T1105',
-                          'T1210',
-                          'T1543.003',
-                          'T1127.001',
-                          'T1550.002',
-                          'T1134.002',
-                          'T1049',
-                          'T1574.001',
-                          'T1558.002',
-                          'T1021.003',
-                          'T1057',
-                          'T1070.006',
-                          'T1041',
-                          'T1114.001',
-                          'T1552.001',
-                          'T1055',
-                          'T1546.008',
-                          'T1071.001',
-                          'T1547.005',
-                          'T1547.009',
-                          'T1087.001',
-                          'T1068',
-                          'T1548.002',
-                          'T1482',
-                          'T1043',
-                          'T1102.002',
-                          'T1003.001',
-                          'T1567.001',
-                          'T1557.001',
-                          'T1555.003',
-                          'T1567.002',
-                          'T1059.003',
-                          'T1053.005',
-                          'T1135',
-                          'T1569.002',
-                          'T1136.002',
-                          'T1113',
-                          'T1134',
+ 'S0363': {'attack_ids': ['T1047',
                           'T1217',
-                          'T1083',
+                          'T1082',
+                          'T1068',
+                          'T1558.003',
+                          'T1087.001',
+                          'T1043',
                           'T1059',
-                          'T1016',
+                          'T1003.001',
+                          'T1070.006',
+                          'T1543.003',
+                          'T1518.001',
+                          'T1558.002',
+                          'T1125',
+                          'T1547.005',
+                          'T1567.001',
+                          'T1574.007',
+                          'T1115',
+                          'T1056.001',
+                          'T1087.002',
+                          'T1021.004',
+                          'T1574.008',
+                          'T1482',
+                          'T1135',
+                          'T1574.001',
+                          'T1041',
+                          'T1574.009',
+                          'T1134.002',
                           'T1106',
-                          'T1134.005'],
+                          'T1105',
+                          'T1027',
+                          'T1040',
+                          'T1558.001',
+                          'T1136.002',
+                          'T1569.002',
+                          'T1055',
+                          'T1567.002',
+                          'T1552.001',
+                          'T1127.001',
+                          'T1113',
+                          'T1546.008',
+                          'T1548.002',
+                          'T1136.001',
+                          'T1552.004',
+                          'T1560',
+                          'T1083',
+                          'T1046',
+                          'T1550.002',
+                          'T1059.003',
+                          'T1049',
+                          'T1557.001',
+                          'T1059.001',
+                          'T1484',
+                          'T1053.005',
+                          'T1134.005',
+                          'T1071.001',
+                          'T1134',
+                          'T1210',
+                          'T1056.004',
+                          'T1102.002',
+                          'T1573.002',
+                          'T1547.009',
+                          'T1547.001',
+                          'T1057',
+                          'T1555.003',
+                          'T1114.001',
+                          'T1016',
+                          'T1021.003'],
            'description': '[Empire](https://attack.mitre.org/software/S0363) is an open source, cross-platform remote '
                           'administration and post-exploitation framework that is publicly available on GitHub. While '
                           'the tool itself is primarily written in Python, the post-exploitation agents are written in '
@@ -15238,20 +17597,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0364',
            'type': 'tool'},
- 'S0365': {'attack_ids': ['T1570',
-                          'T1021.002',
-                          'T1003.001',
-                          'T1555.003',
-                          'T1135',
-                          'T1569.002',
-                          'T1070.001',
+ 'S0365': {'attack_ids': ['T1569.002',
                           'T1047',
                           'T1489',
+                          'T1016',
+                          'T1570',
+                          'T1135',
                           'T1529',
                           'T1485',
+                          'T1003.001',
+                          'T1070.001',
                           'T1018',
-                          'T1016',
-                          'T1490'],
+                          'T1555.003',
+                          'T1490',
+                          'T1021.002'],
            'description': '[Olympic Destroyer](https://attack.mitre.org/software/S0365) is malware that was first seen '
                           'infecting computer systems at the 2018 Winter Olympics, held in Pyeongchang, South Korea. '
                           'The main purpose of the malware appears to be to cause destructive impact to the affected '
@@ -15263,22 +17622,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0365',
            'type': 'malware'},
- 'S0366': {'attack_ids': ['T1570',
-                          'T1222.001',
-                          'T1210',
-                          'T1120',
-                          'T1543.003',
+ 'S0366': {'attack_ids': ['T1222.001',
                           'T1047',
-                          'T1090.003',
+                          'T1489',
                           'T1563.002',
                           'T1564.001',
-                          'T1489',
-                          'T1573.002',
-                          'T1083',
-                          'T1018',
+                          'T1120',
+                          'T1570',
+                          'T1090.003',
                           'T1486',
-                          'T1016',
-                          'T1490'],
+                          'T1210',
+                          'T1573.002',
+                          'T1543.003',
+                          'T1018',
+                          'T1083',
+                          'T1490',
+                          'T1016'],
            'description': '[WannaCry](https://attack.mitre.org/software/S0366) is ransomware that was first seen in a '
                           'global attack during May 2017, which affected more than 150 countries. It contains '
                           'worm-like features to spread itself across a computer network using the SMBv1 exploit '
@@ -15288,58 +17647,59 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0366',
            'type': 'malware'},
- 'S0367': {'attack_ids': ['T1566.002',
+ 'S0367': {'attack_ids': ['T1571',
                           'T1047',
-                          'T1204.002',
-                          'T1027',
-                          'T1204.001',
-                          'T1027.002',
-                          'T1573.002',
-                          'T1566.001',
-                          'T1560',
-                          'T1547.001',
-                          'T1110.001',
-                          'T1040',
-                          'T1059.001',
-                          'T1210',
-                          'T1543.003',
-                          'T1094',
-                          'T1057',
-                          'T1041',
-                          'T1571',
-                          'T1065',
-                          'T1055.001',
-                          'T1021.002',
-                          'T1114.001',
-                          'T1552.001',
-                          'T1059.005',
-                          'T1078.003',
-                          'T1043',
                           'T1087.003',
+                          'T1043',
+                          'T1094',
+                          'T1027.002',
+                          'T1204.002',
                           'T1003.001',
-                          'T1555.003',
+                          'T1055.001',
+                          'T1110.001',
+                          'T1566.001',
+                          'T1204.001',
+                          'T1059.005',
+                          'T1041',
+                          'T1027',
+                          'T1021.002',
+                          'T1040',
+                          'T1552.001',
+                          'T1065',
+                          'T1560',
+                          'T1078.003',
                           'T1059.003',
-                          'T1053.005'],
+                          'T1059.001',
+                          'T1053.005',
+                          'T1210',
+                          'T1573.002',
+                          'T1057',
+                          'T1547.001',
+                          'T1543.003',
+                          'T1555.003',
+                          'T1114.001',
+                          'T1566.002'],
            'description': '[Emotet](https://attack.mitre.org/software/S0367) is a modular malware variant which is '
                           'primarily used as a downloader for other malware variants such as '
-                          '[TrickBot](https://attack.mitre.org/software/S0266) and IcedID. Emotet first emerged in '
-                          'June 2014 and has been primarily used to target the banking sector. (Citation: Trend Micro '
-                          'Banking Malware Jan 2019)',
+                          '[TrickBot](https://attack.mitre.org/software/S0266) and '
+                          '[IcedID](https://attack.mitre.org/software/S0483). Emotet first emerged in June 2014 and '
+                          'has been primarily used to target the banking sector. (Citation: Trend Micro Banking '
+                          'Malware Jan 2019)',
            'name': 'Emotet',
            'platforms': ['Windows'],
            'software_id': 'S0367',
            'type': 'malware'},
- 'S0368': {'attack_ids': ['T1021.002',
-                          'T1003.001',
-                          'T1210',
-                          'T1053.005',
-                          'T1569.002',
-                          'T1070.001',
+ 'S0368': {'attack_ids': ['T1569.002',
                           'T1047',
                           'T1036.003',
-                          'T1078.003',
-                          'T1529',
+                          'T1053.005',
                           'T1486',
+                          'T1210',
+                          'T1003.001',
+                          'T1529',
+                          'T1070.001',
+                          'T1021.002',
+                          'T1078.003',
                           'T1218.011'],
            'description': '[NotPetya](https://attack.mitre.org/software/S0368) is malware that was first seen in a '
                           'worldwide attack starting on June 27, 2017. The main purpose of the malware appeared to be '
@@ -15356,15 +17716,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0368',
            'type': 'malware'},
- 'S0369': {'attack_ids': ['T1065',
+ 'S0369': {'attack_ids': ['T1059.003',
+                          'T1564.001',
+                          'T1059.006',
+                          'T1065',
                           'T1059.004',
-                          'T1059.003',
+                          'T1553.001',
+                          'T1543.001',
                           'T1105',
                           'T1027',
-                          'T1564.001',
-                          'T1543.001',
-                          'T1059.006',
-                          'T1553.001',
                           'T1140'],
            'description': '[CoinTicker](https://attack.mitre.org/software/S0369) is a malicious application that poses '
                           'as a cryptocurrency price ticker and installs components of the open source backdoors '
@@ -15373,7 +17733,7 @@ software_map = {
            'platforms': ['macOS'],
            'software_id': 'S0369',
            'type': 'malware'},
- 'S0370': {'attack_ids': ['T1070.004', 'T1059.003', 'T1027', 'T1027.001', 'T1486'],
+ 'S0370': {'attack_ids': ['T1059.003', 'T1070.004', 'T1027.001', 'T1486', 'T1027'],
            'description': '[SamSam](https://attack.mitre.org/software/S0370) is ransomware that appeared in early '
                           '2016. Unlike some ransomware, its variants have required operators to manually interact '
                           'with the malware to execute some of its core components.(Citation: US-CERT SamSam '
@@ -15383,7 +17743,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0370',
            'type': 'malware'},
- 'S0371': {'attack_ids': ['T1043', 'T1059.001', 'T1573.001', 'T1071.001', 'T1003.002', 'T1547.001', 'T1546.003'],
+ 'S0371': {'attack_ids': ['T1059.001', 'T1043', 'T1071.001', 'T1573.001', 'T1547.001', 'T1546.003', 'T1003.002'],
            'description': '[POWERTON](https://attack.mitre.org/software/S0371) is a custom PowerShell backdoor first '
                           'observed in 2018. It has typically been deployed as a late-stage backdoor by '
                           '[APT33](https://attack.mitre.org/groups/G0064). At least two variants of the backdoor have '
@@ -15393,7 +17753,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0371',
            'type': 'malware'},
- 'S0372': {'attack_ids': ['T1570', 'T1070.004', 'T1553.002', 'T1529', 'T1562.001', 'T1486', 'T1531'],
+ 'S0372': {'attack_ids': ['T1562.001', 'T1070.004', 'T1570', 'T1486', 'T1529', 'T1553.002', 'T1531'],
            'description': '[LockerGoga](https://attack.mitre.org/software/S0372) is ransomware that has been tied to '
                           'various attacks on European companies. It was first reported upon in January '
                           '2019.(Citation: Unit42 LockerGoga 2019)(Citation: CarbonBlack LockerGoga 2019)',
@@ -15401,33 +17761,33 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0372',
            'type': 'malware'},
- 'S0373': {'attack_ids': ['T1218.010',
-                          'T1082',
-                          'T1564.003',
-                          'T1518.001',
+ 'S0373': {'attack_ids': ['T1555',
                           'T1047',
-                          'T1056.001',
-                          'T1027',
-                          'T1027.002',
-                          'T1220',
-                          'T1132.001',
-                          'T1547.001',
-                          'T1059.007',
+                          'T1082',
+                          'T1218.010',
                           'T1129',
-                          'T1074.001',
-                          'T1115',
-                          'T1055.012',
-                          'T1105',
-                          'T1555',
-                          'T1057',
-                          'T1041',
+                          'T1027.002',
+                          'T1518.001',
                           'T1218.001',
-                          'T1547.009',
+                          'T1056.001',
+                          'T1041',
                           'T1552',
+                          'T1105',
+                          'T1027',
                           'T1140',
-                          'T1124',
+                          'T1059.007',
+                          'T1132.001',
                           'T1059.003',
-                          'T1016'],
+                          'T1124',
+                          'T1220',
+                          'T1564.003',
+                          'T1074.001',
+                          'T1547.009',
+                          'T1547.001',
+                          'T1057',
+                          'T1115',
+                          'T1016',
+                          'T1055.012'],
            'description': '[Astaroth](https://attack.mitre.org/software/S0373) is a Trojan and information stealer '
                           'known to affect companies in Europe and Brazil. It has been known publicly since at least '
                           'late 2017. (Citation: Cybereason Astaroth Feb 2019) (Citation: Cofense Astaroth Sept 2018)',
@@ -15435,20 +17795,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0373',
            'type': 'malware'},
- 'S0374': {'attack_ids': ['T1033',
+ 'S0374': {'attack_ids': ['T1049',
+                          'T1053.003',
+                          'T1110.001',
+                          'T1059.006',
                           'T1082',
                           'T1070.004',
-                          'T1105',
-                          'T1046',
-                          'T1027',
+                          'T1033',
                           'T1071.001',
-                          'T1053.003',
-                          'T1059.006',
-                          'T1049',
-                          'T1132.001',
-                          'T1110.001',
                           'T1059',
+                          'T1046',
+                          'T1105',
+                          'T1027',
                           'T1016',
+                          'T1132.001',
                           'T1203'],
            'description': '[SpeakUp](https://attack.mitre.org/software/S0374) is a Trojan backdoor that targets both '
                           'Linux and OSX devices. It was first observed in January 2019. (Citation: CheckPoint SpeakUp '
@@ -15457,64 +17817,64 @@ software_map = {
            'platforms': ['Linux', 'macOS'],
            'software_id': 'S0374',
            'type': 'malware'},
- 'S0375': {'attack_ids': ['T1083',
-                          'T1041',
-                          'T1115',
+ 'S0375': {'attack_ids': ['T1059.003',
+                          'T1027',
+                          'T1056.001',
+                          'T1047',
                           'T1547.004',
-                          'T1059.003',
+                          'T1115',
                           'T1053.005',
                           'T1113',
-                          'T1047',
-                          'T1059.005',
-                          'T1056.001',
-                          'T1027',
                           'T1071.001',
+                          'T1059.005',
                           'T1560',
+                          'T1041',
                           'T1547.001',
-                          'T1140',
-                          'T1010'],
+                          'T1010',
+                          'T1083',
+                          'T1140'],
            'description': '[Remexi](https://attack.mitre.org/software/S0375) is a Windows-based Trojan that was '
                           'developed in the C programming language.(Citation: Securelist Remexi Jan 2019)',
            'name': 'Remexi',
            'platforms': ['Windows'],
            'software_id': 'S0375',
            'type': 'malware'},
- 'S0376': {'attack_ids': ['T1082',
+ 'S0376': {'attack_ids': ['T1571',
                           'T1047',
-                          'T1003.002',
-                          'T1132.001',
-                          'T1008',
-                          'T1105',
-                          'T1550.002',
-                          'T1571',
-                          'T1065',
-                          'T1041',
-                          'T1012',
-                          'T1055',
+                          'T1082',
                           'T1112',
                           'T1043',
-                          'T1124',
                           'T1090',
-                          'T1059.003',
-                          'T1569.002',
+                          'T1008',
                           'T1562.004',
-                          'T1083'],
+                          'T1041',
+                          'T1105',
+                          'T1569.002',
+                          'T1055',
+                          'T1065',
+                          'T1083',
+                          'T1132.001',
+                          'T1550.002',
+                          'T1059.003',
+                          'T1124',
+                          'T1012',
+                          'T1003.002'],
            'description': '[HOPLIGHT](https://attack.mitre.org/software/S0376) is a backdoor Trojan that has '
                           'reportedly been used by the North Korean government.(Citation: US-CERT HOPLIGHT Apr 2019)',
            'name': 'HOPLIGHT',
            'platforms': ['Windows'],
            'software_id': 'S0376',
            'type': 'malware'},
- 'S0377': {'attack_ids': ['T1043',
-                          'T1071.004',
-                          'T1552.004',
-                          'T1573.001',
+ 'S0377': {'attack_ids': ['T1562.002',
                           'T1568.002',
+                          'T1552.004',
+                          'T1556',
+                          'T1573.001',
                           'T1553.002',
-                          'T1562.002',
                           'T1027',
                           'T1554',
-                          'T1132.001'],
+                          'T1132.001',
+                          'T1071.004'],
            'description': '[Ebury](https://attack.mitre.org/software/S0377) is an SSH backdoor targeting Linux '
                           'operating systems. Attackers require root-level access, which allows them to replace SSH '
                           'binaries (ssh, sshd, ssh-add, etc) or modify a shared library used by OpenSSH '
@@ -15523,36 +17883,36 @@ software_map = {
            'platforms': ['Linux'],
            'software_id': 'S0377',
            'type': 'malware'},
- 'S0378': {'attack_ids': ['T1201',
+ 'S0378': {'attack_ids': ['T1047',
                           'T1082',
-                          'T1046',
-                          'T1087.002',
-                          'T1047',
-                          'T1056.001',
-                          'T1007',
-                          'T1040',
-                          'T1210',
-                          'T1119',
-                          'T1550.002',
-                          'T1134.002',
-                          'T1049',
+                          'T1068',
+                          'T1087.001',
                           'T1560.001',
+                          'T1090',
+                          'T1003.001',
+                          'T1087.002',
+                          'T1056.001',
+                          'T1201',
+                          'T1482',
+                          'T1110',
+                          'T1134.002',
                           'T1069.001',
+                          'T1040',
+                          'T1569.002',
+                          'T1119',
+                          'T1007',
                           'T1552.001',
                           'T1055',
-                          'T1071.001',
                           'T1548.002',
-                          'T1087.001',
-                          'T1068',
-                          'T1482',
-                          'T1546.003',
-                          'T1110',
-                          'T1003.001',
-                          'T1090',
-                          'T1557.001',
-                          'T1569.002',
-                          'T1134',
                           'T1083',
+                          'T1546.003',
+                          'T1046',
+                          'T1049',
+                          'T1550.002',
+                          'T1557.001',
+                          'T1071.001',
+                          'T1134',
+                          'T1210',
                           'T1016'],
            'description': '[PoshC2](https://attack.mitre.org/software/S0378) is an open source remote administration '
                           'and post-exploitation framework that is publicly available on GitHub. The server-side '
@@ -15566,23 +17926,23 @@ software_map = {
            'software_id': 'S0378',
            'type': 'tool'},
  'S0379': {'attack_ids': ['T1082',
-                          'T1202',
-                          'T1056.001',
-                          'T1547.001',
-                          'T1132.001',
-                          'T1125',
                           'T1033',
-                          'T1059.001',
-                          'T1105',
-                          'T1065',
-                          'T1123',
-                          'T1218.005',
                           'T1021.001',
-                          'T1102.002',
-                          'T1059.003',
-                          'T1053.005',
+                          'T1125',
+                          'T1056.001',
+                          'T1105',
+                          'T1123',
+                          'T1065',
                           'T1113',
                           'T1003',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1059.001',
+                          'T1202',
+                          'T1053.005',
+                          'T1102.002',
+                          'T1218.005',
+                          'T1547.001',
                           'T1016'],
            'description': '[Revenge RAT](https://attack.mitre.org/software/S0379) is a freely available remote access '
                           'tool written in .NET (C#).(Citation: Cylance Shaheen Nov 2018)(Citation: Cofense RevengeRAT '
@@ -15591,21 +17951,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0379',
            'type': 'malware'},
- 'S0380': {'attack_ids': ['T1124',
+ 'S0380': {'attack_ids': ['T1055',
+                          'T1124',
+                          'T1047',
                           'T1082',
                           'T1070.004',
-                          'T1497',
-                          'T1105',
-                          'T1561.002',
                           'T1113',
-                          'T1518.001',
                           'T1561.001',
                           'T1059.005',
+                          'T1485',
+                          'T1497',
                           'T1012',
-                          'T1047',
+                          'T1105',
                           'T1027',
-                          'T1055',
-                          'T1485'],
+                          'T1561.002',
+                          'T1518.001'],
            'description': '[StoneDrill](https://attack.mitre.org/software/S0380) is wiper malware discovered in '
                           'destructive campaigns against both Middle Eastern and European targets in association with '
                           '[APT33](https://attack.mitre.org/groups/G0064).(Citation: FireEye APT33 Sept '
@@ -15614,16 +17974,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0380',
            'type': 'malware'},
- 'S0381': {'attack_ids': ['T1043',
-                          'T1033',
+ 'S0381': {'attack_ids': ['T1047',
                           'T1082',
-                          'T1069.001',
-                          'T1120',
-                          'T1573.001',
                           'T1518.001',
+                          'T1043',
+                          'T1033',
+                          'T1120',
+                          'T1071.001',
                           'T1001',
-                          'T1047',
-                          'T1071.001'],
+                          'T1573.001',
+                          'T1069.001'],
            'description': '[FlawedAmmyy](https://attack.mitre.org/software/S0381) is a remote access tool (RAT) that '
                           'was first seen in early 2016. The code for '
                           '[FlawedAmmyy](https://attack.mitre.org/software/S0381) was based on leaked source code for '
@@ -15632,19 +17992,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0381',
            'type': 'malware'},
- 'S0382': {'attack_ids': ['T1043',
-                          'T1033',
-                          'T1082',
-                          'T1059.001',
+ 'S0382': {'attack_ids': ['T1059.003',
                           'T1070.004',
-                          'T1105',
-                          'T1059.003',
+                          'T1059.001',
+                          'T1082',
                           'T1053.005',
+                          'T1043',
                           'T1071.001',
-                          'T1573.002',
+                          'T1033',
                           'T1136.001',
+                          'T1573.002',
                           'T1021.001',
                           'T1547.001',
+                          'T1105',
                           'T1218.011'],
            'description': '[ServHelper](https://attack.mitre.org/software/S0382) is a backdoor first observed in late '
                           '2018. The backdoor is written in Delphi and is typically delivered as a DLL file.(Citation: '
@@ -15653,7 +18013,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0382',
            'type': 'malware'},
- 'S0383': {'attack_ids': ['T1043', 'T1027', 'T1094'],
+ 'S0383': {'attack_ids': ['T1027', 'T1094', 'T1043'],
            'description': '[FlawedGrace](https://attack.mitre.org/software/S0383) is a fully featured remote access '
                           'tool (RAT) written in C++ that was first observed in late 2017.(Citation: Proofpoint TA505 '
                           'Jan 2019)',
@@ -15661,7 +18021,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0383',
            'type': 'malware'},
- 'S0384': {'attack_ids': ['T1090', 'T1573.001', 'T1219', 'T1071.001', 'T1573.002', 'T1185'],
+ 'S0384': {'attack_ids': ['T1219', 'T1185', 'T1071.001', 'T1090', 'T1573.002', 'T1573.001'],
            'description': '[Dridex](https://attack.mitre.org/software/S0384) is a banking Trojan that has been used '
                           'for financial gain. Dridex was created from the source code of the Bugat banking trojan '
                           '(also known as Cridex).(Citation: Dell Dridex Oct 2015)(Citation: Kaspersky Dridex May '
@@ -15670,28 +18030,38 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0384',
            'type': 'malware'},
- 'S0385': {'attack_ids': ['T1082',
-                          'T1120',
-                          'T1056.001',
-                          'T1132.001',
-                          'T1547.001',
-                          'T1125',
-                          'T1033',
-                          'T1105',
-                          'T1094',
-                          'T1018',
-                          'T1065',
-                          'T1005',
-                          'T1070.004',
+ 'S0385': {'attack_ids': ['T1571',
+                          'T1082',
                           'T1112',
+                          'T1094',
+                          'T1033',
                           'T1021.001',
                           'T1010',
-                          'T1091',
-                          'T1555.003',
-                          'T1059.003',
-                          'T1113',
+                          'T1018',
+                          'T1125',
+                          'T1056.001',
+                          'T1005',
+                          'T1120',
+                          'T1568.001',
                           'T1562.004',
-                          'T1083'],
+                          'T1041',
+                          'T1070',
+                          'T1106',
+                          'T1027',
+                          'T1105',
+                          'T1065',
+                          'T1113',
+                          'T1027.004',
+                          'T1083',
+                          'T1132.001',
+                          'T1091',
+                          'T1059.003',
+                          'T1059.001',
+                          'T1071.001',
+                          'T1012',
+                          'T1547.001',
+                          'T1057',
+                          'T1555.003'],
            'description': '[njRAT](https://attack.mitre.org/software/S0385) is a remote access tool (RAT) that was '
                           'first observed in 2012. It has been used by threat actors in the Middle East.(Citation: '
                           'Fidelis njRAT June 2013)',
@@ -15699,41 +18069,41 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0385',
            'type': 'malware'},
- 'S0386': {'attack_ids': ['T1082',
-                          'T1564.003',
-                          'T1080',
-                          'T1056.004',
-                          'T1047',
-                          'T1027',
-                          'T1497.003',
-                          'T1547.001',
-                          'T1074.001',
-                          'T1007',
-                          'T1055.012',
-                          'T1059.001',
-                          'T1105',
-                          'T1559.001',
-                          'T1543.003',
-                          'T1094',
-                          'T1057',
-                          'T1041',
-                          'T1005',
-                          'T1070.004',
-                          'T1055.005',
-                          'T1059.005',
-                          'T1012',
-                          'T1071.001',
-                          'T1112',
-                          'T1036.005',
+ 'S0386': {'attack_ids': ['T1047',
+                          'T1082',
                           'T1185',
-                          'T1140',
-                          'T1091',
+                          'T1112',
+                          'T1094',
                           'T1090',
                           'T1568.002',
-                          'T1113',
+                          'T1005',
                           'T1090.003',
+                          'T1059.005',
+                          'T1041',
+                          'T1080',
+                          'T1105',
+                          'T1027',
                           'T1106',
-                          'T1132'],
+                          'T1559.001',
+                          'T1140',
+                          'T1497.003',
+                          'T1007',
+                          'T1113',
+                          'T1036.005',
+                          'T1091',
+                          'T1132',
+                          'T1070.004',
+                          'T1059.001',
+                          'T1074.001',
+                          'T1564.003',
+                          'T1071.001',
+                          'T1056.004',
+                          'T1057',
+                          'T1012',
+                          'T1055.005',
+                          'T1547.001',
+                          'T1543.003',
+                          'T1055.012'],
            'description': '[Ursnif](https://attack.mitre.org/software/S0386) is a banking trojan and variant of the '
                           'Gozi malware observed being spread through various automated exploit kits, [Spearphishing '
                           'Attachment](https://attack.mitre.org/techniques/T1193)s, and malicious links.(Citation: '
@@ -15746,23 +18116,23 @@ software_map = {
            'software_id': 'S0386',
            'type': 'malware'},
  'S0387': {'attack_ids': ['T1082',
-                          'T1547.004',
                           'T1559.002',
-                          'T1564.003',
-                          'T1056.001',
-                          'T1027',
-                          'T1059.001',
-                          'T1105',
-                          'T1543.003',
-                          'T1001.003',
-                          'T1070.006',
-                          'T1059.005',
                           'T1043',
-                          'T1555.003',
-                          'T1059.003',
+                          'T1070.006',
+                          'T1056.001',
+                          'T1059.005',
+                          'T1105',
+                          'T1027',
                           'T1113',
-                          'T1059.006',
+                          'T1001.003',
                           'T1083',
+                          'T1059.003',
+                          'T1547.004',
+                          'T1059.006',
+                          'T1059.001',
+                          'T1564.003',
+                          'T1543.003',
+                          'T1555.003',
                           'T1016'],
            'description': '[KeyBoy](https://attack.mitre.org/software/S0387) is malware that has been used in targeted '
                           'campaigns against members of the Tibetan Parliament in 2016.(Citation: CitizenLab KeyBoy '
@@ -15771,7 +18141,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0387',
            'type': 'malware'},
- 'S0388': {'attack_ids': ['T1082', 'T1105', 'T1518.001', 'T1027', 'T1071.001', 'T1140'],
+ 'S0388': {'attack_ids': ['T1082', 'T1071.001', 'T1105', 'T1027', 'T1518.001', 'T1140'],
            'description': '[YAHOYAH](https://attack.mitre.org/software/S0388) is a Trojan used by [Tropic '
                           'Trooper](https://attack.mitre.org/groups/G0081) as a second-stage backdoor.(Citation: '
                           'TrendMicro TropicTrooper 2015)',
@@ -15779,7 +18149,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0388',
            'type': 'malware'},
- 'S0389': {'attack_ids': ['T1059.001', 'T1059.003', 'T1059.005', 'T1204.002', 'T1547.001', 'T1486', 'T1490'],
+ 'S0389': {'attack_ids': ['T1059.003', 'T1059.001', 'T1059.005', 'T1486', 'T1204.002', 'T1547.001', 'T1490'],
            'description': '[JCry](https://attack.mitre.org/software/S0389) is ransomware written in Go. It was '
                           'identified as apart of the #OpJerusalem 2019 campaign.(Citation: Carbon Black JCry May '
                           '2019)',
@@ -15787,7 +18157,7 @@ software_map = {
            'platforms': [],
            'software_id': 'S0389',
            'type': 'malware'},
- 'S0390': {'attack_ids': ['T1070.004', 'T1059.001', 'T1105', 'T1059.003', 'T1053.005', 'T1204.002', 'T1027', 'T1140'],
+ 'S0390': {'attack_ids': ['T1059.003', 'T1070.004', 'T1059.001', 'T1053.005', 'T1204.002', 'T1105', 'T1027', 'T1140'],
            'description': '[SQLRat](https://attack.mitre.org/software/S0390) is malware that executes SQL scripts to '
                           'avoid leaving traditional host artifacts. [FIN7](https://attack.mitre.org/groups/G0046) has '
                           'been observed using it.(Citation: Flashpoint FIN 7 March 2019)',
@@ -15795,25 +18165,25 @@ software_map = {
            'platforms': [],
            'software_id': 'S0390',
            'type': 'malware'},
- 'S0391': {'attack_ids': ['T1043',
-                          'T1041',
-                          'T1082',
-                          'T1033',
+ 'S0391': {'attack_ids': ['T1059.003',
                           'T1070.004',
+                          'T1082',
+                          'T1560.003',
                           'T1559.002',
-                          'T1059.003',
-                          'T1027',
+                          'T1043',
                           'T1071.001',
+                          'T1033',
+                          'T1041',
                           'T1106',
-                          'T1203',
-                          'T1560.003'],
+                          'T1027',
+                          'T1203'],
            'description': '[HAWKBALL](https://attack.mitre.org/software/S0391) is a backdoor that was observed in '
                           'targeting of the government sector in Central Asia.(Citation: FireEye HAWKBALL Jun 2019)',
            'name': 'HAWKBALL',
            'platforms': ['Windows'],
            'software_id': 'S0391',
            'type': 'malware'},
- 'S0393': {'attack_ids': ['T1070.006', 'T1102.002', 'T1059.001', 'T1027', 'T1057'],
+ 'S0393': {'attack_ids': ['T1059.001', 'T1070.006', 'T1102.002', 'T1057', 'T1027'],
            'description': '[PowerStallion](https://attack.mitre.org/software/S0393) is a lightweight '
                           '[PowerShell](https://attack.mitre.org/techniques/T1086) backdoor used by '
                           '[Turla](https://attack.mitre.org/groups/G0010), possibly as a recovery access tool to '
@@ -15822,46 +18192,46 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0393',
            'type': 'malware'},
- 'S0394': {'attack_ids': ['T1065',
-                          'T1105',
-                          'T1059.003',
+ 'S0394': {'attack_ids': ['T1059.003',
+                          'T1095',
+                          'T1065',
+                          'T1014',
+                          'T1136.001',
                           'T1573.001',
                           'T1546.004',
-                          'T1095',
+                          'T1105',
                           'T1027',
-                          'T1574.006',
-                          'T1136.001',
                           'T1140',
-                          'T1014'],
+                          'T1574.006'],
            'description': '[HiddenWasp](https://attack.mitre.org/software/S0394) is a Linux-based Trojan used to '
-                          'target systems for remote control. It comes in the form of a statistically linked ELF '
-                          'binary with stdlibc++.(Citation: Intezer HiddenWasp Map 2019)',
+                          'target systems for remote control. It comes in the form of a statically linked ELF binary '
+                          'with stdlibc++.(Citation: Intezer HiddenWasp Map 2019)',
            'name': 'HiddenWasp',
            'platforms': ['Linux'],
            'software_id': 'S0394',
            'type': 'malware'},
- 'S0395': {'attack_ids': ['T1114.002',
-                          'T1082',
-                          'T1071.003',
-                          'T1027',
-                          'T1560',
-                          'T1074.001',
-                          'T1105',
-                          'T1119',
-                          'T1001.002',
-                          'T1041',
+ 'S0395': {'attack_ids': ['T1082',
                           'T1020',
-                          'T1005',
-                          'T1070.004',
                           'T1029',
-                          'T1036.005',
-                          'T1140',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1565.002',
+                          'T1071.003',
                           'T1505.002',
-                          'T1016',
-                          'T1106'],
+                          'T1565.002',
+                          'T1005',
+                          'T1041',
+                          'T1573.001',
+                          'T1105',
+                          'T1027',
+                          'T1106',
+                          'T1140',
+                          'T1001.002',
+                          'T1119',
+                          'T1036.005',
+                          'T1560',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1074.001',
+                          'T1114.002',
+                          'T1016'],
            'description': '[LightNeuron](https://attack.mitre.org/software/S0395) is a sophisticated backdoor that has '
                           'targeted Microsoft Exchange servers since at least 2014. '
                           '[LightNeuron](https://attack.mitre.org/software/S0395) has been used by '
@@ -15873,18 +18243,18 @@ software_map = {
            'platforms': ['Windows', 'Linux'],
            'software_id': 'S0395',
            'type': 'malware'},
- 'S0396': {'attack_ids': ['T1497.001',
+ 'S0396': {'attack_ids': ['T1059.003',
                           'T1124',
-                          'T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1053.005',
-                          'T1518.001',
                           'T1047',
+                          'T1070.004',
+                          'T1053.005',
                           'T1071.001',
+                          'T1105',
+                          'T1497.001',
                           'T1547.001',
                           'T1057',
-                          'T1203'],
+                          'T1203',
+                          'T1518.001'],
            'description': '[EvilBunny](https://attack.mitre.org/software/S0396) is a C++ malware sample observed since '
                           '2011 that was designed to be a execution platform for Lua scripts.(Citation: Cyphort '
                           'EvilBunny Dec 2014)',
@@ -15892,7 +18262,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0396',
            'type': 'malware'},
- 'S0397': {'attack_ids': ['T1112', 'T1542.001', 'T1019', 'T1547.001', 'T1014', 'T1564.004'],
+ 'S0397': {'attack_ids': ['T1564.004', 'T1112', 'T1019', 'T1542.001', 'T1014', 'T1547.001'],
            'description': '[LoJax](https://attack.mitre.org/software/S0397) is a UEFI rootkit used by '
                           '[APT28](https://attack.mitre.org/groups/G0007) to persist remote access software on '
                           'targeted systems.(Citation: ESET LoJax Sept 2018)',
@@ -15900,15 +18270,15 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0397',
            'type': 'malware'},
- 'S0398': {'attack_ids': ['T1007',
-                          'T1070.004',
-                          'T1105',
-                          'T1113',
-                          'T1569.002',
+ 'S0398': {'attack_ids': ['T1569.002',
                           'T1055',
-                          'T1071.001',
+                          'T1007',
+                          'T1070.004',
                           'T1574.002',
-                          'T1106'],
+                          'T1113',
+                          'T1071.001',
+                          'T1106',
+                          'T1105'],
            'description': '[HyperBro](https://attack.mitre.org/software/S0398) is a custom in-memory backdoor used by '
                           '[Threat Group-3390](https://attack.mitre.org/groups/G0027).(Citation: Unit42 Emissary Panda '
                           'May 2019)(Citation: Securelist LuckyMouse June 2018)(Citation: Hacker News LuckyMouse June '
@@ -15917,21 +18287,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0398',
            'type': 'malware'},
- 'S0399': {'attack_ids': ['T1411',
-                          'T1412',
-                          'T1476',
-                          'T1447',
-                          'T1432',
-                          'T1406',
-                          'T1430',
-                          'T1512',
-                          'T1507',
-                          'T1409',
+ 'S0399': {'attack_ids': ['T1476',
                           'T1433',
-                          'T1437',
-                          'T1426',
+                          'T1409',
+                          'T1429',
                           'T1418',
-                          'T1429'],
+                          'T1432',
+                          'T1412',
+                          'T1426',
+                          'T1507',
+                          'T1512',
+                          'T1437',
+                          'T1411',
+                          'T1447',
+                          'T1406',
+                          'T1430'],
            'description': '[Pallas](https://attack.mitre.org/software/S0399) is mobile surveillanceware that was '
                           'custom-developed by [Dark Caracal](https://attack.mitre.org/groups/G0070).(Citation: '
                           'Lookout Dark Caracal Jan 2018)',
@@ -15939,7 +18309,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0399',
            'type': 'malware'},
- 'S0400': {'attack_ids': ['T1059.003', 'T1070.005', 'T1489', 'T1562.001', 'T1486', 'T1490'],
+ 'S0400': {'attack_ids': ['T1562.001', 'T1059.003', 'T1489', 'T1070.005', 'T1486', 'T1490'],
            'description': '[RobbinHood](https://attack.mitre.org/software/S0400) is ransomware that was first observed '
                           "being used in an attack against the Baltimore city government's computer network.(Citation: "
                           'CarbonBlack RobbinHood May 2019)(Citation: BaltimoreSun RobbinHood May 2019)',
@@ -15947,7 +18317,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0400',
            'type': 'malware'},
- 'S0401': {'attack_ids': ['T1105', 'T1543.002', 'T1059.004', 'T1027', 'T1071.001', 'T1053.003'],
+ 'S0401': {'attack_ids': ['T1053.003', 'T1071.001', 'T1059.004', 'T1543.002', 'T1105', 'T1027'],
            'description': '[Exaramel for Linux](https://attack.mitre.org/software/S0401) is a backdoor written in the '
                           'Go Programming Language and compiled as a 64-bit ELF binary. The Windows version is tracked '
                           'separately under [Exaramel for Windows](https://attack.mitre.org/software/S0343).(Citation: '
@@ -15957,15 +18327,14 @@ software_map = {
            'software_id': 'S0401',
            'type': 'malware'},
  'S0402': {'attack_ids': ['T1082',
-                          'T1059.004',
-                          'T1548.004',
-                          'T1222.002',
-                          'T1204.002',
                           'T1564.001',
+                          'T1176',
+                          'T1059.004',
+                          'T1204.002',
+                          'T1548.004',
                           'T1036.005',
-                          'T1562.001',
-                          'T1140',
-                          'T1176'],
+                          'T1222.002',
+                          'T1140'],
            'description': '[OSX/Shlayer](https://attack.mitre.org/software/S0402) is a Trojan designed to install '
                           'adware on macOS. It was first discovered in 2018.(Citation: Carbon Black Shlayer Feb '
                           '2019)(Citation: Intego Shlayer Feb 2018)',
@@ -15973,39 +18342,39 @@ software_map = {
            'platforms': ['macOS'],
            'software_id': 'S0402',
            'type': 'malware'},
- 'S0403': {'attack_ids': ['T1411', 'T1412', 'T1422', 'T1476', 'T1432', 'T1437', 'T1418', 'T1426', 'T1516'],
+ 'S0403': {'attack_ids': ['T1476', 'T1412', 'T1418', 'T1432', 'T1426', 'T1437', 'T1411', 'T1516', 'T1422'],
            'description': '[Riltok](https://attack.mitre.org/software/S0403) is banking malware that uses phishing '
                           'popups to collect user credentials.(Citation: Kaspersky Riltok June 2019)',
            'name': 'Riltok',
            'platforms': ['Android'],
            'software_id': 'S0403',
            'type': 'malware'},
- 'S0404': {'attack_ids': ['T1570', 'T1003.003', 'T1564.004', 'T1105'],
+ 'S0404': {'attack_ids': ['T1105', 'T1003.003', 'T1570', 'T1564.004'],
            'description': '[esentutl](https://attack.mitre.org/software/S0404) is a command-line tool that provides '
                           'database utilities for the Windows Extensible Storage Engine.(Citation: Microsoft Esentutl)',
            'name': 'esentutl',
            'platforms': ['Windows'],
            'software_id': 'S0404',
            'type': 'tool'},
- 'S0405': {'attack_ids': ['T1422',
+ 'S0405': {'attack_ids': ['T1509',
+                          'T1407',
+                          'T1430',
+                          'T1433',
+                          'T1412',
+                          'T1533',
+                          'T1432',
                           'T1507',
+                          'T1513',
                           'T1437',
+                          'T1409',
                           'T1429',
                           'T1475',
-                          'T1512',
-                          'T1407',
-                          'T1418',
-                          'T1532',
-                          'T1409',
-                          'T1430',
                           'T1404',
-                          'T1509',
+                          'T1418',
                           'T1435',
-                          'T1412',
-                          'T1432',
-                          'T1433',
-                          'T1533',
-                          'T1513'],
+                          'T1512',
+                          'T1532',
+                          'T1422'],
            'description': '[Exodus](https://attack.mitre.org/software/S0405) is Android spyware deployed in two '
                           'distinct stages named Exodus One (dropper) and Exodus Two (payload).(Citation: SWB Exodus '
                           'March 2019)',
@@ -16013,46 +18382,46 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0405',
            'type': 'malware'},
- 'S0406': {'attack_ids': ['T1411',
-                          'T1422',
+ 'S0406': {'attack_ids': ['T1476',
+                          'T1533',
                           'T1412',
-                          'T1476',
+                          'T1418',
                           'T1432',
-                          'T1406',
+                          'T1426',
                           'T1508',
                           'T1438',
                           'T1437',
-                          'T1426',
-                          'T1418',
+                          'T1411',
                           'T1516',
                           'T1417',
-                          'T1533'],
+                          'T1406',
+                          'T1422'],
            'description': '[Gustuff](https://attack.mitre.org/software/S0406) is mobile malware designed to steal '
                           "users' banking and virtual currency credentials.(Citation: Talos Gustuff Apr 2019)",
            'name': 'Gustuff',
            'platforms': ['Android'],
            'software_id': 'S0406',
            'type': 'malware'},
- 'S0407': {'attack_ids': ['T1422',
-                          'T1544',
-                          'T1406',
-                          'T1507',
-                          'T1446',
-                          'T1438',
-                          'T1429',
-                          'T1447',
-                          'T1512',
-                          'T1400',
-                          'T1418',
-                          'T1426',
+ 'S0407': {'attack_ids': ['T1400',
                           'T1417',
-                          'T1410',
                           'T1430',
-                          'T1435',
-                          'T1432',
                           'T1433',
                           'T1533',
-                          'T1513'],
+                          'T1432',
+                          'T1507',
+                          'T1438',
+                          'T1446',
+                          'T1513',
+                          'T1410',
+                          'T1544',
+                          'T1406',
+                          'T1429',
+                          'T1418',
+                          'T1435',
+                          'T1426',
+                          'T1512',
+                          'T1447',
+                          'T1422'],
            'description': '[Monokle](https://attack.mitre.org/software/S0407) is targeted, sophisticated mobile '
                           'surveillanceware. It is developed for Android, but there are some code artifacts that '
                           'suggests an iOS version may be in development.(Citation: Lookout-Monokle)',
@@ -16060,24 +18429,24 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0407',
            'type': 'malware'},
- 'S0408': {'attack_ids': ['T1412',
-                          'T1402',
-                          'T1447',
-                          'T1432',
-                          'T1406',
+ 'S0408': {'attack_ids': ['T1402',
                           'T1409',
-                          'T1430',
-                          'T1507',
-                          'T1512',
-                          'T1509',
-                          'T1508',
-                          'T1400',
-                          'T1418',
                           'T1429',
-                          'T1417',
-                          'T1435',
                           'T1533',
-                          'T1513'],
+                          'T1412',
+                          'T1418',
+                          'T1435',
+                          'T1509',
+                          'T1432',
+                          'T1508',
+                          'T1507',
+                          'T1400',
+                          'T1512',
+                          'T1513',
+                          'T1417',
+                          'T1447',
+                          'T1406',
+                          'T1430'],
            'description': '[FlexiSpy](https://attack.mitre.org/software/S0408) is sophisticated surveillanceware for '
                           'iOS and Android. Publicly-available, comprehensive analysis has only been found for the '
                           'Android version.(Citation: FortiGuard-FlexiSpy)(Citation: CyberMerchants-FlexiSpy)\n'
@@ -16088,42 +18457,44 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0408',
            'type': 'tool'},
- 'S0409': {'attack_ids': ['T1082',
-                          'T1552.004',
-                          'T1120',
-                          'T1025',
-                          'T1056.001',
-                          'T1027',
-                          'T1564.001',
+ 'S0409': {'attack_ids': ['T1217',
+                          'T1082',
                           'T1027.002',
-                          'T1560',
-                          'T1125',
-                          'T1074.001',
-                          'T1115',
-                          'T1036.004',
-                          'T1008',
-                          'T1105',
-                          'T1049',
-                          'T1057',
-                          'T1041',
                           'T1020',
-                          'T1005',
-                          'T1070.004',
                           'T1029',
-                          'T1123',
-                          'T1071.001',
-                          'T1036.005',
-                          'T1140',
-                          'T1560.003',
                           'T1010',
+                          'T1125',
+                          'T1036.004',
+                          'T1056.001',
+                          'T1005',
+                          'T1008',
+                          'T1025',
+                          'T1120',
+                          'T1041',
+                          'T1573.001',
+                          'T1105',
+                          'T1027',
                           'T1555.003',
-                          'T1053.005',
+                          'T1140',
+                          'T1123',
                           'T1113',
-                          'T1071.002',
-                          'T1052.001',
-                          'T1217',
-                          'T1059.006',
+                          'T1552.004',
+                          'T1036.005',
+                          'T1560',
                           'T1083',
+                          'T1049',
+                          'T1070.004',
+                          'T1059.006',
+                          'T1560.003',
+                          'T1564.001',
+                          'T1053.005',
+                          'T1074.001',
+                          'T1071.001',
+                          'T1052.001',
+                          'T1071.002',
+                          'T1573.002',
+                          'T1057',
+                          'T1115',
                           'T1016'],
            'description': '[Machete](https://attack.mitre.org/software/S0409) is a cyber espionage toolset developed '
                           'by a Spanish-speaking group known as El [Machete](https://attack.mitre.org/groups/G0095). '
@@ -16133,18 +18504,18 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0409',
            'type': 'malware'},
- 'S0410': {'attack_ids': ['T1043',
+ 'S0410': {'attack_ids': ['T1083',
+                          'T1056.001',
                           'T1036.004',
                           'T1082',
                           'T1070.004',
+                          'T1043',
                           'T1059.004',
                           'T1543.002',
-                          'T1056.001',
-                          'T1027',
+                          'T1057',
                           'T1036.005',
-                          'T1083',
-                          'T1132.001',
-                          'T1057'],
+                          'T1027',
+                          'T1132.001'],
            'description': '[Fysbis](https://attack.mitre.org/software/S0410) is a Linux-based backdoor used by '
                           '[APT28](https://attack.mitre.org/groups/G0007) that dates back to at least 2014.(Citation: '
                           'Fysbis Palo Alto Analysis)',
@@ -16152,22 +18523,23 @@ software_map = {
            'platforms': ['Linux'],
            'software_id': 'S0410',
            'type': 'malware'},
- 'S0411': {'attack_ids': ['T1411',
-                          'T1422',
-                          'T1412',
-                          'T1521',
-                          'T1476',
-                          'T1432',
-                          'T1406',
+ 'S0411': {'attack_ids': ['T1476',
                           'T1424',
-                          'T1446',
+                          'T1412',
+                          'T1418',
+                          'T1432',
+                          'T1523',
+                          'T1426',
                           'T1508',
                           'T1520',
                           'T1438',
+                          'T1446',
+                          'T1521',
                           'T1437',
-                          'T1523',
-                          'T1418',
-                          'T1426'],
+                          'T1411',
+                          'T1582',
+                          'T1406',
+                          'T1422'],
            'description': '[Rotexy](https://attack.mitre.org/software/S0411) is an Android banking malware that has '
                           'evolved over several years. It was originally an SMS spyware Trojan first spotted in '
                           'October 2014, and since then has evolved to contain more features, including ransomware '
@@ -16177,35 +18549,35 @@ software_map = {
            'software_id': 'S0411',
            'type': 'malware'},
  'S0412': {'attack_ids': ['T1082',
-                          'T1046',
-                          'T1070.001',
-                          'T1056.004',
-                          'T1056.001',
-                          'T1136.001',
-                          'T1125',
-                          'T1033',
-                          'T1007',
-                          'T1105',
-                          'T1543.003',
-                          'T1134.002',
-                          'T1021.005',
-                          'T1057',
-                          'T1065',
-                          'T1055.001',
-                          'T1070.004',
-                          'T1012',
-                          'T1071.001',
-                          'T1499',
-                          'T1021.001',
-                          'T1562.001',
                           'T1043',
+                          'T1033',
                           'T1090',
-                          'T1059.003',
-                          'T1113',
-                          'T1071.002',
+                          'T1543.003',
+                          'T1021.001',
+                          'T1021.005',
+                          'T1055.001',
+                          'T1125',
+                          'T1218.011',
+                          'T1562.001',
+                          'T1056.001',
                           'T1562.004',
+                          'T1134.002',
+                          'T1105',
+                          'T1007',
+                          'T1065',
+                          'T1113',
+                          'T1136.001',
+                          'T1070.001',
                           'T1083',
-                          'T1218.011'],
+                          'T1046',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1499',
+                          'T1071.001',
+                          'T1056.004',
+                          'T1071.002',
+                          'T1012',
+                          'T1057'],
            'description': '[ZxShell](https://attack.mitre.org/software/S0412) is a remote administration tool and '
                           'backdoor that can be downloaded from the Internet, particularly from Chinese hacker '
                           'websites. It has been used since at least 2004.(Citation: FireEye APT41 Aug 2019)(Citation: '
@@ -16214,7 +18586,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0412',
            'type': 'malware'},
- 'S0413': {'attack_ids': ['T1110.003', 'T1114.002', 'T1087.003'],
+ 'S0413': {'attack_ids': ['T1087.003', 'T1110.003', 'T1114.002'],
            'description': 'MailSniper is a penetration testing tool for searching through email in a Microsoft '
                           'Exchange environment for specific terms (passwords, insider intel, network architecture '
                           'information, etc.). It can be used by a non-administrative user to search their own email, '
@@ -16224,18 +18596,18 @@ software_map = {
            'platforms': ['Office 365', 'Windows', 'Azure AD'],
            'software_id': 'S0413',
            'type': 'tool'},
- 'S0414': {'attack_ids': ['T1033',
-                          'T1082',
-                          'T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1132.001',
-                          'T1012',
+ 'S0414': {'attack_ids': ['T1059.003',
                           'T1056.001',
-                          'T1083',
+                          'T1070.004',
+                          'T1082',
+                          'T1033',
+                          'T1105',
+                          'T1012',
                           'T1547.001',
                           'T1057',
-                          'T1016'],
+                          'T1083',
+                          'T1016',
+                          'T1132.001'],
            'description': '[BabyShark](https://attack.mitre.org/software/S0414) is a Microsoft Visual Basic (VB) '
                           'script-based malware family that is believed to be associated with several North Korean '
                           'campaigns. (Citation: Unit42 BabyShark Feb 2019)',
@@ -16243,7 +18615,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0414',
            'type': 'malware'},
- 'S0415': {'attack_ids': ['T1553.002', 'T1027', 'T1574.001', 'T1140', 'T1129'],
+ 'S0415': {'attack_ids': ['T1574.001', 'T1129', 'T1553.002', 'T1027', 'T1140'],
            'description': '[BOOSTWRITE](https://attack.mitre.org/software/S0415) is a loader crafted to be launched '
                           'via abuse of the DLL search order of applications used by '
                           '[FIN7](https://attack.mitre.org/groups/G0046).(Citation: FireEye FIN7 Oct 2019)',
@@ -16251,7 +18623,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0415',
            'type': 'malware'},
- 'S0416': {'attack_ids': ['T1070.004', 'T1106', 'T1056.004'],
+ 'S0416': {'attack_ids': ['T1106', 'T1056.004', 'T1070.004'],
            'description': '[RDFSNIFFER](https://attack.mitre.org/software/S0416) is a module loaded by '
                           '[BOOSTWRITE](https://attack.mitre.org/software/S0415) which allows an attacker to monitor '
                           'and tamper with legitimate connections made via an application designed to provide '
@@ -16261,27 +18633,27 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0416',
            'type': 'malware'},
- 'S0417': {'attack_ids': ['T1124', 'T1082', 'T1059.001', 'T1053.005', 'T1113', 'T1069.002', 'T1547.001', 'T1059.007'],
+ 'S0417': {'attack_ids': ['T1124', 'T1082', 'T1059.001', 'T1053.005', 'T1059.007', 'T1113', 'T1069.002', 'T1547.001'],
            'description': '[GRIFFON](https://attack.mitre.org/software/S0417) is a JavaScript backdoor used by '
                           '[FIN7](https://attack.mitre.org/groups/G0046). (Citation: SecureList Griffon May 2019)',
            'name': 'GRIFFON',
            'platforms': ['Windows'],
            'software_id': 'S0417',
            'type': 'malware'},
- 'S0418': {'attack_ids': ['T1412',
-                          'T1544',
-                          'T1476',
-                          'T1447',
-                          'T1430',
-                          'T1512',
-                          'T1508',
-                          'T1444',
+ 'S0418': {'attack_ids': ['T1476',
                           'T1433',
-                          'T1437',
+                          'T1533',
+                          'T1412',
                           'T1418',
                           'T1429',
                           'T1426',
-                          'T1533'],
+                          'T1508',
+                          'T1512',
+                          'T1437',
+                          'T1447',
+                          'T1544',
+                          'T1444',
+                          'T1430'],
            'description': '[ViceLeaker](https://attack.mitre.org/software/S0418) is a spyware framework, capable of '
                           'extensive surveillance and data exfiltration operations, primarily targeting devices '
                           'belonging to Israeli citizens.(Citation: SecureList - ViceLeaker 2019)(Citation: '
@@ -16290,7 +18662,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0418',
            'type': 'malware'},
- 'S0419': {'attack_ids': ['T1402', 'T1476', 'T1472', 'T1475', 'T1508', 'T1444'],
+ 'S0419': {'attack_ids': ['T1476', 'T1402', 'T1475', 'T1508', 'T1472', 'T1444'],
            'description': '[SimBad](https://attack.mitre.org/software/S0419) was a strain of adware on the Google Play '
                           'Store, distributed through the RXDroider Software Development Kit. The name "SimBad" was '
                           'derived from the fact that most of the infected applications were simulator games. The '
@@ -16300,7 +18672,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0419',
            'type': 'malware'},
- 'S0420': {'attack_ids': ['T1406', 'T1475', 'T1407', 'T1400', 'T1404', 'T1426', 'T1478'],
+ 'S0420': {'attack_ids': ['T1404', 'T1426', 'T1475', 'T1400', 'T1478', 'T1407', 'T1406'],
            'description': '[Dvmap](https://attack.mitre.org/software/S0420) is rooting malware that injects malicious '
                           'code into system runtime libraries. It is credited with being the first malware that '
                           'performs this type of code injection.(Citation: SecureList DVMap June 2017)',
@@ -16308,24 +18680,24 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0420',
            'type': 'malware'},
- 'S0421': {'attack_ids': ['T1412',
+ 'S0421': {'attack_ids': ['T1476',
                           'T1402',
-                          'T1476',
-                          'T1447',
-                          'T1432',
-                          'T1406',
-                          'T1414',
-                          'T1430',
-                          'T1512',
-                          'T1424',
                           'T1433',
-                          'T1437',
-                          'T1426',
+                          'T1424',
+                          'T1412',
                           'T1429',
-                          'T1418',
                           'T1533',
+                          'T1418',
+                          'T1432',
+                          'T1426',
+                          'T1512',
+                          'T1513',
+                          'T1437',
                           'T1532',
-                          'T1513'],
+                          'T1447',
+                          'T1414',
+                          'T1406',
+                          'T1430'],
            'description': '[GolfSpy](https://attack.mitre.org/software/S0421) is Android spyware deployed by the group '
                           '[Bouncing Golf](https://attack.mitre.org/groups/G0097).(Citation: Trend Micro Bouncing Golf '
                           '2019)',
@@ -16333,22 +18705,22 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0421',
            'type': 'malware'},
- 'S0422': {'attack_ids': ['T1411',
-                          'T1412',
-                          'T1476',
-                          'T1432',
-                          'T1430',
-                          'T1444',
+ 'S0422': {'attack_ids': ['T1476',
+                          'T1582',
                           'T1481',
-                          'T1417',
                           'T1533',
-                          'T1426',
                           'T1429',
-                          'T1418',
                           'T1471',
+                          'T1418',
+                          'T1432',
+                          'T1426',
+                          'T1478',
                           'T1532',
                           'T1513',
-                          'T1478'],
+                          'T1411',
+                          'T1417',
+                          'T1444',
+                          'T1430'],
            'description': '[Anubis](https://attack.mitre.org/software/S0422) is Android malware that was originally '
                           'used for cyber espionage, and has been retooled as a banking trojan.(Citation: Cofense '
                           'Anubis)',
@@ -16356,18 +18728,19 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0422',
            'type': 'malware'},
- 'S0423': {'attack_ids': ['T1411',
+ 'S0423': {'attack_ids': ['T1533',
                           'T1412',
-                          'T1432',
-                          'T1406',
-                          'T1508',
-                          'T1444',
-                          'T1523',
-                          'T1413',
                           'T1418',
+                          'T1523',
+                          'T1432',
+                          'T1508',
+                          'T1413',
+                          'T1513',
+                          'T1411',
                           'T1516',
-                          'T1533',
-                          'T1513'],
+                          'T1582',
+                          'T1406',
+                          'T1444'],
            'description': '[Ginp](https://attack.mitre.org/software/S0423) is an Android banking trojan that has been '
                           'used to target Spanish banks. Some of the code was taken directly from '
                           '[Anubis](https://attack.mitre.org/software/S0422).(Citation: ThreatFabric Ginp)',
@@ -16375,7 +18748,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0423',
            'type': 'malware'},
- 'S0424': {'attack_ids': ['T1412', 'T1474', 'T1472', 'T1475', 'T1407', 'T1437', 'T1418', 'T1540', 'T1532'],
+ 'S0424': {'attack_ids': ['T1474', 'T1412', 'T1418', 'T1475', 'T1472', 'T1532', 'T1437', 'T1407', 'T1540'],
            'description': '[Triada](https://attack.mitre.org/software/S0424) was first reported in 2016 as a second '
                           'stage malware. Later versions in 2019 appeared with new techniques and as an initial '
                           'downloader of other Trojan apps.(Citation: Kaspersky Triada March 2016)',
@@ -16383,18 +18756,19 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0424',
            'type': 'malware'},
- 'S0425': {'attack_ids': ['T1422',
-                          'T1412',
-                          'T1432',
+ 'S0425': {'attack_ids': ['T1433',
                           'T1430',
-                          'T1475',
-                          'T1512',
-                          'T1433',
-                          'T1437',
-                          'T1426',
+                          'T1412',
+                          'T1533',
                           'T1429',
+                          'T1432',
+                          'T1475',
+                          'T1426',
+                          'T1512',
                           'T1517',
-                          'T1533'],
+                          'T1437',
+                          'T1582',
+                          'T1422'],
            'description': '[Corona Updates](https://attack.mitre.org/software/S0425) is Android spyware that took '
                           'advantage of the Coronavirus pandemic. The campaign distributing this spyware is tracked as '
                           'Project Spy. Multiple variants of this spyware have been discovered to have been hosted on '
@@ -16413,20 +18787,21 @@ software_map = {
            'platforms': ['iOS'],
            'software_id': 'S0426',
            'type': 'malware'},
- 'S0427': {'attack_ids': ['T1422',
+ 'S0427': {'attack_ids': ['T1402',
+                          'T1533',
                           'T1412',
-                          'T1402',
-                          'T1406',
-                          'T1446',
-                          'T1523',
-                          'T1438',
-                          'T1437',
                           'T1418',
+                          'T1523',
                           'T1426',
                           'T1576',
-                          'T1533',
+                          'T1438',
+                          'T1446',
+                          'T1513',
+                          'T1437',
                           'T1516',
-                          'T1513'],
+                          'T1582',
+                          'T1406',
+                          'T1422'],
            'description': '[TrickMo](https://attack.mitre.org/software/S0427) a 2FA bypass mobile banking trojan, most '
                           'likely being distributed by [TrickBot](https://attack.mitre.org/software/S0266). '
                           '[TrickMo](https://attack.mitre.org/software/S0427) has been primarily targeting users '
@@ -16439,33 +18814,33 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0427',
            'type': 'malware'},
- 'S0428': {'attack_ids': ['T1497.001',
+ 'S0428': {'attack_ids': ['T1571',
                           'T1082',
+                          'T1560.001',
+                          'T1112',
                           'T1559.002',
-                          'T1056.001',
+                          'T1033',
                           'T1204.002',
-                          'T1564.001',
-                          'T1027',
+                          'T1003.001',
+                          'T1018',
+                          'T1125',
+                          'T1056.001',
                           'T1566.001',
+                          'T1059.005',
+                          'T1070',
+                          'T1105',
+                          'T1027',
+                          'T1048',
+                          'T1119',
+                          'T1113',
+                          'T1497.001',
+                          'T1083',
+                          'T1564.001',
+                          'T1059.006',
                           'T1573.002',
                           'T1547.001',
-                          'T1125',
-                          'T1033',
-                          'T1105',
-                          'T1119',
-                          'T1070',
-                          'T1018',
                           'T1057',
-                          'T1571',
-                          'T1560.001',
-                          'T1059.005',
-                          'T1112',
-                          'T1003.001',
                           'T1555.003',
-                          'T1113',
-                          'T1059.006',
-                          'T1048',
-                          'T1083',
                           'T1048.003'],
            'description': '[PoetRAT](https://attack.mitre.org/software/S0428) is a Python-based remote access trojan '
                           '(RAT) used in multiple campaigns against the private and public sectors in Azerbaijan, '
@@ -16476,7 +18851,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0428',
            'type': 'malware'},
- 'S0430': {'attack_ids': ['T1105', 'T1573.001', 'T1205', 'T1095', 'T1071.001', 'T1027', 'T1140', 'T1014'],
+ 'S0430': {'attack_ids': ['T1095', 'T1071.001', 'T1014', 'T1205', 'T1573.001', 'T1105', 'T1027', 'T1140'],
            'description': '[Winnti for Linux](https://attack.mitre.org/software/S0430) is a trojan, seen since at '
                           'least 2015, designed specifically for targeting Linux systems. Reporting indicates the '
                           'winnti malware family is shared across a number of actors including [Winnti '
@@ -16488,25 +18863,25 @@ software_map = {
            'software_id': 'S0430',
            'type': 'malware'},
  'S0431': {'attack_ids': ['T1082',
-                          'T1564.003',
-                          'T1027',
-                          'T1027.002',
                           'T1033',
-                          'T1007',
-                          'T1105',
-                          'T1489',
-                          'T1057',
-                          'T1041',
-                          'T1070.004',
-                          'T1518',
+                          'T1027.002',
                           'T1010',
-                          'T1059.003',
+                          'T1041',
                           'T1573.001',
-                          'T1053.005',
+                          'T1105',
+                          'T1027',
+                          'T1518',
+                          'T1106',
+                          'T1007',
+                          'T1489',
                           'T1113',
                           'T1083',
-                          'T1016',
-                          'T1106'],
+                          'T1059.003',
+                          'T1070.004',
+                          'T1053.005',
+                          'T1564.003',
+                          'T1057',
+                          'T1016'],
            'description': '[HotCroissant](https://attack.mitre.org/software/S0431) is a remote access trojan (RAT) '
                           'attributed by U.S. government entities to malicious North Korean government cyber activity, '
                           'tracked collectively as HIDDEN COBRA.(Citation: US-CERT HOTCROISSANT February 2020) '
@@ -16517,7 +18892,17 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0431',
            'type': 'malware'},
- 'S0432': {'attack_ids': ['T1452', 'T1422', 'T1412', 'T1406', 'T1475', 'T1407', 'T1575', 'T1437', 'T1448'],
+ 'S0432': {'attack_ids': ['T1476',
+                          'T1412',
+                          'T1475',
+                          'T1575',
+                          'T1517',
+                          'T1448',
+                          'T1437',
+                          'T1452',
+                          'T1407',
+                          'T1406',
+                          'T1422'],
            'description': '[Bread](https://attack.mitre.org/software/S0432) was a large-scale billing fraud malware '
                           'family known for employing many different cloaking and obfuscation techniques in an attempt '
                           'to continuously evade Google Play Store’s malware detection. 1,700 unique Bread apps were '
@@ -16527,14 +18912,14 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0432',
            'type': 'malware'},
- 'S0433': {'attack_ids': ['T1033',
-                          'T1082',
-                          'T1573.001',
-                          'T1204.002',
-                          'T1027',
+ 'S0433': {'attack_ids': ['T1082',
                           'T1566.001',
                           'T1027.001',
+                          'T1033',
+                          'T1204.002',
+                          'T1573.001',
                           'T1547.001',
+                          'T1027',
                           'T1016'],
            'description': '[Rifdoor](https://attack.mitre.org/software/S0433) is a remote access trojan (RAT) that '
                           'shares numerous code similarities with '
@@ -16544,22 +18929,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0433',
            'type': 'malware'},
- 'S0434': {'attack_ids': ['T1083',
-                          'T1041',
-                          'T1070.004',
-                          'T1496',
-                          'T1555.003',
+ 'S0434': {'attack_ids': ['T1496',
+                          'T1083',
+                          'T1562.001',
                           'T1123',
                           'T1056.001',
                           'T1027',
-                          'T1564.001',
-                          'T1021.001',
-                          'T1562.001',
-                          'T1057',
                           'T1140',
+                          'T1070.004',
+                          'T1564.001',
                           'T1059',
-                          'T1125',
-                          'T1106'],
+                          'T1041',
+                          'T1057',
+                          'T1021.001',
+                          'T1106',
+                          'T1555.003',
+                          'T1125'],
            'description': '[Imminent Monitor](https://attack.mitre.org/software/S0434) was a commodity remote access '
                           'tool (RAT) offered for sale from 2012 until 2019, when an operation was conducted to take '
                           'down the Imminent Monitor infrastructure. Various cracked versions and variations of this '
@@ -16568,20 +18953,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0434',
            'type': 'tool'},
- 'S0435': {'attack_ids': ['T1090',
-                          'T1070.004',
-                          'T1105',
-                          'T1555.003',
-                          'T1573.001',
-                          'T1555',
+ 'S0435': {'attack_ids': ['T1083',
                           'T1059.003',
-                          'T1204.002',
+                          'T1555',
+                          'T1070.004',
+                          'T1204.001',
                           'T1071.001',
                           'T1001.001',
-                          'T1204.001',
-                          'T1083',
+                          'T1105',
+                          'T1090',
+                          'T1204.002',
+                          'T1573.001',
+                          'T1010',
                           'T1057',
-                          'T1010'],
+                          'T1555.003'],
            'description': '[PLEAD](https://attack.mitre.org/software/S0435) is a remote access tool (RAT) and '
                           'downloader used by [BlackTech](https://attack.mitre.org/groups/G0098) in targeted attacks '
                           'in East Asia including Taiwan, Japan, and Hong Kong.(Citation: TrendMicro BlackTech June '
@@ -16594,19 +18979,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0435',
            'type': 'malware'},
- 'S0436': {'attack_ids': ['T1090',
-                          'T1555.003',
+ 'S0436': {'attack_ids': ['T1555.003',
                           'T1059.003',
+                          'T1055',
+                          'T1095',
+                          'T1204.001',
+                          'T1071.001',
+                          'T1090',
+                          'T1057',
                           'T1573.001',
                           'T1105',
-                          'T1095',
-                          'T1055',
-                          'T1071.001',
-                          'T1204.001',
                           'T1083',
                           'T1016',
-                          'T1140',
-                          'T1057'],
+                          'T1140'],
            'description': '[TSCookie](https://attack.mitre.org/software/S0436) is a remote access tool (RAT) that has '
                           'been used by [BlackTech](https://attack.mitre.org/groups/G0098) in campaigns against '
                           'Japanese targets.(Citation: JPCert TSCookie March 2018)(Citation: JPCert BlackTech Malware '
@@ -16618,7 +19003,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0436',
            'type': 'malware'},
- 'S0437': {'attack_ids': ['T1070.004', 'T1564.003', 'T1021', 'T1105', 'T1113', 'T1056.001', 'T1083'],
+ 'S0437': {'attack_ids': ['T1056.001', 'T1070.004', 'T1564.003', 'T1113', 'T1021', 'T1105', 'T1083'],
            'description': '[Kivars](https://attack.mitre.org/software/S0437) is a modular remote access tool (RAT), '
                           'derived from the Bifrost RAT, that was used by '
                           '[BlackTech](https://attack.mitre.org/groups/G0098) in a 2010 campaign.(Citation: TrendMicro '
@@ -16627,41 +19012,41 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0437',
            'type': 'malware'},
- 'S0438': {'attack_ids': ['T1497.001',
-                          'T1082',
-                          'T1120',
-                          'T1056.001',
-                          'T1027',
-                          'T1564.001',
-                          'T1573.002',
-                          'T1129',
-                          'T1074.001',
-                          'T1115',
-                          'T1036.004',
-                          'T1105',
-                          'T1543.003',
-                          'T1119',
-                          'T1070.006',
-                          'T1020',
-                          'T1041',
-                          'T1070.004',
-                          'T1037.001',
-                          'T1055.004',
-                          'T1123',
-                          'T1055',
+ 'S0438': {'attack_ids': ['T1082',
                           'T1112',
-                          'T1012',
-                          'T1560.003',
+                          'T1129',
+                          'T1020',
+                          'T1070.006',
                           'T1010',
-                          'T1573.001',
-                          'T1053.005',
-                          'T1113',
-                          'T1569.002',
-                          'T1071.002',
-                          'T1090.003',
-                          'T1083',
                           'T1218.011',
-                          'T1106'],
+                          'T1036.004',
+                          'T1056.001',
+                          'T1120',
+                          'T1090.003',
+                          'T1041',
+                          'T1573.001',
+                          'T1037.001',
+                          'T1106',
+                          'T1105',
+                          'T1027',
+                          'T1569.002',
+                          'T1119',
+                          'T1055',
+                          'T1123',
+                          'T1113',
+                          'T1497.001',
+                          'T1083',
+                          'T1070.004',
+                          'T1564.001',
+                          'T1560.003',
+                          'T1055.004',
+                          'T1074.001',
+                          'T1053.005',
+                          'T1071.002',
+                          'T1573.002',
+                          'T1012',
+                          'T1543.003',
+                          'T1115'],
            'description': '[Attor](https://attack.mitre.org/software/S0438) is a Windows-based espionage platform that '
                           'has been seen in use since 2013. [Attor](https://attack.mitre.org/software/S0438) has a '
                           'loadable plugin architecture to customize functionality for specific targets.(Citation: '
@@ -16670,38 +19055,38 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0438',
            'type': 'malware'},
- 'S0439': {'attack_ids': ['T1497.001',
-                          'T1082',
-                          'T1056.001',
-                          'T1564.001',
-                          'T1497.003',
-                          'T1003.005',
-                          'T1132.001',
-                          'T1547.001',
-                          'T1134.001',
-                          'T1033',
-                          'T1036.004',
-                          'T1027.003',
-                          'T1105',
-                          'T1543.003',
-                          'T1001.003',
-                          'T1049',
-                          'T1090.002',
-                          'T1041',
+ 'S0439': {'attack_ids': ['T1082',
                           'T1560.001',
+                          'T1033',
+                          'T1003.005',
+                          'T1497.002',
+                          'T1003.001',
+                          'T1036.004',
+                          'T1056.001',
+                          'T1041',
+                          'T1573.001',
+                          'T1105',
+                          'T1140',
+                          'T1497.003',
+                          'T1569.002',
+                          'T1027.003',
+                          'T1134.001',
+                          'T1001.003',
+                          'T1497.001',
+                          'T1083',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1049',
+                          'T1124',
+                          'T1090.002',
                           'T1070.004',
+                          'T1564.001',
+                          'T1560.003',
+                          'T1053.005',
                           'T1071.001',
                           'T1547.009',
-                          'T1140',
-                          'T1560.003',
-                          'T1124',
-                          'T1003.001',
-                          'T1497.002',
-                          'T1059.003',
-                          'T1573.001',
-                          'T1053.005',
-                          'T1569.002',
-                          'T1083',
+                          'T1547.001',
+                          'T1543.003',
                           'T1016'],
            'description': '[Okrum](https://attack.mitre.org/software/S0439) is a Windows backdoor that has been seen '
                           'in use since December 2016 with strong links to '
@@ -16710,7 +19095,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0439',
            'type': 'malware'},
- 'S0440': {'attack_ids': ['T1476', 'T1577', 'T1447', 'T1472', 'T1406', 'T1508', 'T1424', 'T1444', 'T1404', 'T1418'],
+ 'S0440': {'attack_ids': ['T1476', 'T1424', 'T1404', 'T1418', 'T1508', 'T1472', 'T1577', 'T1447', 'T1406', 'T1444'],
            'description': '[Agent Smith](https://attack.mitre.org/software/S0440) is mobile malware that generates '
                           'financial gain by replacing legitimate applications on devices with malicious versions that '
                           'include fraudulent ads. As of July 2019 [Agent '
@@ -16722,20 +19107,20 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0440',
            'type': 'malware'},
- 'S0441': {'attack_ids': ['T1033',
-                          'T1041',
-                          'T1082',
-                          'T1560.001',
-                          'T1070.004',
-                          'T1564.003',
+ 'S0441': {'attack_ids': ['T1082',
                           'T1059.001',
-                          'T1132.001',
-                          'T1059.005',
+                          'T1070.004',
+                          'T1560.001',
                           'T1112',
+                          'T1564.003',
                           'T1071.001',
+                          'T1033',
+                          'T1059.005',
+                          'T1041',
                           'T1547.001',
                           'T1057',
-                          'T1016'],
+                          'T1016',
+                          'T1132.001'],
            'description': '[PowerShower](https://attack.mitre.org/software/S0441) is a PowerShell backdoor used by '
                           '[Inception](https://attack.mitre.org/groups/G0100) for initial reconnaissance and to '
                           'download and execute second stage payloads.(Citation: Unit 42 Inception November '
@@ -16744,7 +19129,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0441',
            'type': 'malware'},
- 'S0442': {'attack_ids': ['T1070.004', 'T1105', 'T1059.005', 'T1071.001', 'T1547.001'],
+ 'S0442': {'attack_ids': ['T1070.004', 'T1071.001', 'T1059.005', 'T1547.001', 'T1105'],
            'description': '[VBShower](https://attack.mitre.org/software/S0442) is a backdoor that has been used by '
                           '[Inception](https://attack.mitre.org/groups/G0100) since at least 2019. '
                           '[VBShower](https://attack.mitre.org/software/S0442) has been used as a downloader for '
@@ -16755,7 +19140,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0442',
            'type': 'malware'},
- 'S0443': {'attack_ids': ['T1074.001', 'T1040', 'T1070.004', 'T1119', 'T1049', 'T1083', 'T1140', 'T1560.003'],
+ 'S0443': {'attack_ids': ['T1049', 'T1119', 'T1140', 'T1070.004', 'T1560.003', 'T1074.001', 'T1083', 'T1040'],
            'description': '[MESSAGETAP](https://attack.mitre.org/software/S0443) is a data mining malware family '
                           'deployed by [APT41](https://attack.mitre.org/groups/G0096) into telecommunications networks '
                           'to monitor and save SMS traffic from specific phone numbers, IMSI numbers, or that contain '
@@ -16765,26 +19150,26 @@ software_map = {
            'software_id': 'S0443',
            'type': 'malware'},
  'S0444': {'attack_ids': ['T1574',
-                          'T1027',
-                          'T1027.002',
-                          'T1547.001',
-                          'T1036.004',
-                          'T1008',
-                          'T1105',
-                          'T1543.003',
-                          'T1090.002',
-                          'T1005',
-                          'T1546.011',
-                          'T1070.004',
-                          'T1029',
-                          'T1071.001',
                           'T1112',
-                          'T1548.002',
-                          'T1140',
-                          'T1059.003',
+                          'T1027.002',
+                          'T1029',
+                          'T1036.004',
+                          'T1546.011',
+                          'T1008',
+                          'T1005',
                           'T1135',
+                          'T1105',
+                          'T1106',
+                          'T1027',
+                          'T1140',
+                          'T1548.002',
                           'T1083',
-                          'T1106'],
+                          'T1059.003',
+                          'T1090.002',
+                          'T1070.004',
+                          'T1071.001',
+                          'T1547.001',
+                          'T1543.003'],
            'description': '[ShimRat](https://attack.mitre.org/software/S0444) has been used by the suspected '
                           'China-based adversary [Mofang](https://attack.mitre.org/groups/G0103) in campaigns '
                           'targeting multiple countries and sectors including government, military, critical '
@@ -16796,22 +19181,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0444',
            'type': 'malware'},
- 'S0445': {'attack_ids': ['T1041',
-                          'T1020',
-                          'T1082',
-                          'T1087',
-                          'T1105',
-                          'T1069',
-                          'T1518',
+ 'S0445': {'attack_ids': ['T1049',
                           'T1119',
                           'T1027',
+                          'T1082',
                           'T1071.001',
-                          'T1036.005',
-                          'T1049',
-                          'T1560',
+                          'T1105',
+                          'T1518',
+                          'T1020',
+                          'T1041',
+                          'T1106',
                           'T1057',
-                          'T1016',
-                          'T1106'],
+                          'T1087',
+                          'T1069',
+                          'T1036.005',
+                          'T1560',
+                          'T1016'],
            'description': '[ShimRatReporter](https://attack.mitre.org/software/S0445) is a tool used by suspected '
                           'Chinese adversary [Mofang](https://attack.mitre.org/groups/G0103) to automatically conduct '
                           'initial discovery. The details from this discovery are used to customize follow-on payloads '
@@ -16824,19 +19209,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0445',
            'type': 'tool'},
- 'S0446': {'attack_ids': ['T1059.003',
-                          'T1134',
+ 'S0446': {'attack_ids': ['T1562.001',
                           'T1055',
+                          'T1059.003',
                           'T1489',
                           'T1036.005',
-                          'T1083',
-                          'T1562.001',
+                          'T1134',
+                          'T1486',
+                          'T1106',
                           'T1547.001',
                           'T1057',
-                          'T1486',
-                          'T1016',
-                          'T1106',
-                          'T1490'],
+                          'T1083',
+                          'T1490',
+                          'T1016'],
            'description': '[Ryuk](https://attack.mitre.org/software/S0446) is a ransomware designed to target '
                           'enterprise environments that has been used in attacks since at least 2018. '
                           '[Ryuk](https://attack.mitre.org/software/S0446) shares code similarities with Hermes '
@@ -16846,19 +19231,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0446',
            'type': 'malware'},
- 'S0447': {'attack_ids': ['T1033',
-                          'T1041',
-                          'T1082',
-                          'T1055.012',
-                          'T1555.003',
+ 'S0447': {'attack_ids': ['T1056.001',
                           'T1555',
-                          'T1056.001',
-                          'T1204.002',
                           'T1027',
-                          'T1071.001',
-                          'T1027.002',
+                          'T1082',
                           'T1564.001',
-                          'T1016'],
+                          'T1033',
+                          'T1027.002',
+                          'T1071.001',
+                          'T1041',
+                          'T1204.002',
+                          'T1555.003',
+                          'T1016',
+                          'T1055.012'],
            'description': '[Lokibot](https://attack.mitre.org/software/S0447) is a malware designed to collect '
                           'credentials and security tokens from an infected machine. '
                           '[Lokibot](https://attack.mitre.org/software/S0447) has also been used to establish '
@@ -16868,21 +19253,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0447',
            'type': 'malware'},
- 'S0448': {'attack_ids': ['T1033',
-                          'T1041',
-                          'T1082',
-                          'T1070.004',
-                          'T1059.003',
-                          'T1071.001',
+ 'S0448': {'attack_ids': ['T1059.003',
                           'T1027',
+                          'T1070.004',
+                          'T1082',
+                          'T1560.003',
                           'T1564.001',
-                          'T1083',
-                          'T1070',
+                          'T1033',
+                          'T1071.001',
+                          'T1041',
                           'T1057',
-                          'T1140',
-                          'T1016',
+                          'T1070',
                           'T1106',
-                          'T1560.003'],
+                          'T1083',
+                          'T1016',
+                          'T1140'],
            'description': '[Rising Sun](https://attack.mitre.org/software/S0448) is a modular backdoor malware used '
                           'extensively in Operation [Sharpshooter](https://attack.mitre.org/groups/G0104). The malware '
                           'has been observed targeting nuclear, defense, energy, and financial services companies '
@@ -16893,31 +19278,39 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0448',
            'type': 'malware'},
- 'S0449': {'attack_ids': ['T1082',
-                          'T1568',
+ 'S0449': {'attack_ids': ['T1047',
+                          'T1218.007',
+                          'T1082',
+                          'T1529',
                           'T1055.001',
-                          'T1059.003',
-                          'T1047',
-                          'T1071.001',
-                          'T1027',
-                          'T1027.001',
-                          'T1049',
+                          'T1568',
                           'T1562.001',
-                          'T1057',
-                          'T1486',
+                          'T1036.004',
                           'T1070',
                           'T1106',
-                          'T1490'],
-           'description': '[MAZE](https://attack.mitre.org/software/S0449) ransomware, previously known as "ChaCha", '
+                          'T1027',
+                          'T1490',
+                          'T1489',
+                          'T1049',
+                          'T1059.003',
+                          'T1053.005',
+                          'T1027.001',
+                          'T1071.001',
+                          'T1486',
+                          'T1547.001',
+                          'T1057',
+                          'T1564.006'],
+           'description': '[Maze](https://attack.mitre.org/software/S0449) ransomware, previously known as "ChaCha", '
                           'was discovered in May 2019. In addition to encrypting files on victim machines for impact, '
-                          '[MAZE](https://attack.mitre.org/software/S0449) operators conduct information stealing '
+                          '[Maze](https://attack.mitre.org/software/S0449) operators conduct information stealing '
                           'campaigns prior to encryption and post the information online to extort affected '
-                          'companies.(Citation: FireEye Maze May 2020)(Citation: McAfee Maze March 2020)',
-           'name': 'MAZE',
+                          'companies.(Citation: FireEye Maze May 2020)(Citation: McAfee Maze March 2020)(Citation: '
+                          'Sophos Maze VM September 2020)',
+           'name': 'Maze',
            'platforms': ['Windows'],
            'software_id': 'S0449',
            'type': 'malware'},
- 'S0450': {'attack_ids': ['T1124', 'T1033', 'T1082', 'T1059.001', 'T1105', 'T1027', 'T1016'],
+ 'S0450': {'attack_ids': ['T1124', 'T1082', 'T1059.001', 'T1033', 'T1105', 'T1027', 'T1016'],
            'description': '[SHARPSTATS](https://attack.mitre.org/software/S0450) is a .NET backdoor used by '
                           '[MuddyWater](https://attack.mitre.org/groups/G0069) since at least 2019.(Citation: '
                           'TrendMicro POWERSTATS V3 June 2019)',
@@ -16925,25 +19318,24 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0450',
            'type': 'malware'},
- 'S0451': {'attack_ids': ['T1082',
+ 'S0451': {'attack_ids': ['T1496',
+                          'T1569.002',
+                          'T1569.001',
+                          'T1059.003',
                           'T1218.007',
-                          'T1027',
+                          'T1082',
+                          'T1070.004',
                           'T1564.001',
-                          'T1547.011',
-                          'T1189',
                           'T1105',
                           'T1059.004',
-                          'T1543.003',
-                          'T1569.001',
-                          'T1057',
-                          'T1070.004',
                           'T1543.004',
-                          'T1547',
-                          'T1059.003',
-                          'T1564.006',
-                          'T1569.002',
-                          'T1496',
-                          'T1016'],
+                          'T1547.011',
+                          'T1057',
+                          'T1543.003',
+                          'T1027',
+                          'T1189',
+                          'T1016',
+                          'T1564.006'],
            'description': '[LoudMiner](https://attack.mitre.org/software/S0451) is a cryptocurrency miner which uses '
                           'virtualization software to siphon system resources. The miner has been bundled with pirated '
                           'copies of Virtual Studio Technology (VST) for Windows and macOS.(Citation: ESET LoudMiner '
@@ -16952,17 +19344,17 @@ software_map = {
            'platforms': ['macOS', 'Windows'],
            'software_id': 'S0451',
            'type': 'malware'},
- 'S0452': {'attack_ids': ['T1091',
-                          'T1005',
-                          'T1218.011',
-                          'T1059.003',
-                          'T1120',
-                          'T1087.001',
+ 'S0452': {'attack_ids': ['T1059.003',
                           'T1049',
-                          'T1083',
-                          'T1057',
+                          'T1005',
+                          'T1087.001',
+                          'T1120',
                           'T1018',
-                          'T1016'],
+                          'T1057',
+                          'T1083',
+                          'T1016',
+                          'T1091',
+                          'T1218.011'],
            'description': '[USBferry](https://attack.mitre.org/software/S0452) is an information stealing malware and '
                           'has been used by [Tropic Trooper](https://attack.mitre.org/groups/G0081) in targeted '
                           'attacks against Taiwanese and Philippine air-gapped military environments. '
@@ -16973,21 +19365,21 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0452',
            'type': 'malware'},
- 'S0453': {'attack_ids': ['T1082',
+ 'S0453': {'attack_ids': ['T1059.003',
                           'T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1566.002',
-                          'T1204.002',
-                          'T1071.001',
-                          'T1027',
-                          'T1497.003',
-                          'T1036.005',
-                          'T1087.001',
+                          'T1110.001',
+                          'T1082',
                           'T1566.001',
                           'T1204.001',
+                          'T1087.001',
+                          'T1071.001',
+                          'T1204.002',
                           'T1106',
-                          'T1110.001'],
+                          'T1036.005',
+                          'T1105',
+                          'T1027',
+                          'T1566.002',
+                          'T1497.003'],
            'description': '[Pony](https://attack.mitre.org/software/S0453) is a credential stealing malware, though '
                           'has also been used among adversaries for its downloader capabilities. The source code for '
                           'Pony Loader 1.0 and 2.0 were leaked online, leading to their use by various threat '
@@ -16996,63 +19388,85 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0453',
            'type': 'malware'},
- 'S0454': {'attack_ids': ['T1115', 'T1082', 'T1120', 'T1113', 'T1123', 'T1056.001', 'T1560', 'T1010'],
+ 'S0454': {'attack_ids': ['T1123', 'T1056.001', 'T1082', 'T1113', 'T1120', 'T1560', 'T1010', 'T1115'],
            'description': '[Cadelspy](https://attack.mitre.org/software/S0454) is a backdoor that has been used by '
                           '[APT39](https://attack.mitre.org/groups/G0087).(Citation: Symantec Chafer Dec 2015)',
            'name': 'Cadelspy',
            'platforms': ['Windows'],
            'software_id': 'S0454',
            'type': 'malware'},
- 'S0455': {'attack_ids': ['T1564.003',
-                          'T1027',
-                          'T1573.002',
-                          'T1547.001',
-                          'T1059.007',
-                          'T1105',
-                          'T1553.002',
-                          'T1057',
-                          'T1055.001',
-                          'T1070.004',
-                          'T1497',
-                          'T1071.001',
+ 'S0455': {'attack_ids': ['T1571',
+                          'T1082',
+                          'T1218.007',
+                          'T1095',
                           'T1112',
+                          'T1129',
+                          'T1027.002',
+                          'T1204.002',
+                          'T1497',
+                          'T1010',
+                          'T1553.002',
                           'T1574.002',
-                          'T1036.005',
+                          'T1518.001',
+                          'T1055.001',
+                          'T1562.001',
+                          'T1056.001',
+                          'T1102.003',
+                          'T1565.002',
+                          'T1566.001',
+                          'T1059.005',
+                          'T1070',
+                          'T1106',
+                          'T1027',
+                          'T1518',
+                          'T1105',
                           'T1140',
-                          'T1124',
-                          'T1059.003',
+                          'T1119',
+                          'T1059.007',
+                          'T1113',
+                          'T1036.005',
                           'T1083',
-                          'T1106'],
+                          'T1059.003',
+                          'T1124',
+                          'T1070.004',
+                          'T1564.003',
+                          'T1071.001',
+                          'T1573.002',
+                          'T1218.005',
+                          'T1547.001',
+                          'T1057',
+                          'T1115',
+                          'T1056.002'],
            'description': '[Metamorfo](https://attack.mitre.org/software/S0455) is a banking trojan operated by a '
                           'Brazilian cybercrime group that has been active since at least April 2018. The group '
-                          'focuses on targeting mostly brazilian users.(Citation: Medium Metamorfo Apr 2020)',
+                          'focuses on targeting mostly Brazilian users.(Citation: Medium Metamorfo Apr 2020)',
            'name': 'Metamorfo',
            'platforms': ['Windows'],
            'software_id': 'S0455',
            'type': 'malware'},
  'S0456': {'attack_ids': ['T1082',
-                          'T1025',
-                          'T1027',
-                          'T1560',
-                          'T1547.001',
-                          'T1134.001',
-                          'T1033',
-                          'T1105',
-                          'T1134.002',
-                          'T1049',
-                          'T1057',
-                          'T1055.001',
-                          'T1070.004',
                           'T1095',
-                          'T1071.001',
-                          'T1140',
-                          'T1010',
+                          'T1033',
                           'T1090',
+                          'T1010',
                           'T1568.002',
+                          'T1055.001',
+                          'T1025',
+                          'T1134.002',
+                          'T1106',
+                          'T1105',
+                          'T1027',
+                          'T1140',
+                          'T1134.001',
                           'T1113',
+                          'T1560',
                           'T1083',
-                          'T1016',
-                          'T1106'],
+                          'T1049',
+                          'T1070.004',
+                          'T1071.001',
+                          'T1547.001',
+                          'T1057',
+                          'T1016'],
            'description': '[Aria-body](https://attack.mitre.org/software/S0456) is a custom backdoor that has been '
                           'used by [Naikon](https://attack.mitre.org/groups/G0019).(Citation: CheckPoint Naikon May '
                           '2020)',
@@ -17060,23 +19474,23 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0456',
            'type': 'malware'},
- 'S0457': {'attack_ids': ['T1570',
-                          'T1055.001',
+ 'S0457': {'attack_ids': ['T1569.002',
+                          'T1562.001',
+                          'T1059.003',
+                          'T1489',
+                          'T1047',
                           'T1082',
                           'T1059.001',
-                          'T1105',
-                          'T1059.003',
-                          'T1569.002',
                           'T1518.001',
-                          'T1047',
                           'T1112',
-                          'T1027',
-                          'T1489',
-                          'T1562.001',
-                          'T1140',
+                          'T1570',
+                          'T1105',
                           'T1486',
                           'T1106',
-                          'T1490'],
+                          'T1027',
+                          'T1490',
+                          'T1055.001',
+                          'T1140'],
            'description': '[Netwalker](https://attack.mitre.org/software/S0457) is fileless ransomware written in '
                           'PowerShell and executed directly in memory.(Citation: TrendMicro Netwalker May 2020)',
            'name': 'Netwalker',
@@ -17084,33 +19498,33 @@ software_map = {
            'software_id': 'S0457',
            'type': 'malware'},
  'S0458': {'attack_ids': ['T1082',
-                          'T1559.002',
-                          'T1039',
-                          'T1120',
-                          'T1046',
-                          'T1080',
-                          'T1025',
                           'T1574',
-                          'T1027',
-                          'T1014',
-                          'T1074.001',
-                          'T1119',
                           'T1560.001',
-                          'T1005',
-                          'T1055.001',
-                          'T1059.005',
-                          'T1036.005',
-                          'T1548.002',
-                          'T1140',
+                          'T1559.002',
+                          'T1014',
+                          'T1039',
                           'T1203',
-                          'T1560.003',
-                          'T1091',
-                          'T1546.010',
-                          'T1053.005',
-                          'T1135',
+                          'T1055.001',
                           'T1036',
+                          'T1005',
+                          'T1025',
+                          'T1120',
+                          'T1135',
+                          'T1080',
+                          'T1059.005',
+                          'T1106',
+                          'T1027',
+                          'T1140',
+                          'T1546.010',
+                          'T1119',
+                          'T1548.002',
+                          'T1036.005',
                           'T1083',
-                          'T1106'],
+                          'T1046',
+                          'T1091',
+                          'T1560.003',
+                          'T1053.005',
+                          'T1074.001'],
            'description': '[Ramsay](https://attack.mitre.org/software/S0458) is an information stealing malware '
                           'framework designed to collect and exfiltrate sensitive documents, potentially from '
                           'air-gapped systems. Researchers have identified overlaps between '
@@ -17121,7 +19535,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0458',
            'type': 'malware'},
- 'S0459': {'attack_ids': ['T1033', 'T1041', 'T1105', 'T1059.003', 'T1071.001', 'T1036.005', 'T1059.006', 'T1132.001'],
+ 'S0459': {'attack_ids': ['T1059.003', 'T1059.006', 'T1071.001', 'T1033', 'T1041', 'T1036.005', 'T1105', 'T1132.001'],
            'description': '[MechaFlounder](https://attack.mitre.org/software/S0459) is a python-based remote access '
                           'tool (RAT) that has been used by [APT39](https://attack.mitre.org/groups/G0087). The '
                           'payload uses a combination of actor developed code and code snippets freely available '
@@ -17130,7 +19544,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0459',
            'type': 'malware'},
- 'S0460': {'attack_ids': ['T1033', 'T1082', 'T1055.001', 'T1071.001', 'T1057', 'T1059'],
+ 'S0460': {'attack_ids': ['T1082', 'T1071.001', 'T1033', 'T1059', 'T1057', 'T1055.001'],
            'description': '[Get2](https://attack.mitre.org/software/S0460) is a downloader written in C++ that has '
                           'been used by [TA505](https://attack.mitre.org/groups/G0092) to deliver '
                           '[FlawedGrace](https://attack.mitre.org/software/S0383), '
@@ -17141,24 +19555,24 @@ software_map = {
            'software_id': 'S0460',
            'type': 'malware'},
  'S0461': {'attack_ids': ['T1082',
-                          'T1027',
-                          'T1027.002',
-                          'T1547.001',
-                          'T1125',
-                          'T1033',
-                          'T1546.012',
-                          'T1105',
-                          'T1070',
-                          'T1055.001',
-                          'T1546.011',
-                          'T1070.004',
-                          'T1005',
                           'T1095',
-                          'T1021.001',
-                          'T1140',
+                          'T1033',
+                          'T1027.002',
                           'T1090',
-                          'T1059.003',
+                          'T1021.001',
+                          'T1055.001',
+                          'T1125',
+                          'T1546.011',
+                          'T1005',
+                          'T1070',
+                          'T1105',
+                          'T1027',
+                          'T1140',
                           'T1083',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1546.012',
+                          'T1547.001',
                           'T1016'],
            'description': '[SDBot](https://attack.mitre.org/software/S0461) is a backdoor with installer and loader '
                           'components that has been used by [TA505](https://attack.mitre.org/groups/G0092) since at '
@@ -17167,7 +19581,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0461',
            'type': 'malware'},
- 'S0462': {'attack_ids': ['T1082', 'T1070.004', 'T1105', 'T1059.003', 'T1027'],
+ 'S0462': {'attack_ids': ['T1059.003', 'T1082', 'T1070.004', 'T1105', 'T1027'],
            'description': '[CARROTBAT](https://attack.mitre.org/software/S0462) is a customized dropper that has been '
                           'in use since at least 2017. [CARROTBAT](https://attack.mitre.org/software/S0462) has been '
                           'used to install [SYSCON](https://attack.mitre.org/software/S0464) and has infrastructure '
@@ -17177,28 +19591,28 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0462',
            'type': 'malware'},
- 'S0463': {'attack_ids': ['T1422',
-                          'T1412',
-                          'T1432',
-                          'T1406',
-                          'T1430',
-                          'T1579',
+ 'S0463': {'attack_ids': ['T1579',
                           'T1433',
+                          'T1430',
+                          'T1412',
+                          'T1404',
+                          'T1418',
+                          'T1432',
+                          'T1533',
+                          'T1426',
+                          'T1509',
                           'T1456',
                           'T1437',
-                          'T1404',
-                          'T1426',
-                          'T1418',
                           'T1540',
-                          'T1509',
-                          'T1533'],
+                          'T1406',
+                          'T1422'],
            'description': '[INSOMNIA](https://attack.mitre.org/software/S0463) is spyware that has been used by the '
                           'group Evil Eye.(Citation: Volexity Insomnia)',
            'name': 'INSOMNIA',
            'platforms': ['iOS'],
            'software_id': 'S0463',
            'type': 'malware'},
- 'S0464': {'attack_ids': ['T1082', 'T1059.003', 'T1071.002', 'T1204.002', 'T1057'],
+ 'S0464': {'attack_ids': ['T1059.003', 'T1082', 'T1204.002', 'T1071.002', 'T1057'],
            'description': '[SYSCON](https://attack.mitre.org/software/S0464) is a backdoor that has been in use since '
                           'at least 2017 and has been associated with campaigns involving North Korean themes. '
                           '[SYSCON](https://attack.mitre.org/software/S0464) has been delivered by the '
@@ -17209,7 +19623,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0464',
            'type': 'malware'},
- 'S0465': {'attack_ids': ['T1204.002', 'T1027', 'T1071.002', 'T1105'],
+ 'S0465': {'attack_ids': ['T1105', 'T1204.002', 'T1027', 'T1071.002'],
            'description': '[CARROTBALL](https://attack.mitre.org/software/S0465) is an FTP downloader utility that has '
                           'been in use since at least 2019. [CARROTBALL](https://attack.mitre.org/software/S0465) has '
                           'been used as a downloader to install '
@@ -17219,20 +19633,20 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0465',
            'type': 'tool'},
- 'S0466': {'attack_ids': ['T1124',
-                          'T1560.001',
-                          'T1070.004',
-                          'T1564.003',
-                          'T1059.004',
+ 'S0466': {'attack_ids': ['T1083',
                           'T1036',
                           'T1119',
+                          'T1124',
+                          'T1070.004',
+                          'T1560.001',
+                          'T1564.003',
                           'T1036.001',
                           'T1071.001',
-                          'T1027',
-                          'T1083',
-                          'T1140',
+                          'T1059.004',
                           'T1106',
-                          'T1048.003'],
+                          'T1027',
+                          'T1048.003',
+                          'T1140'],
            'description': '[WindTail](https://attack.mitre.org/software/S0466) is a macOS surveillance implant used by '
                           '[Windshift](https://attack.mitre.org/groups/G0112). '
                           '[WindTail](https://attack.mitre.org/software/S0466) shares code similarities with Hack Back '
@@ -17243,28 +19657,28 @@ software_map = {
            'software_id': 'S0466',
            'type': 'malware'},
  'S0467': {'attack_ids': ['T1082',
-                          'T1120',
-                          'T1025',
-                          'T1518.001',
-                          'T1056.001',
-                          'T1027',
-                          'T1539',
-                          'T1125',
+                          'T1112',
                           'T1129',
-                          'T1115',
-                          'T1119',
-                          'T1057',
-                          'T1560.002',
-                          'T1041',
                           'T1020',
+                          'T1518.001',
                           'T1055.001',
+                          'T1125',
+                          'T1056.001',
                           'T1005',
+                          'T1025',
+                          'T1120',
+                          'T1041',
+                          'T1027',
                           'T1518',
                           'T1123',
-                          'T1112',
-                          'T1124',
+                          'T1119',
                           'T1113',
                           'T1083',
+                          'T1539',
+                          'T1124',
+                          'T1560.002',
+                          'T1057',
+                          'T1115',
                           'T1016'],
            'description': '[TajMahal](https://attack.mitre.org/software/S0467) is a multifunctional spying framework '
                           'that has been in use since at least 2014. '
@@ -17275,29 +19689,29 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0467',
            'type': 'malware'},
- 'S0468': {'attack_ids': ['T1082',
-                          'T1496',
-                          'T1105',
-                          'T1059.004',
-                          'T1098.004',
-                          'T1518.001',
+ 'S0468': {'attack_ids': ['T1496',
+                          'T1562.001',
                           'T1027',
                           'T1053.003',
-                          'T1036.005',
-                          'T1547.006',
-                          'T1083',
-                          'T1562.001',
-                          'T1140',
+                          'T1082',
+                          'T1105',
                           'T1014',
+                          'T1059.004',
+                          'T1556.003',
+                          'T1547.006',
                           'T1057',
-                          'T1556.003'],
+                          'T1036.005',
+                          'T1083',
+                          'T1098.004',
+                          'T1518.001',
+                          'T1140'],
            'description': '[Skidmap](https://attack.mitre.org/software/S0468) is a kernel-mode rootkit used for '
                           'cryptocurrency mining.(Citation: Trend Micro Skidmap)',
            'name': 'Skidmap',
            'platforms': ['Linux'],
            'software_id': 'S0468',
            'type': 'malware'},
- 'S0469': {'attack_ids': ['T1027.003', 'T1105', 'T1059.003', 'T1518.001', 'T1055', 'T1071.001', 'T1140'],
+ 'S0469': {'attack_ids': ['T1059.003', 'T1055', 'T1027.003', 'T1071.001', 'T1105', 'T1518.001', 'T1140'],
            'description': '[ABK](https://attack.mitre.org/software/S0469) is a downloader that has been used by '
                           '[BRONZE BUTLER](https://attack.mitre.org/groups/G0060) since at least 2019.(Citation: Trend '
                           'Micro Tick November 2019)',
@@ -17305,7 +19719,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0469',
            'type': 'malware'},
- 'S0470': {'attack_ids': ['T1027.003', 'T1105', 'T1059.003', 'T1055', 'T1071.001', 'T1140', 'T1106'],
+ 'S0470': {'attack_ids': ['T1059.003', 'T1055', 'T1027.003', 'T1071.001', 'T1106', 'T1105', 'T1140'],
            'description': '[BBK](https://attack.mitre.org/software/S0470) is a downloader that has been used by '
                           '[BRONZE BUTLER](https://attack.mitre.org/groups/G0060) since at least 2019.(Citation: Trend '
                           'Micro Tick November 2019)',
@@ -17313,7 +19727,7 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0470',
            'type': 'malware'},
- 'S0471': {'attack_ids': ['T1124', 'T1036.004', 'T1082', 'T1027.003', 'T1105', 'T1518.001', 'T1547.001', 'T1106'],
+ 'S0471': {'attack_ids': ['T1036.004', 'T1027.003', 'T1124', 'T1082', 'T1106', 'T1547.001', 'T1105', 'T1518.001'],
            'description': '[build_downer](https://attack.mitre.org/software/S0471) is a downloader that has been used '
                           'by [BRONZE BUTLER](https://attack.mitre.org/groups/G0060) since at least 2019.(Citation: '
                           'Trend Micro Tick November 2019)',
@@ -17321,16 +19735,16 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0471',
            'type': 'malware'},
- 'S0472': {'attack_ids': ['T1082',
-                          'T1105',
-                          'T1573.001',
-                          'T1518',
+ 'S0472': {'attack_ids': ['T1083',
+                          'T1082',
                           'T1518.001',
                           'T1071.001',
-                          'T1083',
-                          'T1132.001',
+                          'T1105',
+                          'T1573.001',
                           'T1057',
-                          'T1016'],
+                          'T1518',
+                          'T1016',
+                          'T1132.001'],
            'description': ' [down_new](https://attack.mitre.org/software/S0472) is a downloader that has been used by '
                           '[BRONZE BUTLER](https://attack.mitre.org/groups/G0060) since at least 2019.(Citation: Trend '
                           'Micro Tick November 2019)',
@@ -17338,17 +19752,17 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0472',
            'type': 'malware'},
- 'S0473': {'attack_ids': ['T1082',
+ 'S0473': {'attack_ids': ['T1055',
                           'T1027.003',
-                          'T1105',
-                          'T1518.001',
-                          'T1055',
-                          'T1071.001',
                           'T1027',
+                          'T1082',
+                          'T1518.001',
+                          'T1071.001',
+                          'T1057',
+                          'T1105',
                           'T1083',
                           'T1016',
-                          'T1140',
-                          'T1057'],
+                          'T1140'],
            'description': '[Avenger](https://attack.mitre.org/software/S0473) is a downloader that has been used by '
                           '[BRONZE BUTLER](https://attack.mitre.org/groups/G0060) since at least 2019.(Citation: Trend '
                           'Micro Tick November 2019)',
@@ -17356,22 +19770,22 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0473',
            'type': 'malware'},
- 'S0475': {'attack_ids': ['T1082',
-                          'T1070.004',
-                          'T1105',
-                          'T1059.003',
-                          'T1553.002',
-                          'T1053.005',
-                          'T1059.005',
-                          'T1071.001',
-                          'T1564.001',
-                          'T1204.001',
-                          'T1036.005',
+ 'S0475': {'attack_ids': ['T1059.003',
                           'T1027',
-                          'T1137.001',
+                          'T1082',
+                          'T1070.004',
+                          'T1553.002',
+                          'T1564.001',
+                          'T1053.005',
+                          'T1204.001',
+                          'T1071.001',
+                          'T1059.005',
+                          'T1105',
+                          'T1106',
+                          'T1036.005',
                           'T1083',
-                          'T1140',
-                          'T1106'],
+                          'T1137.001',
+                          'T1140'],
            'description': '[BackConfig](https://attack.mitre.org/software/S0475) is a custom Trojan with a flexible '
                           'plugin architecture that has been used by '
                           '[Patchwork](https://attack.mitre.org/groups/G0040).(Citation: Unit 42 BackConfig May 2020)',
@@ -17379,51 +19793,65 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0475',
            'type': 'malware'},
- 'S0476': {'attack_ids': ['T1218.010',
+ 'S0476': {'attack_ids': ['T1555',
+                          'T1047',
                           'T1082',
-                          'T1114.002',
-                          'T1087.002',
-                          'T1518.001',
-                          'T1204.002',
-                          'T1027',
-                          'T1033',
-                          'T1059.001',
-                          'T1105',
-                          'T1057',
-                          'T1564.004',
-                          'T1041',
-                          'T1112',
-                          'T1071.001',
+                          'T1218.010',
                           'T1087.001',
+                          'T1112',
+                          'T1559.002',
+                          'T1033',
+                          'T1027.002',
+                          'T1204.002',
+                          'T1518.001',
+                          'T1087.002',
+                          'T1008',
+                          'T1566.001',
+                          'T1041',
+                          'T1105',
+                          'T1027',
                           'T1140',
-                          'T1053.005',
+                          'T1119',
+                          'T1059.007',
                           'T1113',
-                          'T1016'],
+                          'T1104',
+                          'T1132.001',
+                          'T1564.004',
+                          'T1059.001',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1114.002',
+                          'T1012',
+                          'T1057',
+                          'T1566.002',
+                          'T1016',
+                          'T1552.002'],
            'description': '[Valak](https://attack.mitre.org/software/S0476) is a multi-stage modular malware that can '
-                          'function as a standalone or downloader, first observed in 2019 targeting enterprises in the '
-                          'US and Germany.(Citation: Cybereason Valak May 2020)',
+                          'function as a standalone information stealer or downloader, first observed in 2019 '
+                          'targeting enterprises in the US and Germany.(Citation: Cybereason Valak May 2020)(Citation: '
+                          'Unit 42 Valak July 2020)',
            'name': 'Valak',
            'platforms': ['Windows'],
            'software_id': 'S0476',
            'type': 'malware'},
- 'S0477': {'attack_ids': ['T1041',
-                          'T1033',
-                          'T1071.004',
-                          'T1005',
-                          'T1071.003',
-                          'T1059.003',
-                          'T1053.005',
-                          'T1059.005',
-                          'T1027',
-                          'T1574.002',
-                          'T1071.001',
-                          'T1027.001',
-                          'T1036.005',
+ 'S0477': {'attack_ids': ['T1059.003',
                           'T1562.001',
+                          'T1027',
+                          'T1005',
+                          'T1053.005',
+                          'T1071.003',
+                          'T1027.001',
+                          'T1033',
+                          'T1071.001',
+                          'T1059.005',
+                          'T1041',
+                          'T1106',
                           'T1057',
-                          'T1140',
+                          'T1036.005',
+                          'T1574.002',
                           'T1070',
-                          'T1106'],
+                          'T1140',
+                          'T1071.004'],
            'description': '[Goopy](https://attack.mitre.org/software/S0477) is a Windows backdoor and Trojan used by '
                           '[APT32](https://attack.mitre.org/groups/G0050) and shares several similarities to another '
                           'backdoor used by the group ([Denis](https://attack.mitre.org/software/S0354)). '
@@ -17433,19 +19861,19 @@ software_map = {
            'platforms': ['Windows'],
            'software_id': 'S0477',
            'type': 'malware'},
- 'S0478': {'attack_ids': ['T1411',
-                          'T1422',
+ 'S0478': {'attack_ids': ['T1402',
                           'T1412',
-                          'T1521',
-                          'T1402',
-                          'T1406',
-                          'T1407',
-                          'T1444',
-                          'T1437',
-                          'T1426',
                           'T1418',
+                          'T1426',
+                          'T1521',
+                          'T1437',
+                          'T1411',
+                          'T1407',
                           'T1417',
-                          'T1513'],
+                          'T1513',
+                          'T1406',
+                          'T1444',
+                          'T1422'],
            'description': '[EventBot](https://attack.mitre.org/software/S0478) is an Android banking trojan and '
                           'information stealer that abuses Android’s accessibility service to steal data from various '
                           'applications.(Citation: Cybereason EventBot) '
@@ -17456,7 +19884,7 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0478',
            'type': 'malware'},
- 'S0479': {'attack_ids': ['T1402', 'T1475', 'T1437', 'T1418', 'T1516', 'T1513'],
+ 'S0479': {'attack_ids': ['T1402', 'T1418', 'T1475', 'T1513', 'T1437', 'T1516'],
            'description': '[DEFENSOR ID](https://attack.mitre.org/software/S0479) is a banking trojan capable of '
                           'clearing a victim’s bank account or cryptocurrency wallet and taking over email or social '
                           'media accounts. [DEFENSOR ID](https://attack.mitre.org/software/S0479) performs the '
@@ -17466,24 +19894,25 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0479',
            'type': 'malware'},
- 'S0480': {'attack_ids': ['T1411',
-                          'T1412',
-                          'T1476',
-                          'T1432',
-                          'T1406',
-                          'T1430',
-                          'T1508',
-                          'T1407',
-                          'T1444',
-                          'T1523',
-                          'T1437',
-                          'T1426',
-                          'T1418',
-                          'T1576',
-                          'T1417',
+ 'S0480': {'attack_ids': ['T1476',
                           'T1509',
+                          'T1407',
+                          'T1582',
+                          'T1417',
+                          'T1430',
+                          'T1412',
+                          'T1432',
+                          'T1508',
+                          'T1437',
                           'T1516',
-                          'T1478'],
+                          'T1406',
+                          'T1576',
+                          'T1478',
+                          'T1444',
+                          'T1418',
+                          'T1523',
+                          'T1426',
+                          'T1411'],
            'description': '[Cerberus](https://attack.mitre.org/software/S0480) is a banking trojan whose usage can be '
                           'rented on underground forums and marketplaces. Prior to being available to rent, the '
                           'authors of [Cerberus](https://attack.mitre.org/software/S0480) claim was used in private '
@@ -17492,18 +19921,18 @@ software_map = {
            'platforms': ['Android'],
            'software_id': 'S0480',
            'type': 'malware'},
- 'S0481': {'attack_ids': ['T1218.010',
-                          'T1218.007',
+ 'S0481': {'attack_ids': ['T1569.002',
                           'T1059.003',
-                          'T1120',
-                          'T1564.006',
-                          'T1543.003',
-                          'T1569.002',
-                          'T1489',
                           'T1562.001',
+                          'T1489',
+                          'T1218.007',
+                          'T1218.010',
+                          'T1120',
                           'T1486',
-                          'T1218.011',
-                          'T1490'],
+                          'T1543.003',
+                          'T1490',
+                          'T1564.006',
+                          'T1218.011'],
            'description': '[Ragnar Locker](https://attack.mitre.org/software/S0481) is a ransomware that has been in '
                           'use since at least December 2019.(Citation: Sophos Ragnar May 2020)(Citation: Cynet Ragnar '
                           'Apr 2020)',
@@ -17513,24 +19942,24 @@ software_map = {
            'type': 'malware'},
  'S0482': {'attack_ids': ['T1082',
                           'T1204.002',
-                          'T1027',
-                          'T1059.007',
-                          'T1189',
-                          'T1059.004',
-                          'T1105',
-                          'T1057',
-                          'T1176',
-                          'T1059.002',
-                          'T1056.002',
-                          'T1098.004',
-                          'T1518',
-                          'T1071.001',
-                          'T1543.004',
-                          'T1036.005',
-                          'T1562.001',
-                          'T1140',
                           'T1543.001',
-                          'T1059.006'],
+                          'T1098.004',
+                          'T1562.001',
+                          'T1176',
+                          'T1543.004',
+                          'T1105',
+                          'T1518',
+                          'T1027',
+                          'T1059.002',
+                          'T1140',
+                          'T1059.007',
+                          'T1059.004',
+                          'T1036.005',
+                          'T1189',
+                          'T1059.006',
+                          'T1071.001',
+                          'T1057',
+                          'T1056.002'],
            'description': '[Bundlore](https://attack.mitre.org/software/S0482) is adware written for macOS that has '
                           'been in use since at least 2015. Though categorized as adware, '
                           '[Bundlore](https://attack.mitre.org/software/S0482) has many features associated with more '
@@ -17538,5 +19967,737 @@ software_map = {
            'name': 'Bundlore',
            'platforms': ['macOS'],
            'software_id': 'S0482',
+           'type': 'malware'},
+ 'S0483': {'attack_ids': ['T1047',
+                          'T1082',
+                          'T1218.007',
+                          'T1185',
+                          'T1027.002',
+                          'T1204.002',
+                          'T1087.002',
+                          'T1566.001',
+                          'T1059.005',
+                          'T1069',
+                          'T1105',
+                          'T1106',
+                          'T1027',
+                          'T1027.003',
+                          'T1055.004',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1573.002',
+                          'T1547.001'],
+           'description': '[IcedID](https://attack.mitre.org/software/S0483) is a modular banking malware designed to '
+                          'steal financial information that has been observed in the wild since at least 2017.  '
+                          '[IcedID](https://attack.mitre.org/software/S0483)  has been downloaded by '
+                          '[Emotet](https://attack.mitre.org/software/S0367) in multiple campaigns.(Citation: IBM '
+                          'IcedID November 2017)(Citation: Juniper IcedID June 2020)',
+           'name': 'IcedID',
+           'platforms': ['Windows'],
+           'software_id': 'S0483',
+           'type': 'malware'},
+ 'S0484': {'attack_ids': ['T1555',
+                          'T1082',
+                          'T1185',
+                          'T1068',
+                          'T1014',
+                          'T1021.005',
+                          'T1518.001',
+                          'T1055.001',
+                          'T1542.003',
+                          'T1562.001',
+                          'T1041',
+                          'T1106',
+                          'T1105',
+                          'T1027',
+                          'T1113',
+                          'T1036.005',
+                          'T1055.004',
+                          'T1564.001',
+                          'T1071.001',
+                          'T1056.004',
+                          'T1057',
+                          'T1012',
+                          'T1547.001',
+                          'T1497',
+                          'T1555.003'],
+           'description': '[Carberp](https://attack.mitre.org/software/S0484) is a credential and information stealing '
+                          'malware that has been active since at least 2009. '
+                          "[Carberp](https://attack.mitre.org/software/S0484)'s source code was leaked online in 2013, "
+                          'and subsequently used as the foundation for the '
+                          '[Carbanak](https://attack.mitre.org/software/S0030) backdoor.(Citation: Trend Micro Carberp '
+                          'February 2014)(Citation: KasperskyCarbanak)(Citation: RSA Carbanak November 2017)',
+           'name': 'Carberp',
+           'platforms': ['Windows'],
+           'software_id': 'S0484',
+           'type': 'malware'},
+ 'S0485': {'attack_ids': ['T1509',
+                          'T1520',
+                          'T1407',
+                          'T1582',
+                          'T1430',
+                          'T1481',
+                          'T1412',
+                          'T1401',
+                          'T1432',
+                          'T1436',
+                          'T1508',
+                          'T1513',
+                          'T1516',
+                          'T1544',
+                          'T1406',
+                          'T1409',
+                          'T1475',
+                          'T1478',
+                          'T1444',
+                          'T1418',
+                          'T1523',
+                          'T1426',
+                          'T1517',
+                          'T1411',
+                          'T1447',
+                          'T1541'],
+           'description': '[Mandrake](https://attack.mitre.org/software/S0485) is a sophisticated Android espionage '
+                          'platform that has been active in the wild since at least 2016. '
+                          '[Mandrake](https://attack.mitre.org/software/S0485) is very actively maintained, with '
+                          'sophisticated features and attacks that are executed with surgical precision.\n'
+                          '\n'
+                          '[Mandrake](https://attack.mitre.org/software/S0485) has gone undetected for several years '
+                          'by providing legitimate, ad-free applications with social media and real reviews to back '
+                          'the apps. The malware is only activated when the operators issue a specific '
+                          'command.(Citation: Bitdefender Mandrake)',
+           'name': 'Mandrake',
+           'platforms': ['Android'],
+           'software_id': 'S0485',
+           'type': 'malware'},
+ 'S0486': {'attack_ids': ['T1496', 'T1082', 'T1016', 'T1033', 'T1059', 'T1057', 'T1573.001', 'T1105', 'T1554'],
+           'description': '[Bonadan](https://attack.mitre.org/software/S0486) is a malicious version of OpenSSH which '
+                          'acts as a custom backdoor. [Bonadan](https://attack.mitre.org/software/S0486) has been '
+                          'active since at least 2018 and combines a new cryptocurrency-mining module with the same '
+                          'credential-stealing module used by the Onderon family of backdoors.(Citation: ESET ForSSHe '
+                          'December 2018)',
+           'name': 'Bonadan',
+           'platforms': ['Linux'],
+           'software_id': 'S0486',
+           'type': 'malware'},
+ 'S0487': {'attack_ids': ['T1027',
+                          'T1030',
+                          'T1140',
+                          'T1082',
+                          'T1105',
+                          'T1059',
+                          'T1090',
+                          'T1041',
+                          'T1556',
+                          'T1554',
+                          'T1560',
+                          'T1048.003',
+                          'T1016',
+                          'T1132.001'],
+           'description': '[Kessel](https://attack.mitre.org/software/S0487) is an advanced version of OpenSSH which '
+                          'acts as a custom backdoor, mainly acting to steal credentials and function as a bot. '
+                          '[Kessel](https://attack.mitre.org/software/S0487) has been active since its C2 domain began '
+                          'resolving in August 2018.(Citation: ESET ForSSHe December 2018)',
+           'name': 'Kessel',
+           'platforms': ['Linux'],
+           'software_id': 'S0487',
+           'type': 'malware'},
+ 'S0488': {'attack_ids': ['T1047',
+                          'T1082',
+                          'T1112',
+                          'T1003.003',
+                          'T1110.003',
+                          'T1069.002',
+                          'T1018',
+                          'T1087.002',
+                          'T1201',
+                          'T1110.001',
+                          'T1135',
+                          'T1053.002',
+                          'T1110',
+                          'T1003.004',
+                          'T1003.002',
+                          'T1083',
+                          'T1049',
+                          'T1550.002',
+                          'T1059.001',
+                          'T1016'],
+           'description': '[CrackMapExec](https://attack.mitre.org/software/S0488), or CME, is a post-exploitation '
+                          'tool developed in Python and designed for penetration testing against networks. '
+                          '[CrackMapExec](https://attack.mitre.org/software/S0488) collects Active Directory '
+                          'information to conduct lateral movement through targeted networks.(Citation: CME Github '
+                          'September 2018)',
+           'name': 'CrackMapExec',
+           'platforms': ['Windows'],
+           'software_id': 'S0488',
+           'type': 'tool'},
+ 'S0489': {'attack_ids': ['T1433',
+                          'T1424',
+                          'T1412',
+                          'T1429',
+                          'T1533',
+                          'T1418',
+                          'T1432',
+                          'T1523',
+                          'T1512',
+                          'T1517',
+                          'T1513',
+                          'T1407',
+                          'T1582',
+                          'T1447',
+                          'T1406',
+                          'T1444',
+                          'T1422'],
+           'description': '[WolfRAT](https://attack.mitre.org/software/S0489) is malware based on a leaked version of '
+                          '[Dendroid](https://attack.mitre.org/software/S0301) that has primarily targeted Thai users. '
+                          '[WolfRAT](https://attack.mitre.org/software/S0489) has most likely been operated by the now '
+                          'defunct organization Wolf Research.(Citation: Talos-WolfRAT) ',
+           'name': 'WolfRAT',
+           'platforms': ['Android'],
+           'software_id': 'S0489',
+           'type': 'malware'},
+ 'S0490': {'attack_ids': ['T1476', 'T1426', 'T1478', 'T1437', 'T1422'],
+           'description': '[XLoader for iOS](https://attack.mitre.org/software/S0490) is a malicious iOS application '
+                          'that is capable of gathering system information.(Citation: TrendMicro-XLoader-FakeSpy) It '
+                          'is tracked separately from the [XLoader for '
+                          'Android](https://attack.mitre.org/software/S0318).',
+           'name': 'XLoader for iOS',
+           'platforms': ['iOS'],
+           'software_id': 'S0490',
+           'type': 'malware'},
+ 'S0491': {'attack_ids': ['T1571',
+                          'T1082',
+                          'T1020',
+                          'T1204.002',
+                          'T1553.002',
+                          'T1518.001',
+                          'T1562.001',
+                          'T1036.004',
+                          'T1090.003',
+                          'T1041',
+                          'T1105',
+                          'T1027',
+                          'T1569.002',
+                          'T1119',
+                          'T1036.005',
+                          'T1083',
+                          'T1070.004',
+                          'T1059.001',
+                          'T1560.003',
+                          'T1564.003',
+                          'T1071.001',
+                          'T1573.002',
+                          'T1057',
+                          'T1547.001',
+                          'T1543.003',
+                          'T1016'],
+           'description': '[StrongPity](https://attack.mitre.org/software/S0491) is an information stealing malware '
+                          'used by [PROMETHIUM](https://attack.mitre.org/groups/G0056).(Citation: Bitdefender '
+                          'StrongPity June 2020)(Citation: Talos Promethium June 2020)',
+           'name': 'StrongPity',
+           'platforms': ['Windows'],
+           'software_id': 'S0491',
+           'type': 'malware'},
+ 'S0492': {'attack_ids': ['T1496',
+                          'T1555.003',
+                          'T1027',
+                          'T1005',
+                          'T1059.006',
+                          'T1059.004',
+                          'T1562.004',
+                          'T1543.001',
+                          'T1105',
+                          'T1083',
+                          'T1048.003',
+                          'T1518.001',
+                          'T1140',
+                          'T1539'],
+           'description': '[CookieMiner](https://attack.mitre.org/software/S0492) is mac-based malware that targets '
+                          'information associated with cryptocurrency exchanges as well as enabling cryptocurrency '
+                          'mining on the victim system itself. It was first discovered in the wild in 2019.(Citation: '
+                          'Unit42 CookieMiner Jan 2019)',
+           'name': 'CookieMiner',
+           'platforms': ['macOS'],
+           'software_id': 'S0492',
+           'type': 'malware'},
+ 'S0493': {'attack_ids': ['T1083',
+                          'T1571',
+                          'T1195.002',
+                          'T1059.003',
+                          'T1082',
+                          'T1070.004',
+                          'T1071.001',
+                          'T1041',
+                          'T1106',
+                          'T1136.001',
+                          'T1543.003',
+                          'T1036.005',
+                          'T1105',
+                          'T1027',
+                          'T1497.003'],
+           'description': '[GoldenSpy](https://attack.mitre.org/software/S0493) is a backdoor malware which has been '
+                          'packaged with legitimate tax preparation software. '
+                          '[GoldenSpy](https://attack.mitre.org/software/S0493) was discovered targeting organizations '
+                          'in China, being delivered with the "Intelligent Tax" software suite which is produced by '
+                          'the Golden Tax Department of Aisino Credit Information Co. and required to pay local '
+                          'taxes.(Citation: Trustwave GoldenSpy June 2020) ',
+           'name': 'GoldenSpy',
+           'platforms': ['Windows'],
+           'software_id': 'S0493',
+           'type': 'malware'},
+ 'S0494': {'attack_ids': ['T1404', 'T1475', 'T1400', 'T1472', 'T1478', 'T1516', 'T1407', 'T1540', 'T1406'],
+           'description': '[Zen](https://attack.mitre.org/software/S0494) is Android malware that was first seen in '
+                          '2013.(Citation: Google Security Zen)',
+           'name': 'Zen',
+           'platforms': ['Android'],
+           'software_id': 'S0494',
+           'type': 'malware'},
+ 'S0495': {'attack_ids': ['T1071.003',
+                          'T1071.004',
+                          'T1036.004',
+                          'T1008',
+                          'T1041',
+                          'T1573.001',
+                          'T1105',
+                          'T1140',
+                          'T1001.002',
+                          'T1027.003',
+                          'T1113',
+                          'T1001',
+                          'T1036.005',
+                          'T1132.001',
+                          'T1059.003',
+                          'T1030',
+                          'T1070.004',
+                          'T1071.001',
+                          'T1132.002',
+                          'T1543.003'],
+           'description': '[RDAT](https://attack.mitre.org/software/S0495) is a backdoor used by the suspected Iranian '
+                          'threat group [OilRig](https://attack.mitre.org/groups/G0049). '
+                          '[RDAT](https://attack.mitre.org/software/S0495) was originally identified in 2017 and '
+                          'targeted companies in the telecommunications sector.(Citation: Unit42 RDAT July 2020)',
+           'name': 'RDAT',
+           'platforms': ['Windows'],
+           'software_id': 'S0495',
+           'type': 'malware'},
+ 'S0496': {'attack_ids': ['T1047',
+                          'T1082',
+                          'T1112',
+                          'T1069.002',
+                          'T1204.002',
+                          'T1562.001',
+                          'T1566.001',
+                          'T1059.005',
+                          'T1041',
+                          'T1134.002',
+                          'T1105',
+                          'T1106',
+                          'T1027',
+                          'T1490',
+                          'T1140',
+                          'T1055',
+                          'T1007',
+                          'T1489',
+                          'T1134.001',
+                          'T1036.005',
+                          'T1083',
+                          'T1189',
+                          'T1059.003',
+                          'T1070.004',
+                          'T1059.001',
+                          'T1071.001',
+                          'T1486',
+                          'T1485',
+                          'T1573.002',
+                          'T1012'],
+           'description': '[REvil](https://attack.mitre.org/software/S0496) is a ransomware family that has been '
+                          'linked to the [GOLD SOUTHFIELD](https://attack.mitre.org/groups/G0115) group and operated '
+                          'as ransomware-as-a-service (RaaS) since at least April 2019. '
+                          '[REvil](https://attack.mitre.org/software/S0496) is highly configurable and shares code '
+                          'similarities with the GandCrab RaaS.(Citation: Secureworks REvil September 2019)(Citation: '
+                          'Intel 471 REvil March 2020)(Citation: Group IB Ransomware May 2020)',
+           'name': 'REvil',
+           'platforms': ['Windows'],
+           'software_id': 'S0496',
+           'type': 'malware'},
+ 'S0497': {'attack_ids': ['T1036',
+                          'T1027',
+                          'T1564.001',
+                          'T1071.001',
+                          'T1105',
+                          'T1543.004',
+                          'T1543.001',
+                          'T1057',
+                          'T1083'],
+           'description': '[Dacls](https://attack.mitre.org/software/S0497) is a multi-platform remote access tool '
+                          'used by [Lazarus Group](https://attack.mitre.org/groups/G0032) since at least December '
+                          '2019.(Citation: TrendMicro macOS Dacls May 2020)(Citation: SentinelOne Lazarus macOS July '
+                          '2020)',
+           'name': 'Dacls',
+           'platforms': ['macOS', 'Linux', 'Windows'],
+           'software_id': 'S0497',
+           'type': 'malware'},
+ 'S0498': {'attack_ids': ['T1070.004', 'T1005', 'T1095', 'T1033', 'T1573', 'T1105', 'T1083'],
+           'description': '[Cryptoistic](https://attack.mitre.org/software/S0498) is a backdoor, written in Swift, '
+                          'that has been used by [Lazarus Group](https://attack.mitre.org/groups/G0032).(Citation: '
+                          'SentinelOne Lazarus macOS July 2020)',
+           'name': 'Cryptoistic',
+           'platforms': ['macOS'],
+           'software_id': 'S0498',
+           'type': 'malware'},
+ 'S0499': {'attack_ids': ['T1070.004',
+                          'T1218.012',
+                          'T1059.001',
+                          'T1566.001',
+                          'T1204.001',
+                          'T1497',
+                          'T1204.002',
+                          'T1106',
+                          'T1547.001',
+                          'T1105',
+                          'T1027',
+                          'T1566.002',
+                          'T1140'],
+           'description': '[Hancitor](https://attack.mitre.org/software/S0499) is a downloader that has been used by '
+                          '[Pony](https://attack.mitre.org/software/S0453) and other information stealing '
+                          'malware.(Citation: Threatpost Hancitor)(Citation: FireEye Hancitor)',
+           'name': 'Hancitor',
+           'platforms': ['Windows'],
+           'software_id': 'S0499',
+           'type': 'malware'},
+ 'S0500': {'attack_ids': ['T1059.003',
+                          'T1027',
+                          'T1005',
+                          'T1036.005',
+                          'T1564.003',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1547.001',
+                          'T1105',
+                          'T1070'],
+           'description': '[MCMD](https://attack.mitre.org/software/S0500) is a remote access tool that provides '
+                          'remote command shell capability used by [Dragonfly '
+                          '2.0](https://attack.mitre.org/groups/G0074).(Citation: Secureworks MCMD July 2019)',
+           'name': 'MCMD',
+           'platforms': ['Windows'],
+           'software_id': 'S0500',
+           'type': 'tool'},
+ 'S0501': {'attack_ids': ['T1082',
+                          'T1095',
+                          'T1112',
+                          'T1129',
+                          'T1543.003',
+                          'T1553.002',
+                          'T1518.001',
+                          'T1055.001',
+                          'T1008',
+                          'T1134.002',
+                          'T1573.001',
+                          'T1105',
+                          'T1106',
+                          'T1027',
+                          'T1140',
+                          'T1134.004',
+                          'T1548.002',
+                          'T1547.012',
+                          'T1036.005',
+                          'T1124',
+                          'T1057',
+                          'T1016'],
+           'description': '[PipeMon](https://attack.mitre.org/software/S0501) is a multi-stage modular backdoor used '
+                          'by [Winnti Group](https://attack.mitre.org/groups/G0044).(Citation: ESET PipeMon May 2020)',
+           'name': 'PipeMon',
+           'platforms': ['Windows'],
+           'software_id': 'S0501',
+           'type': 'malware'},
+ 'S0502': {'attack_ids': ['T1090.001',
+                          'T1070.004',
+                          'T1005',
+                          'T1095',
+                          'T1071.001',
+                          'T1014',
+                          'T1059.004',
+                          'T1547.006',
+                          'T1041',
+                          'T1105',
+                          'T1027',
+                          'T1140'],
+           'description': '[Drovorub](https://attack.mitre.org/software/S0502) is a Linux malware toolset comprised of '
+                          'an agent, client, server, and kernel modules, that has been used by '
+                          '[APT28](https://attack.mitre.org/groups/G0007).(Citation: NSA/FBI Drovorub August 2020)',
+           'name': 'Drovorub',
+           'platforms': ['Linux'],
+           'software_id': 'S0502',
+           'type': 'malware'},
+ 'S0503': {'attack_ids': ['T1005', 'T1560.003', 'T1074.001', 'T1057', 'T1048'],
+           'description': '[FrameworkPOS](https://attack.mitre.org/software/S0503) is a point of sale (POS) malware '
+                          'used by [FIN6](https://attack.mitre.org/groups/G0037) to steal payment card data from '
+                          'sytems that run physical POS devices.(Citation: SentinelOne FrameworkPOS September 2019)',
+           'name': 'FrameworkPOS',
+           'platforms': [],
+           'software_id': 'S0503',
+           'type': 'malware'},
+ 'S0504': {'attack_ids': ['T1082',
+                          'T1095',
+                          'T1027.002',
+                          'T1553.002',
+                          'T1071.004',
+                          'T1008',
+                          'T1480',
+                          'T1105',
+                          'T1027',
+                          'T1021.002',
+                          'T1569.002',
+                          'T1053.003',
+                          'T1059.004',
+                          'T1059.003',
+                          'T1564.004',
+                          'T1070.004',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1543.003',
+                          'T1016'],
+           'description': '[Anchor](https://attack.mitre.org/software/S0504) is one of a family of backdoor malware '
+                          'that has been used in conjunction with [TrickBot](https://attack.mitre.org/software/S0266) '
+                          'on selected high profile targets since at least 2018.(Citation: Cyberreason Anchor December '
+                          '2019)(Citation: Medium Anchor DNS July 2020)',
+           'name': 'Anchor',
+           'platforms': ['Linux', 'Windows'],
+           'software_id': 'S0504',
+           'type': 'malware'},
+ 'S0505': {'attack_ids': ['T1420',
+                          'T1407',
+                          'T1582',
+                          'T1430',
+                          'T1412',
+                          'T1533',
+                          'T1432',
+                          'T1508',
+                          'T1438',
+                          'T1544',
+                          'T1409',
+                          'T1429',
+                          'T1475',
+                          'T1478',
+                          'T1418',
+                          'T1426',
+                          'T1512',
+                          'T1532',
+                          'T1447'],
+           'description': '[Desert Scorpion](https://attack.mitre.org/software/S0505) is surveillanceware that has '
+                          'targeted the Middle East, specifically individuals located in Palestine. [Desert '
+                          'Scorpion](https://attack.mitre.org/software/S0505) is suspected to have been operated by '
+                          'the threat actor APT-C-23.(Citation: Lookout Desert Scorpion) ',
+           'name': 'Desert Scorpion',
+           'platforms': ['Android'],
+           'software_id': 'S0505',
+           'type': 'malware'},
+ 'S0506': {'attack_ids': ['T1476',
+                          'T1433',
+                          'T1430',
+                          'T1412',
+                          'T1533',
+                          'T1429',
+                          'T1432',
+                          'T1426',
+                          'T1512',
+                          'T1507',
+                          'T1407',
+                          'T1444',
+                          'T1422'],
+           'description': '[ViperRAT](https://attack.mitre.org/software/S0506) is sophisticated surveillanceware that '
+                          'has been in operation since at least 2015 and was used to target the Israeli Defense '
+                          'Force.(Citation: Lookout ViperRAT) ',
+           'name': 'ViperRAT',
+           'platforms': ['Android'],
+           'software_id': 'S0506',
+           'type': 'malware'},
+ 'S0507': {'attack_ids': ['T1476',
+                          'T1533',
+                          'T1429',
+                          'T1432',
+                          'T1475',
+                          'T1426',
+                          'T1521',
+                          'T1437',
+                          'T1581',
+                          'T1407',
+                          'T1430'],
+           'description': '[eSurv](https://attack.mitre.org/software/S0507) is mobile surveillanceware designed for '
+                          'the lawful intercept market that was developed over the course of many years.(Citation: '
+                          'Lookout eSurv)',
+           'name': 'eSurv',
+           'platforms': ['Android', 'iOS'],
+           'software_id': 'S0507',
+           'type': 'malware'},
+ 'S0508': {'attack_ids': ['T1572', 'T1568.002', 'T1090', 'T1567', 'T1102'],
+           'description': '[Ngrok](https://attack.mitre.org/software/S0508) is a legitimate reverse proxy tool that '
+                          'can create a secure tunnel to servers located behind firewalls or on local machines that do '
+                          'not have a public IP. [Ngrok](https://attack.mitre.org/software/S0508) has been leveraged '
+                          'by threat actors in several campaigns including use for lateral movement and data '
+                          'exfiltration.(Citation: Zdnet Ngrok September 2018)(Citation: FireEye Maze May '
+                          '2020)(Citation: Cyware Ngrok May 2019)',
+           'name': 'Ngrok',
+           'platforms': ['Windows'],
+           'software_id': 'S0508',
+           'type': 'malware'},
+ 'S0509': {'attack_ids': ['T1476',
+                          'T1402',
+                          'T1409',
+                          'T1412',
+                          'T1418',
+                          'T1523',
+                          'T1432',
+                          'T1426',
+                          'T1508',
+                          'T1507',
+                          'T1437',
+                          'T1582',
+                          'T1406',
+                          'T1444',
+                          'T1422'],
+           'description': '[FakeSpy](https://attack.mitre.org/software/S0509) is Android spyware that has been '
+                          'operated by the Chinese threat actor behind the Roaming Mantis campaigns.(Citation: '
+                          'Cybereason FakeSpy)',
+           'name': 'FakeSpy',
+           'platforms': ['Android'],
+           'software_id': 'S0509',
+           'type': 'malware'},
+ 'S0511': {'attack_ids': ['T1027.003', 'T1059.001', 'T1112', 'T1102.002', 'T1105', 'T1027', 'T1546.003', 'T1140'],
+           'description': '[RegDuke](https://attack.mitre.org/software/S0511) is a first stage implant written in .NET '
+                          'and used by [APT29](https://attack.mitre.org/groups/G0016) since at least 2017. '
+                          '[RegDuke](https://attack.mitre.org/software/S0511) has been used to control a compromised '
+                          'machine when control of other implants on the machine was lost.(Citation: ESET Dukes '
+                          'October 2019)',
+           'name': 'RegDuke',
+           'platforms': ['Windows'],
+           'software_id': 'S0511',
+           'type': 'malware'},
+ 'S0512': {'attack_ids': ['T1090.001',
+                          'T1082',
+                          'T1027.002',
+                          'T1218.011',
+                          'T1008',
+                          'T1005',
+                          'T1543',
+                          'T1573.001',
+                          'T1106',
+                          'T1027',
+                          'T1140',
+                          'T1497.003',
+                          'T1036.005',
+                          'T1083',
+                          'T1070.004',
+                          'T1059.001',
+                          'T1027.001',
+                          'T1071.001',
+                          'T1012',
+                          'T1547.001',
+                          'T1057',
+                          'T1016'],
+           'description': '[FatDuke](https://attack.mitre.org/software/S0512) is a backdoor used by '
+                          '[APT29](https://attack.mitre.org/groups/G0016) since at least 2016.(Citation: ESET Dukes '
+                          'October 2019)',
+           'name': 'FatDuke',
+           'platforms': ['Windows'],
+           'software_id': 'S0512',
+           'type': 'malware'},
+ 'S0514': {'attack_ids': ['T1132.001',
+                          'T1059.003',
+                          'T1082',
+                          'T1059.001',
+                          'T1005',
+                          'T1033',
+                          'T1071.001',
+                          'T1069.002',
+                          'T1001.001',
+                          'T1573.002',
+                          'T1573.001',
+                          'T1105',
+                          'T1016',
+                          'T1140',
+                          'T1071.004'],
+           'description': '[WellMess](https://attack.mitre.org/software/S0514) is lightweight malware family with '
+                          'variants written in .NET and Golang that has been in use since at least 2018 by '
+                          '[APT29](https://attack.mitre.org/groups/G0016).(Citation: CISA WellMess July '
+                          '2020)(Citation: PWC WellMess July 2020)(Citation: NCSC APT29 July 2020)',
+           'name': 'WellMess',
+           'platforms': ['Windows'],
+           'software_id': 'S0514',
+           'type': 'malware'},
+ 'S0515': {'attack_ids': ['T1571', 'T1005', 'T1095', 'T1033', 'T1573.002', 'T1105', 'T1560', 'T1016', 'T1140'],
+           'description': '[WellMail](https://attack.mitre.org/software/S0515) is a lightweight malware written in '
+                          'Golang used by [APT29](https://attack.mitre.org/groups/G0016), similar in design and '
+                          'structure to [WellMess](https://attack.mitre.org/software/S0514).(Citation: CISA WellMail '
+                          'July 2020)(Citation: NCSC APT29 July 2020)',
+           'name': 'WellMail',
+           'platforms': ['Windows'],
+           'software_id': 'S0515',
+           'type': 'malware'},
+ 'S0516': {'attack_ids': ['T1083',
+                          'T1087.002',
+                          'T1082',
+                          'T1087.001',
+                          'T1053.005',
+                          'T1071.001',
+                          'T1105',
+                          'T1069.002',
+                          'T1190',
+                          'T1057',
+                          'T1027',
+                          'T1016',
+                          'T1140'],
+           'description': '[SoreFang](https://attack.mitre.org/software/S0516) is first stage downloader used by '
+                          '[APT29](https://attack.mitre.org/groups/G0016) for exfiltration and to load other '
+                          'malware.(Citation: NCSC APT29 July 2020)(Citation: CISA SoreFang July 2016)',
+           'name': 'SoreFang',
+           'platforms': ['Windows'],
+           'software_id': 'S0516',
+           'type': 'malware'},
+ 'S0517': {'attack_ids': ['T1027',
+                          'T1546.011',
+                          'T1055.004',
+                          'T1059.001',
+                          'T1005',
+                          'T1112',
+                          'T1070.004',
+                          'T1057',
+                          'T1012',
+                          'T1070',
+                          'T1106',
+                          'T1560',
+                          'T1140'],
+           'description': '[Pillowmint](https://attack.mitre.org/software/S0517) is a point-of-sale malware used by '
+                          '[FIN7](https://attack.mitre.org/groups/G0046) designed to capture credit card '
+                          'information.(Citation: Trustwave Pillowmint June 2020)',
+           'name': 'Pillowmint',
+           'platforms': ['Windows'],
+           'software_id': 'S0517',
+           'type': 'malware'},
+ 'S0518': {'attack_ids': ['T1027.003',
+                          'T1102.001',
+                          'T1112',
+                          'T1071.001',
+                          'T1105',
+                          'T1106',
+                          'T1027',
+                          'T1140',
+                          'T1218.011'],
+           'description': '[PolyglotDuke](https://attack.mitre.org/software/S0518) is a downloader that has been used '
+                          'by [APT29](https://attack.mitre.org/groups/G0016) since at least 2013. '
+                          '[PolyglotDuke](https://attack.mitre.org/software/S0518) has been used to drop '
+                          '[MiniDuke](https://attack.mitre.org/software/S0051).(Citation: ESET Dukes October 2019)',
+           'name': 'PolyglotDuke',
+           'platforms': ['Windows'],
+           'software_id': 'S0518',
+           'type': 'malware'},
+ 'S0519': {'attack_ids': ['T1205', 'T1556.004', 'T1601.001'],
+           'description': '[SYNful Knock](https://attack.mitre.org/software/S0519) is a stealthy modification of the '
+                          'operating system of network devices that can be used to maintain persistence within a '
+                          "victim's network and provide new capabilities to the adversary.(Citation: FireEye - Synful "
+                          'Knock)(Citation: Cisco Synful Knock Evolution)',
+           'name': 'SYNful Knock',
+           'platforms': ['Network'],
+           'software_id': 'S0519',
            'type': 'malware'}
 }
