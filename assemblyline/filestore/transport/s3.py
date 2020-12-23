@@ -65,12 +65,14 @@ class TransportS3(Transport):
         )
 
         bucket_exist = False
-        resp = self.with_retries(self.client.list_buckets)
-
-        for bucket in resp["Buckets"]:
-            if bucket.get("Name", None) == self.bucket:
-                bucket_exist = True
-                break
+        try:
+            self.with_retries(self.client.head_bucket, Bucket=self.bucket)
+            bucket_exist = True
+        except ClientError as e:
+            if "404" not in str(e):
+                pass
+            else:
+                raise
 
         if not bucket_exist:
             try:
