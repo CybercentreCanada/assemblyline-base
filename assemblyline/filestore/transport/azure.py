@@ -7,7 +7,7 @@ from azure.core.exceptions import *
 from azure.storage.blob import BlobServiceClient
 from io import BytesIO
 
-from assemblyline.common.exceptions import Chain
+from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
 
 
@@ -15,10 +15,9 @@ from assemblyline.filestore.transport.base import Transport, TransportException
 This class assumes a flat file structure in the Azure storage blob.
 """
 
-
+@ChainAll(TransportException)
 class TransportAzure(Transport):
 
-    @Chain(TransportException)
     def __init__(self, base=None, access_key=None, host=None, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
@@ -37,10 +36,14 @@ class TransportAzure(Transport):
         # Init
         try:
             self.with_retries(self.container_client.get_container_properties)
-        except ResourceNotFoundError:
+        except TransportException as e:
+            if not isinstance(e.cause, ResourceNotFoundError):
+                raise
             try:
                 self.with_retries(self.container_client.create_container)
-            except ResourceNotFoundError:
+            except TransportException as error:
+                if not isinstance(error.cause, ResourceNotFoundError):
+                    raise
                 self.log.info('Failed to create container, we\'re most likely in read only mode')
                 self.read_only = True
 
@@ -67,6 +70,7 @@ class TransportAzure(Transport):
             except (ServiceRequestError, DecodeError, ResourceExistsError, ResourceNotFoundError,
                     ClientAuthenticationError, ResourceModifiedError, ResourceNotModifiedError,
                     TooManyRedirectsError, ODataV4Error):
+                # These errors will be wrapped by TransportException
                 raise
 
             except Exception as e:
@@ -77,7 +81,6 @@ class TransportAzure(Transport):
                 retries += 1
         raise ConnectionError(f"Couldn't reach the requested azure endpoint {self.endpoint_url} inside retry limit")
 
-    @Chain(TransportException)
     def delete(self, path):
         if self.read_only:
             raise TransportException("READ ONLY TRANSPORT: Method not allowed")
@@ -86,7 +89,6 @@ class TransportAzure(Transport):
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
         self.with_retries(blob_client.download_blob)
 
-    @Chain(TransportException)
     def exists(self, path):
         key = self.normalize(path)
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
@@ -97,13 +99,11 @@ class TransportAzure(Transport):
 
         return True
 
-    @Chain(TransportException)
     def makedirs(self, path):
         # Does not need to do anything as azurestorage blob has a flat layout.
         pass
 
     # File based functions
-    @Chain(TransportException)
     def download(self, src_path, dst_path):
         key = self.normalize(src_path)
         dir_path = os.path.dirname(dst_path)
@@ -118,7 +118,6 @@ class TransportAzure(Transport):
             blob_data = self.with_retries(blob_client.download_blob)
             blob_data.readinto(my_blob)
 
-    @Chain(TransportException)
     def upload(self, src_path, dst_path):
         if self.read_only:
             raise TransportException("READ ONLY TRANSPORT: Method not allowed")
@@ -130,11 +129,11 @@ class TransportAzure(Transport):
             blob_client = self.service_client.get_blob_client(self.blob_container, key)
             try:
                 self.with_retries(blob_client.upload_blob, data)
-            except ResourceExistsError:
-                pass
+            except TransportException as error:
+                if not isinstance(error.cause, ResourceExistsError):
+                    raise
 
     # Buffer based functions
-    @Chain(TransportException)
     def get(self, path):
         key = self.normalize(path)
         my_blob = BytesIO()
@@ -144,7 +143,6 @@ class TransportAzure(Transport):
         blob_data.readinto(my_blob)
         return my_blob.getvalue()
 
-    @Chain(TransportException)
     def put(self, dst_path, content):
         if self.read_only:
             raise TransportException("READ ONLY TRANSPORT: Method not allowed")
@@ -157,5 +155,6 @@ class TransportAzure(Transport):
             blob_client = self.service_client.get_blob_client(self.blob_container, key)
             try:
                 self.with_retries(blob_client.upload_blob, file_io)
-            except ResourceExistsError:
-                pass
+            except TransportException as error:
+                if not isinstance(error.cause, ResourceExistsError):
+                    raise
