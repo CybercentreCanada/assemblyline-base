@@ -1023,8 +1023,8 @@ class AssemblylineDatastore(object):
 
             # Update Classification
             classification = cl_engine.min_classification(
-                current_fileinfo.get('classification', classification),
-                classification
+                str(current_fileinfo.get('classification', classification)),
+                str(classification)
             )
             current_fileinfo['classification'] = classification
             self.ds.file.save(sha256, current_fileinfo)
