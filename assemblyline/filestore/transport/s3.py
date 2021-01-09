@@ -68,17 +68,17 @@ class TransportS3(Transport):
         try:
             self.with_retries(self.client.head_bucket, Bucket=self.bucket)
             bucket_exist = True
-        except ClientError as e:
-            if "404" not in str(e):
+        except TransportException as e:
+            if isinstance(e.cause, ClientError) and e.cause.response['Error']['Code'] == '404':
                 pass
             else:
                 raise
 
         if not bucket_exist:
             try:
-                self.client.create_bucket(Bucket=self.bucket)
-            except ClientError as e:
-                if "BucketAlreadyOwnedByYou" in str(e):
+                self.with_retries(self.client.create_bucket, Bucket=self.bucket)
+            except TransportException as e:
+                if isinstance(e.cause, ClientError) and e.cause.response['Error']['Code'] == "BucketAlreadyOwnedByYou":
                     # By the time that we listed the bucket an found it didn't exist, someone else created it.
                     pass
                 else:

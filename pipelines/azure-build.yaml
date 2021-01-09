@@ -21,6 +21,13 @@ resources:
       DISCOVERY_TYPE: 'single-node'
     ports:
       - 9200:9200
+  - container: minio
+    image: cccs/minio
+    env:
+      MINIO_ACCESS_KEY: al_storage_key
+      MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
+    ports:
+      - 9000:9000
 
 stages:
 - stage: build
@@ -57,6 +64,7 @@ stages:
     services:
       elasticsearch: elasticsearch
       redis: redis
+      minio: minio
     steps:
     - checkout: none
     - task: UsePythonVersion@0
