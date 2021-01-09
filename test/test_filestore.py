@@ -89,3 +89,18 @@ def test_s3():
                    's3.amazonaws.com/?s3_bucket=assemblyline-support&aws_region=us-east-1')
     assert fs.exists('al4_s3_pytest.txt') != []
     assert fs.get('al4_s3_pytest.txt') is not None
+
+
+def test_minio():
+    """
+    Test Minio FileStore by pushing and fetching back content from it.
+    """
+    content = b"THIS IS A MINIO TEST"
+
+    fs = FileStore('s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000/?s3_bucket=test&use_ssl=False')
+    assert fs.delete('al4_minio_pytest.txt') is None
+    assert fs.put('al4_minio_pytest.txt', content) != []
+    assert fs.exists('al4_minio_pytest.txt') != []
+    assert fs.get('al4_minio_pytest.txt') == content
+    assert fs.delete('al4_minio_pytest.txt') is None
+
