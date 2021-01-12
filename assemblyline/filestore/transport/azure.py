@@ -15,7 +15,6 @@ from assemblyline.filestore.transport.base import Transport, TransportException
 This class assumes a flat file structure in the Azure storage blob.
 """
 
-
 @ChainAll(TransportException)
 class TransportAzure(Transport):
 
@@ -37,10 +36,14 @@ class TransportAzure(Transport):
         # Init
         try:
             self.with_retries(self.container_client.get_container_properties)
-        except ResourceNotFoundError:
+        except TransportException as e:
+            if not isinstance(e.cause, ResourceNotFoundError):
+                raise
             try:
                 self.with_retries(self.container_client.create_container)
-            except ResourceNotFoundError:
+            except TransportException as error:
+                if not isinstance(error.cause, ResourceNotFoundError):
+                    raise
                 self.log.info('Failed to create container, we\'re most likely in read only mode')
                 self.read_only = True
 
@@ -67,6 +70,7 @@ class TransportAzure(Transport):
             except (ServiceRequestError, DecodeError, ResourceExistsError, ResourceNotFoundError,
                     ClientAuthenticationError, ResourceModifiedError, ResourceNotModifiedError,
                     TooManyRedirectsError, ODataV4Error):
+                # These errors will be wrapped by TransportException
                 raise
 
             except Exception as e:
@@ -125,8 +129,9 @@ class TransportAzure(Transport):
             blob_client = self.service_client.get_blob_client(self.blob_container, key)
             try:
                 self.with_retries(blob_client.upload_blob, data)
-            except ResourceExistsError:
-                pass
+            except TransportException as error:
+                if not isinstance(error.cause, ResourceExistsError):
+                    raise
 
     # Buffer based functions
     def get(self, path):
@@ -150,5 +155,6 @@ class TransportAzure(Transport):
             blob_client = self.service_client.get_blob_client(self.blob_container, key)
             try:
                 self.with_retries(blob_client.upload_blob, file_io)
-            except ResourceExistsError:
-                pass
+            except TransportException as error:
+                if not isinstance(error.cause, ResourceExistsError):
+                    raise
