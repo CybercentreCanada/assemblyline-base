@@ -123,7 +123,12 @@ class Classification(object):
                 self.groups_map_lts[name] = short_name
                 self.groups_map_stl[short_name] = name
                 for a in x.get('aliases', []):
-                    self.groups_aliases[a.upper()] = self.groups_aliases.get(a.upper(), []) + [short_name]
+                    self.groups_aliases[a.upper()] = \
+                        list(set(self.groups_aliases.get(a.upper(), []) + [short_name]))
+                solitary_display_name = x.get('solitary_display_name', None)
+                if solitary_display_name:
+                    self.groups_aliases[solitary_display_name.upper()] = \
+                        list(set(self.groups_aliases.get(solitary_display_name.upper(), []) + [short_name]))
                 if x.get('auto_select', False):
                     self.groups_auto_select.append(name)
                     self.groups_auto_select_short.append(short_name)
@@ -138,7 +143,12 @@ class Classification(object):
                 self.subgroups_map_lts[name] = short_name
                 self.subgroups_map_stl[short_name] = name
                 for a in x.get('aliases', []):
-                    self.subgroups_aliases[a.upper()] = self.subgroups_aliases.get(a.upper(), []) + [short_name]
+                    self.subgroups_aliases[a.upper()] = \
+                        list(set(self.subgroups_aliases.get(a.upper(), []) + [short_name]))
+                solitary_display_name = x.get('solitary_display_name', None)
+                if solitary_display_name:
+                    self.subgroups_aliases[solitary_display_name.upper()] = \
+                        list(set(self.subgroups_aliases.get(solitary_display_name.upper(), []) + [short_name]))
                 if x.get('auto_select', False):
                     self.subgroups_auto_select.append(name)
                     self.subgroups_auto_select_short.append(short_name)
