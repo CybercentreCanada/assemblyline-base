@@ -84,6 +84,8 @@ DEFAULT_SIGNUP = {
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean()
     admin_dn: str = odm.Optional(odm.Keyword())
+    bind_user: str = odm.Optional(odm.Keyword())
+    bind_pass: str = odm.Optional(odm.Keyword())
     auto_create: bool = odm.Boolean()
     auto_sync: bool = odm.Boolean()
     base: str = odm.Keyword()
@@ -102,6 +104,8 @@ class LDAP(odm.Model):
 DEFAULT_LDAP = {
     "enabled": False,
     "admin_dn": None,
+    "bind_user": None,
+    "bind_pass": None,
     "auto_create": True,
     "auto_sync": True,
     "base": "ou=people,dc=assemblyline,dc=local",
