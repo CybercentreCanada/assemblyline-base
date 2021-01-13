@@ -151,10 +151,21 @@ class OAuthAutoProperty(odm.Model):
 
 
 @odm.model(index=False, store=False)
+class AppProvider(odm.Model):
+    access_token_url: str = odm.Keyword()
+    user_get: str = odm.Optional(odm.Keyword())
+    group_get: str = odm.Optional(odm.Keyword())
+    scope: str = odm.Keyword()
+    client_id: str = odm.Optional(odm.Keyword())
+    client_secret: str = odm.Optional(odm.Keyword())
+
+
+@odm.model(index=False, store=False)
 class OAuthProvider(odm.Model):
     auto_create: str = odm.Boolean(default=True)
     auto_sync: str = odm.Boolean(default=False)
     auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[])
+    app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
     uid_regex: str = odm.Optional(odm.Keyword())
     uid_format: str = odm.Optional(odm.Keyword())
     client_id: str = odm.Optional(odm.Keyword())
@@ -167,10 +178,13 @@ class OAuthProvider(odm.Model):
     authorize_params: str = odm.Optional(odm.Keyword())
     api_base_url: str = odm.Optional(odm.Keyword())
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
+    jwks_uri: str = odm.Optional(odm.Keyword())
+    uid_field: str = odm.Optional(odm.Keyword())
     user_get: str = odm.Keyword()
     user_groups: str = odm.Optional(odm.Keyword())
     user_groups_data_field: str = odm.Optional(odm.Keyword())
     user_groups_name_field: str = odm.Optional(odm.Keyword())
+    use_new_callback_format: str = odm.Boolean(default=False)
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
