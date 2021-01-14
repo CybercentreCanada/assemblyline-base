@@ -31,7 +31,7 @@ def test_translate_str():
     teststr = 'Стамболийски'
     encoded_test_str = teststr.encode('ISO-8859-5')
     result = str_utils.translate_str(encoded_test_str)
-    assert result['language'] == 'Bulgairan'  # Bulgarian is misspelled in chardet
+    assert result['language'] == 'Bulgarian'
     assert result['encoding'] == 'ISO-8859-5'
     result = str_utils.translate_str('abcdéfg')
     assert result['language'] == 'unknown'
