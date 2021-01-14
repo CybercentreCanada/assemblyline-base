@@ -11,7 +11,7 @@ from assemblyline.odm.models.heuristic import Heuristic
 from baseconv import BASE62_ALPHABET
 
 from assemblyline.common import forge
-from assemblyline.common.attack_map import attack_map
+from assemblyline.common.attack_map import attack_map, software_map
 from assemblyline.common.chunk import chunked_list, chunk
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
@@ -26,6 +26,28 @@ from assemblyline.common.security import get_random_password, get_password_hash,
 from assemblyline.common.str_utils import safe_str, translate_str
 from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
 from assemblyline.odm.randomizer import random_model_obj, get_random_word
+
+
+def test_attack_map():
+    # Validate the structure of the generated ATT&CK techniques map created by
+    # assemblyline-base/external/generate_attack_map.py
+    assert type(attack_map) == dict
+    # This is the minimum set of keys that each technique entry in the attack map should have
+    attack_technique_keys = {"attack_id", "categories", "description", "name", "platforms"}
+    for attack_technique_id, attack_technique_details in attack_map.items():
+        assert attack_technique_details.keys() == attack_technique_keys
+        assert attack_technique_id == attack_technique_details["attack_id"]
+
+
+def test_software_map():
+    # Validate the structure of the generated ATT&CK software map created by
+    # assemblyline-base/external/generate_attack_map.py
+    assert type(software_map) == dict
+    # This is the minimum set of keys that each technique entry in the attack map should have
+    attack_software_keys = {"attack_ids", "description", "name", "platforms", "software_id", "type"}
+    for attack_software_id, attack_software_details in software_map.items():
+        assert attack_software_details.keys() == attack_software_keys
+        assert attack_software_id == attack_software_details["software_id"]
 
 
 def test_chunk():
@@ -131,7 +153,20 @@ def test_heuristics_valid():
     heuristic_list = [random_model_obj(Heuristic) for _ in range(4)]
     heuristics = {x.heur_id: x for x in heuristic_list}
 
+    software_ids = list(set([random.choice(list(software_map.keys())) for _ in range(random.randint(1, 3))]))
     attack_ids = list(set([random.choice(list(attack_map.keys())) for _ in range(random.randint(1, 3))]))
+
+    attack_ids_to_fetch_details_for = attack_ids[:]
+    for software_id in software_ids:
+        software_attack_ids = software_map[software_id]["attack_ids"]
+        for software_attack_id in software_attack_ids:
+            if software_attack_id in attack_map and software_attack_id not in attack_ids_to_fetch_details_for:
+                attack_ids_to_fetch_details_for.append(software_attack_id)
+            else:
+                print(f"Invalid related attack_id '{software_attack_id}' for software '{software_id}'. Ignoring it.")
+    attack_id_details = {attack_id: {"pattern": attack_map[attack_id]["name"], "categories": attack_map[attack_id]["categories"]} for attack_id in attack_ids_to_fetch_details_for}
+    attack_ids.extend(software_ids)
+
     signatures = {}
     score_map = {}
     for x in range(random.randint(2, 4)):
@@ -155,7 +190,10 @@ def test_heuristics_valid():
     assert service_heur['heur_id'] == result_heur['heur_id']
     assert service_heur['score'] != result_heur['score']
     for attack in result_heur['attack']:
-        assert attack['attack_id'] in attack_ids
+        attack_id = attack['attack_id']
+        assert attack_id in attack_ids_to_fetch_details_for
+        assert attack['pattern'] == attack_id_details[attack_id]['pattern']
+        assert attack['categories'] == attack_id_details[attack_id]['categories']
     for signature in result_heur['signature']:
         assert signature['name'] in signatures
         assert signature['frequency'] == signatures[signature['name']]
