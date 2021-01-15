@@ -1,14 +1,16 @@
 
+import hashlib
 import os
 import pytest
 import random
 import re
+import subprocess
+import tempfile
 
+from baseconv import BASE62_ALPHABET
+from cart import pack_stream, get_metadata_only
 from copy import deepcopy
 from io import BytesIO
-
-from assemblyline.odm.models.heuristic import Heuristic
-from baseconv import BASE62_ALPHABET
 
 from assemblyline.common import forge
 from assemblyline.common.attack_map import attack_map
@@ -19,12 +21,14 @@ from assemblyline.common.dict_utils import flatten, unflatten, recursive_update,
 from assemblyline.common.entropy import calculate_partition_entropy
 from assemblyline.common.heuristics import InvalidHeuristicException, service_heuristic_to_result_heuristic
 from assemblyline.common.hexdump import hexdump
+from assemblyline.common.identify import fileinfo
 from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
     now_as_local
 from assemblyline.common.iprange import is_ip_reserved, is_ip_private
 from assemblyline.common.security import get_random_password, get_password_hash, verify_password
 from assemblyline.common.str_utils import safe_str, translate_str
 from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
+from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.randomizer import random_model_obj, get_random_word
 
 
@@ -179,6 +183,46 @@ def test_hexdump():
         assert c[1] in "abcdef1234567890"
         assert c[2] == " "
     assert line[59:59+2] == "  "
+
+
+def test_identify():
+    # Setup test data
+    aaaa = f"{'A' * 10000}".encode()
+    sha256 = hashlib.sha256(aaaa).hexdigest()
+
+    # Prep temp file
+    _, input_path = tempfile.mkstemp()
+    output_path = f"{input_path}.cart"
+
+    try:
+        # Write temp file
+        with open(input_path, 'wb') as oh:
+            oh.write(aaaa)
+
+        # Create a cart file
+        with open(output_path, 'wb') as oh:
+            with open(input_path, 'rb') as ih:
+                pack_stream(ih, oh, {'name': 'test_identify.a'})
+
+        # Validate the cart file created
+        meta = get_metadata_only(output_path)
+        assert meta.get("sha256", None) == sha256
+
+        # Validate identify file detection
+        info = fileinfo(output_path)
+        assert info.get("type", None) == "archive/cart"
+
+        # Validate identify hashing
+        output_sha256 = subprocess.check_output(['sha256sum', output_path])[:64].decode()
+        assert info.get("sha256", None) == output_sha256
+    finally:
+        # Cleanup output file
+        if os.path.exists(output_path):
+            os.unlink(output_path)
+
+        # Cleanup input file
+        if os.path.exists(input_path):
+            os.unlink(input_path)
 
 
 def test_iprange():
