@@ -12,6 +12,7 @@ import time
 import shutil
 import warnings
 
+from tempfile import gettempdir
 from pprint import pformat
 
 from assemblyline.common import forge, log as al_log
@@ -107,7 +108,7 @@ def action_done(args):
                       f" at {int(COUNT_INCREMENT / (new_t - t_last))} keys/sec)")
             t_last = new_t
     elif do_print:
-        print("!!ERROR!! [%s] %s ==> %s" % (bucket, action, key))
+        print(f"!!ERROR!! [{bucket}] {action} ==> {key}")
 
 
 # noinspection PyMethodMayBeStatic,PyProtectedMember,PyBroadException
@@ -122,32 +123,53 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         self.config = forge.get_config()
         if show_prompt:
             self._update_context()
+        self._platform = sys.platform
+        self._cmd_lex = None
 
     def _update_context(self):
         self.prompt = '(al_cli) $ '
         self.intro = 'AL 4.0 - Console. (type help).'
 
-    def _parse_args(self, s, platform='this'):
-        """Multi-platform variant of shlex.split() for command-line splitting.
+    def _compile_cmd_lex(self):
+        """Compiles regular expression for for command-line splitting.
         For use with subprocess, for argv injection etc. Using fast REGEX.
 
-        platform: 'this' = auto from current platform;
-                  1 = POSIX;
-                  0 = Windows/CMD
-                  (other values reserved)
+        self._platform: auto from current platform;
+                        'win32' = Windows/CMD
+                        'linux', etc. = POSIX
         """
-        if platform == 'this':
-            platform = (sys.platform != 'win32')
-        if platform == 1:
-            cmd_lex = r'''"((?:\\["\\]|[^"])*)"|'([^']*)'|(\\.)|(&&?|\|\|?|\d?\>|[<])|([^\s'"\\&|<>]+)|(\s+)|(.)'''
-        elif platform == 0:
-            cmd_lex = r'''"((?:""|\\["\\]|[^"])*)"?()|(\\\\(?=\\*")|\\")|(&&?|\|\|?|\d?>|[<])|([^\s"&|<>]+)|(\s+)|(.)'''
+
+        if self._platform != 'win32':
+            self._cmd_lex = re.compile(r'''"
+            ((?:\\["\\]|[^"])*)"|       # quoted string
+            '([^']*)'|                  # quoted single string
+            (\\.)|                      # escaped string
+            (&&?|\|\|?|\d?>|[<])|      # pipes and other command continuation
+            ([^\s'"\\&|<>]+)|           # words
+            (\s+)|                      # whitespace
+            (.)                         # fail
+            ''', re.VERBOSE)
         else:
-            raise AssertionError('unkown platform %r' % platform)
+            self._cmd_lex = re.compile(r'''
+            "((?:""|\\["\\]|[^"])*)"|   # quoted string
+            ()|                         # quoted single string, empty for win32 platform
+            (\\\\(?=\\*")|\\")|         # escaped string
+            (&&?|\|\|?|\d?>|[<])|       # pipes and other command continuation
+            ([^\s"&|<>]+)|              # words
+            (\s+)|                      # whitespace
+            (.)                         # fail
+            ''', re.VERBOSE)
+
+    def _parse_args(self, s):
+        """Multi-platform variant of shlex.split() for command-line splitting.
+        For use with subprocess, for argv injection etc. Using fast compiled class REGEX.
+        """
+        if self._cmd_lex is None:
+            self._compile_cmd_lex()
 
         args = []
         accu = None  # collects pieces of one arg
-        for qs, qss, esc, pipe, word, white, fail in re.findall(cmd_lex, s):
+        for qs, qss, esc, pipe, word, white, fail in self._cmd_lex.findall(s):
             if word:
                 pass  # most frequent
             elif esc:
@@ -163,7 +185,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 raise ValueError("invalid or incomplete shell string")
             elif qs:
                 word = qs.replace('\\"', '"').replace('\\\\', '\\')
-                if platform == 0:
+                if self._platform == "win32":
                     word = word.replace('""', '"')
             else:
                 word = qss  # may be even empty; must be last
@@ -184,12 +206,12 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 break
 
         if msg:
-            self.logger.error(msg + "\n")
+            self.logger.error(f"{msg}\n")
 
         if stack_func:
             function_doc = inspect.getdoc(getattr(self, stack_func))
             if function_doc:
-                self.logger.info("Function help:\n\n" + function_doc + "\n")
+                self.logger.info(f"Function help:\n\n{function_doc}\n")
 
     #
     # Exit actions
@@ -267,8 +289,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         try:
             os.makedirs(dest, exist_ok=True)
         except Exception:
-            self.logger.error("Cannot make %s folder. Make sure you can write to this folder. "
-                              "Maybe you should write your backups in /tmp ?" % dest)
+            temp_dir = gettempdir()
+            self.logger.error(f"Cannot make {dest!s} folder. Make sure you can write to this folder.\n"
+                              f"Maybe you should write your backups in {temp_dir} ?")
             return
 
         if system_backup:
@@ -296,14 +319,14 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             data = self.datastore.get_collection(bucket).search(query, offset=0, rows=1)
             total = data['total']
             if not total:
-                self.logger.info("\nNothing in '%s' matches the query:\n\n  %s\n" % (bucket.upper(), query))
+                self.logger.info(f"\nNothing in '{bucket.upper()}' matches the query:\n\n  {query}\n")
                 try:
                     os.rmdir(dest)
                 except Exception:
                     self.logger.error(f"Cannot remove backup destination folder '{dest}'.")
                 return
             else:
-                self.logger.info("\nNumber of items matching this query: %s\n" % data["total"])
+                self.logger.info(f"\nNumber of items matching this query: {data['total']}\n")
 
             if not force:
                 self.logger.info("This is an exemple of the data that will be backuped:\n")
@@ -365,9 +388,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         # Make sure that all the backup parts are there
         bak_files = os.listdir(path)
         for part_num in range(workers):
-            suffix_check = ".part%d" % part_num
+            suffix_check = f".part{part_num:d}"
             if not any(suffix_check in x for x in bak_files):
-                self._print_error("%d files exist, but no file ending with %s found. " % (workers, suffix_check))
+                self._print_error(f"{workers:d} files exist, but no file ending with {suffix_check} found. ")
                 return
 
         backup_manager = DistributedBackup(path, worker_count=workers, logger=self.logger)
@@ -463,7 +486,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 pool.join()
 
         except Exception as e:
-            self.logger.exception("Something when wrong, retry!\n\n %s\n" % e)
+            self.logger.exception(f"Something when wrong, retry!\n\n {e}\n")
         else:
             if pool is not None:
                 pool.close()
@@ -517,31 +540,49 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if action_type == 'list':
             for key in collection.keys():
                 self.logger.info(key)
-        elif action_type == 'show' and item_id:
-            self.logger.info(pformat(self.datastore.get_service_with_delta(item_id, as_obj=False)))
-        elif action_type == 'disable' and item_id:
+            return
+        if item_id:
             item = collection.get(item_id)
-            if item:
-                item.enabled = False
-                collection.save(item_id, item)
-                self.logger.info(f"{item_id} was disabled")
-            else:
+            if item is None:
                 self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'enable' and item_id:
-            item = collection.get(item_id)
-            if item:
-                item.enabled = True
-                collection.save(item_id, item)
-                self.logger.info(f"{item_id} was enabled")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'remove' and item_id:
+                return
+        else:
+            self._print_error("Invalid command parameters")
+            return
+
+        if action_type == 'show':
+            self.logger.info(pformat(item.as_primitives()))
+        elif action_type == 'disable':
+            item.enabled = False
+            collection.save(item_id, item)
+            self.logger.info(f"{item_id} was disabled")
+        elif action_type == 'enable':
+            item.enabled = True
+            collection.save(item_id, item)
+            self.logger.info(f"{item_id} was enabled")
+        elif action_type == 'remove':
             collection.delete(item_id)
             service = self.datastore.get_collection('service')
             service.delete_matching(f"name:{item_id}")
             self.logger.info(f"Service '{item_id}' removed.")
-        else:
-            self._print_error("Invalid command parameters")
+
+    def complete_service(self, text, line, begidx, endidx):
+        """
+        Command completion for the 'service' command
+        """
+        args = self._parse_args(line)
+        valid_actions = ['list', 'show', 'disable', 'enable', 'remove']
+        terminal_actions = ['list']
+
+        if args[1] in terminal_actions:
+            pass
+        elif len(args) == 2:
+            return [i for i in valid_actions if i.startswith(text)]
+        elif len(args) == 3:
+            collection = self.datastore.get_collection('service_delta')
+            if collection:
+                return [i for i in collection.keys() if i.startswith(text)]
+        return []
 
     def do_signature(self, args):
         """
@@ -674,7 +715,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             disable      Disable a user
             enable       Enable a user
             set_admin    Make a user admin
-            unset_admin  Remove admin priviledges to a user
+            unset_admin  Remove admin privileges to a user
             remove       Remove a user
             set_otp      Generate a new random OTP secret key for user
             unset_otp    Remove OTP Secret Token
@@ -710,77 +751,78 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if action_type == 'list':
             for key in users.keys():
                 self.logger.info(key)
-        elif action_type == 'show' and item_id:
-            self.logger.info(pformat(users.get(item_id, as_obj=False)))
-        elif action_type == 'disable' and item_id:
+            return
+        if item_id:
             item = users.get(item_id)
-            if item:
-                item.is_active = False
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} was disabled")
-            else:
+            if item is None:
                 self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'enable' and item_id:
-            item = users.get(item_id)
-            if item:
-                item.is_active = True
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} was enabled")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'set_admin' and item_id:
-            item = users.get(item_id)
-            if item:
-                if 'admin' not in item.type:
-                    item.type.append('admin')
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} was added admin priviledges")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'unset_admin' and item_id:
-            item = users.get(item_id)
-            if item:
-                item.type.pop('admin', None)
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} was removed admin priviledges")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'remove' and item_id:
-            users.delete(item_id)
-            self.logger.info(f"User '{item_id}' removed.")
-        elif action_type == 'unset_otp' and item_id:
-            item = users.get(item_id, as_obj=False)
-            if item:
-                item.pop('otp_sk', None)
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} OTP secret key was removed")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'set_otp' and item_id:
-            item = users.get(item_id)
-            if item:
-                item.otp_sk = generate_random_secret()
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} OTP secret key is now: {item.otp_sk}")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'show_otp' and item_id:
-            item = users.get(item_id)
-            if item:
-                if item.otp_sk:
-                    while True:
-                        self.logger.info('\r%s OTP Token:   %06d   %s%s' % (item_id, get_totp_token(item.otp_sk),
-                                                                            "█" * int(time.time() % 30),
-                                                                            "░" * (29 - int(time.time() % 30)))),
-                        sys.__stdout__.flush()
-
-                        time.sleep(1)
-                else:
-                    self.logger.warn(f"2FA not enabled for user {item_id}")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
+                return
         else:
             self._print_error("Invalid command parameters")
+            return
+
+        if action_type == 'show':
+            self.logger.info(pformat(item.as_primitives()))
+        elif action_type == 'disable':
+            item.is_active = False
+            users.save(item_id, item)
+            self.logger.info(f"{item_id} was disabled")
+        elif action_type == 'enable':
+            item.is_active = True
+            users.save(item_id, item)
+            self.logger.info(f"{item_id} was enabled")
+        elif action_type == 'set_admin':
+            if 'admin' not in item.type:
+                item.type.append('admin')
+            users.save(item_id, item)
+            self.logger.info(f"Granted admin privileges to {item_id}")
+        elif action_type == 'unset_admin':
+            item.type.pop('admin', None)
+            users.save(item_id, item)
+            self.logger.info(f"Admin privileges revoked for {item_id}")
+        elif action_type == 'remove':
+            users.delete(item_id)
+            self.logger.info(f"User '{item_id}' removed.")
+        elif action_type == 'unset_otp':
+            item.pop('otp_sk', None)
+            users.save(item_id, item)
+            self.logger.info(f"{item_id} OTP secret key was removed")
+        elif action_type == 'set_otp':
+            item.otp_sk = generate_random_secret()
+            users.save(item_id, item)
+            self.logger.info(f"{item_id} OTP secret key is now: {item.otp_sk}")
+        elif action_type == 'show_otp':
+            if item.otp_sk:
+                while True:
+                    self.logger.info('\r{!s} OTP Token:   {:06d}   {:░<30}'.format(
+                        item_id,
+                        get_totp_token(item.otp_sk),
+                        "█" * int(time.time() % 30))
+                    )
+                    sys.__stdout__.flush()
+
+                    time.sleep(1)
+            else:
+                self.logger.warn(f"2FA not enabled for user {item_id}")
+
+    def complete_user(self, text, line, begidx, endidx):
+        """
+        Command completion for the 'user' command
+        """
+        args = self._parse_args(line)
+        valid_actions = ['list', 'show', 'disable', 'enable', 'remove',
+                         'set_admin', 'unset_admin', 'set_otp', 'unset_otp', 'show_otp']
+        terminal_actions = ['list']
+
+        if args[1] in terminal_actions:
+            pass
+        elif len(args) == 2:
+            return [i for i in valid_actions if i.startswith(text)]
+        elif len(args) == 3:
+            users = self.datastore.get_collection('user')
+            if users:
+                return [i for i in users.keys() if i.startswith(text)]
+        return []
 
     def do_index(self, args):
         """
@@ -820,13 +862,13 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             return
 
         if action_type not in valid_actions:
-            self._print_error("\nInvalid action specified: %s\n\n"
-                              "Valid actions are:\n%s" % (action_type, "\n".join(valid_actions)))
+            self._print_error("\nInvalid action specified: {}\n\n"
+                              "Valid actions are:\n{}".format(action_type, "\n".join(valid_actions)))
             return
 
         if bucket and bucket not in valid_buckets:
-            self._print_error("\nInvalid bucket specified: %s\n\n"
-                              "Valid buckets are:\n%s" % (bucket, "\n".join(valid_buckets)))
+            self._print_error("\nInvalid bucket specified: {}\n\n"
+                              "Valid buckets are:\n{}".format(bucket, "\n".join(valid_buckets)))
             return
 
         if action_type == 'reindex':
@@ -905,18 +947,18 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             return
 
         if action_type not in valid_actions:
-            self._print_error("\nInvalid action specified: %s\n\n"
-                              "Valid actions are:\n%s" % (action_type, "\n".join(valid_actions)))
+            self._print_error("\nInvalid action specified: {}\n\n"
+                              "Valid actions are:\n{}".format(action_type, "\n".join(valid_actions)))
             return
 
         if action_type == 'bucket':
             if bucket not in valid_buckets:
-                self._print_error("\nInvalid bucket: %s\n\n"
-                                  "Valid buckets are:\n%s" % (bucket, "\n".join(valid_buckets)))
+                self._print_error("\nInvalid bucket: {}\n\n"
+                                  "Valid buckets are:\n{}".format(bucket, "\n".join(valid_buckets)))
                 return
 
             self.datastore.get_collection(bucket).wipe()
-            self.logger.info(f"Done wipping {bucket.upper()}.")
+            self.logger.info(f"Done wiping {bucket.upper()}.")
         elif action_type == 'non_system':
             non_system_buckets = [
                 'alert', 'cached_file', 'emptyresult', 'error', 'file', 'filescore', 'result',
@@ -1030,7 +1072,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         func = args[0]
         if func not in valid_func:
-            self._print_error("Invalid action '%s' for ui command." % func)
+            self._print_error(f"Invalid action '{func}' for ui command.")
             return
 
         if func == 'clear_sessions':
@@ -1084,7 +1126,7 @@ def shell_main():
     cli = ALCommandLineInterface(len(sys.argv) == 1)
 
     if len(sys.argv) != 1:
-        cli.onecmd(" ".join([{True: '"%s"' % x, False: x}[" " in x] for x in sys.argv[1:]]))
+        cli.onecmd(" ".join([{True: f'"{x}"', False: x}[" " in x] for x in sys.argv[1:]]))
     else:
         print_banner()
         cli.cmdloop()
