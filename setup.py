@@ -82,7 +82,8 @@ setup(
         'kubernetes',
         'notifications-python-client',
         # Blacklist a bad release of the azure library until a release newer than that comes out
-        'azure-storage-blob!=12.4.0'
+        'azure-storage-blob!=12.4.0',
+        'msoffcrypto-tool'
     ],
     extras_require={
         'test': [
