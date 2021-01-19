@@ -7,6 +7,7 @@ import sys
 import threading
 import uuid
 import zipfile
+import msoffcrypto
 from binascii import hexlify
 from collections import defaultdict
 from typing import Tuple, Union, Dict
@@ -286,7 +287,6 @@ sl_patterns = [
     ['jpg', r'^jpeg image data'],
     ['png', r'^png image data'],
     ['installer/windows', r'(Installation Database|Windows Installer)'],
-    ['office/passwordprotected', r'(Security: 1|CDFV2 Encrypted)'],
     ['office/excel', r'Microsoft.*Excel'],
     ['office/powerpoint', r'Microsoft.*PowerPoint'],
     ['office/word', r'Microsoft.*Word'],
@@ -762,6 +762,16 @@ def fileinfo(path: str) -> Dict:
         lang, _ = guess_language(path)
         if lang in ["code/javascript", "code/vbs"]:
             data['type'] = 'code/hta'
+
+    if data['type'] in ['document/office/word', 'document/office/excel',
+                        'document/office/powerpoint', 'document/office/unknown']:
+        msoffcrypto_obj = None
+        try:
+            msoffcrypto_obj = msoffcrypto.OfficeFile(open(path, "rb"))
+        except Exception:
+            pass
+        if msoffcrypto_obj and msoffcrypto_obj.is_encrypted():
+            data['type'] = 'document/office/passwordprotected'
 
     if not recognized.get(data['type'], False) and not cart_metadata_set:
         data['type'] = 'unknown'
