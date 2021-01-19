@@ -27,21 +27,21 @@ def get_object(base, key):
 
 
 class BulkPlan(object):
-    def __init__(self, index, model=None):
-        self.index = index
+    def __init__(self, indexes, model=None):
+        self.indexes = indexes
         self.model = model
         self.operations = []
 
-    def add_delete_operation(self, doc_id):
+    def add_delete_operation(self, doc_id, index=None):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
-    def add_insert_operation(self, doc_id, doc):
+    def add_insert_operation(self, doc_id, doc, index=None):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
-    def add_upsert_operation(self, doc_id, doc):
+    def add_upsert_operation(self, doc_id, doc, index=None):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
-    def add_update_operation(self, doc_id, doc):
+    def add_update_operation(self, doc_id, doc, index=None):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
     def get_plan_data(self):
@@ -89,6 +89,15 @@ class Collection(object):
         if isinstance(value, list):
             return value[0]
         return value
+
+    @property
+    def index_list(self):
+        """
+        This property contains the list of valid indexes for the current collection.
+
+        :return: list of valid indexes for this collection
+        """
+        return [self.name]
 
     def with_retries(self, func, *args, **kwargs):
         """
@@ -141,7 +150,7 @@ class Collection(object):
 
         :return: The BulkPlan object
         """
-        return self.bulk_plan_class(self.name, model=self.model_class)
+        return self.bulk_plan_class(self.index_list, model=self.model_class)
 
     def commit(self):
         """
