@@ -237,10 +237,10 @@ class AssemblylineDatastore(object):
 
         # Add delete operation for submission and cache
         s_plan.add_delete_operation(sid)
-        for t in [x['id'] for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
-            st_plan.add_delete_operation(t)
-        for s in [x['id'] for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
-            ss_plan.add_delete_operation(s)
+        for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id,_index", as_obj=False):
+            st_plan.add_delete_operation(x['id'], index=x['_index'])
+        for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id,_index", as_obj=False):
+            ss_plan.add_delete_operation(x['id'], index=x['_index'])
 
         # Gather file list
         errors = submission['errors']
@@ -307,13 +307,13 @@ class AssemblylineDatastore(object):
                         new_file_class = cl_engine.min_classification(new_file_class, c)
 
                     # Find the results for that classification and alter them if the new classification does not match
-                    for item in self.result.stream_search(f"id:{f}*", fl="classification,id", as_obj=False):
+                    for item in self.result.stream_search(f"id:{f}*", fl="classification,id,_index", as_obj=False):
                         new_class = cl_engine.max_classification(
                             item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
                         if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
                             data = cl_engine.get_access_control_parts(new_class)
                             data['classification'] = new_class
-                            r_plan.add_update_operation(item['id'], data)
+                            r_plan.add_update_operation(item['id'], data, index=item['_index'])
 
                     # Alter the file classification if the new classification does not match
                     if cur_file['classification'] != new_file_class:
