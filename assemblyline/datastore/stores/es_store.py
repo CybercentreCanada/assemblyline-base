@@ -415,7 +415,7 @@ class ESCollection(Collection):
 
         return out
 
-    def _get(self, key, retries):
+    def _get(self, key, retries, force_archive_access=False):
 
         def normalize_output(data_output):
             if "__non_doc_raw__" in data_output:
@@ -434,7 +434,7 @@ class ESCollection(Collection):
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
-            if self.archive_access:
+            if self.archive_access or (self.ilm_config and force_archive_access):
                 query_body = {"query": {"ids": {"values": [key]}}}
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                          body=query_body)['hits']['hits']
@@ -451,7 +451,7 @@ class ESCollection(Collection):
 
         return None
 
-    def _save(self, key, data):
+    def _save(self, key, data, force_archive_access=False):
         if self.model_class:
             saved_data = data.as_primitives(hidden_fields=True)
         else:
@@ -468,6 +468,11 @@ class ESCollection(Collection):
             id=key,
             body=json.dumps(saved_data)
         )
+
+        if self.archive_access or (self.ilm_config and force_archive_access):
+            self.with_retries(self.datastore.client.delete_by_query,
+                              index=f"{self.name}-*",
+                              body={"query": {"ids": {"values": [key]}}})
 
         return True
 

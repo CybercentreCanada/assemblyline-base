@@ -205,7 +205,7 @@ class Collection(object):
 
         return output
 
-    def _get(self, key, retries):
+    def _get(self, key, retries, force_archive_access=False):
         """
         This function should be overloaded in a way that if the document is not found,
         the function retries to get the document the specified amount of time.
@@ -218,50 +218,57 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def get(self, key, as_obj=True):
+    def get(self, key, as_obj=True, force_archive_access=False):
         """
         Get a document from the datastore, retry a few times if not found and normalize the
         document with the model provided with the collection.
 
         This is the normal way to get data of the system.
 
+        :param force_archive_access: Temporary force access to archive during this call
         :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_NORMAL), as_obj=as_obj)
+        return self.normalize(self._get(key, self.RETRY_NORMAL, force_archive_access=force_archive_access),
+                              as_obj=as_obj)
 
-    def get_if_exists(self, key, as_obj=True):
+    def get_if_exists(self, key, as_obj=True, force_archive_access=False):
         """
         Get a document from the datastore but do not retry if not found.
 
         Use this more in caching scenarios because eventually consistent database may lead
         to have document reported has missing even if they exist.
 
-        :param as_obj:
+        :param force_archive_access: Temporary force access to archive during this call
+        :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_NONE), as_obj=as_obj)
+        return self.normalize(self._get(key, self.RETRY_NONE, force_archive_access=force_archive_access),
+                              as_obj=as_obj)
 
-    def require(self, key, as_obj=True):
+    def require(self, key, as_obj=True, force_archive_access=False):
         """
         Get a document from the datastore and retry forever because we know for sure
         that this document should exist. If it does not right now, this will wait for the
         document to show up in the datastore.
 
-        :param as_obj:
+        :param force_archive_access: Temporary force access to archive during this call
+        :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_INFINITY), as_obj=as_obj)
+        return self.normalize(self._get(key, self.RETRY_INFINITY, force_archive_access=force_archive_access),
+                              as_obj=as_obj)
 
-    def save(self, key, data):
+    def save(self, key, data, force_archive_access=False):
         """
         Save a to document to the datastore using the key as its document id.
 
         The document data will be normalized before being saved in the datastore.
 
+        :param force_archive_access: Temporary force access to archive during this call
         :param key: ID of the document to save
         :param data: raw data or instance of the model class to save as the document
         :return: True if the document was saved properly
@@ -269,15 +276,16 @@ class Collection(object):
         if " " in key:
             raise DataStoreException("You are not allowed to use spaces in datastore keys.")
             
-        return self._save(key, self.normalize(data))
+        return self._save(key, self.normalize(data), force_archive_access=force_archive_access)
 
-    def _save(self, key, data):
+    def _save(self, key, data, force_archive_access=False):
         """
         This function should takes in an instance of the the model class as input
         and saves it to the database backend at the id mentioned by the key.
 
         This function should return True if the data was saved correctly
 
+        :param force_archive_access: Temporary force access to archive during this call
         :param key: key to use to store the document
         :param data: instance of the model class to save to the database
         :return: True if save was successful
