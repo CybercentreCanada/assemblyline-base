@@ -291,7 +291,7 @@ class Alerter(odm.Model):
 
 
 DEFAULT_ALERTER = {
-    "alert_ttl": 0,
+    "alert_ttl": 90,
     "constant_alert_fields": ["alert_id", "file", "ts"],
     "default_group_field": "file.sha256",
     "delay": 300,
@@ -586,7 +586,7 @@ class ILM(odm.Model):
 
 DEFAULT_ILM = {
     "days_until_archive": 5,
-    "enabled": True,
+    "enabled": False,
     "indexes": DEFAULT_ILM_INDEXES
 }
 
@@ -906,7 +906,7 @@ class Submission(odm.Model):
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
-    'dtl': 0,
+    'dtl': 30,
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
