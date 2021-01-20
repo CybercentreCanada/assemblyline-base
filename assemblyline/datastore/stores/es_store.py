@@ -352,6 +352,8 @@ class ESCollection(Collection):
                 }
                 self.with_retries(self.datastore.client.reindex, body)
                 if self.with_retries(self.datastore.client.indices.exists, new_name):
+                    self.with_retries(self.datastore.client.indices.refresh, new_name)
+                    self.with_retries(self.datastore.client.indices.clear_cache, new_name)
                     self.with_retries(self.datastore.client.indices.delete, index)
 
                     try:
