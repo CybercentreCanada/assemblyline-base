@@ -996,7 +996,7 @@ class AssemblylineDatastore(object):
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None):
         with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
-            current_fileinfo = self.ds.file.get(sha256, as_obj=False) or {}
+            current_fileinfo = self.ds.file.get(sha256, as_obj=False, force_archive_access=True) or {}
 
             # Remove control fields from file info and update current file info
             for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
@@ -1027,4 +1027,4 @@ class AssemblylineDatastore(object):
                 str(classification)
             )
             current_fileinfo['classification'] = classification
-            self.ds.file.save(sha256, current_fileinfo)
+            self.ds.file.save(sha256, current_fileinfo, force_archive_access=True)
