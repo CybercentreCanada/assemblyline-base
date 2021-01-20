@@ -37,46 +37,46 @@ t_last = time.time()
 
 class NullLogger(object):
     @staticmethod
-    def info(msg):
+    def info(msg, *args, **kwargs):
         pass
 
     @staticmethod
-    def warning(msg):
+    def warning(msg, *args, **kwargs):
         pass
 
     @staticmethod
-    def warn(msg):
+    def warn(msg, *args, **kwargs):
         pass
 
     @staticmethod
-    def error(msg):
+    def error(msg, *args, **kwargs):
         pass
 
     @staticmethod
-    def exception(msg):
+    def exception(msg, *args, **kwargs):
         pass
 
 
 class PrintLogger(object):
     @staticmethod
-    def info(msg):
-        print(msg)
+    def info(msg, end=None):
+        print(msg, end=end)
 
     @staticmethod
-    def warning(msg):
-        print(f"[W] {msg}")
+    def warning(msg, end=None):
+        print(f"[W] {msg}", end=end)
 
     @staticmethod
-    def warn(msg):
-        print(f"[W] {msg}")
+    def warn(msg, end=None):
+        print(f"[W] {msg}", end=end)
 
     @staticmethod
-    def error(msg):
-        print(f"[E] {msg}")
+    def error(msg, end=None):
+        print(f"[E] {msg}", end=end)
 
     @staticmethod
-    def exception(msg):
-        print(f"[EX] {msg}")
+    def exception(msg, end=None):
+        print(f"[EX] {msg}", end=end)
 
 
 def init():
@@ -196,6 +196,37 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             args.append(accu)
 
         return args
+
+    def _get_completion_list(self, text, line, collection_name,
+                             valid_actions=None, terminal_actions=None, multiple_actions=None):
+        """
+        Helper for command completion for subcommands that take no arguments, take one argument,
+        or multiple arguments of the same type.
+        """
+        if terminal_actions is None:
+            terminal_actions = []
+        if valid_actions is None:
+            valid_actions = []
+        if multiple_actions is None:
+            multiple_actions = []
+
+        args = self._parse_args(line)
+        if text == '':
+            # Because _parse_args strips trailing spaces
+            args.append(text)
+
+        if len(args) == 2:
+            return [i for i in valid_actions if i.startswith(text)]
+        elif len(args) >= 3:
+            if args[1] in terminal_actions:
+                return []
+            collection = self.datastore.get_collection(collection_name)
+            if collection:
+                if len(args) == 3:
+                    return [i for i in collection.keys() if i.startswith(text)]
+                if args[1] in multiple_actions:
+                    return [i for i in collection.keys() if i.startswith(text) and i not in args[2:-1]]
+        return []
 
     def _print_error(self, msg):
         stack_func = None
@@ -329,7 +360,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 self.logger.info(f"\nNumber of items matching this query: {data['total']}\n")
 
             if not force:
-                self.logger.info("This is an exemple of the data that will be backuped:\n")
+                self.logger.info("This is an example of the data that will be backed up:\n")
                 self.logger.info(f"{data['items'][0]}\n")
                 if self.prompt:
                     cont = input("Are your sure you want to continue? (y/N) ")
@@ -467,7 +498,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                         self.logger.warn("\n**ABORTED**\n")
                         return
                 else:
-                    self.logger.warn("You are not in interactive mode therefor the delete was not executed. "
+                    self.logger.warn("You are not in interactive mode, therefore the delete was not executed. "
                                      "Add 'force' to your commandline to execute the delete.")
                     return
 
@@ -486,7 +517,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 pool.join()
 
         except Exception as e:
-            self.logger.exception(f"Something when wrong, retry!\n\n {e}\n")
+            self.logger.exception(f"Something went wrong, retry!\n\n {e}\n")
         else:
             if pool is not None:
                 pool.close()
@@ -570,19 +601,11 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         """
         Command completion for the 'service' command
         """
-        args = self._parse_args(line)
         valid_actions = ['list', 'show', 'disable', 'enable', 'remove']
         terminal_actions = ['list']
+        multiple_actions = []
 
-        if args[1] in terminal_actions:
-            pass
-        elif len(args) == 2:
-            return [i for i in valid_actions if i.startswith(text)]
-        elif len(args) == 3:
-            collection = self.datastore.get_collection('service_delta')
-            if collection:
-                return [i for i in collection.keys() if i.startswith(text)]
-        return []
+        return self._get_completion_list(text, line, 'service_delta', valid_actions, terminal_actions, multiple_actions)
 
     def do_signature(self, args):
         """
@@ -659,7 +682,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
                     if not force:
                         self.logger.info(f'\nNumber of items matching this query: {test_data["total"]}\n\n')
-                        self.logger.info("This is an exemple of the signatures that will change status:\n")
+                        self.logger.info("This is an example of the signatures that will change status:\n")
                         self.logger.info(f"{test_data['items'][0]}\n")
                         if self.prompt:
                             cont = input("Are your sure you want to continue? (y/N) ")
@@ -669,8 +692,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                                 self.logger.warn("\n**ABORTED**\n")
                                 return
                         else:
-                            self.logger.warn("You are not in interactive mode therefor the "
-                                             "status change was not executed. "
+                            self.logger.warn("You are not in interactive mode, "
+                                             "therefore the status change was not executed. "
                                              "Add 'force' to your commandline to execute the status change.")
                             return
 
@@ -683,7 +706,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 except KeyboardInterrupt:
                     self.logger.warn("Interrupting jobs...")
                 except Exception as e:
-                    self.logger.error(f"Something when wrong, retry!\n\n {e}\n")
+                    self.logger.error(f"Something went wrong, retry!\n\n {e}\n")
             else:
                 self._print_error("Invalid action parameters for action 'change_status' of signature command.")
 
@@ -714,8 +737,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             show         Describe a user
             disable      Disable a user
             enable       Enable a user
-            set_admin    Make a user admin
-            unset_admin  Remove admin privileges to a user
+            set_admin    Grant a user admin privileges
+            unset_admin  Revoke a user's admin privileges
             remove       Remove a user
             set_otp      Generate a new random OTP secret key for user
             unset_otp    Remove OTP Secret Token
@@ -793,15 +816,18 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             self.logger.info(f"{item_id} OTP secret key is now: {item.otp_sk}")
         elif action_type == 'show_otp':
             if item.otp_sk:
-                while True:
-                    self.logger.info('\r{!s} OTP Token:   {:06d}   {:░<30}'.format(
-                        item_id,
-                        get_totp_token(item.otp_sk),
-                        "█" * int(time.time() % 30))
-                    )
-                    sys.__stdout__.flush()
-
-                    time.sleep(1)
+                try:
+                    while True:
+                        self.logger.info('\r{!s} OTP Token:   {:06d}   {:░<30}'.format(
+                            item_id,
+                            get_totp_token(item.otp_sk),
+                            "█" * int(time.time() % 30)),
+                            end=''
+                        ),
+                        sys.__stdout__.flush()
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    self.logger.info('')
             else:
                 self.logger.warn(f"2FA not enabled for user {item_id}")
 
@@ -809,20 +835,12 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         """
         Command completion for the 'user' command
         """
-        args = self._parse_args(line)
         valid_actions = ['list', 'show', 'disable', 'enable', 'remove',
                          'set_admin', 'unset_admin', 'set_otp', 'unset_otp', 'show_otp']
         terminal_actions = ['list']
+        multiple_actions = []
 
-        if args[1] in terminal_actions:
-            pass
-        elif len(args) == 2:
-            return [i for i in valid_actions if i.startswith(text)]
-        elif len(args) == 3:
-            users = self.datastore.get_collection('user')
-            if users:
-                return [i for i in users.keys() if i.startswith(text)]
-        return []
+        return self._get_completion_list(text, line, 'user', valid_actions, terminal_actions, multiple_actions)
 
     def do_index(self, args):
         """
