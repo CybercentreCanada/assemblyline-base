@@ -335,6 +335,13 @@ class ESCollection(Collection):
         for index in self.index_list:
             if self.with_retries(self.datastore.client.indices.exists, index):
                 new_name = f'{index}_{get_random_id().lower()}'
+
+                try:
+                    self.with_retries(self.datastore.client.indices.create, new_name, self._get_index_definition())
+                except elasticsearch.exceptions.RequestError as e:
+                    if "resource_already_exists_exception" not in str(e):
+                        raise
+
                 body = {
                     "source": {
                         "index": index
@@ -346,6 +353,13 @@ class ESCollection(Collection):
                 self.with_retries(self.datastore.client.reindex, body)
                 if self.with_retries(self.datastore.client.indices.exists, new_name):
                     self.with_retries(self.datastore.client.indices.delete, index)
+
+                    try:
+                        self.with_retries(self.datastore.client.indices.create, index, self._get_index_definition())
+                    except elasticsearch.exceptions.RequestError as e:
+                        if "resource_already_exists_exception" not in str(e):
+                            raise
+
                     body = {
                         "source": {
                             "index": new_name
@@ -1110,47 +1124,47 @@ class ESCollection(Collection):
         if not pol_req.ok:
             raise ILMException(f"ERROR: Failed to create ILM policy: {self.name}_policy")
 
+    def _get_index_definition(self):
+        index_def = deepcopy(default_index)
+        if 'settings' not in index_def:
+            index_def['settings'] = {}
+        if 'index' not in index_def['settings']:
+            index_def['settings']['index'] = {}
+        index_def['settings']['index']['number_of_shards'] = self.shards
+        index_def['settings']['index']['number_of_replicas'] = self.replicas
+
+        mappings = deepcopy(default_mapping)
+        if self.model_class:
+            mappings['properties'], mappings['dynamic_templates'] = \
+                build_mapping(self.model_class.fields().values())
+        else:
+            mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
+
+        if not mappings['dynamic_templates']:
+            # Setting dynamic to strict prevents any documents with fields not in the properties to be added
+            mappings['dynamic'] = "strict"
+
+        mappings['properties']['id'] = {
+            "store": True,
+            "doc_values": True,
+            "type": 'keyword'
+        }
+
+        mappings['properties']['__text__'] = {
+            "store": False,
+            "type": 'text',
+        }
+
+        index_def['mappings'] = mappings
+
+        return index_def
+
     def _ensure_collection(self):
-        def get_index_definition():
-            index_def = deepcopy(default_index)
-            if 'settings' not in index_def:
-                index_def['settings'] = {}
-            if 'index' not in index_def['settings']:
-                index_def['settings']['index'] = {}
-            index_def['settings']['index']['number_of_shards'] = self.shards
-            index_def['settings']['index']['number_of_replicas'] = self.replicas
-
-            mappings = deepcopy(default_mapping)
-            if self.model_class:
-                mappings['properties'], mappings['dynamic_templates'] = \
-                    build_mapping(self.model_class.fields().values())
-            else:
-                mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
-
-            if not mappings['dynamic_templates']:
-                # Setting dynamic to strict prevents any documents with fields not in the properties to be added
-                mappings['dynamic'] = "strict"
-
-            mappings['properties']['id'] = {
-                "store": True,
-                "doc_values": True,
-                "type": 'keyword'
-            }
-
-            mappings['properties']['__text__'] = {
-                "store": False,
-                "type": 'text',
-            }
-
-            index_def['mappings'] = mappings
-
-            return index_def
-
         # Create HOT index
         if not self.with_retries(self.datastore.client.indices.exists, self.name):
             log.debug(f"Index {self.name.upper()} does not exists. Creating it now...")
             try:
-                self.with_retries(self.datastore.client.indices.create, self.name, get_index_definition())
+                self.with_retries(self.datastore.client.indices.create, self.name, self._get_index_definition())
             except elasticsearch.exceptions.RequestError as e:
                 if "resource_already_exists_exception" not in str(e):
                     raise
@@ -1169,7 +1183,7 @@ class ESCollection(Collection):
             if not self.with_retries(self.datastore.client.indices.exists_template, self.name):
                 log.debug(f"Index template {self.name.upper()} does not exists. Creating it now...")
 
-                index = get_index_definition()
+                index = self._get_index_definition()
 
                 index["index_patterns"] = [f"{self.name}-*"]
                 index["order"] = 1
