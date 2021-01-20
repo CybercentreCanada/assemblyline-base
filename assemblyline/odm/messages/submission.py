@@ -23,6 +23,10 @@ class Submission(odm.Model):
 
 
 def from_datastore_submission(submission: DatabaseSubmission):
+    """
+    A helper to convert between database model version of Submission
+    and the message version of Submission.
+    """
     return Submission({
         'sid': submission.sid,
         'files': submission.files,
