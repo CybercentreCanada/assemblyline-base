@@ -1,4 +1,5 @@
 
+import redis
 from assemblyline.remote.datatypes import get_client, retry_call
 
 begin_script = """
@@ -30,8 +31,24 @@ class UserQuotaTracker(object):
         return f"{self.prefix}-{user}"
 
     def begin(self, user, max_quota):
-        return retry_call(self.bs, args=[self._queue_name(user), max_quota, self.timeout]) == 1
+        try:
+            return retry_call(self.bs, args=[self._queue_name(user), max_quota, self.timeout]) == 1
+        except redis.exceptions.ResponseError as er:
+            # TODO: This is a failsafe for upgrade purposes could be removed in a future version
+            if "WRONGTYPE" in str(er):
+                retry_call(self.c.delete, self._queue_name(user))
+                return retry_call(self.bs, args=[self._queue_name(user), max_quota, self.timeout]) == 1
+            else:
+                raise
 
     def end(self, user):
         """When only one item is requested, blocking is is possible."""
-        retry_call(self.c.zpopmin, self._queue_name(user))
+        try:
+            retry_call(self.c.zpopmin, self._queue_name(user))
+        except redis.exceptions.ResponseError as er:
+            # TODO: This is a failsafe for upgrade purposes could be removed in a future version
+            if "WRONGTYPE" in str(er):
+                retry_call(self.c.delete, self._queue_name(user))
+                retry_call(self.c.zpopmin, self._queue_name(user))
+            else:
+                raise
