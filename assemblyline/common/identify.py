@@ -34,7 +34,8 @@ STRONG_INDICATORS = {
         re.compile(rb'new[ \t]+ActiveXObject\('),
         re.compile(rb'xfa\.((resolve|create)Node|datasets|form)'),
         re.compile(rb'\.oneOfChild'),
-        re.compile(rb'unescape\(')
+        re.compile(rb'unescape\('),
+        re.compile(rb'\.createElement\('),
     ],
     'code/csharp': [
         re.compile(rb'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
@@ -123,6 +124,7 @@ WEAK_INDICATORS = {
                         rb'String\.(fromCharCode|raw)\(',
                         rb'Math\.(round|pow|sin|cos)\(',
                         rb'(isNaN|isFinite|parseInt|parseFloat)\(',
+                        b'WSH',
                         ],
     'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
     'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
@@ -133,6 +135,7 @@ WEAK_INDICATORS = {
         b'window_onload',
         b'.SpawnInstance_',
         b'.Security_',
+        b'WSH',
     ],
     'code/csharp': [rb'(^|\n)(protected)?[ \t]*override'],
     'code/sql': [rb'(^|\n)(create |drop |select |returns |declare )'],
@@ -182,7 +185,7 @@ OLE_CLSID_GUIDs = {
     "0003000A-0000-0000-C000-000000000046": "document/office/paintbrush",  # "Paintbrush Picture",
     "0003000C-0000-0000-C000-000000000046": "document/office/package",  # "Package"
     "000C1084-0000-0000-C000-000000000046": "document/installer/windows",  # "Installer Package (MSI)"
-    "00020D0B-0000-0000-C000-000000000046": "document/office/word",  # "MailMessage"
+    "00020D0B-0000-0000-C000-000000000046": "document/email",  # "MailMessage"
 
     # GUID v1 (Timestamp & MAC-48)
     "29130400-2EED-1069-BF5D-00DD011186B7": "document/office/wordpro",  # "Lotus WordPro"
