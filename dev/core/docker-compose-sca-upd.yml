@@ -2,7 +2,7 @@ version: '2.4'
 
 services:
   al_scaler:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     environment:
       SERVICE_API_HOST: http://al_service_server:5003
       FILE_UPDATE_VOLUME: /tmp/update_data
@@ -17,7 +17,7 @@ services:
       test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_updater:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     environment:
       SERVICE_API_HOST: http://al_service_server:5003
       FILE_UPDATE_VOLUME: /tmp/update_data
