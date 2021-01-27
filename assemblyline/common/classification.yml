@@ -104,9 +104,9 @@ subgroups:
     # limited_to_group: CSE
 
 # Default restricted classification
-restricted: TLP:AMBER//COMMERCIAL
+restricted: TLP:A//CMR
 
 # Default unrestricted classification:
 #   When no classification are provided or that the classification engine is
 #   disabled, this is the classification value each items will get
-unrestricted: TLP:WHITE
+unrestricted: TLP:W
