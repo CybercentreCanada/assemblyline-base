@@ -3,7 +3,7 @@ version: '2.4'
 services:
   # Service server
   al_service_server:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     ports:
       - '5003:5003'
     volumes:
@@ -17,7 +17,7 @@ services:
 
   # Create test data
   create_test_data:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     environment:
       DEV_ADMIN_PASS: $DEV_ADMIN_PASS
       DEV_USER_PASS: $DEV_USER_PASS
@@ -29,7 +29,7 @@ services:
 
   # UI
   al_ui:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     ports:
       - '5000:5000'
     volumes:
@@ -40,7 +40,7 @@ services:
 
   # SocketIO Server
   al_socketio:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     ports:
       - '5002:5002'
     volumes:
@@ -51,7 +51,7 @@ services:
 
   # Alerter
   al_alerter:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -61,7 +61,7 @@ services:
 
   # Expiry
   al_expiry:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -71,7 +71,7 @@ services:
 
   # Elasticsearch Metrics
   al_elastic_metrics:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -81,7 +81,7 @@ services:
 
   # Metrics aggregator
   al_metrics:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -89,7 +89,7 @@ services:
 
   # Hearbeat manager
   al_heartbeat:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -99,7 +99,7 @@ services:
 
   # Stats aggregator
   al_stats:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -107,7 +107,7 @@ services:
 
   # Workflow
   al_workflow:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -117,7 +117,7 @@ services:
 
   # Watcher
   al_watcher:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -126,7 +126,7 @@ services:
       test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_plumber:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -136,7 +136,7 @@ services:
 
   # Dispatcher processes
   al_dispatcher_files:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -147,7 +147,7 @@ services:
       test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_dispatcher_submissions:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -159,7 +159,7 @@ services:
 
   # Ingester Processes
   al_ingester_ingest:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -168,7 +168,7 @@ services:
       test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_ingester_internal:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -177,7 +177,7 @@ services:
       test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   al_ingester_submit:
-    image: cccs/assemblyline_dev:4.0.17
+    image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
