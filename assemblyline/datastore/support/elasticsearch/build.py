@@ -1,6 +1,6 @@
 from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
-    SSDeepHash, SHA1, SHA256, MD5, ClassificationString, FlattenedObject, Email
+    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -25,6 +25,8 @@ __type_mapping = {
     SHA1: 'keyword',
     SHA256: 'keyword',
     MD5: 'keyword',
+    Platform: 'keyword',
+    Processor: 'keyword',
     FlattenedObject: 'nested'
 }
 __analyzer_mapping = {
