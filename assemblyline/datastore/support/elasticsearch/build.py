@@ -40,7 +40,8 @@ __normalizer_mapping = {
 # TODO: We might want to use custom analyzers for Classification and Enum and not create special backmapping cases
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
                                                                      URIPath, MAC, PhoneNumber, SSDeepHash, Email,
-                                                                     SHA1, SHA256, MD5, ClassificationString]}
+                                                                     SHA1, SHA256, MD5, Platform, Processor,
+                                                                     ClassificationString]}
 back_mapping.update({x: Keyword for x in set(__analyzer_mapping.values())})
 
 
