@@ -196,7 +196,7 @@ def get_random_ssdeep() -> str:
 
 
 def get_random_platform() -> str:
-    return f"{random.choice(['Windows', 'Linux'])}"
+    return f"{random.choice(['Windows', 'Linux', 'MacOS', 'Android', 'iOS'])}"
 
 
 def get_random_processor() -> str:
