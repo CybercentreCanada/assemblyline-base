@@ -64,9 +64,9 @@ class Tagging(odm.Model):
 
         @odm.model(index=True, store=False)
         class DynamicOperatingSystem(odm.Model):
-            platform = odm.Optional(odm.Platform(copyto="__text__"))
-            version = odm.Optional(odm.Keyword(copyto="__text__"))
-            processor = odm.Optional(odm.Processor(copyto="__text__"))
+            platform = odm.Optional(odm.List(odm.Platform(copyto="__text__")))
+            version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            processor = odm.Optional(odm.List(odm.Processor(copyto="__text__")))
 
         autorun_location = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         dos_device = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))

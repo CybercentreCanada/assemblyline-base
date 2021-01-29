@@ -347,6 +347,8 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
                 return get_random_filename()
             elif "directory" in name:
                 return get_random_directory()
+            elif "version" in name:
+                return get_random_word()
 
         return get_random_word()
     elif isinstance(field, Text):
