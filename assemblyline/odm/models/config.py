@@ -166,6 +166,7 @@ class OAuthProvider(odm.Model):
     auto_sync: str = odm.Boolean(default=False)
     auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[])
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
+    uid_randomize: str = odm.Boolean(default=False)
     uid_regex: str = odm.Optional(odm.Keyword())
     uid_format: str = odm.Optional(odm.Keyword())
     client_id: str = odm.Optional(odm.Keyword())
