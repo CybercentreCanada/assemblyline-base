@@ -656,6 +656,7 @@ class Logging(odm.Model):
     log_to_syslog: bool = odm.Boolean()
     # if yes, what is the syslog server hostname/ip?
     syslog_host: str = odm.Keyword()
+    syslog_port: int = odm.Integer()
 
     # How often should counters log their values (seconds)
     export_interval: int = odm.Integer()
@@ -676,6 +677,7 @@ DEFAULT_LOGGING = {
     "log_to_file": False,
     "log_to_syslog": False,
     "syslog_host": "localhost",
+    "syslog_port": 514,
     "export_interval": 5,
     "heartbeat_file": "/tmp/heartbeat"
 }
