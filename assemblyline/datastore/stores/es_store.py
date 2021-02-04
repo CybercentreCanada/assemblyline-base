@@ -172,6 +172,8 @@ class ESCollection(Collection):
         'histogram_type': None,
         'histogram_gap': None,
         'histogram_mincount': 1,
+        'histogram_start': None,
+        'histogram_end': None,
         'start': 0,
         'rows': Collection.DEFAULT_ROW_SIZE,
         'query': "*",
@@ -709,7 +711,11 @@ class ESCollection(Collection):
                 parsed_values['histogram_type']: {
                     "field": parsed_values['histogram_field'],
                     "interval": parsed_values['histogram_gap'],
-                    "min_doc_count": parsed_values['histogram_mincount']
+                    "min_doc_count": parsed_values['histogram_mincount'],
+                    "extended_bounds": {
+                        "min": parsed_values['histogram_start'],
+                        "max": parsed_values['histogram_end']
+                    }
                 }
             }
 
@@ -907,7 +913,9 @@ class ESCollection(Collection):
             ('histogram_field', field),
             ('histogram_type', "date_histogram" if isinstance(gap, str) else 'histogram'),
             ('histogram_gap', gap.strip('+') if isinstance(gap, str) else gap),
-            ('histogram_mincount', mincount)
+            ('histogram_mincount', mincount),
+            ('histogram_start', start),
+            ('histogram_end', end)
         ]
 
         if access_control:
