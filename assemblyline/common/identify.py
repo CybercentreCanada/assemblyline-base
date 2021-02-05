@@ -130,7 +130,7 @@ WEAK_INDICATORS = {
     'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
     'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
     'code/vbs': [
-        rb'(^|\n)*[ \t]*(Dim |Sub |Loop |Attribute |End Sub|Function |End Function )',
+        rb'(^|\n)*[ ]{0,1000}[\t]*(Dim |Sub |Loop |Attribute |End Sub|Function |End Function )',
         b'CreateObject',
         b'WScript',
         b'window_onload',
