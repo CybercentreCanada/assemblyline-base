@@ -92,6 +92,32 @@ F_TYPES = [
     "code/vb"
 ]
 
+RULES = [
+    "BlackShades",
+    "Punisher",
+    "gh0st",
+    "Xtreme",
+    "Bozok",
+    "CyberGate",
+    "NanoCore",
+    "xRAT",
+    "VirusRat",
+    "LuxNet",
+    "njRat",
+    "Pandora",
+    "njrat",
+    "darkcomet51",
+    "PoisonIvy",
+    "mraptor_oletools",
+    "VBA_external_connections",
+    "DarkComet",
+    "darkcomet_rc4"
+]
+
+
+def get_random_rule() -> str:
+    return f"sample_rules.yar.{random.choice(RULES)}"
+
 
 def get_random_file_type() -> str:
     return random.choice(F_TYPES)
@@ -214,6 +240,8 @@ def get_random_tags() -> dict:
     ]
     out = {}
     flat_fields = Tagging.flat_fields()
+    # noinspection PyUnresolvedReferences
+    flat_fields.pop('file.rule')
     tag_list = random.choices(list(flat_fields.keys()), k=random.randint(0, 2))
     tag_list.extend(random.choices(desired_tag_types, k=random.randint(1, 2)))
     for key in tag_list:
@@ -228,7 +256,7 @@ def get_random_tags() -> dict:
             d[parts[-1]] = []
 
         for _ in range(random.randint(1, 2)):
-            d[parts[-1]].append(random_data_for_field(flat_fields[key], key.split(".")[-1]))
+            d[parts[-1]].append(random_data_for_field(flat_fields.get(key, Keyword()), key.split(".")[-1]))
 
     return out
 
@@ -335,6 +363,8 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
                 return get_random_filename()
             elif "directory" in name:
                 return get_random_directory()
+            elif "yara" in name:
+                return get_random_rule()
 
         return get_random_word()
     elif isinstance(field, Text):
