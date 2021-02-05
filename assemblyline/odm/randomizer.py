@@ -329,6 +329,8 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         if name:
             if "sha256" in name:
                 return get_random_hash(64)
+            elif "yara" in name:
+                return get_random_rule()
             elif "filetype" in name:
                 return get_random_file_type()
             elif "organisation" in name:
@@ -363,8 +365,6 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
                 return get_random_filename()
             elif "directory" in name:
                 return get_random_directory()
-            elif "yara" in name:
-                return get_random_rule()
 
         return get_random_word()
     elif isinstance(field, Text):
