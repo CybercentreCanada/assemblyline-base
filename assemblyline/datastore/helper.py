@@ -878,8 +878,9 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_heuristic(self, p_id, p_name, p_classification):
-        stats = self.ds.result.stats("result.score",
-                                     query=f"result.sections.heuristic.heur_id:{p_id}")
+        query = f"result.sections.heuristic.heur_id:{p_id}"
+        stats = self.ds.result.stats("result.score", query=query)
+
         if stats['count'] == 0:
             return {
                 'heur_id': p_id,
@@ -889,8 +890,15 @@ class AssemblylineDatastore(object):
                 'min': 0,
                 'max': 0,
                 'avg': 0,
+                'sum': 0,
+                'first_hit': None,
+                'last_hit': None
             }
         else:
+            first = self.ds.result.search(query=query, fl='created', rows=1,
+                                          sort="created asc", as_obj=False)['items'][0]['created']
+            last = self.ds.result.search(query=query, fl='created', rows=1,
+                                         sort="created desc", as_obj=False)['items'][0]['created']
             return {
                 'heur_id': p_id,
                 'name': p_name,
@@ -899,6 +907,9 @@ class AssemblylineDatastore(object):
                 'min': int(stats['min']),
                 'max': int(stats['max']),
                 'avg': int(stats['avg']),
+                'sum': int(stats['sum']),
+                'first_hit': first,
+                'last_hit': last
             }
 
     @elasticapm.capture_span(span_type='datastore')
@@ -915,8 +926,8 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_signature(self, p_id, p_source, p_name, p_type, p_classification):
-        stats = self.ds.result.stats("result.score",
-                                     query=f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"')
+        query=f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
+        stats = self.ds.result.stats("result.score", query=query)
         if stats['count'] == 0:
             return {
                 'id': p_id,
@@ -928,8 +939,15 @@ class AssemblylineDatastore(object):
                 'min': 0,
                 'max': 0,
                 'avg': 0,
+                'sum': 0,
+                'first_hit': None,
+                'last_hit': None
             }
         else:
+            first = self.ds.result.search(query=query, fl='created', rows=1,
+                                          sort="created asc", as_obj=False)['items'][0]['created']
+            last = self.ds.result.search(query=query, fl='created', rows=1,
+                                         sort="created desc", as_obj=False)['items'][0]['created']
             return {
                 'id': p_id,
                 'source': p_source,
@@ -940,6 +958,9 @@ class AssemblylineDatastore(object):
                 'min': int(stats['min']),
                 'max': int(stats['max']),
                 'avg': int(stats['avg']),
+                'sum': int(stats['sum']),
+                'first_hit': first,
+                'last_hit': last
             }
 
     @elasticapm.capture_span(span_type='datastore')
