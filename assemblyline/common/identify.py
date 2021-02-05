@@ -768,13 +768,14 @@ def fileinfo(path: str) -> Dict:
 
     if data['type'] in ['document/office/word', 'document/office/excel',
                         'document/office/powerpoint', 'document/office/unknown']:
-        msoffcrypto_obj = None
         try:
             msoffcrypto_obj = msoffcrypto.OfficeFile(open(path, "rb"))
+            if msoffcrypto_obj and msoffcrypto_obj.is_encrypted():
+                data['type'] = 'document/office/passwordprotected'
         except Exception:
+            # If msoffcrypto can't handle the file to confirm that it is/isn't password protected,
+            # then it's not meant to be. Moving on!
             pass
-        if msoffcrypto_obj and msoffcrypto_obj.is_encrypted():
-            data['type'] = 'document/office/passwordprotected'
 
     if not recognized.get(data['type'], False) and not cart_metadata_set:
         data['type'] = 'unknown'
