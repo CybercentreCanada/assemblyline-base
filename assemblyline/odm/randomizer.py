@@ -185,7 +185,7 @@ def get_random_ip() -> str:
 
 def get_random_iso_date(epoch: _Optional[float] = None) -> str:
     if epoch is None:
-        epoch = time.time() + random.randint(-10000, 10000)
+        epoch = time.time() + random.randint(-3000000, 0)
 
     return datetime.datetime.fromtimestamp(epoch).isoformat() + "Z"
 
