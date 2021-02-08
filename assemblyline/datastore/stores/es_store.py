@@ -1255,9 +1255,10 @@ class ESCollection(Collection):
         for index in self.index_list_full:
             self.with_retries(self.datastore.client.indices.put_mapping, index=index, body=mappings)
 
-        current_template = self.with_retries(self.datastore.client.indices.get_template, self.name)[self.name]
-        recursive_update(current_template, {'mappings': mappings})
-        self.with_retries(self.datastore.client.indices.put_template, self.name, body=current_template)
+        if self.with_retries(self.datastore.client.indices.exists_template, self.name):
+            current_template = self.with_retries(self.datastore.client.indices.get_template, self.name)[self.name]
+            recursive_update(current_template, {'mappings': mappings})
+            self.with_retries(self.datastore.client.indices.put_template, self.name, body=current_template)
 
     def wipe(self):
         log.debug("Wipe operation started for collection: %s" % self.name.upper())
