@@ -945,7 +945,7 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-        self.ds.signature.update(p_id, [
+        self.ds.signature.update(f"{p_type}_{p_source}_{p_id}", [
             (self.ds.signature.UPDATE_SET, 'stats', stats)
         ])
 
