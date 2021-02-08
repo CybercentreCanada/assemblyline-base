@@ -61,9 +61,8 @@ def create_extra_data(log=None, ds=None, fs=None):
     create_alerts(ds, submission_list=submissions, log=log)
 
     log.info("\nGenerating statistics for signatures and heuristics...")
-    cache = forge.get_statistics_cache()
-    cache.set('signatures', ds.calculate_signature_stats())
-    cache.set('heuristics', ds.calculate_heuristic_stats())
+    ds.calculate_signature_stats()
+    ds.calculate_heuristic_stats()
 
 
 if __name__ == "__main__":
