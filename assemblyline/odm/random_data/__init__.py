@@ -114,8 +114,8 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
 def create_signatures(ds):
     yara = YaraImporter(logger=NullLogger())
     suricata = SuricataImporter(logger=NullLogger())
-    signatures = yara.import_file(get_yara_sig_path(), default_status="DEPLOYED")
-    signatures.extend(suricata.import_file(get_suricata_sig_path(), default_status="DEPLOYED"))
+    signatures = yara.import_file(get_yara_sig_path(), source="YAR_SAMPLE", default_status="DEPLOYED")
+    signatures.extend(suricata.import_file(get_suricata_sig_path(), source="ET_SAMPLE", default_status="DEPLOYED"))
 
     ds.signature.commit()
 
