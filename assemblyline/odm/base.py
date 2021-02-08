@@ -756,7 +756,7 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, skip_mappings, multivalued=False):
+    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
         out = dict()
         for sub_name, sub_field in field.fields().items():
             sub_field.multivalued = multivalued
@@ -768,7 +768,8 @@ class Model:
                 continue
 
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
-                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings,
+                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
+                                                 show_compound, skip_mappings,
                                                  multivalued=multivalued or isinstance(sub_field, List)))
 
             elif sub_name:
@@ -776,16 +777,21 @@ class Model:
 
             else:
                 out[name] = sub_field
+
+        if isinstance(field, Compound) and show_compound:
+            out[name] = field
+
         return out
 
     @classmethod
-    def flat_fields(cls, skip_mappings=False) -> typing.Mapping[str, _Field]:
+    def flat_fields(cls, show_compound=False, skip_mappings=False) -> typing.Mapping[str, _Field]:
         """
         Describe the elements of the model.
 
         Recurse into compound fields, concatenating the names with '.' separators.
 
         Args:
+            show_compound (bool): Show compound as valid fields.
             skip_mappings (bool): Skip over mappings where the real subfield names are unknown.
         """
         out = dict()
@@ -795,7 +801,8 @@ class Model:
                     continue
                 if isinstance(field, Any):
                     continue
-                out.update(Model._recurse_fields(name, field, skip_mappings, multivalued=isinstance(field, List)))
+                out.update(Model._recurse_fields(name, field, show_compound, skip_mappings,
+                                                 multivalued=isinstance(field, List)))
         return out
 
     # Allow attribute assignment by default in the constructor until it is removed
