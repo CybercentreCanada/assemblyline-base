@@ -882,13 +882,13 @@ class AssemblylineDatastore(object):
         stats = self.ds.result.stats("result.score", query=query)
 
         if stats['count'] == 0:
-            stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
+            up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
                                           sort="created asc", as_obj=False)['items'][0]['created']
             last = self.ds.result.search(query=query, fl='created', rows=1,
                                          sort="created desc", as_obj=False)['items'][0]['created']
-            stats = {
+            up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
                 'max': int(stats['max']),
@@ -899,7 +899,7 @@ class AssemblylineDatastore(object):
             }
 
         self.ds.heuristic.update(p_id, [
-            (self.ds.heuristic.UPDATE_SET, 'stats', stats)
+            (self.ds.heuristic.UPDATE_SET, 'stats', up_stats)
         ])
 
         output = {
@@ -909,7 +909,7 @@ class AssemblylineDatastore(object):
             'first_hit': None,
             'last_hit': None
         }
-        output.update(stats)
+        output.update(up_stats)
         return output
 
     @elasticapm.capture_span(span_type='datastore')
@@ -929,13 +929,13 @@ class AssemblylineDatastore(object):
         query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
         stats = self.ds.result.stats("result.score", query=query)
         if stats['count'] == 0:
-            stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
+            up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
                                           sort="created asc", as_obj=False)['items'][0]['created']
             last = self.ds.result.search(query=query, fl='created', rows=1,
                                          sort="created desc", as_obj=False)['items'][0]['created']
-            stats = {
+            up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
                 'max': int(stats['max']),
@@ -945,8 +945,8 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-        self.ds.signature.update(f"{p_type}_{p_source}_{p_id}", [
-            (self.ds.signature.UPDATE_SET, 'stats', stats)
+        self.ds.signature.update(p_id, [
+            (self.ds.signature.UPDATE_SET, 'stats', up_stats)
         ])
 
         output = {
@@ -958,7 +958,7 @@ class AssemblylineDatastore(object):
             'first_hit': None,
             'last_hit': None
         }
-        output.update(stats)
+        output.update(up_stats)
         return output
 
     @elasticapm.capture_span(span_type='datastore')
