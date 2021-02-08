@@ -116,7 +116,7 @@ RULES = [
 
 
 def get_random_rule() -> str:
-    return f"sample_rules.yar.{random.choice(RULES)}"
+    return f"YAR_SAMPLE.{random.choice(RULES)}"
 
 
 def get_random_file_type() -> str:
