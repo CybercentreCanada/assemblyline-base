@@ -882,18 +882,7 @@ class AssemblylineDatastore(object):
         stats = self.ds.result.stats("result.score", query=query)
 
         if stats['count'] == 0:
-            return {
-                'heur_id': p_id,
-                'name': p_name,
-                'classification': p_classification,
-                'count': stats['count'],
-                'min': 0,
-                'max': 0,
-                'avg': 0,
-                'sum': 0,
-                'first_hit': None,
-                'last_hit': None
-            }
+            stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
                                           sort="created asc", as_obj=False)['items'][0]['created']
@@ -909,23 +898,19 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-            self.ds.heuristic.update(p_id, [
-                (self.ds.heuristic.UPDATE_SET, 'stats.count', stats['count']),
-                (self.ds.heuristic.UPDATE_SET, 'stats.min', stats['min']),
-                (self.ds.heuristic.UPDATE_SET, 'stats.max', stats['max']),
-                (self.ds.heuristic.UPDATE_SET, 'stats.avg', stats['avg']),
-                (self.ds.heuristic.UPDATE_SET, 'stats.sum', stats['count']),
-                (self.ds.heuristic.UPDATE_SET, 'stats.first_hit', first),
-                (self.ds.heuristic.UPDATE_SET, 'stats.last_hit', last),
-            ])
+        self.ds.heuristic.update(p_id, [
+            (self.ds.heuristic.UPDATE_SET, 'stats', stats)
+        ])
 
-            output = {
-                'heur_id': p_id,
-                'name': p_name,
-                'classification': p_classification
-            }
-            output.update(stats)
-            return output
+        output = {
+            'heur_id': p_id,
+            'name': p_name,
+            'classification': p_classification,
+            'first_hit': None,
+            'last_hit': None
+        }
+        output.update(stats)
+        return output
 
     @elasticapm.capture_span(span_type='datastore')
     def calculate_heuristic_stats(self):
@@ -941,23 +926,10 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_signature(self, p_id, p_source, p_name, p_type, p_classification):
-        query=f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
+        query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
         stats = self.ds.result.stats("result.score", query=query)
         if stats['count'] == 0:
-            return {
-                'id': p_id,
-                'source': p_source,
-                'name': p_name,
-                'type': p_type,
-                'classification': p_classification,
-                'count': stats['count'],
-                'min': 0,
-                'max': 0,
-                'avg': 0,
-                'sum': 0,
-                'first_hit': None,
-                'last_hit': None
-            }
+            stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
                                           sort="created asc", as_obj=False)['items'][0]['created']
@@ -973,25 +945,21 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-            self.ds.signature.update(p_id, [
-                (self.ds.signature.UPDATE_SET, 'stats.count', stats['count']),
-                (self.ds.signature.UPDATE_SET, 'stats.min', stats['min']),
-                (self.ds.signature.UPDATE_SET, 'stats.max', stats['max']),
-                (self.ds.signature.UPDATE_SET, 'stats.avg', stats['avg']),
-                (self.ds.signature.UPDATE_SET, 'stats.sum', stats['count']),
-                (self.ds.signature.UPDATE_SET, 'stats.first_hit', first),
-                (self.ds.signature.UPDATE_SET, 'stats.last_hit', last),
-            ])
+        self.ds.signature.update(p_id, [
+            (self.ds.signature.UPDATE_SET, 'stats', stats)
+        ])
 
-            output = {
-                'id': p_id,
-                'source': p_source,
-                'name': p_name,
-                'type': p_type,
-                'classification': p_classification,
-            }
-            output.update(stats)
-            return output
+        output = {
+            'id': p_id,
+            'source': p_source,
+            'name': p_name,
+            'type': p_type,
+            'classification': p_classification,
+            'first_hit': None,
+            'last_hit': None
+        }
+        output.update(stats)
+        return output
 
     @elasticapm.capture_span(span_type='datastore')
     def calculate_signature_stats(self):
