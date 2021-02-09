@@ -877,7 +877,7 @@ class AssemblylineDatastore(object):
             return svc_version_data
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_stat_for_heuristic(self, p_id, p_name, p_classification):
+    def get_stat_for_heuristic(self, p_id):
         query = f"result.sections.heuristic.heur_id:{p_id}"
         stats = self.ds.result.stats("result.score", query=query)
 
@@ -902,30 +902,21 @@ class AssemblylineDatastore(object):
             (self.ds.heuristic.UPDATE_SET, 'stats', up_stats)
         ])
 
-        output = {
-            'heur_id': p_id,
-            'name': p_name,
-            'classification': p_classification,
-            'first_hit': None,
-            'last_hit': None
-        }
-        output.update(up_stats)
-        return output
+        return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
     def calculate_heuristic_stats(self):
-        heur_list = sorted([(x['heur_id'], x['name'], x['classification'])
+        heur_list = sorted([(x['heur_id'])
                             for x in self.ds.heuristic.stream_search("heur_id:*", fl="heur_id,name,classification",
                                                                      as_obj=False)])
 
         with concurrent.futures.ThreadPoolExecutor(max(min(len(heur_list), 20), 1)) as executor:
-            res = [executor.submit(self.get_stat_for_heuristic, heur_id, name, classification)
-                   for heur_id, name, classification in heur_list]
+            res = [executor.submit(self.get_stat_for_heuristic, heur_id) for heur_id in heur_list]
 
         return sorted([r.result() for r in res], key=lambda i: i['heur_id'])
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_stat_for_signature(self, p_id, p_source, p_name, p_type, p_classification):
+    def get_stat_for_signature(self, p_id, p_source, p_name, p_type):
         query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
         stats = self.ds.result.stats("result.score", query=query)
         if stats['count'] == 0:
@@ -949,28 +940,18 @@ class AssemblylineDatastore(object):
             (self.ds.signature.UPDATE_SET, 'stats', up_stats)
         ])
 
-        output = {
-            'id': p_id,
-            'source': p_source,
-            'name': p_name,
-            'type': p_type,
-            'classification': p_classification,
-            'first_hit': None,
-            'last_hit': None
-        }
-        output.update(up_stats)
-        return output
+        return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
     def calculate_signature_stats(self):
-        sig_list = sorted([(x['id'], x['source'], x['name'], x['type'], x['classification'])
+        sig_list = sorted([(x['id'], x['source'], x['name'], x['type'])
                            for x in self.ds.signature.stream_search("id:*",
                                                                     fl="id,name,type,source,classification",
                                                                     as_obj=False)])
 
         with concurrent.futures.ThreadPoolExecutor(max(min(len(sig_list), 20), 1)) as executor:
-            res = [executor.submit(self.get_stat_for_signature, sid, source, name, sig_type, classification)
-                   for sid, source, name, sig_type, classification in sig_list]
+            res = [executor.submit(self.get_stat_for_signature, sid, source, name, sig_type)
+                   for sid, source, name, sig_type in sig_list]
 
         return sorted([r.result() for r in res], key=lambda i: i['type'])
 
