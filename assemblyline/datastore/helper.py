@@ -911,9 +911,8 @@ class AssemblylineDatastore(object):
                                                                      as_obj=False)])
 
         with concurrent.futures.ThreadPoolExecutor(max(min(len(heur_list), 20), 1)) as executor:
-            res = [executor.submit(self.get_stat_for_heuristic, heur_id) for heur_id in heur_list]
-
-        return sorted([r.result() for r in res], key=lambda i: i['heur_id'])
+            for heur_id in heur_list:
+                executor.submit(self.get_stat_for_heuristic, heur_id)
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_signature(self, p_id, p_source, p_name, p_type):
@@ -950,10 +949,8 @@ class AssemblylineDatastore(object):
                                                                     as_obj=False)])
 
         with concurrent.futures.ThreadPoolExecutor(max(min(len(sig_list), 20), 1)) as executor:
-            res = [executor.submit(self.get_stat_for_signature, sid, source, name, sig_type)
-                   for sid, source, name, sig_type in sig_list]
-
-        return sorted([r.result() for r in res], key=lambda i: i['type'])
+            for sid, source, name, sig_type in sig_list:
+                executor.submit(self.get_stat_for_signature, sid, source, name, sig_type)
 
     @elasticapm.capture_span(span_type='datastore')
     def list_all_services(self, as_obj=True, full=False) -> Union[List[dict], List[Service]]:
