@@ -148,6 +148,6 @@ stages:
         for IMAGE in "cccs/assemblyline" "docker.pkg.github.com/cybercentrecanada/assemblyline/assemblyline"
         do
           docker build --build-arg version=$VERSION -t $IMAGE:$TAG -t $IMAGE:$BUILD_TYPE -t $IMAGE:$SERIES .
-          docker push $IMAGE
+          docker push $IMAGE --all-tags
         done
       displayName: Deploy to Docker Hub
