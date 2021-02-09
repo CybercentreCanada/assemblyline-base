@@ -333,7 +333,7 @@ class Collection(object):
         :raises: DatastoreException if operation not valid
         """
         if self.model_class:
-            fields = self.model_class.flat_fields()
+            fields = self.model_class.flat_fields(show_compound=True)
             if 'classification in fields':
                 fields.update({"__access_lvl__": Integer(),
                                "__access_req__": List(Keyword()),

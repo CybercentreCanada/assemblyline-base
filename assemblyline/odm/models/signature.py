@@ -1,5 +1,7 @@
 from assemblyline import odm
 from assemblyline.common import forge
+from assemblyline.odm.models.statistics import Statistics
+
 Classification = forge.get_classification()
 
 DEPLOYED_STATUSES = ['DEPLOYED', 'NOISY', 'DISABLED']
@@ -21,5 +23,6 @@ class Signature(odm.Model):
     source = odm.Keyword()
     state_change_date = odm.Optional(odm.Date(store=False))
     state_change_user = odm.Optional(odm.Keyword(store=False))
+    stats = odm.Compound(Statistics, default={})
     status = odm.Enum(values=RULE_STATUSES, copyto="__text__")
     type = odm.Keyword(copyto="__text__")
