@@ -60,12 +60,14 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None):
 
 
 def create_heuristics(ds, log=None, heuristics_count=40):
-    for _ in range(heuristics_count):
-        h = random_model_obj(Heuristic)
-        h.name = get_random_phrase()
-        ds.heuristic.save(h.heur_id, h)
-        if log:
-            log.info(f'\t{h.heur_id}')
+    for srv in SERVICES.keys():
+        for x in range(5):
+            h = random_model_obj(Heuristic)
+            h.heur_id = f"AL_{srv.upper()}_{x + 1}"
+            h.name = get_random_phrase()
+            ds.heuristic.save(h.heur_id, h)
+            if log:
+                log.info(f'\t{h.heur_id}')
 
     ds.heuristic.commit()
 
