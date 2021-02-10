@@ -869,7 +869,6 @@ class ESCollection(Collection):
                 "bool": {
                     "must": {
                         "query_string": {
-                            "default_field": 'id',
                             "query": query
                         }
                     },
