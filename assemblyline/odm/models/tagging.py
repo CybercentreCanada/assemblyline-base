@@ -62,6 +62,12 @@ class Tagging(odm.Model):
             dynamic_classes = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             regkeys = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
+        @odm.model(index=True, store=False)
+        class DynamicOperatingSystem(odm.Model):
+            platform = odm.Optional(odm.List(odm.Platform(copyto="__text__")))
+            version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            processor = odm.Optional(odm.List(odm.Processor(copyto="__text__")))
+
         autorun_location = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         dos_device = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         mutex = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -70,6 +76,7 @@ class Tagging(odm.Model):
         signature = odm.Optional(odm.Compound(DynamicSignature))
         ssdeep = odm.Optional(odm.Compound(DynamicSSDeep))
         window = odm.Optional(odm.Compound(DynamicWindow))
+        operating_system = odm.Optional(odm.Compound(DynamicOperatingSystem))
 
     @odm.model(index=True, store=False)
     class Info(odm.Model):

@@ -6,7 +6,7 @@ from typing import Optional as _Optional, Dict, Any as _Any
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
     Classification, ClassificationString, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, \
-    URIPath, URI, SSDeepHash, Email
+    URIPath, URI, SSDeepHash, Email, Platform, Processor
 from assemblyline.odm.models.tagging import Tagging
 
 config = forge.get_config()
@@ -221,6 +221,14 @@ def get_random_ssdeep() -> str:
         f":{''.join([random.choice(SSDEEP_ALPHA) for _ in range(random.randint(20, 64))])}"
 
 
+def get_random_platform() -> str:
+    return f"{random.choice(['Windows', 'Linux', 'MacOS', 'Android', 'iOS'])}"
+
+
+def get_random_processor() -> str:
+    return f"{random.choice(['x86', 'x64'])}"
+
+
 def get_random_tags() -> dict:
     desired_tag_types = [
         'attribution.actor',
@@ -325,6 +333,10 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         return get_random_host()
     elif isinstance(field, Email):
         return get_random_email()
+    elif isinstance(field, Platform):
+        return get_random_platform()
+    elif isinstance(field, Processor):
+        return get_random_processor()
     elif isinstance(field, Keyword):
         if name:
             if "sha256" in name:
@@ -365,6 +377,8 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
                 return get_random_filename()
             elif "directory" in name:
                 return get_random_directory()
+            elif "version" in name:
+                return get_random_word()
 
         return get_random_word()
     elif isinstance(field, Text):
