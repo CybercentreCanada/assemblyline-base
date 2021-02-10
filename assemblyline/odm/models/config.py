@@ -490,8 +490,8 @@ class Scaler(odm.Model):
     # only available for docker hosts, not kubernetes
     cpu_overallocation: float = odm.Float(default=1)
     memory_overallocation: float = odm.Float(default=1)
-    # Additional labels to be applied to deployments in kubernetes
-    additional_labels: Dict[str, str] = odm.Optional(odm.Mapping(odm.Text()))
+    # Additional labels to be applied to deployments in kubernetes('=' delimited)
+    additional_labels: List[str] = odm.Optional(odm.List(odm.Text()))
 
 
 DEFAULT_SCALER = {
