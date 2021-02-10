@@ -430,13 +430,13 @@ def ident(buf, length: int, path) -> Dict:
         if file_type:
             with magic_lock:
                 labels = magic.magic_file(file_type, path).split(b'\n')
-                labels = [label[2:] if label.startswith(b'- ') else label for label in labels]
+                labels = [label[2:].strip() if label.startswith(b'- ') else label.strip() for label in labels]
 
         mimes = []
         if mime_type:
             with magic_lock:
                 mimes = magic.magic_file(mime_type, path).split(b'\n')
-                mimes = [mime[2:] if mime.startswith(b'- ') else mime for mime in mimes]
+                mimes = [mime[2:].strip() if mime.startswith(b'- ') else mime.strip() for mime in mimes]
 
         # For user feedback set the mime and magic meta data to always be the primary
         # libmagic responses
