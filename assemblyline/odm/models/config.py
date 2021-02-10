@@ -191,33 +191,36 @@ class OAuthProvider(odm.Model):
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
+    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
+    "api_base_url": 'https://login.microsoft.com/common/',
+    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
     "client_id": None,
     "client_secret": None,
-    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
-    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
-    "api_base_url": 'https://login.microsoft.com/common/',
     "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://login.microsoftonline.com/common/discovery/v2.0/keys"
+    "jwks_uri": "https://login.microsoftonline.com/common/discovery/v2.0/keys",
+    "user_get": "openid/userinfo"
 }
 
 DEFAULT_OAUTH_PROVIDER_GOOGLE = {
+    "access_token_url": 'https://oauth2.googleapis.com/token',
+    "api_base_url": 'https://openidconnect.googleapis.com/',
+    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
     "client_id": None,
     "client_secret": None,
-    "access_token_url": 'https://oauth2.googleapis.com/token',
-    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
-    "api_base_url": 'https://openidconnect.googleapis.com/',
     "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://www.googleapis.com/oauth2/v3/certs"
+    "jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
+    "user_get": "v1/userinfo"
 }
 
 DEFAULT_OAUTH_PROVIDER_AUTH_ZERO = {
+    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
+    "api_base_url": 'https://{TENANT}.auth0.com/',
+    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
     "client_id": None,
     "client_secret": None,
-    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
-    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
-    "api_base_url": 'https://{TENANT}.auth0.com/',
     "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://{TENANT}.auth0.com/.well-known/jwks.json"
+    "jwks_uri": "https://{TENANT}.auth0.com/.well-known/jwks.json",
+    "user_get": "userinfo"
 }
 
 DEFAULT_OAUTH_PROVIDERS = {
