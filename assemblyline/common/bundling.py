@@ -298,6 +298,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
             for ekey, err in errors['errors'].items():
                 datastore.error.save(ekey, err)
 
+            return submission
         finally:
             try:
                 os.remove(extracted_path)
