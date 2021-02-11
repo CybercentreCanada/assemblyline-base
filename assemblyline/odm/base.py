@@ -57,6 +57,8 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"(?:[/?#]\S*)"
 FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?){URI_PATH}?$"
+PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
+PROCESSOR_REGEX = r"^x(64|86)$"
 
 
 def flat_to_nested(data: dict):
@@ -364,6 +366,16 @@ class SHA256(ValidatedKeyword):
 class MD5(ValidatedKeyword):
     def __init__(self, *args, **kwargs):
         super().__init__(MD5_REGEX, *args, **kwargs)
+
+
+class Platform(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(PLATFORM_REGEX, *args, **kwargs)
+
+
+class Processor(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(PROCESSOR_REGEX, *args, **kwargs)
 
 
 class Enum(Keyword):
@@ -756,7 +768,7 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, skip_mappings, multivalued=False):
+    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
         out = dict()
         for sub_name, sub_field in field.fields().items():
             sub_field.multivalued = multivalued
@@ -768,7 +780,8 @@ class Model:
                 continue
 
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
-                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type, skip_mappings,
+                out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
+                                                 show_compound, skip_mappings,
                                                  multivalued=multivalued or isinstance(sub_field, List)))
 
             elif sub_name:
@@ -776,16 +789,21 @@ class Model:
 
             else:
                 out[name] = sub_field
+
+        if isinstance(field, Compound) and show_compound:
+            out[name] = field
+
         return out
 
     @classmethod
-    def flat_fields(cls, skip_mappings=False) -> typing.Mapping[str, _Field]:
+    def flat_fields(cls, show_compound=False, skip_mappings=False) -> typing.Mapping[str, _Field]:
         """
         Describe the elements of the model.
 
         Recurse into compound fields, concatenating the names with '.' separators.
 
         Args:
+            show_compound (bool): Show compound as valid fields.
             skip_mappings (bool): Skip over mappings where the real subfield names are unknown.
         """
         out = dict()
@@ -795,7 +813,8 @@ class Model:
                     continue
                 if isinstance(field, Any):
                     continue
-                out.update(Model._recurse_fields(name, field, skip_mappings, multivalued=isinstance(field, List)))
+                out.update(Model._recurse_fields(name, field, show_compound, skip_mappings,
+                                                 multivalued=isinstance(field, List)))
         return out
 
     # Allow attribute assignment by default in the constructor until it is removed

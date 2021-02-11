@@ -183,7 +183,7 @@ class OAuthProvider(odm.Model):
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
     jwks_uri: str = odm.Optional(odm.Keyword())
     uid_field: str = odm.Optional(odm.Keyword())
-    user_get: str = odm.Keyword()
+    user_get: str = odm.Optional(odm.Keyword())
     user_groups: str = odm.Optional(odm.Keyword())
     user_groups_data_field: str = odm.Optional(odm.Keyword())
     user_groups_name_field: str = odm.Optional(odm.Keyword())
@@ -191,53 +191,35 @@ class OAuthProvider(odm.Model):
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
-    "auto_create": True,
-    "auto_sync": False,
-    "auto_properties": [],
+    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
+    "api_base_url": 'https://login.microsoft.com/common/',
+    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
     "client_id": None,
     "client_secret": None,
-    "request_token_url": None,
-    "request_token_params": None,
-    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
-    "access_token_params": None,
-    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
-    "authorize_params": None,
-    "api_base_url": 'https://login.microsoft.com/common/',
     "client_kwargs": {"scope": "openid email profile"},
+    "jwks_uri": "https://login.microsoftonline.com/common/discovery/v2.0/keys",
     "user_get": "openid/userinfo"
 }
 
 DEFAULT_OAUTH_PROVIDER_GOOGLE = {
-    "auto_create": True,
-    "auto_sync": False,
-    "auto_properties": [],
+    "access_token_url": 'https://oauth2.googleapis.com/token',
+    "api_base_url": 'https://openidconnect.googleapis.com/',
+    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
     "client_id": None,
     "client_secret": None,
-    "request_token_url": None,
-    "request_token_params": None,
-    "access_token_url": 'https://oauth2.googleapis.com/token',
-    "access_token_params": None,
-    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
-    "authorize_params": None,
-    "api_base_url": 'https://openidconnect.googleapis.com/',
     "client_kwargs": {"scope": "openid email profile"},
+    "jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
     "user_get": "v1/userinfo"
 }
 
 DEFAULT_OAUTH_PROVIDER_AUTH_ZERO = {
-    "auto_create": True,
-    "auto_sync": False,
-    "auto_properties": [],
+    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
+    "api_base_url": 'https://{TENANT}.auth0.com/',
+    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
     "client_id": None,
     "client_secret": None,
-    "request_token_url": None,
-    "request_token_params": None,
-    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
-    "access_token_params": None,
-    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
-    "authorize_params": None,
-    "api_base_url": 'https://{TENANT}.auth0.com/',
     "client_kwargs": {"scope": "openid email profile"},
+    "jwks_uri": "https://{TENANT}.auth0.com/.well-known/jwks.json",
     "user_get": "userinfo"
 }
 
@@ -508,6 +490,8 @@ class Scaler(odm.Model):
     # only available for docker hosts, not kubernetes
     cpu_overallocation: float = odm.Float(default=1)
     memory_overallocation: float = odm.Float(default=1)
+    # Additional labels to be applied to deployments in kubernetes('=' delimited)
+    additional_labels: List[str] = odm.Optional(odm.List(odm.Text()))
 
 
 DEFAULT_SCALER = {

@@ -1,5 +1,6 @@
 from assemblyline import odm
 from assemblyline.common import forge
+from assemblyline.odm.models.statistics import Statistics
 
 Classification = forge.get_classification()
 
@@ -14,4 +15,5 @@ class Heuristic(odm.Model):
     name = odm.Keyword(copyto="__text__")                                     # Name of the heuristic
     score = odm.Integer()                                                     # Default score of the heuristic
     signature_score_map = odm.Mapping(odm.Integer(), default={})              # Score of signatures for this heuristic
+    stats = odm.Compound(Statistics, default={})
     max_score = odm.Optional(odm.Integer())                                   # Maximum score for heuristic

@@ -172,6 +172,8 @@ class ESCollection(Collection):
         'histogram_type': None,
         'histogram_gap': None,
         'histogram_mincount': 1,
+        'histogram_start': None,
+        'histogram_end': None,
         'start': 0,
         'rows': Collection.DEFAULT_ROW_SIZE,
         'query': "*",
@@ -709,7 +711,11 @@ class ESCollection(Collection):
                 parsed_values['histogram_type']: {
                     "field": parsed_values['histogram_field'],
                     "interval": parsed_values['histogram_gap'],
-                    "min_doc_count": parsed_values['histogram_mincount']
+                    "min_doc_count": parsed_values['histogram_mincount'],
+                    "extended_bounds": {
+                        "min": parsed_values['histogram_start'],
+                        "max": parsed_values['histogram_end']
+                    }
                 }
             }
 
@@ -863,7 +869,6 @@ class ESCollection(Collection):
                 "bool": {
                     "must": {
                         "query_string": {
-                            "default_field": 'id',
                             "query": query
                         }
                     },
@@ -907,7 +912,9 @@ class ESCollection(Collection):
             ('histogram_field', field),
             ('histogram_type', "date_histogram" if isinstance(gap, str) else 'histogram'),
             ('histogram_gap', gap.strip('+') if isinstance(gap, str) else gap),
-            ('histogram_mincount', mincount)
+            ('histogram_mincount', mincount),
+            ('histogram_start', start),
+            ('histogram_end', end)
         ]
 
         if access_control:
@@ -1247,9 +1254,10 @@ class ESCollection(Collection):
         for index in self.index_list_full:
             self.with_retries(self.datastore.client.indices.put_mapping, index=index, body=mappings)
 
-        current_template = self.with_retries(self.datastore.client.indices.get_template, self.name)[self.name]
-        recursive_update(current_template, {'mappings': mappings})
-        self.with_retries(self.datastore.client.indices.put_template, self.name, body=current_template)
+        if self.with_retries(self.datastore.client.indices.exists_template, self.name):
+            current_template = self.with_retries(self.datastore.client.indices.get_template, self.name)[self.name]
+            recursive_update(current_template, {'mappings': mappings})
+            self.with_retries(self.datastore.client.indices.put_template, self.name, body=current_template)
 
     def wipe(self):
         log.debug("Wipe operation started for collection: %s" % self.name.upper())

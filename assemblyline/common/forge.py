@@ -138,18 +138,6 @@ def get_service_queue(service: str, redis=None):
     return PriorityQueue(service_queue_name(service), redis)
 
 
-def get_statistics_cache(config=None, redis=None):
-    from assemblyline.remote.datatypes import get_client
-    from assemblyline.remote.datatypes.hash import Hash
-
-    if not redis:
-        if not config:
-            config = get_config()
-        redis = get_client(config.core.redis.persistent.host, config.core.redis.persistent.port, False)
-
-    return Hash("cached_statistics", redis)
-
-
 def get_tag_whitelister(log=None, yml_config=None):
     from assemblyline.common.tagging import TagWhitelister, InvalidWhitelist
 
