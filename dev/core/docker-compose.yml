@@ -115,16 +115,6 @@ services:
     healthcheck:
       test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
-  # Watcher
-  al_watcher:
-    image: cccs/assemblyline_dev:4.0.18
-    volumes:
-      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
-    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/watcher/run_watcher.py
-    healthcheck:
-      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
-
   al_plumber:
     image: cccs/assemblyline_dev:4.0.18
     volumes:
@@ -135,25 +125,14 @@ services:
       test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 
   # Dispatcher processes
-  al_dispatcher_files:
+  al_dispatcher:
     image: cccs/assemblyline_dev:4.0.18
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     environment:
       SKIP_SERVICE_SETUP: 'true'
-    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/dispatching/run_files.py
-    healthcheck:
-      test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
-
-  al_dispatcher_submissions:
-    image: cccs/assemblyline_dev:4.0.18
-    volumes:
-      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
-    environment:
-      SKIP_SERVICE_SETUP: 'true'
-    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/dispatching/run_submissions.py
+    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/dispatching
     healthcheck:
       test: ["CMD", "bash", "-c", "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi"]
 

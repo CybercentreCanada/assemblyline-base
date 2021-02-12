@@ -21,6 +21,7 @@ class Inflight(odm.Model):
 class Metrics(odm.Model):
     files_completed = odm.Integer()
     submissions_completed = odm.Integer()
+    service_timeouts = odm.Integer()
     cpu_seconds = PerformanceTimer()
     cpu_seconds_count = odm.Integer()
     busy_seconds = PerformanceTimer()

@@ -3,7 +3,6 @@ import os
 from assemblyline.common.path import modulepath
 
 
-FILE_QUEUE = 'dispatch-file-queue'
 SUBMISSION_QUEUE = 'dispatch-submission-queue'
 DISPATCH_TASK_HASH = 'dispatch-active-submissions'
 DISPATCH_RUNNING_TASK_HASH = 'dispatch-active-tasks'
