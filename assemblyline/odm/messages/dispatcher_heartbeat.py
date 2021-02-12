@@ -8,7 +8,6 @@ LOADER_CLASS = "assemblyline.odm.messages.dispatcher_heartbeat.DispatcherMessage
 @odm.model()
 class Queues(odm.Model):
     ingest = odm.Integer()
-    files = odm.Integer()
 
 
 @odm.model()
