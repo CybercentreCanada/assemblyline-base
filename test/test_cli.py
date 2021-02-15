@@ -8,7 +8,45 @@ from assemblyline.common import forge
 from assemblyline.odm.random_data import wipe_alerts, create_alerts, wipe_submissions, create_submission, \
     wipe_heuristics, create_heuristics, wipe_services, create_services, wipe_signatures, create_signatures, \
     wipe_workflows, create_workflows, wipe_users, create_users
-from assemblyline.run.cli import ALCommandLineInterface, NullLogger
+from assemblyline.run.cli import ALCommandLineInterface
+
+
+LOGS = {
+    'info': [],
+    'warning': [],
+    'error': []
+}
+
+
+def reset_logger():
+    global LOGS
+    LOGS = {
+        'info': [],
+        'warning': [],
+        'error': []
+    }
+
+
+class CaptureLogger(object):
+    @staticmethod
+    def info(msg, **_):
+        LOGS['info'].append(msg)
+
+    @staticmethod
+    def warning(msg, **_):
+        LOGS['warning'].append(msg)
+
+    @staticmethod
+    def warn(msg, **_):
+        LOGS['warning'].append(msg)
+
+    @staticmethod
+    def error(msg, **_):
+        LOGS['error'].append(msg)
+
+    @staticmethod
+    def exception(msg, **_):
+        LOGS['error'].append(msg)
 
 
 @pytest.fixture(scope="module")
@@ -44,11 +82,11 @@ def datastore(request, datastore_connection, fs):
 
 @pytest.fixture(scope="module")
 def cli():
-    cli = ALCommandLineInterface(show_prompt=False, logger_class=NullLogger)
+    cli = ALCommandLineInterface(show_prompt=False, logger_class=CaptureLogger)
     return cli
 
 
-def test_backup(datastore, cli):
+def notest_backup(datastore, cli):
     # Get a temp directory
     temp_dir = tempfile.mkdtemp()
     os.rmdir(temp_dir)
@@ -68,7 +106,7 @@ def test_backup(datastore, cli):
         assert data == datastore.get_collection(collection).get(key, as_obj=False)
 
 
-def test_backup_follow(datastore, cli):
+def notest_backup_follow(datastore, cli):
     # Get a temp directory
     temp_dir = tempfile.mkdtemp()
     os.rmdir(temp_dir)
@@ -88,7 +126,7 @@ def test_backup_follow(datastore, cli):
         assert data == datastore.get_collection(collection).get(key, as_obj=False)
 
 
-def test_backup_system(datastore, cli):
+def notest_backup_system(datastore, cli):
     # Get a temp directory
     temp_dir = tempfile.mkdtemp()
     os.rmdir(temp_dir)
@@ -108,7 +146,31 @@ def test_backup_system(datastore, cli):
         assert data == datastore.get_collection(collection).get(key, as_obj=False)
 
 
-def test_restore(datastore, cli, fs):
+def test_delete(datastore, cli):
+    try:
+        # delete all users and check if there are still users
+        cli.do_delete("user force id:*")
+        datastore.user.commit()
+        assert datastore.user.search("id:*")['total'] == 0
+
+        # Delete random submission and check if still there
+        sub_id = datastore.submission.search("id:*", fl="id", rows=1, as_obj=False)['items'][0]['id']
+        cli.do_delete(f"submission full force id:{sub_id}")
+        datastore.submission.commit()
+        assert datastore.user.search(f"id:{sub_id}")['total'] == 0
+    finally:
+        # Restore users ...
+        create_users(datastore)
+
+
+def test_service(datastore, cli):
+    reset_logger()
+
+    cli.do_service("list")
+    assert len(LOGS.get('info', [])) == datastore.service_delta.search("id:*")['total']
+
+
+def notest_restore(datastore, cli, fs):
     # Get a temp directory
     temp_dir = tempfile.mkdtemp()
     os.rmdir(temp_dir)
@@ -145,4 +207,3 @@ def test_restore(datastore, cli, fs):
     assert submission_len == datastore.submission.search("*:*", rows=0)['total']
     assert error_len == datastore.error.search("*:*", rows=0)['total']
     assert file_len == datastore.file.search("*:*", rows=0)['total']
-

@@ -88,6 +88,7 @@ def init():
 def submission_delete_tree(key, logger):
     try:
         with forge.get_filestore() as f_transport:
+            # noinspection PyUnresolvedReferences
             DATASTORE.delete_submission_tree(key, transport=f_transport)
     except Exception as e:
         logger.error(e)
@@ -152,7 +153,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         else:
             self._cmd_lex = re.compile(r'''
             "((?:""|\\["\\]|[^"])*)"|   # quoted string
-            ()|                         # quoted single string, empty for win32 platform
             (\\\\(?=\\*")|\\")|         # escaped string
             (&&?|\|\|?|\d?>|[<])|       # pipes and other command continuation
             ([^\s"&|<>]+)|              # words
@@ -335,7 +335,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 'user_avatar',
                 'user_favorites',
                 'user_settings',
-                'vm',
                 'workflow'
             ]
 
@@ -448,7 +447,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         Examples:
             # Delete all submission for "user" with all associated results
-            delete submission full "submission.submitter:user"
+            delete submission full "params.submitter:user"
         """
         valid_buckets = list(self.datastore.ds.get_models().keys())
         args = self._parse_args(args)
@@ -547,8 +546,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             <name>   Name of the service to perform the action on
 
         Examples:
-            # Show service 'Sync'
-            service show Sync
+            # Show service 'Extract'
+            service show Extract
         """
         valid_actions = ['list', 'show', 'disable', 'enable', 'remove']
         args = self._parse_args(args)
@@ -797,17 +796,18 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         elif action_type == 'set_admin':
             if 'admin' not in item.type:
                 item.type.append('admin')
-            users.save(item_id, item)
+                users.save(item_id, item)
             self.logger.info(f"Granted admin privileges to {item_id}")
         elif action_type == 'unset_admin':
-            item.type.pop('admin', None)
-            users.save(item_id, item)
+            if 'admin' in item.type:
+                item.type.remove('admin')
+                users.save(item_id, item)
             self.logger.info(f"Admin privileges revoked for {item_id}")
         elif action_type == 'remove':
             users.delete(item_id)
             self.logger.info(f"User '{item_id}' removed.")
         elif action_type == 'unset_otp':
-            item.pop('otp_sk', None)
+            item.otp_sk = None
             users.save(item_id, item)
             self.logger.info(f"{item_id} OTP secret key was removed")
         elif action_type == 'set_otp':
@@ -1030,7 +1030,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             'user_avatar',
             'user_favorites',
             'user_settings',
-            'vm',
             'workflow'
         ]
         if full:
