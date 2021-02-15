@@ -333,6 +333,7 @@ def test_user(datastore, cli):
 
 
 def test_wipe(datastore, cli):
+    # This needs to run last as it deletes important data for other tests
     try:
         cli.do_wipe('bucket user')
         datastore.user.commit()
