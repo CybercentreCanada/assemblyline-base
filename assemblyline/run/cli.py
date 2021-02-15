@@ -3,17 +3,18 @@
 
 import cmd
 import inspect
-import sys
-import multiprocessing
+import io
 import os
+import multiprocessing
 import re
-import signal
 import time
+import signal
 import shutil
+import sys
 import warnings
+import yaml
 
 from tempfile import gettempdir
-from pprint import pformat
 
 from assemblyline.common import forge, log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
@@ -581,7 +582,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             return
 
         if action_type == 'show':
-            self.logger.info(pformat(self.datastore.get_service_with_delta(item_id, as_obj=False)))
+            output = io.StringIO()
+            yaml.safe_dump(self.datastore.get_service_with_delta(item_id, as_obj=False), output)
+            self.logger.info(output.getvalue())
         elif action_type == 'disable':
             item.enabled = False
             collection.save(item_id, item)
@@ -658,7 +661,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         signatures = self.datastore.get_collection('signature')
 
         if action_type == 'show' and item_id:
-            self.logger.info(pformat(signatures.get(item_id, as_obj=False)))
+            output = io.StringIO()
+            yaml.safe_dump(signatures.get(item_id, as_obj=False), output)
+            self.logger.info(output.getvalue())
         elif action_type == 'change_status' and item_id and id_type and status:
             if status not in RULE_STATUSES:
                 statuses = "\n".join(RULE_STATUSES)
@@ -668,7 +673,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
             if id_type == 'by_id':
                 signature = signatures.get(item_id)
-                signature.meta.al_status = status
+                signature.status = status
                 signatures.save(item_id, signature)
                 self.logger.info(f"Signature '{item_id}' was changed to status {status}.")
             elif id_type == 'by_query':
@@ -698,7 +703,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
                     if cont:
                         updated = signatures.update_by_query(item_id,
-                                                             [(signatures.UPDATE_SET, 'meta.al_status', status)])
+                                                             [(signatures.UPDATE_SET, 'status', status)])
                         self.logger.info(f"Signatures matching query '{item_id}' were changed "
                                          f"to status '{status}'. [{updated}]")
 
@@ -784,7 +789,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             return
 
         if action_type == 'show':
-            self.logger.info(pformat(item.as_primitives()))
+            output = io.StringIO()
+            yaml.safe_dump(item.as_primitives(), output)
+            self.logger.info(output.getvalue())
         elif action_type == 'disable':
             item.is_active = False
             users.save(item_id, item)
