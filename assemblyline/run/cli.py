@@ -581,7 +581,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             return
 
         if action_type == 'show':
-            self.logger.info(pformat(item.as_primitives()))
+            self.logger.info(pformat(self.datastore.get_service_with_delta(item_id, as_obj=False)))
         elif action_type == 'disable':
             item.enabled = False
             collection.save(item_id, item)
@@ -905,14 +905,14 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             if bucket:
                 collection = self.datastore.get_collection(bucket)
                 collection.commit()
-                self.logger.info(f"Index {bucket.upper()} was commited.")
+                self.logger.info(f"Index {bucket.upper()} was committed.")
             else:
                 self.logger.info("Forcing commit procedure for all indexes...")
                 for bucket in valid_buckets:
                     collection = self.datastore.get_collection(bucket)
                     collection.commit()
                     self.logger.info(f"    Index {bucket.upper()} was commited.")
-                self.logger.info("All indexes commited.")
+                self.logger.info("All indexes committed.")
 
     def do_wipe(self, args):
         """
