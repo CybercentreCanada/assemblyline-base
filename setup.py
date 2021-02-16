@@ -3,6 +3,7 @@ import os
 from setuptools import setup, find_packages, Extension
 
 try:
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     from Cython.Build import cythonize
     USE_CYTHON = True
     extension = '.pyx'
@@ -89,7 +90,7 @@ setup(
         'test': [
             'pytest',
             'pytest-cov',
-            'retrying',
+            'retrying'
         ]
     },
     package_data={
