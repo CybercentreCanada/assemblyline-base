@@ -3,6 +3,7 @@ from assemblyline.common import forge
 Classification = forge.get_classification()
 
 ACL = {"R", "W", "E"}
+SCOPES = {"r", "w", "rw"}
 USER_TYPES = {"admin", "signature_manager", "signature_importer", "user"}
 
 
@@ -10,6 +11,14 @@ USER_TYPES = {"admin", "signature_manager", "signature_importer", "user"}
 class ApiKey(odm.Model):
     acl = odm.List(odm.Enum(values=ACL))  # Access control list for the apikey
     password = odm.Keyword()              # BCrypt hash of the password for the apikey
+
+
+@odm.model(index=False, store=False)
+class RegisteredApps(odm.Model):
+    client_id = odm.Keyword()               # Username allowed to impersonate the current user
+    netloc = odm.Keyword()                  # DNS hostname for the server
+    scope = odm.Enum(values=SCOPES)         # Access control list for the apikey
+    server = odm.Keyword()                  # Name of the server that has access
 
 
 @odm.model(index=True, store=True)
@@ -36,3 +45,5 @@ class User(odm.Model):
     security_tokens = odm.Mapping(odm.Keyword(), index=False,
                                   store=False, default={})                # Map of security tokens
     uname = odm.Keyword(copyto="__text__")                                # Username
+    registered_apps = odm.Mapping(odm.Compound(RegisteredApps),
+                                  default={}, index=False, store=False)   # List of registered Apps for the user
