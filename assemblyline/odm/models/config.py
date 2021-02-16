@@ -767,6 +767,10 @@ class UI(odm.Model):
     allow_url_submissions: bool = odm.Boolean()
     # Should API calls be audited and saved to a separate log file?
     audit: bool = odm.Boolean()
+    # Banner message display on the main page (format: {<language_code>: message})
+    banner: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
+    # Banner message display on the main page (format: {<language_code>: message})
+    banner_level: str = odm.Enum(values=["info", "warning", "success", "error"])
     # Turn on debugging
     debug: bool = odm.Boolean()
     # Which encoding will be used
@@ -811,6 +815,8 @@ DEFAULT_UI = {
     "allow_raw_downloads": True,
     "allow_url_submissions": True,
     "audit": True,
+    "banner": None,
+    "banner_level": 'info',
     "debug": False,
     "download_encoding": "cart",
     "email": None,
