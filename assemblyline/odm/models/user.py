@@ -14,7 +14,7 @@ class ApiKey(odm.Model):
 
 
 @odm.model(index=False, store=False)
-class RegisteredApps(odm.Model):
+class Apps(odm.Model):
     client_id = odm.Keyword()               # Username allowed to impersonate the current user
     netloc = odm.Keyword()                  # DNS hostname for the server
     scope = odm.Enum(values=SCOPES)         # Access control list for the apikey
@@ -27,6 +27,8 @@ class User(odm.Model):
     api_quota = odm.Integer(default=10, store=False)                      # Max number of concurrent API requests
     apikeys = odm.Mapping(odm.Compound(ApiKey), default={},
                           index=False, store=False)                       # Mapping of api keys
+    apps = odm.Mapping(odm.Compound(Apps),
+                       default={}, index=False, store=False)              # Applications with access to the account
     can_impersonate = odm.Boolean(default=False, index=False,
                                   store=False)                            # Allowed to query on behalf of others
     classification = odm.Classification(
@@ -45,5 +47,3 @@ class User(odm.Model):
     security_tokens = odm.Mapping(odm.Keyword(), index=False,
                                   store=False, default={})                # Map of security tokens
     uname = odm.Keyword(copyto="__text__")                                # Username
-    registered_apps = odm.Mapping(odm.Compound(RegisteredApps),
-                                  default={}, index=False, store=False)   # List of registered Apps for the user
