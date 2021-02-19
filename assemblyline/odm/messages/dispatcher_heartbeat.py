@@ -8,19 +8,23 @@ LOADER_CLASS = "assemblyline.odm.messages.dispatcher_heartbeat.DispatcherMessage
 @odm.model()
 class Queues(odm.Model):
     ingest = odm.Integer()
-    files = odm.Integer()
+    start = odm.List(odm.Integer())
+    result = odm.List(odm.Integer())
+    command = odm.List(odm.Integer())
 
 
 @odm.model()
 class Inflight(odm.Model):
     max = odm.Integer()
     outstanding = odm.Integer()
+    per_instance = odm.List(odm.Integer())
 
 
 @odm.model()
 class Metrics(odm.Model):
     files_completed = odm.Integer()
     submissions_completed = odm.Integer()
+    service_timeouts = odm.Integer()
     cpu_seconds = PerformanceTimer()
     cpu_seconds_count = odm.Integer()
     busy_seconds = PerformanceTimer()

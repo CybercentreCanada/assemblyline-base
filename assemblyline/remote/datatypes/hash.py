@@ -50,7 +50,7 @@ class Hash(object):
             raise ValueError("Cannot use bytes for hashmap keys")
         return retry_call(self.c.hsetnx, self.name, key, json.dumps(value))
 
-    def increment(self, key, increment=1):
+    def increment(self, key, increment: int = 1):
         return int(retry_call(self.c.hincrby, self.name, key, increment))
 
     def limited_add(self, key, value, size_limit):
