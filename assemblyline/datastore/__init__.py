@@ -559,9 +559,9 @@ class Collection(object):
                     raise SearchException("Gap must be preceded with either + or - sign.")
 
                 try:
-                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp
-                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp
-                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp - dm('now').timestamp
+                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp()
+                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp()
+                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp() - dm('now').timestamp()
 
                     gaps_count = int((parsed_end - parsed_start) / parsed_gap)
                     ret_type = str
