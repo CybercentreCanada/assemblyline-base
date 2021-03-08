@@ -92,11 +92,12 @@ services:
       retries: 3
 
   nginx:
-    image: cccs/nginx-ssl
+    image: cccs/nginx-ssl-frontend
     ports:
       - '80:80'
       - '443:443'
     environment:
+      - FRONTEND_HOST=172.17.0.1
       - UI_HOST=172.17.0.1
       - SOCKET_HOST=172.17.0.1
       - FQDN=localhost
