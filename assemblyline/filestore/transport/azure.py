@@ -87,7 +87,7 @@ class TransportAzure(Transport):
 
         key = self.normalize(path)
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
-        self.with_retries(blob_client.download_blob)
+        self.with_retries(blob_client.delete_blob)
 
     def exists(self, path):
         key = self.normalize(path)
