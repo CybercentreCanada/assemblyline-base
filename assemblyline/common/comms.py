@@ -47,7 +47,7 @@ def send_reset_email(to: str, reset_id: str):
         
         To reset your password, please visit the link below: 
         
-        https://{config.ui.fqdn}/reset.html?reset_id={reset_id}
+        https://{config.ui.fqdn}/?reset_id={reset_id}
         
         If you did not make this request, you can safely ignore this email and your password will remain the same.
         """)
@@ -69,7 +69,7 @@ def send_signup_email(to: str, registration_key: str):
         
         To confirm your account registration, please visit the link below: 
         
-        https://{config.ui.fqdn}/login.html?registration_key={registration_key}
+        https://{config.ui.fqdn}/?registration_key={registration_key}
         
         If you did not make this request, you can safely ignore this email.
         """)
@@ -93,7 +93,7 @@ def send_authorize_email(to: str, user: str, email: str):
         Email: {email}
         
         You can browse to the link below to activate the account:
-        https://{config.ui.fqdn}/admin/users.html
+        https://{config.ui.fqdn}/admin/users?query=is_active%3Afalse
         """)
 
         title = f"A new {config.ui.fqdn} user is waiting for your authorization"
@@ -117,7 +117,7 @@ def send_activated_email(to: str, user: str, email: str, admin: str):
 
         The account was activated by: {admin}
         
-        Login at https://{config.ui.fqdn}/login.html
+        Login at https://{config.ui.fqdn}/
         """)
 
         title = f"Account for {user} now active on {config.ui.fqdn}"
