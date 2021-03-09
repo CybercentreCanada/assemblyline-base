@@ -27,6 +27,12 @@ services:
     working_dir: /opt/alv4/assemblyline-base/assemblyline/odm/random_data/
     command: python3 create_test_data.py nosvc nosigs
 
+  # frontend
+  al_frontend:
+    image: cccs/assemblyline-ui-frontend
+    ports:
+      - '3000:3000'
+
   # UI
   al_ui:
     image: cccs/assemblyline_dev:4.0.18

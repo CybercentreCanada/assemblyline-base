@@ -9,6 +9,7 @@ FROM nginx
 ENV DOLLAR $
 ENV FQDN localhost
 ENV MAX_BODY_SIZE 100M
+ENV FRONTEND_HOST al_frontend
 ENV SOCKET_HOST al_socketio
 ENV UI_HOST al_ui
 ENV KIBANA_HOST kibana
