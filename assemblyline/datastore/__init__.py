@@ -275,7 +275,7 @@ class Collection(object):
         """
         if " " in key:
             raise DataStoreException("You are not allowed to use spaces in datastore keys.")
-            
+
         return self._save(key, self.normalize(data), force_archive_access=force_archive_access)
 
     def _save(self, key, data, force_archive_access=False):
@@ -559,9 +559,9 @@ class Collection(object):
                     raise SearchException("Gap must be preceded with either + or - sign.")
 
                 try:
-                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp()
-                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp()
-                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp() - dm('now').timestamp()
+                    parsed_start = dm(self.datastore.to_pydatemath(start)).int_timestamp
+                    parsed_end = dm(self.datastore.to_pydatemath(end)).int_timestamp
+                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).int_timestamp - dm('now').int_timestamp
 
                     gaps_count = int((parsed_end - parsed_start) / parsed_gap)
                     ret_type = str
