@@ -57,6 +57,7 @@ class Classification(object):
         self._classification_cache_short = set()
 
         self.enforce = False
+        self.dynamic_groups = False
 
         # Add Invalid classification
         self.levels_map["INV"] = self.INVALID_LVL
@@ -72,6 +73,7 @@ class Classification(object):
 
         try:
             self.enforce = classification_definition['enforce']
+            self.dynamic_groups = classification_definition['dynamic_groups']
             if self.enforce:
                 self._classification_cache = self.list_all_classification_combinations()
                 self._classification_cache_short = self.list_all_classification_combinations(long_format=False)
@@ -256,6 +258,8 @@ class Classification(object):
 
         g1_set = set()
         g2_set = set()
+        other_parts = set()
+        extras = set()
 
         grp_part = c12n.split("//")
         groups = []
@@ -280,9 +284,32 @@ class Classification(object):
             elif g in self.subgroups_aliases:
                 for a in self.subgroups_aliases[g]:
                     g2_set.add(a)
+            else:
+                other_parts.add(g)
+
+        if self.dynamic_groups:
+            for o in other_parts:
+                if o in self.access_req_map_lts:
+                    continue
+                elif o in self.access_req_map_stl:
+                    continue
+                elif o in self.access_req_aliases:
+                    continue
+                elif o in self.levels_map:
+                    continue
+                elif o in self.levels_map_lts:
+                    continue
+                elif o in self.levels_aliases:
+                    continue
+                else:
+                    extras.add(o)
+
+            g1_set = g1_set.union(extras)
 
         if long_format:
-            return sorted([self.groups_map_stl[r] for r in g1_set]), sorted([self.subgroups_map_stl[r] for r in g2_set])
+            return sorted(
+                [self.groups_map_stl.get(r, r) for r in g1_set]), sorted(
+                [self.subgroups_map_stl[r] for r in g2_set])
         return sorted(list(g1_set)), sorted(list(g2_set))
 
     @staticmethod
@@ -731,7 +758,7 @@ class Classification(object):
                             i not in self.access_req_map_lts.keys():
                         check_groups = True
 
-                if check_groups:
+                if check_groups and not self.dynamic_groups:
                     # If not groups. That stuff does not exists...
                     if i not in self.groups_aliases.keys() and \
                             i not in self.groups_map_stl.keys() and \
