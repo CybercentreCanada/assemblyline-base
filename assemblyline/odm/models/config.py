@@ -799,8 +799,6 @@ class UI(odm.Model):
     tos_lockout: bool = odm.Boolean()
     # List of admins to notify when a user gets locked out
     tos_lockout_notify: bool = odm.Optional(odm.List(odm.Keyword()))
-    # UI 4 path
-    ui4_path: str = odm.Optional(odm.Keyword())
     # Headers that will be used by the url_download method
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
     # Proxy that will be used by the url_download method
@@ -831,7 +829,6 @@ DEFAULT_UI = {
     "tos": None,
     "tos_lockout": False,
     "tos_lockout_notify": None,
-    "ui4_path": None,
     "url_submission_headers": {},
     "url_submission_proxies": {},
     "validate_session_ip": True,
