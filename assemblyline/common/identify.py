@@ -83,6 +83,7 @@ STRONG_INDICATORS = {
         re.compile(rb'(^|\n)[ \t]*import[ \t]+\('),
         re.compile(rb'(^|\n)[ \t]*func[ \t]+\w+\('),
     ],
+
     'code/css': [
         re.compile(rb'(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{'
                    rb'[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}'),
@@ -97,6 +98,12 @@ STRONG_INDICATORS = {
         re.compile(rb'^Message-ID: ', re.MULTILINE),
         re.compile(rb'^To: ', re.MULTILINE),
         re.compile(rb'^From: ', re.MULTILINE),
+    ],
+    'metadata/sysmon': [
+        re.compile(rb'<Events>*'),
+        re.compile(rb'<Event>*'),
+        re.compile(rb'<\/Event>'),
+        re.compile(rb'<\/Events>'),
     ],
     'code/xml': [
         # Check if it has an xml declaration header
@@ -251,6 +258,7 @@ tag_to_extension = {
     'java/jar': '.jar',
     'silverlight/xap': '.xap',
     'meta/shortcut/windows': '.lnk',
+
 }
 
 sl_patterns = [
@@ -315,6 +323,7 @@ sl_patterns = [
     ['sff', r'Frame Format'],
     ['shortcut/windows', r'^MS Windows shortcut'],
     ['email', r'Mime entity text'],
+    ['sysmon', r'MS Windows Vista Event Log'],
 ]
 
 sl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in sl_patterns]
@@ -371,7 +380,9 @@ tl_patterns = [
      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'],
     ['meta', '^MS Windows shortcut'],
+    ['metadata', 'MS Windows Vista Event Log'],
     ['unknown', r'.*'],
+
 ]
 
 trusted_mimes = {
