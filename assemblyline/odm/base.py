@@ -237,6 +237,7 @@ class ValidatedKeyword(Keyword):
     """
     Keyword field which the values are validated by a regular expression
     """
+
     def __init__(self, validation_regex, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.validation_regex = re.compile(validation_regex)
@@ -382,6 +383,7 @@ class Enum(Keyword):
     """
     A field storing a short string that has predefined list of possible values
     """
+
     def __init__(self, values, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.values = set(values)
@@ -697,10 +699,10 @@ class Compound(_Field):
         super().__init__(**kwargs)
         self.child_type = field_type
 
-    def check(self, value, mask=None):
+    def check(self, value, mask=None, ignore_extra_values=False, **kwargs):
         if isinstance(value, self.child_type):
             return value
-        return self.child_type(value, mask=mask)
+        return self.child_type(value, mask=mask, ignore_extra_values=ignore_extra_values)
 
     def fields(self):
         out = dict()
@@ -713,6 +715,7 @@ class Compound(_Field):
 
 class Optional(_Field):
     """A wrapper field to allow simple types (int, float, bool) to take None values."""
+
     def __init__(self, child_type, **kwargs):
         if child_type.default_set:
             kwargs['default'] = child_type.default
@@ -820,7 +823,7 @@ class Model:
     # Allow attribute assignment by default in the constructor until it is removed
     __frozen = False
 
-    def __init__(self, data: dict = None, mask: list = None, docid=None):
+    def __init__(self, data: dict = None, mask: list = None, docid=None, ignore_extra_values=False):
         if data is None:
             data = {}
         if not hasattr(data, 'items'):
@@ -853,13 +856,13 @@ class Model:
 
         # Check to make sure we can use all the data we are given
         unused_keys = set(data.keys()) - set(fields.keys()) - BANNED_FIELDS
-        if unused_keys:
+        if unused_keys and not ignore_extra_values:
             raise ValueError(f"'{self.__class__.__name__}' object was created with invalid parameters: "
                              f"{', '.join(unused_keys)}")
 
         # Pass each value through it's respective validator, and store it
         for name, field_type in fields.items():
-            params = {}
+            params = {"ignore_extra_values": ignore_extra_values}
             if name in mask_map and mask_map[name]:
                 params['mask'] = mask_map[name]
 

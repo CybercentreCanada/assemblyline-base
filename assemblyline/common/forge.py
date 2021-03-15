@@ -79,7 +79,7 @@ def _get_config(static=False, yml_config=None):
     if 'AL_LOG_LEVEL' in os.environ:
         config['logging']['log_level'] = os.environ['AL_LOG_LEVEL']
 
-    return Config(config)
+    return Config(config, ignore_extra_values=True)
 
 
 def get_config(static=False, yml_config=None):
