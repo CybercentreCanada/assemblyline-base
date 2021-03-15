@@ -10,18 +10,19 @@ independent data models in python. This gives us:
 
 """
 
+import arrow
 import copy
 import json
+import logging
 import re
 import typing
 import sys
+
+from dateutil.tz import tzutc
 from datetime import datetime
 
-import arrow
-from assemblyline.common.dict_utils import recursive_update
-from dateutil.tz import tzutc
-
 from assemblyline.common import forge
+from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.uid import get_random_id
 
@@ -59,6 +60,8 @@ URI_PATH = r"(?:[/?#]\S*)"
 FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?){URI_PATH}?$"
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
+
+logger = logging.getLogger('assemblyline.odm')
 
 
 def flat_to_nested(data: dict):
@@ -115,7 +118,7 @@ class _Field:
             return obj
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
-        if self.getter_function:
+        if self.getter_function is not None:
             return self.getter_function(obj, obj._odm_py_obj[self.name])
         return obj._odm_py_obj[self.name]
 
@@ -125,7 +128,7 @@ class _Field:
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         value = self.check(value)
-        if self.setter_function:
+        if self.setter_function is not None:
             value = self.setter_function(obj, value)
         obj._odm_py_obj[self.name] = value
 
@@ -641,7 +644,7 @@ class TypedMapping(dict):
 
         # 2. A list of key value pairs as if you were constructing a dictionary
         elif args:
-            for key, value in args:
+            for key, _ in args:
                 if not self.sanitizer.match(key):
                     raise KeyError(f"Illegal key: {key}")
             return super().update({key: self.type.check(item) for key, item in args})
@@ -823,7 +826,7 @@ class Model:
     # Allow attribute assignment by default in the constructor until it is removed
     __frozen = False
 
-    def __init__(self, data: dict = None, mask: list = None, docid=None, ignore_extra_values=False):
+    def __init__(self, data: dict = None, mask: list = None, docid=None, ignore_extra_values=True):
         if data is None:
             data = {}
         if not hasattr(data, 'items'):
@@ -859,6 +862,10 @@ class Model:
         if unused_keys and not ignore_extra_values:
             raise ValueError(f"'{self.__class__.__name__}' object was created with invalid parameters: "
                              f"{', '.join(unused_keys)}")
+        if unused_keys and ignore_extra_values:
+            logger.warning(
+                f"The following parameters where ignored from object "
+                f"'{self.__class__.__name__}': {', '.join(unused_keys)}")
 
         # Pass each value through it's respective validator, and store it
         for name, field_type in fields.items():
@@ -1002,7 +1009,7 @@ def _construct_field(field, value):
     else:
         try:
             return field.check(value), None
-        except (ValueError, TypeError) as _:
+        except (ValueError, TypeError):
             return None, value
 
 
@@ -1026,5 +1033,5 @@ def construct_safe(mod, data) -> typing.Tuple[typing.Any, typing.Dict]:
 
     try:
         return mod(clean), dropped
-    except ValueError as _:
+    except ValueError:
         return None, recursive_update(dropped, clean)
