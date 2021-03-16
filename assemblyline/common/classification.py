@@ -258,8 +258,7 @@ class Classification(object):
 
         g1_set = set()
         g2_set = set()
-        other_parts = set()
-        extras = set()
+        others = set()
 
         grp_part = c12n.split("//")
         groups = []
@@ -285,26 +284,17 @@ class Classification(object):
                 for a in self.subgroups_aliases[g]:
                     g2_set.add(a)
             else:
-                other_parts.add(g)
+                others.add(g)
 
         if self.dynamic_groups:
-            for o in other_parts:
-                if o in self.access_req_map_lts:
-                    continue
-                elif o in self.access_req_map_stl:
-                    continue
-                elif o in self.access_req_aliases:
-                    continue
-                elif o in self.levels_map:
-                    continue
-                elif o in self.levels_map_lts:
-                    continue
-                elif o in self.levels_aliases:
-                    continue
-                else:
-                    extras.add(o)
-
-            g1_set = g1_set.union(extras)
+            for o in others:
+                if o not in self.access_req_map_lts \
+                        and o not in self.access_req_map_stl \
+                        and o not in self.access_req_aliases \
+                        and o not in self.levels_map \
+                        and o not in self.levels_map_lts \
+                        and o not in self.levels_aliases:
+                    g1_set.add(o)
 
         if long_format:
             return sorted(
