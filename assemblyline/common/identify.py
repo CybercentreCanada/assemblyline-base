@@ -83,7 +83,6 @@ STRONG_INDICATORS = {
         re.compile(rb'(^|\n)[ \t]*import[ \t]+\('),
         re.compile(rb'(^|\n)[ \t]*func[ \t]+\w+\('),
     ],
-
     'code/css': [
         re.compile(rb'(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{'
                    rb'[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}'),
@@ -258,7 +257,6 @@ tag_to_extension = {
     'java/jar': '.jar',
     'silverlight/xap': '.xap',
     'meta/shortcut/windows': '.lnk',
-
 }
 
 sl_patterns = [
@@ -382,7 +380,6 @@ tl_patterns = [
     ['meta', '^MS Windows shortcut'],
     ['metadata', 'MS Windows Vista Event Log'],
     ['unknown', r'.*'],
-
 ]
 
 trusted_mimes = {
