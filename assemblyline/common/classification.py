@@ -906,9 +906,9 @@ class Classification(object):
 
         # Normalize classifications before comparing them
         if c12n_1 is not None:
-            c12n_1 = self.normalize_classification(c12n_1)
+            c12n_1 = self.normalize_classification(c12n_1, skip_auto_select=True)
         if c12n_2 is not None:
-            c12n_2 = self.normalize_classification(c12n_2)
+            c12n_2 = self.normalize_classification(c12n_2, skip_auto_select=True)
 
         if c12n_1 is None:
             return c12n_2
@@ -922,8 +922,5 @@ class Classification(object):
         groups = list(set(groups_1) | set(groups_2))
         subgroups = list(set(subgroups_1) | set(subgroups_2))
 
-        return self._get_normalized_classification_text(max(lvl_idx_1, lvl_idx_2),
-                                                        req,
-                                                        groups,
-                                                        subgroups,
-                                                        long_format=long_format)
+        return self._get_normalized_classification_text(max(lvl_idx_1, lvl_idx_2), req, groups, subgroups,
+                                                        long_format=long_format, skip_auto_select=True)
