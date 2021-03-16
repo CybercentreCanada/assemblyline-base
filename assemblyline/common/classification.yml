@@ -6,55 +6,58 @@
 #  completely disables the classification engine, any documents added while
 #  the classification engine is off gets the default unrestricted value
 enforce: false
+dynamic_groups: false
 
 # List of Classification level:
 #   Graded list were a smaller number is less restricted then an higher number.
 levels:
   # List of alternate names for the current marking
-- aliases:
-  - UNRESTRICTED
-  - UNCLASSIFIED
-  - U
-  # Stylesheet applied in the UI for the different levels
-  css:
-    # Top banner stylesheet (alert-* because it's based of bootstrap alert dialogs)
-    banner: alert-default
-    # Label stylesheet (label-* because it's based of bootstrap label components)
-    label: label-default
-    # Text stylesheet (text-* because it's based of bootstrap text color styles)
-    text: text-muted
-  # Description of the classification level
-  description: Subject to standard copyright rules, TLP:WHITE information may be distributed without restriction.
-  # Interger value of the Classification level (higher is more classified)
-  lvl: 100
-  # Long name of the classification item
-  name: TLP:WHITE
-  # Short name of the classification item
-  short_name: TLP:W
-- aliases: []
-  css:
-    banner: alert-success
-    label: label-success
-    text: text-success
-  description: Recipients may share TLP:GREEN information with peers and partner organizations
-    within their sector or community, but not via publicly accessible channels. Information
-    in this category can be circulated widely within a particular community. TLP:GREEN
-    information may not be released outside of the community.
-  lvl: 110
-  name: TLP:GREEN
-  short_name: TLP:G
-- aliases:
-    - RESTRICTED
-  css:
-    banner: alert-warning2
-    label: label-warning
-    text: text-warning2
-  description: Recipients may only share TLP:AMBER information with members of their
-    own organization and with clients or customers who need to know the information
-    to protect themselves or prevent further harm.
-  lvl: 120
-  name: TLP:AMBER
-  short_name: TLP:A
+  - aliases:
+      - UNRESTRICTED
+      - UNCLASSIFIED
+      - U
+    # Stylesheet applied in the UI for the different levels
+    css:
+      # Top banner stylesheet (alert-* because it's based of bootstrap alert dialogs)
+      banner: alert-default
+      # Label stylesheet (label-* because it's based of bootstrap label components)
+      label: label-default
+      # Text stylesheet (text-* because it's based of bootstrap text color styles)
+      text: text-muted
+    # Description of the classification level
+    description: Subject to standard copyright rules, TLP:WHITE information may be distributed without restriction.
+    # Interger value of the Classification level (higher is more classified)
+    lvl: 100
+    # Long name of the classification item
+    name: TLP:WHITE
+    # Short name of the classification item
+    short_name: TLP:W
+  - aliases: []
+    css:
+      banner: alert-success
+      label: label-success
+      text: text-success
+    description:
+      Recipients may share TLP:GREEN information with peers and partner organizations
+      within their sector or community, but not via publicly accessible channels. Information
+      in this category can be circulated widely within a particular community. TLP:GREEN
+      information may not be released outside of the community.
+    lvl: 110
+    name: TLP:GREEN
+    short_name: TLP:G
+  - aliases:
+      - RESTRICTED
+    css:
+      banner: alert-warning2
+      label: label-warning
+      text: text-warning2
+    description:
+      Recipients may only share TLP:AMBER information with members of their
+      own organization and with clients or customers who need to know the information
+      to protect themselves or prevent further harm.
+    lvl: 120
+    name: TLP:AMBER
+    short_name: TLP:A
 
 # List of required tokens:
 #   A user requesting access to an item must have all the
@@ -72,17 +75,17 @@ required:
 #   A user requesting access to an item must be part of a least
 #   of one the group the item is part of to gain access
 groups:
-- aliases: []
-  # This is a special flag that when set to true, if any groups are selected
-  #   in a classification. This group will automatically be selected too. (optional)
-  auto_select: true
-  description: Employees of CSE
-  name: CSE
-  short_name: CSE
-  # Assuming that this groups is the only group selected, this is the display name
-  #   that will be used in the classification (that values has to be in the aliases
-  #   of this group and only this group) (optional)
-  # solitary_display_name: ANY
+  - aliases: []
+    # This is a special flag that when set to true, if any groups are selected
+    #   in a classification. This group will automatically be selected too. (optional)
+    auto_select: true
+    description: Employees of CSE
+    name: CSE
+    short_name: CSE
+    # Assuming that this groups is the only group selected, this is the display name
+    #   that will be used in the classification (that values has to be in the aliases
+    #   of this group and only this group) (optional)
+    # solitary_display_name: ANY
 
 # List of subgroups:
 #   A user requesting access to an item must be part of a least
