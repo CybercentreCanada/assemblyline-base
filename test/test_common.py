@@ -85,6 +85,7 @@ def test_classification():
 
     dyn1 = "U//TEST"
     dyn2 = "U//GOD//TEST"
+    dyn3 = "U//TEST2"
     assert not cl_engine.is_valid(dyn1)
     assert not cl_engine.is_valid(dyn2)
     assert cl_engine.normalize_classification(dyn1, long_format=False) == "U"
@@ -92,8 +93,11 @@ def test_classification():
     cl_engine.dynamic_groups = True
     assert cl_engine.is_valid(dyn1)
     assert cl_engine.is_valid(dyn2)
+    assert cl_engine.is_valid(dyn3)
     assert cl_engine.is_accessible(dyn2, dyn1)
     assert not cl_engine.is_accessible(dyn1, dyn2)
+    assert not cl_engine.is_accessible(dyn3, dyn1)
+    assert not cl_engine.is_accessible(dyn1, dyn3)
     assert cl_engine.intersect_user_classification(dyn1, dyn1) == "UNRESTRICTED//REL TO TEST"
     assert cl_engine.max_classification(dyn1, dyn2) == "UNRESTRICTED//ADMIN//REL TO TEST"
     assert cl_engine.normalize_classification(dyn1, long_format=True) == "UNRESTRICTED//REL TO TEST"
