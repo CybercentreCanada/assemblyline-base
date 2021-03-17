@@ -25,5 +25,3 @@ class UserSettings(odm.Model):                                      # User's def
     services = odm.Compound(ServiceSelection, default={})             # Default service selection
     submission_view = odm.Enum(values=VIEWS, default="report")        # Default view for completed submissions
     ttl = odm.Integer(default=30)                                     # Default submission Time to Live (days)
-    ui4 = odm.Boolean(default=False)                                  # Reroute to UI 4
-    ui4_ask = odm.Boolean(default=True)                               # Ask user if he wants to try UI 4
