@@ -83,6 +83,26 @@ def test_classification():
     with pytest.raises(InvalidClassification):
         cl_engine.max_classification(c1, c2)
 
+    dyn1 = "U//TEST"
+    dyn2 = "U//GOD//TEST"
+    dyn3 = "U//TEST2"
+    assert not cl_engine.is_valid(dyn1)
+    assert not cl_engine.is_valid(dyn2)
+    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U"
+    assert cl_engine.normalize_classification(dyn2, long_format=False) == "U//ADM"
+    cl_engine.dynamic_groups = True
+    assert cl_engine.is_valid(dyn1)
+    assert cl_engine.is_valid(dyn2)
+    assert cl_engine.is_valid(dyn3)
+    assert cl_engine.is_accessible(dyn2, dyn1)
+    assert not cl_engine.is_accessible(dyn1, dyn2)
+    assert not cl_engine.is_accessible(dyn3, dyn1)
+    assert not cl_engine.is_accessible(dyn1, dyn3)
+    assert cl_engine.intersect_user_classification(dyn1, dyn1) == "UNRESTRICTED//REL TO TEST"
+    assert cl_engine.max_classification(dyn1, dyn2) == "UNRESTRICTED//ADMIN//REL TO TEST"
+    assert cl_engine.normalize_classification(dyn1, long_format=True) == "UNRESTRICTED//REL TO TEST"
+    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U//REL TO TEST"
+
 
 def test_compat_tag_map():
     flatten_map = flatten(tag_map)
@@ -168,7 +188,9 @@ def test_heuristics_valid():
                 attack_ids_to_fetch_details_for.append(software_attack_id)
             else:
                 print(f"Invalid related attack_id '{software_attack_id}' for software '{software_id}'. Ignoring it.")
-    attack_id_details = {attack_id: {"pattern": attack_map[attack_id]["name"], "categories": attack_map[attack_id]["categories"]} for attack_id in attack_ids_to_fetch_details_for}
+    attack_id_details = {
+        attack_id: {"pattern": attack_map[attack_id]["name"],
+                    "categories": attack_map[attack_id]["categories"]} for attack_id in attack_ids_to_fetch_details_for}
     attack_ids.extend(software_ids)
 
     signatures = {}
