@@ -39,7 +39,11 @@ stages:
       displayName: Set python version
       inputs: {versionSpec: 3.8}
     - script: |
+        set -x  # Echo commands before they are run
         export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
+        echo $VERSION
+        echo $BUILD_SOURCEBRANCHNAME
+        #        if [[ "$VERSION" == *stable ]] && [[  != "master" ]]; then exit 1; fi
         export VERSION=${VERSION/stable}
         export VERSION=${VERSION/beta/b}
         echo $VERSION > assemblyline/VERSION
