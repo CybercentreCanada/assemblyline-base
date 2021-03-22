@@ -41,10 +41,11 @@ stages:
     - script: |
         set -x  # Echo commands before they are run
         export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
-        export BRANCH=`git branch -r --contains ${BUILD_SOURCEBRANCH} | grep -v ${BUILD_SOURCEVERSION} | xargs`
+        export COMMIT=`git rev-parse --verify ${BUILD_SOURCEBRANCH}`
+        export BRANCH=`git ls-remote --heads origin | grep $COMMIT | sed "s/.*\///"`
         echo "Building $VERSION On branch $BRANCH"
-        if [[ "$VERSION" == *stable* ]] && [[ $BRANCH != "origin/master" ]]; then exit 1; fi
-        if [[ "$VERSION" == *dev* ]] && [[ $BRANCH != "origin/dev" ]]; then exit 1; fi
+        if [[ "$VERSION" == *stable* ]] && [[ $BRANCH != "master" ]]; then exit 1; fi
+        if [[ "$VERSION" == *dev* ]] && [[ $BRANCH != "dev" ]]; then exit 1; fi
         export VERSION=${VERSION/stable}
         export VERSION=${VERSION/beta/b}
         echo $VERSION > assemblyline/VERSION
