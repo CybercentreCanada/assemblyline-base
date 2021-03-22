@@ -761,6 +761,8 @@ DEFAULT_STATISTICS = {
 # This is the model definition for the logging block
 @odm.model(index=False, store=False)
 class UI(odm.Model):
+    # Allow user to tell in advance the system that a file is malicious
+    allow_malicious_hinting: bool = odm.Boolean()
     # Allow to user to download raw files
     allow_raw_downloads: bool = odm.Boolean()
     # Allow file submissions via url
@@ -810,6 +812,7 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
+    "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
     "allow_url_submissions": True,
     "audit": True,

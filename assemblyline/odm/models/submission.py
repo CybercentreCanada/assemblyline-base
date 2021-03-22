@@ -50,6 +50,7 @@ class SubmissionParams(odm.Model):
     ignore_filtering = odm.Boolean(default=False)                       # Should we ignore filtering services
     ignore_size = odm.Boolean(default=False)                            # ignore the file size limits
     never_drop = odm.Boolean(default=False)                             # Exempt from being dropped by ingester
+    malicious = odm.Boolean(default=False)                              # Is the file submitted known to be malicious
     max_extracted = odm.Integer(default=500)                            # Max number of extracted files
     max_supplementary = odm.Integer(default=500)                        # Max number of supplementary files
     priority = odm.Integer(default=1000)                                # Priority of the scan
