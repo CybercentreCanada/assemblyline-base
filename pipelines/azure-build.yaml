@@ -39,7 +39,12 @@ stages:
       displayName: Set python version
       inputs: {versionSpec: 3.8}
     - script: |
+        set -x  # Echo commands before they are run
         export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
+        export BRANCH=`git branch -r --contains ${BUILD_SOURCEBRANCH} | grep -v ${BUILD_SOURCEVERSION} | xargs`
+        echo "Building $VERSION On branch $BRANCH"
+        if [[ "$VERSION" == *stable* ]] && [[ $BRANCH != "origin/master" ]]; then exit 1; fi
+        if [[ "$VERSION" == *dev* ]] && [[ $BRANCH != "origin/dev" ]]; then exit 1; fi
         export VERSION=${VERSION/stable}
         export VERSION=${VERSION/beta/b}
         echo $VERSION > assemblyline/VERSION
