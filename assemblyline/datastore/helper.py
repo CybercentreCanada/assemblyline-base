@@ -567,6 +567,7 @@ class AssemblylineDatastore(object):
         file_data_map = {}
         for key, value in temp_file_data_map.items():
             if user_classification and not cl_engine.is_accessible(user_classification, value['classification']):
+                partial = True
                 forbidden_files.add(key)
                 continue
             file_data_map[key] = value
@@ -603,12 +604,14 @@ class AssemblylineDatastore(object):
                 # Enforce depth protection while building the tree
                 return
 
-            if child_p['sha256'] in placeholder:
-                placeholder[child_p['sha256']]['name'].append(child_p['name'])
+            c_sha256 = child_p['sha256']
+            c_name = child_p['name']
+            if c_sha256 in placeholder:
+                placeholder[c_sha256]['name'].append(c_name)
             else:
                 children_list = {}
                 truncated = False
-                child_list = files.get(child_p['sha256'], [])
+                child_list = files.get(c_sha256, [])
                 for new_child in child_list:
                     if new_child['sha256'] in tree_cache:
                         truncated = True
@@ -617,30 +620,29 @@ class AssemblylineDatastore(object):
 
                     if new_child['sha256'] not in parents_p:
                         recurse_tree(new_child, children_list,
-                                     parents_p + [child_p['sha256']], lvl + 1)
+                                     parents_p + [c_sha256], lvl + 1)
 
                 try:
-                    placeholder[child_p['sha256']] = {
-                        "name": [child_p['name']],
-                        "type": file_data_map[child_p['sha256']]['type'],
-                        "sha256": file_data_map[child_p['sha256']]['sha256'],
-                        "size": file_data_map[child_p['sha256']]['size'],
+                    placeholder[c_sha256] = {
+                        "name": [c_name],
+                        "type": file_data_map[c_sha256]['type'],
+                        "sha256": file_data_map[c_sha256]['sha256'],
+                        "size": file_data_map[c_sha256]['size'],
                         "children": children_list,
                         "truncated": truncated,
-                        "score": scores.get(child_p['sha256'], 0),
+                        "score": scores.get(c_sha256, 0),
                     }
-                except KeyError as ke:
-                    missing_key = str(ke).strip("'")
-                    if missing_key not in forbidden_files and missing_key not in missing_files:
-                        file_data_map[missing_key] = self.file.get(missing_key, as_obj=False)
-                        placeholder[child_p['sha256']] = {
-                            "name": [child_p['name']],
-                            "type": file_data_map[child_p['sha256']]['type'],
-                            "sha256": file_data_map[child_p['sha256']]['sha256'],
-                            "size": file_data_map[child_p['sha256']]['size'],
+                except KeyError:
+                    if c_sha256 not in forbidden_files and c_sha256 not in missing_files:
+                        file_data_map[c_sha256] = self.file.get(c_sha256, as_obj=False)
+                        placeholder[c_sha256] = {
+                            "name": [c_name],
+                            "type": file_data_map[c_sha256]['type'],
+                            "sha256": file_data_map[c_sha256]['sha256'],
+                            "size": file_data_map[c_sha256]['size'],
                             "children": children_list,
                             "truncated": truncated,
-                            "score": scores.get(child_p['sha256'], 0),
+                            "score": scores.get(c_sha256, 0),
                         }
 
         tree = {}
@@ -658,15 +660,28 @@ class AssemblylineDatastore(object):
                     tree_cache.append(child['sha256'])
                     recurse_tree(child, children, parents)
 
-                tree[sha256] = {
-                    "name": [name],
-                    "children": children,
-                    "type": file_data_map[sha256]['type'],
-                    "sha256": file_data_map[sha256]['sha256'],
-                    "size": file_data_map[sha256]['size'],
-                    "truncated": False,
-                    "score": scores.get(sha256, 0),
-                }
+                try:
+                    tree[sha256] = {
+                        "name": [name],
+                        "children": children,
+                        "type": file_data_map[sha256]['type'],
+                        "sha256": file_data_map[sha256]['sha256'],
+                        "size": file_data_map[sha256]['size'],
+                        "truncated": False,
+                        "score": scores.get(sha256, 0),
+                    }
+                except KeyError:
+                    if sha256 not in forbidden_files and sha256 not in missing_files:
+                        file_data_map[sha256] = self.file.get(sha256, as_obj=False)
+                        tree[sha256] = {
+                            "name": [name],
+                            "children": children,
+                            "type": file_data_map[sha256]['type'],
+                            "sha256": file_data_map[sha256]['sha256'],
+                            "size": file_data_map[sha256]['size'],
+                            "truncated": False,
+                            "score": scores.get(sha256, 0),
+                        }
 
         if not partial:
             cached_tree = {
