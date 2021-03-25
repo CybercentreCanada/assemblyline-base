@@ -58,21 +58,7 @@ def wrap_bidir_unicode_string(uni_str):
 # 0xdf but the values 0xc0 and 0xc1 are invalid as they could only be
 # the result of an overlong encoding of basic ASCII characters. There
 # are similar restrictions on the valid values for 3 and 4-byte sequences.
-_valid_utf8_bytes = re.compile(rb"""((?:
-    [\x09\x0a\x20-\x7e]|             # 1-byte (ASCII excluding control chars).
-    [\xc2-\xdf][\x80-\xbf]|          # 2-bytes (excluding overlong sequences).
-    [\xe0][\xa0-\xbf][\x80-\xbf]|    # 3-bytes (excluding overlong sequences).
-
-    [\xe1-\xec][\x80-\xbf]{2}|       # 3-bytes.
-    [\xed][\x80-\x9f][\x80-\xbf]|    # 3-bytes (up to invalid code points).
-    [\xee-\xef][\x80-\xbf]{2}|       # 3-bytes (after invalid code points).
-
-    [\xf0][\x90-\xbf][\x80-\xbf]{2}| # 4-bytes (excluding overlong sequences).
-    [\xf1-\xf3][\x80-\xbf]{3}|       # 4-bytes.
-    [\xf4][\x80-\x8f][\x80-\xbf]{2}  # 4-bytes (up to U+10FFFF).
-    )+)""", re.VERBOSE)
-
-_valid_utf8_str = re.compile(r"""((?:
+_valid_utf8 = re.compile(rb"""((?:
     [\x09\x0a\x20-\x7e]|             # 1-byte (ASCII excluding control chars).
     [\xc2-\xdf][\x80-\xbf]|          # 2-bytes (excluding overlong sequences).
     [\xe0][\xa0-\xbf][\x80-\xbf]|    # 3-bytes (excluding overlong sequences).
@@ -87,14 +73,7 @@ _valid_utf8_str = re.compile(r"""((?:
     )+)""", re.VERBOSE)
 
 
-def _escape_str(t, reversible=True):
-    if t[0] % 2:
-        return t[1].replace('\\', '\\\\') if reversible else t[1]
-    else:
-        return ''.join(('\\x%02x' % x) for x in t[1])
-
-
-def _escape_bytes(t, reversible=True):
+def _escape(t, reversible=True):
     if t[0] % 2:
         return t[1].replace(b'\\', b'\\\\') if reversible else t[1]
     else:
@@ -107,26 +86,19 @@ def dotdump(s):
 
 def escape_str(s, reversible=True, force_str=False):
     if isinstance(s, bytes):
-        return escape_str_strict_bytes(s, reversible)
+        return escape_str_strict(s, reversible)
     elif not isinstance(s, str):
         if force_str:
             return str(s)
         return s
 
-    return escape_str_strict(s, reversible)
+    return escape_str_strict(s.encode('utf-8', errors="backslashreplace"), reversible)
 
 
 # Returns a string (str) with only valid UTF-8 byte sequences.
-def escape_str_strict(s: str, reversible=True) -> str:
-    escaped = ''.join([_escape_str(t, reversible)
-                       for t in enumerate(_valid_utf8_str.split(s))])
-    return escaped
-
-
-# Returns a string (str) with only valid UTF-8 byte sequences.
-def escape_str_strict_bytes(s: bytes, reversible=True) -> str:
-    escaped = b''.join([_escape_bytes(t, reversible)
-                        for t in enumerate(_valid_utf8_bytes.split(s))])
+def escape_str_strict(s: bytes, reversible=True) -> str:
+    escaped = b''.join([_escape(t, reversible)
+                        for t in enumerate(_valid_utf8.split(s))])
     return escaped.decode('utf-8')
 
 
