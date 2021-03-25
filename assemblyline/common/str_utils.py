@@ -75,7 +75,7 @@ _valid_utf8 = re.compile(rb"""((?:
 
 def _escape(t, reversible=True):
     if t[0] % 2:
-        return t[1].replace('\\', '\\\\') if reversible else t[1]
+        return t[1].replace(b'\\', b'\\\\') if reversible else t[1]
     else:
         return b''.join((b'\\x%02x' % x) for x in t[1])
 
@@ -92,13 +92,13 @@ def escape_str(s, reversible=True, force_str=False):
             return str(s)
         return s
 
-    return escape_str_strict(s.encode('utf8'), reversible)
+    return escape_str_strict(s.encode('utf-8', errors="backslashreplace"), reversible)
 
 
 # Returns a string (str) with only valid UTF-8 byte sequences.
 def escape_str_strict(s: bytes, reversible=True) -> str:
     escaped = b''.join([_escape(t, reversible)
-                       for t in enumerate(_valid_utf8.split(s))])
+                        for t in enumerate(_valid_utf8.split(s))])
     return escaped.decode('utf-8')
 
 

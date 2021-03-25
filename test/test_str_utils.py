@@ -27,6 +27,17 @@ def test_dotdump():
     assert result == "...!Bc~.."
 
 
+def test_safe_str():
+    test_str = 'helloÌ\x02Í\udcf9'
+    test_bytes = b'hello\xc3\x8c\x02\xc3\x8d\udcf9'
+
+    result = str_utils.safe_str(test_bytes)
+    assert result == 'hello\xcc\\x02\xcd\\udcf9'
+
+    result = str_utils.safe_str(test_str)
+    assert result == 'hello\xcc\\x02\xcd\\udcf9'
+
+
 def test_translate_str():
     teststr = 'Стамболийски'
     encoded_test_str = teststr.encode('ISO-8859-5')
