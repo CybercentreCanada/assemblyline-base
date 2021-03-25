@@ -248,6 +248,7 @@ DEFAULT_OAUTH = {
 class Auth(odm.Model):
     allow_2fa: bool = odm.Boolean()
     allow_apikeys: bool = odm.Boolean()
+    allow_extended_apikeys: bool = odm.Boolean()
     allow_security_tokens: bool = odm.Boolean()
     internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
     ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP)
@@ -257,6 +258,7 @@ class Auth(odm.Model):
 DEFAULT_AUTH = {
     "allow_2fa": True,
     "allow_apikeys": True,
+    "allow_extended_apikeys": True,
     "allow_security_tokens": True,
     "internal": DEFAULT_INTERNAL,
     "ldap": DEFAULT_LDAP,
