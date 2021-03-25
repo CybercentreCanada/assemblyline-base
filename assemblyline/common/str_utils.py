@@ -111,8 +111,8 @@ def escape_str(s, reversible=True, force_str=False):
 
 # Returns a string (str) with only valid UTF-8 byte sequences.
 def escape_str_strict(s: str, reversible=True) -> str:
-    escaped = b''.join([_escape(t, reversible)
-                        for t in enumerate(_valid_utf8_str.split(s))])
+    escaped = ''.join([_escape(t, reversible)
+                       for t in enumerate(_valid_utf8_str.split(s))])
     return escaped
 
 
