@@ -80,6 +80,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.vscode/
 
 # Cython debug symbols
 cython_debug/
