@@ -92,7 +92,10 @@ def escape_str(s, reversible=True, force_str=False):
             return str(s)
         return s
 
-    return escape_str_strict(s.encode('utf-8', errors="backslashreplace"), reversible)
+    try:
+        return escape_str_strict(s.encode('utf-16', 'surrogatepass').decode('utf-16').encode('utf-8'), reversible)
+    except Exception:
+        return escape_str_strict(s.encode('utf-8', errors="backslashreplace"), reversible)
 
 
 # Returns a string (str) with only valid UTF-8 byte sequences.
