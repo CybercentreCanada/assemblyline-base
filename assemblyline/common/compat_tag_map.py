@@ -99,6 +99,10 @@ tag_map = {
             },
             "used_library": ['ANDROID_USE_LIBRARY'],
         },
+        "jar": {
+            "main_class": ['JAR_MAIN_CLASS'],
+            "main_package": ['JAR_MAIN_PACKAGE']
+        },
         "img": {
             "exif_tool": {
                 "creator_tool": ['EXIFTOOL_XMP_CREATOR_TOOL'],
