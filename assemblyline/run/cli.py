@@ -854,14 +854,15 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         Perform operations on the search index
 
         Usage:
-            index commit   [<bucket>]
-                  reindex  [<bucket>]
+            index commit  [<safe>] [<bucket>]
+                  reindex [<safe>] [<bucket>]
 
         Actions:
             commit       Force datastore to commit the index
             reindex      Force a reindex of all the database (this can be really slow)
 
         Parameters:
+            <safe>       Does not validate the model [optional]
             <bucket>     Bucket to do the operation on [optional]
 
 
@@ -876,6 +877,11 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         valid_actions = ['commit', 'reindex']
 
         args = self._parse_args(args)
+
+        safe = False
+        if 'safe' in args:
+            safe = True
+            args.remove('safe')
 
         if len(args) == 1:
             action_type = args[0]
@@ -896,30 +902,36 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                               "Valid buckets are:\n{}".format(bucket, "\n".join(valid_buckets)))
             return
 
-        if action_type == 'reindex':
-            if bucket:
-                collection = self.datastore.get_collection(bucket)
-                self.logger.info(f"Reindexing {bucket.upper()} ...")
-                collection.reindex()
-                self.logger.info("    Done!")
-            else:
-                for bucket in valid_buckets:
+        if safe:
+            self.datastore.stop_model_validation()
+
+        try:
+            if action_type == 'reindex':
+                if bucket:
                     collection = self.datastore.get_collection(bucket)
-                    self.logger.info(f"Reindexing {bucket} ...")
+                    self.logger.info(f"Reindexing {bucket.upper()} ...")
                     collection.reindex()
                     self.logger.info("    Done!")
-        elif action_type == 'commit':
-            if bucket:
-                collection = self.datastore.get_collection(bucket)
-                collection.commit()
-                self.logger.info(f"Index {bucket.upper()} was committed.")
-            else:
-                self.logger.info("Forcing commit procedure for all indexes...")
-                for bucket in valid_buckets:
+                else:
+                    for bucket in valid_buckets:
+                        collection = self.datastore.get_collection(bucket)
+                        self.logger.info(f"Reindexing {bucket} ...")
+                        collection.reindex()
+                        self.logger.info("    Done!")
+            elif action_type == 'commit':
+                if bucket:
                     collection = self.datastore.get_collection(bucket)
                     collection.commit()
-                    self.logger.info(f"    Index {bucket.upper()} was commited.")
-                self.logger.info("All indexes committed.")
+                    self.logger.info(f"Index {bucket.upper()} was committed.")
+                else:
+                    self.logger.info("Forcing commit procedure for all indexes...")
+                    for bucket in valid_buckets:
+                        collection = self.datastore.get_collection(bucket)
+                        collection.commit()
+                        self.logger.info(f"    Index {bucket.upper()} was commited.")
+                    self.logger.info("All indexes committed.")
+        finally:
+            self.datastore.start_model_validation()
 
     def do_wipe(self, args):
         """

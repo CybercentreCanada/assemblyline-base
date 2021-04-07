@@ -68,6 +68,12 @@ class AssemblylineDatastore(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.ds.close()
 
+    def stop_model_validation(self):
+        self.ds.validate = False
+
+    def start_model_validation(self):
+        self.ds.validate = True
+
     def enable_archive_access(self):
         self.ds.archive_access = True
 
