@@ -179,7 +179,7 @@ class ESCollection(Collection):
         'df': None
     }
 
-    def __init__(self, datastore, name, model_class=None, replicas=0, shards=1):
+    def __init__(self, datastore, name, model_class=None, replicas=0, shards=1, validate=True):
         self.replicas = replicas
         self.shards = shards
         self._index_list = []
@@ -189,7 +189,7 @@ class ESCollection(Collection):
         else:
             self.ilm_config = None
 
-        super().__init__(datastore, name, model_class=model_class)
+        super().__init__(datastore, name, model_class=model_class, validate=validate)
 
         self.bulk_plan_class = ElasticBulkPlan
         self.stored_fields = {}

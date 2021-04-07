@@ -76,12 +76,13 @@ class Collection(object):
         UPDATE_DELETE,
     ]
 
-    def __init__(self, datastore, name, model_class=None):
+    def __init__(self, datastore, name, model_class=None, validate=True):
         self.datastore = datastore
         self.name = name
         self.model_class = model_class
-        self._ensure_collection()
+        self.validate = validate
         self.bulk_plan_class = BulkPlan
+        self._ensure_collection()
 
     @staticmethod
     def _get_obj_value(obj, field):
@@ -617,6 +618,9 @@ class Collection(object):
         return field_types
 
     def _check_fields(self, model=None):
+        if not self.validate:
+            return
+
         if model is None:
             if self.model_class:
                 return self._check_fields(self.model_class)
@@ -695,6 +699,7 @@ class BaseStore(object):
         self._collections = {}
         self._models = {}
         self.ilm_config = ilm_config
+        self.validate = True
 
     def __enter__(self):
         return self
@@ -707,9 +712,12 @@ class BaseStore(object):
         return '{0}'.format(self.__class__.__name__)
 
     def __getattr__(self, name) -> Collection:
+        if not self.validate:
+            return self._collection_class(self, name, model_class=self._models[name], validate=self.validate)
+
         if name not in self._collections:
-            model_class = self._models[name]
-            self._collections[name] = self._collection_class(self, name, model_class=model_class)
+            self._collections[name] = self._collection_class(
+                self, name, model_class=self._models[name], validate=self.validate)
 
         return self._collections[name]
 
