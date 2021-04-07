@@ -1,23 +1,21 @@
+import json
+import logging
+import time
+from copy import deepcopy
 from typing import Dict
 
 import elasticsearch
 import elasticsearch.helpers
-import json
-import logging
-import time
-
-from copy import deepcopy
-
-from assemblyline.common import forge
 
 from assemblyline import odm
+from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.uid import get_random_id
-from assemblyline.datastore import Collection, BaseStore, log, BulkPlan
-from assemblyline.datastore.exceptions import SearchException, SearchRetryException, MultiKeyError, ILMException
-from assemblyline.datastore.support.elasticsearch.schemas import default_index, default_mapping, \
-    default_dynamic_templates
-from assemblyline.datastore.support.elasticsearch.build import build_mapping, back_mapping
+from assemblyline.datastore import BaseStore, BulkPlan, Collection, log
+from assemblyline.datastore.exceptions import ILMException, MultiKeyError, SearchException, SearchRetryException
+from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
+from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_templates, default_index,
+                                                                  default_mapping)
 
 
 def _strip_lists(model, data):
@@ -352,7 +350,11 @@ class ESCollection(Collection):
                         "index": new_name
                     }
                 }
-                self.with_retries(self.datastore.client.reindex, body)
+
+                r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
+                while not self.datastore.client.tasks.get(r_task['task'])['completed']:
+                    time.sleep(.5)
+
                 if self.with_retries(self.datastore.client.indices.exists, new_name):
                     self.with_retries(self.datastore.client.indices.refresh, new_name)
                     self.with_retries(self.datastore.client.indices.clear_cache, new_name)
@@ -372,7 +374,11 @@ class ESCollection(Collection):
                             "index": index
                         }
                     }
-                    self.with_retries(self.datastore.client.reindex, body)
+
+                    r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
+                    while not self.datastore.client.tasks.get(r_task['task'])['completed']:
+                        time.sleep(.5)
+
                     self.with_retries(self.datastore.client.indices.delete, new_name)
             return True
 
