@@ -703,6 +703,8 @@ class Services(odm.Model):
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
     # Default update channel to be used for new services
     preferred_update_channel: str = odm.Keyword()
+    # Allow container registries with self signed certs for service updates
+    allow_insecure_registry: bool = odm.Boolean()
 
 
 DEFAULT_SERVICES = {
@@ -711,7 +713,8 @@ DEFAULT_SERVICES = {
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
     "image_variables": {},
-    "preferred_update_channel": "stable"
+    "preferred_update_channel": "stable",
+    "allow_insecure_registry": False
 }
 
 
