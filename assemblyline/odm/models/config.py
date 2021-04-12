@@ -719,7 +719,7 @@ DEFAULT_SERVICES = {
     "stages": SERVICE_STAGES,
     "image_variables": {},
     "preferred_update_channel": "stable",
-    "allow_insecure_registry": False
+    "allow_insecure_registry": False,
     "cpu_reservation": 1
 }
 
