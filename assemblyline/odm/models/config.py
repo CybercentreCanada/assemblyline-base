@@ -703,6 +703,11 @@ class Services(odm.Model):
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
     # Default update channel to be used for new services
     preferred_update_channel: str = odm.Keyword()
+    # How much CPU to reserve for services, at 1 a service's full cpu request will be reserved for them.
+    # At 0 (only for very small appliances/dev boxes) the service's cpu will be limited
+    # but no cpu will be reserved allowing for more flexible scheduling of containers.
+    # Docker doesn't have the concept of cpu reservation only limits.
+    cpu_reservation: float = odm.Float()
 
 
 DEFAULT_SERVICES = {
@@ -711,7 +716,8 @@ DEFAULT_SERVICES = {
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
     "image_variables": {},
-    "preferred_update_channel": "stable"
+    "preferred_update_channel": "stable",
+    "cpu_reservation": 1
 }
 
 
