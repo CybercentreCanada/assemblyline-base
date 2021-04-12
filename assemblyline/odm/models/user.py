@@ -3,6 +3,7 @@ from assemblyline.common import forge
 Classification = forge.get_classification()
 
 ACL = {"R", "W", "E"}
+SCOPES = {"r", "w", "rw"}
 USER_TYPES = {"admin", "signature_manager", "signature_importer", "user"}
 
 
@@ -12,12 +13,22 @@ class ApiKey(odm.Model):
     password = odm.Keyword()              # BCrypt hash of the password for the apikey
 
 
+@odm.model(index=False, store=False)
+class Apps(odm.Model):
+    client_id = odm.Keyword()               # Username allowed to impersonate the current user
+    netloc = odm.Keyword()                  # DNS hostname for the server
+    scope = odm.Enum(values=SCOPES)         # Access control list for the apikey
+    server = odm.Keyword()                  # Name of the server that has access
+
+
 @odm.model(index=True, store=True)
 class User(odm.Model):
     agrees_with_tos = odm.Optional(odm.Date(index=False, store=False))    # Date the user agree with terms of service
     api_quota = odm.Integer(default=10, store=False)                      # Max number of concurrent API requests
     apikeys = odm.Mapping(odm.Compound(ApiKey), default={},
                           index=False, store=False)                       # Mapping of api keys
+    apps = odm.Mapping(odm.Compound(Apps),
+                       default={}, index=False, store=False)              # Applications with access to the account
     can_impersonate = odm.Boolean(default=False, index=False,
                                   store=False)                            # Allowed to query on behalf of others
     classification = odm.Classification(
