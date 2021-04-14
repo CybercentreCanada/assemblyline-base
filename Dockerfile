@@ -11,12 +11,9 @@ RUN passwd -l root
 FROM base AS builder
 ARG version
 
-# The following line fix an issue with openjdk installation
-RUN mkdir -p /usr/share/man/man1
-
 # Get required apt packages
 RUN apt-get update \
-  && apt-get install -yy openjdk-8-jre-headless java-common build-essential libffi-dev libfuzzy-dev \
+  && apt-get install -yy build-essential libffi-dev libfuzzy-dev \
   && rm -rf /var/lib/apt/lists/*
 
 # Install assemblyline base
