@@ -120,6 +120,9 @@ class PriorityQueue(object):
     def rank(self, raw_value):
         return retry_call(self.c.zrank, self.name, raw_value)
 
+    def remove(self, raw_value):
+        return retry_call(self.c.zrem, self.name, raw_value)
+
     def unpush(self, num=None):
         if num is not None and num <= 0:
             return []
