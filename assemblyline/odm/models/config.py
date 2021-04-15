@@ -705,6 +705,11 @@ class Services(odm.Model):
     preferred_update_channel: str = odm.Keyword()
     # Allow container registries with self signed certs for service updates
     allow_insecure_registry: bool = odm.Boolean()
+    # How much CPU to reserve for services, at 1 a service's full cpu request will be reserved for them.
+    # At 0 (only for very small appliances/dev boxes) the service's cpu will be limited
+    # but no cpu will be reserved allowing for more flexible scheduling of containers.
+    # Docker doesn't have the concept of cpu reservation only limits.
+    cpu_reservation: float = odm.Float()
 
 
 DEFAULT_SERVICES = {
@@ -714,7 +719,8 @@ DEFAULT_SERVICES = {
     "stages": SERVICE_STAGES,
     "image_variables": {},
     "preferred_update_channel": "stable",
-    "allow_insecure_registry": False
+    "allow_insecure_registry": False,
+    "cpu_reservation": 1
 }
 
 
