@@ -720,7 +720,7 @@ DEFAULT_SERVICES = {
     "image_variables": {},
     "preferred_update_channel": "stable",
     "allow_insecure_registry": False,
-    "cpu_reservation": 1
+    "cpu_reservation": 0.25
 }
 
 
