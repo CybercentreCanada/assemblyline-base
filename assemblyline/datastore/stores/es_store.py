@@ -308,9 +308,12 @@ class ESCollection(Collection):
                 "index": f"{self.name}-archive"
             }
         }
-        res_reindex = self.with_retries(self.datastore.client.reindex, reindex_body)
-        total_archived = res_reindex['updated'] + res_reindex['created']
-        if res_reindex['total'] == total_archived:
+        r_task = self.with_retries(self.datastore.client.reindex, reindex_body, wait_for_completion=False)
+        while not self.datastore.client.tasks.get(
+                r_task['task'], wait_for_completion=True, timeout='5s')['completed']:
+            pass
+        total_archived = r_task['updated'] + r_task['created']
+        if r_task['total'] == total_archived:
             if total_archived != 0:
                 delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
                 info = self.with_retries(self.datastore.client.delete_by_query, index=self.name, body=delete_body)
