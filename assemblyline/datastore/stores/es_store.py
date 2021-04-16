@@ -288,6 +288,11 @@ class ESCollection(Collection):
                     raise
 
     def _get_task_results(self, task):
+        # This function is only used to wait for a asynchronous task to finish in a graceful manner without
+        #  timing out the elastic client. You can create an async task for long running operation like:
+        #   - update_by_query
+        #   - delete_by_query
+        #   - reindex ...
         res = self.with_retries(self.datastore.client.tasks.get, task['task'], wait_for_completion=True, timeout='5s')
         while not res['completed']:
             res = self.with_retries(
