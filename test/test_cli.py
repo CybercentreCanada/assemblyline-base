@@ -269,6 +269,7 @@ def test_signature(datastore, cli):
 
     cli.do_signature(f"change_status by_id DISABLED {sig_id}")
     assert datastore.signature.get(sig_id, as_obj=False)['status'] == 'DISABLED'
+    datastore.signature.commit()
 
     cli.do_signature(f"change_status by_query force TESTING id:{sig_id}")
     assert datastore.signature.get(sig_id, as_obj=False)['status'] == 'TESTING'
