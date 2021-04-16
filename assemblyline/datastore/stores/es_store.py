@@ -288,11 +288,11 @@ class ESCollection(Collection):
                     raise
 
     def _get_task_results(self, task):
-        res = self.with_retries(self.datastore.client.tasks.get, task['task'], wait_for_completion=False, timeout='5s')
+        res = self.with_retries(self.datastore.client.tasks.get, task['task'], wait_for_completion=True, timeout='5s')
         while not res['completed']:
             res = self.with_retries(
                 self.datastore.client.tasks.get, task['task'],
-                wait_for_completion=False, timeout='5s')
+                wait_for_completion=True, timeout='5s')
         return res['response']
 
     def archive(self, query):
