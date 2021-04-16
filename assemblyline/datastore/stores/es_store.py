@@ -352,8 +352,9 @@ class ESCollection(Collection):
                 }
 
                 r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
-                while not self.datastore.client.tasks.get(r_task['task'])['completed']:
-                    time.sleep(.5)
+                while not self.datastore.client.tasks.get(
+                        r_task['task'], wait_for_completion=True, timeout='5s')['completed']:
+                    pass
 
                 if self.with_retries(self.datastore.client.indices.exists, new_name):
                     self.with_retries(self.datastore.client.indices.refresh, new_name)
@@ -376,8 +377,9 @@ class ESCollection(Collection):
                     }
 
                     r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
-                    while not self.datastore.client.tasks.get(r_task['task'])['completed']:
-                        time.sleep(.5)
+                    while not self.datastore.client.tasks.get(
+                            r_task['task'], wait_for_completion=True, timeout='5s')['completed']:
+                        pass
 
                     self.with_retries(self.datastore.client.indices.delete, new_name)
             return True
