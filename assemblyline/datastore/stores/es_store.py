@@ -324,7 +324,7 @@ class ESCollection(Collection):
         r_task = self.with_retries(self.datastore.client.reindex, reindex_body, wait_for_completion=False)
         res = self._get_task_results(r_task)
         total_archived = res['updated'] + res['created']
-        if r_task['total'] == total_archived:
+        if res['total'] == total_archived:
             if total_archived != 0:
                 delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
                 d_task = self.with_retries(self.datastore.client.delete_by_query, index=self.name,
