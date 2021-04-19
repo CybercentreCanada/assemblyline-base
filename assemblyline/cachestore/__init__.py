@@ -45,6 +45,11 @@ class CacheStore(object):
 
         return self.filestore.get(new_key)
 
+    def exists(self, cache_key):
+        new_key = f"{self.component}_{cache_key}" if self.component else cache_key
+
+        return self.filestore.exists(new_key)
+
     def delete(self, cache_key, db_delete=True):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
 
