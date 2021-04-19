@@ -54,24 +54,16 @@ class TransportS3(Transport):
 
         self.endpoint_url = "{scheme}://{host}:{port}".format(scheme=self.scheme, host=self.host, port=self.port)
 
-        # The boto3 library has some thread safety issues, can generally be handled by retrying
-        # a few times. (https://github.com/boto/boto3/issues/801)
-        for _ in range(10):
-            try:
-                self.client = boto3.client(
-                    "s3",
-                    aws_access_key_id=accesskey,
-                    aws_secret_access_key=secretkey,
-                    endpoint_url=self.endpoint_url,
-                    region_name=aws_region,
-                    use_ssl=self.use_ssl,
-                    verify=verify
-                )
-                break
-            except KeyError:
-                pass
-        else:
-            raise TransportException("Couldn't create the s3 client")
+        session = boto3.session.Session()
+        self.client = session.client(
+            "s3",
+            aws_access_key_id=accesskey,
+            aws_secret_access_key=secretkey,
+            endpoint_url=self.endpoint_url,
+            region_name=aws_region,
+            use_ssl=self.use_ssl,
+            verify=verify
+        )
 
         bucket_exist = False
         try:
