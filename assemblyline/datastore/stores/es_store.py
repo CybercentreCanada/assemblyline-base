@@ -287,6 +287,52 @@ class ESCollection(Collection):
                 else:
                     raise
 
+    def _get_task_results(self, task):
+        # This function is only used to wait for a asynchronous task to finish in a graceful manner without
+        #  timing out the elastic client. You can create an async task for long running operation like:
+        #   - update_by_query
+        #   - delete_by_query
+        #   - reindex ...
+        res = None
+        while res is None:
+            try:
+                res = self.with_retries(self.datastore.client.tasks.get, task['task'],
+                                        wait_for_completion=True, timeout='5s')
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, msg, _ = e.args
+                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
+                    pass
+                else:
+                    raise
+
+        return res['response']
+
+    def _delete_async(self, index, body):
+        deleted = 0
+        while True:
+            task = self.with_retries(self.datastore.client.delete_by_query, index=index,
+                                     body=body, wait_for_completion=False, conflicts='proceed')
+            res = self._get_task_results(task)
+
+            if res['version_conflicts'] == 0:
+                res['deleted'] += deleted
+                return res
+            else:
+                deleted += res['deleted']
+
+    def _update_async(self, index, body):
+        updated = 0
+        while True:
+            task = self.with_retries(self.datastore.client.update_by_query, index=index,
+                                     body=body, wait_for_completion=False, conflicts='proceed')
+            res = self._get_task_results(task)
+
+            if res['version_conflicts'] == 0:
+                res['updated'] += updated
+                return res
+            else:
+                updated += res['updated']
+
     def archive(self, query):
         if not self.archive_access:
             return False
@@ -308,12 +354,13 @@ class ESCollection(Collection):
                 "index": f"{self.name}-archive"
             }
         }
-        res_reindex = self.with_retries(self.datastore.client.reindex, reindex_body)
-        total_archived = res_reindex['updated'] + res_reindex['created']
-        if res_reindex['total'] == total_archived:
+        r_task = self.with_retries(self.datastore.client.reindex, reindex_body, wait_for_completion=False)
+        res = self._get_task_results(r_task)
+        total_archived = res['updated'] + res['created']
+        if res['total'] == total_archived:
             if total_archived != 0:
                 delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-                info = self.with_retries(self.datastore.client.delete_by_query, index=self.name, body=delete_body)
+                info = self._delete_async(self.name, delete_body)
                 return info.get('deleted', 0) == total_archived
             else:
                 return True
@@ -352,8 +399,7 @@ class ESCollection(Collection):
                 }
 
                 r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
-                while not self.datastore.client.tasks.get(r_task['task'])['completed']:
-                    time.sleep(.5)
+                self._get_task_results(r_task)
 
                 if self.with_retries(self.datastore.client.indices.exists, new_name):
                     self.with_retries(self.datastore.client.indices.refresh, new_name)
@@ -376,9 +422,7 @@ class ESCollection(Collection):
                     }
 
                     r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
-                    while not self.datastore.client.tasks.get(r_task['task'])['completed']:
-                        time.sleep(.5)
-
+                    self._get_task_results(r_task)
                     self.with_retries(self.datastore.client.indices.delete, new_name)
             return True
 
@@ -494,10 +538,7 @@ class ESCollection(Collection):
         )
 
         if self.archive_access or (self.ilm_config and force_archive_access):
-            self.with_retries(self.datastore.client.delete_by_query,
-                              index=f"{self.name}-*",
-                              body={"query": {"ids": {"values": [key]}}})
-
+            self._delete_async(f"{self.name}-*", {"query": {"ids": {"values": [key]}}})
         return True
 
     def delete(self, key):
@@ -510,7 +551,7 @@ class ESCollection(Collection):
 
         if self.archive_access:
             query_body = {"query": {"ids": {"values": [key]}}}
-            info = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name}-*", body=query_body)
+            info = self._delete_async(f"{self.name}-*", query_body)
             if not deleted:
                 deleted = info.get('deleted', 0) == info.get('total', 0)
         else:
@@ -523,7 +564,7 @@ class ESCollection(Collection):
         if self.archive_access:
             index = f"{index},{self.name}-*"
         query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-        info = self.with_retries(self.datastore.client.delete_by_query, index=index, body=query_body)
+        info = self._delete_async(index, query_body)
         return info.get('deleted', 0) != 0
 
     def _create_scripts_from_operations(self, operations):
@@ -582,7 +623,7 @@ class ESCollection(Collection):
         if self.archive_access:
             query_body = {"query": {"ids": {"values": [key]}}}
             update_body.update(query_body)
-            info = self.with_retries(self.datastore.client.update_by_query, index=f"{self.name}-*", body=update_body)
+            info = self._update_async(f"{self.name}-*", update_body)
             return info.get('updated', 0) != 0
 
         return False
@@ -613,7 +654,7 @@ class ESCollection(Collection):
 
         # noinspection PyBroadException
         try:
-            res = self.with_retries(self.datastore.client.update_by_query, index=index, body=query_body)
+            res = self._update_async(index, query_body)
         except Exception:
             return False
 
