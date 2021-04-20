@@ -293,12 +293,45 @@ class ESCollection(Collection):
         #   - update_by_query
         #   - delete_by_query
         #   - reindex ...
-        res = self.with_retries(self.datastore.client.tasks.get, task['task'], wait_for_completion=True, timeout='5s')
-        while not res['completed']:
-            res = self.with_retries(
-                self.datastore.client.tasks.get, task['task'],
-                wait_for_completion=True, timeout='5s')
+        res = None
+        while res is None:
+            try:
+                res = self.with_retries(self.datastore.client.tasks.get, task['task'],
+                                        wait_for_completion=True, timeout='5s')
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, msg, _ = e.args
+                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
+                    pass
+                else:
+                    raise
+
         return res['response']
+
+    def _delete_async(self, index, body):
+        deleted = 0
+        while True:
+            task = self.with_retries(self.datastore.client.delete_by_query, index=index,
+                                     body=body, wait_for_completion=False, conflicts='proceed')
+            res = self._get_task_results(task)
+
+            if res['version_conflicts'] == 0:
+                res['deleted'] += deleted
+                return res
+            else:
+                deleted = res['deleted']
+
+    def _update_async(self, index, body):
+        updated = 0
+        while True:
+            task = self.with_retries(self.datastore.client.update_by_query, index=index,
+                                     body=body, wait_for_completion=False, conflicts='proceed')
+            res = self._get_task_results(task)
+
+            if res['version_conflicts'] == 0:
+                res['updated'] += updated
+                return res
+            else:
+                updated = res['updated']
 
     def archive(self, query):
         if not self.archive_access:
@@ -327,9 +360,7 @@ class ESCollection(Collection):
         if res['total'] == total_archived:
             if total_archived != 0:
                 delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-                d_task = self.with_retries(self.datastore.client.delete_by_query, index=self.name,
-                                           body=delete_body, wait_for_completion=False, conflicts='proceed')
-                info = self._get_task_results(d_task)
+                info = self._delete_async(self.name, delete_body)
                 return info.get('deleted', 0) == total_archived
             else:
                 return True
@@ -507,11 +538,7 @@ class ESCollection(Collection):
         )
 
         if self.archive_access or (self.ilm_config and force_archive_access):
-            task = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name}-*",
-                                     body={"query": {"ids": {"values": [key]}}},
-                                     wait_for_completion=False, conflicts='proceed')
-            self._get_task_results(task)
-
+            self._delete_async(f"{self.name}-*", {"query": {"ids": {"values": [key]}}})
         return True
 
     def delete(self, key):
@@ -524,9 +551,7 @@ class ESCollection(Collection):
 
         if self.archive_access:
             query_body = {"query": {"ids": {"values": [key]}}}
-            task = self.with_retries(self.datastore.client.delete_by_query, index=f"{self.name}-*",
-                                     body=query_body, wait_for_completion=False, conflicts='proceed')
-            info = self._get_task_results(task)
+            info = self._delete_async(f"{self.name}-*", query_body)
             if not deleted:
                 deleted = info.get('deleted', 0) == info.get('total', 0)
         else:
@@ -539,9 +564,7 @@ class ESCollection(Collection):
         if self.archive_access:
             index = f"{index},{self.name}-*"
         query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-        task = self.with_retries(self.datastore.client.delete_by_query, index=index,
-                                 body=query_body, wait_for_completion=False, conflicts='proceed')
-        info = self._get_task_results(task)
+        info = self._delete_async(index, query_body)
         return info.get('deleted', 0) != 0
 
     def _create_scripts_from_operations(self, operations):
@@ -600,9 +623,7 @@ class ESCollection(Collection):
         if self.archive_access:
             query_body = {"query": {"ids": {"values": [key]}}}
             update_body.update(query_body)
-            task = self.with_retries(self.datastore.client.update_by_query, index=f"{self.name}-*",
-                                     body=update_body, wait_for_completion=False, conflicts='proceed')
-            info = self._get_task_results(task)
+            info = self._update_async(f"{self.name}-*", update_body)
             return info.get('updated', 0) != 0
 
         return False
@@ -633,9 +654,7 @@ class ESCollection(Collection):
 
         # noinspection PyBroadException
         try:
-            task = self.with_retries(self.datastore.client.update_by_query, index=index,
-                                     body=query_body, wait_for_completion=False, conflicts='proceed')
-            res = self._get_task_results(task)
+            res = self._update_async(index, query_body)
         except Exception:
             return False
 
