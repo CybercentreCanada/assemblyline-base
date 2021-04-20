@@ -318,7 +318,7 @@ class ESCollection(Collection):
                 res['deleted'] += deleted
                 return res
             else:
-                deleted = res['deleted']
+                deleted += res['deleted']
 
     def _update_async(self, index, body):
         updated = 0
@@ -331,7 +331,7 @@ class ESCollection(Collection):
                 res['updated'] += updated
                 return res
             else:
-                updated = res['updated']
+                updated += res['updated']
 
     def archive(self, query):
         if not self.archive_access:
