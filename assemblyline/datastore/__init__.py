@@ -312,7 +312,7 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def delete_matching(self, query, workers=20):
+    def delete_by_query(self, query, workers=20, max_docs=None):
         """
         This function should delete the underlying documents referenced by the query.
         It should return true if the documents were in fact properly deleted.
@@ -403,7 +403,7 @@ class Collection(object):
         operations = self._validate_operations(operations)
         return self._update(key, operations)
 
-    def update_by_query(self, query, operations, filters=None, access_control=None):
+    def update_by_query(self, query, operations, filters=None, access_control=None, max_docs=None):
         """
         This function performs an atomic update on some fields from the
         underlying documents matching the query and the filters using a list of operations.
@@ -424,9 +424,9 @@ class Collection(object):
             if filters is None:
                 filters = []
             filters.append(access_control)
-        return self._update_by_query(query, operations, filters=filters)
+        return self._update_by_query(query, operations, filters=filters, max_docs=max_docs)
 
-    def _update_by_query(self, query, operations, filters):
+    def _update_by_query(self, query, operations, filters, max_docs=None):
         with concurrent.futures.ThreadPoolExecutor(20) as executor:
             res = {self._get_obj_value(item, 'id'): executor.submit(self._update, self._get_obj_value(item, 'id'),
                                                                     operations)

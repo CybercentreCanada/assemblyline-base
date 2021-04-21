@@ -307,11 +307,11 @@ class ESCollection(Collection):
 
         return res['response']
 
-    def _delete_async(self, index, body):
+    def _delete_async(self, index, body, max_docs=None):
         deleted = 0
         while True:
             task = self.with_retries(self.datastore.client.delete_by_query, index=index,
-                                     body=body, wait_for_completion=False, conflicts='proceed')
+                                     body=body, wait_for_completion=False, conflicts='proceed', max_docs=max_docs)
             res = self._get_task_results(task)
 
             if res['version_conflicts'] == 0:
@@ -320,11 +320,11 @@ class ESCollection(Collection):
             else:
                 deleted += res['deleted']
 
-    def _update_async(self, index, body):
+    def _update_async(self, index, body, max_docs=None):
         updated = 0
         while True:
             task = self.with_retries(self.datastore.client.update_by_query, index=index,
-                                     body=body, wait_for_completion=False, conflicts='proceed')
+                                     body=body, wait_for_completion=False, conflicts='proceed', max_docs=max_docs)
             res = self._get_task_results(task)
 
             if res['version_conflicts'] == 0:
@@ -559,12 +559,12 @@ class ESCollection(Collection):
 
         return deleted
 
-    def delete_matching(self, query, workers=20):
+    def delete_by_query(self, query, workers=20, max_docs=None):
         index = self.name
         if self.archive_access:
             index = f"{index},{self.name}-*"
         query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-        info = self._delete_async(index, query_body)
+        info = self._delete_async(index, query_body, max_docs=max_docs)
         return info.get('deleted', 0) != 0
 
     def _create_scripts_from_operations(self, operations):
@@ -628,7 +628,7 @@ class ESCollection(Collection):
 
         return False
 
-    def _update_by_query(self, query, operations, filters):
+    def _update_by_query(self, query, operations, filters, max_docs=None):
         if filters is None:
             filters = []
 
@@ -654,7 +654,7 @@ class ESCollection(Collection):
 
         # noinspection PyBroadException
         try:
-            res = self._update_async(index, query_body)
+            res = self._update_async(index, query_body, max_docs=max_docs)
         except Exception:
             return False
 
