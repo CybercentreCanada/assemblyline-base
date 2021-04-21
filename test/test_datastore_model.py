@@ -109,7 +109,7 @@ def _setup_collection(ds, name, doc):
         collection = ds.__getattr__(name)
 
         # Make sure the collection is empty
-        collection.delete_matching("id:*")
+        collection.delete_by_query("id:*")
 
         # Save test document
         collection.save("document_id", doc)
