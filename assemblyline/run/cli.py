@@ -508,7 +508,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                     for data in collection.stream_search(query, fl="id", item_buffer_size=COUNT_INCREMENT):
                         pool.apply_async(submission_delete_tree, (data.id, self.logger), callback=action_done)
                 else:
-                    collection.delete_matching(query)
+                    collection.delete_by_query(query)
 
         except KeyboardInterrupt:
             self.logger.warn("Interrupting jobs...")
@@ -596,7 +596,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         elif action_type == 'remove':
             collection.delete(item_id)
             service = self.datastore.get_collection('service')
-            service.delete_matching(f"name:{item_id}")
+            service.delete_by_query(f"name:{item_id}")
             self.logger.info(f"Service '{item_id}' removed.")
 
     def complete_service(self, text, line, begidx, endidx):

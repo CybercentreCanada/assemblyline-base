@@ -11,7 +11,7 @@ COMPONENT = "test_component"
 @pytest.fixture(scope='module')
 def cachestore(datastore_connection):
     cachestore = forge.get_cachestore(COMPONENT, datastore=datastore_connection)
-    cachestore.datastore.cached_file.delete_matching("id:*")
+    cachestore.datastore.cached_file.delete_by_query("id:*")
     cachestore.save(KEY, DATA)
     cachestore.datastore.cached_file.commit()
 
