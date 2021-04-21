@@ -292,7 +292,7 @@ def _test_histogram(c: Collection):
 
     h_date = c.histogram('expiry_dt', '{n}-10{d}/{d}'.format(n=c.datastore.now, d=c.datastore.day),
                          '{n}+10{d}/{d}'.format(n=c.datastore.now, d=c.datastore.day),
-                         '+1{d}'.format(d=c.datastore.day, mincount=2))
+                         '+1{d}'.format(d=c.datastore.day), mincount=2)
     assert len(h_date) > 0
     for k, v in h_date.items():
         assert isinstance(k, str)
