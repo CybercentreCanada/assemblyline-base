@@ -54,7 +54,8 @@ class TransportS3(Transport):
 
         self.endpoint_url = "{scheme}://{host}:{port}".format(scheme=self.scheme, host=self.host, port=self.port)
 
-        self.client = boto3.client(
+        session = boto3.session.Session()
+        self.client = session.client(
             "s3",
             aws_access_key_id=accesskey,
             aws_secret_access_key=secretkey,
