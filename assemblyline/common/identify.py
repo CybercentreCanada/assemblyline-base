@@ -91,12 +91,12 @@ STRONG_INDICATORS = {
         re.compile(rb'\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+'),
     ],
     'document/email': [
-        re.compile(rb'^Content-Type: ', re.MULTILINE),
-        re.compile(rb'^Subject: ', re.MULTILINE),
-        re.compile(rb'^MIME-Version: ', re.MULTILINE),
-        re.compile(rb'^Message-ID: ', re.MULTILINE),
-        re.compile(rb'^To: ', re.MULTILINE),
-        re.compile(rb'^From: ', re.MULTILINE),
+        re.compile(rb'^(?:H\?\?)?Content-Type: ', re.MULTILINE),
+        re.compile(rb'^(?:H\?\?)?Subject: ', re.MULTILINE),
+        re.compile(rb'^(?:H\?\?)?MIME-Version: ', re.MULTILINE),
+        re.compile(rb'^(?:H\?\?)?Message-ID: ', re.MULTILINE),
+        re.compile(rb'^(?:H\?\?)?To: ', re.MULTILINE),
+        re.compile(rb'^(?:H\?\?)?From: ', re.MULTILINE),
     ],
     'code/xml': [
         # Check if it has an xml declaration header
@@ -763,7 +763,9 @@ def fileinfo(path: str) -> Dict:
         # Magic detects .hta files as .html, guess_language detects .hta files as .js/.vbs
         # If both conditions are met, it's fair to say that the file is an .hta
         lang, _ = guess_language(path)
-        if lang in ["code/javascript", "code/vbs"]:
+        if lang == "document/email":
+            data['type'] = lang
+        elif lang in ["code/javascript", "code/vbs"]:
             data['type'] = 'code/hta'
 
     if data['type'] in ['document/office/word', 'document/office/excel',
