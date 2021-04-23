@@ -91,12 +91,12 @@ STRONG_INDICATORS = {
         re.compile(rb'\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+'),
     ],
     'document/email': [
-        re.compile(rb'^(?:H\?\?)?Content-Type: ', re.MULTILINE),
-        re.compile(rb'^(?:H\?\?)?Subject: ', re.MULTILINE),
-        re.compile(rb'^(?:H\?\?)?MIME-Version: ', re.MULTILINE),
-        re.compile(rb'^(?:H\?\?)?Message-ID: ', re.MULTILINE),
-        re.compile(rb'^(?:H\?\?)?To: ', re.MULTILINE),
-        re.compile(rb'^(?:H\?\?)?From: ', re.MULTILINE),
+        re.compile(rb'^Content-Type: ', re.MULTILINE),
+        re.compile(rb'^Subject: ', re.MULTILINE),
+        re.compile(rb'^MIME-Version: ', re.MULTILINE),
+        re.compile(rb'^Message-ID: ', re.MULTILINE),
+        re.compile(rb'^To: ', re.MULTILINE),
+        re.compile(rb'^From: ', re.MULTILINE),
     ],
     'code/xml': [
         # Check if it has an xml declaration header
