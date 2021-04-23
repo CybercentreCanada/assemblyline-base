@@ -898,6 +898,8 @@ class Submission(odm.Model):
     # Number of days submissions will remain in the system by default
     dtl: int = odm.Integer()
 
+    # Maximum number of days submissions will remain in the system
+    max_dtl: int = odm.Integer()
     # Maximum files extraction depth
     max_extraction_depth: int = odm.Integer()
     # Maximum size for files submitted in the system
@@ -913,6 +915,7 @@ DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
     'dtl': 30,
+    'max_dtl': 0,
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
