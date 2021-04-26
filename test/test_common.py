@@ -211,7 +211,7 @@ def test_heuristics_valid():
         score_map=score_map
     )
 
-    result_heur = service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
+    result_heur, _ = service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
     assert result_heur is not None
     assert service_heur['heur_id'] == result_heur['heur_id']
     assert service_heur['score'] != result_heur['score']

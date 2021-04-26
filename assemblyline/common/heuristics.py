@@ -42,7 +42,7 @@ def service_heuristic_to_result_heuristic(srv_heuristic, heuristics):
             )
             output['signature'].append(signature_item)
 
-        return output
+        return output, heuristic.associated_tags
     except InvalidHeuristicException as e:
         heur_logger.warning(str(e))
         raise
@@ -64,6 +64,7 @@ class Heuristic(object):
         self.attack_ids = []
         self.name = definition.name
         self.classification = definition.classification
+        self.associated_tags = []
 
         # Show only attack_ids that are valid
         attack_ids = attack_ids or []
@@ -71,7 +72,12 @@ class Heuristic(object):
             if a_id in attack_map:
                 self.attack_ids.append(a_id)
             elif a_id in software_map:
-                for s_a_id in software_map[a_id]['attack_ids']:
+                software_def = software_map[a_id]
+                implant_name = software_def.get('name', None)
+                if implant_name:
+                    self.associated_tags.append(('attribution.implant', implant_name))
+
+                for s_a_id in software_def['attack_ids']:
                     if s_a_id in attack_map:
                         self.attack_ids.append(s_a_id)
                     else:
