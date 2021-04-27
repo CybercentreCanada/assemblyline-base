@@ -29,7 +29,7 @@ def load_datasource(base=CTI_BASE):
     return composite_ds
 
 
-def getRevokedBy(stix_id, thesrc):
+def get_revoked_by(stix_id, thesrc):
     relations = thesrc.relationships(stix_id, 'revoked-by', source_only=True)
     revoked_by = thesrc.query([
         Filter('id', 'in', [r.target_ref for r in relations]),
@@ -78,7 +78,7 @@ def get_attack_map(composite_ds):
                 }
                 print(f"\tAdding {name.upper()} as ID: {attack_id}")
             else:
-                revoke_id = getRevokedBy(item['id'], composite_ds)
+                revoke_id = get_revoked_by(item['id'], composite_ds)
                 if revoke_id is None:
                     print(f"\t[WARN] {name.upper()} ({attack_id}) has been revoked without being replaced.")
                 else:
@@ -139,7 +139,7 @@ def get_software_map(composite_ds):
                     }
                     print(f"\tAdding {name.upper()} as ID: {software_id}")
                 else:
-                    revoke_id = getRevokedBy(item['id'], composite_ds)
+                    revoke_id = get_revoked_by(item['id'], composite_ds)
                     if revoke_id is None:
                         print(f"\t[WARN] {name.upper()} ({software_id}) has been revoked without being replaced.")
                     else:
@@ -176,7 +176,7 @@ def get_group_map(composite_ds):
                 }
                 print(f"\tAdding {name.upper()} as ID: {group_id}")
             else:
-                revoke_id = getRevokedBy(item['id'], composite_ds)
+                revoke_id = get_revoked_by(item['id'], composite_ds)
                 if revoke_id is None:
                     print(f"\t[WARN] {name.upper()} ({group_id}) has been revoked without being replaced.")
                 else:
