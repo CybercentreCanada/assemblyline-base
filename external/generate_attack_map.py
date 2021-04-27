@@ -36,7 +36,7 @@ def getRevokedBy(stix_id, thesrc):
         Filter('revoked', '=', False)
     ])
     revoke_id = None
-    if revoked_by is not None:
+    if revoked_by:
         revoked_by = revoked_by[0]
 
         for er in revoked_by['external_references']:
