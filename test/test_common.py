@@ -70,7 +70,7 @@ def test_revoke_map():
     # assemblyline-base/external/generate_attack_map.py
     assert type(revoke_map) == dict
     # This is the minimum set of keys that each technique entry in the attack map should have
-    for revoked_id, mapped_id in group_map.items():
+    for revoked_id, mapped_id in revoke_map.items():
         assert revoked_id not in attack_map
         assert revoked_id not in software_map
         assert revoked_id not in group_map
