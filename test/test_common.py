@@ -13,7 +13,7 @@ from copy import deepcopy
 from io import BytesIO
 
 from assemblyline.common import forge
-from assemblyline.common.attack_map import attack_map, software_map
+from assemblyline.common.attack_map import attack_map, software_map, group_map
 from assemblyline.common.chunk import chunked_list, chunk
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
@@ -52,6 +52,17 @@ def test_software_map():
     for attack_software_id, attack_software_details in software_map.items():
         assert attack_software_details.keys() == attack_software_keys
         assert attack_software_id == attack_software_details["software_id"]
+
+
+def test_group_map():
+    # Validate the structure of the generated ATT&CK group map (intrusion_set) created by
+    # assemblyline-base/external/generate_attack_map.py
+    assert type(group_map) == dict
+    # This is the minimum set of keys that each technique entry in the attack map should have
+    attack_group_keys = {"description", "group_id", "name"}
+    for attack_group_id, attack_group_details in group_map.items():
+        assert attack_group_details.keys() == attack_group_keys
+        assert attack_group_id == attack_group_details["group_id"]
 
 
 def test_chunk():
