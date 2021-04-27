@@ -1,6 +1,6 @@
 import logging
 
-from assemblyline.common.attack_map import attack_map, software_map, group_map
+from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
 
 heur_logger = logging.getLogger("assemblyline.heuristics")
 
@@ -68,6 +68,7 @@ class Heuristic(object):
 
         # Show only attack_ids that are valid
         attack_ids = attack_ids or []
+        attack_ids = [revoke_map.get(x, x) for x in attack_ids]
         for a_id in attack_ids:
             if a_id in attack_map:
                 self.attack_ids.append(a_id)

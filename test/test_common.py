@@ -13,7 +13,7 @@ from copy import deepcopy
 from io import BytesIO
 
 from assemblyline.common import forge
-from assemblyline.common.attack_map import attack_map, software_map, group_map
+from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
 from assemblyline.common.chunk import chunked_list, chunk
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
@@ -63,6 +63,18 @@ def test_group_map():
     for attack_group_id, attack_group_details in group_map.items():
         assert attack_group_details.keys() == attack_group_keys
         assert attack_group_id == attack_group_details["group_id"]
+
+
+def test_revoke_map():
+    # Validate the structure of the generated ATT&CK revoke_map created by
+    # assemblyline-base/external/generate_attack_map.py
+    assert type(revoke_map) == dict
+    # This is the minimum set of keys that each technique entry in the attack map should have
+    for revoked_id, mapped_id in group_map.items():
+        assert revoked_id not in attack_map
+        assert revoked_id not in software_map
+        assert revoked_id not in group_map
+        assert mapped_id in attack_map or mapped_id in software_map or mapped_id in group_map
 
 
 def test_chunk():
