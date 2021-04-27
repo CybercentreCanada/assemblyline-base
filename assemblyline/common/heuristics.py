@@ -1,6 +1,6 @@
 import logging
 
-from assemblyline.common.attack_map import attack_map, software_map
+from assemblyline.common.attack_map import attack_map, software_map, group_map
 
 heur_logger = logging.getLogger("assemblyline.heuristics")
 
@@ -83,6 +83,10 @@ class Heuristic(object):
                     else:
                         heur_logger.warning(f"Invalid related attack_id '{s_a_id}' for software '{a_id}' "
                                             f"in heuristic '{heur_id}'. Ignoring it.")
+            elif a_id in group_map:
+                group_name = group_map[a_id].get('name', None)
+                if group_name:
+                    self.associated_tags.append(('attribution.actor', group_name))
             else:
                 heur_logger.warning(f"Invalid attack_id '{a_id}' in heuristic '{heur_id}'. Ignoring it.")
         self.attack_ids = list(set(self.attack_ids))
