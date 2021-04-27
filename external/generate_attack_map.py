@@ -118,6 +118,38 @@ def get_software_map(composite_ds):
     return software_map
 
 
+def get_group_map(composite_ds):
+    print("Parsing intrusion sets ...")
+    group_filter = Filter('type', '=', 'intrusion-set')
+
+    group_map = {}
+    for item in composite_ds.query(group_filter):
+        name = item['name']
+
+        if item['revoked']:
+            print(f"\t[WARN] Ignored {name.upper()}: This intrusion set has been revoked.")
+            continue
+
+        desc = item['description']
+        group_id = None
+        for er in item['external_references']:
+            if er['source_name'] in ["mitre-attack", "mobile-mitre-attack", "mitre-mobile-attack"]:
+                group_id = er['external_id']
+                break
+
+        if group_id:
+            group_map[group_id] = {
+                "name": name,
+                "description": desc,
+                "group_id": group_id
+            }
+            print(f"\tAdding {name.upper()} as ID: {group_id}")
+        else:
+            print(f"[ERR] Ignored {name.upper()}: No group ID found.")
+
+    return group_map
+
+
 if __name__ == "__main__":
     attack_map_location = "../assemblyline/common/attack_map.py"
     if not os.path.exists(attack_map_location):
@@ -129,12 +161,14 @@ if __name__ == "__main__":
     datasource = load_datasource()
     att_map = get_attack_map(datasource)
     soft_map = get_software_map(datasource)
+    grp_map = get_group_map(datasource)
 
     with open(attack_map_location, "w") as attack_map_fh:
         attack_map_fh.write("# This file is generated using generate_attack_map.py script\n"
                             "# DO NOT EDIT! Re-run the script instead...\n\n"
                             f"attack_map = {{\n {pformat(att_map, width=120)[1:-1]}\n}}\n\n"
-                            f"software_map = {{\n {pformat(soft_map, width=120)[1:-1]}\n}}\n")
+                            f"software_map = {{\n {pformat(soft_map, width=120)[1:-1]}\n}}\n\n"
+                            f"group_map = {{\n {pformat(grp_map, width=120)[1:-1]}\n}}\n")
 
     print(f"Attack map file written into: {attack_map_location}")
     print("You can now commit the new attack file to your git.")
