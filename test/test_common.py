@@ -13,7 +13,7 @@ from copy import deepcopy
 from io import BytesIO
 
 from assemblyline.common import forge
-from assemblyline.common.attack_map import attack_map, software_map
+from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
 from assemblyline.common.chunk import chunked_list, chunk
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
@@ -52,6 +52,29 @@ def test_software_map():
     for attack_software_id, attack_software_details in software_map.items():
         assert attack_software_details.keys() == attack_software_keys
         assert attack_software_id == attack_software_details["software_id"]
+
+
+def test_group_map():
+    # Validate the structure of the generated ATT&CK group map (intrusion_set) created by
+    # assemblyline-base/external/generate_attack_map.py
+    assert type(group_map) == dict
+    # This is the minimum set of keys that each technique entry in the attack map should have
+    attack_group_keys = {"description", "group_id", "name"}
+    for attack_group_id, attack_group_details in group_map.items():
+        assert attack_group_details.keys() == attack_group_keys
+        assert attack_group_id == attack_group_details["group_id"]
+
+
+def test_revoke_map():
+    # Validate the structure of the generated ATT&CK revoke_map created by
+    # assemblyline-base/external/generate_attack_map.py
+    assert type(revoke_map) == dict
+    # This is the minimum set of keys that each technique entry in the attack map should have
+    for revoked_id, mapped_id in revoke_map.items():
+        assert revoked_id not in attack_map
+        assert revoked_id not in software_map
+        assert revoked_id not in group_map
+        assert mapped_id in attack_map or mapped_id in software_map or mapped_id in group_map
 
 
 def test_chunk():
@@ -211,7 +234,7 @@ def test_heuristics_valid():
         score_map=score_map
     )
 
-    result_heur = service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
+    result_heur, _ = service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
     assert result_heur is not None
     assert service_heur['heur_id'] == result_heur['heur_id']
     assert service_heur['score'] != result_heur['score']
