@@ -1,7 +1,9 @@
 import json
 import logging
 import time
+
 from copy import deepcopy
+from os import environ
 from typing import Dict
 
 import elasticsearch
@@ -179,9 +181,9 @@ class ESCollection(Collection):
         'df': None
     }
 
-    def __init__(self, datastore, name, model_class=None, replicas=0, shards=1, validate=True):
-        self.replicas = replicas
-        self.shards = shards
+    def __init__(self, datastore, name, model_class=None, validate=True):
+        self.replicas = environ.get(f"ELASTIC_{name.upper()}_REPLICAS", environ.get('ELASTIC_DEFAULT_REPLICAS', 0))
+        self.shards = environ.get(f"ELASTIC_{name.upper()}_SHARDS", environ.get('ELASTIC_DEFAULT_SHARDS', 1))
         self._index_list = []
 
         if name in datastore.ilm_config:
