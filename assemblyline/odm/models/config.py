@@ -541,7 +541,7 @@ class ILMParams(odm.Model):
 
 
 DEFAULT_ILM_PARAMS = {
-    "warm": 1,
+    "warm": 5,
     "cold": 15,
     "delete": 30,
     "unit":  "d"
@@ -571,12 +571,14 @@ class ILM(odm.Model):
     enabled = odm.Boolean()
     days_until_archive = odm.Integer()
     indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES)
+    update_archive = odm.Boolean()
 
 
 DEFAULT_ILM = {
-    "days_until_archive": 5,
+    "days_until_archive": 15,
     "enabled": False,
-    "indexes": DEFAULT_ILM_INDEXES
+    "indexes": DEFAULT_ILM_INDEXES,
+    "update_archive": False
 }
 
 
