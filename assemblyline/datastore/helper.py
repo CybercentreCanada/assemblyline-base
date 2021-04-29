@@ -35,7 +35,7 @@ from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
 
-days_until_archive = forge.get_config().datastore.ilm.days_until_archive
+config = forge.get_config()
 
 
 class AssemblylineDatastore(object):
@@ -176,8 +176,8 @@ class AssemblylineDatastore(object):
         svc_version = svc_version[1:]
 
         data = Result({
-            "archive_ts": now_as_iso(days_until_archive * 24 * 60 * 60),
-            "expiry_ts": now_as_iso(days_until_archive * 24 * 60 * 60),
+            "archive_ts": now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
+            "expiry_ts": now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
                 "service_name": svc_name,
@@ -691,7 +691,7 @@ class AssemblylineDatastore(object):
 
         if not partial:
             cached_tree = {
-                'expiry_ts': now_as_iso(days_until_archive * 24 * 60 * 60),
+                'expiry_ts': now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
                 'tree': json.dumps(tree),
                 'classification': max_classification,
                 'filtered': len(forbidden_files) > 0
@@ -1014,14 +1014,15 @@ class AssemblylineDatastore(object):
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None):
         with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
-            current_fileinfo = self.ds.file.get(sha256, as_obj=False, force_archive_access=True) or {}
+            current_fileinfo = self.ds.file.get(
+                sha256, as_obj=False, force_archive_access=config.datastore.ilm.update_archive) or {}
 
             # Remove control fields from file info and update current file info
             for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
                 fileinfo.pop(x, None)
             current_fileinfo.update(fileinfo)
 
-            current_fileinfo['archive_ts'] = now_as_iso(days_until_archive * 24 * 60 * 60)
+            current_fileinfo['archive_ts'] = now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60)
 
             # Update expiry time
             if isinstance(expiry, datetime):
@@ -1045,4 +1046,4 @@ class AssemblylineDatastore(object):
                 str(classification)
             )
             current_fileinfo['classification'] = classification
-            self.ds.file.save(sha256, current_fileinfo, force_archive_access=True)
+            self.ds.file.save(sha256, current_fileinfo, force_archive_access=config.datastore.ilm.update_archive)
