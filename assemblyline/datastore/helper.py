@@ -906,9 +906,9 @@ class AssemblylineDatastore(object):
             up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
-                                          sort="created asc", as_obj=False)['items'][0]['created']
+                                          sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
             last = self.ds.result.search(query=query, fl='created', rows=1,
-                                         sort="created desc", as_obj=False)['items'][0]['created']
+                                         sort="created desc", as_obj=False, use_archive=True)['items'][0]['created']
             up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
@@ -943,9 +943,9 @@ class AssemblylineDatastore(object):
             up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
-                                          sort="created asc", as_obj=False)['items'][0]['created']
+                                          sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
             last = self.ds.result.search(query=query, fl='created', rows=1,
-                                         sort="created desc", as_obj=False)['items'][0]['created']
+                                         sort="created desc", as_obj=False, use_archive=True)['items'][0]['created']
             up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
