@@ -448,11 +448,44 @@ class ESCollection(Collection):
         return True
 
     def fix_shards(self):
-        body = self._get_index_definition()
+        body = {"settings": self._get_index_definition()['settings']}
         temp_name = f'{self.name}_{get_random_id().lower()}'
-        self.with_retries(self.datastore.client.indices.clone, self.name, temp_name)
-        self.with_retries(self.datastore.client.indices.delete, self.name)
-        self.with_retries(self.datastore.client.indices.split, temp_name, self.name, body=body)
+        current_settings = self.with_retries(self.datastore.client.indices.get_settings)[self.name]
+        method = None
+        cur_shards = int(current_settings['settings']['index']['number_of_shards'])
+        target_shards = int(body['settings']['index']['number_of_shards'])
+
+        if cur_shards > target_shards:
+            method = self.datastore.client.indices.shrink
+        elif cur_shards < target_shards:
+            method = self.datastore.client.indices.split
+
+        if method:
+            try:
+                write_block_settings = {"settings": {"index.blocks.write": "true"}}
+                # Block write to the index
+                self.with_retries(self.datastore.client.indices.put_settings, write_block_settings)
+
+                # Clone it onto a temporary index
+                self.with_retries(self.datastore.client.indices.clone, self.name, temp_name)
+
+                # Delete current index
+                self.with_retries(self.datastore.client.indices.delete, self.name)
+
+                # Split or shrink index
+                self.with_retries(method, temp_name, self.name, body=body)
+            finally:
+                if not self.with_retries(self.datastore.client.indices.exists, self.name):
+                    # Something failed rollback
+                    self.with_retries(self.datastore.client.indices.clone, temp_name, self.name)
+
+                # Delete temp index
+                if self.with_retries(self.datastore.client.indices.exists, temp_name):
+                    self.with_retries(self.datastore.client.indices.delete, temp_name)
+
+                # Restore writes
+                write_unblock_settings = {"settings": {"index.blocks.write": None}}
+                self.with_retries(self.datastore.client.indices.put_settings, write_unblock_settings)
 
     def reindex(self):
         for index in self.index_list:
