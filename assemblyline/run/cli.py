@@ -854,12 +854,16 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         Perform operations on the search index
 
         Usage:
-            index commit  [<safe>] [<bucket>]
-                  reindex [<safe>] [<bucket>]
+            index commit     [<safe>] [<bucket>]
+                  reindex    [<safe>] [<bucket>]
+                  fix_shards [<safe>] [<bucket>]
+                  fix_ilm    [<safe>] [<bucket>]
 
         Actions:
             commit       Force datastore to commit the index
             reindex      Force a reindex of all the database (this can be really slow)
+            fix_ilm      Fix ILM on specified indices (this can be really slow)
+            fix_shards   Fix sharding on specified indices (this can be really slow)
 
         Parameters:
             <safe>       Does not validate the model [optional]
@@ -874,7 +878,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         """
 
         valid_buckets = list(self.datastore.ds.get_models().keys())
-        valid_actions = ['commit', 'reindex']
+        valid_actions = ['commit', 'reindex', 'fix_shards', 'fix_ilm']
 
         args = self._parse_args(args)
 
@@ -930,6 +934,36 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                         collection.commit()
                         self.logger.info(f"    Index {bucket.upper()} was commited.")
                     self.logger.info("All indexes committed.")
+            elif action_type == 'fix_shards':
+                buckets = []
+                if bucket:
+                    self.logger.info(f"Fixing shards on index {bucket.upper()}...")
+                    buckets.append(bucket)
+                else:
+                    self.logger.info("Fixing shards on all indices...")
+                    buckets = valid_buckets
+
+                for bucket in buckets:
+                    collection = self.datastore.get_collection(bucket)
+                    collection.fix_shards()
+                    self.logger.info(f"    Index {bucket.upper()} shards configuration updated.")
+
+                self.logger.info("Completed!")
+            elif action_type == 'fix_ilm':
+                buckets = []
+                if bucket:
+                    self.logger.info(f"Fixing ILM on index {bucket.upper()}...")
+                    buckets.append(bucket)
+                else:
+                    self.logger.info("Fixing ILM on all indices...")
+                    buckets = valid_buckets
+
+                for bucket in buckets:
+                    collection = self.datastore.get_collection(bucket)
+                    collection.fix_ilm()
+                    self.logger.info(f"    Index {bucket.upper()} ILM configuration updated.")
+
+                self.logger.info("Completed!")
         finally:
             self.datastore.start_model_validation()
 
