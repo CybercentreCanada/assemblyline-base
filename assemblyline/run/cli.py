@@ -862,8 +862,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         Actions:
             commit       Force datastore to commit the index
             reindex      Force a reindex of all the database (this can be really slow)
-            fix_ilm      Fix ILM on specified indices (this can be really slow)
-            fix_shards   Fix sharding on specified indices (this can be really slow)
+            fix_ilm      Fix ILM on specified indices (this can be really slow and prevents writes on the index)
+            fix_shards   Fix sharding on specified indices (this can be really slow and prevents writes on the index)
 
         Parameters:
             <safe>       Does not validate the model [optional]
