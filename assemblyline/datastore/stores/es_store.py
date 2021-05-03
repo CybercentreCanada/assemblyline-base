@@ -380,6 +380,113 @@ class ESCollection(Collection):
             self.with_retries(self.datastore.client.indices.clear_cache, f"{self.name}-archive")
         return True
 
+    def fix_ilm(self):
+        if self.ilm_config:
+            # Create ILM policy
+            while not self._ilm_policy_exists():
+                try:
+                    self.with_retries(self._create_ilm_policy)
+                except ILMException:
+                    time.sleep(0.1)
+                    pass
+
+            # Create WARM index template
+            if not self.with_retries(self.datastore.client.indices.exists_template, self.name):
+                log.debug(f"Index template {self.name.upper()} does not exists. Creating it now...")
+
+                index = self._get_index_definition()
+
+                index["index_patterns"] = [f"{self.name}-*"]
+                index["order"] = 1
+                index["settings"]["index.lifecycle.name"] = f"{self.name}_policy"
+                index["settings"]["index.lifecycle.rollover_alias"] = f"{self.name}-archive"
+
+                try:
+                    self.with_retries(self.datastore.client.indices.put_template, self.name, index)
+                except elasticsearch.exceptions.RequestError as e:
+                    if "resource_already_exists_exception" not in str(e):
+                        raise
+                    log.warning(f"Tried to create an index template that already exists: {self.name.upper()}")
+
+            if not self.with_retries(self.datastore.client.indices.exists_alias, f"{self.name}-archive"):
+                log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
+
+                index = {"aliases": {f"{self.name}-archive": {"is_write_index": True}}}
+
+                try:
+                    self.with_retries(self.datastore.client.indices.create, f"{self.name}-000001", index)
+                except elasticsearch.exceptions.RequestError as e:
+                    if "resource_already_exists_exception" not in str(e):
+                        raise
+                    log.warning(f"Tried to create an index template that already exists: {self.name.upper()}-000001")
+        else:
+            for idx in self.index_list_full:
+                if idx != self.name:
+                    body = {
+                        "source": {
+                            "index": idx
+                        },
+                        "dest": {
+                            "index": self.name
+                        }
+                    }
+
+                    r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
+                    self._get_task_results(r_task)
+
+                    self.with_retries(self.datastore.client.indices.refresh, self.name)
+                    self.with_retries(self.datastore.client.indices.clear_cache, self.name)
+
+                    self.with_retries(self.datastore.client.indices.delete, idx)
+
+            if self._ilm_policy_exists():
+                self.with_retries(self._delete_ilm_policy)
+
+            if self.with_retries(self.datastore.client.indices.exists_template, self.name):
+                self.with_retries(self.datastore.client.indices.delete_template, self.name)
+
+        return True
+
+    def fix_shards(self):
+        body = {"settings": self._get_index_definition()['settings']}
+        temp_name = f'{self.name}_{get_random_id().lower()}'
+        current_settings = self.with_retries(self.datastore.client.indices.get_settings)[self.name]
+        method = None
+        cur_shards = int(current_settings['settings']['index']['number_of_shards'])
+        target_shards = int(body['settings']['index']['number_of_shards'])
+
+        if cur_shards > target_shards:
+            method = self.datastore.client.indices.shrink
+        elif cur_shards < target_shards:
+            method = self.datastore.client.indices.split
+
+        if method:
+            try:
+                write_block_settings = {"settings": {"index.blocks.write": "true"}}
+                # Block write to the index
+                self.with_retries(self.datastore.client.indices.put_settings, write_block_settings)
+
+                # Clone it onto a temporary index
+                self.with_retries(self.datastore.client.indices.clone, self.name, temp_name)
+
+                # Delete current index
+                self.with_retries(self.datastore.client.indices.delete, self.name)
+
+                # Split or shrink index
+                self.with_retries(method, temp_name, self.name, body=body)
+            finally:
+                if not self.with_retries(self.datastore.client.indices.exists, self.name):
+                    # Something failed rollback
+                    self.with_retries(self.datastore.client.indices.clone, temp_name, self.name)
+
+                # Delete temp index
+                if self.with_retries(self.datastore.client.indices.exists, temp_name):
+                    self.with_retries(self.datastore.client.indices.delete, temp_name)
+
+                # Restore writes
+                write_unblock_settings = {"settings": {"index.blocks.write": None}}
+                self.with_retries(self.datastore.client.indices.put_settings, write_unblock_settings)
+
     def reindex(self):
         for index in self.index_list:
             if self.with_retries(self.datastore.client.indices.exists, index):
@@ -1136,6 +1243,11 @@ class ESCollection(Collection):
     def _ilm_policy_exists(self):
         conn = self.datastore.client.transport.get_connection()
         pol_req = conn.session.get(f"{conn.base_url}/_ilm/policy/{self.name}_policy")
+        return pol_req.ok
+
+    def _delete_ilm_policy(self):
+        conn = self.datastore.client.transport.get_connection()
+        pol_req = conn.session.delete(f"{conn.base_url}/_ilm/policy/{self.name}_policy")
         return pol_req.ok
 
     def _create_ilm_policy(self):
