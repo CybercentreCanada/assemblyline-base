@@ -860,10 +860,11 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                   fix_ilm    [<safe>] [<bucket>]
 
         Actions:
-            commit       Force datastore to commit the index
-            reindex      Force a reindex of all the database (this can be really slow)
-            fix_ilm      Fix ILM on specified indices (this can be really slow and prevents writes on the index)
-            fix_shards   Fix sharding on specified indices (this can be really slow and prevents writes on the index)
+            commit        Force datastore to commit the specified index
+            reindex       Force a reindex of the sepcified index (this can be really slow)
+            fix_ilm       Fix ILM on specified indices (this can be really slow and prevents writes on the index)
+            fix_replicas  Fix replica count on specified indices
+            fix_shards    Fix sharding on specified indices (this can be really slow and prevents writes on the index)
 
         Parameters:
             <safe>       Does not validate the model [optional]
@@ -878,7 +879,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         """
 
         valid_buckets = list(self.datastore.ds.get_models().keys())
-        valid_actions = ['commit', 'reindex', 'fix_shards', 'fix_ilm']
+        valid_actions = ['commit', 'reindex', 'fix_shards', 'fix_ilm', 'fix_replicas']
 
         args = self._parse_args(args)
 
@@ -962,6 +963,19 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                     collection = self.datastore.get_collection(bucket)
                     collection.fix_ilm()
                     self.logger.info(f"    Index {bucket.upper()} ILM configuration updated.")
+            elif action_type == 'fix_replicas':
+                buckets = []
+                if bucket:
+                    self.logger.info(f"Fixing replicas on index {bucket.upper()}...")
+                    buckets.append(bucket)
+                else:
+                    self.logger.info("Fixing replicas on all indices...")
+                    buckets = valid_buckets
+
+                for bucket in buckets:
+                    collection = self.datastore.get_collection(bucket)
+                    collection.fix_replicas()
+                    self.logger.info(f"    Index {bucket.upper()} replicas configuration updated.")
 
                 self.logger.info("Completed!")
         finally:
