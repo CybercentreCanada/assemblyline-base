@@ -162,6 +162,33 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
+    def fix_ilm(self):
+        """
+        This function should be overloaded to fix the ILM configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    def fix_replicas(self):
+        """
+        This function should be overloaded to fix the replica configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    def fix_shards(self):
+        """
+        This function should be overloaded to fix the shard configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
     def reindex(self):
         """
         This function should be overloaded to perform a reindex of all the data of the different hosts
