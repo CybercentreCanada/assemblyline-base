@@ -706,7 +706,7 @@ class ESCollection(Collection):
 
         return {key: val for key, val in source.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None, use_archive=True, track_total_hits=None):
+    def _search(self, args=None, deep_paging_id=None, use_archive=False, track_total_hits=None):
         index = self.name
         if self.archive_access and use_archive:
             index = f"{index},{self.name}-*"
@@ -827,7 +827,7 @@ class ESCollection(Collection):
 
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, use_archive=True, track_total_hits=None):
+               deep_paging_id=None, as_obj=True, use_archive=False, track_total_hits=None):
 
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
@@ -891,7 +891,7 @@ class ESCollection(Collection):
         return ret_data
 
     def stream_search(self, query, fl=None, filters=None, access_control=None,
-                      item_buffer_size=200, as_obj=True, use_archive=True):
+                      item_buffer_size=200, as_obj=True, use_archive=False):
         if item_buffer_size > 500 or item_buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
 
@@ -943,7 +943,7 @@ class ESCollection(Collection):
             yield self._format_output(value, fl, as_obj=as_obj)
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1,
-                  filters=None, access_control=None, use_archive=True):
+                  filters=None, access_control=None, use_archive=False):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -979,7 +979,7 @@ class ESCollection(Collection):
                 for row in result['aggregations']['histogram']['buckets']}
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-              mincount=1, filters=None, access_control=None, use_archive=True):
+              mincount=1, filters=None, access_control=None, use_archive=False):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1007,7 +1007,7 @@ class ESCollection(Collection):
         return {row.get('key_as_string', row['key']): row['doc_count']
                 for row in result['aggregations'][field]['buckets']}
 
-    def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=True):
+    def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=False):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1030,7 +1030,7 @@ class ESCollection(Collection):
         return result['aggregations'][f"{field}_stats"]
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
-                       rows=None, filters=None, access_control=None, as_obj=True, use_archive=True):
+                       rows=None, filters=None, access_control=None, as_obj=True, use_archive=False):
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
