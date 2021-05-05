@@ -447,6 +447,11 @@ class ESCollection(Collection):
 
         return True
 
+    def fix_replicas(self):
+        replicas = self._get_index_definition()['settings']['index']['number_of_replicas']
+        body = {"number_of_replicas": replicas}
+        return self.with_retries(self.datastore.client.indices.put_settings, index=self.name, body=body)['acknowledged']
+
     def fix_shards(self):
         body = {"settings": self._get_index_definition()['settings']}
         temp_name = f'{self.name}_{get_random_id().lower()}'
