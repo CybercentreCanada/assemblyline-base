@@ -58,7 +58,7 @@ class SubmissionParams(odm.Model):
     psid = odm.Optional(odm.UUID())                                     # Parent submission ID
     quota_item = odm.Boolean(default=False)                             # Does this submission count against quota
     services = odm.Compound(ServiceSelection, default={})               # Service selection bloc
-    service_spec = odm.Mapping(odm.Mapping(odm.Keyword()),
+    service_spec = odm.Mapping(odm.Mapping(odm.Any()),
                                default={}, index=False, store=False)    # Service specific parameters
     submitter = odm.Keyword(store=True, copyto="__text__")              # User who submitted the file
     ttl = odm.Integer(default=0)                                        # Time to live for this submission in days

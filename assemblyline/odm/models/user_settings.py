@@ -22,7 +22,7 @@ class UserSettings(odm.Model):                                      # User's def
     malicious = odm.Boolean(default=False)                            # Is the file submitted known to be malicious
     priority = odm.Integer(default=1000)                              # Default priority for the submissions
     profile = odm.Boolean(default=False)                              # Should the submission do extra profiling
-    service_spec = odm.Mapping(odm.Keyword(), default={})             # Default service specific settings
+    service_spec = odm.Mapping(odm.Any(), default={})                 # Default service specific settings
     services = odm.Compound(ServiceSelection, default={})             # Default service selection
     submission_view = odm.Enum(values=VIEWS, default="report")        # Default view for completed submissions
     ttl = odm.Integer(default=30)                                     # Default submission Time to Live (days)
