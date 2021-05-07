@@ -12,9 +12,9 @@ import elasticsearch.helpers
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
-from assemblyline.common.uid import get_random_id
 from assemblyline.datastore import BaseStore, BulkPlan, Collection, log
-from assemblyline.datastore.exceptions import ILMException, MultiKeyError, SearchException, SearchRetryException
+from assemblyline.datastore.exceptions import ILMException, MultiKeyError, SearchException, SearchRetryException, \
+    DataStoreException
 from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
 from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_templates, default_index,
                                                                   default_mapping)
@@ -454,9 +454,14 @@ class ESCollection(Collection):
 
     def fix_shards(self):
         body = {"settings": self._get_index_definition()['settings']}
-        temp_name = f'{self.name}_{get_random_id().lower()}'
-        current_settings = self.with_retries(self.datastore.client.indices.get_settings)[self.name]
         method = None
+        temp_name = f'{self.name}__fix_shards'
+
+        if not self.with_retries(self.datastore.client.indices.exists, temp_name):
+            current_settings = self.with_retries(self.datastore.client.indices.get_settings)[self.name]
+        else:
+            current_settings = self.with_retries(self.datastore.client.indices.get_settings)[temp_name]
+
         cur_shards = int(current_settings['settings']['index']['number_of_shards'])
         target_shards = int(body['settings']['index']['number_of_shards'])
 
@@ -472,17 +477,25 @@ class ESCollection(Collection):
                 self.with_retries(self.datastore.client.indices.put_settings, write_block_settings)
 
                 # Clone it onto a temporary index
-                self.with_retries(self.datastore.client.indices.clone, self.name, temp_name)
+                if not self.with_retries(self.datastore.client.indices.exists, temp_name):
+                    ret = self.datastore.client.indices.clone(self.name, temp_name)
+                    if not ret['acknowledged']:
+                        raise DataStoreException("Failed to clone index for shard fixing")
 
                 # Delete current index
-                self.with_retries(self.datastore.client.indices.delete, self.name)
+                if self.with_retries(self.datastore.client.indices.exists, self.name):
+                    self.with_retries(self.datastore.client.indices.delete, self.name)
 
                 # Split or shrink index
-                self.with_retries(method, temp_name, self.name, body=body)
+                ret = method(temp_name, self.name, body=body)
+            except Exception as e:
+                print(str(e))
             finally:
                 if not self.with_retries(self.datastore.client.indices.exists, self.name):
                     # Something failed rollback
-                    self.with_retries(self.datastore.client.indices.clone, temp_name, self.name)
+                    ret = self.datastore.client.indices.clone(temp_name, self.name)
+                    if not ret['acknowledged']:
+                        raise DataStoreException("Failed to restore index after shard fixing failure")
 
                 # Delete temp index
                 if self.with_retries(self.datastore.client.indices.exists, temp_name):
@@ -494,9 +507,9 @@ class ESCollection(Collection):
 
     def reindex(self):
         for index in self.index_list:
-            if self.with_retries(self.datastore.client.indices.exists, index):
-                new_name = f'{index}_{get_random_id().lower()}'
-
+            new_name = f'{index}__reindex'
+            if self.with_retries(self.datastore.client.indices.exists, index) and \
+                    not self.with_retries(self.datastore.client.indices.exists, new_name):
                 try:
                     self.with_retries(self.datastore.client.indices.create, new_name, self._get_index_definition())
                 except elasticsearch.exceptions.RequestError as e:
