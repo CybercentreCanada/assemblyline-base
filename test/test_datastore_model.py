@@ -45,9 +45,9 @@ def setup_store(docstore):
 
 
 @pytest.fixture(scope='module')
-def es_datastore():
+def es_datastore(config):
     try:
-        document_store = setup_store(ESStore(['127.0.0.1']))
+        document_store = setup_store(ESStore(config.datastore.hosts))
     except SetupException:
         document_store = None
 
