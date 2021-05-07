@@ -41,6 +41,7 @@ jobs:
   steps:
     - script: |
         sudo cp pipelines/config.yml /etc/assemblyline
+        sudo chmod 777 /var/cache/assemblyline/
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
         sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
