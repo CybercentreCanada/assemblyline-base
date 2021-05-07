@@ -91,8 +91,12 @@ def es_connection(request):
     try:
         collection = setup_store(ESStore(['127.0.0.1']), request)
     except SetupException:
-        collection = None
+        try:
+            collection = setup_store(ESStore(['elasticsearch']), request)
+        except SetupException:
+            collection = None
 
+        
     if collection:
         return collection
 
