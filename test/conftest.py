@@ -2,6 +2,7 @@
 Pytest configuration file, setup global pytest fixtures and functions here.
 """
 import os
+import time
 
 from assemblyline.common import forge
 from assemblyline.datastore.helper import AssemblylineDatastore
@@ -37,8 +38,11 @@ def config():
 def datastore_connection(config):
 
     store = ESStore(config.datastore.hosts)
-    ret_val = store.ping()
-    if not ret_val:
+    for _ in range(30):
+        if store.ping():
+            break
+        time.sleep(1)
+    else:
         pytest.skip("Could not connect to datastore")
 
     return AssemblylineDatastore(store)
