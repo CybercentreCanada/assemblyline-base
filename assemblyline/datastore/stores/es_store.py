@@ -466,31 +466,36 @@ class ESCollection(Collection):
         cur_replicas = int(current_settings['settings']['index']['number_of_replicas'])
         cur_shards = int(current_settings['settings']['index']['number_of_shards'])
         target_shards = int(body['settings']['index']['number_of_shards'])
+        write_block_settings = {"settings": {"index.blocks.write": True}}
+        write_unblock_settings = {"settings": {"index.blocks.write": None}}
 
         if cur_shards > target_shards:
             target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
-            write_block_settings = {"settings": {"index.number_of_replicas": 0,
-                                                 "index.routing.allocation.require._name": target_node,
-                                                 "index.blocks.write": True}}
-            write_unblock_settings = {"settings": {"index.number_of_replicas": cur_replicas,
-                                                   "index.routing.allocation.require._name": None,
-                                                   "index.blocks.write": None}}
+            clone_setup_settings = {"settings": {"index.number_of_replicas": 0,
+                                                 "index.routing.allocation.require._name": target_node}}
+            clone_finish_settings = {"settings": {"index.number_of_replicas": cur_replicas,
+                                                  "index.routing.allocation.require._name": None}}
             method = self.datastore.client.indices.shrink
         elif cur_shards < target_shards:
-            write_block_settings = {"settings": {"index.blocks.write": True}}
-            write_unblock_settings = {"settings": {"index.blocks.write": None}}
             method = self.datastore.client.indices.split
+            clone_setup_settings = None
+            clone_finish_settings = None
 
         if method:
             try:
+                # Block write to the index
+                self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
+
                 # Clone it onto a temporary index
                 if not self.with_retries(self.datastore.client.indices.exists, temp_name):
-                    # Block write to the index
-                    self.with_retries(self.datastore.client.indices.put_settings,
-                                      index=self.name, body=write_block_settings)
-                    # Make sure no shard are relocating
-                    while self.datastore.client.cluster.health(index=self.name)['relocating_shards'] != 0:
-                        time.sleep(1)
+                    # if there are specific settings to be applied to the index, apply them
+                    if clone_setup_settings:
+                        self.with_retries(self.datastore.client.indices.put_settings,
+                                          index=self.name, body=clone_setup_settings)
+
+                        # Make sure no shard are relocating
+                        while self.datastore.client.cluster.health(index=self.name)['relocating_shards'] != 0:
+                            time.sleep(1)
 
                     ret = self.datastore.client.indices.clone(self.name, temp_name, body=clone_body)
                     if not ret['acknowledged']:
@@ -514,8 +519,12 @@ class ESCollection(Collection):
                     self.with_retries(self.datastore.client.indices.delete, temp_name)
 
                 # Restore writes
-                self.with_retries(self.datastore.client.indices.put_settings,
-                                  index=self.name, body=write_unblock_settings)
+                self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
+
+                # if there are specific settings to be applied to the index, apply them
+                if clone_finish_settings:
+                    self.with_retries(self.datastore.client.indices.put_settings,
+                                      index=self.name, body=clone_finish_settings)
 
     def reindex(self):
         for index in self.index_list:
