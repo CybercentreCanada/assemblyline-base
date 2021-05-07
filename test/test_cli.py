@@ -53,7 +53,7 @@ class CaptureLogger(object):
 
 @pytest.fixture(scope="module")
 def fs():
-    return forge.get_filestore()
+    return forge.get_filestore(connection_attempts=1)
 
 
 def purge_data(ds, fs):
