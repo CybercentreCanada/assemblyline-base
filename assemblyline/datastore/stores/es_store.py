@@ -454,6 +454,7 @@ class ESCollection(Collection):
 
     def fix_shards(self):
         body = {"settings": self._get_index_definition()['settings']}
+        clone_body = {"settings": {"index.number_of_replicas": 0}}
         method = None
         temp_name = f'{self.name}__fix_shards'
 
@@ -462,23 +463,36 @@ class ESCollection(Collection):
         else:
             current_settings = self.with_retries(self.datastore.client.indices.get_settings)[temp_name]
 
+        cur_replicas = int(current_settings['settings']['index']['number_of_replicas'])
         cur_shards = int(current_settings['settings']['index']['number_of_shards'])
         target_shards = int(body['settings']['index']['number_of_shards'])
 
         if cur_shards > target_shards:
+            target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
+            write_block_settings = {"settings": {"index.number_of_replicas": 0,
+                                                 "index.routing.allocation.require._name": target_node,
+                                                 "index.blocks.write": True}}
+            write_unblock_settings = {"settings": {"index.number_of_replicas": cur_replicas,
+                                                   "index.routing.allocation.require._name": None,
+                                                   "index.blocks.write": None}}
             method = self.datastore.client.indices.shrink
         elif cur_shards < target_shards:
+            write_block_settings = {"settings": {"index.blocks.write": True}}
+            write_unblock_settings = {"settings": {"index.blocks.write": None}}
             method = self.datastore.client.indices.split
 
         if method:
             try:
-                write_block_settings = {"settings": {"index.blocks.write": "true"}}
-                # Block write to the index
-                self.with_retries(self.datastore.client.indices.put_settings, write_block_settings)
-
                 # Clone it onto a temporary index
                 if not self.with_retries(self.datastore.client.indices.exists, temp_name):
-                    ret = self.datastore.client.indices.clone(self.name, temp_name)
+                    # Block write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings,
+                                      index=self.name, body=write_block_settings)
+                    # Make sure no shard are relocating
+                    while self.datastore.client.cluster.health(index=self.name)['relocating_shards'] != 0:
+                        time.sleep(1)
+
+                    ret = self.datastore.client.indices.clone(self.name, temp_name, body=clone_body)
                     if not ret['acknowledged']:
                         raise DataStoreException("Failed to clone index for shard fixing")
 
@@ -488,8 +502,6 @@ class ESCollection(Collection):
 
                 # Split or shrink index
                 ret = method(temp_name, self.name, body=body)
-            except Exception as e:
-                print(str(e))
             finally:
                 if not self.with_retries(self.datastore.client.indices.exists, self.name):
                     # Something failed rollback
@@ -502,8 +514,8 @@ class ESCollection(Collection):
                     self.with_retries(self.datastore.client.indices.delete, temp_name)
 
                 # Restore writes
-                write_unblock_settings = {"settings": {"index.blocks.write": None}}
-                self.with_retries(self.datastore.client.indices.put_settings, write_unblock_settings)
+                self.with_retries(self.datastore.client.indices.put_settings,
+                                  index=self.name, body=write_unblock_settings)
 
     def reindex(self):
         for index in self.index_list:
