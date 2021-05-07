@@ -33,9 +33,9 @@ pytest.skip = skip_or_fail
 def config():
     return forge.get_config()
 
-
+  
 @pytest.fixture(scope='module')
-def datastore_connection(config):
+def elasticsearch_connection(config):
 
     store = ESStore(config.datastore.hosts)
     for _ in range(30):
@@ -45,7 +45,12 @@ def datastore_connection(config):
     else:
         pytest.skip("Could not connect to datastore")
 
-    return AssemblylineDatastore(store)
+    return store
+  
+
+@pytest.fixture(scope='module')
+def datastore_connection(elasticsearch_connection):
+    return AssemblylineDatastore(elasticsearch_connection)
 
 
 @pytest.fixture(scope='session')
