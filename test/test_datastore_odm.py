@@ -120,15 +120,8 @@ def setup_store(docstore, request):
 
 
 @pytest.fixture(scope='module')
-def es_store():
-    from assemblyline.datastore.stores.es_store import ESStore
-    store = ESStore(['127.0.0.1'])
-    ret_val = store.ping()
-    if ret_val:
-        return store
-
-    return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
-
+def es_store(elasticsearch_connection):
+    return elasticsearch_connection
 
 @pytest.fixture(scope='module')
 def es_connection(es_store, request):
