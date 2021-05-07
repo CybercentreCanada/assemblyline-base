@@ -96,8 +96,10 @@ def test_minio():
     Test Minio FileStore by pushing and fetching back content from it.
     """
     content = b"THIS IS A MINIO TEST"
-
-    fs = FileStore('s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000/?s3_bucket=test&use_ssl=False')
+    try:
+        fs = FileStore('s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000/?s3_bucket=test&use_ssl=False', connection_attempts=1)
+    except:
+        fs = FileStore('s3://al_storage_key:Ch@ngeTh!sPa33w0rd@minio:9000/?s3_bucket=test&use_ssl=False', connection_attempts=1)
     assert fs.delete('al4_minio_pytest.txt') is None
     assert fs.put('al4_minio_pytest.txt', content) != []
     assert fs.exists('al4_minio_pytest.txt') != []
