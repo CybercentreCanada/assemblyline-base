@@ -12,4 +12,4 @@ core:
       host: redis
       port: 6379
 datastore:
-  hosts: ["elasicsearch:9200"]
+  hosts: ["elasticsearch:9200"]
