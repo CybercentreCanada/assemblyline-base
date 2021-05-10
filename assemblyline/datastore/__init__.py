@@ -79,6 +79,7 @@ class Collection(object):
     def __init__(self, datastore, name, model_class=None, validate=True):
         self.datastore = datastore
         self.name = name
+        self.index_name = f"{name}_hot"
         self.model_class = model_class
         self.validate = validate
         self.bulk_plan_class = BulkPlan
