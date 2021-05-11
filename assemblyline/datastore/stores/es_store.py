@@ -19,6 +19,9 @@ from assemblyline.datastore.support.elasticsearch.build import back_mapping, bui
 from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_templates, default_index,
                                                                   default_mapping)
 
+write_block_settings = {"settings": {"index.blocks.write": True}}
+write_unblock_settings = {"settings": {"index.blocks.write": None}}
+
 
 def _strip_lists(model, data):
     """Elasticsearch returns everything as lists, regardless of whether
@@ -468,8 +471,6 @@ class ESCollection(Collection):
         cur_replicas = int(current_settings['settings']['index']['number_of_replicas'])
         cur_shards = int(current_settings['settings']['index']['number_of_shards'])
         target_shards = int(body['settings']['index']['number_of_shards'])
-        write_block_settings = {"settings": {"index.blocks.write": True}}
-        write_unblock_settings = {"settings": {"index.blocks.write": None}}
 
         if cur_shards > target_shards:
             target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
@@ -532,12 +533,26 @@ class ESCollection(Collection):
             new_name = f'{index}__reindex'
             if self.with_retries(self.datastore.client.indices.exists, index) and \
                     not self.with_retries(self.datastore.client.indices.exists, new_name):
-                try:
-                    self.with_retries(self.datastore.client.indices.create, new_name, self._get_index_definition())
-                except elasticsearch.exceptions.RequestError as e:
-                    if "resource_already_exists_exception" not in str(e):
-                        raise
 
+                # Get information about the index to reindex
+                index_data = self.with_retries(self.datastore.client.indices.get, index)[index]
+
+                # Create reindex target
+                self.with_retries(self.datastore.client.indices.create, new_name, self._get_index_definition())
+
+                # For all aliases related to the index, add a new alias to the reindex index
+                for alias, alias_data in index_data['aliases'].items():
+                    # Make the reindex index the new write index if the original index was
+                    if alias_data.get('is_write_index', True):
+                        alias_body = {"actions": [
+                            {"add": {"index": new_name, "alias": alias, "is_write_index": True}},
+                            {"add": {"index": index, "alias": alias, "is_write_index": False}}, ]}
+                    else:
+                        alias_body = {"actions": [
+                            {"add": {"index": new_name, "alias": alias}}]}
+                    self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+
+                # Reindex data into target
                 body = {
                     "source": {
                         "index": index
@@ -546,34 +561,43 @@ class ESCollection(Collection):
                         "index": new_name
                     }
                 }
-
                 r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
                 self._get_task_results(r_task)
 
-                if self.with_retries(self.datastore.client.indices.exists, new_name):
-                    self.with_retries(self.datastore.client.indices.refresh, new_name)
-                    self.with_retries(self.datastore.client.indices.clear_cache, new_name)
-                    self.with_retries(self.datastore.client.indices.delete, index)
+                # Commit reindexed data
+                self.with_retries(self.datastore.client.indices.refresh, new_name)
+                self.with_retries(self.datastore.client.indices.clear_cache, new_name)
 
-                    try:
-                        self.with_retries(self.datastore.client.indices.create, index, self._get_index_definition())
-                    except elasticsearch.exceptions.RequestError as e:
-                        if "resource_already_exists_exception" not in str(e):
-                            raise
+                # Delete old index
+                self.with_retries(self.datastore.client.indices.delete, index)
 
-                    body = {
-                        "source": {
-                            "index": new_name
-                        },
-                        "dest": {
-                            "index": index
-                        }
-                    }
+                # Block write to the index
+                self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
 
-                    r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
-                    self._get_task_results(r_task)
-                    self.with_retries(self.datastore.client.indices.delete, new_name)
-            return True
+                # Rename reindexed index
+                try:
+                    clone_body = {"settings": self._get_index_definition()['settings']}
+                    ret = self.datastore.client.indices.clone(new_name, index, body=clone_body)
+                    if not ret['acknowledged']:
+                        raise DataStoreException("Failed to clone index for reindexing")
+
+                    # Restore original aliases for the index
+                    for alias, alias_data in index_data['aliases'].items():
+                        # Make the reindex index the new write index if the original index was
+                        if alias_data.get('is_write_index', True):
+                            alias_body = {"actions": [
+                                {"add": {"index": index, "alias": alias, "is_write_index": True}},
+                                {"remove_index": {"index": new_name}}]}
+                            self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+
+                    # Delete the reindex target if it still exists
+                    if self.with_retries(self.datastore.client.indices.exists, new_name):
+                        self.with_retries(self.datastore.client.indices.delete, new_name)
+                finally:
+                    # Unblock write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
+
+        return True
 
     def multiget(self, key_list, as_dictionary=True, as_obj=True, error_on_missing=True):
 
@@ -1390,8 +1414,7 @@ class ESCollection(Collection):
         elif not self.with_retries(self.datastore.client.indices.exists, self.index_name) and \
                 not self.with_retries(self.datastore.client.indices.exists_alias, self.name):
             # Turn on write block
-            self.with_retries(self.datastore.client.indices.put_settings,
-                              body={"settings": {"index.blocks.write": True}})
+            self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
 
             # Create a copy on the result index
             ret = self.datastore.client.indices.clone(self.name, self.index_name)
@@ -1403,8 +1426,7 @@ class ESCollection(Collection):
                 "remove_index": {"index": self.name}}]}
             self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
 
-            self.with_retries(self.datastore.client.indices.put_settings,
-                              body={"settings": {"index.blocks.write": None}})
+            self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
 
         if self.ilm_config:
             # Create ILM policy
