@@ -851,20 +851,30 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
     def do_index(self, args):
         """
-        Perform operations on the search index
+        Perform operations on the database index.
+
+        ** Do not use these operations unless you absolutely have to as they may slow down
+           considerably your system and some of these operations may result in dataloss if
+           something went wrong in the middle of it.
 
         Usage:
-            index commit     [<safe>] [<bucket>]
-                  reindex    [<safe>] [<bucket>]
-                  fix_shards [<safe>] [<bucket>]
-                  fix_ilm    [<safe>] [<bucket>]
+            index commit        [<safe>] [<bucket>]
+                  reindex       [<safe>] [<bucket>]
+                  fix_ilm       [<safe>] [<bucket>]
+                  fix_replicas  [<safe>] [<bucket>]
+                  fix_shards    [<safe>] [<bucket>]
 
         Actions:
             commit        Force datastore to commit the specified index
-            reindex       Force a reindex of the sepcified index (this can be really slow)
-            fix_ilm       Fix ILM on specified indices (this can be really slow and prevents writes on the index)
+            reindex       Force a reindex of the sepcified index
+                             ** This operation is really slow because it re-index all documents
+            fix_ilm       Fix ILM on specified indices
+                             ** This operation can be really slow when going from an ILM setup to a hot
+                                archive only setup because it will copy the archive to hot index
             fix_replicas  Fix replica count on specified indices
-            fix_shards    Fix sharding on specified indices (this can be really slow and prevents writes on the index)
+            fix_shards    Fix sharding on specified indices
+                             ** This operation can be slow and will prevent data from being written
+                                the cluster while it is hapenning.
 
         Parameters:
             <safe>       Does not validate the model [optional]
