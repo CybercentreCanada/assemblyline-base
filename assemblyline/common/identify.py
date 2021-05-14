@@ -98,6 +98,12 @@ STRONG_INDICATORS = {
         re.compile(rb'^To: ', re.MULTILINE),
         re.compile(rb'^From: ', re.MULTILINE),
     ],
+    'metadata/sysmon': [
+        re.compile(rb'<Events>*'),
+        re.compile(rb'<Event>*'),
+        re.compile(rb'<\/Event>'),
+        re.compile(rb'<\/Events>'),
+    ],
     'code/xml': [
         # Check if it has an xml declaration header
         re.compile(rb'^\s*<\?xml[^>]+\?>', re.DOTALL | re.MULTILINE),
@@ -315,6 +321,7 @@ sl_patterns = [
     ['sff', r'Frame Format'],
     ['shortcut/windows', r'^MS Windows shortcut'],
     ['email', r'Mime entity text'],
+    ['sysmon', r'MS Windows Vista Event Log'],
 ]
 
 sl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in sl_patterns]
@@ -370,7 +377,8 @@ tl_patterns = [
     ['archive',
      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'],
-    ['meta', '^MS Windows shortcut'],
+    ['meta', r'^MS Windows shortcut'],
+    ['metadata', r'MS Windows Vista Event Log'],
     ['unknown', r'.*'],
 ]
 
