@@ -49,28 +49,47 @@ def _strip_lists(model, data):
     return out
 
 
-def parse_sort(sort):
+def sort_str(sort_dicts):
+    if sort_dicts is None:
+        return sort_dicts
+
+    sort_list = [f"{key}:{val}" for d in sort_dicts for key, val in d.items()]
+    return ",".join(sort_list)
+
+
+def parse_sort(sort, ret_list=True):
     """
     This function tries to do two things at once:
         - convert AL sort syntax to elastic,
         - convert any sorts on the key _id to _id_
     """
+    if sort is None:
+        return sort
+
     if isinstance(sort, list):
-        return [parse_sort(row) for row in sort]
+        return [parse_sort(row, ret_list=False) for row in sort]
     elif isinstance(sort, dict):
         return {('id' if key == '_id' else key): value for key, value in sort.items()}
 
     parts = sort.split(' ')
     if len(parts) == 1:
         if parts == '_id':
-            return ['id']
-        return [parts]
+            if ret_list:
+                return ['id']
+            return 'id'
+        if ret_list:
+            return [parts]
+        return parts
     elif len(parts) == 2:
         if parts[1] not in ['asc', 'desc']:
             raise SearchException('Unknown sort parameter ' + sort)
         if parts[0] == '_id':
-            return [{'id': parts[1]}]
-        return [{parts[0]: parts[1]}]
+            if ret_list:
+                return [{'id': parts[1]}]
+            return {'id': parts[1]}
+        if ret_list:
+            return [{parts[0]: parts[1]}]
+        return {parts[0]: parts[1]}
     raise SearchException('Unknown sort parameter ' + sort)
 
 
@@ -334,11 +353,12 @@ class ESCollection(Collection):
                 else:
                     raise
 
-    def _delete_async(self, index, body, max_docs=None):
+    def _delete_async(self, index, body, max_docs=None, sort=None):
         deleted = 0
         while True:
             task = self.with_retries(self.datastore.client.delete_by_query, index=index,
-                                     body=body, wait_for_completion=False, conflicts='proceed', max_docs=max_docs)
+                                     body=body, wait_for_completion=False, conflicts='proceed',
+                                     sort=sort, max_docs=max_docs)
             res = self._get_task_results(task)
 
             if res['version_conflicts'] == 0:
@@ -750,12 +770,12 @@ class ESCollection(Collection):
 
         return deleted
 
-    def delete_by_query(self, query, workers=20, max_docs=None):
+    def delete_by_query(self, query, workers=20, sort=None, max_docs=None):
         index = self.name
         if self.archive_access:
             index = f"{index},{self.name}-*"
         query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-        info = self._delete_async(index, query_body, max_docs=max_docs)
+        info = self._delete_async(index, query_body, sort=sort_str(parse_sort(sort)), max_docs=max_docs)
         return info.get('deleted', 0) != 0
 
     def _create_scripts_from_operations(self, operations):

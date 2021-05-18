@@ -377,8 +377,8 @@ tl_patterns = [
     ['archive',
      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'],
-    ['meta', '^MS Windows shortcut'],
-    ['metadata', 'MS Windows Vista Event Log'],
+    ['meta', r'^MS Windows shortcut'],
+    ['metadata', r'MS Windows Vista Event Log'],
     ['unknown', r'.*'],
 ]
 
