@@ -124,6 +124,11 @@ class Tagging(odm.Model):
             used_library = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         @odm.model(index=True, store=False)
+        class FileJAR(odm.Model):
+            main_class = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            main_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
         class FileIMG(odm.Model):
             @odm.model(index=True, store=False)
             class FileIMGExiftool(odm.Model):
@@ -329,6 +334,7 @@ class Tagging(odm.Model):
         rule = odm.Optional(odm.Mapping(odm.List(odm.Keyword(copyto="__text__"))))
         string = odm.Optional(odm.Compound(FileStrings))
         apk = odm.Optional(odm.Compound(FileAPK))
+        jar = odm.Optional(odm.Compound(FileJAR))
         img = odm.Optional(odm.Compound(FileIMG))
         ole = odm.Optional(odm.Compound(FileOLE))
         pe = odm.Optional(odm.Compound(FilePE))
