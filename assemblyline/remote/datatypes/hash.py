@@ -25,12 +25,36 @@ return nil
 """
 
 
+class HashIterator:
+    def __init__(self, hash_object):
+        self.hash_object = hash_object
+        self.cursor = 0
+        self.buffer = []
+        self._load_next()
+
+    def __next__(self):
+        while True:
+            if self.buffer:
+                return self.buffer.pop(0)
+            if self.cursor == 0:
+                raise StopIteration()
+            self._load_next()
+
+    def _load_next(self):
+        self.cursor, data = retry_call(self.hash_object.c.hscan, self.hash_object.name, self.cursor)
+        for key, value in data.items():
+            self.buffer.append((key.decode('utf-8'), json.loads(value)))
+
+
 class Hash(object):
     def __init__(self, name, host=None, port=None):
         self.c = get_client(host, port, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
         self._limited_add = self.c.register_script(_limited_add)
+
+    def __iter__(self):
+        return HashIterator(self)
 
     def __enter__(self):
         return self
