@@ -335,6 +335,24 @@ class ESCollection(Collection):
 
         return res['response']
 
+    def _safe_index_copy(self, copy_function, src, target, body=None, min_status='yellow'):
+        ret = copy_function(src, target, body=body, request_timeout=60)
+        if not ret['acknowledged']:
+            raise DataStoreException(f"Failed to create index {target} from {src}.")
+
+        status_ok = False
+        while not status_ok:
+            try:
+                res = self.datastore.client.cluster.health(index=target, timeout='5s', wait_for_status=min_status)
+                status_ok = not res['timed_out']
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, _, _ = e.args
+                if err_code == 408 or err_code == '408':
+                    log.warning(f"Waiting for index {target} to get to status {min_status}...")
+                    pass
+                else:
+                    raise
+
     def _delete_async(self, index, body, max_docs=None, sort=None):
         deleted = 0
         while True:
@@ -486,7 +504,10 @@ class ESCollection(Collection):
         method = None
         temp_name = f'{self.name}__fix_shards'
 
-        current_settings = self.with_retries(self.datastore.client.indices.get_settings)[self.index_name]
+        current_settings = self.with_retries(self.datastore.client.indices.get_settings).get(self.index_name, None)
+        if not current_settings:
+            raise DataStoreException(
+                'Could not get current index settings. Something is wrong and requires namual intervention...')
 
         cur_replicas = int(current_settings['settings']['index']['number_of_replicas'])
         cur_shards = int(current_settings['settings']['index']['number_of_shards'])
@@ -520,9 +541,8 @@ class ESCollection(Collection):
                         while self.datastore.client.cluster.health(index=self.index_name)['relocating_shards'] != 0:
                             time.sleep(1)
 
-                    ret = self.datastore.client.indices.clone(self.index_name, temp_name, body=clone_body)
-                    if not ret['acknowledged']:
-                        raise DataStoreException("Failed to clone index for shard fixing")
+                    self._safe_index_copy(self.datastore.client.indices.clone,
+                                          self.index_name, temp_name, body=clone_body)
 
                     # Make the hot index the new clone
                     alias_body = {"actions": [{"add":  {"index": temp_name, "alias": self.name}}, {
@@ -533,7 +553,7 @@ class ESCollection(Collection):
                     self.with_retries(self.datastore.client.indices.delete, self.index_name)
 
                 # Shrink index into shrinked_name
-                method(temp_name, self.index_name, body=body)
+                self._safe_index_copy(method, temp_name, self.index_name, body=body)
 
                 # Make the hot index the new clone
                 alias_body = {"actions": [{"add":  {"index": self.index_name, "alias": self.name}}, {
@@ -597,9 +617,7 @@ class ESCollection(Collection):
                 # Rename reindexed index
                 try:
                     clone_body = {"settings": self._get_index_definition()['settings']}
-                    ret = self.datastore.client.indices.clone(new_name, index, body=clone_body)
-                    if not ret['acknowledged']:
-                        raise DataStoreException("Failed to clone index for reindexing")
+                    self._safe_index_copy(self.datastore.client.indices.clone, new_name, index, body=clone_body)
 
                     # Restore original aliases for the index
                     for alias, alias_data in index_data['aliases'].items():
@@ -1437,9 +1455,7 @@ class ESCollection(Collection):
             self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
 
             # Create a copy on the result index
-            ret = self.datastore.client.indices.clone(self.name, self.index_name)
-            if not ret['acknowledged']:
-                raise DataStoreException("Failed to clone index for shard fixing")
+            self._safe_index_copy(self.datastore.client.indices.clone, self.name, self.index_name)
 
             # Make the hot index the new clone
             alias_body = {"actions": [{"add":  {"index": self.index_name, "alias": self.name}}, {
