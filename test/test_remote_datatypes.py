@@ -1,4 +1,4 @@
-
+import itertools
 import time
 
 from threading import Thread
@@ -36,6 +36,17 @@ def test_hash(redis_connection):
             assert h.increment("a") == 2
             assert h.increment("a", 10) == 12
             assert h.increment("a", -22) == -10
+            h.delete()
+
+            # Load a bunch of items and test iteration
+            data_before = [''.join(_x) for _x in itertools.product('abcde', repeat=5)]
+            data_before = {_x: _x + _x for _x in data_before}
+            h.multi_set(data_before)
+
+            data_after = {}
+            for key, value in h:
+                data_after[key] = value
+            assert data_before == data_after
 
 
 # noinspection PyShadowingNames
