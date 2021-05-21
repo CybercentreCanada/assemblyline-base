@@ -62,7 +62,7 @@ setup(
         'boto3',
         'pysftp',
         'netifaces',
-        'pyroute2',
+        'pyroute2.core',
         'redis',
         'requests',
         'elasticsearch>=7.0.0,<8.0.0,!=7.0.3',  # 7.0.3 is excluded due to an error
