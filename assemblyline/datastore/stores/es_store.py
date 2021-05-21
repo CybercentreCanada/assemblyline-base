@@ -17,7 +17,7 @@ from assemblyline.datastore.exceptions import ILMException, MultiKeyError, Searc
     DataStoreException
 from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
 from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_templates, default_index,
-                                                                  default_mapping)
+                                                                  default_mapping, default_dynamic_strings)
 
 write_block_settings = {"settings": {"index.blocks.write": True}}
 write_unblock_settings = {"settings": {"index.blocks.write": None}}
@@ -1415,6 +1415,7 @@ class ESCollection(Collection):
         if self.model_class:
             mappings['properties'], mappings['dynamic_templates'] = \
                 build_mapping(self.model_class.fields().values())
+            mappings['dynamic_templates'].insert(0, default_dynamic_strings)
         else:
             mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
