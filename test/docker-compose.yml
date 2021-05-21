@@ -10,6 +10,7 @@ services:
     ports:
       - '9000:9000'
     command: server /data
+    networks: [test]
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
@@ -19,8 +20,14 @@ services:
       - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
     ports:
       - '9200:9200'
+    networks: [test]
 
   redis:
     image: redis
     ports:
       - '6379:6379'
+    networks: [test]
+
+networks:
+  test:
+    external: true

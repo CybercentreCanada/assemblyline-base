@@ -4,6 +4,10 @@ filestore:
   storage:
     - file:///var/cache/assemblyline/
 core:
+  metrics:
+    redis:
+      host: redis
+      port: 6379
   redis:
     nonpersistent:
       host: redis

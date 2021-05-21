@@ -85,18 +85,13 @@ def setup_store(docstore, request):
 
 
 @pytest.fixture(scope='module')
-def es_connection(request):
-    from assemblyline.datastore.stores.es_store import ESStore
+def es_connection(elasticsearch_connection, request):
 
     try:
-        collection = setup_store(ESStore(['127.0.0.1']), request)
+        collection = setup_store(elasticsearch_connection, request)
     except SetupException:
-        try:
-            collection = setup_store(ESStore(['elasticsearch']), request)
-        except SetupException:
-            collection = None
+        collection = None
 
-        
     if collection:
         return collection
 
