@@ -188,21 +188,9 @@ def build_templates(name, field, nested_template=False, index=True) -> list:
             main_template = {
                 "match": f"{name}",
                 "mapping": {
-                    "type": "nested",
-                    "properties": {
-                        "*": {
-                            "type": "keyword",
-                            "index": field.index,
-                            "store": field.store,
-                            "ignore_above": 8191
-                        }
-                    }
-
+                    "type": "nested"
                 }
             }
-            if field.copyto:
-                assert len(field.copyto) == 1
-                main_template['mapping']["properties"]["*"]['copy_to'] = field.copyto[0]
 
             return [{f"nested_{name}": main_template}]
         else:
