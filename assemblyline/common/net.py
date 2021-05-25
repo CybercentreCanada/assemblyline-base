@@ -5,7 +5,7 @@ import uuid
 from random import randint
 
 import netifaces as nif
-import pyroute2
+import pr2modules.iproute as iproute
 
 from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN
 
@@ -94,7 +94,7 @@ def get_random_mac(seperator: str = ':') -> str:
 def get_route_to(dst: str) -> str:
     ret_val = None
     try:
-        with pyroute2.IPRoute() as ipr:
+        with iproute.IPRoute() as ipr:
             for k, v in ipr.route('get', dst=dst)[0]['attrs']:
                 if k == "RTA_PREFSRC":
                     ret_val = v
