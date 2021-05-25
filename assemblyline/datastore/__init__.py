@@ -234,6 +234,16 @@ class Collection(object):
 
         return output
 
+    def exists(self, key, force_archive_access=False):
+        """
+        Check if a document exists in the datastore.
+
+        :param force_archive_access: Temporary force access to archive during this call
+        :param key: key of the document to get from the datastore
+        :return: true/false depending if the document exists or not
+        """
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+
     def _get(self, key, retries, force_archive_access=False):
         """
         This function should be overloaded in a way that if the document is not found,
