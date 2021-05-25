@@ -389,6 +389,7 @@ trusted_mimes = {
     'text/calendar': 'text/calendar',
     'image/svg+xml': 'image/svg',
     'application/x-mach-binary': 'executable/mach-o',
+    'application/vnd.ms-outlook': 'document/office/email'
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]

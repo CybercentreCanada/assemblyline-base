@@ -140,6 +140,7 @@ RECOGNIZED_TYPES = {
     'document/installer/windows': True,
     'document/office/equation': True,
     'document/office/excel': True,
+    'document/office/email': True,
     'document/office/mhtml': True,
     'document/office/paintbrush': True,
     'document/office/package': True,
