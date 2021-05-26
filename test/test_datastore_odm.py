@@ -150,6 +150,23 @@ def get_obj(obj_map, key, as_obj):
     return obj
 
 
+def _test_exists(col, _):
+    assert not col.exists('not-a-key')
+
+    for x in range(1, 4):
+        assert col.exists(f'test{x}')
+
+    for x in range(1, 4):
+        assert col.exists(f'dict{x}')
+
+    for x in range(1, 4):
+        assert col.exists(f'extra{x}')
+
+    assert not col.exists('string')
+    assert not col.exists('list')
+    assert not col.exists('int')
+
+
 def _test_get(col, as_obj):
     assert col.get('not-a-key', as_obj=as_obj) is None
     assert col.get_if_exists('not-a-key', as_obj=as_obj) is None
@@ -301,7 +318,7 @@ def _test_histogram(col, _):
 
     h_date = col.histogram('birthday', '{n}-10{d}/{d}'.format(n=col.datastore.now, d=col.datastore.day),
                            '{n}+10{d}/{d}'.format(n=col.datastore.now, d=col.datastore.day),
-                           '+1{d}'.format(d=col.datastore.day, mincount=2))
+                           '+1{d}'.format(d=col.datastore.day), mincount=2)
     for k, v in h_date.items():
         assert isinstance(k, str)
         assert "T00:00:00" in k
@@ -338,6 +355,7 @@ def _test_fields(col, _):
 
 
 TEST_FUNCTIONS = [
+    (_test_exists, None, "exists - object"),
     (_test_get, True, "get - object"),
     (_test_get, False, "get - dict"),
     (_test_get_primitives, None, "get primitives"),
