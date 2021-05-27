@@ -121,8 +121,4 @@
 0	beshort	0x0BAD					custom: quarantine/windowsdefender
 0	belong	0xDBE8C501				custom: quarantine/windowsdefender
 
-0	string  \320\317\021\340\241\261\032\341
->0x400	lestring16	ROOT\40ENTRY
->>0x480	lestring16	Details			custom: quarantine/mcafee
-
 0	string	AntiVir\040\Qua			custom: quarantine/avira

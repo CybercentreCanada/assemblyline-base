@@ -206,6 +206,11 @@ RECOGNIZED_TYPES = {
     'resource/unity': True,
     'text/calendar': True,
     'text/markdown': True,
+    'quarantine/ahnlab': True,
+    'quarantine/avast': True,
+    'quarantine/avira': True,
+    'quarantine/mcafee': True,
+    'quarantine/windowsdefender': True,
     'unknown': True,
 }
 
