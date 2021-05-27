@@ -35,7 +35,7 @@ from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
 
-days_until_archive = forge.get_config().datastore.ilm.days_until_archive
+config = forge.get_config()
 
 
 class AssemblylineDatastore(object):
@@ -67,6 +67,12 @@ class AssemblylineDatastore(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.ds.close()
+
+    def stop_model_validation(self):
+        self.ds.validate = False
+
+    def start_model_validation(self):
+        self.ds.validate = True
 
     def enable_archive_access(self):
         self.ds.archive_access = True
@@ -170,8 +176,8 @@ class AssemblylineDatastore(object):
         svc_version = svc_version[1:]
 
         data = Result({
-            "archive_ts": now_as_iso(days_until_archive * 24 * 60 * 60),
-            "expiry_ts": now_as_iso(days_until_archive * 24 * 60 * 60),
+            "archive_ts": now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
+            "expiry_ts": now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
                 "service_name": svc_name,
@@ -237,10 +243,10 @@ class AssemblylineDatastore(object):
 
         # Add delete operation for submission and cache
         s_plan.add_delete_operation(sid)
-        for t in [x['id'] for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
-            st_plan.add_delete_operation(t)
-        for s in [x['id'] for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
-            ss_plan.add_delete_operation(s)
+        for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id,_index", as_obj=False):
+            st_plan.add_delete_operation(x['id'], index=x['_index'])
+        for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id,_index", as_obj=False):
+            ss_plan.add_delete_operation(x['id'], index=x['_index'])
 
         # Gather file list
         errors = submission['errors']
@@ -307,13 +313,13 @@ class AssemblylineDatastore(object):
                         new_file_class = cl_engine.min_classification(new_file_class, c)
 
                     # Find the results for that classification and alter them if the new classification does not match
-                    for item in self.result.stream_search(f"id:{f}*", fl="classification,id", as_obj=False):
+                    for item in self.result.stream_search(f"id:{f}*", fl="classification,id,_index", as_obj=False):
                         new_class = cl_engine.max_classification(
                             item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
                         if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
                             data = cl_engine.get_access_control_parts(new_class)
                             data['classification'] = new_class
-                            r_plan.add_update_operation(item['id'], data)
+                            r_plan.add_update_operation(item['id'], data, index=item['_index'])
 
                     # Alter the file classification if the new classification does not match
                     if cur_file['classification'] != new_file_class:
@@ -567,6 +573,7 @@ class AssemblylineDatastore(object):
         file_data_map = {}
         for key, value in temp_file_data_map.items():
             if user_classification and not cl_engine.is_accessible(user_classification, value['classification']):
+                partial = True
                 forbidden_files.add(key)
                 continue
             file_data_map[key] = value
@@ -603,12 +610,14 @@ class AssemblylineDatastore(object):
                 # Enforce depth protection while building the tree
                 return
 
-            if child_p['sha256'] in placeholder:
-                placeholder[child_p['sha256']]['name'].append(child_p['name'])
+            c_sha256 = child_p['sha256']
+            c_name = child_p['name']
+            if c_sha256 in placeholder:
+                placeholder[c_sha256]['name'].append(c_name)
             else:
                 children_list = {}
                 truncated = False
-                child_list = files.get(child_p['sha256'], [])
+                child_list = files.get(c_sha256, [])
                 for new_child in child_list:
                     if new_child['sha256'] in tree_cache:
                         truncated = True
@@ -617,30 +626,29 @@ class AssemblylineDatastore(object):
 
                     if new_child['sha256'] not in parents_p:
                         recurse_tree(new_child, children_list,
-                                     parents_p + [child_p['sha256']], lvl + 1)
+                                     parents_p + [c_sha256], lvl + 1)
 
                 try:
-                    placeholder[child_p['sha256']] = {
-                        "name": [child_p['name']],
-                        "type": file_data_map[child_p['sha256']]['type'],
-                        "sha256": file_data_map[child_p['sha256']]['sha256'],
-                        "size": file_data_map[child_p['sha256']]['size'],
+                    placeholder[c_sha256] = {
+                        "name": [c_name],
+                        "type": file_data_map[c_sha256]['type'],
+                        "sha256": file_data_map[c_sha256]['sha256'],
+                        "size": file_data_map[c_sha256]['size'],
                         "children": children_list,
                         "truncated": truncated,
-                        "score": scores.get(child_p['sha256'], 0),
+                        "score": scores.get(c_sha256, 0),
                     }
-                except KeyError as ke:
-                    missing_key = str(ke).strip("'")
-                    if missing_key not in forbidden_files and missing_key not in missing_files:
-                        file_data_map[missing_key] = self.file.get(missing_key, as_obj=False)
-                        placeholder[child_p['sha256']] = {
-                            "name": [child_p['name']],
-                            "type": file_data_map[child_p['sha256']]['type'],
-                            "sha256": file_data_map[child_p['sha256']]['sha256'],
-                            "size": file_data_map[child_p['sha256']]['size'],
+                except KeyError:
+                    if c_sha256 not in forbidden_files and c_sha256 not in missing_files:
+                        file_data_map[c_sha256] = self.file.get(c_sha256, as_obj=False)
+                        placeholder[c_sha256] = {
+                            "name": [c_name],
+                            "type": file_data_map[c_sha256]['type'],
+                            "sha256": file_data_map[c_sha256]['sha256'],
+                            "size": file_data_map[c_sha256]['size'],
                             "children": children_list,
                             "truncated": truncated,
-                            "score": scores.get(child_p['sha256'], 0),
+                            "score": scores.get(c_sha256, 0),
                         }
 
         tree = {}
@@ -658,19 +666,32 @@ class AssemblylineDatastore(object):
                     tree_cache.append(child['sha256'])
                     recurse_tree(child, children, parents)
 
-                tree[sha256] = {
-                    "name": [name],
-                    "children": children,
-                    "type": file_data_map[sha256]['type'],
-                    "sha256": file_data_map[sha256]['sha256'],
-                    "size": file_data_map[sha256]['size'],
-                    "truncated": False,
-                    "score": scores.get(sha256, 0),
-                }
+                try:
+                    tree[sha256] = {
+                        "name": [name],
+                        "children": children,
+                        "type": file_data_map[sha256]['type'],
+                        "sha256": file_data_map[sha256]['sha256'],
+                        "size": file_data_map[sha256]['size'],
+                        "truncated": False,
+                        "score": scores.get(sha256, 0),
+                    }
+                except KeyError:
+                    if sha256 not in forbidden_files and sha256 not in missing_files:
+                        file_data_map[sha256] = self.file.get(sha256, as_obj=False)
+                        tree[sha256] = {
+                            "name": [name],
+                            "children": children,
+                            "type": file_data_map[sha256]['type'],
+                            "sha256": file_data_map[sha256]['sha256'],
+                            "size": file_data_map[sha256]['size'],
+                            "truncated": False,
+                            "score": scores.get(sha256, 0),
+                        }
 
         if not partial:
             cached_tree = {
-                'expiry_ts': now_as_iso(days_until_archive * 24 * 60 * 60),
+                'expiry_ts': now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
                 'tree': json.dumps(tree),
                 'classification': max_classification,
                 'filtered': len(forbidden_files) > 0
@@ -877,83 +898,80 @@ class AssemblylineDatastore(object):
             return svc_version_data
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_stat_for_heuristic(self, p_id, p_name, p_classification):
-        stats = self.ds.result.stats("result.score",
-                                     query=f"result.sections.heuristic.heur_id:{p_id}")
+    def get_stat_for_heuristic(self, p_id):
+        query = f"result.sections.heuristic.heur_id:{p_id}"
+        stats = self.ds.result.stats("result.score", query=query)
+
         if stats['count'] == 0:
-            return {
-                'heur_id': p_id,
-                'name': p_name,
-                'classification': p_classification,
-                'count': stats['count'],
-                'min': 0,
-                'max': 0,
-                'avg': 0,
-            }
+            up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
         else:
-            return {
-                'heur_id': p_id,
-                'name': p_name,
-                'classification': p_classification,
+            first = self.ds.result.search(query=query, fl='created', rows=1,
+                                          sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
+            last = self.ds.result.search(query=query, fl='created', rows=1,
+                                         sort="created desc", as_obj=False, use_archive=True)['items'][0]['created']
+            up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
                 'max': int(stats['max']),
                 'avg': int(stats['avg']),
+                'sum': int(stats['sum']),
+                'first_hit': first,
+                'last_hit': last
             }
+
+        self.ds.heuristic.update(p_id, [
+            (self.ds.heuristic.UPDATE_SET, 'stats', up_stats)
+        ])
+
+        return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
     def calculate_heuristic_stats(self):
-        heur_list = sorted([(x['heur_id'], x['name'], x['classification'])
+        heur_list = sorted([(x['heur_id'])
                             for x in self.ds.heuristic.stream_search("heur_id:*", fl="heur_id,name,classification",
                                                                      as_obj=False)])
 
         with concurrent.futures.ThreadPoolExecutor(max(min(len(heur_list), 20), 1)) as executor:
-            res = [executor.submit(self.get_stat_for_heuristic, heur_id, name, classification)
-                   for heur_id, name, classification in heur_list]
-
-        return sorted([r.result() for r in res], key=lambda i: i['heur_id'])
+            for heur_id in heur_list:
+                executor.submit(self.get_stat_for_heuristic, heur_id)
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_stat_for_signature(self, p_id, p_source, p_name, p_type, p_classification):
-        stats = self.ds.result.stats("result.score",
-                                     query=f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"')
+    def get_stat_for_signature(self, p_id, p_source, p_name, p_type):
+        query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
+        stats = self.ds.result.stats("result.score", query=query)
         if stats['count'] == 0:
-            return {
-                'id': p_id,
-                'source': p_source,
-                'name': p_name,
-                'type': p_type,
-                'classification': p_classification,
-                'count': stats['count'],
-                'min': 0,
-                'max': 0,
-                'avg': 0,
-            }
+            up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
         else:
-            return {
-                'id': p_id,
-                'source': p_source,
-                'name': p_name,
-                'type': p_type,
-                'classification': p_classification,
+            first = self.ds.result.search(query=query, fl='created', rows=1,
+                                          sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
+            last = self.ds.result.search(query=query, fl='created', rows=1,
+                                         sort="created desc", as_obj=False, use_archive=True)['items'][0]['created']
+            up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
                 'max': int(stats['max']),
                 'avg': int(stats['avg']),
+                'sum': int(stats['sum']),
+                'first_hit': first,
+                'last_hit': last
             }
+
+        self.ds.signature.update(p_id, [
+            (self.ds.signature.UPDATE_SET, 'stats', up_stats)
+        ])
+
+        return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
     def calculate_signature_stats(self):
-        sig_list = sorted([(x['id'], x['source'], x['name'], x['type'], x['classification'])
+        sig_list = sorted([(x['id'], x['source'], x['name'], x['type'])
                            for x in self.ds.signature.stream_search("id:*",
                                                                     fl="id,name,type,source,classification",
                                                                     as_obj=False)])
 
         with concurrent.futures.ThreadPoolExecutor(max(min(len(sig_list), 20), 1)) as executor:
-            res = [executor.submit(self.get_stat_for_signature, sid, source, name, sig_type, classification)
-                   for sid, source, name, sig_type, classification in sig_list]
-
-        return sorted([r.result() for r in res], key=lambda i: i['type'])
+            for sid, source, name, sig_type in sig_list:
+                executor.submit(self.get_stat_for_signature, sid, source, name, sig_type)
 
     @elasticapm.capture_span(span_type='datastore')
     def list_all_services(self, as_obj=True, full=False) -> Union[List[dict], List[Service]]:
@@ -996,14 +1014,15 @@ class AssemblylineDatastore(object):
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None):
         with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
-            current_fileinfo = self.ds.file.get(sha256, as_obj=False) or {}
+            current_fileinfo = self.ds.file.get(
+                sha256, as_obj=False, force_archive_access=config.datastore.ilm.update_archive) or {}
 
             # Remove control fields from file info and update current file info
             for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
                 fileinfo.pop(x, None)
             current_fileinfo.update(fileinfo)
 
-            current_fileinfo['archive_ts'] = now_as_iso(days_until_archive * 24 * 60 * 60)
+            current_fileinfo['archive_ts'] = now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60)
 
             # Update expiry time
             if isinstance(expiry, datetime):
@@ -1027,4 +1046,4 @@ class AssemblylineDatastore(object):
                 str(classification)
             )
             current_fileinfo['classification'] = classification
-            self.ds.file.save(sha256, current_fileinfo)
+            self.ds.file.save(sha256, current_fileinfo, force_archive_access=config.datastore.ilm.update_archive)

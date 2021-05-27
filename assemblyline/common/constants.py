@@ -3,7 +3,6 @@ import os
 from assemblyline.common.path import modulepath
 
 
-FILE_QUEUE = 'dispatch-file-queue'
 SUBMISSION_QUEUE = 'dispatch-submission-queue'
 DISPATCH_TASK_HASH = 'dispatch-active-submissions'
 DISPATCH_RUNNING_TASK_HASH = 'dispatch-active-tasks'
@@ -40,7 +39,7 @@ class ServiceStatus(enum.IntEnum):
 
 
 SERVICE_STATE_HASH = 'service-stasis-table'
-
+SERVICE_VERSION_HASH = 'service-tool-version-table'
 
 # A null empty accepts, accepts all. A null rejects, rejects nothing
 DEFAULT_SERVICE_ACCEPTS = ".*"
@@ -141,6 +140,7 @@ RECOGNIZED_TYPES = {
     'document/installer/windows': True,
     'document/office/equation': True,
     'document/office/excel': True,
+    'document/office/email': True,
     'document/office/mhtml': True,
     'document/office/paintbrush': True,
     'document/office/package': True,
@@ -191,6 +191,7 @@ RECOGNIZED_TYPES = {
     'java/unknown': True,
     'meta/torrent': True,
     'meta/shortcut/windows': True,
+    'metadata/sysmon': True,
     'network/sff': True,
     'network/tcpdump': True,
     'network/unknown': True,

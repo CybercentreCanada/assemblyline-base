@@ -27,6 +27,24 @@ def test_dotdump():
     assert result == "...!Bc~.."
 
 
+def test_safe_str():
+    test_str = 'helloÌ\x02Í\udcf9'
+    test_bytes = b'hello\xc3\x8c\x02\xc3\x8d\udcf9'
+    expected_result = 'hello\xcc\\x02\xcd\\udcf9'
+
+    assert str_utils.safe_str(test_bytes) == expected_result
+    assert str_utils.safe_str(test_str) == expected_result
+
+
+def test_safe_str_emoji():
+    test_str = 'Smile! \ud83d\ude00'
+    test_bytes = b'Smile! \xf0\x9f\x98\x80'
+    expected_result = 'Smile! 😀'
+
+    assert str_utils.safe_str(test_bytes) == expected_result
+    assert str_utils.safe_str(test_str) == expected_result
+
+
 def test_translate_str():
     teststr = 'Стамболийски'
     encoded_test_str = teststr.encode('ISO-8859-5')

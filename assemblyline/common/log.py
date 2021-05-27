@@ -105,7 +105,8 @@ def init_logging(name: str, config: Optional[Config] = None, log_level=None):
             console.setFormatter(logging.Formatter(AL_LOG_FORMAT))
         logger.addHandler(console)
 
-    if config.logging.log_to_syslog and config.logging.syslog_host:
-        syslog_handler = logging.handlers.SysLogHandler(address=(config.logging.syslog_host, 514))
+    if config.logging.log_to_syslog and config.logging.syslog_host and config.logging.syslog_port:
+        syslog_handler = logging.handlers.SysLogHandler(address=(config.logging.syslog_host,
+                                                                 config.logging.syslog_port))
         syslog_handler.formatter = logging.Formatter(AL_SYSLOG_FORMAT)
         logger.addHandler(syslog_handler)

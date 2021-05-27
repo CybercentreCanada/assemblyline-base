@@ -1,6 +1,4 @@
-
-import pytest
-import random
+import itertools
 import time
 
 from threading import Thread
@@ -38,6 +36,17 @@ def test_hash(redis_connection):
             assert h.increment("a") == 2
             assert h.increment("a", 10) == 12
             assert h.increment("a", -22) == -10
+            h.delete()
+
+            # Load a bunch of items and test iteration
+            data_before = [''.join(_x) for _x in itertools.product('abcde', repeat=5)]
+            data_before = {_x: _x + _x for _x in data_before}
+            h.multi_set(data_before)
+
+            data_after = {}
+            for key, value in h:
+                data_after[key] = value
+            assert data_before == data_after
 
 
 # noinspection PyShadowingNames
@@ -352,3 +361,31 @@ def test_comms_queue(redis_connection):
         t.join()
         assert not t.is_alive()
 
+
+# noinspection PyShadowingNames
+def test_user_quota_tracker(redis_connection):
+    if redis_connection:
+        from assemblyline.remote.datatypes.user_quota_tracker import UserQuotaTracker
+
+        max_quota = 3
+        timeout = 2
+        name = get_random_id()
+        uqt = UserQuotaTracker('test-quota', timeout=timeout)
+
+        # First 0 to max_quota items should succeed
+        for _ in range(max_quota):
+            assert uqt.begin(name, max_quota) is True
+
+        # All other items should fail until items timeout
+        for _ in range(max_quota):
+            assert uqt.begin(name, max_quota) is False
+
+        # if you remove and item only one should be able to go in
+        uqt.end(name)
+        assert uqt.begin(name, max_quota) is True
+        assert uqt.begin(name, max_quota) is False
+
+        # if you wait the timeout, all items can go in
+        time.sleep(timeout+1)
+        for _ in range(max_quota):
+            assert uqt.begin(name, max_quota) is True

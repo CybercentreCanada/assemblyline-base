@@ -50,6 +50,7 @@ class SubmissionParams(odm.Model):
     ignore_filtering = odm.Boolean(default=False)                       # Should we ignore filtering services
     ignore_size = odm.Boolean(default=False)                            # ignore the file size limits
     never_drop = odm.Boolean(default=False)                             # Exempt from being dropped by ingester
+    malicious = odm.Boolean(default=False)                              # Is the file submitted known to be malicious
     max_extracted = odm.Integer(default=500)                            # Max number of extracted files
     max_supplementary = odm.Integer(default=500)                        # Max number of supplementary files
     priority = odm.Integer(default=1000)                                # Priority of the scan
@@ -57,7 +58,7 @@ class SubmissionParams(odm.Model):
     psid = odm.Optional(odm.UUID())                                     # Parent submission ID
     quota_item = odm.Boolean(default=False)                             # Does this submission count against quota
     services = odm.Compound(ServiceSelection, default={})               # Service selection bloc
-    service_spec = odm.Mapping(odm.Mapping(odm.Keyword()),
+    service_spec = odm.Mapping(odm.Mapping(odm.Any()),
                                default={}, index=False, store=False)    # Service specific parameters
     submitter = odm.Keyword(store=True, copyto="__text__")              # User who submitted the file
     ttl = odm.Integer(default=0)                                        # Time to live for this submission in days

@@ -27,21 +27,21 @@ def get_object(base, key):
 
 
 class BulkPlan(object):
-    def __init__(self, index, model=None):
-        self.index = index
+    def __init__(self, indexes, model=None):
+        self.indexes = indexes
         self.model = model
         self.operations = []
 
-    def add_delete_operation(self, doc_id):
+    def add_delete_operation(self, doc_id, index=None):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
-    def add_insert_operation(self, doc_id, doc):
+    def add_insert_operation(self, doc_id, doc, index=None):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
-    def add_upsert_operation(self, doc_id, doc):
+    def add_upsert_operation(self, doc_id, doc, index=None):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
-    def add_update_operation(self, doc_id, doc):
+    def add_update_operation(self, doc_id, doc, index=None):
         raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
 
     def get_plan_data(self):
@@ -76,12 +76,14 @@ class Collection(object):
         UPDATE_DELETE,
     ]
 
-    def __init__(self, datastore, name, model_class=None):
+    def __init__(self, datastore, name, model_class=None, validate=True):
         self.datastore = datastore
         self.name = name
+        self.index_name = f"{name}_hot"
         self.model_class = model_class
-        self._ensure_collection()
+        self.validate = validate
         self.bulk_plan_class = BulkPlan
+        self._ensure_collection()
 
     @staticmethod
     def _get_obj_value(obj, field):
@@ -89,6 +91,15 @@ class Collection(object):
         if isinstance(value, list):
             return value[0]
         return value
+
+    @property
+    def index_list(self):
+        """
+        This property contains the list of valid indexes for the current collection.
+
+        :return: list of valid indexes for this collection
+        """
+        return [self.name]
 
     def with_retries(self, func, *args, **kwargs):
         """
@@ -141,7 +152,7 @@ class Collection(object):
 
         :return: The BulkPlan object
         """
-        return self.bulk_plan_class(self.name, model=self.model_class)
+        return self.bulk_plan_class(self.index_list, model=self.model_class)
 
     def commit(self):
         """
@@ -149,6 +160,33 @@ class Collection(object):
         specified in self.datastore.hosts.
 
         :return: Should return True of the commit was successful on all hosts
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    def fix_ilm(self):
+        """
+        This function should be overloaded to fix the ILM configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    def fix_replicas(self):
+        """
+        This function should be overloaded to fix the replica configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
+        """
+        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+
+    def fix_shards(self):
+        """
+        This function should be overloaded to fix the shard configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
         """
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
@@ -196,7 +234,7 @@ class Collection(object):
 
         return output
 
-    def _get(self, key, retries):
+    def _get(self, key, retries, force_archive_access=False):
         """
         This function should be overloaded in a way that if the document is not found,
         the function retries to get the document the specified amount of time.
@@ -209,66 +247,74 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def get(self, key, as_obj=True):
+    def get(self, key, as_obj=True, force_archive_access=False):
         """
         Get a document from the datastore, retry a few times if not found and normalize the
         document with the model provided with the collection.
 
         This is the normal way to get data of the system.
 
+        :param force_archive_access: Temporary force access to archive during this call
         :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_NORMAL), as_obj=as_obj)
+        return self.normalize(self._get(key, self.RETRY_NORMAL, force_archive_access=force_archive_access),
+                              as_obj=as_obj)
 
-    def get_if_exists(self, key, as_obj=True):
+    def get_if_exists(self, key, as_obj=True, force_archive_access=False):
         """
         Get a document from the datastore but do not retry if not found.
 
         Use this more in caching scenarios because eventually consistent database may lead
         to have document reported has missing even if they exist.
 
-        :param as_obj:
+        :param force_archive_access: Temporary force access to archive during this call
+        :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_NONE), as_obj=as_obj)
+        return self.normalize(self._get(key, self.RETRY_NONE, force_archive_access=force_archive_access),
+                              as_obj=as_obj)
 
-    def require(self, key, as_obj=True):
+    def require(self, key, as_obj=True, force_archive_access=False):
         """
         Get a document from the datastore and retry forever because we know for sure
         that this document should exist. If it does not right now, this will wait for the
         document to show up in the datastore.
 
-        :param as_obj:
+        :param force_archive_access: Temporary force access to archive during this call
+        :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_INFINITY), as_obj=as_obj)
+        return self.normalize(self._get(key, self.RETRY_INFINITY, force_archive_access=force_archive_access),
+                              as_obj=as_obj)
 
-    def save(self, key, data):
+    def save(self, key, data, force_archive_access=False):
         """
         Save a to document to the datastore using the key as its document id.
 
         The document data will be normalized before being saved in the datastore.
 
+        :param force_archive_access: Temporary force access to archive during this call
         :param key: ID of the document to save
         :param data: raw data or instance of the model class to save as the document
         :return: True if the document was saved properly
         """
         if " " in key:
             raise DataStoreException("You are not allowed to use spaces in datastore keys.")
-            
-        return self._save(key, self.normalize(data))
 
-    def _save(self, key, data):
+        return self._save(key, self.normalize(data), force_archive_access=force_archive_access)
+
+    def _save(self, key, data, force_archive_access=False):
         """
         This function should takes in an instance of the the model class as input
         and saves it to the database backend at the id mentioned by the key.
 
         This function should return True if the data was saved correctly
 
+        :param force_archive_access: Temporary force access to archive during this call
         :param key: key to use to store the document
         :param data: instance of the model class to save to the database
         :return: True if save was successful
@@ -294,7 +340,7 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def delete_matching(self, query, workers=20):
+    def delete_by_query(self, query, workers=20, max_docs=None):
         """
         This function should delete the underlying documents referenced by the query.
         It should return true if the documents were in fact properly deleted.
@@ -316,7 +362,7 @@ class Collection(object):
         :raises: DatastoreException if operation not valid
         """
         if self.model_class:
-            fields = self.model_class.flat_fields()
+            fields = self.model_class.flat_fields(show_compound=True)
             if 'classification in fields':
                 fields.update({"__access_lvl__": Integer(),
                                "__access_req__": List(Keyword()),
@@ -385,7 +431,7 @@ class Collection(object):
         operations = self._validate_operations(operations)
         return self._update(key, operations)
 
-    def update_by_query(self, query, operations, filters=None, access_control=None):
+    def update_by_query(self, query, operations, filters=None, access_control=None, max_docs=None):
         """
         This function performs an atomic update on some fields from the
         underlying documents matching the query and the filters using a list of operations.
@@ -406,9 +452,9 @@ class Collection(object):
             if filters is None:
                 filters = []
             filters.append(access_control)
-        return self._update_by_query(query, operations, filters=filters)
+        return self._update_by_query(query, operations, filters=filters, max_docs=max_docs)
 
-    def _update_by_query(self, query, operations, filters):
+    def _update_by_query(self, query, operations, filters, max_docs=None):
         with concurrent.futures.ThreadPoolExecutor(20) as executor:
             res = {self._get_obj_value(item, 'id'): executor.submit(self._update, self._get_obj_value(item, 'id'),
                                                                     operations)
@@ -442,7 +488,7 @@ class Collection(object):
             return self._save(key, data)
 
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
-               filters=(), access_control=None, deep_paging_id=None, as_obj=True, use_archive=True,
+               filters=(), access_control=None, deep_paging_id=None, as_obj=True, use_archive=False,
                track_total_hits=False):
         """
         This function should perform a search through the datastore and return a
@@ -477,7 +523,7 @@ class Collection(object):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def stream_search(self, query, fl=None, filters=(), access_control=None,
-                      buffer_size=200, as_obj=True, use_archive=True):
+                      buffer_size=200, as_obj=True, use_archive=False):
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys
@@ -542,9 +588,9 @@ class Collection(object):
                     raise SearchException("Gap must be preceded with either + or - sign.")
 
                 try:
-                    parsed_start = dm(self.datastore.to_pydatemath(start)).timestamp
-                    parsed_end = dm(self.datastore.to_pydatemath(end)).timestamp
-                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).timestamp - dm('now').timestamp
+                    parsed_start = dm(self.datastore.to_pydatemath(start)).int_timestamp
+                    parsed_end = dm(self.datastore.to_pydatemath(end)).int_timestamp
+                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).int_timestamp - dm('now').int_timestamp
 
                     gaps_count = int((parsed_end - parsed_start) / parsed_gap)
                     ret_type = str
@@ -561,18 +607,18 @@ class Collection(object):
             return ret_type
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1,
-                  filters=None, access_control=None, use_archive=True):
+                  filters=None, access_control=None, use_archive=False):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-              mincount=1, filters=None, access_control=None, use_archive=True):
+              mincount=1, filters=None, access_control=None, use_archive=False):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=True):
+    def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=False):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def grouped_search(self, group_field, query="id:*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
-                       rows=DEFAULT_ROW_SIZE, filters=(), access_control=None, as_obj=True, use_archive=True):
+                       rows=DEFAULT_ROW_SIZE, filters=(), access_control=None, as_obj=True, use_archive=False):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def fields(self):
@@ -600,6 +646,9 @@ class Collection(object):
         return field_types
 
     def _check_fields(self, model=None):
+        if not self.validate:
+            return
+
         if model is None:
             if self.model_class:
                 return self._check_fields(self.model_class)
@@ -678,6 +727,7 @@ class BaseStore(object):
         self._collections = {}
         self._models = {}
         self.ilm_config = ilm_config
+        self.validate = True
 
     def __enter__(self):
         return self
@@ -690,9 +740,12 @@ class BaseStore(object):
         return '{0}'.format(self.__class__.__name__)
 
     def __getattr__(self, name) -> Collection:
+        if not self.validate:
+            return self._collection_class(self, name, model_class=self._models[name], validate=self.validate)
+
         if name not in self._collections:
-            model_class = self._models[name]
-            self._collections[name] = self._collection_class(self, name, model_class=model_class)
+            self._collections[name] = self._collection_class(
+                self, name, model_class=self._models[name], validate=self.validate)
 
         return self._collections[name]
 

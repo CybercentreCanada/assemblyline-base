@@ -1,6 +1,6 @@
 import logging
 
-from assemblyline.common.attack_map import attack_map, software_map
+from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
 
 heur_logger = logging.getLogger("assemblyline.heuristics")
 
@@ -42,7 +42,7 @@ def service_heuristic_to_result_heuristic(srv_heuristic, heuristics):
             )
             output['signature'].append(signature_item)
 
-        return output
+        return output, heuristic.associated_tags
     except InvalidHeuristicException as e:
         heur_logger.warning(str(e))
         raise
@@ -64,19 +64,30 @@ class Heuristic(object):
         self.attack_ids = []
         self.name = definition.name
         self.classification = definition.classification
+        self.associated_tags = []
 
         # Show only attack_ids that are valid
         attack_ids = attack_ids or []
+        attack_ids = [revoke_map.get(x, x) for x in attack_ids]
         for a_id in attack_ids:
             if a_id in attack_map:
                 self.attack_ids.append(a_id)
             elif a_id in software_map:
-                for s_a_id in software_map[a_id]['attack_ids']:
+                software_def = software_map[a_id]
+                implant_name = software_def.get('name', None)
+                if implant_name:
+                    self.associated_tags.append(('attribution.implant', implant_name))
+
+                for s_a_id in software_def['attack_ids']:
                     if s_a_id in attack_map:
                         self.attack_ids.append(s_a_id)
                     else:
                         heur_logger.warning(f"Invalid related attack_id '{s_a_id}' for software '{a_id}' "
                                             f"in heuristic '{heur_id}'. Ignoring it.")
+            elif a_id in group_map:
+                group_name = group_map[a_id].get('name', None)
+                if group_name:
+                    self.associated_tags.append(('attribution.actor', group_name))
             else:
                 heur_logger.warning(f"Invalid attack_id '{a_id}' in heuristic '{heur_id}'. Ignoring it.")
         self.attack_ids = list(set(self.attack_ids))

@@ -19,11 +19,10 @@ class UserSettings(odm.Model):                                      # User's def
     ignore_cache = odm.Boolean(default=False)                         # Ignore service caching
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False)  # Ignore dynamic recursion prevention
     ignore_filtering = odm.Boolean(default=False)                     # Ignore filtering services
+    malicious = odm.Boolean(default=False)                            # Is the file submitted known to be malicious
     priority = odm.Integer(default=1000)                              # Default priority for the submissions
     profile = odm.Boolean(default=False)                              # Should the submission do extra profiling
-    service_spec = odm.Mapping(odm.Keyword(), default={})             # Default service specific settings
+    service_spec = odm.Mapping(odm.Any(), default={})                 # Default service specific settings
     services = odm.Compound(ServiceSelection, default={})             # Default service selection
     submission_view = odm.Enum(values=VIEWS, default="report")        # Default view for completed submissions
-    ttl = odm.Integer(default=0)                                      # Default submission Time to Live (days)
-    ui4 = odm.Boolean(default=False)                                  # Reroute to UI 4
-    ui4_ask = odm.Boolean(default=True)                               # Ask user if he wants to try UI 4
+    ttl = odm.Integer(default=30)                                     # Default submission Time to Live (days)

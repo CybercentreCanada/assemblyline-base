@@ -60,6 +60,10 @@ def create_extra_data(log=None, ds=None, fs=None):
     log.info("\nCreating 50 Alerts...")
     create_alerts(ds, submission_list=submissions, log=log)
 
+    log.info("\nGenerating statistics for signatures and heuristics...")
+    ds.calculate_signature_stats()
+    ds.calculate_heuristic_stats()
+
 
 if __name__ == "__main__":
     datastore = forge.get_datastore()
@@ -70,6 +74,7 @@ if __name__ == "__main__":
         create_extra_data(log=logger, ds=datastore)
 
     if "alerts" in sys.argv:
+        logger.info("\nCreating extra 1000 Alerts...")
         create_alerts(datastore, alert_count=1000, log=logger)
 
     logger.info("\nDone.")

@@ -3,16 +3,18 @@
 
 import cmd
 import inspect
-import sys
-import multiprocessing
+import io
 import os
+import multiprocessing
 import re
-import signal
 import time
+import signal
 import shutil
+import sys
 import warnings
+import yaml
 
-from pprint import pformat
+from tempfile import gettempdir
 
 from assemblyline.common import forge, log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
@@ -36,46 +38,46 @@ t_last = time.time()
 
 class NullLogger(object):
     @staticmethod
-    def info(msg):
+    def info(msg, *args, **kwargs):
         pass
 
     @staticmethod
-    def warning(msg):
+    def warning(msg, *args, **kwargs):
         pass
 
     @staticmethod
-    def warn(msg):
+    def warn(msg, *args, **kwargs):
         pass
 
     @staticmethod
-    def error(msg):
+    def error(msg, *args, **kwargs):
         pass
 
     @staticmethod
-    def exception(msg):
+    def exception(msg, *args, **kwargs):
         pass
 
 
 class PrintLogger(object):
     @staticmethod
-    def info(msg):
-        print(msg)
+    def info(msg, end=None):
+        print(msg, end=end)
 
     @staticmethod
-    def warning(msg):
-        print(f"[W] {msg}")
+    def warning(msg, end=None):
+        print(f"[W] {msg}", end=end)
 
     @staticmethod
-    def warn(msg):
-        print(f"[W] {msg}")
+    def warn(msg, end=None):
+        print(f"[W] {msg}", end=end)
 
     @staticmethod
-    def error(msg):
-        print(f"[E] {msg}")
+    def error(msg, end=None):
+        print(f"[E] {msg}", end=end)
 
     @staticmethod
-    def exception(msg):
-        print(f"[EX] {msg}")
+    def exception(msg, end=None):
+        print(f"[EX] {msg}", end=end)
 
 
 def init():
@@ -87,6 +89,7 @@ def init():
 def submission_delete_tree(key, logger):
     try:
         with forge.get_filestore() as f_transport:
+            # noinspection PyUnresolvedReferences
             DATASTORE.delete_submission_tree(key, transport=f_transport)
     except Exception as e:
         logger.error(e)
@@ -107,7 +110,7 @@ def action_done(args):
                       f" at {int(COUNT_INCREMENT / (new_t - t_last))} keys/sec)")
             t_last = new_t
     elif do_print:
-        print("!!ERROR!! [%s] %s ==> %s" % (bucket, action, key))
+        print(f"!!ERROR!! [{bucket}] {action} ==> {key}")
 
 
 # noinspection PyMethodMayBeStatic,PyProtectedMember,PyBroadException
@@ -122,32 +125,52 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         self.config = forge.get_config()
         if show_prompt:
             self._update_context()
+        self._platform = sys.platform
+        self._cmd_lex = None
 
     def _update_context(self):
         self.prompt = '(al_cli) $ '
         self.intro = 'AL 4.0 - Console. (type help).'
 
-    def _parse_args(self, s, platform='this'):
-        """Multi-platform variant of shlex.split() for command-line splitting.
+    def _compile_cmd_lex(self):
+        """Compiles regular expression for for command-line splitting.
         For use with subprocess, for argv injection etc. Using fast REGEX.
 
-        platform: 'this' = auto from current platform;
-                  1 = POSIX;
-                  0 = Windows/CMD
-                  (other values reserved)
+        self._platform: auto from current platform;
+                        'win32' = Windows/CMD
+                        'linux', etc. = POSIX
         """
-        if platform == 'this':
-            platform = (sys.platform != 'win32')
-        if platform == 1:
-            cmd_lex = r'''"((?:\\["\\]|[^"])*)"|'([^']*)'|(\\.)|(&&?|\|\|?|\d?\>|[<])|([^\s'"\\&|<>]+)|(\s+)|(.)'''
-        elif platform == 0:
-            cmd_lex = r'''"((?:""|\\["\\]|[^"])*)"?()|(\\\\(?=\\*")|\\")|(&&?|\|\|?|\d?>|[<])|([^\s"&|<>]+)|(\s+)|(.)'''
+
+        if self._platform != 'win32':
+            self._cmd_lex = re.compile(r'''"
+            ((?:\\["\\]|[^"])*)"|       # quoted string
+            '([^']*)'|                  # quoted single string
+            (\\.)|                      # escaped string
+            (&&?|\|\|?|\d?>|[<])|      # pipes and other command continuation
+            ([^\s'"\\&|<>]+)|           # words
+            (\s+)|                      # whitespace
+            (.)                         # fail
+            ''', re.VERBOSE)
         else:
-            raise AssertionError('unkown platform %r' % platform)
+            self._cmd_lex = re.compile(r'''
+            "((?:""|\\["\\]|[^"])*)"|   # quoted string
+            (\\\\(?=\\*")|\\")|         # escaped string
+            (&&?|\|\|?|\d?>|[<])|       # pipes and other command continuation
+            ([^\s"&|<>]+)|              # words
+            (\s+)|                      # whitespace
+            (.)                         # fail
+            ''', re.VERBOSE)
+
+    def _parse_args(self, s):
+        """Multi-platform variant of shlex.split() for command-line splitting.
+        For use with subprocess, for argv injection etc. Using fast compiled class REGEX.
+        """
+        if self._cmd_lex is None:
+            self._compile_cmd_lex()
 
         args = []
         accu = None  # collects pieces of one arg
-        for qs, qss, esc, pipe, word, white, fail in re.findall(cmd_lex, s):
+        for qs, qss, esc, pipe, word, white, fail in self._cmd_lex.findall(s):
             if word:
                 pass  # most frequent
             elif esc:
@@ -163,7 +186,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 raise ValueError("invalid or incomplete shell string")
             elif qs:
                 word = qs.replace('\\"', '"').replace('\\\\', '\\')
-                if platform == 0:
+                if self._platform == "win32":
                     word = word.replace('""', '"')
             else:
                 word = qss  # may be even empty; must be last
@@ -175,6 +198,37 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         return args
 
+    def _get_completion_list(self, text, line, collection_name,
+                             valid_actions=None, terminal_actions=None, multiple_actions=None):
+        """
+        Helper for command completion for subcommands that take no arguments, take one argument,
+        or multiple arguments of the same type.
+        """
+        if terminal_actions is None:
+            terminal_actions = []
+        if valid_actions is None:
+            valid_actions = []
+        if multiple_actions is None:
+            multiple_actions = []
+
+        args = self._parse_args(line)
+        if text == '':
+            # Because _parse_args strips trailing spaces
+            args.append(text)
+
+        if len(args) == 2:
+            return [i for i in valid_actions if i.startswith(text)]
+        elif len(args) >= 3:
+            if args[1] in terminal_actions:
+                return []
+            collection = self.datastore.get_collection(collection_name)
+            if collection:
+                if len(args) == 3:
+                    return [i for i in collection.keys() if i.startswith(text)]
+                if args[1] in multiple_actions:
+                    return [i for i in collection.keys() if i.startswith(text) and i not in args[2:-1]]
+        return []
+
     def _print_error(self, msg):
         stack_func = None
         stack = inspect.stack()
@@ -184,12 +238,12 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 break
 
         if msg:
-            self.logger.error(msg + "\n")
+            self.logger.error(f"{msg}\n")
 
         if stack_func:
             function_doc = inspect.getdoc(getattr(self, stack_func))
             if function_doc:
-                self.logger.info("Function help:\n\n" + function_doc + "\n")
+                self.logger.info(f"Function help:\n\n{function_doc}\n")
 
     #
     # Exit actions
@@ -267,8 +321,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         try:
             os.makedirs(dest, exist_ok=True)
         except Exception:
-            self.logger.error("Cannot make %s folder. Make sure you can write to this folder. "
-                              "Maybe you should write your backups in /tmp ?" % dest)
+            temp_dir = gettempdir()
+            self.logger.error(f"Cannot make {dest!s} folder. Make sure you can write to this folder.\n"
+                              f"Maybe you should write your backups in {temp_dir} ?")
             return
 
         if system_backup:
@@ -281,7 +336,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 'user_avatar',
                 'user_favorites',
                 'user_settings',
-                'vm',
                 'workflow'
             ]
 
@@ -296,17 +350,17 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             data = self.datastore.get_collection(bucket).search(query, offset=0, rows=1)
             total = data['total']
             if not total:
-                self.logger.info("\nNothing in '%s' matches the query:\n\n  %s\n" % (bucket.upper(), query))
+                self.logger.info(f"\nNothing in '{bucket.upper()}' matches the query:\n\n  {query}\n")
                 try:
                     os.rmdir(dest)
                 except Exception:
                     self.logger.error(f"Cannot remove backup destination folder '{dest}'.")
                 return
             else:
-                self.logger.info("\nNumber of items matching this query: %s\n" % data["total"])
+                self.logger.info(f"\nNumber of items matching this query: {data['total']}\n")
 
             if not force:
-                self.logger.info("This is an exemple of the data that will be backuped:\n")
+                self.logger.info("This is an example of the data that will be backed up:\n")
                 self.logger.info(f"{data['items'][0]}\n")
                 if self.prompt:
                     cont = input("Are your sure you want to continue? (y/N) ")
@@ -365,9 +419,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         # Make sure that all the backup parts are there
         bak_files = os.listdir(path)
         for part_num in range(workers):
-            suffix_check = ".part%d" % part_num
+            suffix_check = f".part{part_num:d}"
             if not any(suffix_check in x for x in bak_files):
-                self._print_error("%d files exist, but no file ending with %s found. " % (workers, suffix_check))
+                self._print_error(f"{workers:d} files exist, but no file ending with {suffix_check} found. ")
                 return
 
         backup_manager = DistributedBackup(path, worker_count=workers, logger=self.logger)
@@ -394,7 +448,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         Examples:
             # Delete all submission for "user" with all associated results
-            delete submission full "submission.submitter:user"
+            delete submission full "params.submitter:user"
         """
         valid_buckets = list(self.datastore.ds.get_models().keys())
         args = self._parse_args(args)
@@ -444,7 +498,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                         self.logger.warn("\n**ABORTED**\n")
                         return
                 else:
-                    self.logger.warn("You are not in interactive mode therefor the delete was not executed. "
+                    self.logger.warn("You are not in interactive mode, therefore the delete was not executed. "
                                      "Add 'force' to your commandline to execute the delete.")
                     return
 
@@ -454,7 +508,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                     for data in collection.stream_search(query, fl="id", item_buffer_size=COUNT_INCREMENT):
                         pool.apply_async(submission_delete_tree, (data.id, self.logger), callback=action_done)
                 else:
-                    collection.delete_matching(query)
+                    collection.delete_by_query(query)
 
         except KeyboardInterrupt:
             self.logger.warn("Interrupting jobs...")
@@ -463,7 +517,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 pool.join()
 
         except Exception as e:
-            self.logger.exception("Something when wrong, retry!\n\n %s\n" % e)
+            self.logger.exception(f"Something went wrong, retry!\n\n {e}\n")
         else:
             if pool is not None:
                 pool.close()
@@ -493,8 +547,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             <name>   Name of the service to perform the action on
 
         Examples:
-            # Show service 'Sync'
-            service show Sync
+            # Show service 'Extract'
+            service show Extract
         """
         valid_actions = ['list', 'show', 'disable', 'enable', 'remove']
         args = self._parse_args(args)
@@ -517,31 +571,43 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if action_type == 'list':
             for key in collection.keys():
                 self.logger.info(key)
-        elif action_type == 'show' and item_id:
-            self.logger.info(pformat(self.datastore.get_service_with_delta(item_id, as_obj=False)))
-        elif action_type == 'disable' and item_id:
+            return
+        if item_id:
             item = collection.get(item_id)
-            if item:
-                item.enabled = False
-                collection.save(item_id, item)
-                self.logger.info(f"{item_id} was disabled")
-            else:
+            if item is None:
                 self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'enable' and item_id:
-            item = collection.get(item_id)
-            if item:
-                item.enabled = True
-                collection.save(item_id, item)
-                self.logger.info(f"{item_id} was enabled")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'remove' and item_id:
-            collection.delete(item_id)
-            service = self.datastore.get_collection('service')
-            service.delete_matching(f"name:{item_id}")
-            self.logger.info(f"Service '{item_id}' removed.")
+                return
         else:
             self._print_error("Invalid command parameters")
+            return
+
+        if action_type == 'show':
+            output = io.StringIO()
+            yaml.safe_dump(self.datastore.get_service_with_delta(item_id, as_obj=False), output)
+            self.logger.info(output.getvalue())
+        elif action_type == 'disable':
+            item.enabled = False
+            collection.save(item_id, item)
+            self.logger.info(f"{item_id} was disabled")
+        elif action_type == 'enable':
+            item.enabled = True
+            collection.save(item_id, item)
+            self.logger.info(f"{item_id} was enabled")
+        elif action_type == 'remove':
+            collection.delete(item_id)
+            service = self.datastore.get_collection('service')
+            service.delete_by_query(f"name:{item_id}")
+            self.logger.info(f"Service '{item_id}' removed.")
+
+    def complete_service(self, text, line, begidx, endidx):
+        """
+        Command completion for the 'service' command
+        """
+        valid_actions = ['list', 'show', 'disable', 'enable', 'remove']
+        terminal_actions = ['list']
+        multiple_actions = []
+
+        return self._get_completion_list(text, line, 'service_delta', valid_actions, terminal_actions, multiple_actions)
 
     def do_signature(self, args):
         """
@@ -595,7 +661,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         signatures = self.datastore.get_collection('signature')
 
         if action_type == 'show' and item_id:
-            self.logger.info(pformat(signatures.get(item_id, as_obj=False)))
+            output = io.StringIO()
+            yaml.safe_dump(signatures.get(item_id, as_obj=False), output)
+            self.logger.info(output.getvalue())
         elif action_type == 'change_status' and item_id and id_type and status:
             if status not in RULE_STATUSES:
                 statuses = "\n".join(RULE_STATUSES)
@@ -605,7 +673,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
             if id_type == 'by_id':
                 signature = signatures.get(item_id)
-                signature.meta.al_status = status
+                signature.status = status
                 signatures.save(item_id, signature)
                 self.logger.info(f"Signature '{item_id}' was changed to status {status}.")
             elif id_type == 'by_query':
@@ -618,7 +686,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
                     if not force:
                         self.logger.info(f'\nNumber of items matching this query: {test_data["total"]}\n\n')
-                        self.logger.info("This is an exemple of the signatures that will change status:\n")
+                        self.logger.info("This is an example of the signatures that will change status:\n")
                         self.logger.info(f"{test_data['items'][0]}\n")
                         if self.prompt:
                             cont = input("Are your sure you want to continue? (y/N) ")
@@ -628,21 +696,21 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                                 self.logger.warn("\n**ABORTED**\n")
                                 return
                         else:
-                            self.logger.warn("You are not in interactive mode therefor the "
-                                             "status change was not executed. "
+                            self.logger.warn("You are not in interactive mode, "
+                                             "therefore the status change was not executed. "
                                              "Add 'force' to your commandline to execute the status change.")
                             return
 
                     if cont:
                         updated = signatures.update_by_query(item_id,
-                                                             [(signatures.UPDATE_SET, 'meta.al_status', status)])
+                                                             [(signatures.UPDATE_SET, 'status', status)])
                         self.logger.info(f"Signatures matching query '{item_id}' were changed "
                                          f"to status '{status}'. [{updated}]")
 
                 except KeyboardInterrupt:
                     self.logger.warn("Interrupting jobs...")
                 except Exception as e:
-                    self.logger.error(f"Something when wrong, retry!\n\n {e}\n")
+                    self.logger.error(f"Something went wrong, retry!\n\n {e}\n")
             else:
                 self._print_error("Invalid action parameters for action 'change_status' of signature command.")
 
@@ -673,8 +741,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             show         Describe a user
             disable      Disable a user
             enable       Enable a user
-            set_admin    Make a user admin
-            unset_admin  Remove admin priviledges to a user
+            set_admin    Grant a user admin privileges
+            unset_admin  Revoke a user's admin privileges
             remove       Remove a user
             set_otp      Generate a new random OTP secret key for user
             unset_otp    Remove OTP Secret Token
@@ -710,91 +778,106 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if action_type == 'list':
             for key in users.keys():
                 self.logger.info(key)
-        elif action_type == 'show' and item_id:
-            self.logger.info(pformat(users.get(item_id, as_obj=False)))
-        elif action_type == 'disable' and item_id:
+            return
+        if item_id:
             item = users.get(item_id)
-            if item:
-                item.is_active = False
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} was disabled")
-            else:
+            if item is None:
                 self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'enable' and item_id:
-            item = users.get(item_id)
-            if item:
-                item.is_active = True
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} was enabled")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'set_admin' and item_id:
-            item = users.get(item_id)
-            if item:
-                if 'admin' not in item.type:
-                    item.type.append('admin')
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} was added admin priviledges")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'unset_admin' and item_id:
-            item = users.get(item_id)
-            if item:
-                item.type.pop('admin', None)
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} was removed admin priviledges")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'remove' and item_id:
-            users.delete(item_id)
-            self.logger.info(f"User '{item_id}' removed.")
-        elif action_type == 'unset_otp' and item_id:
-            item = users.get(item_id, as_obj=False)
-            if item:
-                item.pop('otp_sk', None)
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} OTP secret key was removed")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'set_otp' and item_id:
-            item = users.get(item_id)
-            if item:
-                item.otp_sk = generate_random_secret()
-                users.save(item_id, item)
-                self.logger.info(f"{item_id} OTP secret key is now: {item.otp_sk}")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
-        elif action_type == 'show_otp' and item_id:
-            item = users.get(item_id)
-            if item:
-                if item.otp_sk:
-                    while True:
-                        self.logger.info('\r%s OTP Token:   %06d   %s%s' % (item_id, get_totp_token(item.otp_sk),
-                                                                            "█" * int(time.time() % 30),
-                                                                            "░" * (29 - int(time.time() % 30)))),
-                        sys.__stdout__.flush()
-
-                        time.sleep(1)
-                else:
-                    self.logger.warn(f"2FA not enabled for user {item_id}")
-            else:
-                self.logger.warn(f"{item_id} does not exist")
+                return
         else:
             self._print_error("Invalid command parameters")
+            return
+
+        if action_type == 'show':
+            output = io.StringIO()
+            yaml.safe_dump(item.as_primitives(), output)
+            self.logger.info(output.getvalue())
+        elif action_type == 'disable':
+            item.is_active = False
+            users.save(item_id, item)
+            self.logger.info(f"{item_id} was disabled")
+        elif action_type == 'enable':
+            item.is_active = True
+            users.save(item_id, item)
+            self.logger.info(f"{item_id} was enabled")
+        elif action_type == 'set_admin':
+            if 'admin' not in item.type:
+                item.type.append('admin')
+                users.save(item_id, item)
+            self.logger.info(f"Granted admin privileges to {item_id}")
+        elif action_type == 'unset_admin':
+            if 'admin' in item.type:
+                item.type.remove('admin')
+                users.save(item_id, item)
+            self.logger.info(f"Admin privileges revoked for {item_id}")
+        elif action_type == 'remove':
+            users.delete(item_id)
+            self.logger.info(f"User '{item_id}' removed.")
+        elif action_type == 'unset_otp':
+            item.otp_sk = None
+            users.save(item_id, item)
+            self.logger.info(f"{item_id} OTP secret key was removed")
+        elif action_type == 'set_otp':
+            item.otp_sk = generate_random_secret()
+            users.save(item_id, item)
+            self.logger.info(f"{item_id} OTP secret key is now: {item.otp_sk}")
+        elif action_type == 'show_otp':
+            if item.otp_sk:
+                try:
+                    while True:
+                        self.logger.info('\r{!s} OTP Token:   {:06d}   {:░<30}'.format(
+                            item_id,
+                            get_totp_token(item.otp_sk),
+                            "█" * int(time.time() % 30)),
+                            end=''
+                        ),
+                        sys.__stdout__.flush()
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    self.logger.info('')
+            else:
+                self.logger.warn(f"2FA not enabled for user {item_id}")
+
+    def complete_user(self, text, line, begidx, endidx):
+        """
+        Command completion for the 'user' command
+        """
+        valid_actions = ['list', 'show', 'disable', 'enable', 'remove',
+                         'set_admin', 'unset_admin', 'set_otp', 'unset_otp', 'show_otp']
+        terminal_actions = ['list']
+        multiple_actions = []
+
+        return self._get_completion_list(text, line, 'user', valid_actions, terminal_actions, multiple_actions)
 
     def do_index(self, args):
         """
-        Perform operations on the search index
+        Perform operations on the database index.
+
+        ** Do not use these operations unless you absolutely have to as they may slow down
+           considerably your system and some of these operations may result in dataloss if
+           something went wrong in the middle of it.
 
         Usage:
-            index commit   [<bucket>]
-                  reindex  [<bucket>]
+            index commit        [<safe>] [<bucket>]
+                  reindex       [<safe>] [<bucket>]
+                  fix_ilm       [<safe>] [<bucket>]
+                  fix_replicas  [<safe>] [<bucket>]
+                  fix_shards    [<safe>] [<bucket>]
 
         Actions:
-            commit       Force datastore to commit the index
-            reindex      Force a reindex of all the database (this can be really slow)
+            commit        Force datastore to commit the specified index
+            reindex       Force a reindex of the sepcified index
+                             ** This operation is really slow because it re-index all documents
+            fix_ilm       Fix ILM on specified indices
+                             ** This operation can be really slow when going from an ILM setup to a hot
+                                archive only setup because it will copy the archive to hot index
+            fix_replicas  Fix replica count on specified indices
+            fix_shards    Fix sharding on specified indices
+                             ** This operation can be slow and will prevent data from being written
+                                the cluster while it is hapenning.
 
         Parameters:
+            <safe>       Does not validate the model [optional]
             <bucket>     Bucket to do the operation on [optional]
 
 
@@ -806,9 +889,14 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         """
 
         valid_buckets = list(self.datastore.ds.get_models().keys())
-        valid_actions = ['commit', 'reindex']
+        valid_actions = ['commit', 'reindex', 'fix_shards', 'fix_ilm', 'fix_replicas']
 
         args = self._parse_args(args)
+
+        safe = False
+        if 'safe' in args:
+            safe = True
+            args.remove('safe')
 
         if len(args) == 1:
             action_type = args[0]
@@ -820,39 +908,88 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             return
 
         if action_type not in valid_actions:
-            self._print_error("\nInvalid action specified: %s\n\n"
-                              "Valid actions are:\n%s" % (action_type, "\n".join(valid_actions)))
+            self._print_error("\nInvalid action specified: {}\n\n"
+                              "Valid actions are:\n{}".format(action_type, "\n".join(valid_actions)))
             return
 
         if bucket and bucket not in valid_buckets:
-            self._print_error("\nInvalid bucket specified: %s\n\n"
-                              "Valid buckets are:\n%s" % (bucket, "\n".join(valid_buckets)))
+            self._print_error("\nInvalid bucket specified: {}\n\n"
+                              "Valid buckets are:\n{}".format(bucket, "\n".join(valid_buckets)))
             return
 
-        if action_type == 'reindex':
-            if bucket:
-                collection = self.datastore.get_collection(bucket)
-                self.logger.info(f"Reindexing {bucket.upper()} ...")
-                collection.reindex()
-                self.logger.info("    Done!")
-            else:
-                for bucket in valid_buckets:
+        if safe:
+            self.datastore.stop_model_validation()
+
+        try:
+            if action_type == 'reindex':
+                if bucket:
                     collection = self.datastore.get_collection(bucket)
-                    self.logger.info(f"Reindexing {bucket} ...")
+                    self.logger.info(f"Reindexing {bucket.upper()} ...")
                     collection.reindex()
                     self.logger.info("    Done!")
-        elif action_type == 'commit':
-            if bucket:
-                collection = self.datastore.get_collection(bucket)
-                collection.commit()
-                self.logger.info(f"Index {bucket.upper()} was commited.")
-            else:
-                self.logger.info("Forcing commit procedure for all indexes...")
-                for bucket in valid_buckets:
+                else:
+                    for bucket in valid_buckets:
+                        collection = self.datastore.get_collection(bucket)
+                        self.logger.info(f"Reindexing {bucket} ...")
+                        collection.reindex()
+                        self.logger.info("    Done!")
+            elif action_type == 'commit':
+                if bucket:
                     collection = self.datastore.get_collection(bucket)
                     collection.commit()
-                    self.logger.info(f"    Index {bucket.upper()} was commited.")
-                self.logger.info("All indexes commited.")
+                    self.logger.info(f"Index {bucket.upper()} was committed.")
+                else:
+                    self.logger.info("Forcing commit procedure for all indexes...")
+                    for bucket in valid_buckets:
+                        collection = self.datastore.get_collection(bucket)
+                        collection.commit()
+                        self.logger.info(f"    Index {bucket.upper()} was commited.")
+                    self.logger.info("All indexes committed.")
+            elif action_type == 'fix_shards':
+                buckets = []
+                if bucket:
+                    self.logger.info(f"Fixing shards on index {bucket.upper()}...")
+                    buckets.append(bucket)
+                else:
+                    self.logger.info("Fixing shards on all indices...")
+                    buckets = valid_buckets
+
+                for bucket in buckets:
+                    collection = self.datastore.get_collection(bucket)
+                    collection.fix_shards()
+                    self.logger.info(f"    Index {bucket.upper()} shards configuration updated.")
+
+                self.logger.info("Completed!")
+            elif action_type == 'fix_ilm':
+                buckets = []
+                if bucket:
+                    self.logger.info(f"Fixing ILM on index {bucket.upper()}...")
+                    buckets.append(bucket)
+                else:
+                    self.logger.info("Fixing ILM on all indices...")
+                    buckets = valid_buckets
+
+                for bucket in buckets:
+                    collection = self.datastore.get_collection(bucket)
+                    collection.fix_ilm()
+                    self.logger.info(f"    Index {bucket.upper()} ILM configuration updated.")
+            elif action_type == 'fix_replicas':
+                buckets = []
+                if bucket:
+                    self.logger.info(f"Fixing replicas on index {bucket.upper()}...")
+                    buckets.append(bucket)
+                else:
+                    self.logger.info("Fixing replicas on all indices...")
+                    buckets = valid_buckets
+
+                for bucket in buckets:
+                    collection = self.datastore.get_collection(bucket)
+                    collection.fix_replicas()
+                    self.logger.info(f"    Index {bucket.upper()} replicas configuration updated.")
+
+                self.logger.info("Completed!")
+        finally:
+            self.datastore.start_model_validation()
 
     def do_wipe(self, args):
         """
@@ -905,18 +1042,18 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             return
 
         if action_type not in valid_actions:
-            self._print_error("\nInvalid action specified: %s\n\n"
-                              "Valid actions are:\n%s" % (action_type, "\n".join(valid_actions)))
+            self._print_error("\nInvalid action specified: {}\n\n"
+                              "Valid actions are:\n{}".format(action_type, "\n".join(valid_actions)))
             return
 
         if action_type == 'bucket':
             if bucket not in valid_buckets:
-                self._print_error("\nInvalid bucket: %s\n\n"
-                                  "Valid buckets are:\n%s" % (bucket, "\n".join(valid_buckets)))
+                self._print_error("\nInvalid bucket: {}\n\n"
+                                  "Valid buckets are:\n{}".format(bucket, "\n".join(valid_buckets)))
                 return
 
             self.datastore.get_collection(bucket).wipe()
-            self.logger.info(f"Done wipping {bucket.upper()}.")
+            self.logger.info(f"Done wiping {bucket.upper()}.")
         elif action_type == 'non_system':
             non_system_buckets = [
                 'alert', 'cached_file', 'emptyresult', 'error', 'file', 'filescore', 'result',
@@ -970,7 +1107,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             'user_avatar',
             'user_favorites',
             'user_settings',
-            'vm',
             'workflow'
         ]
         if full:
@@ -1030,7 +1166,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         func = args[0]
         if func not in valid_func:
-            self._print_error("Invalid action '%s' for ui command." % func)
+            self._print_error(f"Invalid action '{func}' for ui command.")
             return
 
         if func == 'clear_sessions':
@@ -1084,7 +1220,7 @@ def shell_main():
     cli = ALCommandLineInterface(len(sys.argv) == 1)
 
     if len(sys.argv) != 1:
-        cli.onecmd(" ".join([{True: '"%s"' % x, False: x}[" " in x] for x in sys.argv[1:]]))
+        cli.onecmd(" ".join([{True: f'"{x}"', False: x}[" " in x] for x in sys.argv[1:]]))
     else:
         print_banner()
         cli.cmdloop()

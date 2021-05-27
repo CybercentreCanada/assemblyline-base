@@ -1,17 +1,19 @@
 
+import hashlib
 import os
 import pytest
 import random
 import re
+import subprocess
+import tempfile
 
+from baseconv import BASE62_ALPHABET
+from cart import pack_stream, get_metadata_only
 from copy import deepcopy
 from io import BytesIO
 
-from assemblyline.odm.models.heuristic import Heuristic
-from baseconv import BASE62_ALPHABET
-
 from assemblyline.common import forge
-from assemblyline.common.attack_map import attack_map, software_map
+from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
 from assemblyline.common.chunk import chunked_list, chunk
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
@@ -19,12 +21,14 @@ from assemblyline.common.dict_utils import flatten, unflatten, recursive_update,
 from assemblyline.common.entropy import calculate_partition_entropy
 from assemblyline.common.heuristics import InvalidHeuristicException, service_heuristic_to_result_heuristic
 from assemblyline.common.hexdump import hexdump
+from assemblyline.common.identify import fileinfo
 from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
     now_as_local
 from assemblyline.common.iprange import is_ip_reserved, is_ip_private
 from assemblyline.common.security import get_random_password, get_password_hash, verify_password
 from assemblyline.common.str_utils import safe_str, translate_str
 from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
+from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.randomizer import random_model_obj, get_random_word
 
 
@@ -48,6 +52,29 @@ def test_software_map():
     for attack_software_id, attack_software_details in software_map.items():
         assert attack_software_details.keys() == attack_software_keys
         assert attack_software_id == attack_software_details["software_id"]
+
+
+def test_group_map():
+    # Validate the structure of the generated ATT&CK group map (intrusion_set) created by
+    # assemblyline-base/external/generate_attack_map.py
+    assert type(group_map) == dict
+    # This is the minimum set of keys that each technique entry in the attack map should have
+    attack_group_keys = {"description", "group_id", "name"}
+    for attack_group_id, attack_group_details in group_map.items():
+        assert attack_group_details.keys() == attack_group_keys
+        assert attack_group_id == attack_group_details["group_id"]
+
+
+def test_revoke_map():
+    # Validate the structure of the generated ATT&CK revoke_map created by
+    # assemblyline-base/external/generate_attack_map.py
+    assert type(revoke_map) == dict
+    # This is the minimum set of keys that each technique entry in the attack map should have
+    for revoked_id, mapped_id in revoke_map.items():
+        assert revoked_id not in attack_map
+        assert revoked_id not in software_map
+        assert revoked_id not in group_map
+        assert mapped_id in attack_map or mapped_id in software_map or mapped_id in group_map
 
 
 def test_chunk():
@@ -78,6 +105,26 @@ def test_classification():
     assert cl_engine.intersect_user_classification(c1, c2) == "UNRESTRICTED"
     with pytest.raises(InvalidClassification):
         cl_engine.max_classification(c1, c2)
+
+    dyn1 = "U//TEST"
+    dyn2 = "U//GOD//TEST"
+    dyn3 = "U//TEST2"
+    assert not cl_engine.is_valid(dyn1)
+    assert not cl_engine.is_valid(dyn2)
+    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U"
+    assert cl_engine.normalize_classification(dyn2, long_format=False) == "U//ADM"
+    cl_engine.dynamic_groups = True
+    assert cl_engine.is_valid(dyn1)
+    assert cl_engine.is_valid(dyn2)
+    assert cl_engine.is_valid(dyn3)
+    assert cl_engine.is_accessible(dyn2, dyn1)
+    assert not cl_engine.is_accessible(dyn1, dyn2)
+    assert not cl_engine.is_accessible(dyn3, dyn1)
+    assert not cl_engine.is_accessible(dyn1, dyn3)
+    assert cl_engine.intersect_user_classification(dyn1, dyn1) == "UNRESTRICTED//REL TO TEST"
+    assert cl_engine.max_classification(dyn1, dyn2) == "UNRESTRICTED//ADMIN//REL TO TEST"
+    assert cl_engine.normalize_classification(dyn1, long_format=True) == "UNRESTRICTED//REL TO TEST"
+    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U//REL TO TEST"
 
 
 def test_compat_tag_map():
@@ -164,7 +211,9 @@ def test_heuristics_valid():
                 attack_ids_to_fetch_details_for.append(software_attack_id)
             else:
                 print(f"Invalid related attack_id '{software_attack_id}' for software '{software_id}'. Ignoring it.")
-    attack_id_details = {attack_id: {"pattern": attack_map[attack_id]["name"], "categories": attack_map[attack_id]["categories"]} for attack_id in attack_ids_to_fetch_details_for}
+    attack_id_details = {
+        attack_id: {"pattern": attack_map[attack_id]["name"],
+                    "categories": attack_map[attack_id]["categories"]} for attack_id in attack_ids_to_fetch_details_for}
     attack_ids.extend(software_ids)
 
     signatures = {}
@@ -185,7 +234,7 @@ def test_heuristics_valid():
         score_map=score_map
     )
 
-    result_heur = service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
+    result_heur, _ = service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
     assert result_heur is not None
     assert service_heur['heur_id'] == result_heur['heur_id']
     assert service_heur['score'] != result_heur['score']
@@ -217,6 +266,46 @@ def test_hexdump():
         assert c[1] in "abcdef1234567890"
         assert c[2] == " "
     assert line[59:59+2] == "  "
+
+
+def test_identify():
+    # Setup test data
+    aaaa = f"{'A' * 10000}".encode()
+    sha256 = hashlib.sha256(aaaa).hexdigest()
+
+    # Prep temp file
+    _, input_path = tempfile.mkstemp()
+    output_path = f"{input_path}.cart"
+
+    try:
+        # Write temp file
+        with open(input_path, 'wb') as oh:
+            oh.write(aaaa)
+
+        # Create a cart file
+        with open(output_path, 'wb') as oh:
+            with open(input_path, 'rb') as ih:
+                pack_stream(ih, oh, {'name': 'test_identify.a'})
+
+        # Validate the cart file created
+        meta = get_metadata_only(output_path)
+        assert meta.get("sha256", None) == sha256
+
+        # Validate identify file detection
+        info = fileinfo(output_path)
+        assert info.get("type", None) == "archive/cart"
+
+        # Validate identify hashing
+        output_sha256 = subprocess.check_output(['sha256sum', output_path])[:64].decode()
+        assert info.get("sha256", None) == output_sha256
+    finally:
+        # Cleanup output file
+        if os.path.exists(output_path):
+            os.unlink(output_path)
+
+        # Cleanup input file
+        if os.path.exists(input_path):
+            os.unlink(input_path)
 
 
 def test_iprange():

@@ -7,6 +7,7 @@ import sys
 import threading
 import uuid
 import zipfile
+import msoffcrypto
 from binascii import hexlify
 from collections import defaultdict
 from typing import Tuple, Union, Dict
@@ -34,7 +35,8 @@ STRONG_INDICATORS = {
         re.compile(rb'new[ \t]+ActiveXObject\('),
         re.compile(rb'xfa\.((resolve|create)Node|datasets|form)'),
         re.compile(rb'\.oneOfChild'),
-        re.compile(rb'unescape\(')
+        re.compile(rb'unescape\('),
+        re.compile(rb'\.createElement\('),
     ],
     'code/csharp': [
         re.compile(rb'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
@@ -96,6 +98,12 @@ STRONG_INDICATORS = {
         re.compile(rb'^To: ', re.MULTILINE),
         re.compile(rb'^From: ', re.MULTILINE),
     ],
+    'metadata/sysmon': [
+        re.compile(rb'<Events>*'),
+        re.compile(rb'<Event>*'),
+        re.compile(rb'<\/Event>'),
+        re.compile(rb'<\/Events>'),
+    ],
     'code/xml': [
         # Check if it has an xml declaration header
         re.compile(rb'^\s*<\?xml[^>]+\?>', re.DOTALL | re.MULTILINE),
@@ -123,16 +131,18 @@ WEAK_INDICATORS = {
                         rb'String\.(fromCharCode|raw)\(',
                         rb'Math\.(round|pow|sin|cos)\(',
                         rb'(isNaN|isFinite|parseInt|parseFloat)\(',
+                        b'WSH',
                         ],
     'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
     'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
     'code/vbs': [
-        rb'(^|\n)*[ \t]*(Dim |Sub |Loop |Attribute |End Sub|Function |End Function )',
+        rb'(^|\n)*[ ]{0,1000}[\t]*(Dim |Sub |Loop |Attribute |End Sub|Function |End Function )',
         b'CreateObject',
         b'WScript',
         b'window_onload',
         b'.SpawnInstance_',
         b'.Security_',
+        b'WSH',
     ],
     'code/csharp': [rb'(^|\n)(protected)?[ \t]*override'],
     'code/sql': [rb'(^|\n)(create |drop |select |returns |declare )'],
@@ -182,7 +192,7 @@ OLE_CLSID_GUIDs = {
     "0003000A-0000-0000-C000-000000000046": "document/office/paintbrush",  # "Paintbrush Picture",
     "0003000C-0000-0000-C000-000000000046": "document/office/package",  # "Package"
     "000C1084-0000-0000-C000-000000000046": "document/installer/windows",  # "Installer Package (MSI)"
-    "00020D0B-0000-0000-C000-000000000046": "document/office/word",  # "MailMessage"
+    "00020D0B-0000-0000-C000-000000000046": "document/email",  # "MailMessage"
 
     # GUID v1 (Timestamp & MAC-48)
     "29130400-2EED-1069-BF5D-00DD011186B7": "document/office/wordpro",  # "Lotus WordPro"
@@ -286,7 +296,6 @@ sl_patterns = [
     ['jpg', r'^jpeg image data'],
     ['png', r'^png image data'],
     ['installer/windows', r'(Installation Database|Windows Installer)'],
-    ['office/passwordprotected', r'(Security: 1|CDFV2 Encrypted)'],
     ['office/excel', r'Microsoft.*Excel'],
     ['office/powerpoint', r'Microsoft.*PowerPoint'],
     ['office/word', r'Microsoft.*Word'],
@@ -312,6 +321,7 @@ sl_patterns = [
     ['sff', r'Frame Format'],
     ['shortcut/windows', r'^MS Windows shortcut'],
     ['email', r'Mime entity text'],
+    ['sysmon', r'MS Windows Vista Event Log'],
 ]
 
 sl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in sl_patterns]
@@ -367,7 +377,8 @@ tl_patterns = [
     ['archive',
      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'],
-    ['meta', '^MS Windows shortcut'],
+    ['meta', r'^MS Windows shortcut'],
+    ['metadata', r'MS Windows Vista Event Log'],
     ['unknown', r'.*'],
 ]
 
@@ -378,6 +389,7 @@ trusted_mimes = {
     'text/calendar': 'text/calendar',
     'image/svg+xml': 'image/svg',
     'application/x-mach-binary': 'executable/mach-o',
+    'application/vnd.ms-outlook': 'document/office/email'
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
@@ -427,13 +439,13 @@ def ident(buf, length: int, path) -> Dict:
         if file_type:
             with magic_lock:
                 labels = magic.magic_file(file_type, path).split(b'\n')
-                labels = [label[2:] if label.startswith(b'- ') else label for label in labels]
+                labels = [label[2:].strip() if label.startswith(b'- ') else label.strip() for label in labels]
 
         mimes = []
         if mime_type:
             with magic_lock:
                 mimes = magic.magic_file(mime_type, path).split(b'\n')
-                mimes = [mime[2:] if mime.startswith(b'- ') else mime for mime in mimes]
+                mimes = [mime[2:].strip() if mime.startswith(b'- ') else mime.strip() for mime in mimes]
 
         # For user feedback set the mime and magic meta data to always be the primary
         # libmagic responses
@@ -766,6 +778,17 @@ def fileinfo(path: str) -> Dict:
         lang, _ = guess_language(path)
         if lang in ["code/javascript", "code/vbs"]:
             data['type'] = 'code/hta'
+
+    if data['type'] in ['document/office/word', 'document/office/excel',
+                        'document/office/powerpoint', 'document/office/unknown']:
+        try:
+            msoffcrypto_obj = msoffcrypto.OfficeFile(open(path, "rb"))
+            if msoffcrypto_obj and msoffcrypto_obj.is_encrypted():
+                data['type'] = 'document/office/passwordprotected'
+        except Exception:
+            # If msoffcrypto can't handle the file to confirm that it is/isn't password protected,
+            # then it's not meant to be. Moving on!
+            pass
 
     if not recognized.get(data['type'], False) and not cart_metadata_set:
         data['type'] = 'unknown'

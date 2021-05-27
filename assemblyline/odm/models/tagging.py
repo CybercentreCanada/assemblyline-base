@@ -62,6 +62,12 @@ class Tagging(odm.Model):
             dynamic_classes = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             regkeys = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
+        @odm.model(index=True, store=False)
+        class DynamicOperatingSystem(odm.Model):
+            platform = odm.Optional(odm.List(odm.Platform(copyto="__text__")))
+            version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            processor = odm.Optional(odm.List(odm.Processor(copyto="__text__")))
+
         autorun_location = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         dos_device = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         mutex = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -70,6 +76,7 @@ class Tagging(odm.Model):
         signature = odm.Optional(odm.Compound(DynamicSignature))
         ssdeep = odm.Optional(odm.Compound(DynamicSSDeep))
         window = odm.Optional(odm.Compound(DynamicWindow))
+        operating_system = odm.Optional(odm.Compound(DynamicOperatingSystem))
 
     @odm.model(index=True, store=False)
     class Info(odm.Model):
@@ -86,12 +93,6 @@ class Tagging(odm.Model):
         class FileName(odm.Model):
             anomaly = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             extracted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-        @odm.model(index=True, store=False)
-        class FileRule(odm.Model):
-            suricata = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            tagcheck = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            yara = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         @odm.model(index=True, store=False)
         class FileStrings(odm.Model):
@@ -121,6 +122,11 @@ class Tagging(odm.Model):
             provides_component = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             sdk = odm.Optional(odm.Compound(FileAPKSDK))
             used_library = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
+        class FileJAR(odm.Model):
+            main_class = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            main_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         @odm.model(index=True, store=False)
         class FileIMG(odm.Model):
@@ -325,9 +331,10 @@ class Tagging(odm.Model):
         lib = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         name = odm.Optional(odm.Compound(FileName))
         path = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-        rule = odm.Optional(odm.Compound(FileRule))
+        rule = odm.Optional(odm.Mapping(odm.List(odm.Keyword(copyto="__text__"))))
         string = odm.Optional(odm.Compound(FileStrings))
         apk = odm.Optional(odm.Compound(FileAPK))
+        jar = odm.Optional(odm.Compound(FileJAR))
         img = odm.Optional(odm.Compound(FileIMG))
         ole = odm.Optional(odm.Compound(FileOLE))
         pe = odm.Optional(odm.Compound(FilePE))

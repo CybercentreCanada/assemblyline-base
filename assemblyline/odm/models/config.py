@@ -166,6 +166,9 @@ class OAuthProvider(odm.Model):
     auto_sync: str = odm.Boolean(default=False)
     auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[])
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
+    uid_randomize: str = odm.Boolean(default=False)
+    uid_randomize_digits: str = odm.Integer(default=0)
+    uid_randomize_delimiter: str = odm.Keyword(default="-")
     uid_regex: str = odm.Optional(odm.Keyword())
     uid_format: str = odm.Optional(odm.Keyword())
     client_id: str = odm.Optional(odm.Keyword())
@@ -180,7 +183,7 @@ class OAuthProvider(odm.Model):
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
     jwks_uri: str = odm.Optional(odm.Keyword())
     uid_field: str = odm.Optional(odm.Keyword())
-    user_get: str = odm.Keyword()
+    user_get: str = odm.Optional(odm.Keyword())
     user_groups: str = odm.Optional(odm.Keyword())
     user_groups_data_field: str = odm.Optional(odm.Keyword())
     user_groups_name_field: str = odm.Optional(odm.Keyword())
@@ -188,53 +191,35 @@ class OAuthProvider(odm.Model):
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
-    "auto_create": True,
-    "auto_sync": False,
-    "auto_properties": [],
+    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
+    "api_base_url": 'https://login.microsoft.com/common/',
+    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
     "client_id": None,
     "client_secret": None,
-    "request_token_url": None,
-    "request_token_params": None,
-    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
-    "access_token_params": None,
-    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
-    "authorize_params": None,
-    "api_base_url": 'https://login.microsoft.com/common/',
     "client_kwargs": {"scope": "openid email profile"},
+    "jwks_uri": "https://login.microsoftonline.com/common/discovery/v2.0/keys",
     "user_get": "openid/userinfo"
 }
 
 DEFAULT_OAUTH_PROVIDER_GOOGLE = {
-    "auto_create": True,
-    "auto_sync": False,
-    "auto_properties": [],
+    "access_token_url": 'https://oauth2.googleapis.com/token',
+    "api_base_url": 'https://openidconnect.googleapis.com/',
+    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
     "client_id": None,
     "client_secret": None,
-    "request_token_url": None,
-    "request_token_params": None,
-    "access_token_url": 'https://oauth2.googleapis.com/token',
-    "access_token_params": None,
-    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
-    "authorize_params": None,
-    "api_base_url": 'https://openidconnect.googleapis.com/',
     "client_kwargs": {"scope": "openid email profile"},
+    "jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
     "user_get": "v1/userinfo"
 }
 
 DEFAULT_OAUTH_PROVIDER_AUTH_ZERO = {
-    "auto_create": True,
-    "auto_sync": False,
-    "auto_properties": [],
+    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
+    "api_base_url": 'https://{TENANT}.auth0.com/',
+    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
     "client_id": None,
     "client_secret": None,
-    "request_token_url": None,
-    "request_token_params": None,
-    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
-    "access_token_params": None,
-    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
-    "authorize_params": None,
-    "api_base_url": 'https://{TENANT}.auth0.com/',
     "client_kwargs": {"scope": "openid email profile"},
+    "jwks_uri": "https://{TENANT}.auth0.com/.well-known/jwks.json",
     "user_get": "userinfo"
 }
 
@@ -263,6 +248,7 @@ DEFAULT_OAUTH = {
 class Auth(odm.Model):
     allow_2fa: bool = odm.Boolean()
     allow_apikeys: bool = odm.Boolean()
+    allow_extended_apikeys: bool = odm.Boolean()
     allow_security_tokens: bool = odm.Boolean()
     internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
     ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP)
@@ -272,6 +258,7 @@ class Auth(odm.Model):
 DEFAULT_AUTH = {
     "allow_2fa": True,
     "allow_apikeys": True,
+    "allow_extended_apikeys": True,
     "allow_security_tokens": True,
     "internal": DEFAULT_INTERNAL,
     "ldap": DEFAULT_LDAP,
@@ -291,7 +278,7 @@ class Alerter(odm.Model):
 
 
 DEFAULT_ALERTER = {
-    "alert_ttl": 0,
+    "alert_ttl": 90,
     "constant_alert_fields": ["alert_id", "file", "ts"],
     "default_group_field": "file.sha256",
     "delay": 300,
@@ -505,6 +492,8 @@ class Scaler(odm.Model):
     # only available for docker hosts, not kubernetes
     cpu_overallocation: float = odm.Float(default=1)
     memory_overallocation: float = odm.Float(default=1)
+    # Additional labels to be applied to deployments in kubernetes('=' delimited)
+    additional_labels: List[str] = odm.Optional(odm.List(odm.Text()))
 
 
 DEFAULT_SCALER = {
@@ -514,7 +503,7 @@ DEFAULT_SCALER = {
         'backlog': 100,
         'min_instances': 0,
         'environment': [
-            {'name': 'SERVICE_API_HOST', 'value': 'http://al_service_server:5003'},
+            {'name': 'SERVICE_API_HOST', 'value': 'http://service-server:5003'},
             {'name': 'AL_SERVICE_TASK_LIMIT', 'value': 'inf'},
         ],
     }
@@ -552,7 +541,7 @@ class ILMParams(odm.Model):
 
 
 DEFAULT_ILM_PARAMS = {
-    "warm": 1,
+    "warm": 5,
     "cold": 15,
     "delete": 30,
     "unit":  "d"
@@ -582,12 +571,14 @@ class ILM(odm.Model):
     enabled = odm.Boolean()
     days_until_archive = odm.Integer()
     indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES)
+    update_archive = odm.Boolean()
 
 
 DEFAULT_ILM = {
-    "days_until_archive": 5,
-    "enabled": True,
-    "indexes": DEFAULT_ILM_INDEXES
+    "days_until_archive": 15,
+    "enabled": False,
+    "indexes": DEFAULT_ILM_INDEXES,
+    "update_archive": False
 }
 
 
@@ -653,6 +644,7 @@ class Logging(odm.Model):
     log_to_syslog: bool = odm.Boolean()
     # if yes, what is the syslog server hostname/ip?
     syslog_host: str = odm.Keyword()
+    syslog_port: int = odm.Integer()
 
     # How often should counters log their values (seconds)
     export_interval: int = odm.Integer()
@@ -673,6 +665,7 @@ DEFAULT_LOGGING = {
     "log_to_file": False,
     "log_to_syslog": False,
     "syslog_host": "localhost",
+    "syslog_port": 514,
     "export_interval": 5,
     "heartbeat_file": "/tmp/heartbeat"
 }
@@ -712,6 +705,13 @@ class Services(odm.Model):
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
     # Default update channel to be used for new services
     preferred_update_channel: str = odm.Keyword()
+    # Allow container registries with self signed certs for service updates
+    allow_insecure_registry: bool = odm.Boolean()
+    # How much CPU to reserve for services, at 1 a service's full cpu request will be reserved for them.
+    # At 0 (only for very small appliances/dev boxes) the service's cpu will be limited
+    # but no cpu will be reserved allowing for more flexible scheduling of containers.
+    # Docker doesn't have the concept of cpu reservation only limits.
+    cpu_reservation: float = odm.Float()
 
 
 DEFAULT_SERVICES = {
@@ -720,7 +720,9 @@ DEFAULT_SERVICES = {
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
     "image_variables": {},
-    "preferred_update_channel": "stable"
+    "preferred_update_channel": "stable",
+    "allow_insecure_registry": False,
+    "cpu_reservation": 0.25
 }
 
 
@@ -772,12 +774,18 @@ DEFAULT_STATISTICS = {
 # This is the model definition for the logging block
 @odm.model(index=False, store=False)
 class UI(odm.Model):
+    # Allow user to tell in advance the system that a file is malicious
+    allow_malicious_hinting: bool = odm.Boolean()
     # Allow to user to download raw files
     allow_raw_downloads: bool = odm.Boolean()
     # Allow file submissions via url
     allow_url_submissions: bool = odm.Boolean()
     # Should API calls be audited and saved to a separate log file?
     audit: bool = odm.Boolean()
+    # Banner message display on the main page (format: {<language_code>: message})
+    banner: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
+    # Banner message display on the main page (format: {<language_code>: message})
+    banner_level: str = odm.Enum(values=["info", "warning", "success", "error"])
     # Turn on debugging
     debug: bool = odm.Boolean()
     # Which encoding will be used
@@ -806,8 +814,6 @@ class UI(odm.Model):
     tos_lockout: bool = odm.Boolean()
     # List of admins to notify when a user gets locked out
     tos_lockout_notify: bool = odm.Optional(odm.List(odm.Keyword()))
-    # UI 4 path
-    ui4_path: str = odm.Optional(odm.Keyword())
     # Headers that will be used by the url_download method
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
     # Proxy that will be used by the url_download method
@@ -819,9 +825,12 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
+    "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
     "allow_url_submissions": True,
     "audit": True,
+    "banner": None,
+    "banner_level": 'info',
     "debug": False,
     "download_encoding": "cart",
     "email": None,
@@ -836,7 +845,6 @@ DEFAULT_UI = {
     "tos": None,
     "tos_lockout": False,
     "tos_lockout_notify": None,
-    "ui4_path": None,
     "url_submission_headers": {},
     "url_submission_proxies": {},
     "validate_session_ip": True,
@@ -892,6 +900,8 @@ class Submission(odm.Model):
     # Number of days submissions will remain in the system by default
     dtl: int = odm.Integer()
 
+    # Maximum number of days submissions will remain in the system
+    max_dtl: int = odm.Integer()
     # Maximum files extraction depth
     max_extraction_depth: int = odm.Integer()
     # Maximum size for files submitted in the system
@@ -906,7 +916,8 @@ class Submission(odm.Model):
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
-    'dtl': 0,
+    'dtl': 30,
+    'max_dtl': 0,
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,

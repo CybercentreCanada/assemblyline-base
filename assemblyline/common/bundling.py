@@ -2,16 +2,17 @@
 import json
 import logging
 import os
+import shutil
 import subprocess
+import tempfile
 import time
 
-import shutil
 from copy import copy
-
-from assemblyline.datastore.exceptions import MultiKeyError
+from cart import pack_stream, unpack_stream, is_cart
 
 from assemblyline.common import forge
 from assemblyline.common.uid import get_random_id
+from assemblyline.datastore.exceptions import MultiKeyError
 from assemblyline.filestore import FileStoreException
 
 config = forge.get_config()
@@ -19,6 +20,7 @@ Classification = forge.get_classification()
 MAX_RETRY = 10
 WORK_DIR = "/tmp/bundling"
 BUNDLE_MAGIC = b'\x1f\x8b\x08'
+BUNDLE_TYPE = "archive/bundle/al"
 
 log = logging.getLogger('assemblyline.bundling')
 
@@ -149,13 +151,14 @@ def create_bundle(sid, working_dir=WORK_DIR):
             if submission is None:
                 raise SubmissionNotFound("Can't find submission %s, skipping." % sid)
             else:
-                target_file = os.path.join(working_dir, f"{temp_bundle_file}.tgz")
+                target_file = os.path.join(working_dir, f"{temp_bundle_file}.cart")
+                tgz_file = os.path.join(working_dir, f"{temp_bundle_file}.tgz")
 
                 try:
                     os.makedirs(current_working_dir)
-                except Exception as e:
-                    if isinstance(PermissionError, e):
-                        raise
+                except PermissionError:
+                    raise
+                except Exception:
                     pass
 
                 # Create file information data
@@ -191,7 +194,11 @@ def create_bundle(sid, working_dir=WORK_DIR):
                             pass
 
                 # Create the bundle
-                subprocess.check_call("tar czf %s *" % target_file, shell=True, cwd=current_working_dir)
+                subprocess.check_call("tar czf %s *" % tgz_file, shell=True, cwd=current_working_dir)
+
+                with open(target_file, 'wb') as oh:
+                    with open(tgz_file, 'rb') as ih:
+                        pack_stream(ih, oh, {'al': {"type": BUNDLE_TYPE}, 'name': f"{sid}.tgz"})
 
                 return target_file
 
@@ -204,7 +211,7 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
 # noinspection PyBroadException,PyProtectedMember
 def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False):
-    with forge.get_datastore() as datastore:
+    with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
         try:
@@ -212,9 +219,25 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
         except Exception:
             pass
 
+        with open(path, 'rb') as original_file:
+            if is_cart(original_file.read(256)):
+                original_file.seek(0)
+
+                extracted_fd, extracted_path = tempfile.mkstemp()
+                extracted_file = os.fdopen(extracted_fd, 'wb')
+
+                try:
+                    hdr, _ = unpack_stream(original_file, extracted_file)
+                    if hdr.get('al', {}).get('type', 'unknown') != BUNDLE_TYPE:
+                        raise BundlingException(f"Not a valid CaRTed bundle, should be of type: {BUNDLE_TYPE}")
+                finally:
+                    extracted_file.close()
+            else:
+                extracted_path = path
+
         # Extract  the bundle
         try:
-            subprocess.check_call(["tar", "-zxf", path, "-C", current_working_dir])
+            subprocess.check_call(["tar", "-zxf", extracted_path, "-C", current_working_dir])
         except subprocess.CalledProcessError:
             raise BundlingException("Bundle decompression failed. Not a valid bundle...")
 
@@ -275,8 +298,13 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
             for ekey, err in errors['errors'].items():
                 datastore.error.save(ekey, err)
 
+            return submission
         finally:
-            # Perform working dir cleanup
+            try:
+                os.remove(extracted_path)
+            except Exception:
+                pass
+
             try:
                 os.remove(path)
             except Exception:

@@ -1,7 +1,6 @@
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.caching import generate_conf_key
-from assemblyline.odm.models.heuristic import ATTACK_ID_LIST
 from assemblyline.odm.models.tagging import Tagging
 
 
@@ -11,7 +10,7 @@ constants = forge.get_constants()
 
 @odm.model(index=True, store=False)
 class Attack(odm.Model):
-    attack_id = odm.Enum(values=ATTACK_ID_LIST, copyto="__text__")  # Attack matrix ID
+    attack_id = odm.Keyword(copyto="__text__")  # Attack matrix ID
     pattern = odm.Keyword(copyto="__text__")                        # Attack matrix Pattern Name
     categories = odm.List(odm.Keyword())                            # Attack matrix Categories
 
