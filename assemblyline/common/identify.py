@@ -120,6 +120,8 @@ STRONG_INDICATORS = {
                    rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type)'),
         # Match one of the common Classes
         re.compile(rb'(-memberDefinition|-Name|-namespace|-passthru)'),
+        # Match one of the common Methods
+        re.compile(rb'(\.Get(String|Field|Type)\()')
     ]
 }
 STRONG_SCORE = 15
