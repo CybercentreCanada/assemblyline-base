@@ -99,6 +99,17 @@ def es_connection(request):
     return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
+def _test_exists(c: Collection):
+    # Test GET
+    assert c.exists('test1')
+    assert c.exists('test2')
+    assert c.exists('test3')
+    assert c.exists('test4')
+    assert c.exists('string')
+    assert c.exists('list')
+    assert c.exists('int')
+
+
 def _test_get(c: Collection):
     # Test GET
     assert test_map.get('test1') == c.get('test1')
@@ -321,6 +332,7 @@ def _test_stats(c: Collection):
 
 
 TEST_FUNCTIONS = [
+    (_test_exists, "exists"),
     (_test_get, "get"),
     (_test_require, "require"),
     (_test_get_if_exists, "get_if_exists"),
