@@ -28,6 +28,8 @@ STRONG_INDICATORS = {
         re.compile(rb'(^|\n)(?:Private)?[ \t]*Sub[ \t]+\w+\(*'),
         re.compile(rb'(^|\n)End Module'),
         re.compile(rb'(^|\n)ExecuteGlobal'),
+        re.compile(rb'(^|\n)REM '),
+        re.compile(rb'(ubound|lbound)\('),
     ],
     'code/javascript': [
         re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
