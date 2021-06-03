@@ -91,7 +91,8 @@ setup(
         'test': [
             'pytest',
             'pytest-cov',
-            'retrying'
+            'retrying',
+            'pytest-mock',
         ]
     },
     package_data={
