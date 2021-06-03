@@ -32,6 +32,7 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
+from assemblyline.odm.models.whitelist import Whitelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
 
@@ -60,6 +61,7 @@ class AssemblylineDatastore(object):
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_settings', UserSettings)
+        self.ds.register('whitelist', Whitelist)
         self.ds.register('workflow', Workflow)
 
     def __enter__(self):
@@ -159,6 +161,10 @@ class AssemblylineDatastore(object):
     @property
     def vm(self) -> Collection:
         return self.ds.vm
+
+    @property
+    def whitelist(self) -> Collection:
+        return self.ds.whitelist
 
     @property
     def workflow(self) -> Collection:

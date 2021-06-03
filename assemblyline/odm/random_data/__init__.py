@@ -16,8 +16,9 @@ from assemblyline.odm.models.service import Service, UpdateSource
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
+from assemblyline.odm.models.whitelist import Whitelist
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.odm.randomizer import SERVICES, random_model_obj, get_random_phrase, get_random_uri, get_random_word
+from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_model_obj, get_random_phrase, get_random_uri, get_random_word
 from assemblyline.run.suricata_importer import SuricataImporter
 from assemblyline.run.yara_importer import YaraImporter
 from assemblyline.datastore.helper import AssemblylineDatastore
@@ -306,6 +307,16 @@ def create_users(ds, log=None):
     ds.user.commit()
 
 
+def create_whitelists(ds, log=None):
+    for _ in range(20):
+        w_id = get_random_hash(64)
+        ds.whitelist.save(w_id, random_model_obj(Whitelist))
+        if log:
+            log.info(f'\t{w_id}')
+
+    ds.whitelist.commit()
+
+
 def create_workflows(ds, log=None):
     for _ in range(20):
         w_id = get_random_id()
@@ -369,6 +380,10 @@ def wipe_users(ds):
     ds.user_settings.wipe()
     ds.user_avatar.wipe()
     ds.user_favorites.wipe()
+
+
+def wipe_whitelist(ds):
+    ds.whitelist.wipe()
 
 
 def wipe_workflows(ds):

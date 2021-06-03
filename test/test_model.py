@@ -21,6 +21,7 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.vm import VM
+from assemblyline.odm.models.whitelist import Whitelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj
 
@@ -184,6 +185,13 @@ def test_vm_model():
         random_model_obj(VM).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'VM' object and validate it.")
+
+
+def test_whitelist_model():
+    try:
+        random_model_obj(Whitelist).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'Whitelist' object and validate it.")
 
 
 def test_workflow_model():
