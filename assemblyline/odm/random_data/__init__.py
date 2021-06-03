@@ -18,7 +18,8 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.whitelist import Whitelist
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_model_obj, get_random_phrase, get_random_uri, get_random_word
+from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_model_obj, get_random_phrase, \
+    get_random_uri, get_random_word
 from assemblyline.run.suricata_importer import SuricataImporter
 from assemblyline.run.yara_importer import YaraImporter
 from assemblyline.datastore.helper import AssemblylineDatastore
@@ -220,7 +221,7 @@ def create_submission(ds, fs, log=None):
 
     if log:
         log.info(f"\t{s.sid}")
-        log.info(f"\tGenerating files for submission...")
+        log.info("\tGenerating files for submission...")
     for _ in range(random.randint(4, 8)):
         f = random_model_obj(File)
         byte_str = get_random_phrase(wmin=8, wmax=20).encode()
@@ -238,13 +239,13 @@ def create_submission(ds, fs, log=None):
         first_level_files.append(f_list.pop())
 
     if log:
-        log.info(f"\t\tGenerating results and errors for top level files...")
+        log.info("\t\tGenerating results and errors for top level files...")
     for f in first_level_files:
         r_list.extend(_create_results_for_file(ds, f, possible_childs=f_list, log=log))
         e_list.extend(_create_errors_for_file(ds, f, [x.split('.')[1] for x in r_list if x.startswith(f)], log=log))
 
     if log:
-        log.info(f"\t\tGenerating results and errors for children files...")
+        log.info("\t\tGenerating results and errors for children files...")
     for f in f_list:
         r_list.extend(_create_results_for_file(ds, f, log=log))
         e_list.extend(_create_errors_for_file(ds, f, [x.split('.')[1] for x in r_list if x.startswith(f)], log=log))
