@@ -2,7 +2,7 @@ import sys
 
 from assemblyline.common import forge
 from assemblyline.odm.random_data import create_heuristics, create_users, create_services, create_signatures, \
-    create_submission, create_alerts
+    create_submission, create_alerts, create_whitelists
 
 
 class PrintLogger(object):
@@ -19,7 +19,7 @@ class PrintLogger(object):
         print(f"{self.indent}[E] {msg}")
 
 
-def create_basic_data(log=None, ds=None, svc=True, sigs=True, reset=False):
+def create_basic_data(log=None, ds=None, svc=True, sigs=True, whitelist=True, reset=False):
     ds = ds or forge.get_datastore()
 
     if reset:
@@ -35,6 +35,10 @@ def create_basic_data(log=None, ds=None, svc=True, sigs=True, reset=False):
     if svc:
         log.info("\nCreating services...")
         create_services(ds, log=log)
+
+    if whitelist:
+        log.info("\nCreating random whitelist...")
+        create_whitelists(ds, log=log)
 
     if sigs:
         log.info("\nImporting test signatures...")
@@ -69,7 +73,7 @@ if __name__ == "__main__":
     datastore = forge.get_datastore()
     logger = PrintLogger()
     create_basic_data(log=logger, ds=datastore, svc="nosvc" not in sys.argv, sigs="nosigs" not in sys.argv,
-                      reset="reset" in sys.argv)
+                      whitelist="nowl" not in sys.argv, reset="reset" in sys.argv)
     if "full" in sys.argv:
         create_extra_data(log=logger, ds=datastore)
 
