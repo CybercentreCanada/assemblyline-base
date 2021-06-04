@@ -310,10 +310,11 @@ def create_users(ds, log=None):
 
 def create_whitelists(ds, log=None):
     for _ in range(20):
-        w_id = "0" + get_random_hash(63)
-        ds.whitelist.save(w_id, random_model_obj(Whitelist))
+        wl = random_model_obj(Whitelist)
+        wl.fileinfo.sha256 = "0" + get_random_hash(63)
+        ds.whitelist.save(wl.fileinfo.sha256, wl)
         if log:
-            log.info(f'\t{w_id}')
+            log.info(f'\t{wl.fileinfo.sha256}')
 
     ds.whitelist.commit()
 
