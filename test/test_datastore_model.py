@@ -27,8 +27,6 @@ from assemblyline.odm.models.whitelist import Whitelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
 
-# from .conftest import skip_or_fail
-
 
 class SetupException(Exception):
     pass
