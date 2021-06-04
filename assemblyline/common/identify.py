@@ -246,6 +246,7 @@ tag_to_extension = {
     'document/office/word': '.doc',
     'document/office/wordperfect': 'wp',
     'document/office/wordpro': 'lwp',
+    'document/office/onenote': '.one',
     'document/pdf': '.pdf',
     'document/email': '.eml',
     'executable/windows/pe32': '.exe',
