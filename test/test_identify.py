@@ -311,6 +311,7 @@ def test_constants():
         (b".GetString(", ["code/ps1"]),
         (b".GetField(", ["code/ps1"]),
         (b".GetType(", ["code/ps1"]),
+        (b".GetMethod(", ["code/ps1"]),
     ]
 )
 def test_strong_indicators(code_snippet, code_types):
@@ -684,6 +685,7 @@ def test_tl_patterns(tl, string):
         ('image/svg+xml', 'image/svg'),
         ('application/x-mach-binary', 'executable/mach-o'),
         ('application/vnd.ms-outlook', 'document/office/email'),
+        ('application/x-iso9660-image', 'archive/iso'),
     ]
 )
 def test_trusted_mimes(mime, translated_type):
