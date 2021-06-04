@@ -123,7 +123,7 @@ STRONG_INDICATORS = {
         # Match one of the common Classes
         re.compile(rb'(-memberDefinition|-Name|-namespace|-passthru)'),
         # Match one of the common Methods
-        re.compile(rb'(\.Get(String|Field|Type)\()')
+        re.compile(rb'(\.Get(String|Field|Type|Method)\()')
     ]
 }
 STRONG_SCORE = 15
@@ -393,7 +393,8 @@ trusted_mimes = {
     'text/calendar': 'text/calendar',
     'image/svg+xml': 'image/svg',
     'application/x-mach-binary': 'executable/mach-o',
-    'application/vnd.ms-outlook': 'document/office/email'
+    'application/vnd.ms-outlook': 'document/office/email',
+    'application/x-iso9660-image': 'archive/iso',
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
