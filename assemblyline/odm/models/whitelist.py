@@ -22,6 +22,7 @@ class Source(odm.Model):
 @odm.model(index=True, store=True)
 class Whitelist(odm.Model):
     added = odm.Date(default="NOW")                       # Date when the hash was added
+    classification = odm.Classification()                 # Classification of the hash
     fileinfo = odm.Compound(FileInfo)                     # Informations about the file
     updated = odm.Date(default="NOW")                     # Last date when sources were added to the hash
     sources = odm.List(odm.Compound(Source), default=[])  # List of reasons why it is whitelisted
