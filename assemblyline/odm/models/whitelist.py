@@ -26,3 +26,9 @@ class Whitelist(odm.Model):
     fileinfo = odm.Compound(FileInfo)                     # Informations about the file
     updated = odm.Date(default="NOW")                     # Last date when sources were added to the hash
     sources = odm.List(odm.Compound(Source), default=[])  # List of reasons why it is whitelisted
+
+
+if __name__ == "__main__":
+    from pprint import pprint
+    from assemblyline.odm.randomizer import random_model_obj
+    pprint(random_model_obj(Whitelist, as_json=True))
