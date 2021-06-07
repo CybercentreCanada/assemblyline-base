@@ -23,7 +23,7 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.vm import VM
-from assemblyline.odm.models.whitelist import Whitelist
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
 
@@ -75,7 +75,7 @@ TEST_DATA = [
     ("user_favorites", random_model_obj(UserFavorites)),
     ("user_settings", random_model_obj(UserSettings)),
     ("vm", random_model_obj(VM)),
-    ("whitelist", random_model_obj(Whitelist)),
+    ("safelist", random_model_obj(Safelist)),
     ("workflow", random_model_obj(Workflow)),
     ("alert_min", random_minimal_obj(Alert)),
     ("cached_file_min", random_minimal_obj(CachedFile)),
@@ -95,7 +95,7 @@ TEST_DATA = [
     ("user_favorites_min", random_minimal_obj(UserFavorites)),
     ("user_settings_min", random_minimal_obj(UserSettings)),
     ("vm_min", random_minimal_obj(VM)),
-    ("whitelist_min", random_minimal_obj(Whitelist)),
+    ("safelist_min", random_minimal_obj(Safelist)),
     ("workflow_min", random_minimal_obj(Workflow))
 ]
 

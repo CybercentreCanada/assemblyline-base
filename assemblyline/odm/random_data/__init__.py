@@ -16,7 +16,7 @@ from assemblyline.odm.models.service import Service, UpdateSource
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
-from assemblyline.odm.models.whitelist import Whitelist
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_model_obj, get_random_phrase, \
     get_random_uri, get_random_word
@@ -308,15 +308,15 @@ def create_users(ds, log=None):
     ds.user.commit()
 
 
-def create_whitelists(ds, log=None):
+def create_safelists(ds, log=None):
     for _ in range(20):
-        wl = random_model_obj(Whitelist)
+        wl = random_model_obj(Safelist)
         wl.fileinfo.sha256 = "0" + get_random_hash(63)
-        ds.whitelist.save(wl.fileinfo.sha256, wl)
+        ds.safelist.save(wl.fileinfo.sha256, wl)
         if log:
             log.info(f'\t{wl.fileinfo.sha256}')
 
-    ds.whitelist.commit()
+    ds.safelist.commit()
 
 
 def create_workflows(ds, log=None):
@@ -384,8 +384,8 @@ def wipe_users(ds):
     ds.user_favorites.wipe()
 
 
-def wipe_whitelist(ds):
-    ds.whitelist.wipe()
+def wipe_safelist(ds):
+    ds.safelist.wipe()
 
 
 def wipe_workflows(ds):
