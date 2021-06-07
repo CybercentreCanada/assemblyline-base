@@ -16,6 +16,8 @@
 >&0     regex/10        \^(Subject|MIME)
 >>0x10 	search/0x100    multipart/related
 >>>0x50	search/0x300	urn:schemas-microsoft-com:office    custom: document/office/mhtml
+# OneNote Files
+0	string	\344R\\{\214\330\247M\256\261Sx\320)\226\323	custom: document/office/onenote
 # VBE files
 0   string
 >&0     regex/20        \^#@~\\^[^=]{6}==     custom: code/vbe
