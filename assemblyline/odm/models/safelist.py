@@ -5,11 +5,11 @@ TYPES = ["user", "external"]
 
 @odm.model(index=True, store=False)
 class FileInfo(odm.Model):
-    md5 = odm.Optional(odm.MD5())                       # MD5 hash of the file
-    sha1 = odm.Optional(odm.SHA1())                     # SHA1 Hash of the file
-    sha256 = odm.SHA256(store=True, copyto="__text__")  # SHA256 Hash of the file
-    size = odm.Optional(odm.Integer())                  # Size of the file
-    type = odm.Optional(odm.Keyword())                  # Type of file
+    md5 = odm.Optional(odm.MD5(store=True, copyto="__text__"))        # MD5 hash of the file
+    sha1 = odm.Optional(odm.SHA1(store=True, copyto="__text__"))      # SHA1 Hash of the file
+    sha256 = odm.Optional(odm.SHA256(store=True, copyto="__text__"))  # SHA256 Hash of the file
+    size = odm.Optional(odm.Integer())                                # Size of the file
+    type = odm.Optional(odm.Keyword())                                # Type of file
 
 
 @odm.model(index=True, store=False)
