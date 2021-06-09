@@ -741,6 +741,7 @@ class AssemblylineDatastore(object):
             "attack_matrix": [],
             "heuristics": {
                 "info": [],
+                "safe": [],
                 "suspicious": [],
                 "malicious": []
             },
@@ -791,7 +792,9 @@ class AssemblylineDatastore(object):
 
                 if section.get('heuristic', False):
                     # Get the heuristics data
-                    if section['heuristic']['score'] < 100:
+                    if section['heuristic']['score'] < 0:
+                        h_type = "safe"
+                    elif section['heuristic']['score'] < 100:
                         h_type = "info"
                     elif section['heuristic']['score'] < 1000:
                         h_type = "suspicious"
