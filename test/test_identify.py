@@ -120,6 +120,7 @@ def test_constants():
         (b"function\tblah\t(\t$b\t)\t{", ["code/php"]),
         (b"function blah($){", []),
         (b"functionblah($b){", []),
+        (b"function blah($b)\n{", ["code/php"]),
         (b"eval(", ["code/javascript", "code/php"]),
         (b"eval (", ["code/javascript", "code/php"]),
         (b"eval\t(", ["code/javascript", "code/php"]),

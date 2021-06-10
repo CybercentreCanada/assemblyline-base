@@ -48,7 +48,7 @@ STRONG_INDICATORS = {
     'code/php': [
         re.compile(rb'(^|\n)<\?php'),
         re.compile(rb'namespace[ \t]+[\w.]+'),
-        re.compile(rb'function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t]*{'),
+        re.compile(rb'function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{'),
         re.compile(rb'\beval[ \t]*\('),
     ],
     'code/c': [
