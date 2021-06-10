@@ -55,8 +55,8 @@ def test_constants():
         # VBS
         (b"On Error Resume Next", ["code/vbs"]),
         (b"\nOn Error Resume Next", ["code/vbs"]),
-        (b"\nOn  Error  Resume  Next", []),  # TODO this is a bug
-        (b"\nOn\tError\tResume\tNext", []),  # TODO this is a bug
+        (b"\nOn  Error  Resume  Next", ["code/vbs"]),
+        (b"\nOn\tError\tResume\tNext", ["code/vbs"]),
         (b"Sub blah", ["code/vbs"]),
         (b"\nSub blah", ["code/vbs"]),
         (b"Private Sub blah", ["code/vbs"]),
@@ -66,12 +66,12 @@ def test_constants():
         (b"\nPrivate\tSub\tblah blah(", ["code/vbs"]),
         (b"End Module", ["code/vbs"]),
         (b"\nEnd Module", ["code/vbs"]),
-        (b"\nEnd\tModule", []),  # TODO This is a bug
+        (b"\nEnd\tModule", ["code/vbs"]),
         (b"ExecuteGlobal", ["code/vbs"]),
         (b"\nExecuteGlobal", ["code/vbs"]),
         (b"REM ", ["code/vbs"]),
         (b"\nREM ", ["code/vbs"]),
-        (b"\nREM\t", []),  # TODO this is a bug
+        (b"\nREM\t", ["code/vbs"]),
         (b"ubound(", ["code/vbs"]),
         (b"lbound(", ["code/vbs"]),
         # JS
@@ -87,7 +87,7 @@ def test_constants():
         (b"blaheval\t(", []),
         (b"new ActiveXObject(", ["code/javascript"]),
         (b"new\tActiveXObject(", ["code/javascript"]),
-        (b"bnew\tActiveXObject(", ["code/javascript"]),  # TODO: This is a bug
+        (b"bnew\tActiveXObject(", ["code/javascript"]),
         (b"xfa.resolveNode", ["code/javascript"]),
         (b"xfa.datasets", ["code/javascript"]),
         (b"xfa.form", ["code/javascript"]),
@@ -106,8 +106,8 @@ def test_constants():
         (b"internal class ", ["code/csharp"]),
         (b"\n\tinternal class ", ["code/csharp"]),
         (b"\n internal class ", ["code/csharp"]),
-        (b"\n internal\tclass ", []),  # TODO this is a bug
-        (b"\n internal\tclass\t", []),  # TODO this is a bug
+        (b"\n internal\tclass ", ["code/csharp"]),
+        (b"\n internal\tclass\t", ["code/csharp"]),
         # PHP
         (b"<?php", ["code/php"]),
         (b"\n<?php", ["code/php"]),
@@ -115,20 +115,23 @@ def test_constants():
         (b"namespace\tblah(", ["code/csharp", "code/php"]),
         (b"function blah($b){", ["code/php"]),
         (b"function blah ($b) {", ["code/php"]),
-        (b"function blah ( $b ) {", []),  # TODO this is a bug
+        (b"function blah ( $b ) {", ["code/php"]),
         (b"function\tblah\t($b)\t{", ["code/php"]),
-        (b"function\tblah\t(\t$b\t)\t{", []),  # TODO this is a bug
+        (b"function\tblah\t(\t$b\t)\t{", ["code/php"]),
         (b"function blah($){", []),
+        (b"functionblah($b){", []),
+        (b"function blah($b)\n{", ["code/php"]),
         (b"eval(", ["code/javascript", "code/php"]),
         (b"eval (", ["code/javascript", "code/php"]),
         (b"eval\t(", ["code/javascript", "code/php"]),
         # C
         (b"static struct", []),
         (b"static struct ", ["code/c"]),
-        (b"\nstatic\tstruct\t", []),  # TODO: this is a bug
+        (b"\nstatic\tstruct\t", ["code/c"]),
         (b"typedef struct", []),
         (b"typedef struct ", ["code/c"]),
-        (b"\ntypedef\tstruct\t", []),  # TODO: this is a bug
+        (b"\ntypedef\tstruct\t", ["code/c"]),
+        (b"\ntypedefstruct\t", []),
         (b"#include\"blah.\"", ["code/c"]),
         (b"#include \"blah.\"", ["code/c"]),
         (b"#include\t\"blah.\"", ["code/c"]),
@@ -136,24 +139,22 @@ def test_constants():
         (b"#include<blah.>", ["code/c"]),
         (b"#include<blah/>", ["code/c"]),
         (b"\n#include<blah/>", ["code/c"]),
-        (b"#include<blah/\"", ["code/c"]),  # TODO this is a bug
-        (b"#include\"blah/>", ["code/c"]),  # TODO this is a bug
-        (b"#include\"blah/>", ["code/c"]),  # TODO this is a bug
-        (b"#include\"blah/>", ["code/c"]),  # TODO this is a bug
+        (b"#include<blah/\"", ["code/c"]),
+        (b"#include\"blah/>", ["code/c"]),
         (b"#ifndef ", ["code/c"]),
         (b"#define ", ["code/c"]),
         (b"#endif ", ["code/c"]),
         (b"#pragma ", ["code/c"]),
-        (b"#pragma\t", []),  # TODO this is a bug
+        (b"#pragma\t", ["code/c"]),
         (b"\n#pragma ", ["code/c"]),
         # Python
         (b"\nif __name__==\"__main__\":", ["code/python"]),
-        (b"\nif\t__name__==\"__main__\":", []),  # TODO This is a bug
+        (b"\nif\t__name__==\"__main__\":", ["code/python"]),
         (b" if __name__ == \"__main__\" :", ["code/python"]),
         (b"\tif __name__\t==\t'__main__'\t:", ["code/python"]),
         (b"\tif __name__\t==\t'__main__'\t:", ["code/python"]),
-        (b"\tif __name__\t==\t'__main__\"\t:", ["code/python"]),  # TODO This is a bug
-        (b"\tif __name__\t==\t\"__main__'\t:", ["code/python"]),  # TODO This is a bug
+        (b"\tif __name__\t==\t'__main__\"\t:", ["code/python"]),
+        (b"\tif __name__\t==\t\"__main__'\t:", ["code/python"]),
         (b"from blah import blah", ["code/python"]),
         (b"from blah import blah as blah", ["code/python"]),
         (b" from blah import blah as", ["code/python"]),
@@ -166,16 +167,16 @@ def test_constants():
         (b"pub struct ", ["code/rust"]),
         (b"priv struct ", ["code/rust"]),
         (b"pub\tenum ", ["code/rust"]),
-        (b"pub\tenum\t", []),  # TODO this is a bug
+        (b"pub\tenum\t", ["code/rust"]),
         (b"\npub\tenum ", ["code/rust"]),
         (b"\npub\timpl ", ["code/rust"]),
         (b"\npub\tconst ", ["code/rust"]),
-        (b"\npubconst ", ["code/rust"]),  # TODO this is a bug
+        (b"\npubconst ", []),
         (b"fn blah(&self ", ["code/rust"]),
         (b"\n fn\tblah(&self ", ["code/rust"]),
         (b"\n\tfn\tblah\t(&self ", ["code/rust"]),
         (b"\n\tfn\tblah (&self ", ["code/rust"]),
-        (b"fnblah(&self ", ["code/rust"]),  # TODO this is a bug
+        (b"fnblah(&self ", []),
         (b"println!", ["code/rust"]),
         (b"panic!", ["code/rust"]),
         (b"(defmacro ", ["code/lisp"]),
@@ -188,38 +189,39 @@ def test_constants():
         (b"\n(defvar ", ["code/lisp"]),
         (b"\n (defvar ", ["code/lisp"]),
         (b"\n\t(defvar ", ["code/lisp"]),
-        (b"\n\t(defvar\t", []),  # TODO this is a bug
+        (b"\n\t(defvar\t", ["code/lisp"]),
         # Java
         (b"public class blah {", ["code/java"]),
+        (b"public class blah{", ["code/java"]),
         (b" public class blah extends blah {", ["code/java"]),
         (b"\n\tpublic\tclass\tblah\textends\tblah\t{", ["code/java"]),
-        (b"\n\tpublic\tclass\tblah\textends\tblah{", []),  # TODO this is a bug
+        (b"\n\tpublic\tclass\tblah\textends\tblah{", ["code/java"]),
         (b"blah(b) throws blah {", ["code/java"]),
-        (b"blah(b) throws blah{", []),  # TODO this is a bug
-        (b"blah() throws blah {", []),  # TODO this is a bug
-        (b"blah(b) throws , {", ["code/java"]),  # TODO this is a bug
-        (b"blah(b) throws blah, {", ["code/java"]),  # TODO this is a bug
+        (b"blah(b) throws blah{", ["code/java"]),
+        (b"blah() throws blah {", ["code/java"]),
+        (b"blah(b) throws , {", []),
+        (b"blah(b) throws blah, {", []),
         (b"\nblah(b) throws blah,blah {", ["code/java"]),
         (b"\nblah(b)\tthrows\tblah\t,\tblah\t{", ["code/java"]),
         # Perl
         (b"my $blah=", ["code/perl"]),
         (b"\n\tmy\t$blah\t=", ["code/perl"]),
         (b"\n my $blah =", ["code/perl"]),
-        (b"\n my$blah =", ["code/perl"]),  # TODO this is a bug
+        (b"\n my$blah =", []),
         (b"\n my $blah blah=", []),
         (b"sub blah{", ["code/perl"]),
         (b"\n sub\tblah\t{", ["code/perl"]),
         (b"\tsub blah {", ["code/perl"]),
-        (b"subblah{", ["code/perl"]),  # TODO this is a bug
+        (b"subblah{", []),
         # Ruby
         (b"require 'blah'", ["code/ruby"]),
         (b"\n require\t'blah'", ["code/ruby"]),
         (b"\n\trequire\t'blah'", ["code/ruby"]),
         (b"require_all 'blah'", ["code/ruby"]),
-        (b"require_all'blah'", ["code/ruby"]),  # TODO this is a bug
+        (b"require_all'blah'", ["code/ruby"]),
         (b"require_all 'blah/blah'", ["code/ruby"]),
         (b"rescue blah =>", ["code/ruby"]),
-        (b"blahrescue blah =>", ["code/ruby"]),  # TODO this is a bug
+        (b"blahrescue blah =>", ["code/ruby"]),
         (b"rescue\tblah\t=>", ["code/ruby"]),
         # Go
         (b"import (", ["code/go"]),
@@ -242,8 +244,8 @@ def test_constants():
         (b".blah {background: blah}", ["code/css"]),
         (b".blah {font: blah}", ["code/css"]),
         (b".blah {text: blah}", ["code/css"]),
-        (b"\n.blah\t{textb}", ["code/css"]),  # TODO: this is a bug
-        (b"}.blah{textb}", ["code/css"]),  # TODO: this is a bug
+        (b"\n.blah\t{textb}", ["code/css"]),
+        (b"}.blah{textb}", ["code/css"]),
         # Markdown
         (b"*`blah`-blah", ["text/markdown"]),
         (b"* `blah` - blah", ["text/markdown"]),
@@ -257,26 +259,25 @@ def test_constants():
         (b"From: ", ["document/email"]),
         (b"\n\nFrom: ", ["document/email"]),
         # Sysmon Events
-        (b"<Events>", ["metadata/sysmon", "metadata/sysmon"]),  # TODO this is a bug
-        (b"<Events", ["metadata/sysmon", "metadata/sysmon"]),  # TODO this is a bug
-        (b"<Events>>>>>", ["metadata/sysmon", "metadata/sysmon"]),  # TODO this is a bug
-        (b"<Event>", ["metadata/sysmon"]),
-        (b"<Event", ["metadata/sysmon"]),  # TODO this is a bug
-        (b"<Event>>>>>", ["metadata/sysmon"]),  # TODO this is a bug
+        (b"<Events>", []),
+        (b"<Events", []),
+        (b"<Events>>>>>", []),
+        (b"<Events>b", ["metadata/sysmon"]),
+        (b"<Event>", []),
+        (b"<Event", []),
+        (b"<Event>>>>>", []),
+        (b"<Event>b", ["metadata/sysmon"]),
         (b"</Event>", ["metadata/sysmon"]),
         (b"</Events>", ["metadata/sysmon"]),
         # XML
         (b"<?xml blah?>", ["code/xml"]),
         (b"\n\t <?xml blah?>", ["code/xml"]),
-        (b"<?xmlblah?>", ["code/xml"]),  # TODO this is a bug
-        # TODO: This regex is flawed
-        # '^\s*<(?P<open>[\w:]+) .+</(?P=open)[^>]+>\s*$'
-        # Should be '^\s*<(?P<open>[\w:]+)>.+<\/(?P=open)>\s*$'
-        (b"<something>blah blah</something>", []),  # TODO this is a bug
-        (b"\n\t <something>blah blah</something>\n\t ", []),  # TODO this is a bug
+        (b"<?xmlblah?>", ["code/xml"]),
+        (b"<something>blah blah</something>", ['code/xml']),
+        (b"\n\t <something>blah blah</something>\n\t ", ['code/xml']),
         (b"<blah xmlns:blah>", ["code/xml"]),
-        (b"<blahxmlns:blah>", ["code/xml"]),  # TODO this is a bug
-        (b"<blah xmlns=blah>", ["code/xml"]),  # TODO this is a bug
+        (b"<blahxmlns:blah>", ["code/xml"]),
+        (b"<blah xmlns=blah>", ["code/xml"]),
         # Powershell
         (b"Get-ExecutionPolicy", ["code/ps1"]),
         (b"\nGet-ExecutionPolicy", ["code/ps1"]),
@@ -307,7 +308,6 @@ def test_constants():
         (b"-Name", ["code/ps1"]),
         (b"-namespace", ["code/ps1"]),
         (b"-passthru", ["code/ps1"]),
-        # TODO remove redundant parentheses on '(\.Get(String|Field|Type)\()'
         (b".GetString(", ["code/ps1"]),
         (b".GetField(", ["code/ps1"]),
         (b".GetType(", ["code/ps1"]),
@@ -358,11 +358,11 @@ def test_strong_indicators(code_snippet, code_types):
         (b"Loop ", ["code/vbs"]),
         (b"Attribute ", ["code/vbs"]),
         (b"End Sub", ["code/vbs"]),
-        (b"End Sub ", ["code/vbs"]),  # TODO this is a bug
+        (b"End Sub ", ["code/vbs"]),
         (b"Function ", ["code/vbs"]),
-        (b"Function\t", []),  # TODO this is a bug, all strings ending with a single space should be converted to handle tabs
+        (b"Function\t", ["code/vbs"]),
         (b"End Function ", ["code/vbs"]),
-        (b"End Function", []),  # TODO this is a bug
+        (b"End Function", []),
         (b"CreateObject", ["code/vbs"]),
         (b"WScript", ["code/vbs"]),
         (b"window_onload", ["code/vbs"]),
@@ -372,7 +372,7 @@ def test_strong_indicators(code_snippet, code_types):
         # C#
         (b"protected override", ["code/csharp"]),
         (b"protected\toverride", ["code/csharp"]),
-        (b"protectedoverride", ["code/csharp"]),  # TODO this is a bug
+        (b"protectedoverride", []),
         (b"override", ["code/csharp"]),
         (b"\noverride", ["code/csharp"]),
         # SQL
@@ -382,17 +382,17 @@ def test_strong_indicators(code_snippet, code_types):
         (b"select ", ["code/sql"]),
         (b"returns ", ["code/sql"]),
         (b"declare ", ["code/sql"]),
-        (b"declare\t", []),  # TODO this is a bug
+        (b"declare\t", ["code/sql"]),
         # PHP
         (b"$this->", ["code/php"]),
         # C
         (b"const char blah;", ["code/c"]),
-        (b"const\tchar\tblah;", []),  # TODO this is a bug
+        (b"const\tchar\tblah;", ["code/c"]),
         (b"extern ", ["code/c"]),
         (b"uint8_t ", ["code/c"]),
         (b"uint16_t ", ["code/c"]),
         (b"uint32_t ", ["code/c"]),
-        (b"uint32_t\t", []),  # TODO this is a bug
+        (b"uint32_t\t", ["code/c"]),
         # Python
         (b"try:", ["code/python"]),
         (b"except:", ["code/python"]),
@@ -536,6 +536,7 @@ def test_guids(guid, general_result):
         ('java/jar', '.jar'),
         ('silverlight/xap', '.xap'),
         ('meta/shortcut/windows', '.lnk'),
+        ('document/office/onenote', '.one'),
     ]
 )
 def test_tag_to_extension(tag, ext):
@@ -781,9 +782,8 @@ def test_trusted_mimes(mime, translated_type):
         ('MS Windows Vista Event Log', 'sysmon'),
     ]
 )
-# TODO make this method private
 def test_subtype(label, expected):
-    assert identify.subtype(label) == expected
+    assert identify._subtype(label) == expected
 
 
 @pytest.mark.parametrize("buf, expected_result, mocked_magic",
@@ -855,14 +855,13 @@ def test_differentiate(lang, scores_map, expected):
         (b"really_big", ("unknown", 0)),
     ]
 )
-# TODO make this method private
 def test_guess_language(file_contents, expected_return):
     path = "/tmp/sample.txt"
     with open(path, "wb") as f:
         if file_contents == b"really_big":
             file_contents *= 13200
         f.write(file_contents)
-    assert identify.guess_language(path) == expected_return
+    assert identify._guess_language(path) == expected_return
     remove(path)
 
 
@@ -889,7 +888,6 @@ def test_guess_language(file_contents, expected_return):
         (b"", None, ["docProps/blah", "[Content_Types].xml", "ppt/blah"], "document/office/powerpoint"),
     ]
 )
-# TODO make this method private
 def test_zip_ident(file_contents, fallback, namelist, expected_return, dummy_zipfile_class, mocker):
     mocker.patch("zipfile.ZipFile", return_value=dummy_zipfile_class(namelist))
     path = "/tmp/sample.txt"
@@ -906,7 +904,6 @@ def test_zip_ident(file_contents, fallback, namelist, expected_return, dummy_zip
         (None, None, "corrupted/cart"),
     ]
 )
-# TODO make this method private
 def test_cart_ident(file_contents, metadata, expected_return):
     from assemblyline.common.codec import encode_file
     if file_contents is not None:
@@ -925,12 +922,10 @@ def test_cart_ident(file_contents, metadata, expected_return):
 @pytest.mark.parametrize("file_contents, expected_return",
     [
         (b"", "executable/windows/dos"),
-        # TODO: there is big bug here, if file_header[0:2] != "MZ":... file_header[0:2] is in bytes so a ValueError will always be raised
-        (b"MZblahblahblahblahblahblahblahblahblahblahblahblah", "executable/windows/dos"),
+        (b"MZ10010101010101010101010101010101010101010101010", "executable/windows/dos"),
         ("MZblahblahblahblahblahblahblahblahblahblahblahblah", "executable/windows/dos"),
     ]
 )
-# TODO make this method private
 def test_dos_ident(file_contents, expected_return):
     path = "/tmp/sample.txt"
     if type(file_contents) == str:
@@ -947,9 +942,8 @@ def test_dos_ident(file_contents, expected_return):
     [
         (b"", {"mime": None, "type": None}, {'mime': None, 'ssdeep': '3::', 'type': 'unknown'}),
         (b"", {"mime": "blah", "type": None}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
-        # TODO: a bug exists here, ident requires path to be passed to it here: data.update(ident(buf, buflen))
-        # (b"", {"mime": "application/cdfv2-corrupt", "type": None}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
-        # (b"", {"mime": "application/cdfv2-unknown", "type": None}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
+        (b"", {"mime": "application/cdfv2-corrupt", "type": None}, {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'ssdeep': '3::', 'type': 'unknown'}),
+        (b"", {"mime": "application/cdfv2-unknown", "type": None}, {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'ssdeep': '3::', 'type': 'unknown'}),
         (b"", {"mime": "blah", "type": None, "size": 0}, {'mime': 'blah', 'size': 0, 'ssdeep': '3::', 'type': 'unknown'}),
         (b"", {"mime": "blah", "type": "archive/zip"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'archive/zip'}),
         (b"", {"mime": "blah", "type": "java/jar"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'archive/zip'}),
