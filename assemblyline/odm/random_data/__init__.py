@@ -310,11 +310,15 @@ def create_users(ds, log=None):
 
 def create_safelists(ds, log=None):
     for _ in range(20):
-        sl = random_model_obj(Safelist)
-        sl.hashes.sha256 = "0" + get_random_hash(63)
-        ds.safelist.save(sl.hashes.sha256, sl)
+        sl = random_model_obj(Safelist, as_json=True)
+        if sl['type'] == 'file':
+            sl.pop('tag', None)
+        elif sl['type'] == 'tag':
+            sl.pop('file', None)
+        sl['hashes']['sha256'] = "0" + get_random_hash(63)
+        ds.safelist.save(sl['hashes']['sha256'], sl)
         if log:
-            log.info(f'\t{sl.hashes.sha256}')
+            log.info(f"\t{sl['hashes']['sha256']}")
 
     ds.safelist.commit()
 
