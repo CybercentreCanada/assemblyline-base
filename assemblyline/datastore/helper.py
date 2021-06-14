@@ -837,7 +837,25 @@ class AssemblylineDatastore(object):
                                     'h_type': h_type,
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
-                                    'key': key
+                                    'key': key,
+                                    'safelisted': False
+                                })
+                                done_map['tags'].add(cache_key)
+
+                # Get safelisted tag data
+                for tag_type, tags in section.get('safelisted_tags', {}).items():
+                    if tags is not None:
+                        for tag in tags:
+                            cache_key = f"{tag_type}_{tag}_{key}"
+
+                            if cache_key not in done_map['tags']:
+                                out['tags'].append({
+                                    'type': tag_type,
+                                    'h_type': h_type,
+                                    'short_type': tag_type.rsplit(".", 1)[-1],
+                                    'value': tag,
+                                    'key': key,
+                                    'safelisted': True
                                 })
                                 done_map['tags'].add(cache_key)
 
@@ -860,7 +878,18 @@ class AssemblylineDatastore(object):
                                 'type': tag_type,
                                 'short_type': tag_type.rsplit(".", 1)[-1],
                                 'value': tag,
-                                'key': key
+                                'key': key,
+                                'safelisted': False
+                            })
+                for tag_type, tags in section.get('safelisted_tags', {}).items():
+                    if tags is not None:
+                        for tag in tags:
+                            out.append({
+                                'type': tag_type,
+                                'short_type': tag_type.rsplit(".", 1)[-1],
+                                'value': tag,
+                                'key': key,
+                                'safelisted': True
                             })
 
         return out

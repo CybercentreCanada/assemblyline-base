@@ -2,7 +2,6 @@ import re
 
 from typing import List, Dict, Set
 
-from assemblyline.common.dict_utils import flatten
 from assemblyline.common.forge import CachedObject, get_datastore
 from assemblyline.odm.models.tagging import Tagging
 
@@ -17,10 +16,10 @@ def tag_list_to_dict(tag_list: List[Dict]) -> Dict:
     return tag_dict
 
 
-def tag_dict_to_list(tag_dict: Dict) -> List[Dict]:
+def tag_dict_to_list(tag_dict: Dict, safelisted: bool) -> List[Dict]:
     return [
-        {'type': k, 'value': t, 'short_type': k.rsplit(".", 1)[-1]}
-        for k, v in flatten(tag_dict).items()
+        {'safelisted': safelisted, 'type': k, 'value': t, 'short_type': k.rsplit(".", 1)[-1]}
+        for k, v in tag_dict.items()
         if v is not None
         for t in v
     ]
