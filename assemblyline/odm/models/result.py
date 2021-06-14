@@ -38,6 +38,7 @@ class Section(odm.Model):
     depth = odm.Integer(index=False)                         # Depth of the section
     heuristic = odm.Optional(odm.Compound(Heuristic))        # Heuristic used to score result section
     tags = odm.Compound(Tagging, default={})                 # List of tags associated to this section
+    safelisted_tags = odm.FlattenedListObject(store=False)   # List of safelisted tags
     title_text = odm.Text(copyto="__text__")                 # Title of the section
 
 
