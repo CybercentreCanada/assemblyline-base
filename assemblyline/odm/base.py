@@ -680,6 +680,23 @@ class Mapping(_Field):
         self.child_type.apply_defaults(self.index, self.store)
 
 
+class FlattenedListObject(Mapping):
+    """A field storing a flattened object"""
+
+    def __init__(self, **kwargs):
+        super().__init__(List(Keyword()), **kwargs)
+
+    def check(self, value, **kwargs):
+        return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
+
+    def apply_defaults(self, index, store):
+        """Initialize the default settings for the child field."""
+        # First apply the default to the list itself
+        super().apply_defaults(index, store)
+        # Then pass through the initialized values on the list to the child type
+        self.child_type.apply_defaults(self.index, self.store)
+
+
 class FlattenedObject(Mapping):
     """A field storing a flattened object"""
 
