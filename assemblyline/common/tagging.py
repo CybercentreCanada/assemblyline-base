@@ -16,7 +16,7 @@ def tag_list_to_dict(tag_list: List[Dict]) -> Dict:
     return tag_dict
 
 
-def tag_dict_to_list(tag_dict: Dict, safelisted: bool) -> List[Dict]:
+def tag_dict_to_list(tag_dict: Dict, safelisted: bool = False) -> List[Dict]:
     return [
         {'safelisted': safelisted, 'type': k, 'value': t, 'short_type': k.rsplit(".", 1)[-1]}
         for k, v in tag_dict.items()
