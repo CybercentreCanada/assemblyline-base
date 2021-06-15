@@ -17,6 +17,7 @@ from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.safelist import Safelist
+from assemblyline.odm.models.tag_safelist import TagSafelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_model_obj, get_random_phrase, \
     get_random_uri, get_random_word
@@ -323,6 +324,17 @@ def create_safelists(ds, log=None):
     ds.safelist.commit()
 
 
+def create_tag_safelist(ds, log=None):
+    for _ in range(20):
+        tsl_id = get_random_id()
+        tsl = random_model_obj(TagSafelist, as_json=True)
+        ds.tag_safelist.save(tsl_id, tsl)
+        if log:
+            log.info(f"\t{tsl_id}")
+
+    ds.tag_safelist.commit()
+
+
 def create_workflows(ds, log=None):
     for _ in range(20):
         w_id = get_random_id()
@@ -390,6 +402,10 @@ def wipe_users(ds):
 
 def wipe_safelist(ds):
     ds.safelist.wipe()
+
+
+def wipe_tag_safelist(ds):
+    ds.tag_safelist.wipe()
 
 
 def wipe_workflows(ds):
