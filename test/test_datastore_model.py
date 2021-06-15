@@ -124,14 +124,18 @@ def _setup_collection(ds, name, doc):
 
 def _assert_key_exists(key, data):
     if data is None:
-        raise Exception(f"'{key}' is inside an optional compound field which cannot be stored.")
+        # Field is stored but optional... This is fine
+        return True
 
     if "." in key:
         main, sub = key.split(".", 1)
         if main not in data:
             return False
         return _assert_key_exists(sub, data[main])
-    if key in data:
+    if isinstance(data, list):
+        if all(key in x for x in data):
+            return True
+    elif key in data:
         return True
     return False
 

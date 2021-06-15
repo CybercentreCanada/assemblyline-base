@@ -48,7 +48,8 @@ def test_constants():
     assert identify.custom == compile(r'^custom: ', IGNORECASE)
 
 
-@pytest.mark.parametrize("code_snippet, code_types",
+@pytest.mark.parametrize(
+    "code_snippet, code_types",
     [
         # Nothing
         (b"blah", []),
@@ -322,7 +323,8 @@ def test_strong_indicators(code_snippet, code_types):
     assert actual_code_types == code_types
 
 
-@pytest.mark.parametrize("code_snippet, code_types",
+@pytest.mark.parametrize(
+    "code_snippet, code_types",
     [
         # Nothing
         (b"blah", []),
@@ -359,7 +361,9 @@ def test_strong_indicators(code_snippet, code_types):
         (b"End Sub", ["code/vbs"]),
         (b"End Sub ", ["code/vbs"]),  # TODO this is a bug
         (b"Function ", ["code/vbs"]),
-        (b"Function\t", []),  # TODO this is a bug, all strings ending with a single space should be converted to handle tabs
+        # TODO this is a bug
+        # all strings ending with a single space should be converted to handle tabs
+        (b"Function\t", []),
         (b"End Function ", ["code/vbs"]),
         (b"End Function", []),  # TODO this is a bug
         (b"CreateObject", ["code/vbs"]),
@@ -426,32 +430,33 @@ def test_weak_indicators(code_snippet, code_types):
 
 
 @pytest.mark.parametrize("code_snippet, is_match",
-    [
-        (b"blah", False),
-        (b"#!", False),
-        (b"#!blah.blah/blah\n", True),
-        (b"#!blah.blah/blah\t \n", True),
-        (b"#!blah.blah/env blah\n", True),
-    ]
-)
+                         [
+                             (b"blah", False),
+                             (b"#!", False),
+                             (b"#!blah.blah/blah\n", True),
+                             (b"#!blah.blah/blah\t \n", True),
+                             (b"#!blah.blah/env blah\n", True),
+                         ]
+                         )
 def test_shebang(code_snippet, is_match):
     assert match(identify.SHEBANG, code_snippet) if is_match else not match(identify.SHEBANG, code_snippet)
 
 
 @pytest.mark.parametrize("executable, general_result",
-    [
-        ("escript", "erlang"),
-        ("nush", "nu"),
-        ("macruby", "ruby"),
-        ("jruby", "ruby"),
-        ("rbx", "ruby"),
-    ]
-)
+                         [
+                             ("escript", "erlang"),
+                             ("nush", "nu"),
+                             ("macruby", "ruby"),
+                             ("jruby", "ruby"),
+                             ("rbx", "ruby"),
+                         ]
+                         )
 def test_executables(executable, general_result):
     assert identify.EXECUTABLES[executable] == general_result
 
 
-@pytest.mark.parametrize("guid, general_result",
+@pytest.mark.parametrize(
+    "guid, general_result",
     [
         # GUID v0 (0)
         ("00020803-0000-0000-C000-000000000046", "document/office/word"),
@@ -489,7 +494,8 @@ def test_guids(guid, general_result):
     assert identify.OLE_CLSID_GUIDs[guid] == general_result
 
 
-@pytest.mark.parametrize("tag, ext",
+@pytest.mark.parametrize(
+    "tag, ext",
     [
         ('archive/chm', '.chm'),
         ('audiovisual/flash', '.swf'),
@@ -541,7 +547,8 @@ def test_tag_to_extension(tag, ext):
     assert identify.tag_to_extension[tag] == ext
 
 
-@pytest.mark.parametrize("type, string",
+@pytest.mark.parametrize(
+    "type, string",
     [
         ('tnef', r'Transport Neutral Encapsulation Format'),
         ('chm', r'MS Windows HtmlHelp Data'),
@@ -609,9 +616,10 @@ def test_tag_to_extension(tag, ext):
 )
 def test_sl_patterns(type, string):
     assert [type, compile(string, IGNORECASE)] in identify.sl_patterns
-    
 
-@pytest.mark.parametrize("sl, tl", 
+
+@pytest.mark.parametrize(
+    "sl, tl",
     [
         ('windows/com', 'executable'),
         ('windows/dos', 'executable'),
@@ -644,161 +652,180 @@ def test_sl_patterns(type, string):
 def test_sl_to_tl(sl, tl):
     assert identify.sl_to_tl[sl] == tl
 
-@pytest.mark.parametrize("tl, string",
-    [
-        ('document',
-        r'Composite Document File|CDFV2|Corel|OLE 2|OpenDocument |Rich Text Format|Microsoft.*'
-        r'(Document|Excel|PowerPoint|Word|OOXML)|Number of (Characters|Pages|Words)'),
-        ('document', r'PostScript|pdf|MIME entity text'),
-        ('java', r'jar |java'),
-        ('code',
-        r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
-        r'|ruby|scheme|script text exe|shell script|tcl'),
-        ('network', r'capture'),
-        ('unknown', r'CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage'),
-        ('unknown', r'disk|file[ ]*system|floppy|tape'),
-        ('audiovisual',
-        r'Macromedia Flash|Matroska|MIDI data|MPEG|MP4|MPG|MP3|QuickTime|RIFF|WebM|animation|audio|movie|music|ogg'
-        r'|sound|tracker|video|voice data'),
-        ('executable', r'803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object'),
-        ('unknown', r'Emulator'),
-        ('image', r'DjVu|Surface|XCursor|bitmap|cursor|color|font|graphics|icon|image|jpeg'),
-        ('archive',
-        r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
-        r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'),
-        ('meta', r'^MS Windows shortcut'),
-        ('metadata', r'MS Windows Vista Event Log'),
-        ('unknown', r'.*'),
-    ]
-)
+
+@pytest.mark.parametrize(
+    "tl, string",
+    [('document',
+      r'Composite Document File|CDFV2|Corel|OLE 2|OpenDocument |Rich Text Format|Microsoft.*'
+      r'(Document|Excel|PowerPoint|Word|OOXML)|Number of (Characters|Pages|Words)'),
+     ('document', r'PostScript|pdf|MIME entity text'),
+     ('java', r'jar |java'),
+     ('code',
+      r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
+      r'|ruby|scheme|script text exe|shell script|tcl'),
+     ('network', r'capture'),
+     ('unknown', r'CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage'),
+     ('unknown', r'disk|file[ ]*system|floppy|tape'),
+     ('audiovisual',
+      r'Macromedia Flash|Matroska|MIDI data|MPEG|MP4|MPG|MP3|QuickTime|RIFF|WebM|animation|audio|movie|music|ogg'
+      r'|sound|tracker|video|voice data'),
+     ('executable', r'803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object'),
+     ('unknown', r'Emulator'),
+     ('image', r'DjVu|Surface|XCursor|bitmap|cursor|color|font|graphics|icon|image|jpeg'),
+     ('archive',
+      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
+      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'),
+     ('meta', r'^MS Windows shortcut'),
+     ('metadata', r'MS Windows Vista Event Log'),
+     ('unknown', r'.*'), ])
 def test_tl_patterns(tl, string):
     assert [tl, compile(string, IGNORECASE)] in identify.tl_patterns
-    
+
 
 @pytest.mark.parametrize("mime, translated_type",
-    [
-        ('application/x-bittorrent', 'meta/torrent'),
-        ('application/x-tar', 'archive/tar'),
-        ('message/rfc822', 'document/email'),
-        ('text/calendar', 'text/calendar'),
-        ('image/svg+xml', 'image/svg'),
-        ('application/x-mach-binary', 'executable/mach-o'),
-        ('application/vnd.ms-outlook', 'document/office/email'),
-    ]
-)
+                         [
+                             ('application/x-bittorrent', 'meta/torrent'),
+                             ('application/x-tar', 'archive/tar'),
+                             ('message/rfc822', 'document/email'),
+                             ('text/calendar', 'text/calendar'),
+                             ('image/svg+xml', 'image/svg'),
+                             ('application/x-mach-binary', 'executable/mach-o'),
+                             ('application/vnd.ms-outlook', 'document/office/email'),
+                         ]
+                         )
 def test_trusted_mimes(mime, translated_type):
     assert identify.trusted_mimes[mime] == translated_type
 
 
 @pytest.mark.parametrize("label, expected",
-    [
-        ("blah", "unknown"),
-        ("Transport Neutral Encapsulation Format", "tnef"),
-        ("MS Windows HtmlHelp Data", "chm"),
-        ("pe32+ blahdllblahx86-64", "windows/dll64"),
-        ("pe32+ blahx86-64blahwindows", "windows/pe64"),
-        ("pe32 blahdll", "windows/dll32"),
-        ("pe32 blahwindows", "windows/pe32"),
-        ("pe unknownblahwindows", "windows/pe"),
-        ("ms-dos executable", "windows/dos"),
-        ("dos executable", "windows/dos"),
-        ("com executable", "windows/com"),
-        ("8086 relocatable", "windows/dos"),
-        ("elf 32-bit lsb executable", "linux/elf32"),
-        ("elf 32-bit lsb           executable", "linux/elf32"),
-        ("elf 64-bit lsb executable", "linux/elf64"),
-        ("elf 64-bit lsb           executable", "linux/elf64"),
-        ("elf 32-bit lsb shared object", "linux/so32"),
-        ("elf 32-bit lsb           shared object", "linux/so32"),
-        ("elf 64-bit lsb shared object", "linux/so64"),
-        ("elf 64-bit lsb           shared object", "linux/so64"),
-        ("Mach-O", "mach-o"),
-        ("7-zip archive data", "7-zip"),
-        ("ACE archive data", "ace"),
-        ('bzip2 compressed data', 'bzip2'),
-        ('installshield cab', 'cabinet'),
-        ('microsoft cabinet archive data', 'cabinet'),
-        ('cpio archive', 'cpio'),
-        ('gzip compressed data', 'gzip'),
-        ('ISO 9660', 'iso'),
-        ('LZMA compressed data', 'lzma'),
-        ('rar archive data', 'rar'),
-        ('GNU tar archive', 'tar'),
-        ('POSIX tar archive', 'tar'),
-        ('ar archive', 'ar'),
-        ('XZ compressed data', 'xz'),
-        ('zip archive data', 'zip'),
-        ('tcpdump', 'tcpdump'),
-        ('pdf document', 'pdf'),
-        ('pc bitmap', 'bmp'),
-        ('gif image data', 'gif'),
-        ('jpeg image data', 'jpg'),
-        ('png image data', 'png'),
-        ('Installation Database', 'installer/windows'),
-        ('Windows Installer', 'installer/windows'),
-        ('MicrosoftExcel', 'office/excel'),
-        ('MicrosoftblahExcel', 'office/excel'),
-        ('MicrosoftPowerPoint', 'office/powerpoint'),
-        ('MicrosoftblahPowerPoint', 'office/powerpoint'),
-        ('MicrosoftWord', 'office/word'),
-        ('MicrosoftblahWord', 'office/word'),
-        ('Rich Text Format', 'office/rtf'),
-        ('OLE 2', 'office/ole'),
-        ('Composite Document File', 'office/unknown'),
-        ('CDFV2', 'office/unknown'),
-        ('MicrosoftOOXML', 'office/unknown'),
-        ('MicrosoftDocument', 'office/unknown'),
-        ('MicrosoftblahOOXML', 'office/unknown'),
-        ('MicrosoftblahDocument', 'office/unknown'),
-        ('Number of Characters', 'office/unknown'),
-        ('Number of Pages', 'office/unknown'),
-        ('Number of Words', 'office/unknown'),
-        ('Macromedia Flash', 'flash'),
-        ('microsoft windows autorun', 'autorun'),
-        ('dos batch file', 'batch'),
-        (' Jar ', 'jar'),
-        ('(Jar)', 'jar'),
-        ('java program', 'java'),
-        ('java class data', 'class'),
-        ('perl script', 'perl'),
-        ('perl blahscript', 'perl'),
-        ('php script', 'php'),
-        ('python script', 'python'),
-        ('python byte', 'python'),
-        ('python blahscript', 'python'),
-        ('python blahbyte', 'python'),
-        ('shell script', 'shell'),
-        ('sh script', 'shell'),
-        ('OpenGIS KML', 'xml'),
-        ('html', 'html'),
-        ('sgml', 'sgml'),
-        ('xml', 'xml'),
-        ('Frame Format', 'sff'),
-        ('MS Windows shortcut', 'shortcut/windows'),
-        ('Mime entity text', 'email'),
-        ('MS Windows Vista Event Log', 'sysmon'),
-    ]
-)
+                         [
+                             ("blah", "unknown"),
+                             ("Transport Neutral Encapsulation Format", "tnef"),
+                             ("MS Windows HtmlHelp Data", "chm"),
+                             ("pe32+ blahdllblahx86-64", "windows/dll64"),
+                             ("pe32+ blahx86-64blahwindows", "windows/pe64"),
+                             ("pe32 blahdll", "windows/dll32"),
+                             ("pe32 blahwindows", "windows/pe32"),
+                             ("pe unknownblahwindows", "windows/pe"),
+                             ("ms-dos executable", "windows/dos"),
+                             ("dos executable", "windows/dos"),
+                             ("com executable", "windows/com"),
+                             ("8086 relocatable", "windows/dos"),
+                             ("elf 32-bit lsb executable", "linux/elf32"),
+                             ("elf 32-bit lsb           executable", "linux/elf32"),
+                             ("elf 64-bit lsb executable", "linux/elf64"),
+                             ("elf 64-bit lsb           executable", "linux/elf64"),
+                             ("elf 32-bit lsb shared object", "linux/so32"),
+                             ("elf 32-bit lsb           shared object", "linux/so32"),
+                             ("elf 64-bit lsb shared object", "linux/so64"),
+                             ("elf 64-bit lsb           shared object", "linux/so64"),
+                             ("Mach-O", "mach-o"),
+                             ("7-zip archive data", "7-zip"),
+                             ("ACE archive data", "ace"),
+                             ('bzip2 compressed data', 'bzip2'),
+                             ('installshield cab', 'cabinet'),
+                             ('microsoft cabinet archive data', 'cabinet'),
+                             ('cpio archive', 'cpio'),
+                             ('gzip compressed data', 'gzip'),
+                             ('ISO 9660', 'iso'),
+                             ('LZMA compressed data', 'lzma'),
+                             ('rar archive data', 'rar'),
+                             ('GNU tar archive', 'tar'),
+                             ('POSIX tar archive', 'tar'),
+                             ('ar archive', 'ar'),
+                             ('XZ compressed data', 'xz'),
+                             ('zip archive data', 'zip'),
+                             ('tcpdump', 'tcpdump'),
+                             ('pdf document', 'pdf'),
+                             ('pc bitmap', 'bmp'),
+                             ('gif image data', 'gif'),
+                             ('jpeg image data', 'jpg'),
+                             ('png image data', 'png'),
+                             ('Installation Database', 'installer/windows'),
+                             ('Windows Installer', 'installer/windows'),
+                             ('MicrosoftExcel', 'office/excel'),
+                             ('MicrosoftblahExcel', 'office/excel'),
+                             ('MicrosoftPowerPoint', 'office/powerpoint'),
+                             ('MicrosoftblahPowerPoint', 'office/powerpoint'),
+                             ('MicrosoftWord', 'office/word'),
+                             ('MicrosoftblahWord', 'office/word'),
+                             ('Rich Text Format', 'office/rtf'),
+                             ('OLE 2', 'office/ole'),
+                             ('Composite Document File', 'office/unknown'),
+                             ('CDFV2', 'office/unknown'),
+                             ('MicrosoftOOXML', 'office/unknown'),
+                             ('MicrosoftDocument', 'office/unknown'),
+                             ('MicrosoftblahOOXML', 'office/unknown'),
+                             ('MicrosoftblahDocument', 'office/unknown'),
+                             ('Number of Characters', 'office/unknown'),
+                             ('Number of Pages', 'office/unknown'),
+                             ('Number of Words', 'office/unknown'),
+                             ('Macromedia Flash', 'flash'),
+                             ('microsoft windows autorun', 'autorun'),
+                             ('dos batch file', 'batch'),
+                             (' Jar ', 'jar'),
+                             ('(Jar)', 'jar'),
+                             ('java program', 'java'),
+                             ('java class data', 'class'),
+                             ('perl script', 'perl'),
+                             ('perl blahscript', 'perl'),
+                             ('php script', 'php'),
+                             ('python script', 'python'),
+                             ('python byte', 'python'),
+                             ('python blahscript', 'python'),
+                             ('python blahbyte', 'python'),
+                             ('shell script', 'shell'),
+                             ('sh script', 'shell'),
+                             ('OpenGIS KML', 'xml'),
+                             ('html', 'html'),
+                             ('sgml', 'sgml'),
+                             ('xml', 'xml'),
+                             ('Frame Format', 'sff'),
+                             ('MS Windows shortcut', 'shortcut/windows'),
+                             ('Mime entity text', 'email'),
+                             ('MS Windows Vista Event Log', 'sysmon'),
+                         ]
+                         )
 # TODO make this method private
 def test_subtype(label, expected):
     assert identify.subtype(label) == expected
 
 
-@pytest.mark.parametrize("buf, expected_result, mocked_magic",
-    [
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, None),
-        (b"blah", {'ascii': 'blah', 'hex': '626c6168', 'magic': 'ASCII text, with no line terminators', 'mime': 'text/plain', 'type': 'unknown'}, None),
-        (b"if __name__=='__main__'", {'ascii': "if __name__=='__main__'", 'hex': '6966205f5f6e616d655f5f3d3d275f5f6d61696e5f5f27', 'magic': 'Python script, ASCII text executable, with no line terminators', 'mime': 'text/plain', 'type': 'code/python'}, None),
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, b"blah"),
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, b"blah\nblip\nbloop"),
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, b"blah\ncustom: yabadabadoo\nbloop"),
-        (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'code/vbs'}, b"blah\ncustom: code/vbs\nbloop"),
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, b"blah\n- yabadabadoo \nbloop"),
-        (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'meta/torrent'}, b"blah\n- application/x-bittorrent \nbloop"),
-        (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'}, b"blah\ncustom: document/office/unknown\nbloop"),
-        (u"Root Entrybbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb00020803-0000-0000-C000-000000000046".encode("utf-16-le"), {'ascii': 'R.o.o.t. .E.n.t.r.y.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.', 'hex': '52006f006f007400200045006e007400720079006200620062006200620062006200620062006200620062006200620062006200620062006200620062006200', 'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'}, b"blah\ncustom: document/office/unknown\nbloop"),
-    ]
-)
+@pytest.mark.parametrize(
+    "buf, expected_result, mocked_magic",
+    [(b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      None),
+     (b"blah",
+      {'ascii': 'blah', 'hex': '626c6168', 'magic': 'ASCII text, with no line terminators', 'mime': 'text/plain',
+       'type': 'unknown'},
+      None),
+     (b"if __name__=='__main__'",
+      {'ascii': "if __name__=='__main__'", 'hex': '6966205f5f6e616d655f5f3d3d275f5f6d61696e5f5f27',
+       'magic': 'Python script, ASCII text executable, with no line terminators', 'mime': 'text/plain',
+       'type': 'code/python'},
+      None),
+     (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      b"blah"),
+     (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      b"blah\nblip\nbloop"),
+     (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      b"blah\ncustom: yabadabadoo\nbloop"),
+     (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'code/vbs'},
+      b"blah\ncustom: code/vbs\nbloop"),
+     (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      b"blah\n- yabadabadoo \nbloop"),
+     (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'meta/torrent'},
+      b"blah\n- application/x-bittorrent \nbloop"),
+     (b"blah",
+      {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'},
+      b"blah\ncustom: document/office/unknown\nbloop"),
+     (u"Root Entrybbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb00020803-0000-0000-C000-000000000046".encode(
+         "utf-16-le"),
+      {'ascii': 'R.o.o.t. .E.n.t.r.y.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.',
+       'hex': '52006f006f007400200045006e007400720079006200620062006200620062006200620'
+              '062006200620062006200620062006200620062006200620062006200',
+       'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'},
+      b"blah\ncustom: document/office/unknown\nbloop"), ])
 def test_ident(buf, expected_result, mocked_magic, mocker):
     if mocked_magic:
         mocker.patch("magic.magic_file", return_value=mocked_magic)
@@ -809,7 +836,8 @@ def test_ident(buf, expected_result, mocked_magic, mocker):
     remove(path)
 
 
-@pytest.mark.parametrize("score, expected",
+@pytest.mark.parametrize(
+    "score, expected",
     [
         (0, "0%"),
         (0.0, "0%"),
@@ -828,7 +856,8 @@ def test_confidence(score, expected):
     assert identify._confidence(score) == expected
 
 
-@pytest.mark.parametrize("lang, scores_map, expected",
+@pytest.mark.parametrize(
+    "lang, scores_map, expected",
     [
         ("blah", {}, "blah"),
         ("code/javascript", {"code/jscript": 0, "code/pdfjs": 0}, "code/javascript"),
@@ -840,16 +869,23 @@ def test_differentiate(lang, scores_map, expected):
     assert identify._differentiate(lang, scores_map) == expected
 
 
-@pytest.mark.parametrize("file_contents, expected_return",
+@pytest.mark.parametrize(
+    "file_contents, expected_return",
     [
         (b"", ("unknown", 0)),
         (b"#!blah.blah/blah\n", ("code/blah", "60%")),
         (b"#!blah.blah/jruby\n", ("code/ruby", "60%")),
         (b"REM \nubound()", ("code/vbs", "40%")),
         (b"create \ndrop \nselect \nreturns \ndeclare ", ("unknown", 0)),
-        (b"try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:", ("code/python", "74%")),
-        (b"REM \nubound()\nlbound()\ntry:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:", ("code/python", "74%")),
-        (b"REM \nubound()\nlbound()\nREM \ntry:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:", ("code/vbs", "80%")),
+        (b"try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:"
+         b"try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try"
+         b":try:try:try:try:try:try:try:try:try:", ("code/python", "74%")),
+        (b"REM \nubound()\nlbound()\ntry:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:"
+         b"try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try"
+         b":try:try:try:try:try:try:try:try:try:", ("code/python", "74%")),
+        (b"REM \nubound()\nlbound()\nREM \ntry:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try"
+         b":try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:"
+         b"try:try:try:try:try:try:try:try:try:try:try:", ("code/vbs", "80%")),
         (b"really_big", ("unknown", 0)),
     ]
 )
@@ -864,7 +900,8 @@ def test_guess_language(file_contents, expected_return):
     remove(path)
 
 
-@pytest.mark.parametrize("file_contents, fallback, namelist, expected_return",
+@pytest.mark.parametrize(
+    "file_contents, fallback, namelist, expected_return",
     [
         (b"", None, [], "archive/zip"),
         (b"", None, ["META-INF MANIFEST.MF"], "java/jar"),
@@ -898,12 +935,12 @@ def test_zip_ident(file_contents, fallback, namelist, expected_return, dummy_zip
 
 
 @pytest.mark.parametrize("file_contents, metadata, expected_return",
-    [
-        (b"", None, "archive/cart"),
-        (b"", {"al": {"type": "blah"}}, "blah"),
-        (None, None, "corrupted/cart"),
-    ]
-)
+                         [
+                             (b"", None, "archive/cart"),
+                             (b"", {"al": {"type": "blah"}}, "blah"),
+                             (None, None, "corrupted/cart"),
+                         ]
+                         )
 # TODO make this method private
 def test_cart_ident(file_contents, metadata, expected_return):
     from assemblyline.common.codec import encode_file
@@ -920,10 +957,12 @@ def test_cart_ident(file_contents, metadata, expected_return):
         remove(output_path)
 
 
-@pytest.mark.parametrize("file_contents, expected_return",
+@pytest.mark.parametrize(
+    "file_contents, expected_return",
     [
         (b"", "executable/windows/dos"),
-        # TODO: there is big bug here, if file_header[0:2] != "MZ":... file_header[0:2] is in bytes so a ValueError will always be raised
+        # TODO: there is big bug here,
+        # if file_header[0:2] != "MZ":... file_header[0:2] is in bytes so a ValueError will always be raised
         (b"MZblahblahblahblahblahblahblahblahblahblahblahblah", "executable/windows/dos"),
         ("MZblahblahblahblahblahblahblahblahblahblahblahblah", "executable/windows/dos"),
     ]
@@ -941,27 +980,44 @@ def test_dos_ident(file_contents, expected_return):
     remove(path)
 
 
-@pytest.mark.parametrize("file_contents, mocked_return, expected_return",
+@pytest.mark.parametrize(
+    "file_contents, mocked_return, expected_return",
     [
         (b"", {"mime": None, "type": None}, {'mime': None, 'ssdeep': '3::', 'type': 'unknown'}),
         (b"", {"mime": "blah", "type": None}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
         # TODO: a bug exists here, ident requires path to be passed to it here: data.update(ident(buf, buflen))
-        # (b"", {"mime": "application/cdfv2-corrupt", "type": None}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
-        # (b"", {"mime": "application/cdfv2-unknown", "type": None}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
-        (b"", {"mime": "blah", "type": None, "size": 0}, {'mime': 'blah', 'size': 0, 'ssdeep': '3::', 'type': 'unknown'}),
-        (b"", {"mime": "blah", "type": "archive/zip"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'archive/zip'}),
-        (b"", {"mime": "blah", "type": "java/jar"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'archive/zip'}),
-        (b"", {"mime": "blah", "type": "document/office/unknown"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'document/office/unknown'}),
-        (b"", {"mime": "blah", "type": "unknown"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
-        (b"", {"mime": "blah", "type": "archive/cart"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'corrupted/cart'}),
-        (b"", {"mime": "blah", "type": "executable/windows/dos"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'executable/windows/dos'}),
-        (b"", {"mime": "blah", "type": "code/html"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'code/html'}),
-        (b"unescape(unescape(", {"mime": "blah", "type": "code/html"}, {'mime': 'blah', 'ssdeep': '3:eAWyfdn:eAWyfdn', 'type': 'code/hta'}),
-        (b"", {"mime": "blah", "type": "document/office/word"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'document/office/word'}),
-        (b"", {"mime": "blah", "type": "document/office/excel"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'document/office/excel'}),
-        (b"", {"mime": "blah", "type": "document/office/powerpoint"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'document/office/powerpoint'}),
-        (b"", {"mime": "blah", "type": "blah"}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
-        (b"pp", {"mime": "blah", "type": "document/office/powerpoint"}, {'mime': 'blah', 'ssdeep': '3:/:/', 'type': 'document/office/passwordprotected'}),
+        # (b"", {"mime": "application/cdfv2-corrupt", "type": None},
+        #       {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
+        # (b"", {"mime": "application/cdfv2-unknown", "type": None},
+        #       {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
+        (b"", {"mime": "blah", "type": None, "size": 0}, {
+            'mime': 'blah', 'size': 0, 'ssdeep': '3::', 'type': 'unknown'}),
+        (b"", {"mime": "blah", "type": "archive/zip"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'archive/zip'}),
+        (b"", {"mime": "blah", "type": "java/jar"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'archive/zip'}),
+        (b"", {"mime": "blah", "type": "document/office/unknown"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'document/office/unknown'}),
+        (b"", {"mime": "blah", "type": "unknown"}, {
+            'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
+        (b"", {"mime": "blah", "type": "archive/cart"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'corrupted/cart'}),
+        (b"", {"mime": "blah", "type": "executable/windows/dos"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'executable/windows/dos'}),
+        (b"", {"mime": "blah", "type": "code/html"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'code/html'}),
+        (b"unescape(unescape(", {"mime": "blah", "type": "code/html"},
+         {'mime': 'blah', 'ssdeep': '3:eAWyfdn:eAWyfdn', 'type': 'code/hta'}),
+        (b"", {"mime": "blah", "type": "document/office/word"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'document/office/word'}),
+        (b"", {"mime": "blah", "type": "document/office/excel"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'document/office/excel'}),
+        (b"", {"mime": "blah", "type": "document/office/powerpoint"},
+         {'mime': 'blah', 'ssdeep': '3::', 'type': 'document/office/powerpoint'}),
+        (b"", {"mime": "blah", "type": "blah"}, {
+            'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
+        (b"pp", {"mime": "blah", "type": "document/office/powerpoint"},
+         {'mime': 'blah', 'ssdeep': '3:/:/', 'type': 'document/office/passwordprotected'}),
     ]
 )
 def test_fileinfo(file_contents, mocked_return, expected_return, dummy_office_file_class, mocker):
