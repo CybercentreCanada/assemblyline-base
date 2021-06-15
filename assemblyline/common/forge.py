@@ -138,8 +138,8 @@ def get_service_queue(service: str, redis=None):
     return PriorityQueue(service_queue_name(service), redis)
 
 
-def get_tag_whitelister(log=None, yml_config=None):
-    from assemblyline.common.tagging import TagWhitelister, InvalidWhitelist
+def get_tag_safelister(log=None, yml_config=None):
+    from assemblyline.common.tagging import TagSafelister, InvalidSafelist
 
     if yml_config is None:
         yml_config = "/etc/assemblyline/tag_whitelist.yml"
@@ -160,9 +160,9 @@ def get_tag_whitelister(log=None, yml_config=None):
                 tag_whitelist_data = recursive_update(tag_whitelist_data, yml_data)
 
     if not tag_whitelist_data:
-        raise InvalidWhitelist('Could not find any tag_whitelist file to load.')
+        raise InvalidSafelist('Could not find any tag_whitelist file to load.')
 
-    return TagWhitelister(tag_whitelist_data, log=log)
+    return TagSafelister(tag_whitelist_data, log=log)
 
 
 class CachedObject:

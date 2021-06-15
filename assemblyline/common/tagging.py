@@ -34,11 +34,11 @@ def get_safelist(ds) -> Set:
             for sl in ds.safelist.stream_search("type:tag AND enabled:true", as_obj=False)}
 
 
-class InvalidWhitelist(Exception):
+class InvalidSafelist(Exception):
     pass
 
 
-class TagWhitelister(object):
+class TagSafelister(object):
     def __init__(self, data, log=None):
         valid_tags = set(Tagging.flat_fields().keys())
         self.datastore = get_datastore()
@@ -51,19 +51,19 @@ class TagWhitelister(object):
         # Validate matches and regex
         for section, item in {'match': self.match, 'regex': self.regex}.items():
             if not isinstance(item, dict):
-                raise InvalidWhitelist(f"Section {section} should be of type: DICT")
+                raise InvalidSafelist(f"Section {section} should be of type: DICT")
 
             for k, v in item.items():
                 if not isinstance(v, list):
-                    raise InvalidWhitelist(f"Values in the {section} section should all be of type: LIST")
+                    raise InvalidSafelist(f"Values in the {section} section should all be of type: LIST")
 
                 if k not in valid_tags:
-                    raise InvalidWhitelist(f"Key ({k}) in the {section} section is not a valid tag.")
+                    raise InvalidSafelist(f"Key ({k}) in the {section} section is not a valid tag.")
 
                 if section == 'regex':
                     self.regex[k] = [re.compile(x) for x in v]
 
-    def is_whitelisted(self, t_type, t_value):
+    def is_safelisted(self, t_type, t_value):
         if self.safelist.get(get_safelist_key(t_type, t_value), False):
             if self.log:
                 self.log.info(f"Tag '{t_type}' with value '{t_value}' was safelisted.")
@@ -72,26 +72,26 @@ class TagWhitelister(object):
         for match in self.match.get(t_type, []):
             if t_value == match:
                 if self.log:
-                    self.log.info(f"Tag '{t_type}' with value '{t_value}' was whitelisted by match rule.")
+                    self.log.info(f"Tag '{t_type}' with value '{t_value}' was safelisted by match rule.")
                 return True
 
         for regex in self.regex.get(t_type, []):
             if regex.match(t_value):
                 if self.log:
                     self.log.info(f"Tag '{t_type}' with value '{t_value}' "
-                                  f"was whitelisted by regex '{regex.pattern}'.")
+                                  f"was safelisted by regex '{regex.pattern}'.")
                 return True
 
         return False
 
-    def whitelist_many(self, t_type, t_values):
+    def safelist_many(self, t_type, t_values):
         if not isinstance(t_values, list):
             t_values = [t_values]
 
         tags = []
         safelisted_tags = []
         for x in t_values:
-            if self.is_whitelisted(t_type, x):
+            if self.is_safelisted(t_type, x):
                 safelisted_tags.append(x)
             else:
                 tags.append(x)
@@ -103,7 +103,7 @@ class TagWhitelister(object):
         safelisted_tags = {}
         for k, v in tag_map.items():
             if v is not None and v != []:
-                c_tags, c_safelisted_tags = self.whitelist_many(k, v)
+                c_tags, c_safelisted_tags = self.safelist_many(k, v)
                 if c_tags:
                     tags[k] = c_tags
                 if c_safelisted_tags:
