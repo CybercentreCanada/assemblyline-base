@@ -142,27 +142,27 @@ def get_tag_safelister(log=None, yml_config=None):
     from assemblyline.common.tagging import TagSafelister, InvalidSafelist
 
     if yml_config is None:
-        yml_config = "/etc/assemblyline/tag_whitelist.yml"
+        yml_config = "/etc/assemblyline/tag_safelist.yml"
 
-    tag_whitelist_data = {}
-    default_file = os.path.join(os.path.dirname(__file__), "tag_whitelist.yml")
+    tag_safelist_data = {}
+    default_file = os.path.join(os.path.dirname(__file__), "tag_safelist.yml")
     if os.path.exists(default_file):
         with open(default_file) as default_fh:
             default_yml_data = yaml.safe_load(default_fh.read())
             if default_yml_data:
-                tag_whitelist_data.update(default_yml_data)
+                tag_safelist_data.update(default_yml_data)
 
     # Load modifiers from the yaml config
     if os.path.exists(yml_config):
         with open(yml_config) as yml_fh:
             yml_data = yaml.safe_load(yml_fh.read())
             if yml_data:
-                tag_whitelist_data = recursive_update(tag_whitelist_data, yml_data)
+                tag_safelist_data = recursive_update(tag_safelist_data, yml_data)
 
-    if not tag_whitelist_data:
-        raise InvalidSafelist('Could not find any tag_whitelist file to load.')
+    if not tag_safelist_data:
+        raise InvalidSafelist('Could not find any tag_safelist file to load.')
 
-    return TagSafelister(tag_whitelist_data, log=log)
+    return TagSafelister(tag_safelist_data, log=log)
 
 
 class CachedObject:
