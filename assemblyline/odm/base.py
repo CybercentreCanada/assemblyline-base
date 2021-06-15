@@ -558,8 +558,8 @@ class ClassificationString(Keyword):
 
 class TypedList(list):
 
-    def __init__(self, type_p, *items):
-        super().__init__([type_p.check(el) for el in items])
+    def __init__(self, type_p, *items, **kwargs):
+        super().__init__([type_p.check(el, **kwargs) for el in items])
         self.type = type_p
 
     def append(self, item):
@@ -596,9 +596,9 @@ class List(_Field):
 
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
-            return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())])
+            return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
 
-        return TypedList(self.child_type, *value)
+        return TypedList(self.child_type, *value, **kwargs)
 
     def apply_defaults(self, index, store):
         """Initialize the default settings for the child field."""
