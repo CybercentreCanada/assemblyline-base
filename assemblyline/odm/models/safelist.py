@@ -24,7 +24,7 @@ class File(odm.Model):
 class Source(odm.Model):
     classification = odm.Classification(default=Classification.UNRESTRICTED)  # Classification of the source
     name = odm.Keyword(store=True)                                            # Name of the source
-    reason = odm.List(odm.Keyword(), default=[])                              # Reason why it is safelisted
+    reason = odm.List(odm.Keyword())                                          # Reason why it is safelisted
     type = odm.Enum(values=SOURCE_TYPES)                                      # Type of source
 
 
@@ -39,9 +39,9 @@ class Safelist(odm.Model):
     added = odm.Date(default="NOW")                       # Date when the safe hash was added
     classification = odm.Classification()                 # Computed max classification for the safe hash
     enabled = odm.Boolean(default=True)                   # The safe hash enabled or not
-    hashes = odm.Compound(Hashes)                         # List of hashes related to the safe hash
+    hashes = odm.Compound(Hashes, default={})             # List of hashes related to the safe hash
     file = odm.Optional(odm.Compound(File))               # Informations about the file
-    sources = odm.List(odm.Compound(Source), default=[])  # List of reasons why hash is safelisted
+    sources = odm.List(odm.Compound(Source))              # List of reasons why hash is safelisted
     tag = odm.Optional(odm.Compound(Tag))                 # Informations about the tag
     type = odm.Enum(values=SAFEHASH_TYPES)                # Type of safe hash
     updated = odm.Date(default="NOW")                     # Last date when sources were added to the safe hash
