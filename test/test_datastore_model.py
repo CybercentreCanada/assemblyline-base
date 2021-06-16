@@ -13,7 +13,6 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
@@ -24,7 +23,7 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.vm import VM
-from assemblyline.odm.models.tag_safelist import TagSafelist
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
 
@@ -66,18 +65,17 @@ TEST_DATA = [
     ("filescore", random_model_obj(FileScore)),
     ("heuristic", random_model_obj(Heuristic)),
     ("result", random_model_obj(Result)),
-    ("safelist", random_model_obj(Safelist)),
     ("service", random_model_obj(Service)),
     ("service_delta", random_model_obj(ServiceDelta)),
     ("signature", random_model_obj(Signature)),
     ("submission", random_model_obj(Submission)),
     ("submission_summary", random_model_obj(SubmissionSummary)),
     ("submission_tree", random_model_obj(SubmissionTree)),
-    ("tag_safelist", random_model_obj(TagSafelist)),
     ("user", random_model_obj(User)),
     ("user_favorites", random_model_obj(UserFavorites)),
     ("user_settings", random_model_obj(UserSettings)),
     ("vm", random_model_obj(VM)),
+    ("safelist", random_model_obj(Safelist)),
     ("workflow", random_model_obj(Workflow)),
     ("alert_min", random_minimal_obj(Alert)),
     ("cached_file_min", random_minimal_obj(CachedFile)),
@@ -87,18 +85,17 @@ TEST_DATA = [
     ("filescore_min", random_minimal_obj(FileScore)),
     ("heuristic_min", random_minimal_obj(Heuristic)),
     ("result_min", random_minimal_obj(Result)),
-    ("safelist_min", random_minimal_obj(Safelist)),
     ("service_min", random_minimal_obj(Service)),
     ("service_delta_min", random_minimal_obj(ServiceDelta)),
     ("signature_min", random_minimal_obj(Signature)),
     ("submission_min", random_minimal_obj(Submission)),
     ("submission_summary_min", random_minimal_obj(SubmissionSummary)),
     ("submission_tree_min", random_minimal_obj(SubmissionTree)),
-    ("tag_safelist_min", random_minimal_obj(TagSafelist)),
     ("user_min", random_minimal_obj(User)),
     ("user_favorites_min", random_minimal_obj(UserFavorites)),
     ("user_settings_min", random_minimal_obj(UserSettings)),
     ("vm_min", random_minimal_obj(VM)),
+    ("safelist_min", random_minimal_obj(Safelist)),
     ("workflow_min", random_minimal_obj(Workflow))
 ]
 

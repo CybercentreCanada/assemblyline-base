@@ -22,7 +22,6 @@ from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.vm import VM
 from assemblyline.odm.models.safelist import Safelist
-from assemblyline.odm.models.tag_safelist import TagSafelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj
 
@@ -95,13 +94,6 @@ def test_result_model():
         pytest.fail("Could not generate 'Result' object and validate it.")
 
 
-def test_safelist_model():
-    try:
-        random_model_obj(Safelist).as_primitives()
-    except (ValueError, TypeError, KeyError):
-        pytest.fail("Could not generate 'Safelist' object and validate it.")
-
-
 def test_service_model():
     try:
         random_model_obj(Service).as_primitives()
@@ -160,13 +152,6 @@ def test_submission_tree_model():
         pytest.fail("Could not generate 'SubmissionTree' object and validate it.")
 
 
-def test_tag_safelist_model():
-    try:
-        random_model_obj(TagSafelist).as_primitives()
-    except (ValueError, TypeError, KeyError):
-        pytest.fail("Could not generate 'TagSafelist' object and validate it.")
-
-
 def test_tagging_model():
     try:
         random_model_obj(Tagging).as_primitives()
@@ -200,6 +185,13 @@ def test_vm_model():
         random_model_obj(VM).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'VM' object and validate it.")
+
+
+def test_safelist_model():
+    try:
+        random_model_obj(Safelist).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'Safelist' object and validate it.")
 
 
 def test_workflow_model():

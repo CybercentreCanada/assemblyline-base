@@ -1,8 +1,8 @@
 import sys
 
 from assemblyline.common import forge
-from assemblyline.odm.random_data import create_heuristics, create_tag_safelist, create_users, \
-    create_services, create_signatures, create_submission, create_alerts, create_safelists
+from assemblyline.odm.random_data import create_heuristics, create_users, create_services, create_signatures, \
+    create_submission, create_alerts, create_safelists
 
 
 class PrintLogger(object):
@@ -39,9 +39,6 @@ def create_basic_data(log=None, ds=None, svc=True, sigs=True, safelist=True, res
     if safelist:
         log.info("\nCreating random safelist...")
         create_safelists(ds, log=log)
-
-        log.info("\nCreating random tag safelist...")
-        create_tag_safelist(ds, log=log)
 
     if sigs:
         log.info("\nImporting test signatures...")

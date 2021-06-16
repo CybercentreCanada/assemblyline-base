@@ -33,7 +33,6 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.safelist import Safelist
-from assemblyline.odm.models.tag_safelist import TagSafelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
 
@@ -63,7 +62,6 @@ class AssemblylineDatastore(object):
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_settings', UserSettings)
         self.ds.register('safelist', Safelist)
-        self.ds.register('tag_safelist', TagSafelist)
         self.ds.register('workflow', Workflow)
 
     def __enter__(self):
@@ -117,10 +115,6 @@ class AssemblylineDatastore(object):
         return self.ds.result
 
     @property
-    def safelist(self) -> Collection:
-        return self.ds.safelist
-
-    @property
     def service(self) -> Collection:
         return self.ds.service
 
@@ -149,10 +143,6 @@ class AssemblylineDatastore(object):
         return self.ds.submission_tree
 
     @property
-    def tag_safelist(self) -> Collection:
-        return self.ds.tag_safelist
-
-    @property
     def user(self) -> Collection:
         return self.ds.user
 
@@ -171,6 +161,10 @@ class AssemblylineDatastore(object):
     @property
     def vm(self) -> Collection:
         return self.ds.vm
+
+    @property
+    def safelist(self) -> Collection:
+        return self.ds.safelist
 
     @property
     def workflow(self) -> Collection:
