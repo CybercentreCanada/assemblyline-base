@@ -30,7 +30,7 @@ class CacheStore(object):
     def __exit__(self, ex_type, exc_val, exc_tb):
         self.filestore.close()
 
-    def save(self, cache_key, data, ttl=DEFAULT_CACHE_LEN):
+    def save(self, cache_key, data, ttl=DEFAULT_CACHE_LEN, force=False):
         if not COMPONENT_VALIDATOR.match(cache_key):
             raise ValueError("Invalid cache_key for cache item. "
                              "(Only letters, numbers, underscores and dots allowed)")
@@ -38,7 +38,7 @@ class CacheStore(object):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
 
         self.datastore.cached_file.save(new_key, {'expiry_ts': now_as_iso(ttl), 'component': self.component})
-        self.filestore.put(new_key, data)
+        self.filestore.put(new_key, data, force=force)
 
     def get(self, cache_key):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key

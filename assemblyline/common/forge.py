@@ -138,8 +138,7 @@ def get_service_queue(service: str, redis=None):
     return PriorityQueue(service_queue_name(service), redis)
 
 
-def get_tag_safelister(log=None, yml_config=None):
-    from assemblyline.common.tagging import TagSafelister, InvalidSafelist
+def get_tag_safelist_data(yml_config=None):
 
     if yml_config is None:
         yml_config = "/etc/assemblyline/tag_safelist.yml"
@@ -158,6 +157,14 @@ def get_tag_safelister(log=None, yml_config=None):
             yml_data = yaml.safe_load(yml_fh.read())
             if yml_data:
                 tag_safelist_data = recursive_update(tag_safelist_data, yml_data)
+
+    return tag_safelist_data
+
+
+def get_tag_safelister(log=None, yml_config=None):
+    from assemblyline.common.tagging import TagSafelister, InvalidSafelist
+
+    tag_safelist_data = get_tag_safelist_data(yml_config=yml_config)
 
     if not tag_safelist_data:
         raise InvalidSafelist('Could not find any tag_safelist file to load.')
