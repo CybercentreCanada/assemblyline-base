@@ -146,6 +146,7 @@ RECOGNIZED_TYPES = {
     'document/office/powerpoint': True,
     'document/office/passwordprotected': True,
     'document/office/ole': True,
+    'document/office/onenote': True,
     'document/office/rtf': True,
     'document/office/unknown': True,
     'document/office/visio': True,
