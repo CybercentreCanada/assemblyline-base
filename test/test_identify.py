@@ -48,7 +48,8 @@ def test_constants():
     assert identify.custom == compile(r'^custom: ', IGNORECASE)
 
 
-@pytest.mark.parametrize("code_snippet, code_types",
+@pytest.mark.parametrize(
+    "code_snippet, code_types",
     [
         # Nothing
         (b"blah", []),
@@ -323,7 +324,8 @@ def test_strong_indicators(code_snippet, code_types):
     assert actual_code_types == code_types
 
 
-@pytest.mark.parametrize("code_snippet, code_types",
+@pytest.mark.parametrize(
+    "code_snippet, code_types",
     [
         # Nothing
         (b"blah", []),
@@ -427,32 +429,33 @@ def test_weak_indicators(code_snippet, code_types):
 
 
 @pytest.mark.parametrize("code_snippet, is_match",
-    [
-        (b"blah", False),
-        (b"#!", False),
-        (b"#!blah.blah/blah\n", True),
-        (b"#!blah.blah/blah\t \n", True),
-        (b"#!blah.blah/env blah\n", True),
-    ]
-)
+                         [
+                             (b"blah", False),
+                             (b"#!", False),
+                             (b"#!blah.blah/blah\n", True),
+                             (b"#!blah.blah/blah\t \n", True),
+                             (b"#!blah.blah/env blah\n", True),
+                         ]
+                         )
 def test_shebang(code_snippet, is_match):
     assert match(identify.SHEBANG, code_snippet) if is_match else not match(identify.SHEBANG, code_snippet)
 
 
 @pytest.mark.parametrize("executable, general_result",
-    [
-        ("escript", "erlang"),
-        ("nush", "nu"),
-        ("macruby", "ruby"),
-        ("jruby", "ruby"),
-        ("rbx", "ruby"),
-    ]
-)
+                         [
+                             ("escript", "erlang"),
+                             ("nush", "nu"),
+                             ("macruby", "ruby"),
+                             ("jruby", "ruby"),
+                             ("rbx", "ruby"),
+                         ]
+                         )
 def test_executables(executable, general_result):
     assert identify.EXECUTABLES[executable] == general_result
 
 
-@pytest.mark.parametrize("guid, general_result",
+@pytest.mark.parametrize(
+    "guid, general_result",
     [
         # GUID v0 (0)
         ("00020803-0000-0000-C000-000000000046", "document/office/word"),
@@ -490,7 +493,8 @@ def test_guids(guid, general_result):
     assert identify.OLE_CLSID_GUIDs[guid] == general_result
 
 
-@pytest.mark.parametrize("tag, ext",
+@pytest.mark.parametrize(
+    "tag, ext",
     [
         ('archive/chm', '.chm'),
         ('audiovisual/flash', '.swf'),
@@ -543,7 +547,8 @@ def test_tag_to_extension(tag, ext):
     assert identify.tag_to_extension[tag] == ext
 
 
-@pytest.mark.parametrize("type, string",
+@pytest.mark.parametrize(
+    "type, string",
     [
         ('tnef', r'Transport Neutral Encapsulation Format'),
         ('chm', r'MS Windows HtmlHelp Data'),
@@ -611,9 +616,10 @@ def test_tag_to_extension(tag, ext):
 )
 def test_sl_patterns(type, string):
     assert [type, compile(string, IGNORECASE)] in identify.sl_patterns
-    
 
-@pytest.mark.parametrize("sl, tl", 
+
+@pytest.mark.parametrize(
+    "sl, tl",
     [
         ('windows/com', 'executable'),
         ('windows/dos', 'executable'),
@@ -646,36 +652,35 @@ def test_sl_patterns(type, string):
 def test_sl_to_tl(sl, tl):
     assert identify.sl_to_tl[sl] == tl
 
-@pytest.mark.parametrize("tl, string",
-    [
-        ('document',
-        r'Composite Document File|CDFV2|Corel|OLE 2|OpenDocument |Rich Text Format|Microsoft.*'
-        r'(Document|Excel|PowerPoint|Word|OOXML)|Number of (Characters|Pages|Words)'),
-        ('document', r'PostScript|pdf|MIME entity text'),
-        ('java', r'jar |java'),
-        ('code',
-        r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
-        r'|ruby|scheme|script text exe|shell script|tcl'),
-        ('network', r'capture'),
-        ('unknown', r'CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage'),
-        ('unknown', r'disk|file[ ]*system|floppy|tape'),
-        ('audiovisual',
-        r'Macromedia Flash|Matroska|MIDI data|MPEG|MP4|MPG|MP3|QuickTime|RIFF|WebM|animation|audio|movie|music|ogg'
-        r'|sound|tracker|video|voice data'),
-        ('executable', r'803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object'),
-        ('unknown', r'Emulator'),
-        ('image', r'DjVu|Surface|XCursor|bitmap|cursor|color|font|graphics|icon|image|jpeg'),
-        ('archive',
-        r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
-        r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'),
-        ('meta', r'^MS Windows shortcut'),
-        ('metadata', r'MS Windows Vista Event Log'),
-        ('unknown', r'.*'),
-    ]
-)
+
+@pytest.mark.parametrize(
+    "tl, string",
+    [('document',
+      r'Composite Document File|CDFV2|Corel|OLE 2|OpenDocument |Rich Text Format|Microsoft.*'
+      r'(Document|Excel|PowerPoint|Word|OOXML)|Number of (Characters|Pages|Words)'),
+     ('document', r'PostScript|pdf|MIME entity text'),
+     ('java', r'jar |java'),
+     ('code',
+      r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
+      r'|ruby|scheme|script text exe|shell script|tcl'),
+     ('network', r'capture'),
+     ('unknown', r'CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage'),
+     ('unknown', r'disk|file[ ]*system|floppy|tape'),
+     ('audiovisual',
+      r'Macromedia Flash|Matroska|MIDI data|MPEG|MP4|MPG|MP3|QuickTime|RIFF|WebM|animation|audio|movie|music|ogg'
+      r'|sound|tracker|video|voice data'),
+     ('executable', r'803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object'),
+     ('unknown', r'Emulator'),
+     ('image', r'DjVu|Surface|XCursor|bitmap|cursor|color|font|graphics|icon|image|jpeg'),
+     ('archive',
+      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
+      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'),
+     ('meta', r'^MS Windows shortcut'),
+     ('metadata', r'MS Windows Vista Event Log'),
+     ('unknown', r'.*'), ])
 def test_tl_patterns(tl, string):
     assert [tl, compile(string, IGNORECASE)] in identify.tl_patterns
-    
+
 
 @pytest.mark.parametrize("mime, translated_type",
     [
@@ -786,21 +791,41 @@ def test_subtype(label, expected):
     assert identify._subtype(label) == expected
 
 
-@pytest.mark.parametrize("buf, expected_result, mocked_magic",
-    [
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, None),
-        (b"blah", {'ascii': 'blah', 'hex': '626c6168', 'magic': 'ASCII text, with no line terminators', 'mime': 'text/plain', 'type': 'unknown'}, None),
-        (b"if __name__=='__main__'", {'ascii': "if __name__=='__main__'", 'hex': '6966205f5f6e616d655f5f3d3d275f5f6d61696e5f5f27', 'magic': 'Python script, ASCII text executable, with no line terminators', 'mime': 'text/plain', 'type': 'code/python'}, None),
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, b"blah"),
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, b"blah\nblip\nbloop"),
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, b"blah\ncustom: yabadabadoo\nbloop"),
-        (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'code/vbs'}, b"blah\ncustom: code/vbs\nbloop"),
-        (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'}, b"blah\n- yabadabadoo \nbloop"),
-        (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'meta/torrent'}, b"blah\n- application/x-bittorrent \nbloop"),
-        (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'}, b"blah\ncustom: document/office/unknown\nbloop"),
-        (u"Root Entrybbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb00020803-0000-0000-C000-000000000046".encode("utf-16-le"), {'ascii': 'R.o.o.t. .E.n.t.r.y.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.', 'hex': '52006f006f007400200045006e007400720079006200620062006200620062006200620062006200620062006200620062006200620062006200620062006200', 'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'}, b"blah\ncustom: document/office/unknown\nbloop"),
-    ]
-)
+@pytest.mark.parametrize(
+    "buf, expected_result, mocked_magic",
+    [(b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      None),
+     (b"blah",
+      {'ascii': 'blah', 'hex': '626c6168', 'magic': 'ASCII text, with no line terminators', 'mime': 'text/plain',
+       'type': 'unknown'},
+      None),
+     (b"if __name__=='__main__'",
+      {'ascii': "if __name__=='__main__'", 'hex': '6966205f5f6e616d655f5f3d3d275f5f6d61696e5f5f27',
+       'magic': 'Python script, ASCII text executable, with no line terminators', 'mime': 'text/plain',
+       'type': 'code/python'},
+      None),
+     (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      b"blah"),
+     (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      b"blah\nblip\nbloop"),
+     (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      b"blah\ncustom: yabadabadoo\nbloop"),
+     (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'code/vbs'},
+      b"blah\ncustom: code/vbs\nbloop"),
+     (b"", {'ascii': None, 'hex': None, 'magic': None, 'mime': None, 'type': 'unknown'},
+      b"blah\n- yabadabadoo \nbloop"),
+     (b"blah", {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'meta/torrent'},
+      b"blah\n- application/x-bittorrent \nbloop"),
+     (b"blah",
+      {'ascii': "blah", 'hex': "626c6168", 'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'},
+      b"blah\ncustom: document/office/unknown\nbloop"),
+     (u"Root Entrybbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb00020803-0000-0000-C000-000000000046".encode(
+         "utf-16-le"),
+      {'ascii': 'R.o.o.t. .E.n.t.r.y.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.',
+       'hex': '52006f006f007400200045006e007400720079006200620062006200620062006200620'
+              '062006200620062006200620062006200620062006200620062006200',
+       'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'},
+      b"blah\ncustom: document/office/unknown\nbloop"), ])
 def test_ident(buf, expected_result, mocked_magic, mocker):
     if mocked_magic:
         mocker.patch("magic.magic_file", return_value=mocked_magic)
@@ -811,7 +836,8 @@ def test_ident(buf, expected_result, mocked_magic, mocker):
     remove(path)
 
 
-@pytest.mark.parametrize("score, expected",
+@pytest.mark.parametrize(
+    "score, expected",
     [
         (0, "0%"),
         (0.0, "0%"),
@@ -830,7 +856,8 @@ def test_confidence(score, expected):
     assert identify._confidence(score) == expected
 
 
-@pytest.mark.parametrize("lang, scores_map, expected",
+@pytest.mark.parametrize(
+    "lang, scores_map, expected",
     [
         ("blah", {}, "blah"),
         ("code/javascript", {"code/jscript": 0, "code/pdfjs": 0}, "code/javascript"),
@@ -842,16 +869,23 @@ def test_differentiate(lang, scores_map, expected):
     assert identify._differentiate(lang, scores_map) == expected
 
 
-@pytest.mark.parametrize("file_contents, expected_return",
+@pytest.mark.parametrize(
+    "file_contents, expected_return",
     [
         (b"", ("unknown", 0)),
         (b"#!blah.blah/blah\n", ("code/blah", "60%")),
         (b"#!blah.blah/jruby\n", ("code/ruby", "60%")),
         (b"REM \nubound()", ("code/vbs", "40%")),
         (b"create \ndrop \nselect \nreturns \ndeclare ", ("unknown", 0)),
-        (b"try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:", ("code/python", "74%")),
-        (b"REM \nubound()\nlbound()\ntry:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:", ("code/python", "74%")),
-        (b"REM \nubound()\nlbound()\nREM \ntry:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:", ("code/vbs", "80%")),
+        (b"try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:"
+         b"try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try"
+         b":try:try:try:try:try:try:try:try:try:", ("code/python", "74%")),
+        (b"REM \nubound()\nlbound()\ntry:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:"
+         b"try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try"
+         b":try:try:try:try:try:try:try:try:try:", ("code/python", "74%")),
+        (b"REM \nubound()\nlbound()\nREM \ntry:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try"
+         b":try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:try:"
+         b"try:try:try:try:try:try:try:try:try:try:try:", ("code/vbs", "80%")),
         (b"really_big", ("unknown", 0)),
     ]
 )
@@ -865,7 +899,8 @@ def test_guess_language(file_contents, expected_return):
     remove(path)
 
 
-@pytest.mark.parametrize("file_contents, fallback, namelist, expected_return",
+@pytest.mark.parametrize(
+    "file_contents, fallback, namelist, expected_return",
     [
         (b"", None, [], "archive/zip"),
         (b"", None, ["META-INF MANIFEST.MF"], "java/jar"),
@@ -919,7 +954,8 @@ def test_cart_ident(file_contents, metadata, expected_return):
         remove(output_path)
 
 
-@pytest.mark.parametrize("file_contents, expected_return",
+@pytest.mark.parametrize(
+    "file_contents, expected_return",
     [
         (b"", "executable/windows/dos"),
         (b"MZ10010101010101010101010101010101010101010101010", "executable/windows/dos"),
@@ -938,7 +974,8 @@ def test_dos_ident(file_contents, expected_return):
     remove(path)
 
 
-@pytest.mark.parametrize("file_contents, mocked_return, expected_return",
+@pytest.mark.parametrize(
+    "file_contents, mocked_return, expected_return",
     [
         (b"", {"mime": None, "type": None}, {'mime': None, 'ssdeep': '3::', 'type': 'unknown'}),
         (b"", {"mime": "blah", "type": None}, {'mime': 'blah', 'ssdeep': '3::', 'type': 'unknown'}),
