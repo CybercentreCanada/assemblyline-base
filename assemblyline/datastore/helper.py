@@ -559,7 +559,7 @@ class AssemblylineDatastore(object):
                     "partial": False
                 }
 
-        partial = False
+        partial = submission['state'] != 'completed'
         files = {}
         scores = {}
         missing_files = []
