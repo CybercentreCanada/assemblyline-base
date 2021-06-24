@@ -32,13 +32,14 @@ class Heuristic(odm.Model):
 
 @odm.model(index=True, store=False)
 class Section(odm.Model):
-    body = odm.Optional(odm.Text(copyto="__text__"))         # Text body of the result section
-    classification = odm.Classification()                    # Classification of the section
-    body_format = odm.Enum(values=BODY_FORMAT, index=False)  # Type of body in this section
-    depth = odm.Integer(index=False)                         # Depth of the section
-    heuristic = odm.Optional(odm.Compound(Heuristic))        # Heuristic used to score result section
-    tags = odm.Compound(Tagging, default={})                 # List of tags associated to this section
-    title_text = odm.Text(copyto="__text__")                 # Title of the section
+    body = odm.Optional(odm.Text(copyto="__text__"))                      # Text body of the result section
+    classification = odm.Classification()                                 # Classification of the section
+    body_format = odm.Enum(values=BODY_FORMAT, index=False)               # Type of body in this section
+    depth = odm.Integer(index=False)                                      # Depth of the section
+    heuristic = odm.Optional(odm.Compound(Heuristic))                     # Heuristic used to score result section
+    tags = odm.Compound(Tagging, default={})                              # List of tags associated to this section
+    safelisted_tags = odm.FlattenedListObject(store=False, default={})    # List of safelisted tags
+    title_text = odm.Text(copyto="__text__")                              # Title of the section
 
 
 @odm.model(index=True, store=True)
