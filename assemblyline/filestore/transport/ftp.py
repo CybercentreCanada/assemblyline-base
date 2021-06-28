@@ -9,7 +9,7 @@ import errno
 import weakref
 
 from io import BytesIO
-from typing import Union
+from typing import Union, AnyStr
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.path import splitpath
@@ -97,7 +97,7 @@ class TransportFTP(Transport):
     FTP Transport class.
     """
     def __init__(self, base=None, host=None, password=None, user=None, port=None, use_tls=None):
-        self.log = logging.getLogger('assemblyline.transport.ftp')
+        self.log: logging.Logger = logging.getLogger('assemblyline.transport.ftp')
         self.base: str = base
         self.ftp_objects: weakref.WeakKeyDictionary[threading.Thread, ftplib.FTP] = weakref.WeakKeyDictionary()
         self.host: str = host
@@ -144,7 +144,7 @@ class TransportFTP(Transport):
         self.ftp.delete(path)
 
     @reconnect_retry_on_fail
-    def exists(self, path):
+    def exists(self, path) -> bool:
         path = self.normalize(path)
         self.log.debug('Checking for existence of %s', path)
         size = None
@@ -178,7 +178,7 @@ class TransportFTP(Transport):
             self.ftp.retrbinary('RETR ' + src_path, localfile.write)
 
     @reconnect_retry_on_fail
-    def upload(self, src_path, dst_path):
+    def upload(self, src_path: str, dst_path: str):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
@@ -207,7 +207,7 @@ class TransportFTP(Transport):
         return bio.getvalue()
 
     @reconnect_retry_on_fail
-    def put(self, dst_path, content: Union[bytes, str]):
+    def put(self, dst_path: str, content: AnyStr):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
