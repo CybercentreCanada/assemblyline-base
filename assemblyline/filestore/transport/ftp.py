@@ -1,11 +1,15 @@
+from __future__ import annotations
 import ftplib
 import logging
 import os
 import posixpath
+import threading
 import time
 import errno
+import weakref
 
 from io import BytesIO
+from typing import Union, AnyStr
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.path import splitpath
@@ -14,7 +18,7 @@ from assemblyline.filestore.transport.base import Transport, TransportException,
 
 
 def reconnect_retry_on_fail(func):
-    def new_func(self, *args, **kwargs):
+    def new_func(self: TransportFTP, *args, **kwargs):
         max_retry = 3
         try_count = 0
 
@@ -93,14 +97,14 @@ class TransportFTP(Transport):
     FTP Transport class.
     """
     def __init__(self, base=None, host=None, password=None, user=None, port=None, use_tls=None):
-        self.log = logging.getLogger('assemblyline.transport.ftp')
-        self.base = base
-        self.ftp = None
-        self.host = host
-        self.port = int(port or 21)
-        self.password = password
-        self.user = user
-        self.use_tls = use_tls
+        self.log: logging.Logger = logging.getLogger('assemblyline.transport.ftp')
+        self.base: str = base
+        self.ftp_objects: weakref.WeakKeyDictionary[threading.Thread, ftplib.FTP] = weakref.WeakKeyDictionary()
+        self.host: str = host
+        self.port: int = int(port or 21)
+        self.password: str = password
+        self.user: str = user
+        self.use_tls: bool = use_tls
 
         def ftp_normalize(path):
             # If they've provided an absolute path. Leave it a is.
@@ -116,6 +120,14 @@ class TransportFTP(Transport):
 
         super(TransportFTP, self).__init__(normalize=ftp_normalize)
 
+    @property
+    def ftp(self) -> Union[ftplib.FTP, ftplib.FTP_TLS]:
+        return self.ftp_objects.get(threading.current_thread(), None)
+
+    @ftp.setter
+    def ftp(self, value: Union[ftplib.FTP, ftplib.FTP_TLS]):
+        self.ftp_objects[threading.current_thread()] = value
+
     def __str__(self):
         out = 'ftp://{}@{}'.format(self.user, self.host)
         if self.base:
@@ -123,8 +135,8 @@ class TransportFTP(Transport):
         return out
 
     def close(self):
-        if self.ftp:
-            self.ftp.close()
+        for con in self.ftp_objects.values():
+            con.close()
 
     @reconnect_retry_on_fail
     def delete(self, path):
@@ -132,7 +144,7 @@ class TransportFTP(Transport):
         self.ftp.delete(path)
 
     @reconnect_retry_on_fail
-    def exists(self, path):
+    def exists(self, path) -> bool:
         path = self.normalize(path)
         self.log.debug('Checking for existence of %s', path)
         size = None
@@ -166,7 +178,7 @@ class TransportFTP(Transport):
             self.ftp.retrbinary('RETR ' + src_path, localfile.write)
 
     @reconnect_retry_on_fail
-    def upload(self, src_path, dst_path):
+    def upload(self, src_path: str, dst_path: str):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)
@@ -188,14 +200,14 @@ class TransportFTP(Transport):
 
     # Buffer based functions
     @reconnect_retry_on_fail
-    def get(self, path):
+    def get(self, path) -> bytes:
         path = self.normalize(path)
         bio = BytesIO()
         self.ftp.retrbinary('RETR ' + path, bio.write)
         return bio.getvalue()
 
     @reconnect_retry_on_fail
-    def put(self, dst_path, content):
+    def put(self, dst_path: str, content: AnyStr):
         dst_path = self.normalize(dst_path)
         dirname = posixpath.dirname(dst_path)
         filename = posixpath.basename(dst_path)

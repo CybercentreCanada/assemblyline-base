@@ -1,3 +1,5 @@
+from typing import AnyStr
+
 from assemblyline.common.exceptions import ChainException
 
 
@@ -37,20 +39,20 @@ class Transport(object):
     def close(self):
         pass
     
-    def delete(self, path):
+    def delete(self, path: str):
         """
         Deletes the file.
         """
         raise TransportException("Not Implemented")
 
-    def exists(self, path):
+    def exists(self, path: str) -> bool:
         """
         Returns True if the path exists, False otherwise.
         Should work with both files and directories.
         """
         raise TransportException("Not Implemented")
 
-    def makedirs(self, path):
+    def makedirs(self, path: str):
         """
         Like os.makedirs the super-mkdir, create the leaf directory path and
         any intermediate path segments.
@@ -58,13 +60,13 @@ class Transport(object):
         raise TransportException("Not Implemented")
 
     # File based functions
-    def download(self, src_path, dst_path):
+    def download(self, src_path: str, dst_path: str):
         """
         Copies the content of the filestore src_path to the local dst_path.
         """
         raise TransportException("Not Implemented")
 
-    def upload(self, src_path, dst_path):
+    def upload(self, src_path: str, dst_path: str):
         """
         Save upload source file src_path to to the filesotre dst_path, overwriting dst_path if it already exists.
         """
@@ -84,13 +86,13 @@ class Transport(object):
         return failed_tuples
 
     # Buffer based functions
-    def get(self, path):
+    def get(self, path: str) -> bytes:
         """
         Returns the content of the file.
         """
         raise TransportException("Not Implemented")
         
-    def put(self, dst_path, content):
+    def put(self, dst_path: str, content: AnyStr):
         """
         Put the content of the file in memory directly to the filestore dst_path
         """
