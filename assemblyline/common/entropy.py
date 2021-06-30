@@ -7,9 +7,10 @@ from typing import Tuple, List, BinaryIO, AnyStr
 frequency = None
 
 
-def calculate_entropy(contents: AnyStr) -> float:
-    """ this function calculates the entropy of the file
-        It is given by the formula:
+def calculate_entropy(contents: AnyStr, flag: int=0) -> Union[float, array.array, Tuple[float, array.array]]:
+    """ this function calculates a byte histrogram and the entropy of the file
+        and returns either the histogram, entropy, or both
+        Entropy is given by the formula:
             E = -SUM[v in 0..255](p(v) * ln(p(v)))
     """
 
@@ -24,6 +25,9 @@ def calculate_entropy(contents: AnyStr) -> float:
     for byte in contents:
         count[byte] += 1
 
+    if flag == 1:
+        return count
+
     entropy = float(0)
 
     for value in count:
@@ -31,6 +35,9 @@ def calculate_entropy(contents: AnyStr) -> float:
             prob = (float(value) / data_length)
             entropy += (prob * log(prob, 2))
     entropy *= -1
+
+    if flag == 2:
+        return tuple(entropy, count)
 
     return entropy
 
