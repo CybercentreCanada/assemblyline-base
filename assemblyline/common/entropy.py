@@ -69,9 +69,9 @@ def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tupl
     fullentropy = BufferedCalculator()
     for _ in range(num_partitions):
         partition = fin.read(partition_size)
-        p_entropies.append(entropy_from_data(partition)[0])
+        p_entropies.append(entropy_from_data(partition))
         fullentropy.update(partition)
-    return entropy_from_histogram(fullentropy.length, fullentropy.count_bytes), p_entropies
+    return (entropy_from_histogram(fullentropy.length, fullentropy.count_bytes), fullentropy.count_bytes), p_entropies
 
 
 class BufferedCalculator(object):
