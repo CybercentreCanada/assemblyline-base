@@ -1,46 +1,58 @@
-import array
 import io
 
+import array
 from math import ceil, log
-from typing import Tuple, List, BinaryIO, AnyStr
+from typing import Tuple, List, BinaryIO, AnyStr, Optional
 
 frequency = None
 
 
-def calculate_entropy(contents: AnyStr, flag: int=0) -> Union[float, array.array, Tuple[float, array.array]]:
-    """ this function calculates a byte histrogram and the entropy of the file
-        and returns either the histogram, entropy, or both
-        Entropy is given by the formula:
-            E = -SUM[v in 0..255](p(v) * ln(p(v)))
+def calculate_byte_histogram(contents: AnyStr) -> Optional[array.array]:
+    """ this function calculates a byte histrogram of the file.
+    if the length of contents is 0 then None is returned
     """
 
     data_length = len(contents)
 
     if data_length == 0:
-        return 0
+        return None
 
-    count = array.array('L', [0] * 256)
+    count_bytes = array.array('L', [0] * 256)
 
     # keep a count of all the bytes
     for byte in contents:
-        count[byte] += 1
+        count_bytes[byte] += 1
 
-    if flag == 1:
-        return count
+    return count_bytes
 
+def entropy_from_histogram(data_length: int, count_bytes: array.array):
+    """ Given a byte histogram and  the length of the data it was derived from,
+        this function will compute and return the Shannon entropy.
+        Entropy is given by the formula:
+            E = -SUM[v in 0..255](p(v) * ln(p(v)))
+    """
     entropy = float(0)
-
-    for value in count:
+    for value in count_bytes:
         if value:
             prob = (float(value) / data_length)
             entropy += (prob * log(prob, 2))
     entropy *= -1
-
-    if flag == 2:
-        return tuple(entropy, count)
-
     return entropy
 
+def entropy_from_data(contents: AnyStr) -> Tuple[float, array.array]:
+    """ this function calculates a byte histrogram and the entropy of the file
+        and returns the histogram and the entropy.
+        Entropy is given by the formula:
+            E = -SUM[v in 0..255](p(v) * ln(p(v)))
+    """
+
+    count_bytes = calculate_byte_histogram(contents)
+    if count_bytes is None:
+        return (0.0, None)
+
+    data_length = len(contents)
+    entropy = entropy_from_histogram(data_length, count_bytes)
+    return (entropy, count_bytes)
 
 def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tuple[float, List[float]]:
     """Calculate the entropy of a file and its partitions."""
@@ -57,44 +69,20 @@ def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tupl
     fullentropy = BufferedCalculator()
     for _ in range(num_partitions):
         partition = fin.read(partition_size)
-        p_entropies.append(calculate_entropy(partition))
+        p_entropies.append(entropy_from_data(partition)[0])
         fullentropy.update(partition)
-    return fullentropy.entropy(), p_entropies
+    return entropy_from_histogram(fullentropy.length, fullentropy.count_bytes), p_entropies
 
 
 class BufferedCalculator(object):
     def __init__(self):
-        global frequency
-        import pyximport
-        pyximport.install()
-        # noinspection PyUnresolvedReferences
-        from assemblyline.common import frequency
-
-        self.c = {}
+        self.count_bytes = array.array('L', [0] * 256)
         self.length = 0
-
-    def entropy(self) -> float:
-        if self.length == 0:
-            return 0.0
-
-        length = float(self.length)
-
-        entropy = 0.0
-        for v in self.c.values():
-            prob = float(v) / length
-            entropy += prob * log(prob, 2)
-
-        entropy *= -1
-
-        # Make sure we don't return -0.0.
-        if not entropy:
-            entropy = 0.0
-
-        return entropy
 
     def update(self, data: AnyStr, length: int = 0):
         if not length:
             length = len(data)
 
         self.length += length
-        self.c = frequency.counts(data, length, self.c)
+        for byte in data:
+            self.count_bytes[byte] += 1
