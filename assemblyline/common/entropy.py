@@ -13,11 +13,10 @@ def calculate_byte_histogram(contents: AnyStr) -> Optional[array.array]:
     """
 
     data_length = len(contents)
+    count_bytes = array.array('L', [0] * 256)
 
     if data_length == 0:
-        return None
-
-    count_bytes = array.array('L', [0] * 256)
+        return count_bytes
 
     # keep a count of all the bytes
     for byte in contents:
@@ -47,10 +46,10 @@ def entropy_from_data(contents: AnyStr) -> Tuple[float, array.array]:
     """
 
     count_bytes = calculate_byte_histogram(contents)
-    if count_bytes is None:
-        return (0.0, None)
-
     data_length = len(contents)
+    if data_length == 0:
+        return (0.0, count_bytes)
+
     entropy = entropy_from_histogram(data_length, count_bytes)
     return (entropy, count_bytes)
 
@@ -72,6 +71,7 @@ def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tupl
         p_entropies.append(entropy_from_data(partition))
         fullentropy.update(partition)
     return (entropy_from_histogram(fullentropy.length, fullentropy.count_bytes), fullentropy.count_bytes), p_entropies
+
 
 
 class BufferedCalculator(object):
