@@ -53,7 +53,7 @@ def entropy_from_data(contents: AnyStr) -> Tuple[float, array.array]:
     entropy = entropy_from_histogram(data_length, count_bytes)
     return (entropy, count_bytes)
 
-def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tuple[float, List[float]]:
+def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tuple[Tuple[float, array.array], List[Tuple[float, array.array]]]::
     """Calculate the entropy of a file and its partitions."""
 
     # Split input into num_parititions and calculate
