@@ -165,12 +165,12 @@ def test_entropy():
     str_1 = "1" * 10000
     str_2 = bytes([random.randint(1, 255) for _ in range(10000)])
 
-    e1, parts1 = calculate_partition_entropy(BytesIO(str_1.encode()), num_partitions=1)
-    e2, parts2 = calculate_partition_entropy(BytesIO(str_2), num_partitions=1)
+    (e1, h1), parts1 = calculate_partition_entropy(BytesIO(str_1.encode()), num_partitions=1)
+    (e2, h2), parts2 = calculate_partition_entropy(BytesIO(str_2), num_partitions=1)
     assert e1 == 0
-    assert e1 == parts1[0]
+    assert e1 == parts1[0][0]
     assert e2 > 7.5
-    assert e2 == parts2[0]
+    assert e2 == parts2[0][0]
 
 
 def test_heuristics_valid():
