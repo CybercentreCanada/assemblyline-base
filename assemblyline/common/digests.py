@@ -43,7 +43,7 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
             length = len(data)
 
     if calculate_entropy:
-        result['entropy'] = bc.entropy()
+        result['entropy'] = entropy.entropy_from_histogram(bc.length, bc.count_bytes)
     else:
         result['entropy'] = 0
     result['md5'] = md5.hexdigest()

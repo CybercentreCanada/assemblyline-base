@@ -82,7 +82,7 @@ class BufferedCalculator(object):
     def update(self, data: AnyStr, length: int = 0):
         if not length:
             length = len(data)
-
         self.length += length
         for byte in data:
             self.count_bytes[byte] += 1
+
