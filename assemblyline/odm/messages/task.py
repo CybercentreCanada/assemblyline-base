@@ -22,6 +22,7 @@ class TagItem(odm.Model):
     type = odm.Keyword()
     value = odm.Keyword()
     short_type = odm.Keyword()
+    safelisted = odm.Boolean(default=False)
 
 
 @odm.model()
