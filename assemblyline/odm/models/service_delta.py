@@ -16,6 +16,7 @@ class DockerConfigDelta(odm.Model):
     image = odm.Optional(odm.Keyword())  # The docker image and tag, optionally including registry in the normal way
     registry_username = odm.Optional(odm.Keyword())  # The username to use when pulling the image
     registry_password = odm.Optional(odm.Keyword())  # The password or token to use when pulling the image
+    registry_type = odm.Optional(odm.Enum(values=["docker", "harbor"]))  # The type of registry (Docker, Harbor)
     ports = odm.Optional(odm.List(odm.Keyword()))
     ram_mb = odm.Optional(odm.Integer())
     ram_mb_min = odm.Optional(odm.Integer())
