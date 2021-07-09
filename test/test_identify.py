@@ -313,6 +313,7 @@ def test_constants():
         (b".GetField(", ["code/ps1"]),
         (b".GetType(", ["code/ps1"]),
         (b".GetMethod(", ["code/ps1"]),
+        (b"FromBase64String(", ["code/ps1"]),
     ]
 )
 def test_strong_indicators(code_snippet, code_types):
