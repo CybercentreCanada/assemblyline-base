@@ -43,6 +43,7 @@ class Tagging(odm.Model):
         class DynamicProcess(odm.Model):
             command_line = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             file_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            shortcut = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         @odm.model(index=True, store=False)
         class DynamicSignature(odm.Model):
