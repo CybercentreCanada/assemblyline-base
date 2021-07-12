@@ -444,13 +444,19 @@ def ident(buf, length: int, path) -> Dict:
         labels = []
         if file_type:
             with magic_lock:
-                labels = magic.magic_file(file_type, path).split(b'\n')
+                try:
+                    labels = magic.magic_file(file_type, path).split(b'\n')
+                except magic.MagicException as me:
+                    labels = me.message.split(b'\n')
                 labels = [label[2:].strip() if label.startswith(b'- ') else label.strip() for label in labels]
 
         mimes = []
         if mime_type:
             with magic_lock:
-                mimes = magic.magic_file(mime_type, path).split(b'\n')
+                try:
+                    mimes = magic.magic_file(mime_type, path).split(b'\n')
+                except magic.MagicException as me:
+                    labels = me.message.split(b'\n')
                 mimes = [mime[2:].strip() if mime.startswith(b'- ') else mime.strip() for mime in mimes]
 
         # For user feedback set the mime and magic meta data to always be the primary
