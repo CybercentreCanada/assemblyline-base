@@ -123,7 +123,7 @@ STRONG_INDICATORS = {
         # Match one of the common Classes
         re.compile(rb'(-memberDefinition|-Name|-namespace|-passthru)'),
         # Match one of the common Methods
-        re.compile(rb'\.Get(String|Field|Type|Method)\(')
+        re.compile(rb'(\.Get(String|Field|Type|Method)|FromBase64String)\(')
     ]
 }
 STRONG_SCORE = 15
