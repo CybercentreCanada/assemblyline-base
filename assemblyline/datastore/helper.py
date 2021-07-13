@@ -794,7 +794,7 @@ class AssemblylineDatastore(object):
                     # Get the heuristics data
                     if section['heuristic']['score'] < 0:
                         h_type = "safe"
-                    elif section['heuristic']['score'] < 100:
+                    elif section['heuristic']['score'] < 300:
                         h_type = "info"
                     elif section['heuristic']['score'] < 1000:
                         h_type = "suspicious"
