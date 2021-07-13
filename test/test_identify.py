@@ -96,6 +96,7 @@ def test_constants():
         (b".oneOfChild", ["code/javascript"]),
         (b"unescape(", ["code/javascript"]),
         (b".createElement(", ["code/javascript"]),
+        (b"submitForm(", ["code/javascript"]),
         # C#
         (b"namespace blah", ["code/csharp", "code/php"]),
         (b"\nnamespace\tblah(", ["code/csharp", "code/php"]),
