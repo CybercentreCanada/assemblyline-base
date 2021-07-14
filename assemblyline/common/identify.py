@@ -39,6 +39,7 @@ STRONG_INDICATORS = {
         re.compile(rb'\.oneOfChild'),
         re.compile(rb'unescape\('),
         re.compile(rb'\.createElement\('),
+        re.compile(rb'submitForm\('),
     ],
     'code/csharp': [
         re.compile(rb'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
