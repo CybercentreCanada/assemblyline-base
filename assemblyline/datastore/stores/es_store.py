@@ -694,6 +694,17 @@ class ESCollection(Collection):
 
         return out
 
+    def exists(self, key, force_archive_access=False):
+        found = self.with_retries(self.datastore.client.exists, index=self.name, id=key, _source=False)
+
+        if not found and (self.archive_access or (self.ilm_config and force_archive_access)):
+            query_body = {"query": {"ids": {"values": [key]}}, "size": 0}
+            res = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
+                                    body=query_body)
+            found = res['hits']['total']['value'] > 0
+
+        return found
+
     def _get(self, key, retries, force_archive_access=False):
 
         def normalize_output(data_output):

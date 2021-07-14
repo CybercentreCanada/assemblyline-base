@@ -39,7 +39,6 @@ class ServiceStatus(enum.IntEnum):
 
 
 SERVICE_STATE_HASH = 'service-stasis-table'
-SERVICE_VERSION_HASH = 'service-tool-version-table'
 
 # A null empty accepts, accepts all. A null rejects, rejects nothing
 DEFAULT_SERVICE_ACCEPTS = ".*"
@@ -147,6 +146,7 @@ RECOGNIZED_TYPES = {
     'document/office/powerpoint': True,
     'document/office/passwordprotected': True,
     'document/office/ole': True,
+    'document/office/onenote': True,
     'document/office/rtf': True,
     'document/office/unknown': True,
     'document/office/visio': True,

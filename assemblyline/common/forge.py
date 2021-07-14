@@ -138,31 +138,43 @@ def get_service_queue(service: str, redis=None):
     return PriorityQueue(service_queue_name(service), redis)
 
 
-def get_tag_whitelister(log=None, yml_config=None):
-    from assemblyline.common.tagging import TagWhitelister, InvalidWhitelist
+def get_tag_safelist_data(yml_config=None):
 
     if yml_config is None:
-        yml_config = "/etc/assemblyline/tag_whitelist.yml"
+        yml_config = "/etc/assemblyline/tag_safelist.yml"
 
-    tag_whitelist_data = {}
-    default_file = os.path.join(os.path.dirname(__file__), "tag_whitelist.yml")
+    tag_safelist_data = {}
+    default_file = os.path.join(os.path.dirname(__file__), "tag_safelist.yml")
     if os.path.exists(default_file):
         with open(default_file) as default_fh:
             default_yml_data = yaml.safe_load(default_fh.read())
             if default_yml_data:
-                tag_whitelist_data.update(default_yml_data)
+                tag_safelist_data.update(default_yml_data)
 
     # Load modifiers from the yaml config
     if os.path.exists(yml_config):
         with open(yml_config) as yml_fh:
             yml_data = yaml.safe_load(yml_fh.read())
             if yml_data:
-                tag_whitelist_data = recursive_update(tag_whitelist_data, yml_data)
+                tag_safelist_data = recursive_update(tag_safelist_data, yml_data)
 
-    if not tag_whitelist_data:
-        raise InvalidWhitelist('Could not find any tag_whitelist file to load.')
+    return tag_safelist_data
 
-    return TagWhitelister(tag_whitelist_data, log=log)
+
+def get_tag_safelister(log=None, yml_config=None, config=None, datastore=None):
+    from assemblyline.common.tagging import TagSafelister, InvalidSafelist
+
+    with get_cachestore('system', config=config, datastore=datastore) as cache:
+        tag_safelist_yml = cache.get('tag_safelist_yml')
+        if tag_safelist_yml:
+            tag_safelist_data = yaml.safe_load(tag_safelist_yml)
+        else:
+            tag_safelist_data = get_tag_safelist_data(yml_config=yml_config)
+
+    if not tag_safelist_data:
+        raise InvalidSafelist('Could not find any tag_safelist file to load.')
+
+    return TagSafelister(tag_safelist_data, log=log)
 
 
 class CachedObject:
