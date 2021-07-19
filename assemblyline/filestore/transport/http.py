@@ -98,7 +98,7 @@ class TransportHTTP(Transport):
         raise TransportException("READ ONLY TRANSPORT: Method not implemented")
 
     # Buffer based functions
-    def get(self, path):
+    def get(self, path: str) -> bytes:
         path = self.normalize(path)
         resp = self.session.get(path, auth=self.auth, cert=self.pki, verify=self.verify)
         if resp.ok:

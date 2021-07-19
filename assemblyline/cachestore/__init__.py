@@ -1,5 +1,6 @@
 
 import re
+from typing import AnyStr
 
 from assemblyline.common import forge
 from assemblyline.common.isotime import now_as_iso
@@ -10,7 +11,7 @@ COMPONENT_VALIDATOR = re.compile("^[a-zA-Z0-9][a-zA-Z0-9_.]*$")
 
 
 class CacheStore(object):
-    def __init__(self, component, config=None, datastore=None):
+    def __init__(self, component: str, config=None, datastore=None):
         if not component:
             raise ValueError("Cannot instanciate a cachestore without providing a component name.")
 
@@ -24,13 +25,13 @@ class CacheStore(object):
         self.datastore = datastore or forge.get_datastore(config=config)
         self.filestore = FileStore(*config.filestore.cache)
 
-    def __enter__(self):
+    def __enter__(self) -> 'CacheStore':
         return self
 
     def __exit__(self, ex_type, exc_val, exc_tb):
         self.filestore.close()
 
-    def save(self, cache_key, data, ttl=DEFAULT_CACHE_LEN, force=False):
+    def save(self, cache_key: str, data: AnyStr, ttl=DEFAULT_CACHE_LEN, force=False):
         if not COMPONENT_VALIDATOR.match(cache_key):
             raise ValueError("Invalid cache_key for cache item. "
                              "(Only letters, numbers, underscores and dots allowed)")
@@ -62,7 +63,6 @@ class CacheStore(object):
 
     def get(self, cache_key: str) -> bytes:
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
-
         return self.filestore.get(new_key)
 
     def download(self, cache_key: str, path: str):
@@ -71,10 +71,9 @@ class CacheStore(object):
 
     def exists(self, cache_key: str):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
-
         return self.filestore.exists(new_key)
 
-    def delete(self, cache_key, db_delete=True):
+    def delete(self, cache_key: str, db_delete=True):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
 
         self.filestore.delete(new_key)
