@@ -1250,7 +1250,8 @@ class ESCollection(Collection):
         return result['aggregations'][f"{field}_stats"]
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
-                       rows=None, filters=None, access_control=None, as_obj=True, use_archive=False):
+                       rows=None, filters=None, access_control=None, as_obj=True, use_archive=False,
+                       track_total_hits=False):
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
@@ -1290,7 +1291,7 @@ class ESCollection(Collection):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args, use_archive=use_archive)
+        result = self._search(args, use_archive=use_archive, track_total_hits=track_total_hits)
 
         return {
             'offset': offset,
