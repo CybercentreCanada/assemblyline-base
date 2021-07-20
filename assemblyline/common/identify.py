@@ -24,10 +24,12 @@ constants = get_constants()
 
 STRONG_INDICATORS = {
     'code/vbs': [
-        re.compile(rb'(^|\n)On Error Resume Next'),
+        re.compile(rb'(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next'),
         re.compile(rb'(^|\n)(?:Private)?[ \t]*Sub[ \t]+\w+\(*'),
-        re.compile(rb'(^|\n)End Module'),
+        re.compile(rb'(^|\n)End[ \t]+Module'),
         re.compile(rb'(^|\n)ExecuteGlobal'),
+        re.compile(rb'(^|\n)REM[ \t]+'),
+        re.compile(rb'(ubound|lbound)\('),
     ],
     'code/javascript': [
         re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
@@ -37,43 +39,44 @@ STRONG_INDICATORS = {
         re.compile(rb'\.oneOfChild'),
         re.compile(rb'unescape\('),
         re.compile(rb'\.createElement\('),
+        re.compile(rb'submitForm\('),
     ],
     'code/csharp': [
         re.compile(rb'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
         re.compile(rb'(^|\n)[ \t]*using[ \t]+[\w.]+;'),
-        re.compile(rb'(^|\n)[ \t]*internal class '),
+        re.compile(rb'(^|\n)[ \t]*internal[ \t]+class[ \t]+'),
     ],
     'code/php': [
         re.compile(rb'(^|\n)<\?php'),
         re.compile(rb'namespace[ \t]+[\w.]+'),
-        re.compile(rb'function[ \t]*\w+[ \t]*\(\$[^)]+\)[ \t]*{'),
+        re.compile(rb'function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{'),
         re.compile(rb'\beval[ \t]*\('),
     ],
     'code/c': [
-        re.compile(rb'(^|\n)(static|typedef)?[ \t]*struct '),
+        re.compile(rb'(^|\n)(static|typedef)?[ \t]+struct[ \t]+'),
         re.compile(rb'(^|\n)#include[ \t]*([<"])[\w./]+([>"])'),
-        re.compile(rb'(^|\n)#(ifndef |define |endif |pragma )'),
+        re.compile(rb'(^|\n)#(ifndef|define|endif|pragma)[ \t]+'),
     ],
     'code/python': [
-        re.compile(rb'(^|\n)[ \t]*if __name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:'),
+        re.compile(rb'(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:'),
         re.compile(rb'(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?'),
         re.compile(rb'(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:'),
     ],
     'code/rust': [
-        re.compile(rb'(^|\n)(pub|priv)[ \t]*(struct |enum |impl |const )'),
-        re.compile(rb'(^|\n)[ \t]*fn[ \t]*\w+[ \t]*\(&self'),
+        re.compile(rb'(^|\n)(pub|priv)[ \t]+(struct|enum|impl|const)[ \t]+'),
+        re.compile(rb'(^|\n)[ \t]*fn[ \t]+\w+[ \t]*\(&self'),
         re.compile(rb'(println!|panic!)'),
     ],
     'code/lisp': [
-        re.compile(rb'(^|\n)[ \t]*\((defmacro|defun|eval-when|in-package|list|export|defvar) '),
+        re.compile(rb'(^|\n)[ \t]*\((defmacro|defun|eval-when|in-package|list|export|defvar)[ \t]+'),
     ],
     'code/java': [
-        re.compile(rb'(^|\n)[ \t]*public[ \t]+class[ \t]+\w+[ \t]+(extends[ \t]+\w+[ \t]+)?{'),
-        re.compile(rb'(^|\n)[\w \t]+\([^)]+\)[ \t]+throws[ \t]+[\w, \t]+[ \t]+{'),
+        re.compile(rb'(^|\n)[ \t]*public[ \t]+class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{'),
+        re.compile(rb'(^|\n)[\w \t]+\([^)]*\)[ \t]+throws[ \t]+\w+[ \t]*(,[ \t]*\w+[ \t]*)*{'),
     ],
     'code/perl': [
-        re.compile(rb'(^|\n)[ \t]*my[ \t]*\$\w+[ \t]*='),
-        re.compile(rb'(^|\n)[ \t]*sub[ \t]*\w+[ \t]*{'),
+        re.compile(rb'(^|\n)[ \t]*my[ \t]+\$\w+[ \t]*='),
+        re.compile(rb'(^|\n)[ \t]*sub[ \t]+\w+[ \t]*{'),
     ],
     'code/ruby': [
         re.compile(rb'(^|\n)[ \t]*require(_all)?[ \t]*\'[\w/]+\''),
@@ -98,11 +101,17 @@ STRONG_INDICATORS = {
         re.compile(rb'^To: ', re.MULTILINE),
         re.compile(rb'^From: ', re.MULTILINE),
     ],
+    'metadata/sysmon': [
+        re.compile(rb'<Events>[^>]+'),
+        re.compile(rb'<Event>[^>]+'),
+        re.compile(rb'<\/Event>'),
+        re.compile(rb'<\/Events>'),
+    ],
     'code/xml': [
         # Check if it has an xml declaration header
         re.compile(rb'^\s*<\?xml[^>]+\?>', re.DOTALL | re.MULTILINE),
         # Check if it begins and ends with <tag ... and </tag ...> (for informal xml usages)
-        re.compile(rb'^\s*<(?P<open>[\w:]+) .+</(?P=open)[^>]+>\s*$', re.DOTALL),
+        re.compile(rb'^\s*<(?P<open>[\w:]+).+</(?P=open)>\s*$', re.DOTALL),
         # Check if a tag has an xmlns attribute
         re.compile(rb'<[^>]+xmlns[:=][^>]+>', re.MULTILINE),
     ],
@@ -114,6 +123,8 @@ STRONG_INDICATORS = {
                    rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type)'),
         # Match one of the common Classes
         re.compile(rb'(-memberDefinition|-Name|-namespace|-passthru)'),
+        # Match one of the common Methods
+        re.compile(rb'(\.Get(String|Field|Type|Method)|FromBase64String)\(')
     ]
 }
 STRONG_SCORE = 15
@@ -130,7 +141,7 @@ WEAK_INDICATORS = {
     'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
     'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
     'code/vbs': [
-        rb'(^|\n)*[ ]{0,1000}[\t]*(Dim |Sub |Loop |Attribute |End Sub|Function |End Function )',
+        rb'(^|\n)*[ \t]{0,1000}((Dim|Sub|Loop|Attribute|Function|End[ \t]+Function)[ \t]+)|(End[ \t]+Sub)',
         b'CreateObject',
         b'WScript',
         b'window_onload',
@@ -138,10 +149,10 @@ WEAK_INDICATORS = {
         b'.Security_',
         b'WSH',
     ],
-    'code/csharp': [rb'(^|\n)(protected)?[ \t]*override'],
-    'code/sql': [rb'(^|\n)(create |drop |select |returns |declare )'],
+    'code/csharp': [rb'(^|\n)(protected[ \t]+)?[ \t]*override'],
+    'code/sql': [rb'(^|\n)(create|drop|select|returns|declare)[ \t]+'],
     'code/php': [rb'\$this\->'],
-    'code/c': [rb'(^|\n)(const char \w+;|extern |uint(8|16|32)_t )'],
+    'code/c': [rb'(^|\n)(const[ \t]+char[ \t]+\w+;|extern[ \t]+|uint(8|16|32)_t[ \t]+)'],
     'code/python': [b'try:', b'except:', b'else:'],
     'code/java': [rb'(^|\n)[ \t]*package[ \t]+[\w\.]+;'],
     'code/perl': [rb'(^|\n)[ \t]*package[ \t]+[\w\.]+;', b'@_'],
@@ -236,6 +247,7 @@ tag_to_extension = {
     'document/office/word': '.doc',
     'document/office/wordperfect': 'wp',
     'document/office/wordpro': 'lwp',
+    'document/office/onenote': '.one',
     'document/pdf': '.pdf',
     'document/email': '.eml',
     'executable/windows/pe32': '.exe',
@@ -315,6 +327,7 @@ sl_patterns = [
     ['sff', r'Frame Format'],
     ['shortcut/windows', r'^MS Windows shortcut'],
     ['email', r'Mime entity text'],
+    ['sysmon', r'MS Windows Vista Event Log'],
 ]
 
 sl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in sl_patterns]
@@ -370,7 +383,8 @@ tl_patterns = [
     ['archive',
      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'],
-    ['meta', '^MS Windows shortcut'],
+    ['meta', r'^MS Windows shortcut'],
+    ['metadata', r'MS Windows Vista Event Log'],
     ['unknown', r'.*'],
 ]
 
@@ -381,6 +395,8 @@ trusted_mimes = {
     'text/calendar': 'text/calendar',
     'image/svg+xml': 'image/svg',
     'application/x-mach-binary': 'executable/mach-o',
+    'application/vnd.ms-outlook': 'document/office/email',
+    'application/x-iso9660-image': 'archive/iso',
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
@@ -405,7 +421,7 @@ if platform.system() != 'Windows':
 
 
 # Translate the match object into a sub-type label.
-def subtype(label: str) -> str:
+def _subtype(label: str) -> str:
     for entry in sl_patterns:
         if entry[1].search(label):  # pylint: disable=E1101
             return entry[0]
@@ -429,13 +445,19 @@ def ident(buf, length: int, path) -> Dict:
         labels = []
         if file_type:
             with magic_lock:
-                labels = magic.magic_file(file_type, path).split(b'\n')
+                try:
+                    labels = magic.magic_file(file_type, path).split(b'\n')
+                except magic.MagicException as me:
+                    labels = me.message.split(b'\n')
                 labels = [label[2:].strip() if label.startswith(b'- ') else label.strip() for label in labels]
 
         mimes = []
         if mime_type:
             with magic_lock:
-                mimes = magic.magic_file(mime_type, path).split(b'\n')
+                try:
+                    mimes = magic.magic_file(mime_type, path).split(b'\n')
+                except magic.MagicException as me:
+                    labels = me.message.split(b'\n')
                 mimes = [mime[2:].strip() if mime.startswith(b'- ') else mime.strip() for mime in mimes]
 
         # For user feedback set the mime and magic meta data to always be the primary
@@ -494,7 +516,7 @@ def ident(buf, length: int, path) -> Dict:
                 # ... keep highest precedence (lowest index) match.
                 if index < minimum:
                     minimum = index
-                    sl_tag = subtype(label)
+                    sl_tag = _subtype(label)
 
                     # If a label does match, take the best from that label
                     # Further labels from magic are probably terrible
@@ -552,7 +574,7 @@ def _differentiate(lang: str, scores_map: Dict) -> str:
 
 
 # Pass a filepath and this will return the guessed language in the AL tag format.
-def guess_language(path: str) -> Tuple[str, Union[str, int]]:
+def _guess_language(path: str) -> Tuple[str, Union[str, int]]:
     file_length = os.path.getsize(path)
     with open(path, 'rb') as fh:
         if file_length > 131070:
@@ -694,12 +716,12 @@ def dos_ident(path: str) -> str:
     try:
         with open(path, "rb") as fh:
             file_header = fh.read(0x40)
-            if file_header[0:2] != "MZ":
+            if file_header[0:2] != b"MZ":
                 raise ValueError()
 
             header_pos, = struct.unpack("<I", file_header[-4:])
             fh.seek(header_pos)
-            if fh.read(4) != "PE\x00\x00":
+            if fh.read(4) != b"PE\x00\x00":
                 raise ValueError()
             machine_id, = struct.unpack("<H", fh.read(2))
             if machine_id == 0x014c:
@@ -734,7 +756,7 @@ def fileinfo(path: str) -> Dict:
         with open(path, 'rb') as fh:
             buf = fh.read()
             buflen = len(buf)
-            data.update(ident(buf, buflen))
+            data.update(ident(buf, buflen, path))
     data['ssdeep'] = ssdeep_from_file(path) if ssdeep_from_file else ''
 
     # When data is parsed from a cart file we trust its metatdata and can skip the recognition test later
@@ -752,7 +774,7 @@ def fileinfo(path: str) -> Dict:
         # but don't commit to it being a zip if it can't be extracted
         data['type'] = zip_ident(path, data['type'])
     elif data['type'] == 'unknown':
-        data['type'], _ = guess_language(path)
+        data['type'], _ = _guess_language(path)
     elif data['type'] == 'archive/cart':
         data['type'] = cart_ident(path)
         cart_metadata_set = True
@@ -762,7 +784,7 @@ def fileinfo(path: str) -> Dict:
     elif data['type'] == 'code/html':
         # Magic detects .hta files as .html, guess_language detects .hta files as .js/.vbs
         # If both conditions are met, it's fair to say that the file is an .hta
-        lang, _ = guess_language(path)
+        lang, _ = _guess_language(path)
         if lang in ["code/javascript", "code/vbs"]:
             data['type'] = 'code/hta'
 

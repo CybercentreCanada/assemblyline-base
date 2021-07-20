@@ -30,9 +30,9 @@ default_index = {
             },
             "normalizer": {
                 "lowercase_normalizer": {
-                  "type": "custom",
-                  "char_filter": [],
-                  "filter": ["lowercase"]
+                    "type": "custom",
+                    "char_filter": [],
+                    "filter": ["lowercase"]
                 }
             }
         }
@@ -44,6 +44,16 @@ default_mapping = {
     'dynamic': True,
     'properties': {
         '__text__': {'type': 'text'},
+    }
+}
+
+default_dynamic_strings = {
+    "strings_as_keywords": {
+        "match_mapping_type": "string",
+        "mapping": {
+            "type": "keyword",
+            "ignore_above": 8191
+        }
     }
 }
 

@@ -32,6 +32,7 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.remote.datatypes.lock import Lock
 
@@ -60,6 +61,7 @@ class AssemblylineDatastore(object):
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_settings', UserSettings)
+        self.ds.register('safelist', Safelist)
         self.ds.register('workflow', Workflow)
 
     def __enter__(self):
@@ -159,6 +161,10 @@ class AssemblylineDatastore(object):
     @property
     def vm(self) -> Collection:
         return self.ds.vm
+
+    @property
+    def safelist(self) -> Collection:
+        return self.ds.safelist
 
     @property
     def workflow(self) -> Collection:
@@ -553,7 +559,7 @@ class AssemblylineDatastore(object):
                     "partial": False
                 }
 
-        partial = False
+        partial = submission['state'] != 'completed'
         files = {}
         scores = {}
         missing_files = []
@@ -735,6 +741,7 @@ class AssemblylineDatastore(object):
             "attack_matrix": [],
             "heuristics": {
                 "info": [],
+                "safe": [],
                 "suspicious": [],
                 "malicious": []
             },
@@ -785,7 +792,9 @@ class AssemblylineDatastore(object):
 
                 if section.get('heuristic', False):
                     # Get the heuristics data
-                    if section['heuristic']['score'] < 100:
+                    if section['heuristic']['score'] < 0:
+                        h_type = "safe"
+                    elif section['heuristic']['score'] < 300:
                         h_type = "info"
                     elif section['heuristic']['score'] < 1000:
                         h_type = "suspicious"
@@ -828,7 +837,25 @@ class AssemblylineDatastore(object):
                                     'h_type': h_type,
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
-                                    'key': key
+                                    'key': key,
+                                    'safelisted': False
+                                })
+                                done_map['tags'].add(cache_key)
+
+                # Get safelisted tag data
+                for tag_type, tags in section.get('safelisted_tags', {}).items():
+                    if tags is not None:
+                        for tag in tags:
+                            cache_key = f"{tag_type}_{tag}_{key}"
+
+                            if cache_key not in done_map['tags']:
+                                out['tags'].append({
+                                    'type': tag_type,
+                                    'h_type': h_type,
+                                    'short_type': tag_type.rsplit(".", 1)[-1],
+                                    'value': tag,
+                                    'key': key,
+                                    'safelisted': True
                                 })
                                 done_map['tags'].add(cache_key)
 
@@ -851,7 +878,18 @@ class AssemblylineDatastore(object):
                                 'type': tag_type,
                                 'short_type': tag_type.rsplit(".", 1)[-1],
                                 'value': tag,
-                                'key': key
+                                'key': key,
+                                'safelisted': False
+                            })
+                for tag_type, tags in section.get('safelisted_tags', {}).items():
+                    if tags is not None:
+                        for tag in tags:
+                            out.append({
+                                'type': tag_type,
+                                'short_type': tag_type.rsplit(".", 1)[-1],
+                                'value': tag,
+                                'key': key,
+                                'safelisted': True
                             })
 
         return out
@@ -1014,7 +1052,7 @@ class AssemblylineDatastore(object):
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None):
         with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
-            current_fileinfo = self.ds.file.get(
+            current_fileinfo = self.ds.file.get_if_exists(
                 sha256, as_obj=False, force_archive_access=config.datastore.ilm.update_archive) or {}
 
             # Remove control fields from file info and update current file info

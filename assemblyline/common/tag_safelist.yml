@@ -1,21 +1,21 @@
-# Default tag_whitelist.yml file
+# Default tag_safelist.yml file
 #
-#    The following tags are whitelisted:
+#    The following tags are safelisted:
 #     - Domains pointing to localhost
 #     - Domain commonly found in XML files, certificates and during dynamic Analysis runs
 #     - IPs in the private network IP space
 #     - URI pointing to IPs in the private network IP space
 #     - URIs commonly found in XML files, certificates and during dynamic Analysis runs
 #
-#    Note: - You can override the default tag_whitelist.yml by putting an
-#            updated version in /etc/assemblyline/tag_whitelist.yml.
+#    Note: - You can override the default tag_safelist.yml by putting an
+#            updated version in /etc/assemblyline/tag_safelist.yml.
 #          - If you want to add values to one of the following tag types,
 #            you have to copy the default values to the new file.
 #          - You can nullify value by putting empty object or empty list
 #            in your new file
 
 # Match section contains tag types and for each tag type
-#  a list of values that should be whitelisted using a direct
+#  a list of values that should be safelisted using a direct
 #  string comparison.
 match:
   # Direct match to dynamic domains
@@ -64,18 +64,18 @@ match:
     - purl.org
 
 # Regex section contains tag types and for each tag type
-#  a list of regular expression to be run to whitelist
+#  a list of regular expression to be run to safelist
 #  the associated tags.
 regex:
-  # Regular expression to whitelist dynamic IPs (Private IPs)
+  # Regular expression to safelist dynamic IPs (Private IPs)
   #  note: Since IPs have already been validated, the regular expression in simpler
   network.dynamic.ip:
     - (?:127\.|10\.|192\.168|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.).*
-  # Regular expression to whitelist static IPs (Private IPs)
+  # Regular expression to safelist static IPs (Private IPs)
   #  note: Since IPs have already been validated, the regular expression in simpler
   network.static.ip:
     - (?:127\.|10\.|192\.168|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.).*
-  # Regular expression to whitelist dynamic URIs
+  # Regular expression to safelist dynamic URIs
   network.dynamic.uri:
     - (?:ftp|http)s?://localhost(?:$|/.*)
     - (?:ftp|http)s?://(?:(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2})))(?:$|/.*)
@@ -110,7 +110,7 @@ regex:
     - https?://ns\.adobe\.com/xap/1\.0/sType/ResourceEvent#
     - https?://purl\.org/dc/elements/1\.1/
     - https?://www\.w3\.org/1999/02/22-rdf-syntax-ns#
-  # Regular expression to whitelist static URIs
+  # Regular expression to safelist static URIs
   network.static.uri:
     - (?:ftp|http)s?://localhost(?:$|/.*)
     - (?:ftp|http)s?://(?:(?:(?:10|127)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2})))(?:$|/.*)

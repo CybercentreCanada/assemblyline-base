@@ -23,10 +23,9 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.vm import VM
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
-
-# from .conftest import skip_or_fail
 
 
 class SetupException(Exception):
@@ -76,6 +75,7 @@ TEST_DATA = [
     ("user_favorites", random_model_obj(UserFavorites)),
     ("user_settings", random_model_obj(UserSettings)),
     ("vm", random_model_obj(VM)),
+    ("safelist", random_model_obj(Safelist)),
     ("workflow", random_model_obj(Workflow)),
     ("alert_min", random_minimal_obj(Alert)),
     ("cached_file_min", random_minimal_obj(CachedFile)),
@@ -95,6 +95,7 @@ TEST_DATA = [
     ("user_favorites_min", random_minimal_obj(UserFavorites)),
     ("user_settings_min", random_minimal_obj(UserSettings)),
     ("vm_min", random_minimal_obj(VM)),
+    ("safelist_min", random_minimal_obj(Safelist)),
     ("workflow_min", random_minimal_obj(Workflow))
 ]
 
@@ -123,14 +124,18 @@ def _setup_collection(ds, name, doc):
 
 def _assert_key_exists(key, data):
     if data is None:
-        raise Exception(f"'{key}' is inside an optional compound field which cannot be stored.")
+        # Field is stored but optional... This is fine
+        return True
 
     if "." in key:
         main, sub = key.split(".", 1)
         if main not in data:
             return False
         return _assert_key_exists(sub, data[main])
-    if key in data:
+    if isinstance(data, list):
+        if all(key in x for x in data):
+            return True
+    elif key in data:
         return True
     return False
 

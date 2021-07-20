@@ -27,8 +27,10 @@ jobs:
     matrix:
       python3_7:
         python.version: '3.7'
-      Python3_8:
+      python3_8:
         python.version: '3.8'
+      python3_9:
+        python.version: '3.9'
 
   timeoutInMinutes: 10
   services:

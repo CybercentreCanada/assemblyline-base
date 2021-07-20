@@ -79,6 +79,7 @@ class Collection(object):
     def __init__(self, datastore, name, model_class=None, validate=True):
         self.datastore = datastore
         self.name = name
+        self.index_name = f"{name}_hot"
         self.model_class = model_class
         self.validate = validate
         self.bulk_plan_class = BulkPlan
@@ -232,6 +233,16 @@ class Collection(object):
             raise MultiKeyError(missing, output)
 
         return output
+
+    def exists(self, key, force_archive_access=False):
+        """
+        Check if a document exists in the datastore.
+
+        :param force_archive_access: Temporary force access to archive during this call
+        :param key: key of the document to get from the datastore
+        :return: true/false depending if the document exists or not
+        """
+        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def _get(self, key, retries, force_archive_access=False):
         """

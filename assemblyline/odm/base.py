@@ -558,8 +558,8 @@ class ClassificationString(Keyword):
 
 class TypedList(list):
 
-    def __init__(self, type_p, *items):
-        super().__init__([type_p.check(el) for el in items])
+    def __init__(self, type_p, *items, **kwargs):
+        super().__init__([type_p.check(el, **kwargs) for el in items])
         self.type = type_p
 
     def append(self, item):
@@ -596,9 +596,9 @@ class List(_Field):
 
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
-            return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())])
+            return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
 
-        return TypedList(self.child_type, *value)
+        return TypedList(self.child_type, *value, **kwargs)
 
     def apply_defaults(self, index, store):
         """Initialize the default settings for the child field."""
@@ -671,6 +671,23 @@ class Mapping(_Field):
             sanitizer = NOT_INDEXED_SANITIZER
 
         return TypedMapping(self.child_type, self.index, self.store, sanitizer, **value)
+
+    def apply_defaults(self, index, store):
+        """Initialize the default settings for the child field."""
+        # First apply the default to the list itself
+        super().apply_defaults(index, store)
+        # Then pass through the initialized values on the list to the child type
+        self.child_type.apply_defaults(self.index, self.store)
+
+
+class FlattenedListObject(Mapping):
+    """A field storing a flattened object"""
+
+    def __init__(self, **kwargs):
+        super().__init__(List(Keyword()), **kwargs)
+
+    def check(self, value, **kwargs):
+        return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
 
     def apply_defaults(self, index, store):
         """Initialize the default settings for the child field."""
