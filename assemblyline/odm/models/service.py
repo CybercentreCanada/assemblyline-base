@@ -39,6 +39,7 @@ class PersistentVolume(odm.Model):
 class DependencyConfig(odm.Model):
     container = odm.Compound(DockerConfig)
     volumes = odm.Mapping(odm.Compound(PersistentVolume), default={})
+    run_as_core: bool = odm.Boolean(default=False)
 
 
 @odm.model(index=False, store=False)
