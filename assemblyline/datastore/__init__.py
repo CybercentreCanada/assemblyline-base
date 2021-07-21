@@ -628,7 +628,8 @@ class Collection(object):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def grouped_search(self, group_field, query="id:*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
-                       rows=DEFAULT_ROW_SIZE, filters=(), access_control=None, as_obj=True, use_archive=False):
+                       rows=DEFAULT_ROW_SIZE, filters=(), access_control=None, as_obj=True, use_archive=False,
+                       track_total_hits=False):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def fields(self):
