@@ -78,9 +78,7 @@ setup(
         'pytz',
         'apscheduler',
         'websocket_client<1.0.0',
-        # Elastic APM 6.3.0+ crashes once in a while so we're locking it to last known vorking version until
-        # the following bug report is fixed: https://github.com/elastic/apm-agent-python/issues/1188
-        'elastic-apm[flask]==6.2.3',
+        'elastic-apm[flask]!=6.3.0,!=6.3.1,!=6.3.2',  # Exclude broken elastic APM version
         'cython',
         'docker',
         'kubernetes',
