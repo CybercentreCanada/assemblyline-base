@@ -544,11 +544,15 @@ def ident(buf, length: int, path) -> Dict:
                 clsid_offset = root_entry_property_offset + 0x50
                 if len(buf) >= clsid_offset + 16:
                     clsid = buf[clsid_offset:clsid_offset + 16]
-                    if len(clsid) == 16 and clsid != "\0" * len(clsid):
+                    if len(clsid) == 16 and clsid != b"\0" * len(clsid):
                         clsid_str = uuid.UUID(bytes_le=clsid)
                         clsid_str = clsid_str.urn.rsplit(':', 1)[-1].upper()
                         if clsid_str in OLE_CLSID_GUIDs:
                             data['type'] = OLE_CLSID_GUIDs[clsid_str]
+                    else:
+                        bup_details_offset = buf[:root_entry_property_offset+0x100].find(u"Details".encode("utf-16-le"))
+                        if -1 != bup_details_offset:
+                            data['type'] = 'quarantine/mcafee'
         except Exception:
             pass
 
