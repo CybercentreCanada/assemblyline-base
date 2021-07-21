@@ -13,7 +13,7 @@ COMPONENT_VALIDATOR = re.compile("^[a-zA-Z0-9][a-zA-Z0-9_.]*$")
 class CacheStore(object):
     def __init__(self, component: str, config=None, datastore=None):
         if not component:
-            raise ValueError("Cannot instanciate a cachestore without providing a component name.")
+            raise ValueError("Cannot instantiate a cachestore without providing a component name.")
 
         if not COMPONENT_VALIDATOR.match(component):
             raise ValueError("Invalid component name. (Only letters, numbers, underscores and dots allowed)")
