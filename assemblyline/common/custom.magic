@@ -103,3 +103,9 @@
 >&0 short   0xA1B2        custom: network\tcpdump
 # Email
 0   string  DKIM-Signature:     custom: document/email
+# Quarantine Files
+0	string	AhnLab\040Inc.\0402006	custom: quarantine/ahnlab
+0	string	\055chest\055\040		custom: quarantine/avast
+0	string	AntiVir\040\Qua			custom: quarantine/avira
+0	beshort	0x0BAD					custom: quarantine/windowsdefender
+0	belong	0xDBE8C501				custom: quarantine/windowsdefender
