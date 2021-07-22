@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 from assemblyline.remote.datatypes import get_client, retry_call, decode
 
@@ -212,3 +213,15 @@ def select(*queues, **kw):
         return response
 
     return response[0].decode('utf-8'), json.loads(response[1][21:])
+
+
+def length(*queues: PriorityQueue) -> List[int]:
+    """Utility function for batch reading queue lengths."""
+    if not queues:
+        return []
+    pipeline = queues[0].c.pipeline(transaction=False)
+
+    for que in queues:
+        pipeline.zcard(que.name)
+
+    return retry_call(pipeline.execute)

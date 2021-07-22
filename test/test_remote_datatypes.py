@@ -180,7 +180,7 @@ def test_lock(redis_connection):
 
 # noinspection PyShadowingNames,PyUnusedLocal
 def test_priority_queue(redis_connection):
-    from assemblyline.remote.datatypes.queues.priority import PriorityQueue
+    from assemblyline.remote.datatypes.queues.priority import PriorityQueue, length
     with PriorityQueue('test-priority-queue') as pq:
         pq.delete()
 
@@ -212,6 +212,11 @@ def test_priority_queue(redis_connection):
         assert pq.dequeue_range(lower_limit=102, skip=1) == [2]  # 2 and 3 are both options, 3 has higher score, skip it
         assert pq.dequeue_range(upper_limit=100, num=10) == [5, 0]  # Take some off the other end
         assert pq.length() == 2
+
+        with PriorityQueue('test-priority-queue') as other:
+            other.push(100, 'a')
+            assert length(other, pq) == [1, 2]
+
         pq.pop(2)
 
         pq.push(50, 'first')
