@@ -213,7 +213,7 @@ def test_priority_queue(redis_connection):
         assert pq.dequeue_range(upper_limit=100, num=10) == [5, 0]  # Take some off the other end
         assert pq.length() == 2
 
-        with PriorityQueue('test-priority-queue') as other:
+        with PriorityQueue('second-priority-queue') as other:
             other.push(100, 'a')
             assert length(other, pq) == [1, 2]
 
