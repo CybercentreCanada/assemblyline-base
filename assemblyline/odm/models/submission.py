@@ -123,7 +123,7 @@ class Submission(odm.Model):
     state = odm.Enum(values=SUBMISSION_STATES)                  # Status of the submission
     times = odm.Compound(Times, default={})                     # Timing bloc
     verdict = odm.Compound(Verdict, default={})                 # Verdict timing
-    scan_key = odm.Optional(odm.Keyword())                      # the filescore key, used in deduplication
+    scan_key = odm.Optional(odm.Keyword(store=False, index=False))  # the filescore key, used in deduplication
 
     def is_submit(self):
         return self.state == 'submitted'
