@@ -20,6 +20,7 @@ class Submission(odm.Model):
     metadata: Dict[str, str] = odm.FlattenedObject(default={})           # Metadata submitted with the file
     notification: Notification = odm.Compound(Notification, default={})  # Notification queue parameters
     params: SubmissionParams = odm.Compound(SubmissionParams)            # Parameters of the submission
+    scan_key: str = odm.Optional(odm.Keyword())
 
 
 def from_datastore_submission(submission: DatabaseSubmission):
@@ -31,7 +32,8 @@ def from_datastore_submission(submission: DatabaseSubmission):
         'sid': submission.sid,
         'files': submission.files,
         'metadata': submission.metadata,
-        'params': submission.params
+        'params': submission.params,
+        'scan_key': submission.scan_key
     })
 
 
