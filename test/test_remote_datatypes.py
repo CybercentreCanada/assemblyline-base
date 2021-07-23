@@ -20,6 +20,10 @@ def test_hash(redis_connection):
             assert h.items() == {"key": "new-value"}
             assert h.pop("key") == "new-value"
             assert h.length() == 0
+            assert h.add("key", "value") == 1
+            assert h.conditional_remove("key", "value1") is False
+            assert h.conditional_remove("key", "value") is True
+            assert h.length() == 0
 
             # Make sure we can limit the size of a hash table
             assert h.limited_add("a", 1, 2) == 1

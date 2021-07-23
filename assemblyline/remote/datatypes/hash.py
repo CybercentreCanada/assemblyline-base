@@ -1,9 +1,22 @@
 from typing import Dict, Any
 
-import redis
 import json
 
 from assemblyline.remote.datatypes import get_client, retry_call
+
+
+_conditional_remove_script = """
+local hash_name = KEYS[1]
+local key_in_hash = ARGV[1]
+local expected_value = ARGV[2]
+local result = redis.call('hget', hash_name, key_in_hash)
+if result == expected_value then 
+    redis.call('hdel', hash_name, key_in_hash) 
+    return 1
+end
+return 0
+"""
+
 
 h_pop_script = """
 local result = redis.call('hget', ARGV[1], ARGV[2])
@@ -52,6 +65,7 @@ class Hash(object):
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
         self._limited_add = self.c.register_script(_limited_add)
+        self._conditional_remove = self.c.register_script(_conditional_remove_script)
 
     def __iter__(self):
         return HashIterator(self)
@@ -107,6 +121,9 @@ class Hash(object):
         for k in items.keys():
             items[k] = json.loads(items[k])
         return {k.decode('utf-8'): v for k, v in items.items()}
+
+    def conditional_remove(self, key: str, value) -> bool:
+        return bool(retry_call(self._conditional_remove, keys=[self.name], args=[key, json.dumps(value)]))
 
     def pop(self, key):
         item = retry_call(self._pop, args=[self.name, key])
