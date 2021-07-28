@@ -1,4 +1,4 @@
-FROM python:3.7-slim-stretch AS base
+FROM python:3.9-slim-buster AS base
 
 # Get required apt packages
 RUN apt-get update \
