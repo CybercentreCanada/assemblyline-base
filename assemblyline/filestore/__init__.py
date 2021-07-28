@@ -226,6 +226,16 @@ class FileStore(object):
                                              'exist for %s on %s (%s)' % (dst_path, location, t))
         return transports
 
+    @elasticapm.capture_span(span_type='filestore')
+    def read(self, path, location='any'):
+        for t in self.slice(location):
+            try:
+                if t.exists(path):
+                    return t.read(path)
+            except Exception as ex:
+                trace = get_stacktrace_info(ex)
+                self.log.warning('Transport problem: %s', trace)
+
     def slice(self, location):
         start, end = {
             'all': (0, len(self.transports)),

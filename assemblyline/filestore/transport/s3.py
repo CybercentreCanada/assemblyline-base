@@ -1,13 +1,13 @@
-import boto3
 import logging
 import os
 import tempfile
-
-from botocore.exceptions import ClientError, EndpointConnectionError, ConnectionClosedError
 from io import BytesIO
 
+import boto3
+from botocore.exceptions import ClientError, EndpointConnectionError, ConnectionClosedError
+
 from assemblyline.common.exceptions import ChainAll
-from assemblyline.filestore.transport.base import Transport, TransportException
+from assemblyline.filestore.transport.base import Transport, TransportException, TransportReadStream
 
 try:
     from botocore.vendored.requests.packages.urllib3 import disable_warnings
@@ -173,3 +173,22 @@ class TransportS3(Transport):
 
         with BytesIO(content) as file_io:
             self.with_retries(self.client.upload_fileobj, file_io, self.bucket, dst_path)
+
+    def read(self, path):
+        key = self.normalize(path)
+        file = self.with_retries(self.client.get_object, Key = key, Bucket = self.bucket)
+        return TransportReadStreamS3(file['Body'])
+
+
+class TransportReadStreamS3(TransportReadStream):
+    def __init__(self, file):
+        self.file = file
+
+    def close(self):
+        self.file.close()
+
+    def read(self, chunk_size = -1):
+        if chunk_size > 0:
+            return self.file.read(chunk_size)
+        else:
+            return self.file.read()

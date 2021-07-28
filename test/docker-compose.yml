@@ -24,3 +24,19 @@ services:
     image: redis
     ports:
       - '6379:6379'
+
+  ftpServer:
+    image: fauria/vsftpd
+    environment:
+      - FTP_USER=al_test_user
+      - FTP_PASS=password
+    ports:
+      - '21:21'
+      - '20:20'
+      - '21100-21110:21100-21110'
+
+  sftpServer:
+    image: atmoz/sftp
+    ports:
+      - '2222:22'
+    command: sftp_test_user:password:1001::test

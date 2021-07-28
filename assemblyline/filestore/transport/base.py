@@ -97,3 +97,41 @@ class Transport(object):
         Put the content of the file in memory directly to the filestore dst_path
         """
         raise TransportException("Not Implemented")
+
+    def read(self, path):
+        """
+        Returns a file-like object for the file.
+        """
+        raise TransportException("Not Implemented")
+
+class TransportReadStream(object):
+    """
+        TransportFile base class.
+
+        - Subclasses should override all methods.
+        - Except as noted, TransportFile methods do not return value and raise
+        - TransportException on failure.
+        - Methods should only raise TransportExceptions. (The decorators
+          Chain and ChainAll can be applied to a function/method and class,
+          respectively, to ensure that any exceptions raised are converted to
+          TransportExceptions.
+    """
+
+    def read(self, chunk_size = -1):
+        """
+        Returns the next chunk of a streamed file, to the maximum that is currently available
+        should never return an empty string, always > 0
+        """
+        raise TransportException("Not Implemented")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
+        """
+        Ends the use of the file, requiring the user to create another read stream to access the same file
+        """
+        raise TransportException("Not Implemented")

@@ -1,10 +1,11 @@
 import logging
 import os
 import posixpath
+
 import requests
 
 from assemblyline.common.exceptions import ChainAll
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportReadStream
 
 
 @ChainAll(TransportException)
@@ -108,3 +109,27 @@ class TransportHTTP(Transport):
 
     def put(self, dst_path, content):
         raise TransportException("READ ONLY TRANSPORT: Method not implemented")
+
+    def read(self, path):
+        path = self.normalize(path)
+        resp = self.session.get(path, auth=self.auth, cert=self.pki, verify=self.verify, stream=True)
+        if resp.ok:
+            return TransportReadStreamHTTP(resp)
+        else:
+            raise TransportException("[%s] %s: %s" % (resp.status_code, resp.reason, path))
+
+
+# TODO: Create an extension of the base class TransportFile
+
+class TransportReadStreamHTTP(TransportReadStream):
+    def __init__(self, response):
+        self.response = response
+        self.iter = None
+
+    def close(self):
+        self.response.close()
+
+    def read(self, chunk_size=1024):
+        if self.iter is None:
+            self.iter = self.response.iter_content(chunk_size=chunk_size)
+        return next(self.iter)

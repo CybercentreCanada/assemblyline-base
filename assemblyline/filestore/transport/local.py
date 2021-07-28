@@ -126,6 +126,17 @@ class TransportLocal(Transport):
                 pass
             assert(self.exists(path))
 
+    def read(self, path):
+        path = self.normalize(path)
+        fh = None
+        try:
+            fh = open(path, "rb")
+            return fh
+        finally:
+            if fh:
+                fh.close()
+
+
     def __str__(self):
         return 'file://{}'.format(self.base)
 

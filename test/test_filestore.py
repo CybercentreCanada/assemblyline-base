@@ -1,9 +1,10 @@
 import os
+import tempfile
 
 import pytest
-from assemblyline.filestore.transport.base import TransportException
 
 from assemblyline.filestore import FileStore
+from assemblyline.filestore.transport.base import TransportException
 
 
 def test_azure():
@@ -13,6 +14,7 @@ def test_azure():
     fs = FileStore("azure://alpytest.blob.core.windows.net/pytest/", connection_attempts=2)
     assert fs.exists('test') != []
     assert fs.get('test') is not None
+    assert fs.read('test').read() is not None
     with pytest.raises(TransportException):
         fs.put('bob', 'bob')
 
@@ -26,6 +28,15 @@ def test_http():
     assert fs.exists('assemblyline-base') != []
     assert fs.get('assemblyline-base') is not None
 
+    fs = FileStore('http://cyber.gc.ca/en/')
+    assert fs.exists('assemblyline') != []
+    assert fs.get('assemblyline') is not None
+    tempf = tempfile.NamedTemporaryFile()
+    fs.download('assembyline', tempf.name)
+    assert open(tempf.name, 'r').read() is not None
+    httpObject = fs.read('assemblyline')
+    assert httpObject.read(chunk_size=32) is not None
+
 
 def test_https():
     """
@@ -36,6 +47,14 @@ def test_https():
     assert fs.exists('assemblyline-base') != []
     assert fs.get('assemblyline-base') is not None
 
+    fs = FileStore('https://cyber.gc.ca/en/')
+    assert fs.exists('assemblyline') != []
+    assert fs.get('assemblyline') is not None
+    tempf = tempfile.NamedTemporaryFile()
+    fs.download('assembyline', tempf.name)
+    assert open(tempf.name, 'r').read() is not None
+    assert fs.read('assemblyline').read(chunk_size=24) is not None
+
 
 # def test_sftp():
 #     """
@@ -43,18 +62,28 @@ def test_https():
 #     Rebex test server.
 #     """
 #     fs = FileStore('sftp://demo:password@test.rebex.net')
+#     # fs = FileStore('sftp://sftp_test_user:password@localhost:2222')
+#     # fs.upload('readme.txt', 'readme.txt')
 #     assert fs.exists('readme.txt') != []
 #     assert fs.get('readme.txt') is not None
+#     sftpfile = fs.read('readme.txt')
+#     assert sftpfile.read() is not None
 
 
-# def test_ftp():
-#     """
-#     Test FTP FileStore by fetching the readme.txt file from
-#     Rebex test server.
-#     """
-#     fs = FileStore('ftp://demo:password@test.rebex.net')
-#     assert fs.exists('readme.txt') != []
-#     assert fs.get('readme.txt') is not None
+def test_ftp():
+    """
+    Test FTP FileStore by fetching the readme.txt file from
+    containerized server.
+    """
+    fs = FileStore('ftp://al_test_user:password@localhost')
+    fs.upload('readme.txt', 'readme.txt')
+    # fs = FileStore('ftp://demo:password@test.rebex.net')
+    assert fs.exists('readme.txt') != []
+    assert fs.get('readme.txt') is not None
+    ftpfile = fs.read('readme.txt')
+    assert ftpfile.read() is not None
+    fs.delete('readme.txt')
+    assert fs.exists('readme.txt') == []
 
 
 # def test_ftps():
@@ -65,6 +94,8 @@ def test_https():
 #     fs = FileStore('ftps://demo:password@test.rebex.net')
 #     assert fs.exists('readme.txt') != []
 #     assert fs.get('readme.txt') is not None
+#     ftpsfile = fs.read('readme.txt')
+#     assert ftpsfile.read() is not None
 
 
 def test_file():
@@ -78,6 +109,7 @@ def test_file():
     fs = FileStore('file://%s' % os.path.dirname(__file__))
     assert fs.exists(os.path.basename(__file__)) != []
     assert fs.get(os.path.basename(__file__)) is not None
+    assert fs.read(os.path.basename(__file__)) is not None
 
 
 def test_s3():
@@ -87,8 +119,12 @@ def test_s3():
     """
     fs = FileStore('s3://AKIAIIESFCKMSXUP6KWQ:Uud08qLQ48Cbo9RB7b+H+M97aA2wdR8OXaHXIKwL@'
                    's3.amazonaws.com/?s3_bucket=assemblyline-support&aws_region=us-east-1')
+    tempf = tempfile.NamedTemporaryFile()
     assert fs.exists('al4_s3_pytest.txt') != []
     assert fs.get('al4_s3_pytest.txt') is not None
+    assert fs.read('al4_s3_pytest.txt') is not None
+    fs.download('al4_s3_pytest.txt', tempf.name)
+    assert open(tempf.name, 'r').read() is not None
 
 
 def test_minio():
@@ -103,4 +139,3 @@ def test_minio():
     assert fs.exists('al4_minio_pytest.txt') != []
     assert fs.get('al4_minio_pytest.txt') == content
     assert fs.delete('al4_minio_pytest.txt') is None
-

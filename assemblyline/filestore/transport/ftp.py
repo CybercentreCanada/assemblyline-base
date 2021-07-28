@@ -1,11 +1,12 @@
 from __future__ import annotations
+import errno
 import ftplib
 import logging
 import os
 import posixpath
+import queue
 import threading
 import time
-import errno
 import weakref
 
 from io import BytesIO
@@ -14,7 +15,7 @@ from typing import Union, AnyStr
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.path import splitpath
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path, TransportReadStream
 
 
 def reconnect_retry_on_fail(func):
@@ -227,3 +228,37 @@ class TransportFTP(Transport):
             self.log.debug("Rename: %s -> %s", temppath, finalpath)
             self.ftp.rename(temppath, finalpath)
             assert (self.exists(dst_path))
+
+    def read(self, path):
+        path = self.normalize(path)
+        callbackqueue = queue.Queue()
+        def retrbinary(chunk_size = 8192):
+            self.ftp.retrbinary('RETR ' + path, callback = callbackqueue.put, blocksize = chunk_size)
+            callbackqueue.put(None)
+        return TransportReadStreamFTP(path, callbackqueue, retrbinary)
+
+
+class TransportReadStreamFTP(TransportReadStream):
+    def __init__(self, filepath, filequeue, retrMethod):
+        self.filepath = filepath
+        self.filequeue = filequeue
+        self.retrMethod = retrMethod
+        self.readThread = None
+        self.generator = None
+
+    def close(self):
+        pass
+
+    def read(self, chunk_size=8192):
+        if self.generator is None:
+            self.generator = self.getGen(chunk_size=chunk_size)
+        return next(self.generator)
+
+    def getGen(self, chunk_size=8192):
+        self.readThread = threading.Thread(target=self.retrMethod(chunk_size), daemon=True)
+        self.readThread.start()
+        chunk = self.filequeue.get()
+        if chunk is not None:
+            yield chunk
+        else:
+            raise StopIteration()

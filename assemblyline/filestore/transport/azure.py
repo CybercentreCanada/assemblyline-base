@@ -1,15 +1,14 @@
 import logging
 import os
 import time
+from io import BytesIO
 
 # noinspection PyProtectedMember
 from azure.core.exceptions import *
 from azure.storage.blob import BlobServiceClient
-from io import BytesIO
 
 from assemblyline.common.exceptions import ChainAll
-from assemblyline.filestore.transport.base import Transport, TransportException
-
+from assemblyline.filestore.transport.base import Transport, TransportException, TransportReadStream
 
 """
 This class assumes a flat file structure in the Azure storage blob.
@@ -143,6 +142,15 @@ class TransportAzure(Transport):
         blob_data.readinto(my_blob)
         return my_blob.getvalue()
 
+    def read(self, path):
+        key = self.normalize(path)
+        my_blob = BytesIO()
+
+        blob_client = self.service_client.get_blob_client(self.blob_container, key)
+        blob_data = self.with_retries(blob_client.download_blob)
+
+        return TransportReadStreamAzure(blob_data.chunks())
+
     def put(self, dst_path, content):
         if self.read_only:
             raise TransportException("READ ONLY TRANSPORT: Method not allowed")
@@ -158,3 +166,14 @@ class TransportAzure(Transport):
             except TransportException as error:
                 if not isinstance(error.cause, ResourceExistsError):
                     raise
+
+
+class TransportReadStreamAzure(TransportReadStream):
+    def __init__(self, streamFile):
+        self.file = streamFile
+
+    def close(self):
+        pass
+
+    def read(self, chunk_size=-1):
+        return next(self.file)
