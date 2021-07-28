@@ -37,7 +37,8 @@ stages:
         steps:
           - task: UsePythonVersion@0
             displayName: Set python version
-            inputs: { versionSpec: 3.9 }
+            inputs:
+              versionSpec: 3.9
           - script: |
               set -x  # Echo commands before they are run
               export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
@@ -106,7 +107,7 @@ stages:
           - task: UsePythonVersion@0
             displayName: Set python version
             inputs:
-              versionSpec: "3.9"
+              versionSpec: 3.9
           - script: |
               set -xv  # Echo commands before they are run
               sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
