@@ -1,9 +1,9 @@
-FROM python:3.7-slim
+FROM python:3.9-slim-buster
 
 # SSDEEP pkg requirments
 RUN apt-get update -yy \
- && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create Assemblyline source directory
 RUN mkdir -p /etc/assemblyline
