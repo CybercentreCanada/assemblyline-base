@@ -33,8 +33,8 @@ jobs:
       matrix:
         python3_9:
           python.version: "3.9"
-        python3_10:
-          python.version: "3.10"
+        # python3_10:
+        #   python.version: "3.10"
 
     timeoutInMinutes: 10
     services:
