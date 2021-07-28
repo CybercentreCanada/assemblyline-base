@@ -1,10 +1,42 @@
 import os
 import tempfile
-
+import threading
 import pytest
 from assemblyline.filestore.transport.base import TransportException
 
 from assemblyline.filestore import FileStore
+
+_temp_body_a = b'temporary file string'
+
+
+def _temp_ftp_server(stop: threading.Event):
+    from pyftpdlib.authorizers import DummyAuthorizer
+    from pyftpdlib.handlers import FTPHandler
+    from pyftpdlib.servers import FTPServer
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        authorizer = DummyAuthorizer()
+        authorizer.add_user("user", "12345", temp_dir, perm="elradfmwMT")
+        authorizer.add_anonymous(temp_dir)
+
+        handler = FTPHandler
+        handler.authorizer = authorizer
+
+        server = FTPServer(("0.0.0.0", 21111), handler)
+        while not stop.is_set():
+            server.serve_forever()
+
+
+@pytest.fixture
+def temp_ftp_server():
+    stop = threading.Event()
+    thread = threading.Thread(target=_temp_ftp_server, args=[stop])
+    thread.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        thread.join()
 
 
 def test_azure():
@@ -48,15 +80,13 @@ def test_https():
 #     assert fs.get('readme.txt') is not None
 
 
-# def test_ftp():
-#     """
-#     Test FTP FileStore by fetching the readme.txt file from
-#     Rebex test server.
-#     """
-#     fs = FileStore('ftp://demo:password@test.rebex.net')
-#     assert fs.exists('readme.txt') != []
-#     assert fs.get('readme.txt') is not None
-
+def test_ftp(temp_ftp_server):
+    """
+    Test FTP FileStore by fetching the readme.txt file from
+    Rebex test server.
+    """
+    fs = FileStore('ftp://user:12345@localhost:21111')
+    common_actions(fs)
 
 # def test_ftps():
 #     """
@@ -67,8 +97,6 @@ def test_https():
 #     assert fs.exists('readme.txt') != []
 #     assert fs.get('readme.txt') is not None
 
-
-_temp_body_a = b'temporary file string'
 
 def test_file():
     """
@@ -84,31 +112,7 @@ def test_file():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         fs = FileStore('file://' + temp_dir)
-        # Write and read file body directly
-        fs.put('put', _temp_body_a)
-        assert fs.get('put') == _temp_body_a
-
-        # Write a file body by batch upload
-        with tempfile.NamedTemporaryFile() as temp_file_a:
-            with tempfile.NamedTemporaryFile() as temp_file_b:
-                temp_file_a.write(_temp_body_a)
-                temp_file_b.write(_temp_body_a)
-                temp_file_a.flush()
-                temp_file_b.flush()
-
-                fs.upload_batch([
-                    (temp_file_a.name, 'upload/a'),
-                    (temp_file_b.name, 'upload/b')
-                ])
-
-        # Read a file body by download
-        with tempfile.NamedTemporaryFile() as temp_file:
-            fs.download('upload/b', temp_file.name)
-            assert open(temp_file.name, 'rb').read() == _temp_body_a
-
-        assert fs.exists('put')
-        fs.delete('put')
-        assert not fs.exists('put')
+        common_actions(fs)
 
 
 def test_s3():
@@ -135,3 +139,30 @@ def test_minio():
     assert fs.get('al4_minio_pytest.txt') == content
     assert fs.delete('al4_minio_pytest.txt') is None
 
+
+def common_actions(fs):
+    # Write and read file body directly
+    fs.put('put', _temp_body_a)
+    assert fs.get('put') == _temp_body_a
+
+    # Write a file body by batch upload
+    with tempfile.NamedTemporaryFile() as temp_file_a:
+        with tempfile.NamedTemporaryFile() as temp_file_b:
+            temp_file_a.write(_temp_body_a)
+            temp_file_b.write(_temp_body_a)
+            temp_file_a.flush()
+            temp_file_b.flush()
+
+            fs.upload_batch([
+                (temp_file_a.name, 'upload/a'),
+                (temp_file_b.name, 'upload/b')
+            ])
+
+    # Read a file body by download
+    with tempfile.NamedTemporaryFile() as temp_file:
+        fs.download('upload/b', temp_file.name)
+        assert open(temp_file.name, 'rb').read() == _temp_body_a
+
+    assert fs.exists('put')
+    fs.delete('put')
+    assert not fs.exists('put')
