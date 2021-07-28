@@ -107,7 +107,7 @@ def test_file():
             assert open(temp_file.name, 'rb').read() == _temp_body_a
 
         assert fs.exists('put')
-        assert fs.delete('put')
+        fs.delete('put')
         assert not fs.exists('put')
 
 
