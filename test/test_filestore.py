@@ -9,7 +9,7 @@ from assemblyline.filestore import FileStore
 _temp_body_a = b'temporary file string'
 
 
-def _temp_ftp_server(stop: threading.Event):
+def _temp_ftp_server(start: threading.Event, stop: threading.Event):
     from pyftpdlib.authorizers import DummyAuthorizer
     from pyftpdlib.handlers import FTPHandler
     from pyftpdlib.servers import FTPServer
@@ -24,15 +24,18 @@ def _temp_ftp_server(stop: threading.Event):
 
         server = FTPServer(("0.0.0.0", 21111), handler)
         while not stop.is_set():
+            start.set()
             server.serve_forever(timeout=1, blocking=False)
 
 
 @pytest.fixture
 def temp_ftp_server():
+    start = threading.Event()
     stop = threading.Event()
     thread = threading.Thread(target=_temp_ftp_server, args=[stop])
-    thread.start()
     try:
+        thread.start()
+        start.wait(30)
         yield
     finally:
         stop.set()
@@ -146,22 +149,26 @@ def common_actions(fs):
     assert fs.get('put') == _temp_body_a
 
     # Write a file body by batch upload
-    with tempfile.NamedTemporaryFile() as temp_file_a:
-        with tempfile.NamedTemporaryFile() as temp_file_b:
-            temp_file_a.write(_temp_body_a)
-            temp_file_b.write(_temp_body_a)
-            temp_file_a.flush()
-            temp_file_b.flush()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_file_a = os.path.join(temp_dir, 'a')
+        with open(temp_file_a, 'wb') as handle:
+            handle.write(_temp_body_a)
+        temp_file_b = os.path.join(temp_dir, 'a')
+        with open(temp_file_b, 'wb') as handle:
+            handle.write(_temp_body_a)
 
-            fs.upload_batch([
-                (temp_file_a.name, 'upload/a'),
-                (temp_file_b.name, 'upload/b')
-            ])
+        failures = fs.upload_batch([
+            (temp_file_a, 'upload/a'),
+            (temp_file_b, 'upload/b')
+        ])
+        assert len(failures) == 0, failures
+        assert fs.exists('upload/a')
+        assert fs.exists('upload/b')
 
-    # Read a file body by download
-    with tempfile.NamedTemporaryFile() as temp_file:
-        fs.download('upload/b', temp_file.name)
-        assert open(temp_file.name, 'rb').read() == _temp_body_a
+        # Read a file body by download
+        temp_file_name = os.path.join(temp_dir, 'scratch')
+        fs.download('upload/b', temp_file_name)
+        assert open(temp_file_name, 'rb').read() == _temp_body_a
 
     assert fs.exists('put')
     fs.delete('put')
