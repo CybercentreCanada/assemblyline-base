@@ -24,7 +24,7 @@ def _temp_ftp_server(stop: threading.Event):
 
         server = FTPServer(("0.0.0.0", 21111), handler)
         while not stop.is_set():
-            server.serve_forever()
+            server.serve_forever(timeout=1, blocking=False)
 
 
 @pytest.fixture
