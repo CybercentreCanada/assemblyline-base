@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 import pytest
 from assemblyline.filestore.transport.base import TransportException
@@ -67,6 +68,8 @@ def test_https():
 #     assert fs.get('readme.txt') is not None
 
 
+_temp_body_a = b'temporary file string'
+
 def test_file():
     """
     Test Local FileStore by fetching the README.md file from
@@ -78,6 +81,34 @@ def test_file():
     fs = FileStore('file://%s' % os.path.dirname(__file__))
     assert fs.exists(os.path.basename(__file__)) != []
     assert fs.get(os.path.basename(__file__)) is not None
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        fs = FileStore('file://' + temp_dir)
+        # Write and read file body directly
+        fs.put('put', _temp_body_a)
+        assert fs.get('put') == _temp_body_a
+
+        # Write a file body by batch upload
+        with tempfile.NamedTemporaryFile() as temp_file_a:
+            with tempfile.NamedTemporaryFile() as temp_file_b:
+                temp_file_a.write(_temp_body_a)
+                temp_file_b.write(_temp_body_a)
+                temp_file_a.flush()
+                temp_file_b.flush()
+
+                fs.upload_batch([
+                    (temp_file_a.name, 'upload/a'),
+                    (temp_file_b.name, 'upload/b')
+                ])
+
+        # Read a file body by download
+        with tempfile.NamedTemporaryFile() as temp_file:
+            fs.download('upload/b', temp_file.name)
+            assert open(temp_file.name, 'rb').read() == _temp_body_a
+
+        assert fs.exists('put')
+        assert fs.delete('put')
+        assert not fs.exists('put')
 
 
 def test_s3():
