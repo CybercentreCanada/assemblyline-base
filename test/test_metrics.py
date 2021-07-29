@@ -26,15 +26,15 @@ def test_metrics_counter(redis_connection):
     start = time.time()
     read = {}
     for metric_message in channel.listen(blocking=False):
+        if 'counter' in read and 'performance_counter.t' in read:
+            break
+
         if time.time() - start > 30:
             pytest.fail()
 
         if metric_message is None:
             time.sleep(0.1)
             continue
-
-        if 'counter' in read and 'performance_counter.t' in read:
-            break
 
         for key, value in metric_message.items():
             if isinstance(value, (int, float)):
