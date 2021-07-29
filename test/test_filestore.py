@@ -11,10 +11,10 @@ from assemblyline.filestore import FileStore, create_transport
 _temp_body_a = b'temporary file string'
 
 
-def _temp_ftp_server(start: threading.Event, stop: threading.Event):
+def _temp_ftp_server(start: threading.Event, stop: threading.Event, port, secure):
     try:
         from pyftpdlib.authorizers import DummyAuthorizer
-        from pyftpdlib.handlers import FTPHandler
+        from pyftpdlib.handlers import FTPHandler, TLS_FTPHandler
         from pyftpdlib.servers import FTPServer
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -22,9 +22,14 @@ def _temp_ftp_server(start: threading.Event, stop: threading.Event):
             authorizer.add_user("user", "12345", temp_dir, perm="elradfmwMT")
             authorizer.add_anonymous(temp_dir)
 
-            handler = FTPHandler
+            if secure:
+                handler = TLS_FTPHandler
+                handler.certfile = os.path.join(os.path.dirname(__file__), 'key.pem')
+            else:
+                handler = FTPHandler
+
             handler.authorizer = authorizer
-            server = FTPServer(("127.0.0.1", 21111), handler)
+            server = FTPServer(("127.0.0.1", port), handler)
             while not stop.is_set():
                 start.set()
                 server.serve_forever(timeout=1, blocking=False)
@@ -36,7 +41,21 @@ def _temp_ftp_server(start: threading.Event, stop: threading.Event):
 def temp_ftp_server():
     start = threading.Event()
     stop = threading.Event()
-    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop])
+    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop, 21111, False])
+    try:
+        thread.start()
+        start.wait(5)
+        yield
+    finally:
+        stop.set()
+        thread.join()
+
+
+@pytest.fixture
+def temp_ftps_server():
+    start = threading.Event()
+    stop = threading.Event()
+    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop, 21112, True])
     try:
         thread.start()
         start.wait(5)
@@ -103,14 +122,14 @@ def test_ftp(temp_ftp_server):
     assert 'localhost' in str(fs)
     common_actions(fs)
 
-# def test_ftps():
-#     """
-#     Test FTP over TLS FileStore by fetching the readme.txt file from
-#     Rebex test server.
-#     """
-#     fs = FileStore('ftps://demo:password@test.rebex.net')
-#     assert fs.exists('readme.txt') != []
-#     assert fs.get('readme.txt') is not None
+
+def test_ftps(temp_ftps_server):
+    """
+    Run some operations against an in-process ftp server
+    """
+    fs = FileStore('ftps://user:12345@localhost:21112')
+    assert 'localhost' in str(fs)
+    common_actions(fs)
 
 
 def test_file():
