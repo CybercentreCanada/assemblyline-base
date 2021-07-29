@@ -1,41 +1,45 @@
 import os
 import tempfile
 import threading
+import traceback
+
 import pytest
 from assemblyline.filestore.transport.base import TransportException
 
-from assemblyline.filestore import FileStore
+from assemblyline.filestore import FileStore, create_transport
 
 _temp_body_a = b'temporary file string'
 
 
 def _temp_ftp_server(start: threading.Event, stop: threading.Event):
-    from pyftpdlib.authorizers import DummyAuthorizer
-    from pyftpdlib.handlers import FTPHandler
-    from pyftpdlib.servers import FTPServer
+    try:
+        from pyftpdlib.authorizers import DummyAuthorizer
+        from pyftpdlib.handlers import FTPHandler
+        from pyftpdlib.servers import FTPServer
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        authorizer = DummyAuthorizer()
-        authorizer.add_user("user", "12345", temp_dir, perm="elradfmwMT")
-        authorizer.add_anonymous(temp_dir)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            authorizer = DummyAuthorizer()
+            authorizer.add_user("user", "12345", temp_dir, perm="elradfmwMT")
+            authorizer.add_anonymous(temp_dir)
 
-        handler = FTPHandler
-        handler.authorizer = authorizer
-
-        server = FTPServer(("0.0.0.0", 21111), handler)
-        while not stop.is_set():
-            start.set()
-            server.serve_forever(timeout=1, blocking=False)
+            handler = FTPHandler
+            handler.authorizer = authorizer
+            server = FTPServer(("127.0.0.1", 21111), handler)
+            while not stop.is_set():
+                start.set()
+                server.serve_forever(timeout=1, blocking=False)
+    except Exception:
+        traceback.print_exc()
 
 
 @pytest.fixture
 def temp_ftp_server():
     start = threading.Event()
     stop = threading.Event()
-    thread = threading.Thread(target=_temp_ftp_server, args=[stop])
+    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop])
     try:
         thread.start()
-        start.wait(30)
+        start.wait(5)
         yield
     finally:
         stop.set()
@@ -58,6 +62,11 @@ def test_http():
     Test HTTP FileStore by fetching the assemblyline page on
     CSE's cyber center page.
     """
+    tp = create_transport('http://github.com/CybercentreCanada/')
+    assert tp.base == '/CybercentreCanada/'
+    assert tp.host == 'github.com'
+    assert tp.scheme == 'http'
+
     fs = FileStore('http://github.com/CybercentreCanada/')
     assert fs.exists('assemblyline-base') != []
     assert fs.get('assemblyline-base') is not None
