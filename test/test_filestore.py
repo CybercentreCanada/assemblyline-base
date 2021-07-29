@@ -62,14 +62,9 @@ def test_http():
     Test HTTP FileStore by fetching the assemblyline page on
     CSE's cyber center page.
     """
-    tp = create_transport('http://github.com/CybercentreCanada/')
-    assert tp.base == '/CybercentreCanada/'
-    assert tp.host == 'github.com'
-    assert tp.scheme == 'http'
-
     fs = FileStore('http://github.com/CybercentreCanada/')
-    assert fs.exists('assemblyline-base') != []
-    assert fs.get('assemblyline-base') is not None
+    assert 'github.com' in str(fs)
+    httpx_tests(fs)
 
 
 def test_https():
@@ -78,9 +73,17 @@ def test_https():
     CSE's cyber center page.
     """
     fs = FileStore('https://github.com/CybercentreCanada/')
+    assert 'github.com' in str(fs)
+    httpx_tests(fs)
+
+
+def httpx_tests(fs):
     assert fs.exists('assemblyline-base') != []
     assert fs.get('assemblyline-base') is not None
-
+    with tempfile.TemporaryDirectory() as temp_dir:
+        local_base = os.path.join(temp_dir, 'base')
+        fs.download('assemblyline-base', local_base)
+        assert os.path.exists(local_base)
 
 # def test_sftp():
 #     """
@@ -94,10 +97,10 @@ def test_https():
 
 def test_ftp(temp_ftp_server):
     """
-    Test FTP FileStore by fetching the readme.txt file from
-    Rebex test server.
+    Run some operations against an in-process ftp server
     """
     fs = FileStore('ftp://user:12345@localhost:21111')
+    assert 'localhost' in str(fs)
     common_actions(fs)
 
 # def test_ftps():
