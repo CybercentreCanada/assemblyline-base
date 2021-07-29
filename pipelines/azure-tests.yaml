@@ -4,63 +4,61 @@ trigger: ["*"]
 pr: ["*"]
 
 pool:
-  vmImage: 'ubuntu-18.04'
+  vmImage: "ubuntu-20.04"
 
 resources:
   containers:
-  - container: redis
-    image: redis
-    ports:
-      - 6379:6379
-  - container: elasticsearch
-    image: cccs/elasticsearch:7.8.0
-    env:
-      ES_JAVA_OPTS: "-Xms256m -Xmx512m"
-      DISCOVERY_TYPE: 'single-node'
-    ports:
-      - 9200:9200
-  - container: minio
-    image: cccs/minio
-    env:
-      MINIO_ACCESS_KEY: al_storage_key
-      MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
-    ports:
-      - 9000:9000
+    - container: redis
+      image: redis
+      ports:
+        - 6379:6379
+    - container: elasticsearch
+      image: cccs/elasticsearch:7.8.0
+      env:
+        ES_JAVA_OPTS: "-Xms256m -Xmx512m"
+        DISCOVERY_TYPE: "single-node"
+      ports:
+        - 9200:9200
+    - container: minio
+      image: cccs/minio
+      env:
+        MINIO_ACCESS_KEY: al_storage_key
+        MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
+      ports:
+        - 9000:9000
 
 jobs:
-- job: run_test
-  strategy:
-    matrix:
-      python3_7:
-        python.version: '3.7'
-      python3_8:
-        python.version: '3.8'
-      python3_9:
-        python.version: '3.9'
+  - job: run_test
+    strategy:
+      matrix:
+        python3_9:
+          python.version: "3.9"
+        # python3_10:
+        #   python.version: "3.10"
 
-  timeoutInMinutes: 10
-  services:
-    elasticsearch: elasticsearch
-    redis: redis
-    minio: minio
+    timeoutInMinutes: 10
+    services:
+      elasticsearch: elasticsearch
+      redis: redis
+      minio: minio
 
-  steps:
-    - task: UsePythonVersion@0
-      displayName: Set python version
-      inputs:
-        versionSpec: '$(python.version)'
-    - script: |
-        sudo mkdir -p /etc/assemblyline/
-        sudo mkdir -p /var/cache/assemblyline/
-        sudo cp pipelines/config.yml /etc/assemblyline
-        sudo chmod a+rw /var/cache/assemblyline/
-        sudo apt-get update
-        sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
-        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools
-        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
-        sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
-      displayName: Setup environment
-    - script: python -m pytest --durations=10 -rsx -vv --cov-report=xml --cov=assemblyline
-      displayName: Test
-    - script: python -m codecov
-      displayName: Upload Coverage
+    steps:
+      - task: UsePythonVersion@0
+        displayName: Set python version
+        inputs:
+          versionSpec: "$(python.version)"
+      - script: |
+          sudo mkdir -p /etc/assemblyline/
+          sudo mkdir -p /var/cache/assemblyline/
+          sudo cp pipelines/config.yml /etc/assemblyline
+          sudo chmod a+rw /var/cache/assemblyline/
+          sudo apt-get update
+          sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
+          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools
+          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
+          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
+        displayName: Setup environment
+      - script: python -m pytest --durations=10 -rsx -vv --cov-report=xml --cov=assemblyline
+        displayName: Test
+      - script: python -m codecov
+        displayName: Upload Coverage

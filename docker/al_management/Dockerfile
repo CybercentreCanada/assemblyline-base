@@ -1,4 +1,4 @@
-FROM python:3.7-slim-stretch
+FROM python:3.9-slim-buster
 
 # Make sure root account is locked so 'su' commands fail all the time
 RUN passwd -l root
@@ -36,7 +36,7 @@ USER assemblyline
 RUN python -m venv /var/lib/assemblyline/venv
 
 # Install packages in the venv
-RUN /bin/bash -c "source /var/lib/assemblyline/venv/bin/activate && pip install --no-cache-dir --upgrade pip wheel && pip install --no-cache-dir assemblyline assemblyline_core assemblyline_ui assemblyline-client==4.0.0b4 ipython jupyter"
+RUN /bin/bash -c "source /var/lib/assemblyline/venv/bin/activate && pip install --no-cache-dir --upgrade pip wheel && pip install --no-cache-dir assemblyline assemblyline_core assemblyline_ui assemblyline-client ipython jupyter"
 
 # Setup venv when bash is launched
 RUN echo "source /var/lib/assemblyline/venv/bin/activate" >> /var/lib/assemblyline/.bashrc
