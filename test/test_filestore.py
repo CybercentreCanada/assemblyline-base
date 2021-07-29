@@ -11,7 +11,7 @@ from assemblyline.filestore import FileStore
 _temp_body_a = b'temporary file string'
 
 
-def _temp_ftp_server(start: threading.Event, stop: threading.Event, port, secure):
+def _temp_ftp_server(start: threading.Event, stop: threading.Event, user, password, port, secure):
     try:
         from pyftpdlib.authorizers import DummyAuthorizer
         from pyftpdlib.handlers import FTPHandler, TLS_FTPHandler
@@ -19,7 +19,7 @@ def _temp_ftp_server(start: threading.Event, stop: threading.Event, port, secure
 
         with tempfile.TemporaryDirectory() as temp_dir:
             authorizer = DummyAuthorizer()
-            authorizer.add_user("user", "12345", temp_dir, perm="elradfmwMT")
+            authorizer.add_user(user, password, temp_dir, perm="elradfmwMT")
             authorizer.add_anonymous(temp_dir)
 
             if secure:
@@ -41,11 +41,11 @@ def _temp_ftp_server(start: threading.Event, stop: threading.Event, port, secure
 def temp_ftp_server():
     start = threading.Event()
     stop = threading.Event()
-    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop, 21111, False])
+    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop, "user", "12345", 21111, False])
     try:
         thread.start()
         start.wait(5)
-        yield
+        yield 'user:12345@localhost:21111'
     finally:
         stop.set()
         thread.join()
@@ -55,11 +55,11 @@ def temp_ftp_server():
 def temp_ftps_server():
     start = threading.Event()
     stop = threading.Event()
-    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop, 21112, True])
+    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop, "user", "12345", 21112, True])
     try:
         thread.start()
         start.wait(5)
-        yield
+        yield 'user:12345@localhost:21112'
     finally:
         stop.set()
         thread.join()
@@ -118,7 +118,7 @@ def test_ftp(temp_ftp_server):
     """
     Run some operations against an in-process ftp server
     """
-    fs = FileStore('ftp://user:12345@localhost:21111')
+    fs = FileStore(f'ftp://{temp_ftp_server}')
     assert 'localhost' in str(fs)
     common_actions(fs)
 
@@ -127,7 +127,7 @@ def test_ftps(temp_ftps_server):
     """
     Run some operations against an in-process ftp server
     """
-    fs = FileStore('ftps://user:12345@localhost:21112')
+    fs = FileStore(f'ftps://{temp_ftps_server}')
     assert 'localhost' in str(fs)
     common_actions(fs)
 

@@ -72,19 +72,6 @@ class Transport(object):
         """
         raise TransportException("Not Implemented")
 
-    def upload_batch(self, local_remote_tuples):
-        """
-        Upload multiple files specified by list of (local, remote) tuples.
-        Transports that can optimize batch file transfers should write a custom upload_batch.
-        """
-        failed_tuples = []
-        for (src_path, dst_path) in local_remote_tuples:
-            try:
-                self.upload(src_path, dst_path)
-            except Exception as e:
-                failed_tuples.append((src_path, dst_path, str(e)))
-        return failed_tuples
-
     # Buffer based functions
     def get(self, path: str) -> bytes:
         """
