@@ -1,6 +1,9 @@
 
 import hashlib
+import io
 import os
+import zipfile
+
 import pytest
 import random
 import re
@@ -25,6 +28,7 @@ from assemblyline.common.identify import fileinfo
 from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
     now_as_local
 from assemblyline.common.iprange import is_ip_reserved, is_ip_private
+from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.security import get_random_password, get_password_hash, verify_password
 from assemblyline.common.str_utils import safe_str, translate_str
 from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
@@ -432,3 +436,15 @@ def test_uid():
     for c_id in [rid, id_test, id_test_l, id_test_m, id_test_s, id_test_t]:
         for x in c_id:
             assert x in BASE62_ALPHABET
+
+
+def test_mem_zip():
+    obj = InMemoryZip()
+    obj.append('a.txt', 'abc abc ')
+    obj.append('a.txt', 'abc abc')
+    obj.append('b.txt', '11111111')
+
+    buffer = io.BytesIO(obj.read())
+    reader = zipfile.ZipFile(buffer)
+    assert reader.read('a.txt') == 'abc abc abc abc'
+    assert reader.read('b.txt') == '11111111'

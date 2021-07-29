@@ -118,18 +118,18 @@ def test_ftp(temp_ftp_server):
     """
     Run some operations against an in-process ftp server
     """
-    fs = FileStore(f'ftp://{temp_ftp_server}')
-    assert 'localhost' in str(fs)
-    common_actions(fs)
+    with FileStore(f'ftp://{temp_ftp_server}') as fs:
+        assert 'localhost' in str(fs)
+        common_actions(fs)
 
 
 def test_ftps(temp_ftps_server):
     """
     Run some operations against an in-process ftp server
     """
-    fs = FileStore(f'ftps://{temp_ftps_server}')
-    assert 'localhost' in str(fs)
-    common_actions(fs)
+    with FileStore(f'ftps://{temp_ftps_server}') as fs:
+        assert 'localhost' in str(fs)
+        common_actions(fs)
 
 
 def test_file():
@@ -145,8 +145,8 @@ def test_file():
     assert fs.get(os.path.basename(__file__)) is not None
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        fs = FileStore('file://' + temp_dir)
-        common_actions(fs)
+        with FileStore('file://' + temp_dir) as fs:
+            common_actions(fs)
 
 
 def test_s3():
