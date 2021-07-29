@@ -440,11 +440,10 @@ def test_uid():
 
 def test_mem_zip():
     obj = InMemoryZip()
-    obj.append('a.txt', 'abc abc ')
     obj.append('a.txt', 'abc abc')
     obj.append('b.txt', '11111111')
 
     buffer = io.BytesIO(obj.read())
     reader = zipfile.ZipFile(buffer)
-    assert reader.read('a.txt') == 'abc abc abc abc'
-    assert reader.read('b.txt') == '11111111'
+    assert reader.read('a.txt') == b'abc abc'
+    assert reader.read('b.txt') == b'11111111'
