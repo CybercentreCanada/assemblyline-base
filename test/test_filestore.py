@@ -4,9 +4,9 @@ import threading
 import traceback
 
 import pytest
-from assemblyline.filestore.transport.base import TransportException
 
-from assemblyline.filestore import FileStore, create_transport
+from assemblyline.filestore.transport.base import TransportException
+from assemblyline.filestore import FileStore
 
 _temp_body_a = b'temporary file string'
 
