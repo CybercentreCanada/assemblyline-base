@@ -37,7 +37,8 @@ def test_metrics_counter(redis_connection):
             break
 
         for key, value in metric_message.items():
-            read[key] = read.get(key, 0) + value
+            if isinstance(value, (int, float)):
+                read[key] = read.get(key, 0) + value
 
     assert read['counter'] == 55
     assert read['performance_counter.t'] == 12
