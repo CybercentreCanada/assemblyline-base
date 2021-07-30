@@ -52,7 +52,7 @@ def test_metrics_export(redis_connection):
     channel = forge.get_metrics_sink(redis_connection)
     channel.listen(blocking=False)
 
-    export_metrics_once('test', Metrics, {'counter': 55, 'performance_counter.t': 12, 'performance_counter.c': 2})
+    export_metrics_once('test', Metrics, {'counter': 99, 'performance_counter': 6})
 
     start = time.time()
     read = {}
@@ -71,6 +71,6 @@ def test_metrics_export(redis_connection):
             if isinstance(value, (int, float)):
                 read[key] = read.get(key, 0) + value
 
-    assert read['counter'] == 55
-    assert read['performance_counter.t'] == 12
-    assert read['performance_counter.c'] == 2
+    assert read['counter'] == 99
+    assert read['performance_counter.t'] == 6
+    assert read['performance_counter.c'] == 1
