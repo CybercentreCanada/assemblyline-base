@@ -52,7 +52,7 @@ def test_metrics_export(redis_connection):
     channel = forge.get_metrics_sink(redis_connection)
     channel.listen(blocking=False)
 
-    export_metrics_once('test', Metrics, {'counter': 99, 'performance_counter': 6})
+    export_metrics_once('test', Metrics, {'counter': 99, 'performance_counter': 6}, redis=redis_connection)
 
     start = time.time()
     read = {}
