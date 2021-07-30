@@ -164,12 +164,12 @@ def export_metrics_once(name, schema, metrics, host=None, counter_type=None, con
         if metric in counter_schema:
             counts[metric] += value
         elif metric in timer_schema:
-            counts[name + ".c"] += 1
-            counts[name + ".t"] += value
+            counts[metric + ".c"] += 1
+            counts[metric + ".t"] += value
         else:
             raise ValueError(f"{metric} is not an accepted counter")
 
-    counts['type'] = counter_type
+    counts['type'] = counter_type or name
     counts['name'] = name
     counts['host'] = host
 
