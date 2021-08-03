@@ -10,10 +10,11 @@ echo "Building $1"
 
 
 # Build core containers
+cd assemblyline-base/dev/k8s/
 (docker tag localhost:32000/cccs/assemblyline:$1 localhost:32000/cccs/assemblyline-core:$1)
-(docker build . -t localhost:32000/cccs/assemblyline-ui:$1 -f assemblyline-base/dev/k8s/ui.Dockerfile --build-arg build_no=$1)
-(docker build . -t localhost:32000/cccs/assemblyline-socketio:$1 -f assemblyline-base/dev/k8s/socketio.Dockerfile --build-arg build_no=$1)
-(docker build . -t localhost:32000/cccs/assemblyline-service-server:$1 -f assemblyline-base/dev/k8s/service-server.Dockerfile --build-arg build_no=$1)
+(docker build . -t localhost:32000/cccs/assemblyline-ui:$1 -f ui.Dockerfile --build-arg build_no=$1)
+(docker build . -t localhost:32000/cccs/assemblyline-socketio:$1 -f socketio.Dockerfile --build-arg build_no=$1)
+(docker build . -t localhost:32000/cccs/assemblyline-service-server:$1 -f service-server.Dockerfile --build-arg build_no=$1)
 
 # Push core to local registry
 (docker push localhost:32000/cccs/assemblyline-core:$1)
