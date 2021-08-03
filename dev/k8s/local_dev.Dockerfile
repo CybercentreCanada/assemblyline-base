@@ -25,7 +25,7 @@ COPY assemblyline-core assemblyline-core
 RUN pip install -e ./assemblyline-core[test]
 
 COPY assemblyline-ui assemblyline-ui
-RUN pip install -e ./assemblyline-ui[test]
+RUN pip install -e ./assemblyline-ui[socketio,test]
 
 COPY assemblyline_client assemblyline_client
 RUN pip install -e ./assemblyline_client[test]

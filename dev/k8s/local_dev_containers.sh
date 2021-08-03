@@ -15,7 +15,7 @@ echo "Building $1"
 (docker build . -t localhost:32000/cccs/assemblyline-socketio:$1 -f assemblyline-base/dev/k8s/socketio.Dockerfile --build-arg build_no=$1)
 (docker build . -t localhost:32000/cccs/assemblyline-service-server:$1 -f assemblyline-base/dev/k8s/service-server.Dockerfile --build-arg build_no=$1)
 
-# Push core local registry
+# Push core to local registry
 (docker push localhost:32000/cccs/assemblyline-core:$1)
 (docker push localhost:32000/cccs/assemblyline-ui:$1)
 (docker push localhost:32000/cccs/assemblyline-socketio:$1)
