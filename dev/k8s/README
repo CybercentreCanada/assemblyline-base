@@ -1,5 +1,0 @@
-- use K8S appliance for setup
-- ensure registry addon for microk8s is enabled (check: GET localhost:32000/v2/_catalog)
-- run local_dev_containers.sh script with tag as param
-- run helm install|upgrade using new tag in values.yaml
-- use Lens or commandline to monitor status of deployment
