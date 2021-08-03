@@ -1,6 +1,6 @@
 FROM python:3.9-slim-buster
 
-ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline-ui
+ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline-ui:/opt/alv4/assemblyline-v4-service:/opt/alv4/assemblyline-service-client
 
 # SSDEEP pkg requirments
 RUN apt-get update -yy \
@@ -33,8 +33,17 @@ RUN pip install -e ./assemblyline_client[test]
 COPY assemblyline-service-server assemblyline-service-server
 RUN pip install -e ./assemblyline-service-server[test]
 
+COPY assemblyline-service-client assemblyline-service-client
+RUN pip install -e ./assemblyline-service-client[test]
+
+COPY assemblyline-v4-service assemblyline-v4-service
+RUN pip install -e ./assemblyline-v4-service[test]
+
+
 RUN pip uninstall -y assemblyline
 RUN pip uninstall -y assemblyline_core
 RUN pip uninstall -y assemblyline_ui
 RUN pip uninstall -y assemblyline_service_server
 RUN pip uninstall -y assemblyline_client
+RUN pip uninstall -y assemblyline_service_client
+RUN pip uninstall -y assemblyline_v4_service
