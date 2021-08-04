@@ -1,9 +1,68 @@
 import os
+import tempfile
+import threading
+import traceback
 
 import pytest
-from assemblyline.filestore.transport.base import TransportException
 
+from assemblyline.filestore.transport.base import TransportException
 from assemblyline.filestore import FileStore
+
+_temp_body_a = b'temporary file string'
+
+
+def _temp_ftp_server(start: threading.Event, stop: threading.Event, user, password, port, secure):
+    try:
+        from pyftpdlib.authorizers import DummyAuthorizer
+        from pyftpdlib.handlers import FTPHandler, TLS_FTPHandler
+        from pyftpdlib.servers import FTPServer
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            authorizer = DummyAuthorizer()
+            authorizer.add_user(user, password, temp_dir, perm="elradfmwMT")
+            authorizer.add_anonymous(temp_dir)
+
+            if secure:
+                handler = TLS_FTPHandler
+                handler.certfile = os.path.join(os.path.dirname(__file__), 'key.pem')
+            else:
+                handler = FTPHandler
+
+            handler.authorizer = authorizer
+            server = FTPServer(("127.0.0.1", port), handler)
+            while not stop.is_set():
+                start.set()
+                server.serve_forever(timeout=1, blocking=False)
+    except Exception:
+        traceback.print_exc()
+
+
+@pytest.fixture
+def temp_ftp_server():
+    start = threading.Event()
+    stop = threading.Event()
+    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop, "user", "12345", 21111, False])
+    try:
+        thread.start()
+        start.wait(5)
+        yield 'user:12345@localhost:21111'
+    finally:
+        stop.set()
+        thread.join()
+
+
+@pytest.fixture
+def temp_ftps_server():
+    start = threading.Event()
+    stop = threading.Event()
+    thread = threading.Thread(target=_temp_ftp_server, args=[start, stop, "user", "12345", 21112, True])
+    try:
+        thread.start()
+        start.wait(5)
+        yield 'user:12345@localhost:21112'
+    finally:
+        stop.set()
+        thread.join()
 
 
 def test_azure():
@@ -23,8 +82,8 @@ def test_http():
     CSE's cyber center page.
     """
     fs = FileStore('http://github.com/CybercentreCanada/')
-    assert fs.exists('assemblyline-base') != []
-    assert fs.get('assemblyline-base') is not None
+    assert 'github.com' in str(fs)
+    httpx_tests(fs)
 
 
 def test_https():
@@ -33,9 +92,17 @@ def test_https():
     CSE's cyber center page.
     """
     fs = FileStore('https://github.com/CybercentreCanada/')
+    assert 'github.com' in str(fs)
+    httpx_tests(fs)
+
+
+def httpx_tests(fs):
     assert fs.exists('assemblyline-base') != []
     assert fs.get('assemblyline-base') is not None
-
+    with tempfile.TemporaryDirectory() as temp_dir:
+        local_base = os.path.join(temp_dir, 'base')
+        fs.download('assemblyline-base', local_base)
+        assert os.path.exists(local_base)
 
 # def test_sftp():
 #     """
@@ -47,24 +114,22 @@ def test_https():
 #     assert fs.get('readme.txt') is not None
 
 
-# def test_ftp():
-#     """
-#     Test FTP FileStore by fetching the readme.txt file from
-#     Rebex test server.
-#     """
-#     fs = FileStore('ftp://demo:password@test.rebex.net')
-#     assert fs.exists('readme.txt') != []
-#     assert fs.get('readme.txt') is not None
+def test_ftp(temp_ftp_server):
+    """
+    Run some operations against an in-process ftp server
+    """
+    with FileStore(f'ftp://{temp_ftp_server}') as fs:
+        assert 'localhost' in str(fs)
+        common_actions(fs)
 
 
-# def test_ftps():
-#     """
-#     Test FTP over TLS FileStore by fetching the readme.txt file from
-#     Rebex test server.
-#     """
-#     fs = FileStore('ftps://demo:password@test.rebex.net')
-#     assert fs.exists('readme.txt') != []
-#     assert fs.get('readme.txt') is not None
+def test_ftps(temp_ftps_server):
+    """
+    Run some operations against an in-process ftp server
+    """
+    with FileStore(f'ftps://{temp_ftps_server}') as fs:
+        assert 'localhost' in str(fs)
+        common_actions(fs)
 
 
 def test_file():
@@ -78,6 +143,10 @@ def test_file():
     fs = FileStore('file://%s' % os.path.dirname(__file__))
     assert fs.exists(os.path.basename(__file__)) != []
     assert fs.get(os.path.basename(__file__)) is not None
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with FileStore('file://' + temp_dir) as fs:
+            common_actions(fs)
 
 
 def test_s3():
@@ -104,3 +173,34 @@ def test_minio():
     assert fs.get('al4_minio_pytest.txt') == content
     assert fs.delete('al4_minio_pytest.txt') is None
 
+
+def common_actions(fs):
+    # Write and read file body directly
+    fs.put('put', _temp_body_a)
+    assert fs.get('put') == _temp_body_a
+
+    # Write a file body by batch upload
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_file_a = os.path.join(temp_dir, 'a')
+        with open(temp_file_a, 'wb') as handle:
+            handle.write(_temp_body_a)
+        temp_file_b = os.path.join(temp_dir, 'a')
+        with open(temp_file_b, 'wb') as handle:
+            handle.write(_temp_body_a)
+
+        failures = fs.upload_batch([
+            (temp_file_a, 'upload/a'),
+            (temp_file_b, 'upload/b')
+        ])
+        assert len(failures) == 0, failures
+        assert fs.exists('upload/a')
+        assert fs.exists('upload/b')
+
+        # Read a file body by download
+        temp_file_name = os.path.join(temp_dir, 'scratch')
+        fs.download('upload/b', temp_file_name)
+        assert open(temp_file_name, 'rb').read() == _temp_body_a
+
+    assert fs.exists('put')
+    fs.delete('put')
+    assert not fs.exists('put')

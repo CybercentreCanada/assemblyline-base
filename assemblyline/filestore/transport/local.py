@@ -43,13 +43,13 @@ class TransportLocal(Transport):
         path = self.normalize(path)
         return os.path.exists(path)
 
-    def getmtime(self, path):
-        path = self.normalize(path)
-
-        try:
-            return os.path.getmtime(path)
-        except OSError:
-            return 0
+    # def getmtime(self, path):
+    #     path = self.normalize(path)
+    #
+    #     try:
+    #         return os.path.getmtime(path)
+    #     except OSError:
+    #         return 0
 
     def makedirs(self, path):
         path = self.normalize(path)

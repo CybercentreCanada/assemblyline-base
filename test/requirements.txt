@@ -3,3 +3,5 @@ pytest-cov
 retrying
 codecov
 pytest-mock
+pyftpdlib
+pyopenssl
