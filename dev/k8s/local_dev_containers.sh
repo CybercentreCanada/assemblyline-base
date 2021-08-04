@@ -6,8 +6,7 @@ echo "Building $1"
 
 # Build & push main container
 (docker build . -t localhost:32000/cccs/assemblyline:$1 -f assemblyline-base/dev/k8s/local_dev.Dockerfile)
-(docker push localhost:32000/cccs/assemblyline:$1)
-
+(docker tag localhost:32000/cccs/assemblyline:$1 localhost:32000/cccs/assemblyline:latest)
 
 # Build core containers
 cd assemblyline-base/dev/k8s/
