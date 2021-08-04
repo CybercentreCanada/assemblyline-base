@@ -1,4 +1,4 @@
-ARG build_no=dev0
+ARG build_no=latest
 FROM localhost:32000/cccs/assemblyline:$build_no
 
 # Setup environment varibles
