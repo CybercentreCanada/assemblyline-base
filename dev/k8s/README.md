@@ -9,8 +9,7 @@
   - ie. docker build . -f service-base.Dockerfile --build-arg build_no=dev0
 - Debugging: Visual Code's [Bridge to Kubernetes](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.mindaro) &
 [Kubernetes](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools) extensions
-  - TODO: figure out how to use it with Scaler/Updater that make calls to Kubernetes API
-  - Add to settings.json (assuming using microk8s installed from snap):
+  - Add the following to settings.json (assuming using microk8s installed from snap):
     ```
     "vs-kubernetes": {
       "vs-kubernetes.namespace": "al",
@@ -30,3 +29,4 @@
       "imageBuildTool": "Docker"
     }
     ```
+  - Specific to Updater/Scaler: You need to provide an environment variable in your launch targets called 'KUBECONFIG' that points to where your kubeconfig file is.
