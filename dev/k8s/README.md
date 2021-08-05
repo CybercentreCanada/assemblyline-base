@@ -11,22 +11,22 @@
 [Kubernetes](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools) extensions
   - TODO: figure out how to use it with Scaler/Updater that make calls to Kubernetes API
   - Add to settings.json (assuming using microk8s installed from snap):
-    '''
-        "vs-kubernetes": {
-          "vs-kubernetes.namespace": "al",
-          "vs-kubernetes.kubectl-path": "/snap/kubectl/current/kubectl",
-          "vs-kubernetes.helm-path": "/snap/helm/current/helm",
-          "vs-kubernetes.minikube-path": "/snap/bin/microk8s",
-          "vs-kubernetes.kubectlVersioning": "user-provided",
-          "vs-kubernetes.outputFormat": "yaml",
-          "vs-kubernetes.kubeconfig": "/var/snap/microk8s/current/credentials/client.config",
-          "vs-kubernetes.knownKubeconfigs": [],
-          "vs-kubernetes.autoCleanupOnDebugTerminate": false,
-          "vs-kubernetes.nodejs-autodetect-remote-root": true,
-          "vs-kubernetes.nodejs-remote-root": "",
-          "vs-kubernetes.nodejs-debug-port": 9229,
-          "vs-kubernetes.local-tunnel-debug-provider": "",
-          "checkForMinikubeUpgrade": false,
-          "imageBuildTool": "Docker"
-      }
-    '''
+    ```
+    "vs-kubernetes": {
+      "vs-kubernetes.namespace": "al",
+      "vs-kubernetes.kubectl-path": "/snap/kubectl/current/kubectl",
+      "vs-kubernetes.helm-path": "/snap/helm/current/helm",
+      "vs-kubernetes.minikube-path": "/snap/bin/microk8s",
+      "vs-kubernetes.kubectlVersioning": "user-provided",
+      "vs-kubernetes.outputFormat": "yaml",
+      "vs-kubernetes.kubeconfig": "/var/snap/microk8s/current/credentials/client.config",
+      "vs-kubernetes.knownKubeconfigs": [],
+      "vs-kubernetes.autoCleanupOnDebugTerminate": false,
+      "vs-kubernetes.nodejs-autodetect-remote-root": true,
+      "vs-kubernetes.nodejs-remote-root": "",
+      "vs-kubernetes.nodejs-debug-port": 9229,
+      "vs-kubernetes.local-tunnel-debug-provider": "",
+      "checkForMinikubeUpgrade": false,
+      "imageBuildTool": "Docker"
+    }
+    ```
