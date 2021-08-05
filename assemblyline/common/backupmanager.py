@@ -251,7 +251,7 @@ class DistributedBackup(object):
                 except Exception as e:
                     self.cleanup()
                     if self.logger:
-                        self.logger.execption(e)
+                        self.logger.exception(e)
                         self.logger.error("Error occurred while processing bucket %s." % bucket_name)
                     self.bucket_error.append(bucket_name)
 
@@ -261,7 +261,7 @@ class DistributedBackup(object):
             dt.join()
         except Exception as e:
             if self.logger:
-                self.logger.execption(e)
+                self.logger.exception(e)
 
     def restore(self):
         try:
@@ -292,7 +292,7 @@ class DistributedBackup(object):
             dt.join()
         except Exception as e:
             if self.logger:
-                self.logger.execption(e)
+                self.logger.exception(e)
 
 
 def _string_getter(data):
