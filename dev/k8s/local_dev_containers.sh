@@ -20,3 +20,7 @@ cd assemblyline-base/dev/k8s/
 (docker push localhost:32000/cccs/assemblyline-ui:$1)
 (docker push localhost:32000/cccs/assemblyline-socketio:$1)
 (docker push localhost:32000/cccs/assemblyline-service-server:$1)
+
+# Build service-base
+(docker build . -t cccs/assemblyline-v4-service-base:$1 -f service-base.Dockerfile --build-arg build_no=$1)
+(docker tag cccs/assemblyline-v4-service-base:$1 cccs/assemblyline-v4-service-base:latest)
