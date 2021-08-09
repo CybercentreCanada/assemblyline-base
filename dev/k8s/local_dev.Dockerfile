@@ -17,6 +17,15 @@ RUN mkdir -p /var/log/assemblyline
 RUN mkdir -p /opt/alv4
 WORKDIR /opt/alv4
 
+# Install and uninstall the pypi version, so that docker can cache the
+# dependency installation making repeated rebuilds with changing local changes faster
+RUN pip install assemblyline[test] assemblyline_core[test] assemblyline_ui[test,scoketio] \
+                assemblyline_client[test] assemblyline_service_server[test] \
+                assemblyline_service_client[test] assemblyline_v4_service[test] \
+    && pip uninstall -y assemblyline assemblyline_core assemblyline_ui \
+                    assemblyline_service_server assemblyline_client \
+                    assemblyline_service_client assemblyline_v4_service
+
 #
 COPY assemblyline-base assemblyline-base
 RUN pip install -e ./assemblyline-base[test]
@@ -40,10 +49,6 @@ COPY assemblyline-v4-service assemblyline-v4-service
 RUN pip install -e ./assemblyline-v4-service[test]
 
 
-RUN pip uninstall -y assemblyline
-RUN pip uninstall -y assemblyline_core
-RUN pip uninstall -y assemblyline_ui
-RUN pip uninstall -y assemblyline_service_server
-RUN pip uninstall -y assemblyline_client
-RUN pip uninstall -y assemblyline_service_client
-RUN pip uninstall -y assemblyline_v4_service
+RUN pip uninstall -y assemblyline assemblyline_core assemblyline_ui \
+                    assemblyline_service_server assemblyline_client \
+                    assemblyline_service_client assemblyline_v4_service

@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import json
 import logging
@@ -13,6 +14,7 @@ from assemblyline.filestore.transport.http import TransportHTTP
 from assemblyline.filestore.transport.local import TransportLocal
 from assemblyline.filestore.transport.s3 import TransportS3
 from assemblyline.filestore.transport.sftp import TransportSFTP
+
 if TYPE_CHECKING:
     from assemblyline.filestore.transport.base import Transport
 
