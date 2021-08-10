@@ -116,15 +116,15 @@ STRONG_INDICATORS = {
         re.compile(rb'<[^>]+xmlns[:=][^>]+>', re.MULTILINE),
     ],
     'code/ps1': [
-        # Match one of the common Cmdlets
-        re.compile(rb'(^|\n)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|'
+        # Match one of the common Cmdlets (case-insensitive)
+        re.compile(rb'(?i)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|'
                    rb'Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|'
                    rb'New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|'
-                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type)'),
-        # Match one of the common Classes
-        re.compile(rb'(-memberDefinition|-Name|-namespace|-passthru)'),
-        # Match one of the common Methods
-        re.compile(rb'(\.Get(String|Field|Type|Method)|FromBase64String)\(')
+                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error)'),
+        # Match one of the common Classes (case-insensitive)
+        re.compile(rb'(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName)'),
+        # Match one of the common Methods (case-insensitive)
+        re.compile(rb'(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\(')
     ]
 }
 STRONG_SCORE = 15
