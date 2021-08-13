@@ -1,6 +1,6 @@
 FROM python:3.9-slim-buster
 
-ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline-ui:/opt/alv4/assemblyline-v4-service:/opt/alv4/assemblyline-service-client
+ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline-ui:/opt/alv4/assemblyline_client:/opt/alv4/assemblyline-v4-service:/opt/alv4/assemblyline-service-client
 
 # SSDEEP pkg requirments
 RUN apt-get update -yy \
@@ -8,6 +8,7 @@ RUN apt-get update -yy \
     && rm -rf /var/lib/apt/lists/*
 
 # Create Assemblyline source directory
+RUN useradd -b /var/lib -U -m assemblyline
 RUN mkdir -p /etc/assemblyline
 RUN mkdir -p /var/cache/assemblyline
 RUN mkdir -p /var/lib/assemblyline
