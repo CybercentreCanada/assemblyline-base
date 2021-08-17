@@ -17,7 +17,10 @@ RUN mkdir -p /var/log/assemblyline
 RUN mkdir -p /opt/alv4
 WORKDIR /opt/alv4
 
-#
+# Optional package for debugging with VS Code; needed for Debug (Attach)
+# https://github.com/Azure/vscode-kubernetes-tools/blob/master/debug-on-kubernetes.md
+RUN pip install debugpy
+
 COPY assemblyline-base assemblyline-base
 RUN pip install -e ./assemblyline-base[test]
 
