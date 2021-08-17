@@ -58,6 +58,8 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"(?:[/?#]\S*)"
 FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?){URI_PATH}?$"
+# To be used by services for extracting URIs out of blobs of text
+URI_FROM_BLOB_REGEX = f"(?:(?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?){URI_PATH}?"
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
 
