@@ -82,7 +82,7 @@ setup(
         'elastic-apm[flask]!=6.3.0,!=6.3.1,!=6.3.2',  # Exclude broken elastic APM version
         'cython',
         'docker',
-        'kubernetes<18',
+        'kubernetes<19',
         'notifications-python-client',
         # Blacklist a bad release of the azure library until a release newer than that comes out
         'azure-storage-blob!=12.4.0',
