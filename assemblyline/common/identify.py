@@ -124,7 +124,9 @@ STRONG_INDICATORS = {
         # Match one of the common Classes (case-insensitive)
         re.compile(rb'(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName)'),
         # Match one of the common Methods (case-insensitive)
-        re.compile(rb'(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\(')
+        re.compile(rb'(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\('),
+        # A .NET class that is commonly used in PowerShell
+        re.compile(rb'(?i)(System\.Net\.WebClient)'),
     ]
 }
 STRONG_SCORE = 15
