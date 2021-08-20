@@ -1,5 +1,5 @@
 # Assemblyline Dev Setup (Kubernetes)
-- Run setup script for [alv4_setup](https://github.com/cccs-sgaron/alv4_setup)
+- Run setup script for [Assemblyline Development](https://github.com/CybercentreCanada/assemblyline-development-setup)
 - When ready to build, run local_dev_containers.sh script with tag as parameter.
 - Run helm upgrade using new tags in values.yaml.
 - Use Lens or kubectl to monitor status of deployment
