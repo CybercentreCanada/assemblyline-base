@@ -10,4 +10,4 @@ ENV CONTAINER_MODE true
 RUN mkdir -p /opt/al_service
 RUN touch /opt/al_service/__init__.py
 
-CMD ["python", "-m", "debugpy", "--listen", "localhost:5678","/opt/alv4/assemblyline-v4-service/docker/process_handler.py"]
+CMD ["python", "-m", "debugpy", "--listen", "localhost:5678", "-m", "/opt/alv4/assemblyline-v4-service/docker/process_handler.py"]
