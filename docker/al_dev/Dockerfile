@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir \
    assemblyline-core \
    assemblyline-ui \
    assemblyline-service-server \
+   debugpy \
    && rm -rf ~/.cache/pip
 
 
