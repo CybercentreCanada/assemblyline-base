@@ -9,5 +9,6 @@ ENV CONTAINER_MODE true
 
 RUN mkdir -p /opt/al_service
 RUN touch /opt/al_service/__init__.py
+USER assemblyline
 
 CMD ["python", "/opt/alv4/assemblyline-v4-service/docker/process_handler.py"]

@@ -1,6 +1,6 @@
 FROM python:3.9-slim-buster
 
-ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline-ui:/opt/alv4/assemblyline_client:/opt/alv4/assemblyline-v4-service:/opt/alv4/assemblyline-service-client
+ENV PYTHONPATH=${PYTHONPATH}:/var/lib/assemblyline/.local/lib/python3.9/site-packages/:/opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline-ui:/opt/alv4/assemblyline_client:/opt/alv4/assemblyline-v4-service:/opt/alv4/assemblyline-service-client
 
 # SSDEEP pkg requirments
 RUN apt-get update -yy \
@@ -15,8 +15,8 @@ RUN mkdir -p /var/lib/assemblyline
 RUN mkdir -p /var/lib/assemblyline/flowjs
 RUN mkdir -p /var/lib/assemblyline/bundling
 RUN mkdir -p /var/log/assemblyline
-RUN mkdir -p /opt/alv4
 WORKDIR /opt/alv4
+ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
 
 # Install and uninstall the pypi version, so that docker can cache the
 # dependency installation making repeated rebuilds with changing local changes faster
@@ -50,6 +50,6 @@ COPY assemblyline-v4-service assemblyline-v4-service
 RUN pip install -e ./assemblyline-v4-service[test]
 
 
-RUN pip uninstall -y assemblyline assemblyline_core assemblyline_ui \
-                    assemblyline_service_server assemblyline_client \
-                    assemblyline_service_client assemblyline_v4_service
+# RUN pip uninstall -y assemblyline assemblyline_core assemblyline_ui \
+#                     assemblyline_service_server assemblyline_client \
+#                     assemblyline_service_client assemblyline_v4_service
