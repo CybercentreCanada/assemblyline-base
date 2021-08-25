@@ -14,12 +14,12 @@ RUN pip install --no-cache-dir \
    assemblyline-core \
    assemblyline-ui \
    assemblyline-service-server \
+   debugpy \
    && pip uninstall -y \
    assemblyline \
    assemblyline-core \
    assemblyline-ui \
    assemblyline-service-server \
-   debugpy \
    && rm -rf ~/.cache/pip
 
 
