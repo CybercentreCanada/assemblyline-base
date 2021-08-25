@@ -2,6 +2,7 @@
 A base classes and utilities to provide a common set of behaviours for
 the assemblyline core server nodes.
 """
+from __future__ import annotations
 import enum
 import functools
 import time
@@ -11,12 +12,15 @@ import signal
 import sys
 import io
 import os
-from typing import cast, Dict, Callable
+from typing import cast, Callable, TYPE_CHECKING
 
 from assemblyline.remote.datatypes import get_client
 from assemblyline.remote.datatypes.hash import Hash
 from assemblyline.odm.models.service import Service
 from assemblyline.common import forge, log as al_log
+
+if TYPE_CHECKING:
+    from assemblyline.datastore.helper import AssemblylineDatastore
 
 
 SHUTDOWN_SECONDS_LIMIT = 10
@@ -92,7 +96,7 @@ class ServerBase(threading.Thread):
             _, self._exception, self._traceback = sys.exc_info()
             self.log.exception("Exiting:")
 
-    def sleep(self, timeout):
+    def sleep(self, timeout: float):
         self.stopping.wait(timeout)
         return self.running
         
@@ -188,7 +192,7 @@ class CoreBase(ServerBase):
                  shutdown_timeout: float = None, config=None, datastore=None,
                  redis=None, redis_persist=None):
         super().__init__(component_name=component_name, logger=logger, shutdown_timeout=shutdown_timeout, config=config)
-        self.datastore = datastore or forge.get_datastore(self.config)
+        self.datastore: AssemblylineDatastore = datastore or forge.get_datastore(self.config)
 
         # Connect to all of our persistent redis structures
         self.redis = redis or get_client(
@@ -203,7 +207,7 @@ class CoreBase(ServerBase):
         )
 
         # Create a cached service data object, and access to the service status
-        self.service_info = cast(Dict[str, Service], forge.CachedObject(self._get_services))
+        self.service_info = cast(dict[str, Service], forge.CachedObject(self._get_services))
         self._service_stage_hash = get_service_stage_hash(self.redis)
 
     def _get_services(self):
@@ -238,7 +242,7 @@ class ThreadedCoreBase(CoreBase):
                 self.log.exception(f'Crash in dispatcher: {fn.__name__}')
         return with_logs
 
-    def maintain_threads(self, expected_threads: Dict[str, Callable]):
+    def maintain_threads(self, expected_threads: dict[str, Callable[..., None]]):
         expected_threads = {name: self.log_crashes(start) for name, start in expected_threads.items()}
         threads = {}
 

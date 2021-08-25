@@ -9,8 +9,8 @@ Classification = forge.get_classification()
 
 @odm.model(index=False, store=False)
 class EnvironmentVariable(odm.Model):
-    name = odm.Keyword()
-    value = odm.Keyword()
+    name: str = odm.Keyword()
+    value: str = odm.Keyword()
 
 
 @odm.model(index=False, store=False)
@@ -44,16 +44,16 @@ class DependencyConfig(odm.Model):
 
 @odm.model(index=False, store=False)
 class UpdateSource(odm.Model):
-    name = odm.Keyword()
-    password = odm.Optional(odm.Keyword(default=""))
-    pattern = odm.Optional(odm.Keyword(default=""))
-    private_key = odm.Optional(odm.Keyword(default=""))
-    ca_cert = odm.Optional(odm.Keyword(default=""))
-    ssl_ignore_errors = odm.Boolean(default=False)
-    proxy = odm.Optional(odm.Keyword(default=""))
-    uri = odm.Keyword()
-    username = odm.Optional(odm.Keyword(default=""))
-    headers = odm.List(odm.Compound(EnvironmentVariable), default=[])
+    name: str = odm.Keyword()
+    password: Opt[str] = odm.Optional(odm.Keyword(default=""))
+    pattern: Opt[str] = odm.Optional(odm.Keyword(default=""))
+    private_key: Opt[str] = odm.Optional(odm.Keyword(default=""))
+    ca_cert: Opt[str] = odm.Optional(odm.Keyword(default=""))
+    ssl_ignore_errors: bool = odm.Boolean(default=False)
+    proxy: Opt[str] = odm.Optional(odm.Keyword(default=""))
+    uri: str = odm.Keyword()
+    username: Opt[str] = odm.Optional(odm.Keyword(default=""))
+    headers: list[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
     default_classification = odm.Classification(default=Classification.UNRESTRICTED)
 
 
@@ -63,9 +63,9 @@ class UpdateConfig(odm.Model):
     generates_signatures = odm.Boolean(index=True, default=False)
     method = odm.Enum(values=['run', 'build'])                    # Are we going to run or build a container?
     run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
-    sources = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
-    update_interval_seconds = odm.Integer()                       # Update check interval in seconds
-    wait_for_update = odm.Boolean(default=False)
+    sources: list[UpdateSource] = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
+    update_interval_seconds: int = odm.Integer()                       # Update check interval in seconds
+    wait_for_update: bool = odm.Boolean(default=False)
 
 
 @odm.model(index=False, store=False)
@@ -91,7 +91,7 @@ class Service(odm.Model):
     is_external = odm.Boolean(default=False)
     licence_count = odm.Integer(default=0)
 
-    name = odm.Keyword(store=True, copyto="__text__")
+    name: str = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
 
     # Should the result cache be disabled for this service

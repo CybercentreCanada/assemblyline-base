@@ -916,17 +916,17 @@ class AssemblylineDatastore(object):
         return out
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_service_with_delta(self, service_name, version=None, as_obj=True):
+    def get_service_with_delta(self, service_name, version=None, as_obj=True) -> Union[Service, dict, None]:
         svc = self.ds.service_delta.get(service_name)
         if svc is None:
-            return svc
+            return None
 
         if version is not None:
             svc.version = version
 
         svc_version_data = self.ds.service.get(f"{service_name}_{svc.version}")
         if svc_version_data is None:
-            return svc_version_data
+            return None
 
         svc_version_data = recursive_update(svc_version_data.as_primitives(strip_null=True),
                                             svc.as_primitives(strip_null=True))
