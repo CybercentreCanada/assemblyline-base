@@ -17,8 +17,8 @@ class Operation(enum.IntEnum):
 
 @dataclass
 class ServiceChange:
-    operation: Operation
     name: str
+    operation: Operation
 
     @staticmethod
     def serialize(obj: ServiceChange) -> str:
@@ -27,3 +27,18 @@ class ServiceChange:
     @staticmethod
     def deserialize(data: str) -> ServiceChange:
         return ServiceChange(**json.loads(data))
+
+@dataclass
+class SignatureChange:
+    signature_id: str
+    signature_type: str
+    source: str
+    operation: Operation
+
+    @staticmethod
+    def serialize(obj: SignatureChange) -> str:
+        return json.dumps(asdict(obj))
+
+    @staticmethod
+    def deserialize(data: str) -> SignatureChange:
+        return SignatureChange(**json.loads(data))
