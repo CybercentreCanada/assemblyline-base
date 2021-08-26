@@ -13,13 +13,13 @@ from redis import Redis
 
 
 def test_exact_event(redis_connection: Redis[Any]):
-    calls = []
+    calls: list[dict[str, Any]] = []
 
-    def _track_call(data):
+    def _track_call(data: dict[str, Any]):
         calls.append(data)
 
+    watcher = EventWatcher(redis_connection)
     try:
-        watcher = EventWatcher(redis_connection)
         watcher.register('changes.test', _track_call)
         watcher.start()
         sender = EventSender('changes.', redis_connection)
@@ -61,11 +61,11 @@ def test_serialized_event(redis_connection: Redis[Any]):
     def _track_call(data: Message):
         calls.append(data)
 
-    watcher = EventWatcher(redis_connection, deserializer=_deserialize)
+    watcher = EventWatcher[Message](redis_connection, deserializer=_deserialize)
     try:
         watcher.register('changes.test', _track_call)
         watcher.start()
-        sender = EventSender('changes.', redis_connection, serializer=_serialize)
+        sender = EventSender[Message]('changes.', redis_connection, serializer=_serialize)
         start = time.time()
 
         while len(calls) < 5:
@@ -83,14 +83,14 @@ def test_serialized_event(redis_connection: Redis[Any]):
         watcher.stop()
 
 
-def test_pattern_event(redis_connection):
-    calls = []
+def test_pattern_event(redis_connection: Redis[Any]):
+    calls: list[dict[str, Any]] = []
 
-    def _track_call(data):
+    def _track_call(data: dict[str, Any]):
         calls.append(data)
 
+    watcher = EventWatcher(redis_connection)
     try:
-        watcher = EventWatcher(redis_connection)
         watcher.register('changes.*', _track_call)
         watcher.start()
         sender = EventSender('changes.', redis_connection)
