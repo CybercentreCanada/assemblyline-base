@@ -12,7 +12,7 @@ def get_safelist_key(t_type: str, t_value: str) -> str:
 
 def get_safelist(ds):
     if not ds:
-        return set({})
+        return {}
     return {get_safelist_key('signature', sl['signature']['name']): True
             for sl in ds.safelist.stream_search("type:signature AND enabled:true", fl="signature.name", as_obj=False)}
 
@@ -20,7 +20,7 @@ def get_safelist(ds):
 class HeuristicHandler():
     def __init__(self, datastore=None):
         self.datastore = datastore
-        self.safelist = CachedObject(get_safelist, kwargs={'ds': self.datastore}, refresh=300) if datastore else set({})
+        self.safelist = CachedObject(get_safelist, kwargs={'ds': self.datastore}, refresh=300) if datastore else {}
 
     def service_heuristic_to_result_heuristic(self, srv_heuristic, heuristics, zerioize_on_sig_safe=True):
         heur_id = srv_heuristic['heur_id']
