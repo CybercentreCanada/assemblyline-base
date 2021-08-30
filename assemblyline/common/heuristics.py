@@ -1,51 +1,73 @@
 import logging
 
 from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
+from assemblyline.common.forge import CachedObject
 
 heur_logger = logging.getLogger("assemblyline.heuristics")
 
 
-def service_heuristic_to_result_heuristic(srv_heuristic, heuristics):
-    heur_id = srv_heuristic['heur_id']
-    attack_ids = srv_heuristic.pop('attack_ids', [])
-    signatures = srv_heuristic.pop('signatures', {})
-    frequency = srv_heuristic.pop('frequency', 0)
-    score_map = srv_heuristic.pop('score_map', {})
+def get_safelist_key(t_type: str, t_value: str) -> str:
+    return f"{t_type}__{t_value}"
 
-    # Validate the heuristic and recalculate its score
-    heuristic = Heuristic(heur_id, attack_ids, signatures, score_map, frequency, heuristics)
 
-    try:
-        # Assign the newly computed heuristic to the section
-        output = dict(
-            heur_id=heur_id,
-            score=heuristic.score,
-            name=heuristic.name,
-            attack=[],
-            signature=[]
-        )
+def get_safelist(ds):
+    if not ds:
+        return {}
+    return {get_safelist_key('signature', sl['signature']['name']): True
+            for sl in ds.safelist.stream_search("type:signature AND enabled:true", fl="signature.name", as_obj=False)}
 
-        # Assign the multiple attack IDs to the heuristic
-        for attack_id in heuristic.attack_ids:
-            attack_item = dict(
-                attack_id=attack_id,
-                pattern=attack_map[attack_id]['name'],
-                categories=attack_map[attack_id]['categories']
+
+class HeuristicHandler():
+    def __init__(self, datastore=None):
+        self.datastore = datastore
+        self.safelist = CachedObject(get_safelist, kwargs={'ds': self.datastore}, refresh=300) if datastore else {}
+
+    def service_heuristic_to_result_heuristic(self, srv_heuristic, heuristics, zerioize_on_sig_safe=True):
+        heur_id = srv_heuristic['heur_id']
+        attack_ids = srv_heuristic.pop('attack_ids', [])
+        signatures = srv_heuristic.pop('signatures', {})
+        frequency = srv_heuristic.pop('frequency', 0)
+        score_map = srv_heuristic.pop('score_map', {})
+
+        # Validate the heuristic and recalculate its score
+        heuristic = Heuristic(heur_id, attack_ids, signatures, score_map, frequency, heuristics)
+
+        try:
+            # Assign the newly computed heuristic to the section
+            output = dict(
+                heur_id=heur_id,
+                score=heuristic.score,
+                name=heuristic.name,
+                attack=[],
+                signature=[]
             )
-            output['attack'].append(attack_item)
 
-        # Assign the multiple signatures to the heuristic
-        for sig_name, freq in heuristic.signatures.items():
-            signature_item = dict(
-                name=sig_name,
-                frequency=freq
-            )
-            output['signature'].append(signature_item)
+            # Assign the multiple attack IDs to the heuristic
+            for attack_id in heuristic.attack_ids:
+                attack_item = dict(
+                    attack_id=attack_id,
+                    pattern=attack_map[attack_id]['name'],
+                    categories=attack_map[attack_id]['categories']
+                )
+                output['attack'].append(attack_item)
 
-        return output, heuristic.associated_tags
-    except InvalidHeuristicException as e:
-        heur_logger.warning(str(e))
-        raise
+            # Assign the multiple signatures to the heuristic
+            for sig_name, freq in heuristic.signatures.items():
+                signature_item = dict(
+                    name=sig_name,
+                    frequency=freq,
+                    safe=self.safelist.get(get_safelist_key('signature', sig_name), None) is not None
+                )
+                output['signature'].append(signature_item)
+
+            sig_safe_status = [s['safe'] for s in output['signature']]
+            if len(sig_safe_status) > 0 and all(sig_safe_status):
+                output['score'] = 0
+
+            return output, heuristic.associated_tags
+        except InvalidHeuristicException as e:
+            heur_logger.warning(str(e))
+            raise
 
 
 class InvalidHeuristicException(Exception):

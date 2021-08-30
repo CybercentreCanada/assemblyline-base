@@ -22,7 +22,7 @@ from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
 from assemblyline.common.dict_utils import flatten, unflatten, recursive_update, get_recursive_delta
 from assemblyline.common.entropy import calculate_partition_entropy
-from assemblyline.common.heuristics import InvalidHeuristicException, service_heuristic_to_result_heuristic
+from assemblyline.common.heuristics import InvalidHeuristicException, HeuristicHandler
 from assemblyline.common.hexdump import hexdump
 from assemblyline.common.identify import fileinfo
 from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
@@ -238,7 +238,7 @@ def test_heuristics_valid():
         score_map=score_map
     )
 
-    result_heur, _ = service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
+    result_heur, _ = HeuristicHandler().service_heuristic_to_result_heuristic(deepcopy(service_heur), heuristics)
     assert result_heur is not None
     assert service_heur['heur_id'] == result_heur['heur_id']
     assert service_heur['score'] != result_heur['score']
@@ -254,7 +254,7 @@ def test_heuristics_valid():
 
 def test_heuristics_invalid():
     with pytest.raises(InvalidHeuristicException):
-        service_heuristic_to_result_heuristic({'heur_id': "my_id"}, {})
+        HeuristicHandler().service_heuristic_to_result_heuristic({'heur_id': "my_id"}, {})
 
 
 def test_hexdump():
