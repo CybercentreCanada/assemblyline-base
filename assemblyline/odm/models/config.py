@@ -703,6 +703,8 @@ class Services(odm.Model):
     stages: List[str] = odm.List(odm.Keyword())
     # Substitution variables for image paths (for custom registry support)
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
+    # Same as above, but only applied in the updater, used in dev setups and local registries
+    update_image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
     # Default update channel to be used for new services
     preferred_update_channel: str = odm.Keyword()
     # Allow container registries with self signed certs for service updates
@@ -720,6 +722,7 @@ DEFAULT_SERVICES = {
     "min_service_workers": 0,
     "stages": SERVICE_STAGES,
     "image_variables": {},
+    "update_image_variables": {},
     "preferred_update_channel": "stable",
     "allow_insecure_registry": False,
     "cpu_reservation": 0.25

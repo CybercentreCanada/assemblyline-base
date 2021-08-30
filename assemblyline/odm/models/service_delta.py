@@ -48,6 +48,7 @@ class PersistentVolumeDelta(odm.Model):
 class DependencyConfigDelta(odm.Model):
     container = odm.Optional(odm.Compound(DockerConfigDelta))
     volumes = odm.Mapping(odm.Compound(PersistentVolumeDelta), default={})
+    run_as_core: bool = odm.Optional(odm.Boolean())
 
 
 @odm.model(index=False, store=False)
