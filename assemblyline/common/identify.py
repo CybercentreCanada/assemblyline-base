@@ -372,7 +372,7 @@ tl_patterns = [
     ['java', r'jar |java'],
     ['code',
      r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
-     r'|ruby|color scheme|script text exe|shell script|tcl'],
+     r'|ruby|script text exe|shell script|tcl'],
     ['network', r'capture'],
     ['unknown', r'CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage'],
     ['unknown', r'disk|file[ ]*system|floppy|tape'],
@@ -381,7 +381,7 @@ tl_patterns = [
      r'|sound|tracker|video|voice data'],
     ['executable', r'803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object'],
     ['unknown', r'Emulator'],
-    ['image', r'DjVu|Surface|XCursor|bitmap|cursor|color|font|graphics|icon|image|jpeg'],
+    ['image', r'DjVu|Surface|XCursor|bitmap|cursor|font|graphics|icon|image|jpeg'],
     ['archive',
      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'],
