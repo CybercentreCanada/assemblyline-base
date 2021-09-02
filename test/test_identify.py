@@ -75,6 +75,11 @@ def test_constants():
         (b"\nREM\t", ["code/vbs"]),
         (b"ubound(", ["code/vbs"]),
         (b"lbound(", ["code/vbs"]),
+        (b"CreateObject(", ["code/vbs"]),
+        (b"Set blah =", ["code/vbs"]),
+        (b"Set\tblah\t=", ["code/vbs"]),
+        (b"Set\tblah=", ["code/vbs"]),
+        (b"Setblah=", []),
         # JS
         (b"function(){", ["code/javascript"]),
         (b"function( ) {", ["code/javascript"]),
