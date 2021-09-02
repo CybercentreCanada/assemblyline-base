@@ -30,6 +30,8 @@ STRONG_INDICATORS = {
         re.compile(rb'(^|\n)ExecuteGlobal'),
         re.compile(rb'(^|\n)REM[ \t]+'),
         re.compile(rb'(ubound|lbound)\('),
+        re.compile(rb'CreateObject\('),
+        re.compile(rb'Set[ \t]*\w+[ \t]*=[ \t]*'),
     ],
     'code/javascript': [
         re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
