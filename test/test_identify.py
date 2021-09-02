@@ -75,11 +75,6 @@ def test_constants():
         (b"\nREM\t", ["code/vbs"]),
         (b"ubound(", ["code/vbs"]),
         (b"lbound(", ["code/vbs"]),
-        (b"CreateObject(", ["code/vbs"]),
-        (b"Set blah =", ["code/vbs"]),
-        (b"Set\tblah\t=", ["code/vbs"]),
-        (b"Set\tblah=", ["code/vbs"]),
-        (b"Setblah=", []),
         # JS
         (b"function(){", ["code/javascript"]),
         (b"function( ) {", ["code/javascript"]),
@@ -699,7 +694,6 @@ def test_tl_patterns(tl, string):
         ('application/x-mach-binary', 'executable/mach-o'),
         ('application/vnd.ms-outlook', 'document/office/email'),
         ('application/x-iso9660-image', 'archive/iso'),
-        ('application/x-gettext-translation', 'resource/mo'),
     ]
 )
 def test_trusted_mimes(mime, translated_type):
