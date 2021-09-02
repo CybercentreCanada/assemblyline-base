@@ -401,6 +401,7 @@ trusted_mimes = {
     'application/x-mach-binary': 'executable/mach-o',
     'application/vnd.ms-outlook': 'document/office/email',
     'application/x-iso9660-image': 'archive/iso',
+    'application/x-gettext-translation': 'resource/mo',
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]

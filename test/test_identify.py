@@ -699,6 +699,7 @@ def test_tl_patterns(tl, string):
         ('application/x-mach-binary', 'executable/mach-o'),
         ('application/vnd.ms-outlook', 'document/office/email'),
         ('application/x-iso9660-image', 'archive/iso'),
+        ('application/x-gettext-translation', 'resource/mo'),
     ]
 )
 def test_trusted_mimes(mime, translated_type):
