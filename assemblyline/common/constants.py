@@ -199,7 +199,6 @@ RECOGNIZED_TYPES = {
     'resource/ccz': True,
     'resource/cpk': True,
     'resource/dz': True,
-    'resource/mo': True,
     'resource/pak': True,
     'resource/ptc': True,
     'resource/sbm': True,

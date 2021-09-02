@@ -31,7 +31,7 @@ STRONG_INDICATORS = {
         re.compile(rb'(^|\n)REM[ \t]+'),
         re.compile(rb'(ubound|lbound)\('),
         re.compile(rb'CreateObject\('),
-        re.compile(rb'Set[ \t]+\w+[ \t]*='),
+        re.compile(rb'Set[ \t]*\w+[ \t]*=[ \t]*'),
     ],
     'code/javascript': [
         re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
@@ -401,7 +401,6 @@ trusted_mimes = {
     'application/x-mach-binary': 'executable/mach-o',
     'application/vnd.ms-outlook': 'document/office/email',
     'application/x-iso9660-image': 'archive/iso',
-    'application/x-gettext-translation': 'resource/mo',
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
