@@ -2,7 +2,7 @@ from assemblyline import odm
 from assemblyline.common import forge
 
 Classification = forge.get_classification()
-SAFEHASH_TYPES = ["file", "tag"]
+SAFEHASH_TYPES = ["file", "tag", "signature"]
 SOURCE_TYPES = ["user", "external"]
 
 
@@ -30,8 +30,13 @@ class Source(odm.Model):
 
 @odm.model(index=True, store=True)
 class Tag(odm.Model):
-    type = odm.Keyword()       # List of names seen for that file
-    value = odm.Keyword(copyto="__text__")      # Size of the file
+    type = odm.Keyword()                                                      # List of names seen for that file
+    value = odm.Keyword(copyto="__text__")                                    # Size of the file
+
+
+@odm.model(index=True, store=True)
+class Signature(odm.Model):
+    name = odm.Keyword(copyto="__text__")                                     # Name of the signature
 
 
 @odm.model(index=True, store=True)
@@ -43,6 +48,7 @@ class Safelist(odm.Model):
     file = odm.Optional(odm.Compound(File))               # Informations about the file
     sources = odm.List(odm.Compound(Source))              # List of reasons why hash is safelisted
     tag = odm.Optional(odm.Compound(Tag))                 # Informations about the tag
+    signature = odm.Optional(odm.Compound(Signature))     # Informations about the signature
     type = odm.Enum(values=SAFEHASH_TYPES)                # Type of safe hash
     updated = odm.Date(default="NOW")                     # Last date when sources were added to the safe hash
 

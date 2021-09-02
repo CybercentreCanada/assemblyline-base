@@ -19,6 +19,7 @@ class Attack(odm.Model):
 class Signature(odm.Model):
     name = odm.Keyword(copyto="__text__")   # Name of the signature that triggered the heuristic
     frequency = odm.Integer(default=1)      # Number of times this signature triggered the heuristic
+    safe = odm.Boolean(default=False)       # Is the signature safelisted or not
 
 
 @odm.model(index=True, store=False)
