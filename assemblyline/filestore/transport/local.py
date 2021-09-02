@@ -43,14 +43,6 @@ class TransportLocal(Transport):
         path = self.normalize(path)
         return os.path.exists(path)
 
-    def getmtime(self, path):
-        path = self.normalize(path)
-
-        try:
-            return os.path.getmtime(path)
-        except OSError:
-            return 0
-
     def makedirs(self, path):
         path = self.normalize(path)
         try:
@@ -89,7 +81,7 @@ class TransportLocal(Transport):
         assert (self.exists(dst_path))
 
     # Buffer based functions
-    def get(self, path):
+    def get(self, path: str) -> bytes:
         path = self.normalize(path)
         fh = None
         try:

@@ -134,7 +134,7 @@ class TransportAzure(Transport):
                     raise
 
     # Buffer based functions
-    def get(self, path):
+    def get(self, path: str) -> bytes:
         key = self.normalize(path)
         my_blob = BytesIO()
 

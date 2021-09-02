@@ -134,13 +134,9 @@ class TransportSFTP(Transport):
         self.sftp.rename(temppath, finalpath)
         assert (self.exists(dst_path))
 
-    @reconnect_retry_on_fail
-    def upload_batch(self, local_remote_tuples):
-        return super(TransportSFTP, self).upload_batch(local_remote_tuples)
-
     # Buffer based functions
     @reconnect_retry_on_fail
-    def get(self, path):
+    def get(self, path: str) -> bytes:
         path = self.normalize(path)
         bio = BytesIO()
         with self.sftp.open(path) as sftp_handle:
