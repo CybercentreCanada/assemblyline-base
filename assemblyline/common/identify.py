@@ -122,9 +122,10 @@ STRONG_INDICATORS = {
         re.compile(rb'(?i)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|'
                    rb'Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|'
                    rb'New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|'
-                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error)'),
+                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|'
+                   rb'Invoke-Expression)'),
         # Match one of the common Classes (case-insensitive)
-        re.compile(rb'(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName)'),
+        re.compile(rb'(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split)'),
         # Match one of the common Methods (case-insensitive)
         re.compile(rb'(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\('),
         # A .NET class that is commonly used in PowerShell
