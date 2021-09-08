@@ -142,6 +142,7 @@ WEAK_INDICATORS = {
                         rb'Math\.(round|pow|sin|cos)\(',
                         rb'(isNaN|isFinite|parseInt|parseFloat)\(',
                         b'WSH',
+                        rb'(document|window)\['
                         ],
     'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
     'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
