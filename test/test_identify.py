@@ -350,6 +350,8 @@ def test_strong_indicators(code_snippet, code_types):
         (b"parseInt(", ["code/javascript"]),
         (b"parseFloat(", ["code/javascript"]),
         (b"WSH", ["code/javascript", "code/vbs"]),
+        (b"document[", ["code/javascript"]),
+        (b"window[", ["code/javascript"]),
         # JScript
         (b"new ActiveXObject(", ["code/jscript"]),
         (b"new\tActiveXObject(", ["code/jscript"]),
