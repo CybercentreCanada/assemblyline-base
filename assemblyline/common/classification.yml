@@ -18,12 +18,8 @@ levels:
       - U
     # Stylesheet applied in the UI for the different levels
     css:
-      # Top banner stylesheet (alert-* because it's based of bootstrap alert dialogs)
-      banner: alert-default
-      # Label stylesheet (label-* because it's based of bootstrap label components)
-      label: label-default
-      # Text stylesheet (text-* because it's based of bootstrap text color styles)
-      text: text-muted
+      # Name of the color scheme used for display (default, primary, secondary, success, info, warning, error)
+      color: default
     # Description of the classification level
     description: Subject to standard copyright rules, TLP:WHITE information may be distributed without restriction.
     # Interger value of the Classification level (higher is more classified)
@@ -34,9 +30,7 @@ levels:
     short_name: TLP:W
   - aliases: []
     css:
-      banner: alert-success
-      label: label-success
-      text: text-success
+      color: success
     description:
       Recipients may share TLP:GREEN information with peers and partner organizations
       within their sector or community, but not via publicly accessible channels. Information
@@ -48,9 +42,7 @@ levels:
   - aliases:
       - RESTRICTED
     css:
-      banner: alert-warning2
-      label: label-warning
-      text: text-warning2
+      color: warning
     description:
       Recipients may only share TLP:AMBER information with members of their
       own organization and with clients or customers who need to know the information
