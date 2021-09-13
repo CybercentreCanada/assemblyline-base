@@ -2,7 +2,7 @@ version: "2.4"
 
 services:
   al_scaler:
-    image: cccs/assemblyline_dev:4.0.18
+    image: cccs/assemblyline_dev:4.0.19
     environment:
       FILE_UPDATE_VOLUME: /tmp/update_data
       FILE_UPDATE_DIRECTORY: /mount/update_root/
@@ -22,7 +22,7 @@ services:
         ]
 
   al_updater:
-    image: cccs/assemblyline_dev:4.0.18
+    image: cccs/assemblyline_dev:4.0.19
     environment:
       FILE_UPDATE_VOLUME: /tmp/update_data
       FILE_UPDATE_DIRECTORY: /mount/update_root/

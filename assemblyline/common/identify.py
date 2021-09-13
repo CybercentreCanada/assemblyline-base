@@ -124,7 +124,9 @@ STRONG_INDICATORS = {
         # Match one of the common Classes (case-insensitive)
         re.compile(rb'(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName)'),
         # Match one of the common Methods (case-insensitive)
-        re.compile(rb'(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\(')
+        re.compile(rb'(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\('),
+        # A .NET class that is commonly used in PowerShell
+        re.compile(rb'(?i)(System\.Net\.WebClient)'),
     ]
 }
 STRONG_SCORE = 15
@@ -295,7 +297,7 @@ sl_patterns = [
     ['ar', r'ar archive'],
     ['xz', r'^XZ compressed data'],
     ['zip', r'^zip archive data'],
-    ['tcpdump', r'^tcpdump'],
+    ['tcpdump', r'^(tcpdump|pcap)'],
     ['pdf', r'^pdf document'],
     ['bmp', r'^pc bitmap'],
     ['gif', r'^gif image data'],
@@ -370,7 +372,7 @@ tl_patterns = [
     ['java', r'jar |java'],
     ['code',
      r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
-     r'|ruby|scheme|script text exe|shell script|tcl'],
+     r'|ruby|color scheme|script text exe|shell script|tcl'],
     ['network', r'capture'],
     ['unknown', r'CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage'],
     ['unknown', r'disk|file[ ]*system|floppy|tape'],

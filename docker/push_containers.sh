@@ -1,11 +1,11 @@
 #!/bin/bash -ex
 
 # Push core containers
-docker push cccs/elasticsearch
-docker push cccs/minio
-docker push cccs/nginx-ssl
-docker push cccs/nginx-ssl-frontend
+docker push cccs/elasticsearch --all-tags
+docker push cccs/minio --all-tags
+docker push cccs/nginx-ssl --all-tags
+docker push cccs/nginx-ssl-frontend --all-tags
 
 # Push dev containers
-docker push cccs/assemblyline_dev
-docker push cccs/assemblyline_management
+docker push cccs/assemblyline_dev --all-tags
+docker push cccs/assemblyline_management --all-tags
