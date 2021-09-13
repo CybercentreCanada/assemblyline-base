@@ -89,7 +89,7 @@ class Service(odm.Model):
     default_result_classification = odm.ClassificationString(default=Classification.UNRESTRICTED)
     enabled: bool = odm.Boolean(store=True, default=False)
     is_external: bool = odm.Boolean(default=False)
-    licence_count: str = odm.Integer(default=0)
+    licence_count: int = odm.Integer(default=0)
 
     name: str = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
