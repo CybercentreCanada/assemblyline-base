@@ -37,7 +37,7 @@ class PersistentVolume(odm.Model):
 
 @odm.model(index=False, store=False)
 class DependencyConfig(odm.Model):
-    container = odm.Compound(DockerConfig)
+    container: DockerConfig = odm.Compound(DockerConfig)
     volumes = odm.Mapping(odm.Compound(PersistentVolume), default={})
     run_as_core: bool = odm.Boolean(default=False)
 
@@ -87,9 +87,9 @@ class Service(odm.Model):
     config = odm.Mapping(odm.Any(), default={}, index=False, store=False)
     description = odm.Text(store=True, default="NA", copyto="__text__")
     default_result_classification = odm.ClassificationString(default=Classification.UNRESTRICTED)
-    enabled = odm.Boolean(store=True, default=False)
-    is_external = odm.Boolean(default=False)
-    licence_count = odm.Integer(default=0)
+    enabled: bool = odm.Boolean(store=True, default=False)
+    is_external: bool = odm.Boolean(default=False)
+    licence_count: str = odm.Integer(default=0)
 
     name: str = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
@@ -99,10 +99,10 @@ class Service(odm.Model):
 
     stage = odm.Keyword(store=True, default="CORE", copyto="__text__")
     submission_params: SubmissionParams = odm.List(odm.Compound(SubmissionParams), index=False, default=[])
-    timeout = odm.Integer(default=60)
+    timeout: int = odm.Integer(default=60)
 
     docker_config: DockerConfig = odm.Compound(DockerConfig)
-    dependencies = odm.Mapping(odm.Compound(DependencyConfig), default={})
+    dependencies: dict[str, DependencyConfig] = odm.Mapping(odm.Compound(DependencyConfig), default={})
 
     update_channel: str = odm.Enum(values=["stable", "rc", "beta", "dev"], default='stable')
     update_config: UpdateConfig = odm.Optional(odm.Compound(UpdateConfig))
