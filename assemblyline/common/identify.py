@@ -30,6 +30,8 @@ STRONG_INDICATORS = {
         re.compile(rb'(^|\n)ExecuteGlobal'),
         re.compile(rb'(^|\n)REM[ \t]+'),
         re.compile(rb'(ubound|lbound)\('),
+        re.compile(rb'CreateObject\('),
+        re.compile(rb'Set[ \t]+\w+[ \t]*='),
     ],
     'code/javascript': [
         re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
@@ -120,9 +122,10 @@ STRONG_INDICATORS = {
         re.compile(rb'(?i)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|'
                    rb'Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|'
                    rb'New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|'
-                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error)'),
+                   rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|'
+                   rb'Invoke-Expression)'),
         # Match one of the common Classes (case-insensitive)
-        re.compile(rb'(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName)'),
+        re.compile(rb'(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split)'),
         # Match one of the common Methods (case-insensitive)
         re.compile(rb'(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\('),
         # A .NET class that is commonly used in PowerShell
@@ -139,6 +142,7 @@ WEAK_INDICATORS = {
                         rb'Math\.(round|pow|sin|cos)\(',
                         rb'(isNaN|isFinite|parseInt|parseFloat)\(',
                         b'WSH',
+                        rb'(document|window)\['
                         ],
     'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
     'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
@@ -372,7 +376,7 @@ tl_patterns = [
     ['java', r'jar |java'],
     ['code',
      r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
-     r'|ruby|color scheme|script text exe|shell script|tcl'],
+     r'|ruby|script text exe|shell script|tcl'],
     ['network', r'capture'],
     ['unknown', r'CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage'],
     ['unknown', r'disk|file[ ]*system|floppy|tape'],
@@ -381,7 +385,7 @@ tl_patterns = [
      r'|sound|tracker|video|voice data'],
     ['executable', r'803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object'],
     ['unknown', r'Emulator'],
-    ['image', r'DjVu|Surface|XCursor|bitmap|cursor|color|font|graphics|icon|image|jpeg'],
+    ['image', r'DjVu|Surface|XCursor|bitmap|cursor|font|graphics|icon|image|jpeg'],
     ['archive',
      r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
      r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'],
@@ -399,6 +403,7 @@ trusted_mimes = {
     'application/x-mach-binary': 'executable/mach-o',
     'application/vnd.ms-outlook': 'document/office/email',
     'application/x-iso9660-image': 'archive/iso',
+    'application/x-gettext-translation': 'resource/mo',
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]

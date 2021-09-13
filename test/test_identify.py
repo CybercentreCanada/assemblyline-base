@@ -75,6 +75,11 @@ def test_constants():
         (b"\nREM\t", ["code/vbs"]),
         (b"ubound(", ["code/vbs"]),
         (b"lbound(", ["code/vbs"]),
+        (b"CreateObject(", ["code/vbs"]),
+        (b"Set blah =", ["code/vbs"]),
+        (b"Set\tblah\t=", ["code/vbs"]),
+        (b"Set\tblah=", ["code/vbs"]),
+        (b"Setblah=", []),
         # JS
         (b"function(){", ["code/javascript"]),
         (b"function( ) {", ["code/javascript"]),
@@ -280,7 +285,7 @@ def test_constants():
         (b"<blah xmlns:blah>", ["code/xml"]),
         (b"<blahxmlns:blah>", ["code/xml"]),
         (b"<blah xmlns=blah>", ["code/xml"]),
-        # Powershell
+        # PowerShell
         (b"Get-ExecutionPolicy", ["code/ps1"]),
         (b"\nGet-ExecutionPolicy", ["code/ps1"]),
         (b"Get-Service", ["code/ps1"]),
@@ -306,10 +311,15 @@ def test_constants():
         (b"Rename-Item", ["code/ps1"]),
         (b"Stop-Process", ["code/ps1"]),
         (b"Add-Type", ["code/ps1"]),
+        (b"Out-String", ["code/ps1"]),
+        (b"Write-Error", ["code/ps1"]),
+        (b"Invoke-Expression", ["code/ps1"]),
         (b"-memberDefinition", ["code/ps1"]),
         (b"-Name", ["code/ps1"]),
         (b"-namespace", ["code/ps1"]),
         (b"-passthru", ["code/ps1"]),
+        (b"-join", ["code/ps1"]),
+        (b"-split", ["code/ps1"]),
         (b".GetString(", ["code/ps1"]),
         (b".GetField(", ["code/ps1"]),
         (b".GetType(", ["code/ps1"]),
@@ -345,6 +355,8 @@ def test_strong_indicators(code_snippet, code_types):
         (b"parseInt(", ["code/javascript"]),
         (b"parseFloat(", ["code/javascript"]),
         (b"WSH", ["code/javascript", "code/vbs"]),
+        (b"document[", ["code/javascript"]),
+        (b"window[", ["code/javascript"]),
         # JScript
         (b"new ActiveXObject(", ["code/jscript"]),
         (b"new\tActiveXObject(", ["code/jscript"]),
@@ -664,7 +676,7 @@ def test_sl_to_tl(sl, tl):
      ('java', r'jar |java'),
      ('code',
       r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
-      r'|ruby|color scheme|script text exe|shell script|tcl'),
+      r'|ruby|script text exe|shell script|tcl'),
      ('network', r'capture'),
      ('unknown', r'CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage'),
      ('unknown', r'disk|file[ ]*system|floppy|tape'),
@@ -673,7 +685,7 @@ def test_sl_to_tl(sl, tl):
       r'|sound|tracker|video|voice data'),
      ('executable', r'803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object'),
      ('unknown', r'Emulator'),
-     ('image', r'DjVu|Surface|XCursor|bitmap|cursor|color|font|graphics|icon|image|jpeg'),
+     ('image', r'DjVu|Surface|XCursor|bitmap|cursor|font|graphics|icon|image|jpeg'),
      ('archive',
       r'BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt'
       r'|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660'),
@@ -694,6 +706,7 @@ def test_tl_patterns(tl, string):
         ('application/x-mach-binary', 'executable/mach-o'),
         ('application/vnd.ms-outlook', 'document/office/email'),
         ('application/x-iso9660-image', 'archive/iso'),
+        ('application/x-gettext-translation', 'resource/mo'),
     ]
 )
 def test_trusted_mimes(mime, translated_type):
