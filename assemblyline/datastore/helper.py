@@ -170,7 +170,7 @@ class AssemblylineDatastore(object):
     def workflow(self) -> Collection:
         return self.ds.workflow
 
-    def get_collection(self, collection_name):
+    def get_collection(self, collection_name: str) -> Collection:
         if collection_name in self.ds.get_models():
             return getattr(self, collection_name)
         else:

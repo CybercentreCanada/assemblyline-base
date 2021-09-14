@@ -1,9 +1,11 @@
-
+from __future__ import annotations
 import json
 import os
 import random
 import time
 import threading
+import logging
+from typing import Any
 
 from multiprocessing import Process
 
@@ -15,11 +17,11 @@ from assemblyline.remote.datatypes.queues.named import NamedQueue
 
 
 # noinspection PyBroadException
-def backup_worker(worker_id, instance_id, working_dir):
+def backup_worker(worker_id: str, instance_id: str, working_dir: str):
     datastore = forge.get_datastore(archive_access=True)
-    worker_queue = NamedQueue(f"r-worker-{instance_id}", ttl=1800)
-    done_queue = NamedQueue(f"r-done-{instance_id}", ttl=1800)
-    hash_queue = Hash(f"r-hash-{instance_id}")
+    worker_queue: NamedQueue[dict[str, Any]] = NamedQueue(f"r-worker-{instance_id}", ttl=1800)
+    done_queue: NamedQueue[dict[str, Any]] = NamedQueue(f"r-done-{instance_id}", ttl=1800)
+    hash_queue: Hash[str] = Hash(f"r-hash-{instance_id}")
     stopping = False
     with open(os.path.join(working_dir, "backup.part%s" % worker_id), "w+") as backup_file:
         while True:
@@ -67,9 +69,9 @@ def backup_worker(worker_id, instance_id, working_dir):
 
 
 # noinspection PyBroadException
-def restore_worker(worker_id, instance_id, working_dir):
+def restore_worker(worker_id: str, instance_id: str, working_dir: str):
     datastore = forge.get_datastore(archive_access=True)
-    done_queue = NamedQueue(f"r-done-{instance_id}", ttl=1800)
+    done_queue: NamedQueue[dict[str, Any]] = NamedQueue(f"r-done-{instance_id}", ttl=1800)
 
     with open(os.path.join(working_dir, "backup.part%s" % worker_id), "rb") as input_file:
         for line in input_file:
@@ -92,24 +94,24 @@ def restore_worker(worker_id, instance_id, working_dir):
 
 
 class DistributedBackup(object):
-    def __init__(self, working_dir, worker_count=50, spawn_workers=True, use_threading=False, logger=None):
+    def __init__(self, working_dir: str, worker_count:int=50, spawn_workers:bool=True, use_threading:bool=False, logger:logging.Logger=None):
         self.working_dir = working_dir
         self.datastore = forge.get_datastore(archive_access=True)
         self.logger = logger
-        self.plist = []
+        self.plist: list[Process] = []
         self.use_threading = use_threading
         self.instance_id = get_random_id()
-        self.worker_queue = NamedQueue(f"r-worker-{self.instance_id}", ttl=1800)
-        self.done_queue = NamedQueue(f"r-done-{self.instance_id}", ttl=1800)
-        self.hash_queue = Hash(f"r-hash-{self.instance_id}")
-        self.bucket_error = []
-        self.VALID_BUCKETS = sorted(list(self.datastore.ds.get_models().keys()))
+        self.worker_queue: NamedQueue[dict[str, Any]] = NamedQueue(f"r-worker-{self.instance_id}", ttl=1800)
+        self.done_queue: NamedQueue[dict[str, Any]] = NamedQueue(f"r-done-{self.instance_id}", ttl=1800)
+        self.hash_queue: Hash[str] = Hash(f"r-hash-{self.instance_id}")
+        self.bucket_error: list[str] = []
+        self.valid_buckets: list[str] = sorted(list(self.datastore.ds.get_models().keys()))
         self.worker_count = worker_count
         self.spawn_workers = spawn_workers
         self.total_count = 0
-        self.error_map_count = {}
-        self.missing_map_count = {}
-        self.map_count = {}
+        self.error_map_count: dict[str, int] = {}
+        self.missing_map_count: dict[str, int] = {}
+        self.map_count: dict[str, int] = {}
         self.last_time = 0
         self.last_count = 0
         self.error_count = 0
@@ -121,7 +123,7 @@ class DistributedBackup(object):
         for p in self.plist:
             p.terminate()
 
-    def done_thread(self, title):
+    def done_thread(self, title: str):
         t0 = time.time()
         self.last_time = t0
 
@@ -200,16 +202,16 @@ class DistributedBackup(object):
             self.logger.info(summary)
 
     # noinspection PyBroadException,PyProtectedMember
-    def backup(self, bucket_list, follow_keys=False, query=None):
+    def backup(self, bucket_list: list[str], follow_keys:bool=False, query:str=None):
         if query is None:
             query = 'id:*'
 
         for bucket in bucket_list:
-            if bucket not in self.VALID_BUCKETS:
+            if bucket not in self.valid_buckets:
                 if self.logger:
                     self.logger.warn("\n%s is not a valid bucket.\n\n"
                                      "The list of valid buckets is the following:\n\n\t%s\n" %
-                                     (bucket.upper(), "\n\t".join(self.VALID_BUCKETS)))
+                                     (bucket.upper(), "\n\t".join(self.valid_buckets)))
                 return
 
         targets = ', '.join(bucket_list)
@@ -295,49 +297,49 @@ class DistributedBackup(object):
                 self.logger.exception(e)
 
 
-def _string_getter(data):
+def _string_getter(data) -> list[str]:
     if data is not None:
         return [data]
     else:
         return []
 
 
-def _result_getter(data):
+def _result_getter(data) -> list[str]:
     if data is not None:
         return [x for x in data if not x.endswith('.e')]
     else:
         return []
 
 
-def _emptyresult_getter(data):
+def _emptyresult_getter(data) -> list[str]:
     if data is not None:
         return [x for x in data if x.endswith('.e')]
     else:
         return []
 
 
-def _error_getter(data):
+def _error_getter(data) -> list[str]:
     if data is not None:
         return [x for x in data if x.rsplit('.e', 1)[1] not in ERROR_TYPES.values()]
     else:
         return []
 
 
-def _sha256_getter(data):
+def _sha256_getter(data) -> list[str]:
     if data is not None:
         return [x[:64] for x in data]
     else:
         return []
 
 
-def _file_getter(data):
+def _file_getter(data) -> list[str]:
     if data is not None:
         return [x['sha256'] for x in data]
     else:
         return []
 
 
-def _result_file_getter(data):
+def _result_file_getter(data) -> list[str]:
     if data is not None:
         supp = data.get("supplementary", []) + data.get("extracted", [])
         return _file_getter(supp)

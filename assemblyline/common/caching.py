@@ -4,13 +4,17 @@ import threading
 import time
 
 from collections import OrderedDict
+from typing import Generic, TypeVar, Hashable, Tuple, Optional
 
 import baseconv
 
 from assemblyline.common.uid import get_random_id
 
 
-class TimeExpiredCache(object):
+T = TypeVar('T')
+
+
+class TimeExpiredCache(Generic[T]):
     """
     TimeExpiredCache is a thread safe caching object that will store any amount of items for
     a period of X seconds at maximum.
@@ -22,13 +26,13 @@ class TimeExpiredCache(object):
     raise an exception if specified. This will not freshen the timeout for the specified item.
     """
 
-    def __init__(self, timeout, expiry_rate=5, raise_on_error=False):
+    def __init__(self, timeout: float, expiry_rate:float=5, raise_on_error:bool=False):
         self.lock = threading.Lock()
         self.timeout = timeout
         self.expiry_rate = expiry_rate
         self.raise_on_error = raise_on_error
-        self.cache = {}
-        self.timeout_list = []
+        self.cache: dict[Hashable, T] = {}
+        self.timeout_list: list[Tuple[float, Hashable]] = []
         timeout_thread = threading.Thread(target=self._process_timeouts, name="_process_timeouts")
         timeout_thread.setDaemon(True)
         timeout_thread.start()
@@ -58,7 +62,7 @@ class TimeExpiredCache(object):
 
                 self.timeout_list = self.timeout_list[index:]
 
-    def add(self, key, data):
+    def add(self, key: Hashable, data: T):
         with self.lock:
             if key in self.cache:
                 if self.raise_on_error:
@@ -69,7 +73,7 @@ class TimeExpiredCache(object):
             self.cache[key] = data
             self.timeout_list.append((time.time() + self.timeout, key))
 
-    def get(self, key, default=None):
+    def get(self, key:Hashable, default:T=None) -> Optional[T]:
         with self.lock:
             return self.cache.get(key, default)
 
@@ -78,7 +82,7 @@ class TimeExpiredCache(object):
             return self.cache.keys()
 
 
-class SizeExpiredCache(object):
+class SizeExpiredCache(Generic[T]):
     """
     SizeExpiredCache is a thread safe caching object that will store only X number of item for
     caching at maximum.
@@ -89,10 +93,10 @@ class SizeExpiredCache(object):
     raise an exception if specified. This will not freshen the item position in the cache.
     """
 
-    def __init__(self, max_item_count, raise_on_error=False):
+    def __init__(self, max_item_count:int, raise_on_error:bool=False):
         self.lock = threading.Lock()
         self.max_item_count = max_item_count
-        self.cache = OrderedDict()
+        self.cache: OrderedDict[Hashable, T] = OrderedDict()
         self.raise_on_error = raise_on_error
 
     def __len__(self):
@@ -103,7 +107,7 @@ class SizeExpiredCache(object):
         with self.lock:
             return 'SizeExpiredCache(%s/%s): %s' % (len(self.cache), self.max_item_count, str(self.cache.keys()))
 
-    def add(self, key, data):
+    def add(self, key: Hashable, data: T):
         with self.lock:
             if key in self.cache:
                 if self.raise_on_error:
@@ -115,7 +119,7 @@ class SizeExpiredCache(object):
             if len(self.cache) > self.max_item_count:
                 self.cache.popitem(False)
 
-    def get(self, key, default=None):
+    def get(self, key:Hashable, default:T=None) -> Optional[T]:
         with self.lock:
             return self.cache.get(key, default)
 
@@ -124,7 +128,7 @@ class SizeExpiredCache(object):
             return self.cache.keys()
 
 
-def generate_conf_key(service_tool_version=None, task=None):
+def generate_conf_key(service_tool_version:str=None, task=None) -> str:
     ignore_salt = None
     service_config = None
     submission_params_str = None

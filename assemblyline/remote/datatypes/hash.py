@@ -1,4 +1,5 @@
-from typing import Dict, Any
+from __future__ import annotations
+from typing import Generic, TypeVar, Any
 
 import json
 
@@ -37,15 +38,17 @@ end
 return nil
 """
 
+T = TypeVar('T')
 
-class HashIterator:
-    def __init__(self, hash_object):
+
+class HashIterator(Generic[T]):
+    def __init__(self, hash_object: Hash[T]):
         self.hash_object = hash_object
         self.cursor = 0
-        self.buffer = []
+        self.buffer: list[T] = []
         self._load_next()
 
-    def __next__(self):
+    def __next__(self) -> T:
         while True:
             if self.buffer:
                 return self.buffer.pop(0)
@@ -59,8 +62,8 @@ class HashIterator:
             self.buffer.append((key.decode('utf-8'), json.loads(value)))
 
 
-class Hash(object):
-    def __init__(self, name, host=None, port=None):
+class Hash(Generic[T]):
+    def __init__(self, name: str, host:str=None, port:int=None):
         self.c = get_client(host, port, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
@@ -76,7 +79,7 @@ class Hash(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.delete()
 
-    def add(self, key: str, value):
+    def add(self, key: str, value: T) -> int:
         """Add the (key, value) pair to the hash for new keys.
 
         If a key already exists this operation doesn't add it.
@@ -99,7 +102,7 @@ class Hash(object):
         """
         return retry_call(self._limited_add, keys=[self.name], args=[key, json.dumps(value), size_limit])
 
-    def exists(self, key):
+    def exists(self, key: str) -> bool:
         return retry_call(self.c.hexists, self.name, key)
 
     def get(self, key):
