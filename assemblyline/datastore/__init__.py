@@ -851,7 +851,7 @@ class BaseStore(object):
     def is_closed(self):
         return self._closed
 
-    def register(self, name, model_class=None):
+    def register(self, name: str, model_class=None):
         if re.match(r'[a-z0-9_]*', name).string != name:
             raise DataStoreException('Invalid characters in model name. '
                                      'You can only use lower case letters, numbers and underscores.')
