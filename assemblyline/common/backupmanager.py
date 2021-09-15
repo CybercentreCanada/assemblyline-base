@@ -247,7 +247,7 @@ class DistributedBackup(object):
             for bucket_name in bucket_list:
                 try:
                     collection = self.datastore.get_collection(bucket_name)
-                    for item in collection.stream_search(query, fl="id", item_buffer_size=500, as_obj=False):
+                    for item in collection.stream_search(query, fl="id", buffer_size=500, as_obj=False):
                         self.worker_queue.push({"bucket_name": bucket_name, "key": item['id'],
                                                 "follow_keys": follow_keys})
 
