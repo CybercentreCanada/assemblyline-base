@@ -5,7 +5,6 @@ from traceback import format_exception
 
 import json
 import os
-from typing import Optional
 
 from assemblyline.common import forge
 from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT, AL_JSON_FORMAT
@@ -38,7 +37,7 @@ class JsonFormatter(logging.Formatter):
         return ''.join(format_exception(*exc_info))
 
 
-def init_logging(name: str, config: Optional[Config] = None, log_level=None):
+def init_logging(name: str, config: Config = None, log_level: int = None):
     logger = logging.getLogger('assemblyline')
 
     # Test if we've initialized the log handler already.
@@ -64,7 +63,7 @@ def init_logging(name: str, config: Optional[Config] = None, log_level=None):
     if config.logging.log_to_file:
         if not os.path.isdir(config.logging.log_directory):
             print('Warning: log directory does not exist. Will try to create %s' % config.logging.log_directory)
-            os.makedirs(config.logging.directory)
+            os.makedirs(config.logging.log_directory)
 
         if log_level <= logging.DEBUG:
             dbg_file_handler = logging.handlers.RotatingFileHandler(
@@ -96,7 +95,7 @@ def init_logging(name: str, config: Optional[Config] = None, log_level=None):
                 err_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
             err_file_handler.setFormatter(logging.Formatter(AL_LOG_FORMAT))
             logger.addHandler(err_file_handler)
- 
+
     if config.logging.log_to_console:
         console = logging.StreamHandler()
         if config.logging.log_as_json:
