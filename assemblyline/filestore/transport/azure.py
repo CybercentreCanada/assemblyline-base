@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from typing import Optional
 
 # noinspection PyProtectedMember
 from azure.core.exceptions import *
@@ -21,7 +22,7 @@ class TransportAzure(Transport):
     def __init__(self, base=None, access_key=None, host=None, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
-        self.connection_attempts: int = connection_attempts
+        self.connection_attempts: Optional[int] = connection_attempts
 
         # Data
         self.blob_container = base.strip("/")
