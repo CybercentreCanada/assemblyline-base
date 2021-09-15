@@ -111,7 +111,7 @@ class AssemblylineDatastore(object):
         return self.ds.heuristic
 
     @property
-    def result(self) -> Collection:
+    def result(self) -> Collection[Result]:
         return self.ds.result
 
     @property
@@ -131,7 +131,7 @@ class AssemblylineDatastore(object):
         return self.ds.signature
 
     @property
-    def submission(self) -> Collection:
+    def submission(self) -> Collection[Submission]:
         return self.ds.submission
 
     @property
