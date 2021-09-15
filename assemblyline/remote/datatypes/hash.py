@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Generic, TypeVar, Any
+from typing import Generic, TypeVar, Optional
 
 import json
 
@@ -105,19 +105,19 @@ class Hash(Generic[T]):
     def exists(self, key: str) -> bool:
         return retry_call(self.c.hexists, self.name, key)
 
-    def get(self, key):
+    def get(self, key:str) -> Optional[T]:
         item = retry_call(self.c.hget, self.name, key)
         if not item:
             return item
         return json.loads(item)
 
-    def keys(self):
+    def keys(self) -> list[str]:
         return [k.decode('utf-8') for k in retry_call(self.c.hkeys, self.name)]
 
     def length(self):
         return retry_call(self.c.hlen, self.name)
 
-    def items(self) -> dict:
+    def items(self) -> dict[str, T]:
         items = retry_call(self.c.hgetall, self.name)
         if not isinstance(items, dict):
             return {}
@@ -128,18 +128,18 @@ class Hash(Generic[T]):
     def conditional_remove(self, key: str, value) -> bool:
         return bool(retry_call(self._conditional_remove, keys=[self.name], args=[key, json.dumps(value)]))
 
-    def pop(self, key):
+    def pop(self, key: str):
         item = retry_call(self._pop, args=[self.name, key])
         if not item:
             return item
         return json.loads(item)
 
-    def set(self, key, value):
+    def set(self, key: str, value: T):
         if isinstance(key, bytes):
             raise ValueError("Cannot use bytes for hashmap keys")
         return retry_call(self.c.hset, self.name, key, json.dumps(value))
 
-    def multi_set(self, data: Dict[str, Any]):
+    def multi_set(self, data: dict[str, T]):
         if any(isinstance(key, bytes) for key in data.keys()):
             raise ValueError("Cannot use bytes for hashmap keys")
         encoded = {key: json.dumps(value) for key, value in data.items()}

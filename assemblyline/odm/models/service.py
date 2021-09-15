@@ -21,9 +21,9 @@ class DockerConfig(odm.Model):
     cpu_cores: float = odm.Float(default=1.0)
     environment: list[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
     image: str = odm.Keyword()                       # Complete name of the Docker image with tag, may include registry
-    registry_username = odm.Optional(odm.Keyword())  # The username to use when pulling the image
-    registry_password = odm.Optional(odm.Keyword())  # The password or token to use when pulling the image
-    registry_type = odm.Enum(values=["docker", "harbor"], default='docker')  # The type of registry (Docker, Harbor)
+    registry_username: Opt[str] = odm.Optional(odm.Keyword())  # The username to use when pulling the image
+    registry_password: Opt[str] = odm.Optional(odm.Keyword())  # The password or token to use when pulling the image
+    registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker')  # The type of registry (Docker, Harbor)
     ports: list[str] = odm.List(odm.Keyword(), default=[])
     ram_mb: int = odm.Integer(default=512)
     ram_mb_min: int = odm.Integer(default=128)
