@@ -94,7 +94,8 @@ def restore_worker(worker_id: str, instance_id: str, working_dir: str):
 
 
 class DistributedBackup(object):
-    def __init__(self, working_dir: str, worker_count:int=50, spawn_workers:bool=True, use_threading:bool=False, logger:logging.Logger=None):
+    def __init__(self, working_dir: str, worker_count: int = 50, spawn_workers: bool = True,
+                 use_threading: bool = False, logger: logging.Logger = None):
         self.working_dir = working_dir
         self.datastore = forge.get_datastore(archive_access=True)
         self.logger = logger
@@ -112,7 +113,7 @@ class DistributedBackup(object):
         self.error_map_count: dict[str, int] = {}
         self.missing_map_count: dict[str, int] = {}
         self.map_count: dict[str, int] = {}
-        self.last_time = 0
+        self.last_time: float = 0
         self.last_count = 0
         self.error_count = 0
 
@@ -202,7 +203,7 @@ class DistributedBackup(object):
             self.logger.info(summary)
 
     # noinspection PyBroadException,PyProtectedMember
-    def backup(self, bucket_list: list[str], follow_keys:bool=False, query:str=None):
+    def backup(self, bucket_list: list[str], follow_keys: bool = False, query: str = None):
         if query is None:
             query = 'id:*'
 

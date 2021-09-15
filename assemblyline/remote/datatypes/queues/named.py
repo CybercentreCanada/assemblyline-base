@@ -5,8 +5,9 @@ from assemblyline.remote.datatypes import get_client, retry_call
 
 T = TypeVar('T')
 
+
 class NamedQueue(Generic[T]):
-    def __init__(self, name: str, host=None, port=None, private:bool=False, ttl:int=0):
+    def __init__(self, name: str, host=None, port=None, private: bool = False, ttl: int = 0):
         self.c = get_client(host, port, private)
         self.name: str = name
         self.ttl: int = ttl
@@ -33,7 +34,7 @@ class NamedQueue(Generic[T]):
             return json.loads(response[0])
         return None
 
-    def pop(self, blocking:bool=True, timeout:int=0) -> Optional[T]:
+    def pop(self, blocking: bool = True, timeout: int = 0) -> Optional[T]:
         if blocking:
             response = retry_call(self.c.blpop, self.name, timeout)
         else:
