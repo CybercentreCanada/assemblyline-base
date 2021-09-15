@@ -15,7 +15,7 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
         try:
             bc = entropy.BufferedCalculator()
         except Exception:
-            calculate_entropy = False
+            pass
 
     result = {}
 
@@ -32,7 +32,7 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
             result.update(on_first_block(data, length, path))
 
         while length > 0:
-            if calculate_entropy:
+            if bc is not None:
                 bc.update(data, length)
             md5.update(data)
             sha1.update(data)
@@ -42,7 +42,7 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
             data = f.read(blocksize)
             length = len(data)
 
-    if calculate_entropy:
+    if bc is not None:
         result['entropy'] = bc.entropy()
     else:
         result['entropy'] = 0

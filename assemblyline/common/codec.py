@@ -29,7 +29,7 @@ def decode_file(original_path, fileinfo):
             finally:
                 extracted_file.close()
 
-            if cart_extracted:
+            if cart_extracted and extracted_path:
                 fileinfo = identify.fileinfo(extracted_path)
 
     return extracted_path, fileinfo, hdr
