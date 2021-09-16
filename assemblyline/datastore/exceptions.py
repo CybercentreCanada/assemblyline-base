@@ -17,7 +17,7 @@ class SearchDepthException(Exception):
     pass
 
 
-class UndefinedFunction(NotImplementedError):
+class UndefinedFunction(Exception):
     pass
 
 
