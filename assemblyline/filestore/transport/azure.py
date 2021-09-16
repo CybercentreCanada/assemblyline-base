@@ -4,7 +4,9 @@ import time
 from typing import Optional
 
 # noinspection PyProtectedMember
-from azure.core.exceptions import *
+from azure.core.exceptions import ServiceRequestError, DecodeError, \
+    ResourceExistsError, ResourceNotFoundError, ClientAuthenticationError, \
+    ResourceModifiedError, ResourceNotModifiedError, TooManyRedirectsError, ODataV4Error
 from azure.storage.blob import BlobServiceClient
 from io import BytesIO
 
