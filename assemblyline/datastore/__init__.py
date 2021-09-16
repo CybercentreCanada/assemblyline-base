@@ -537,7 +537,7 @@ class Collection(Generic[ModelType]):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def stream_search(self, query, fl=None, filters=(), access_control=None,
-                      buffer_size=200, as_obj=True, use_archive=False) -> Iterable[Union[dict[str, Any], ModelType]]:
+                      item_buffer_size=200, as_obj=True, use_archive=False) -> Iterable[Union[dict[str, Any], ModelType]]:
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys
