@@ -17,7 +17,7 @@ class SearchDepthException(Exception):
     pass
 
 
-class UndefinedFunction(Exception):
+class UndefinedFunction(NotImplementedError):
     pass
 
 
@@ -30,5 +30,3 @@ class MultiKeyError(KeyError):
         super().__init__(str(keys))
         self.keys = set(keys)
         self.partial_output = partial_output
-
-

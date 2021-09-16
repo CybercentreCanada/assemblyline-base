@@ -2,7 +2,7 @@ from __future__ import annotations
 import concurrent.futures
 import logging
 import re
-from typing import Any, Iterable, Union, Generic, TypeVar
+from typing import Any, Iterable, Optional, Union, Generic, TypeVar
 import warnings
 
 from datemath import dm
@@ -113,7 +113,7 @@ class Collection(Generic[ModelType]):
         """
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
-    def normalize(self, data, as_obj=True) -> Union[dict, ModelType, None]:
+    def normalize(self, data, as_obj=True) -> Union[ModelType, dict[str, Any], None]:
         """
         Normalize the data using the model class
 
@@ -291,7 +291,7 @@ class Collection(Generic[ModelType]):
         return self.normalize(self._get(key, self.RETRY_NONE, force_archive_access=force_archive_access),
                               as_obj=as_obj)
 
-    def require(self, key, as_obj=True, force_archive_access=False) -> Union[dict, ModelType]:
+    def require(self, key, as_obj=True, force_archive_access=False) -> Union[dict[str, Any], ModelType]:
         """
         Get a document from the datastore and retry forever because we know for sure
         that this document should exist. If it does not right now, this will wait for the
@@ -537,7 +537,7 @@ class Collection(Generic[ModelType]):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def stream_search(self, query, fl=None, filters=(), access_control=None,
-                      buffer_size=200, as_obj=True, use_archive=False) -> Iterable[Union[dict, ModelType]]:
+                      buffer_size=200, as_obj=True, use_archive=False) -> Iterable[Union[dict[str, Any], ModelType]]:
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys

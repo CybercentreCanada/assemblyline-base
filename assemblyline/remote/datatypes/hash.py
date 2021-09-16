@@ -1,9 +1,12 @@
 from __future__ import annotations
-from typing import Generic, TypeVar, Optional
+from typing import Generic, TypeVar, Optional, TYPE_CHECKING, Union
 
 import json
 
 from assemblyline.remote.datatypes import get_client, retry_call
+
+if TYPE_CHECKING:
+    from redis import Redis
 
 
 _conditional_remove_script = """
@@ -63,7 +66,7 @@ class HashIterator(Generic[T]):
 
 
 class Hash(Generic[T]):
-    def __init__(self, name: str, host: str = None, port: int = None):
+    def __init__(self, name: str, host: Union[str, Redis] = None, port: int = None):
         self.c = get_client(host, port, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)

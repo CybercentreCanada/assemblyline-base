@@ -99,7 +99,7 @@ class AssemblylineDatastore(object):
         return self.ds.error
 
     @property
-    def file(self) -> Collection:
+    def file(self) -> Collection[File]:
         return self.ds.file
 
     @property
