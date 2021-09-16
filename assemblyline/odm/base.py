@@ -758,10 +758,6 @@ class Optional(_Field):
 
 class Model:
     @classmethod
-    def name(cls):
-        return cls.__name__
-
-    @classmethod
     def fields(cls, skip_mappings=False) -> typing.Mapping[str, _Field]:
         """
         Describe the elements of the model.

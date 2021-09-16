@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import AnyStr, TYPE_CHECKING, List, Tuple
+from typing import AnyStr, TYPE_CHECKING, Optional, Tuple
 from urllib.parse import urlparse, parse_qs, unquote
 
 import elasticapm
@@ -196,7 +196,7 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def exists(self, path, location='any') -> List[Transport]:
+    def exists(self, path, location='any') -> list[Transport]:
         transports = []
         for t in self.slice(location):
             try:
@@ -210,7 +210,7 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def get(self, path: str, location='any') -> bytes:
+    def get(self, path: str, location='any') -> Optional[bytes]:
         for t in self.slice(location):
             try:
                 if t.exists(path):
@@ -218,9 +218,10 @@ class FileStore(object):
             except Exception as ex:
                 trace = get_stacktrace_info(ex)
                 self.log.warning('Transport problem: %s', trace)
+        return None
 
     @elasticapm.capture_span(span_type='filestore')
-    def put(self, dst_path: str, content: AnyStr, location='all', force=False) -> List[Transport]:
+    def put(self, dst_path: str, content: AnyStr, location='all', force=False) -> list[Transport]:
         transports = []
         for t in self.slice(location):
             if force or not t.exists(dst_path):
@@ -244,7 +245,7 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def upload(self, src_path: str, dst_path: str, location='all', force=False) -> List[Transport]:
+    def upload(self, src_path: str, dst_path: str, location='all', force=False) -> list[Transport]:
         transports = []
         for t in self.slice(location):
             if force or not t.exists(dst_path):
@@ -256,7 +257,7 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def upload_batch(self, local_remote_tuples, location='all') -> List[Tuple[str, str, str]]:
+    def upload_batch(self, local_remote_tuples, location='all') -> list[Tuple[str, str, str]]:
         failed_tuples = []
         for (src_path, dst_path) in local_remote_tuples:
             try:

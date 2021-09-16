@@ -1,9 +1,12 @@
 from __future__ import annotations
-from typing import Generic, TypeVar, Optional
+from typing import Generic, TypeVar, Optional, TYPE_CHECKING, Union
 
 import json
 
 from assemblyline.remote.datatypes import get_client, retry_call
+
+if TYPE_CHECKING:
+    from redis import Redis
 
 
 _conditional_remove_script = """
@@ -11,8 +14,8 @@ local hash_name = KEYS[1]
 local key_in_hash = ARGV[1]
 local expected_value = ARGV[2]
 local result = redis.call('hget', hash_name, key_in_hash)
-if result == expected_value then 
-    redis.call('hdel', hash_name, key_in_hash) 
+if result == expected_value then
+    redis.call('hdel', hash_name, key_in_hash)
     return 1
 end
 return 0
@@ -63,7 +66,7 @@ class HashIterator(Generic[T]):
 
 
 class Hash(Generic[T]):
-    def __init__(self, name: str, host:str=None, port:int=None):
+    def __init__(self, name: str, host: Union[str, Redis] = None, port: int = None):
         self.c = get_client(host, port, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
@@ -105,7 +108,7 @@ class Hash(Generic[T]):
     def exists(self, key: str) -> bool:
         return retry_call(self.c.hexists, self.name, key)
 
-    def get(self, key:str) -> Optional[T]:
+    def get(self, key: str) -> Optional[T]:
         item = retry_call(self.c.hget, self.name, key)
         if not item:
             return item

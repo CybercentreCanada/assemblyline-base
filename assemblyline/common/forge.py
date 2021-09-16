@@ -1,8 +1,8 @@
 # This file contains the loaders for the different components of the system
-
+from __future__ import annotations
 import importlib
 from string import Template
-
+from typing import TYPE_CHECKING
 import os
 import time
 
@@ -12,6 +12,10 @@ from assemblyline.common.constants import service_queue_name
 
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
+
+if TYPE_CHECKING:
+    from assemblyline.odm.models.config import Config
+
 
 config_singletons = {}
 
@@ -82,7 +86,7 @@ def _get_config(static=False, yml_config=None):
     return Config(config)
 
 
-def get_config(static=False, yml_config=None):
+def get_config(static=False, yml_config=None) -> Config:
     if (static, yml_config) not in config_singletons:
         config_singletons[(static, yml_config)] = CachedObject(_get_config, kwargs={'static': static,
                                                                                     'yml_config': yml_config})
