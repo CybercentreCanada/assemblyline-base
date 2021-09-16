@@ -83,19 +83,19 @@ class AssemblylineDatastore(object):
         self.ds.archive_access = False
 
     @property
-    def alert(self) -> Collection:
+    def alert(self) -> Collection[Alert]:
         return self.ds.alert
 
     @property
-    def cached_file(self) -> Collection:
+    def cached_file(self) -> Collection[CachedFile]:
         return self.ds.cached_file
 
     @property
-    def emptyresult(self) -> Collection:
+    def emptyresult(self) -> Collection[EmptyResult]:
         return self.ds.emptyresult
 
     @property
-    def error(self) -> Collection:
+    def error(self) -> Collection[Error]:
         return self.ds.error
 
     @property
@@ -103,11 +103,11 @@ class AssemblylineDatastore(object):
         return self.ds.file
 
     @property
-    def filescore(self) -> Collection:
+    def filescore(self) -> Collection[FileScore]:
         return self.ds.filescore
 
     @property
-    def heuristic(self) -> Collection:
+    def heuristic(self) -> Collection[Heuristic]:
         return self.ds.heuristic
 
     @property
@@ -115,7 +115,7 @@ class AssemblylineDatastore(object):
         return self.ds.result
 
     @property
-    def service(self) -> Collection:
+    def service(self) -> Collection[Service]:
         return self.ds.service
 
     @property
@@ -123,11 +123,11 @@ class AssemblylineDatastore(object):
         return self.ds.service_client
 
     @property
-    def service_delta(self) -> Collection:
+    def service_delta(self) -> Collection[ServiceDelta]:
         return self.ds.service_delta
 
     @property
-    def signature(self) -> Collection:
+    def signature(self) -> Collection[Signature]:
         return self.ds.signature
 
     @property
@@ -135,15 +135,15 @@ class AssemblylineDatastore(object):
         return self.ds.submission
 
     @property
-    def submission_summary(self) -> Collection:
+    def submission_summary(self) -> Collection[SubmissionSummary]:
         return self.ds.submission_summary
 
     @property
-    def submission_tree(self) -> Collection:
+    def submission_tree(self) -> Collection[SubmissionTree]:
         return self.ds.submission_tree
 
     @property
-    def user(self) -> Collection:
+    def user(self) -> Collection[User]:
         return self.ds.user
 
     @property
@@ -151,11 +151,11 @@ class AssemblylineDatastore(object):
         return self.ds.user_avatar
 
     @property
-    def user_favorites(self) -> Collection:
+    def user_favorites(self) -> Collection[UserFavorites]:
         return self.ds.user_favorites
 
     @property
-    def user_settings(self) -> Collection:
+    def user_settings(self) -> Collection[UserSettings]:
         return self.ds.user_settings
 
     @property
@@ -163,11 +163,11 @@ class AssemblylineDatastore(object):
         return self.ds.vm
 
     @property
-    def safelist(self) -> Collection:
+    def safelist(self) -> Collection[Safelist]:
         return self.ds.safelist
 
     @property
-    def workflow(self) -> Collection:
+    def workflow(self) -> Collection[Workflow]:
         return self.ds.workflow
 
     def get_collection(self, collection_name: str) -> Collection:
