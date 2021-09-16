@@ -92,7 +92,6 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
 
         if random.choice([True, False]):
             service_data['update_config'] = {
-                "method": "run",
                 "sources": [random_model_obj(UpdateSource)],
                 "update_interval_seconds": 600,
                 "generates_signatures": True

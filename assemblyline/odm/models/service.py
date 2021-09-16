@@ -60,10 +60,7 @@ class UpdateSource(odm.Model):
 
 @odm.model(index=False, store=False)
 class UpdateConfig(odm.Model):
-    # build_options = odm.Optional(odm.Compound(DockerfileConfig))  # If we are going to build a container, how?
     generates_signatures = odm.Boolean(index=True, default=False)
-    method = odm.Enum(values=['run', 'build'])                    # Are we going to run or build a container?
-    run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
     sources: list[UpdateSource] = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
     update_interval_seconds: int = odm.Integer()                       # Update check interval in seconds
     wait_for_update: bool = odm.Boolean(default=False)

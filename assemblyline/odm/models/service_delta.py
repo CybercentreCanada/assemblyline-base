@@ -53,10 +53,7 @@ class DependencyConfigDelta(odm.Model):
 
 @odm.model(index=False, store=False)
 class UpdateConfigDelta(odm.Model):
-    # build_options = odm.Optional(odm.Compound(DockerfileConfigDelta))
     generates_signatures = odm.Optional(odm.Boolean(), index=True)
-    method = odm.Optional(odm.Enum(values=['run', 'build']))
-    run_options = odm.Optional(odm.Compound(DockerConfigDelta))
     sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
     update_interval_seconds = odm.Optional(odm.Integer())
     wait_for_update = odm.Optional(odm.Boolean())
