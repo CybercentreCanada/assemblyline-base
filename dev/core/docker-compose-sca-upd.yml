@@ -4,10 +4,13 @@ services:
   al_scaler:
     image: cccs/assemblyline_dev:4.0.19
     environment:
-      FILE_UPDATE_VOLUME: /tmp/update_data
-      FILE_UPDATE_DIRECTORY: /mount/update_root/
+      DOCKER_CONFIGURATION_PATH: /mount/service_config/
+      DOCKER_CONFIGURATION_VOLUME: service_config
     volumes:
-      - /tmp/update_data:/mount/update_root/
+      - type: volume
+        source: service_config
+        target: /mount/service_config/
+        read_only: false
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
       - /var/run/docker.sock:/var/run/docker.sock # NOTE, this container has access to docker socket (this is like root)
@@ -23,11 +26,8 @@ services:
 
   al_updater:
     image: cccs/assemblyline_dev:4.0.19
-    environment:
-      FILE_UPDATE_VOLUME: /tmp/update_data
-      FILE_UPDATE_DIRECTORY: /mount/update_root/
+    # environment:
     volumes:
-      - /tmp/update_data:/mount/update_root/
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
       - /var/run/docker.sock:/var/run/docker.sock # NOTE, this container has access to docker socket (this is like root)
@@ -45,3 +45,7 @@ networks:
   default:
     external: true
     name: external
+
+volumes:
+  service_config:
+    name: service_config
