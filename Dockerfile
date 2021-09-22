@@ -17,7 +17,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Install assemblyline base
-RUN pip install --no-cache-dir --user assemblyline==$version && rm -rf ~/.cache/pip
+COPY Dockerfile dist* dist/
+RUN pip install --no-cache-dir -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
 
 FROM base
 
