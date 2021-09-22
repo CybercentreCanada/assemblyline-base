@@ -16,8 +16,9 @@ RUN apt-get update \
   && apt-get install -yy build-essential libffi-dev libfuzzy-dev \
   && rm -rf /var/lib/apt/lists/*
 
-# Install assemblyline base
-COPY Dockerfile dist* dist/
+# Install assemblyline base (setup.py is just a file we know exists so the command
+# won't fail. The dist* copies in any dist directory only if it exists.)
+COPY setup.py dist* dist/
 RUN pip install --no-cache-dir -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
 
 FROM base
