@@ -1,4 +1,5 @@
 import logging
+import typing
 
 from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
 from assemblyline.common.forge import CachedObject
@@ -34,7 +35,7 @@ class HeuristicHandler():
 
         try:
             # Assign the newly computed heuristic to the section
-            output = dict(
+            output: dict[str, typing.Any] = dict(
                 heur_id=heur_id,
                 score=heuristic.score,
                 name=heuristic.name,
