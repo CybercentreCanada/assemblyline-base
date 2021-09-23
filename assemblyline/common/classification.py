@@ -100,9 +100,7 @@ class Classification(object):
                     self.levels_aliases[a.upper()] = short_name
                 self.params_map[short_name] = {k: v for k, v in x.items() if k not in banned_params_keys}
                 self.params_map[name] = self.params_map[short_name]
-                self.levels_styles_map[short_name] = x.get('css', {'banner': 'alert-default',
-                                                                   'label': 'label-default',
-                                                                   'text': 'text-muted'})
+                self.levels_styles_map[short_name] = x.get('css', {'color': 'default'})
                 self.levels_styles_map[name] = self.levels_styles_map[short_name]
                 self.description[short_name] = x.get('description', "N/A")
                 self.description[name] = self.description[short_name]
