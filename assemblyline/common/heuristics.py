@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import typing
 
@@ -35,7 +37,7 @@ class HeuristicHandler():
 
         try:
             # Assign the newly computed heuristic to the section
-            output: typing.Dict[str, typing.Any] = dict(
+            output: dict[str, typing.Any] = dict(
                 heur_id=heur_id,
                 score=heuristic.score,
                 name=heuristic.name,
