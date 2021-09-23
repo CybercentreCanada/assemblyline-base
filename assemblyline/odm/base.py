@@ -64,8 +64,8 @@ PROCESSOR_REGEX = r"^x(64|86)$"
 logger = logging.getLogger('assemblyline.odm')
 
 
-def flat_to_nested(data: dict[str, typing.Any]) -> dict:
-    sub_data: dict[str, typing.Any] = {}
+def flat_to_nested(data: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+    sub_data: typing.Dict[str, typing.Any] = {}
     nested_keys = []
     for key, value in data.items():
         if '.' in key:

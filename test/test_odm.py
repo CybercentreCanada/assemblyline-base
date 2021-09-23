@@ -1,7 +1,8 @@
 from assemblyline.common.classification import InvalidClassification
 
 from assemblyline.odm import model, Model, KeyMaskException, Compound, List, \
-    Keyword, Integer, Mapping, Classification, Enum, UUID, construct_safe, FlattenedObject
+    Keyword, Integer, Mapping, Classification, Enum, UUID, construct_safe, FlattenedObject, \
+    flat_to_nested
 
 import json
 import pytest
@@ -729,3 +730,7 @@ def test_model_equal():
     assert a != dict(a=dict(a=10, b=5))
     assert a != []
     assert a != 99
+
+def test_flat_to_nested():
+    assert flat_to_nested({}) == {}
+    assert flat_to_nested({'a.b.c': None}) == {'a': {'b': {'c': None}}}
