@@ -1,6 +1,8 @@
 # This dockerfile only includes the minimal steps to build a package onto
 # a periodic root image
 ARG build_image
+ARG base
+ARG tag
 FROM $build_image AS builder
 ARG version
 
@@ -9,9 +11,6 @@ ARG version
 COPY setup.py dist* dist/
 RUN pip install --no-cache-dir -f dist/ -U --user assemblyline==$version && rm -rf ~/.cache/pip
 
-ARG base
-ARG tag
-RUN echo ${base} ${tag}
 FROM $base:$tag
 
 # Install assemblyline base
