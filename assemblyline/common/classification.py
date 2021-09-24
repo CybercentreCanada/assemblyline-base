@@ -262,6 +262,7 @@ class Classification(object):
         groups = []
         for gp in grp_part:
             gp = gp.replace("REL TO ", "")
+            gp = gp.replace("REL ", "")
             temp_group = set([x.strip() for x in gp.split(",")])
             for t in temp_group:
                 groups.extend(t.split("/"))
@@ -709,6 +710,7 @@ class Classification(object):
             return False
 
         c12n = c12n.replace("REL TO ", "")
+        c12n = c12n.replace("REL ", "")
         parts = c12n.split("//")
 
         # There is a maximum of 3 parts
