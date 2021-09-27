@@ -10,6 +10,7 @@ class Queues(odm.Model):
     critical = odm.Integer()  # Size of the critical priority queue
     high = odm.Integer()      # Size of the high priority queue
     ingest = odm.Integer()    # Size of the ingest queue
+    complete = odm.Integer()  # Size of the complete queue
     low = odm.Integer()       # Size of the low priority queue
     medium = odm.Integer()    # Size of the medium priority queue
 

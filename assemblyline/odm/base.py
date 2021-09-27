@@ -10,6 +10,8 @@ independent data models in python. This gives us:
 
 """
 
+from __future__ import annotations
+
 import arrow
 import copy
 import json
@@ -64,7 +66,7 @@ PROCESSOR_REGEX = r"^x(64|86)$"
 logger = logging.getLogger('assemblyline.odm')
 
 
-def flat_to_nested(data: dict[str, typing.Any]) -> dict:
+def flat_to_nested(data: dict[str, typing.Any]) -> dict[str, typing.Any]:
     sub_data: dict[str, typing.Any] = {}
     nested_keys = []
     for key, value in data.items():
@@ -1022,7 +1024,7 @@ def _construct_field(field, value):
             return None, value
 
 
-def construct_safe(mod, data) -> typing.Tuple[typing.Any, typing.Dict]:
+def construct_safe(mod, data) -> tuple[typing.Any, dict]:
     if not isinstance(data, dict):
         return None, data
     fields = mod.fields()

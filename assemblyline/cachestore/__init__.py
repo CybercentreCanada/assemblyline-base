@@ -1,6 +1,6 @@
 
 import re
-from typing import AnyStr
+from typing import AnyStr, Optional
 
 from assemblyline.common import forge
 from assemblyline.common.isotime import now_as_iso
@@ -61,7 +61,7 @@ class CacheStore(object):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
         self.datastore.cached_file.save(new_key, {'expiry_ts': now_as_iso(ttl), 'component': self.component})
 
-    def get(self, cache_key: str) -> bytes:
+    def get(self, cache_key: str) -> Optional[bytes]:
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
         return self.filestore.get(new_key)
 

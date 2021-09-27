@@ -111,7 +111,7 @@ class Submission(odm.Model):
     archive_ts = odm.Date(store=False)                          # Archiving timestamp
     classification = odm.Classification()                       # Classification of the submission
     error_count = odm.Integer()                                 # Total number of errors in the submission
-    errors: list[str] = odm.List(odm.Keyword(), store=False)               # List of error keys
+    errors: list[str] = odm.List(odm.Keyword(), store=False)    # List of error keys
     expiry_ts = odm.Optional(odm.Date(store=False))             # Expiry timestamp
     file_count = odm.Integer()                                  # Total number of files in the submission
     files: list[File] = odm.List(odm.Compound(File))            # List of files that were originally submitted
