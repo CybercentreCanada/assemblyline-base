@@ -194,10 +194,6 @@ class TransportFTP(Transport):
         self.ftp.rename(temppath, finalpath)
         assert (self.exists(dst_path))
 
-    @reconnect_retry_on_fail
-    def upload_batch(self, local_remote_tuples):
-        return super(TransportFTP, self).upload_batch(local_remote_tuples)
-
     # Buffer based functions
     @reconnect_retry_on_fail
     def get(self, path) -> bytes:

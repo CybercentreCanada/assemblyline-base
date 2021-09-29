@@ -11,5 +11,7 @@ core:
     persistent:
       host: localhost
       port: 6379
+  metrics:
+    export_interval: 1
 datastore:
   hosts: ["localhost:9200"]
