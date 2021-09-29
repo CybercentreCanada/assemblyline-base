@@ -10,6 +10,7 @@ RUN passwd -l root
 
 FROM base AS builder
 ARG version
+ARG version_tag=${version}
 
 # Get required apt packages
 RUN apt-get update \
@@ -49,6 +50,8 @@ RUN chown assemblyline:assemblyline /var/log/assemblyline
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
+ENV ASSEMBLYLINE_VERSION=${version}
+ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
 
 # Switch to assemblyline user
 USER assemblyline
