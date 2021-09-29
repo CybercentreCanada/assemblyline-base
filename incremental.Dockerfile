@@ -5,6 +5,7 @@ ARG base
 ARG tag
 FROM $build_image AS builder
 ARG version
+ARG version_tag=${version}
 
 # Install assemblyline base (setup.py is just a file we know exists so the command
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
@@ -16,6 +17,8 @@ FROM $base:$tag
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
+ENV ASSEMBLYLINE_VERSION=${version}
+ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
 
 # Switch to assemblyline user
 USER assemblyline
