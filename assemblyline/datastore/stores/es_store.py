@@ -333,7 +333,10 @@ class ESCollection(Collection):
                 else:
                     raise
 
-        return res['response']
+        try:
+            return res['response']
+        except KeyError:
+            return res['task']['status']
 
     def _safe_index_copy(self, copy_function, src, target, body=None, min_status='yellow'):
         ret = copy_function(src, target, body=body, request_timeout=60)
