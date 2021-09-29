@@ -12,10 +12,14 @@ COPY setup.py dist* dist/
 RUN pip install --no-cache-dir -f dist/ -U --user assemblyline==$version && rm -rf ~/.cache/pip
 
 FROM $base:$tag
+ARG version
+ARG version_tag=${version}
 
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
+ENV ASSEMBLYLINE_VERSION=${version}
+ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
 
 # Switch to assemblyline user
 USER assemblyline
