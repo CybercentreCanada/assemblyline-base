@@ -123,13 +123,15 @@ STRONG_INDICATORS = {
                    rb'Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|'
                    rb'New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|'
                    rb'Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|'
-                   rb'Invoke-Expression)'),
+                   rb'Invoke-(Expression|WebRequest))'),
         # Match one of the common Classes (case-insensitive)
         re.compile(rb'(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split)'),
         # Match one of the common Methods (case-insensitive)
         re.compile(rb'(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\('),
-        # A .NET class that is commonly used in PowerShell
+        # Commonly used .NET classed found in PowerShell
         re.compile(rb'(?i)(System\.Net\.WebClient)'),
+        re.compile(rb'(?i)(Net\.ServicePointManager)'),
+        re.compile(rb'(?i)(Net\.SecurityProtocolType)'),
     ]
 }
 STRONG_SCORE = 15
