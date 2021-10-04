@@ -840,7 +840,12 @@ def test_subtype(label, expected):
        'hex': '52006f006f007400200045006e007400720079006200620062006200620062006200620'
               '062006200620062006200620062006200620062006200620062006200',
        'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'},
-      b"blah\ncustom: document/office/unknown\nbloop"), ])
+      b"blah\ncustom: document/office/unknown\nbloop"),
+     (b"blah",
+      {'ascii': 'blah', 'hex': '626c6168', 'magic': 'OLE 2 Compound Document : Microsoft Word Document', 'mime': 'blah',
+      'type': 'document/office/word'},
+      b"blah\nOLE 2 Compound Document : Microsoft Word Document\n"),
+     ])
 def test_ident(buf, expected_result, mocked_magic, mocker):
     if mocked_magic:
         mocker.patch("magic.magic_file", return_value=mocked_magic)
