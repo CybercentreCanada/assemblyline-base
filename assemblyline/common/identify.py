@@ -470,6 +470,11 @@ def ident(buf, length: int, path) -> Dict:
         # For user feedback set the mime and magic meta data to always be the primary
         # libmagic responses
         if len(labels) > 0:
+            # If this Word label is not the first label returned by Magic, then make it so
+            special_word_case = b'OLE 2 Compound Document : Microsoft Word Document'
+            if special_word_case != labels[0] and any(label == special_word_case for label in labels):
+                special_word_case_index = labels.index(special_word_case)
+                labels.insert(0, labels.pop(special_word_case_index))
             data['magic'] = safe_str(labels[0])
 
         if len(mimes) > 0 and mimes[0] != b'':
