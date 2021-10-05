@@ -314,6 +314,7 @@ def test_constants():
         (b"Out-String", ["code/ps1"]),
         (b"Write-Error", ["code/ps1"]),
         (b"Invoke-Expression", ["code/ps1"]),
+        (b"Invoke-WebRequest", ["code/ps1"]),
         (b"-memberDefinition", ["code/ps1"]),
         (b"-Name", ["code/ps1"]),
         (b"-namespace", ["code/ps1"]),
@@ -325,6 +326,9 @@ def test_constants():
         (b".GetType(", ["code/ps1"]),
         (b".GetMethod(", ["code/ps1"]),
         (b"FromBase64String(", ["code/ps1"]),
+        (b"System.Net.WebClient", ["code/ps1"]),
+        (b"Net.ServicePointManager", ["code/ps1"]),
+        (b"Net.SecurityProtocolType", ["code/ps1"]),
     ]
 )
 def test_strong_indicators(code_snippet, code_types):
