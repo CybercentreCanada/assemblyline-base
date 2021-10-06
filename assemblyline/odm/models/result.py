@@ -62,7 +62,7 @@ class File(odm.Model):
     sha256 = odm.SHA256(copyto="__text__")     # SHA256 hash of the file
     description = odm.Text(copyto="__text__")  # Description of the file
     classification = odm.Classification()      # Classification of the file
-    safe_image = odm.Boolean()                 # Is this part of the safe image format?
+    is_section_image = odm.Boolean()           # Is this an image used in an Image Result Section
 
 
 @odm.model(index=True, store=True)
