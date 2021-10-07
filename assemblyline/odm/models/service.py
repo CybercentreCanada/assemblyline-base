@@ -69,12 +69,13 @@ class UpdateSource(odm.Model):
 
 @odm.model(index=False, store=False)
 class UpdateConfig(odm.Model):
-    generates_signatures = odm.Boolean(index=True, default=False)       # Does the service generate signatures
-    method = odm.Enum(values=['run', 'build'])                          # Are we going to run or build a container?
-    run_options = odm.Optional(odm.Compound(DockerConfig))              # If we are going to run a container, which one?
-    sources = odm.List(odm.Compound(UpdateSource), default=[])          # Generic external resources we need
-    update_interval_seconds = odm.Integer()                             # Update check interval in seconds
-    wait_for_update = odm.Boolean(default=False)                        # Service wait for a valid update to start
+    # build_options = odm.Optional(odm.Compound(DockerfileConfig))  # If we are going to build a container, how?
+    generates_signatures = odm.Boolean(index=True, default=False)
+    method = odm.Enum(values=['run', 'build'])                    # Are we going to run or build a container?
+    run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
+    sources = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
+    update_interval_seconds = odm.Integer()                       # Update check interval in seconds
+    wait_for_update = odm.Boolean(default=False)
     signature_delimiter = odm.Enum(values=SIGNATURE_DELIMITERS.keys(),
                                    default="double_new_line")           # Delimiter use in between signature
     custom_delimiter = odm.Optional(odm.Keyword())                      # Custom delimiter
