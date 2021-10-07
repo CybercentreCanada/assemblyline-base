@@ -1,9 +1,10 @@
+from __future__ import annotations
 import os
 import sys
-from typing import Optional, List, AnyStr
+from typing import Optional
 
 
-def modulepath(modulename: str) -> AnyStr:
+def modulepath(modulename: str) -> str:
     m = sys.modules[modulename]
     f = getattr(m, '__file__', None)
     if not f:
@@ -11,7 +12,7 @@ def modulepath(modulename: str) -> AnyStr:
     return os.path.dirname(os.path.abspath(f))
 
 
-def splitpath(path: str, sep: Optional[str] = None) -> List:
+def splitpath(path: str, sep: Optional[str] = None) -> list:
     """ Split the path into a list of items """
     return list(filter(len, path.split(sep or os.path.sep)))
 

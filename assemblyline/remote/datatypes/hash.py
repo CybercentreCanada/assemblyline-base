@@ -1,8 +1,12 @@
-from typing import Dict, Any
+from __future__ import annotations
+from typing import Generic, TypeVar, Optional, TYPE_CHECKING, Union
 
 import json
 
 from assemblyline.remote.datatypes import get_client, retry_call
+
+if TYPE_CHECKING:
+    from redis import Redis
 
 
 _conditional_remove_script = """
@@ -10,8 +14,8 @@ local hash_name = KEYS[1]
 local key_in_hash = ARGV[1]
 local expected_value = ARGV[2]
 local result = redis.call('hget', hash_name, key_in_hash)
-if result == expected_value then 
-    redis.call('hdel', hash_name, key_in_hash) 
+if result == expected_value then
+    redis.call('hdel', hash_name, key_in_hash)
     return 1
 end
 return 0
@@ -37,15 +41,17 @@ end
 return nil
 """
 
+T = TypeVar('T')
 
-class HashIterator:
-    def __init__(self, hash_object):
+
+class HashIterator(Generic[T]):
+    def __init__(self, hash_object: Hash[T]):
         self.hash_object = hash_object
         self.cursor = 0
-        self.buffer = []
+        self.buffer: list[T] = []
         self._load_next()
 
-    def __next__(self):
+    def __next__(self) -> T:
         while True:
             if self.buffer:
                 return self.buffer.pop(0)
@@ -59,8 +65,8 @@ class HashIterator:
             self.buffer.append((key.decode('utf-8'), json.loads(value)))
 
 
-class Hash(object):
-    def __init__(self, name, host=None, port=None):
+class Hash(Generic[T]):
+    def __init__(self, name: str, host: Union[str, Redis] = None, port: int = None):
         self.c = get_client(host, port, False)
         self.name = name
         self._pop = self.c.register_script(h_pop_script)
@@ -76,7 +82,7 @@ class Hash(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.delete()
 
-    def add(self, key: str, value):
+    def add(self, key: str, value: T) -> int:
         """Add the (key, value) pair to the hash for new keys.
 
         If a key already exists this operation doesn't add it.
@@ -99,22 +105,22 @@ class Hash(object):
         """
         return retry_call(self._limited_add, keys=[self.name], args=[key, json.dumps(value), size_limit])
 
-    def exists(self, key):
+    def exists(self, key: str) -> bool:
         return retry_call(self.c.hexists, self.name, key)
 
-    def get(self, key):
+    def get(self, key: str) -> Optional[T]:
         item = retry_call(self.c.hget, self.name, key)
         if not item:
             return item
         return json.loads(item)
 
-    def keys(self):
+    def keys(self) -> list[str]:
         return [k.decode('utf-8') for k in retry_call(self.c.hkeys, self.name)]
 
     def length(self):
         return retry_call(self.c.hlen, self.name)
 
-    def items(self) -> dict:
+    def items(self) -> dict[str, T]:
         items = retry_call(self.c.hgetall, self.name)
         if not isinstance(items, dict):
             return {}
@@ -125,18 +131,18 @@ class Hash(object):
     def conditional_remove(self, key: str, value) -> bool:
         return bool(retry_call(self._conditional_remove, keys=[self.name], args=[key, json.dumps(value)]))
 
-    def pop(self, key):
+    def pop(self, key: str):
         item = retry_call(self._pop, args=[self.name, key])
         if not item:
             return item
         return json.loads(item)
 
-    def set(self, key, value):
+    def set(self, key: str, value: T):
         if isinstance(key, bytes):
             raise ValueError("Cannot use bytes for hashmap keys")
         return retry_call(self.c.hset, self.name, key, json.dumps(value))
 
-    def multi_set(self, data: Dict[str, Any]):
+    def multi_set(self, data: dict[str, T]):
         if any(isinstance(key, bytes) for key in data.keys()):
             raise ValueError("Cannot use bytes for hashmap keys")
         encoded = {key: json.dumps(value) for key, value in data.items()}

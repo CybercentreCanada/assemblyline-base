@@ -1,4 +1,4 @@
-from typing import List
+from __future__ import annotations
 import hashlib
 from assemblyline import odm
 from assemblyline.common import forge
@@ -111,14 +111,14 @@ class Submission(odm.Model):
     archive_ts = odm.Date(store=False)                          # Archiving timestamp
     classification = odm.Classification()                       # Classification of the submission
     error_count = odm.Integer()                                 # Total number of errors in the submission
-    errors = odm.List(odm.Keyword(), store=False)               # List of error keys
+    errors: list[str] = odm.List(odm.Keyword(), store=False)    # List of error keys
     expiry_ts = odm.Optional(odm.Date(store=False))             # Expiry timestamp
     file_count = odm.Integer()                                  # Total number of files in the submission
-    files: List[File] = odm.List(odm.Compound(File))            # List of files that were originally submitted
+    files: list[File] = odm.List(odm.Compound(File))            # List of files that were originally submitted
     max_score = odm.Integer()                                   # Maximum score of all the files in the scan
     metadata = odm.FlattenedObject(store=False)                 # Metadata associated to the submission
     params: SubmissionParams = odm.Compound(SubmissionParams)   # Submission detail blocs
-    results: List[str] = odm.List(odm.Keyword(), store=False)   # List of result keys
+    results: list[str] = odm.List(odm.Keyword(), store=False)   # List of result keys
     sid = odm.UUID(copyto="__text__")                           # Submission ID
     state = odm.Enum(values=SUBMISSION_STATES)                  # Status of the submission
     times = odm.Compound(Times, default={})                     # Timing bloc

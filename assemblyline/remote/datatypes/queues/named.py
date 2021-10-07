@@ -1,13 +1,16 @@
 import json
+from typing import Generic, TypeVar, Optional
 
 from assemblyline.remote.datatypes import get_client, retry_call
 
+T = TypeVar('T')
 
-class NamedQueue(object):
-    def __init__(self, name, host=None, port=None, private=False, ttl=0):
+
+class NamedQueue(Generic[T]):
+    def __init__(self, name: str, host=None, port=None, private: bool = False, ttl: int = 0):
         self.c = get_client(host, port, private)
-        self.name = name
-        self.ttl = ttl
+        self.name: str = name
+        self.ttl: int = ttl
 
     def __enter__(self):
         return self
@@ -24,14 +27,14 @@ class NamedQueue(object):
     def length(self):
         return retry_call(self.c.llen, self.name)
 
-    def peek_next(self):
+    def peek_next(self) -> Optional[T]:
         response = retry_call(self.c.lrange, self.name, 0, 0)
 
         if response:
             return json.loads(response[0])
         return None
 
-    def pop(self, blocking=True, timeout=0):
+    def pop(self, blocking: bool = True, timeout: int = 0) -> Optional[T]:
         if blocking:
             response = retry_call(self.c.blpop, self.name, timeout)
         else:
@@ -45,13 +48,13 @@ class NamedQueue(object):
         else:
             return json.loads(response)
 
-    def push(self, *messages):
+    def push(self, *messages: T):
         for message in messages:
             retry_call(self.c.rpush, self.name, json.dumps(message))
         if self.ttl:
             retry_call(self.c.expire, self.name, self.ttl)
 
-    def unpop(self, *messages):
+    def unpop(self, *messages: T):
         """Put all messages passed back at the head of the FIFO queue."""
         for message in messages:
             retry_call(self.c.lpush, self.name, json.dumps(message))

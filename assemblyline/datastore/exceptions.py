@@ -30,5 +30,3 @@ class MultiKeyError(KeyError):
         super().__init__(str(keys))
         self.keys = set(keys)
         self.partial_output = partial_output
-
-

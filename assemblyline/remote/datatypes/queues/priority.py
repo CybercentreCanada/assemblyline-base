@@ -1,5 +1,6 @@
+from __future__ import annotations
 import json
-from typing import List
+from typing import Generic, Optional, TypeVar, Union
 
 from assemblyline.remote.datatypes import get_client, retry_call, decode
 
@@ -13,16 +14,16 @@ from assemblyline.remote.datatypes import get_client, retry_call, decode
 #   max element count to pop
 pq_dequeue_range_script = """
 local unpack = table.unpack or unpack
-local min_score = tonumber(ARGV[1]); 
+local min_score = tonumber(ARGV[1]);
 if min_score == nil then min_score = -math.huge end
 local max_score = tonumber(ARGV[2]);
-if max_score == nil then max_score = math.huge end 
-local rem_offset = tonumber(ARGV[3]); 
-local rem_limit = tonumber(ARGV[4]); 
+if max_score == nil then max_score = math.huge end
+local rem_offset = tonumber(ARGV[3]);
+local rem_limit = tonumber(ARGV[4]);
 
 local entries = redis.call("zrangebyscore", KEYS[1], -max_score, -min_score, "limit", rem_offset, rem_limit);
 if #entries > 0 then redis.call("zrem", KEYS[1], unpack(entries)) end
-return entries 
+return entries
 """
 
 
@@ -54,8 +55,10 @@ if result then redis.call('zremrangebyrank', ARGV[1], 0 - ARGV[2], 0 - 1) end
 return result
 """
 
+T = TypeVar('T')
 
-class PriorityQueue(object):
+
+class PriorityQueue(Generic[T]):
     def __init__(self, name, host=None, port=None, private=False):
         self.c = get_client(host, port, private)
         self.r = self.c.register_script(pq_pop_script)
@@ -98,7 +101,7 @@ class PriorityQueue(object):
             return decode(result[1][21:])
         return None
 
-    def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1):
+    def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1) -> list[T]:
         """Dequeue a number of elements, within a specified range of scores.
 
         Limits given are inclusive, can be made exclusive, see redis docs on how to format limits for that.
@@ -114,7 +117,7 @@ class PriorityQueue(object):
         results = retry_call(self._deque_range, keys=[self.name], args=[lower_limit, upper_limit, skip, num])
         return [decode(res[21:]) for res in results]
 
-    def push(self, priority: int, data, vip=None):
+    def push(self, priority: int, data: T, vip=None):
         vip = 0 if vip else 9
         return retry_call(self.s, args=[self.name, priority, vip, json.dumps(data)])
 
@@ -124,7 +127,7 @@ class PriorityQueue(object):
     def remove(self, raw_value):
         return retry_call(self.c.zrem, self.name, raw_value)
 
-    def unpush(self, num=None):
+    def unpush(self, num=None) -> Union[list[T], Optional[T]]:
         if num is not None and num <= 0:
             return []
 
@@ -215,7 +218,7 @@ def select(*queues, **kw):
     return response[0].decode('utf-8'), json.loads(response[1][21:])
 
 
-def length(*queues: PriorityQueue) -> List[int]:
+def length(*queues: PriorityQueue) -> list[int]:
     """Utility function for batch reading queue lengths."""
     if not queues:
         return []

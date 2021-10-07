@@ -136,7 +136,7 @@ class TransportSFTP(Transport):
 
     # Buffer based functions
     @reconnect_retry_on_fail
-    def get(self, path):
+    def get(self, path: str) -> bytes:
         path = self.normalize(path)
         bio = BytesIO()
         with self.sftp.open(path) as sftp_handle:

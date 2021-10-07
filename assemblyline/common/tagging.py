@@ -1,12 +1,11 @@
+from __future__ import annotations
 import re
-
-from typing import List, Dict, Set
 
 from assemblyline.common.forge import CachedObject, get_datastore
 from assemblyline.odm.models.tagging import Tagging
 
 
-def tag_list_to_dict(tag_list: List[Dict]) -> Dict:
+def tag_list_to_dict(tag_list: list[dict]) -> dict:
     tag_dict = {}
     for t in tag_list:
         if t['type'] not in tag_dict:
@@ -16,7 +15,7 @@ def tag_list_to_dict(tag_list: List[Dict]) -> Dict:
     return tag_dict
 
 
-def tag_dict_to_list(tag_dict: Dict, safelisted: bool = False) -> List[Dict]:
+def tag_dict_to_list(tag_dict: dict, safelisted: bool = False) -> list[dict]:
     return [
         {'safelisted': safelisted, 'type': k, 'value': t, 'short_type': k.rsplit(".", 1)[-1]}
         for k, v in tag_dict.items()
@@ -29,7 +28,7 @@ def get_safelist_key(t_type: str, t_value: str) -> str:
     return f"{t_type}__{t_value}"
 
 
-def get_safelist(ds) -> Set:
+def get_safelist(ds) -> dict[str, bool]:
     return {get_safelist_key(sl['tag']['type'], sl['tag']['value']): True
             for sl in ds.safelist.stream_search("type:tag AND enabled:true", as_obj=False)}
 

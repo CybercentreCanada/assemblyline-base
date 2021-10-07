@@ -9,7 +9,7 @@ MEDIUM = NORMAL = 32
 LONG = 64
 
 
-def get_random_id():
+def get_random_id() -> str:
     return baseconv.base62.encode(uuid.uuid4().int)
 
 

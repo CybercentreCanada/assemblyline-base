@@ -81,7 +81,7 @@ class TransportLocal(Transport):
         assert (self.exists(dst_path))
 
     # Buffer based functions
-    def get(self, path):
+    def get(self, path: str) -> bytes:
         path = self.normalize(path)
         fh = None
         try:

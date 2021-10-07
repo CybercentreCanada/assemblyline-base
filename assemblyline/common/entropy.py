@@ -7,7 +7,7 @@ from typing import Tuple, List, BinaryIO, AnyStr
 frequency = None
 
 
-def calculate_entropy(contents: AnyStr) -> float:
+def calculate_entropy(contents: bytes) -> float:
     """ this function calculates the entropy of the file
         It is given by the formula:
             E = -SUM[v in 0..255](p(v) * ln(p(v)))

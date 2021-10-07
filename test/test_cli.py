@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 import json
 import io
 import os
@@ -13,7 +13,7 @@ from assemblyline.odm.random_data import wipe_alerts, create_alerts, wipe_submis
 from assemblyline.run.cli import ALCommandLineInterface
 
 
-LOGS = {
+LOGS: dict[str, list[str]] = {
     'info': [],
     'warning': [],
     'error': []
@@ -53,7 +53,7 @@ class CaptureLogger(object):
 
 @pytest.fixture(scope="module")
 def fs():
-    return forge.get_filestore()
+    return forge.get_filestore(connection_attempts=1)
 
 
 def purge_data(ds, fs):

@@ -404,3 +404,4 @@ class Tagging(odm.Model):
     network = odm.Optional(odm.Compound(Network))
     source = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
     technique = odm.Optional(odm.Compound(Technique))
+    vector = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))

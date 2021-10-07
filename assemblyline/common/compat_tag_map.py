@@ -282,6 +282,7 @@ tag_map = {
         "shellcode": ['SHELLCODE', 'TECHNIQUE_SHELLCODE'],
         "string": ['IMPLANT_STRINGS'],
     },
+    "vector": ['VECTOR'],
 }
 
 UNUSED = [
