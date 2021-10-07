@@ -58,7 +58,7 @@ class UpdateConfigDelta(odm.Model):
     sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
     update_interval_seconds = odm.Optional(odm.Integer())
     wait_for_update = odm.Optional(odm.Boolean())
-    signature_delimiter = odm.Enum(values=SIGNATURE_DELIMITERS.keys())
+    signature_delimiter = odm.Optional(odm.Enum(values=SIGNATURE_DELIMITERS.keys()))
     custom_delimiter = odm.Optional(odm.Keyword())
 
 
