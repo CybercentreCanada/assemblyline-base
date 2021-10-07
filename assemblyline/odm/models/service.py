@@ -54,6 +54,7 @@ class UpdateSource(odm.Model):
     username = odm.Optional(odm.Keyword(default=""))
     headers = odm.List(odm.Compound(EnvironmentVariable), default=[])
     default_classification = odm.Classification(default=Classification.UNRESTRICTED)
+    seperator = odm.Optional(odm.Keyword(default="\n\n\n"))
 
 
 @odm.model(index=False, store=False)

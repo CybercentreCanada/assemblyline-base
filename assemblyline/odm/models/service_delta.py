@@ -35,6 +35,7 @@ class UpdateSourceDelta(odm.Model):
     uri = odm.Optional(odm.Keyword())
     username = odm.Optional(odm.Keyword(default=""))
     default_classification = odm.Optional(odm.Classification())
+    seperator = odm.Optional(odm.Keyword(default="\n\n\n"))
 
 
 @odm.model(index=False, store=False)
