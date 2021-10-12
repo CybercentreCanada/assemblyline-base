@@ -15,6 +15,7 @@ class File(odm.Model):
     classification = odm.Classification()             # Classification of the file
     entropy = odm.Float()                             # Entropy of the file
     expiry_ts = odm.Optional(odm.Date(store=False))   # Expiry timestamp
+    is_section_image = odm.Boolean(default=False)     # Is this an image from an Image Result Section
     hex = odm.Keyword(index=False, store=False)       # Hex dump of the first 64 bytes of the file
     md5 = odm.MD5(copyto="__text__")                  # MD5 of the top level file
     magic = odm.Keyword(store=False)                  # Output from libmagic related to that file

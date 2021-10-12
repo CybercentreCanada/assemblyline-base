@@ -1050,7 +1050,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
-                             cl_engine=forge.get_classification(), redis=None):
+                             cl_engine=forge.get_classification(), redis=None, is_section_image=False):
         with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
             current_fileinfo = self.ds.file.get_if_exists(
                 sha256, as_obj=False, force_archive_access=config.datastore.ilm.update_archive) or {}
@@ -1084,4 +1084,8 @@ class AssemblylineDatastore(object):
                 str(classification)
             )
             current_fileinfo['classification'] = classification
+
+            # Update section image status
+            current_fileinfo['is_section_image'] = current_fileinfo.get('is_section_image', False) or is_section_image
+
             self.ds.file.save(sha256, current_fileinfo, force_archive_access=config.datastore.ilm.update_archive)
