@@ -85,10 +85,10 @@ def get_mac_for_ip(ip: str) -> str:
     return get_mac_address()
 
 
-def get_random_mac(seperator: str = ':') -> str:
+def get_random_mac(separator: str = ':') -> str:
     oui = [0x52, 0x54, 0x00]
     mac = oui + [randint(0, 0xff), randint(0, 0xff), randint(0, 0xff)]
-    return seperator.join("%02x" % x for x in mac).upper()
+    return separator.join("%02x" % x for x in mac).upper()
 
 
 def get_route_to(dst: str) -> str:

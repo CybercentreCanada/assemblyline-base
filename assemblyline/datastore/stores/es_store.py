@@ -1141,7 +1141,8 @@ class ESCollection(Collection):
                 "bool": {
                     "must": {
                         "query_string": {
-                            "query": query
+                            "query": query,
+                            "default_field": self.DEFAULT_SEARCH_FIELD
                         }
                     },
                     'filter': [{'query_string': {'query': ff}} for ff in filters]
