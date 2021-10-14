@@ -196,7 +196,7 @@ class TransportFTP(Transport):
 
     # Buffer based functions
     @reconnect_retry_on_fail
-    def get(self, path) -> bytes:
+    def get(self, path: str) -> bytes:
         path = self.normalize(path)
         bio = BytesIO()
         self.ftp.retrbinary('RETR ' + path, bio.write)

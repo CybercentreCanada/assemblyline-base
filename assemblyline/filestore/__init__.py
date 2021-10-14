@@ -1,6 +1,8 @@
+from __future__ import annotations
 
 import json
 import logging
+from typing import AnyStr, TYPE_CHECKING, Optional, Tuple
 from urllib.parse import urlparse, parse_qs, unquote
 
 import elasticapm
@@ -12,6 +14,9 @@ from assemblyline.filestore.transport.http import TransportHTTP
 from assemblyline.filestore.transport.local import TransportLocal
 from assemblyline.filestore.transport.s3 import TransportS3
 from assemblyline.filestore.transport.sftp import TransportSFTP
+
+if TYPE_CHECKING:
+    from assemblyline.filestore.transport.base import Transport
 
 
 class FileStoreException(Exception):
@@ -163,7 +168,7 @@ class FileStore(object):
                 self.log.warning('Transport problem: %s', trace)
 
     @elasticapm.capture_span(span_type='filestore')
-    def delete(self, path, location='all'):
+    def delete(self, path: str, location='all'):
         with elasticapm.capture_span(name='delete', span_type='filestore', labels={'path': path}):
             for t in self.slice(location):
                 try:
@@ -173,7 +178,7 @@ class FileStore(object):
                     self.log.info('Transport problem: %s', trace)
 
     @elasticapm.capture_span(span_type='filestore')
-    def download(self, src_path, dest_path, location='any'):
+    def download(self, src_path: str, dest_path: str, location='any'):
         successful = False
         transports = []
         download_errors = []
@@ -191,7 +196,7 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def exists(self, path, location='any'):
+    def exists(self, path, location='any') -> list[Transport]:
         transports = []
         for t in self.slice(location):
             try:
@@ -205,7 +210,7 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def get(self, path, location='any'):
+    def get(self, path: str, location='any') -> Optional[bytes]:
         for t in self.slice(location):
             try:
                 if t.exists(path):
@@ -213,9 +218,10 @@ class FileStore(object):
             except Exception as ex:
                 trace = get_stacktrace_info(ex)
                 self.log.warning('Transport problem: %s', trace)
+        return None
 
     @elasticapm.capture_span(span_type='filestore')
-    def put(self, dst_path, content, location='all', force=False):
+    def put(self, dst_path: str, content: AnyStr, location='all', force=False) -> list[Transport]:
         transports = []
         for t in self.slice(location):
             if force or not t.exists(dst_path):
@@ -239,7 +245,7 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def upload(self, src_path, dst_path, location='all', force=False):
+    def upload(self, src_path: str, dst_path: str, location='all', force=False) -> list[Transport]:
         transports = []
         for t in self.slice(location):
             if force or not t.exists(dst_path):
@@ -251,7 +257,7 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def upload_batch(self, local_remote_tuples, location='all'):
+    def upload_batch(self, local_remote_tuples, location='all') -> list[Tuple[str, str, str]]:
         failed_tuples = []
         for (src_path, dst_path) in local_remote_tuples:
             try:

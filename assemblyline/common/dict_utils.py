@@ -18,7 +18,7 @@ def recursive_update(d: Dict, u: _Mapping) -> Union[Dict, _Mapping]:
     return d
 
 
-def get_recursive_delta(d1: (Dict, Mapping), d2: (Dict, Mapping)) -> Dict:
+def get_recursive_delta(d1: Union[Dict, Mapping], d2: Union[Dict, Mapping]) -> Dict:
     if d1 is None:
         return d2
 

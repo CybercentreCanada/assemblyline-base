@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional as Opt
 from assemblyline import odm
 from assemblyline.odm.models.submission import SubmissionParams, File, Submission as DatabaseSubmission
 
@@ -20,7 +20,7 @@ class Submission(odm.Model):
     metadata: Dict[str, str] = odm.FlattenedObject(default={})           # Metadata submitted with the file
     notification: Notification = odm.Compound(Notification, default={})  # Notification queue parameters
     params: SubmissionParams = odm.Compound(SubmissionParams)            # Parameters of the submission
-    scan_key: str = odm.Optional(odm.Keyword())
+    scan_key: Opt[str] = odm.Optional(odm.Keyword())
 
 
 def from_datastore_submission(submission: DatabaseSubmission):

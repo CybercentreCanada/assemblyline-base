@@ -49,13 +49,12 @@ class PersistentVolumeDelta(odm.Model):
 class DependencyConfigDelta(odm.Model):
     container = odm.Optional(odm.Compound(DockerConfigDelta))
     volumes = odm.Mapping(odm.Compound(PersistentVolumeDelta), default={})
+    run_as_core: bool = odm.Optional(odm.Boolean())
 
 
 @odm.model(index=False, store=False)
 class UpdateConfigDelta(odm.Model):
     generates_signatures = odm.Optional(odm.Boolean(), index=True)
-    method = odm.Optional(odm.Enum(values=['run', 'build']))
-    run_options = odm.Optional(odm.Compound(DockerConfigDelta))
     sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
     update_interval_seconds = odm.Optional(odm.Integer())
     wait_for_update = odm.Optional(odm.Boolean())

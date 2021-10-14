@@ -1,8 +1,9 @@
+from __future__ import annotations
 import concurrent.futures
 import logging
 import re
+from typing import Any, Iterable, Optional, Union, Generic, TypeVar
 import warnings
-from typing import Dict
 
 from datemath import dm
 from datemath.helpers import DateMathException
@@ -52,7 +53,10 @@ class BulkPlan(object):
         return len(self.operations) == 0
 
 
-class Collection(object):
+ModelType = TypeVar('ModelType', bound=Model)
+
+
+class Collection(Generic[ModelType]):
     DEFAULT_ROW_SIZE = 25
     DEFAULT_SEARCH_FIELD = '__text__'
     FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
@@ -109,7 +113,7 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
 
-    def normalize(self, data, as_obj=True):
+    def normalize(self, data, as_obj=True) -> Union[ModelType, dict[str, Any], None]:
         """
         Normalize the data using the model class
 
@@ -234,7 +238,7 @@ class Collection(object):
 
         return output
 
-    def exists(self, key, force_archive_access=False):
+    def exists(self, key, force_archive_access=False) -> bool:
         """
         Check if a document exists in the datastore.
 
@@ -244,7 +248,7 @@ class Collection(object):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def _get(self, key, retries, force_archive_access=False):
+    def _get(self, key, retries, force_archive_access=False) -> Any:
         """
         This function should be overloaded in a way that if the document is not found,
         the function retries to get the document the specified amount of time.
@@ -287,7 +291,7 @@ class Collection(object):
         return self.normalize(self._get(key, self.RETRY_NONE, force_archive_access=force_archive_access),
                               as_obj=as_obj)
 
-    def require(self, key, as_obj=True, force_archive_access=False):
+    def require(self, key, as_obj=True, force_archive_access=False) -> Union[dict[str, Any], ModelType]:
         """
         Get a document from the datastore and retry forever because we know for sure
         that this document should exist. If it does not right now, this will wait for the
@@ -499,7 +503,7 @@ class Collection(object):
 
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
                filters=(), access_control=None, deep_paging_id=None, as_obj=True, use_archive=False,
-               track_total_hits=False):
+               track_total_hits=False) -> dict:
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -533,7 +537,7 @@ class Collection(object):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def stream_search(self, query, fl=None, filters=(), access_control=None,
-                      buffer_size=200, as_obj=True, use_archive=False):
+                      item_buffer_size=200, as_obj=True, use_archive=False) -> Iterable[Union[dict[str, Any], ModelType]]:
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys
@@ -617,11 +621,11 @@ class Collection(object):
             return ret_type
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1,
-                  filters=None, access_control=None, use_archive=False):
+                  filters=None, access_control=None, use_archive=False) -> dict[str, int]:
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-              mincount=1, filters=None, access_control=None, use_archive=False):
+              mincount=1, filters=None, access_control=None, use_archive=False) -> dict[str, int]:
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
     def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=False):
@@ -632,7 +636,7 @@ class Collection(object):
                        track_total_hits=False):
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def fields(self):
+    def fields(self) -> dict:
         """
         This function should return all the fields in the index with their types
 
@@ -686,7 +690,7 @@ class Collection(object):
                                    f"type. [{fields[field_name]['type']} != "
                                    f"{model[field_name].__class__.__name__.lower()}]")
 
-    def _add_fields(self, missing_fields: Dict[str, _Field]):
+    def _add_fields(self, missing_fields: dict[str, _Field]):
         raise RuntimeError(f"Couldn't load collection, fields missing: {missing_fields.keys()}")
 
     def wipe(self):
@@ -851,7 +855,7 @@ class BaseStore(object):
     def is_closed(self):
         return self._closed
 
-    def register(self, name, model_class=None):
+    def register(self, name: str, model_class=None):
         if re.match(r'[a-z0-9_]*', name).string != name:
             raise DataStoreException('Invalid characters in model name. '
                                      'You can only use lower case letters, numbers and underscores.')

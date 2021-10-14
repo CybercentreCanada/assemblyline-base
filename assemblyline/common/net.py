@@ -132,7 +132,7 @@ def get_default_gateway_ip() -> str:
     except (IndexError, KeyError):
         subnet = ip.split(".")[0]
         if sys.platform.startswith('win'):
-            proc = subprocess.Popen('ipconfig', stdout=subprocess.PIPE)
+            proc = subprocess.Popen('ipconfig', stdout=subprocess.PIPE, text=True)
             output = proc.stdout.read()
             for line in output.split('\n'):
                 if "IP Address" in line and ": %s" % subnet in line:
@@ -140,7 +140,7 @@ def get_default_gateway_ip() -> str:
                     break
 
         else:
-            proc = subprocess.Popen('ifconfig', stdout=subprocess.PIPE)
+            proc = subprocess.Popen('ifconfig', stdout=subprocess.PIPE, text=True)
             output = proc.stdout.read()
 
             for line in output.split('\n'):

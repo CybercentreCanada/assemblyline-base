@@ -154,7 +154,7 @@ class TransportS3(Transport):
         self.with_retries(self.client.upload_file, src_path, self.bucket, dst_path)
 
     # Buffer based functions
-    def get(self, path):
+    def get(self, path: str) -> bytes:
         fd, dst_path = tempfile.mkstemp(prefix="s3_transport.", suffix=".download")
         os.close(fd)  # We don't need the file descriptor open
 

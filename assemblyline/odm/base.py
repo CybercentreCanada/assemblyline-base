@@ -10,6 +10,8 @@ independent data models in python. This gives us:
 
 """
 
+from __future__ import annotations
+
 import arrow
 import copy
 import json
@@ -64,8 +66,8 @@ PROCESSOR_REGEX = r"^x(64|86)$"
 logger = logging.getLogger('assemblyline.odm')
 
 
-def flat_to_nested(data: dict):
-    sub_data = {}
+def flat_to_nested(data: dict[str, typing.Any]) -> dict[str, typing.Any]:
+    sub_data: dict[str, typing.Any] = {}
     nested_keys = []
     for key, value in data.items():
         if '.' in key:
@@ -85,10 +87,6 @@ def flat_to_nested(data: dict):
 
 
 class KeyMaskException(KeyError):
-    pass
-
-
-class UndefinedFunction(Exception):
     pass
 
 
@@ -170,8 +168,8 @@ class _Field:
         return {'': self}
 
     def check(self, value, **kwargs):
-        raise UndefinedFunction("This function is not defined in the default field. "
-                                "Each fields has to have their own definition")
+        raise NotImplementedError("This function is not defined in the default field. "
+                                  "Each fields has to have their own definition")
 
 
 class _DeletedField:
@@ -758,10 +756,6 @@ class Optional(_Field):
 
 class Model:
     @classmethod
-    def name(cls):
-        return cls.__name__
-
-    @classmethod
     def fields(cls, skip_mappings=False) -> typing.Mapping[str, _Field]:
         """
         Describe the elements of the model.
@@ -922,7 +916,7 @@ class Model:
                 elif isinstance(value, TypedMapping):
                     out[key] = {k: v.as_primitives(strip_null=strip_null)
                                 if isinstance(v, Model) else v for k, v in value.items()}
-                elif isinstance(value, (List, TypedList)):
+                elif isinstance(value, TypedList):
                     out[key] = [v.as_primitives(strip_null=strip_null)
                                 if isinstance(v, Model) else v for v in value]
                 elif isinstance(value, ClassificationObject):
@@ -1030,7 +1024,7 @@ def _construct_field(field, value):
             return None, value
 
 
-def construct_safe(mod, data) -> typing.Tuple[typing.Any, typing.Dict]:
+def construct_safe(mod, data) -> tuple[typing.Any, dict]:
     if not isinstance(data, dict):
         return None, data
     fields = mod.fields()
