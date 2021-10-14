@@ -1,8 +1,10 @@
 from collections.abc import Mapping
-from typing import Dict, Optional, Mapping as _Mapping, Union
+from typing import Dict, Optional, AnyStr, List, Mapping as _Mapping, Union
 
 
-def recursive_update(d: Dict, u: _Mapping) -> Union[Dict, _Mapping]:
+def recursive_update(d: Dict, u: _Mapping,
+                     stop_keys: List[AnyStr] = [],
+                     allow_recursion: bool = True) -> Union[Dict, _Mapping]:
     if d is None:
         return u
 
@@ -10,15 +12,17 @@ def recursive_update(d: Dict, u: _Mapping) -> Union[Dict, _Mapping]:
         return d
 
     for k, v in u.items():
-        if isinstance(v, Mapping):
-            d[k] = recursive_update(d.get(k, {}), v)
+        if isinstance(v, Mapping) and allow_recursion:
+            d[k] = recursive_update(d.get(k, {}), v, stop_keys=stop_keys, allow_recursion=k not in stop_keys)
         else:
             d[k] = v
 
     return d
 
 
-def get_recursive_delta(d1: Union[Dict, Mapping], d2: Union[Dict, Mapping]) -> Dict:
+def get_recursive_delta(d1: Union[Dict, Mapping], d2: Union[Dict, Mapping],
+                        stop_keys: List[AnyStr] = [],
+                        allow_recursion: bool = True) -> Dict:
     if d1 is None:
         return d2
 
@@ -27,8 +31,8 @@ def get_recursive_delta(d1: Union[Dict, Mapping], d2: Union[Dict, Mapping]) -> D
 
     out = {}
     for k1, v1 in d1.items():
-        if isinstance(v1, Mapping):
-            internal = get_recursive_delta(v1, d2.get(k1, {}))
+        if isinstance(v1, Mapping) and allow_recursion:
+            internal = get_recursive_delta(v1, d2.get(k1, {}), stop_keys=stop_keys, allow_recursion=k1 not in stop_keys)
             if internal:
                 out[k1] = internal
         else:
