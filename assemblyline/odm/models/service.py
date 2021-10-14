@@ -34,7 +34,9 @@ class DockerConfig(odm.Model):
     image: str = odm.Keyword()                       # Complete name of the Docker image with tag, may include registry
     registry_username: Opt[str] = odm.Optional(odm.Keyword())  # The username to use when pulling the image
     registry_password: Opt[str] = odm.Optional(odm.Keyword())  # The password or token to use when pulling the image
-    registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker')  # The type of registry (Docker, Harbor)
+    registry_type: str = odm.Enum(
+        values=["docker", "harbor"],
+        default='docker')  # The type of registry (Docker, Harbor)
     ports: list[str] = odm.List(odm.Keyword(), default=[])
     ram_mb: int = odm.Integer(default=512)
     ram_mb_min: int = odm.Integer(default=128)
@@ -78,6 +80,7 @@ class UpdateConfig(odm.Model):
     signature_delimiter = odm.Enum(values=SIGNATURE_DELIMITERS.keys(),
                                    default="double_new_line")           # Delimiter use in between signature
     custom_delimiter = odm.Optional(odm.Keyword())                      # Custom delimiter
+
 
 @odm.model(index=False, store=False)
 class SubmissionParams(odm.Model):
