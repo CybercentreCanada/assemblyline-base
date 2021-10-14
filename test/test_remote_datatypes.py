@@ -184,7 +184,7 @@ def test_lock(redis_connection):
 
 # noinspection PyShadowingNames,PyUnusedLocal
 def test_priority_queue(redis_connection):
-    from assemblyline.remote.datatypes.queues.priority import PriorityQueue, length
+    from assemblyline.remote.datatypes.queues.priority import PriorityQueue, length, select
     with PriorityQueue('test-priority-queue') as pq:
         pq.delete()
 
@@ -220,8 +220,10 @@ def test_priority_queue(redis_connection):
         with PriorityQueue('second-priority-queue') as other:
             other.push(100, 'a')
             assert length(other, pq) == [1, 2]
-
-        pq.pop(2)
+            select(other, pq)
+            select(other, pq)
+            select(other, pq)
+            assert length(other, pq) == [0, 0]
 
         pq.push(50, 'first')
         pq.push(-50, 'second')

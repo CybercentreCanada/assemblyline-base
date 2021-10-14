@@ -7,6 +7,17 @@ from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVI
 
 Classification = forge.get_classification()
 
+SIGNATURE_DELIMITERS = {
+    'new_line': '\n',
+    'double_new_line': '\n\n',
+    'pipe': '|',
+    'comma': ',',
+    'space': ' ',
+    'none': '',
+    'file': '',
+    'custom': ''
+}
+
 
 @odm.model(index=False, store=False)
 class EnvironmentVariable(odm.Model):
@@ -61,10 +72,14 @@ class UpdateSource(odm.Model):
 @odm.model(index=False, store=False)
 class UpdateConfig(odm.Model):
     generates_signatures = odm.Boolean(index=True, default=False)
-    sources: list[UpdateSource] = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
-    update_interval_seconds: int = odm.Integer()                       # Update check interval in seconds
-    wait_for_update: bool = odm.Boolean(default=False)
-
+    method = odm.Enum(values=['run', 'build'])                    # Are we going to run or build a container?
+    run_options = odm.Optional(odm.Compound(DockerConfig))        # If we are going to run a container, which one?
+    sources = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
+    update_interval_seconds = odm.Integer()                       # Update check interval in seconds
+    wait_for_update = odm.Boolean(default=False)
+    signature_delimiter = odm.Enum(values=SIGNATURE_DELIMITERS.keys(),
+                                   default="double_new_line")           # Delimiter use in between signature
+    custom_delimiter = odm.Optional(odm.Keyword())                      # Custom delimiter
 
 @odm.model(index=False, store=False)
 class SubmissionParams(odm.Model):

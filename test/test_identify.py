@@ -314,6 +314,7 @@ def test_constants():
         (b"Out-String", ["code/ps1"]),
         (b"Write-Error", ["code/ps1"]),
         (b"Invoke-Expression", ["code/ps1"]),
+        (b"Invoke-WebRequest", ["code/ps1"]),
         (b"-memberDefinition", ["code/ps1"]),
         (b"-Name", ["code/ps1"]),
         (b"-namespace", ["code/ps1"]),
@@ -325,6 +326,9 @@ def test_constants():
         (b".GetType(", ["code/ps1"]),
         (b".GetMethod(", ["code/ps1"]),
         (b"FromBase64String(", ["code/ps1"]),
+        (b"System.Net.WebClient", ["code/ps1"]),
+        (b"Net.ServicePointManager", ["code/ps1"]),
+        (b"Net.SecurityProtocolType", ["code/ps1"]),
     ]
 )
 def test_strong_indicators(code_snippet, code_types):
@@ -840,7 +844,12 @@ def test_subtype(label, expected):
        'hex': '52006f006f007400200045006e007400720079006200620062006200620062006200620'
               '062006200620062006200620062006200620062006200620062006200',
        'magic': "blah", 'mime': "blah", 'type': 'document/office/unknown'},
-      b"blah\ncustom: document/office/unknown\nbloop"), ])
+      b"blah\ncustom: document/office/unknown\nbloop"),
+     (b"blah",
+      {'ascii': 'blah', 'hex': '626c6168', 'magic': 'OLE 2 Compound Document : Microsoft Word Document', 'mime': 'blah',
+      'type': 'document/office/word'},
+      b"blah\nOLE 2 Compound Document : Microsoft Word Document\n"),
+     ])
 def test_ident(buf, expected_result, mocked_magic, mocker):
     if mocked_magic:
         mocker.patch("magic.magic_file", return_value=mocked_magic)

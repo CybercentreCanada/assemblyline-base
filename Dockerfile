@@ -10,14 +10,17 @@ RUN passwd -l root
 
 FROM base AS builder
 ARG version
+ARG version_tag=${version}
 
 # Get required apt packages
 RUN apt-get update \
   && apt-get install -yy build-essential libffi-dev libfuzzy-dev \
   && rm -rf /var/lib/apt/lists/*
 
-# Install assemblyline base
-RUN pip install --no-cache-dir --user assemblyline==$version && rm -rf ~/.cache/pip
+# Install assemblyline base (setup.py is just a file we know exists so the command
+# won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
+COPY setup.py dist* dist/
+RUN pip install --no-cache-dir -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
 
 FROM base
 
@@ -47,6 +50,8 @@ RUN chown assemblyline:assemblyline /var/log/assemblyline
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
+ENV ASSEMBLYLINE_VERSION=${version}
+ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
 
 # Switch to assemblyline user
 USER assemblyline

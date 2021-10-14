@@ -4,7 +4,7 @@ from assemblyline.common.caching import generate_conf_key
 from assemblyline.odm.models.tagging import Tagging
 
 
-BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "PROCESS_TREE", "TABLE"}
+BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "PROCESS_TREE", "TABLE", "IMAGE"}
 constants = forge.get_constants()
 
 
@@ -58,10 +58,11 @@ class Milestone(odm.Model):
 
 @odm.model(index=True, store=False)
 class File(odm.Model):
-    name = odm.Keyword(copyto="__text__")      # Name of the file
-    sha256 = odm.SHA256(copyto="__text__")     # SHA256 hash of the file
-    description = odm.Text(copyto="__text__")  # Description of the file
-    classification = odm.Classification()      # Classification of the file
+    name = odm.Keyword(copyto="__text__")           # Name of the file
+    sha256 = odm.SHA256(copyto="__text__")          # SHA256 hash of the file
+    description = odm.Text(copyto="__text__")       # Description of the file
+    classification = odm.Classification()           # Classification of the file
+    is_section_image = odm.Boolean(default=False)   # Is this an image used in an Image Result Section
 
 
 @odm.model(index=True, store=True)

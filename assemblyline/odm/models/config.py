@@ -791,6 +791,8 @@ class UI(odm.Model):
     banner_level: str = odm.Enum(values=["info", "warning", "success", "error"])
     # Turn on debugging
     debug: bool = odm.Boolean()
+    # Discover URL
+    discover_url: str = odm.Optional(odm.Keyword())
     # Which encoding will be used
     download_encoding = odm.Enum(values=["raw", "cart"])
     # Assemblyline admins email address
@@ -835,6 +837,7 @@ DEFAULT_UI = {
     "banner": None,
     "banner_level": 'info',
     "debug": False,
+    "discover_url": None,
     "download_encoding": "cart",
     "email": None,
     "enforce_quota": True,

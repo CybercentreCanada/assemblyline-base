@@ -1,4 +1,5 @@
 from assemblyline import odm
+from assemblyline.odm.models.service import SIGNATURE_DELIMITERS
 
 
 @odm.model(index=False, store=False)
@@ -24,7 +25,6 @@ class DockerConfigDelta(odm.Model):
 
 @odm.model(index=False, store=False)
 class UpdateSourceDelta(odm.Model):
-    headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)))
     name = odm.Optional(odm.Keyword())
     password = odm.Optional(odm.Keyword(default=""))
     pattern = odm.Optional(odm.Keyword(default=""))
@@ -34,6 +34,7 @@ class UpdateSourceDelta(odm.Model):
     proxy = odm.Optional(odm.Keyword(default=""))
     uri = odm.Optional(odm.Keyword())
     username = odm.Optional(odm.Keyword(default=""))
+    headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)))
     default_classification = odm.Optional(odm.Classification())
 
 
@@ -57,6 +58,8 @@ class UpdateConfigDelta(odm.Model):
     sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)))
     update_interval_seconds = odm.Optional(odm.Integer())
     wait_for_update = odm.Optional(odm.Boolean())
+    signature_delimiter = odm.Optional(odm.Enum(values=SIGNATURE_DELIMITERS.keys()))
+    custom_delimiter = odm.Optional(odm.Keyword())
 
 
 @odm.model(index=False, store=False)

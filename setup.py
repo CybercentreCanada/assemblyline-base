@@ -95,6 +95,8 @@ setup(
             'pytest-cov',
             'retrying',
             'pytest-mock',
+            'pyftpdlib',
+            'pyopenssl',
         ]
     },
     package_data={

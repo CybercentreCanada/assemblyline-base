@@ -100,9 +100,7 @@ class Classification(object):
                     self.levels_aliases[a.upper()] = short_name
                 self.params_map[short_name] = {k: v for k, v in x.items() if k not in banned_params_keys}
                 self.params_map[name] = self.params_map[short_name]
-                self.levels_styles_map[short_name] = x.get('css', {'banner': 'alert-default',
-                                                                   'label': 'label-default',
-                                                                   'text': 'text-muted'})
+                self.levels_styles_map[short_name] = x.get('css', {'color': 'default'})
                 self.levels_styles_map[name] = self.levels_styles_map[short_name]
                 self.description[short_name] = x.get('description', "N/A")
                 self.description[name] = self.description[short_name]
@@ -264,6 +262,7 @@ class Classification(object):
         groups = []
         for gp in grp_part:
             gp = gp.replace("REL TO ", "")
+            gp = gp.replace("REL ", "")
             temp_group = set([x.strip() for x in gp.split(",")])
             for t in temp_group:
                 groups.extend(t.split("/"))
@@ -637,7 +636,7 @@ class Classification(object):
                                                         long_format=long_format,
                                                         skip_auto_select=True)
 
-    def is_accessible(self, user_c12n: str, c12n: str) -> bool:
+    def is_accessible(self, user_c12n: str, c12n: str, ignore_invalid: bool = False) -> bool:
         """
         Given a user classification, check if a user is allow to see a certain classification
 
@@ -657,24 +656,30 @@ class Classification(object):
         if c12n is None:
             return True
 
-        # Normalize classifications before comparing them
-        user_c12n = self.normalize_classification(user_c12n, skip_auto_select=True)
-        c12n = self.normalize_classification(c12n, skip_auto_select=True)
+        try:
+            # Normalize classifications before comparing them
+            user_c12n = self.normalize_classification(user_c12n, skip_auto_select=True)
+            c12n = self.normalize_classification(c12n, skip_auto_select=True)
 
-        user_req = self._get_c12n_required(user_c12n)
-        user_groups, user_subgroups = self._get_c12n_groups(user_c12n)
-        req = self._get_c12n_required(c12n)
-        groups, subgroups = self._get_c12n_groups(c12n)
+            user_req = self._get_c12n_required(user_c12n)
+            user_groups, user_subgroups = self._get_c12n_groups(user_c12n)
+            req = self._get_c12n_required(c12n)
+            groups, subgroups = self._get_c12n_groups(c12n)
 
-        if self._get_c12n_level_index(user_c12n) >= self._get_c12n_level_index(c12n):
-            if not self._can_see_required(user_req, req):
+            if self._get_c12n_level_index(user_c12n) >= self._get_c12n_level_index(c12n):
+                if not self._can_see_required(user_req, req):
+                    return False
+                if not self._can_see_groups(user_groups, groups):
+                    return False
+                if not self._can_see_groups(user_subgroups, subgroups):
+                    return False
+                return True
+            return False
+        except InvalidClassification:
+            if ignore_invalid:
                 return False
-            if not self._can_see_groups(user_groups, groups):
-                return False
-            if not self._can_see_groups(user_subgroups, subgroups):
-                return False
-            return True
-        return False
+            else:
+                raise
 
     def is_valid(self, c12n: str, skip_auto_select: bool = False) -> bool:
         """
@@ -711,6 +716,7 @@ class Classification(object):
             return False
 
         c12n = c12n.replace("REL TO ", "")
+        c12n = c12n.replace("REL ", "")
         parts = c12n.split("//")
 
         # There is a maximum of 3 parts
