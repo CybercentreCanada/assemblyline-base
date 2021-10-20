@@ -34,7 +34,7 @@ class Tagging(odm.Model):
         subject = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         subject_alt_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         thumbprint = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-        thumbprint_mp5 = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+        thumbprint_md5 = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         thumbprint_sha256 = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         valid = odm.Optional(odm.Compound(CertValid))
         version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
