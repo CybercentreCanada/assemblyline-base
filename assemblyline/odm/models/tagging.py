@@ -380,6 +380,7 @@ class Tagging(odm.Model):
         signature = odm.Optional(odm.Compound(NetworkSignature))
         static = odm.Optional(odm.Compound(NetworkIOCs))
         tls = odm.Optional(odm.Compound(NetworkTLS))
+        user_agent = odm.Optional(odm.List(odm.Keyword()))
 
     @odm.model(index=True, store=False)
     class Technique(odm.Model):
