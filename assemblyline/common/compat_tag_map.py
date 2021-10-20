@@ -25,8 +25,6 @@ tag_map = {
         "subject": ['CERT_SUBJECT'],
         "subject_alt_name": ['CERT_SUBJECT_ALT_NAME'],
         "thumbprint": ['CERT_THUMBPRINT'],
-        "thumbprint_md5": ['CERT_THUMBPRINT_MD5'],
-        "thumbprint_sha256": ['CERT_THUMBPRINT_SHA256'],
         "valid": {
             "start": ['ANDROID_CERT_START_DATE', 'CERT_VALID_FROM'],
             "end": ['ANDROID_CERT_END_DATE', 'CERT_VALID_TO'],
