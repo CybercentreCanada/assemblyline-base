@@ -286,10 +286,16 @@ class ESCollection(Collection):
                     elasticsearch.exceptions.ConnectionError,
                     elasticsearch.exceptions.ConnectionTimeout,
                     elasticsearch.exceptions.AuthenticationException) as e:
-                if not isinstance(e, SearchRetryException):
+                # If the retry count gets high, give a stacktrace every 10 tries.
+                if (retries % 10) == 9:
+                    log.exception(f"Persistent error connecting to Elasticsearch server(s): "
+                                  f"{' | '.join(self.datastore.get_hosts(safe=True))}"
+                                  f", retrying...")
+                elif not isinstance(e, SearchRetryException):
                     log.warning(f"No connection to Elasticsearch server(s): "
                                 f"{' | '.join(self.datastore.get_hosts(safe=True))}"
                                 f", retrying...")
+
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
