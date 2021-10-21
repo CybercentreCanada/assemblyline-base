@@ -9,7 +9,6 @@
   "xml.xml": "code/xml",
   "calendar.ics": "text/calendar",
   "gzip.gz": "archive/gzip",
-  "cert.pem": "certificate/rsa",
   "powershell.ps1": "code/ps1",
   "jpg.jpg": "image/jpg"
 }
