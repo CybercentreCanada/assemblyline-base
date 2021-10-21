@@ -1034,7 +1034,7 @@ def test_fileinfo(file_contents, mocked_return, expected_return, dummy_office_fi
 
 
 def test_id_file_base():
-    from assemblyline.common.identify import get_digests_for_file, ident
+    from assemblyline.common.identify import fileinfo
     file_base_dir = "test/id_file_base"
     map_file = "id_file_base.json"
     map_path = path.join(file_base_dir, map_file)
@@ -1047,7 +1047,7 @@ def test_id_file_base():
                 continue
 
             file_path = path.join(file_base_dir, file_name)
-            data = get_digests_for_file(file_path, on_first_block=ident)
+            data = fileinfo(file_path)
             actual_value = data.get("type", "")
             expected_value = json_contents[file_name]
             assert actual_value == expected_value

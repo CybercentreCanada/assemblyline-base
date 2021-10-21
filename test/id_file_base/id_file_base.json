@@ -1,7 +1,15 @@
 {
   "text.txt": "unknown",
-  "excel.xlsx": "document/office/excel",
+  "excel.xls": "document/office/excel",
   "powerpoint.pptx": "document/office/powerpoint",
   "word.docx": "document/office/word",
-  "png.png": "image/png"
+  "png.png": "image/png",
+  "pdf.pdf": "document/pdf",
+  "html.html": "code/html",
+  "xml.xml": "code/xml",
+  "calendar.ics": "text/calendar",
+  "gzip.gz": "archive/gzip",
+  "cert.pem": "certificate/rsa",
+  "powershell.ps1": "code/ps1",
+  "jpg.jpg": "image/jpg"
 }
