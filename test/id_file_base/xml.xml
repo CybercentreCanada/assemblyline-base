@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<student-data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <record>
+       <LastName>Takahashi</LastName>
+       <FirstName>Jesse</FirstName>
+       <Age>19</Age>
+       <Major>Literature</Major>
+       <GPA>3.8</GPA>
+       <Year>Freshman</Year>
+    </record>
+    <record>
+       <LastName>Nguyen</LastName>
+       <FirstName>May</FirstName>
+       <Age>23</Age>
+       <Major>Chemistry</Major>
+       <GPA>3.5</GPA>
+       <Year>Senior</Year>
+    </record>
+</student-data>

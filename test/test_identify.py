@@ -1,6 +1,7 @@
 import pytest
 
-from os import remove
+from json import loads
+from os import path, remove, walk
 from re import findall, match, compile, IGNORECASE
 from assemblyline.common import identify
 
@@ -1024,3 +1025,23 @@ def test_fileinfo(file_contents, mocked_return, expected_return, dummy_office_fi
         mocker.patch("msoffcrypto.OfficeFile", return_value=dummy_office_file_class())
     assert identify.fileinfo(path) == expected_return
     remove(path)
+
+
+def test_id_file_base():
+    from assemblyline.common.identify import fileinfo
+    file_base_dir = "test/id_file_base"
+    map_file = "id_file_base.json"
+    map_path = path.join(file_base_dir, map_file)
+    with open(map_path, "r") as f:
+        contents = f.read()
+        json_contents = loads(contents)
+    for _, _, files in walk(file_base_dir):
+        for file_name in files:
+            if file_name == map_file:
+                continue
+
+            file_path = path.join(file_base_dir, file_name)
+            data = fileinfo(file_path)
+            actual_value = data.get("type", "")
+            expected_value = json_contents[file_name]
+            assert actual_value == expected_value
