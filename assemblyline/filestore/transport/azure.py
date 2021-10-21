@@ -18,6 +18,7 @@ from assemblyline.filestore.transport.base import Transport, TransportException
 This class assumes a flat file structure in the Azure storage blob.
 """
 
+
 @ChainAll(TransportException)
 class TransportAzure(Transport):
 
@@ -131,7 +132,7 @@ class TransportAzure(Transport):
         with open(src_path, "rb") as data:
             blob_client = self.service_client.get_blob_client(self.blob_container, key)
             try:
-                self.with_retries(blob_client.upload_blob, data)
+                self.with_retries(blob_client.upload_blob, data, overwrite=True)
             except TransportException as error:
                 if not isinstance(error.cause, ResourceExistsError):
                     raise
@@ -157,7 +158,7 @@ class TransportAzure(Transport):
         with BytesIO(content) as file_io:
             blob_client = self.service_client.get_blob_client(self.blob_container, key)
             try:
-                self.with_retries(blob_client.upload_blob, file_io)
+                self.with_retries(blob_client.upload_blob, file_io, overwrite=True)
             except TransportException as error:
                 if not isinstance(error.cause, ResourceExistsError):
                     raise
