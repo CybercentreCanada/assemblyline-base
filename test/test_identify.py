@@ -1029,7 +1029,9 @@ def test_fileinfo(file_contents, mocked_return, expected_return, dummy_office_fi
 
 def test_id_file_base():
     from assemblyline.common.identify import fileinfo
-    file_base_dir = "test/id_file_base"
+    tests_dir = path.dirname(__file__)
+    id_file_base = "id_file_base"
+    file_base_dir = path.join(tests_dir, id_file_base)
     map_file = "id_file_base.json"
     map_path = path.join(file_base_dir, map_file)
     with open(map_path, "r") as f:
