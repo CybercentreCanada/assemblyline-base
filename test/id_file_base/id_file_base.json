@@ -1,0 +1,7 @@
+{
+  "text.txt": "unknown",
+  "excel.xlsx": "document/office/excel",
+  "powerpoint.pptx": "document/office/powerpoint",
+  "word.docx": "document/office/word",
+  "png.png": "image/png"
+}
