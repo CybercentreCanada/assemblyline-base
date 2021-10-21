@@ -1035,13 +1035,13 @@ def test_fileinfo(file_contents, mocked_return, expected_return, dummy_office_fi
 
 def test_id_file_base():
     from assemblyline.common.identify import get_digests_for_file, ident
-    file_base_dir = "id_file_base"
+    file_base_dir = "test/id_file_base"
     map_file = "id_file_base.json"
     map_path = path.join(file_base_dir, map_file)
     with open(map_path, "r") as f:
         contents = f.read()
         json_contents = loads(contents)
-    for root, _, files in walk(file_base_dir):
+    for _, _, files in walk(file_base_dir):
         for file_name in files:
             if file_name == map_file:
                 continue
