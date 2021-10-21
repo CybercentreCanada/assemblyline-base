@@ -13,7 +13,7 @@ def normalize_srl_path(srl):
 class TransportException(ChainException):
     """
     FileTransport exception base class.
-    
+
     TransportException is a subclass of ChainException so that it can be
     used with the Chain and ChainAll decorators.
     """
@@ -23,7 +23,7 @@ class TransportException(ChainException):
 class Transport(object):
     """
     FileTransport base class.
-    
+
     - Subclasses should override all methods.
     - Except as noted, FileTransport methods do not return value and raise
     - TransportException on failure.
@@ -32,13 +32,13 @@ class Transport(object):
       respectively, to ensure that any exceptions raised are converted to
       TransportExceptions.
     """
-    
+
     def __init__(self, normalize=normalize_srl_path):
         self.normalize = normalize
 
     def close(self):
         pass
-    
+
     def delete(self, path: str):
         """
         Deletes the file.
@@ -78,7 +78,7 @@ class Transport(object):
         Returns the content of the file.
         """
         raise TransportException("Not Implemented")
-        
+
     def put(self, dst_path: str, content: AnyStr):
         """
         Put the content of the file in memory directly to the filestore dst_path

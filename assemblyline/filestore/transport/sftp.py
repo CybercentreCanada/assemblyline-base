@@ -61,6 +61,7 @@ class TransportSFTP(Transport):
     """
     SFTP Transport class.
     """
+
     def __init__(self, base=None, host=None, password=None, user=None, private_key=None, private_key_pass=None,
                  validate_host=False):
         self.log = logging.getLogger('assemblyline.transport.sftp')
@@ -77,11 +78,11 @@ class TransportSFTP(Transport):
             # If they've provided an absolute path. Leave it a is.
             if path.startswith('/'):
                 s = path
-            # Relative paths 
+            # Relative paths
             elif '/' in path or len(path) != 64:
                 s = posixpath.join(self.base, path)
             else:
-                s = posixpath.join(self.base, normalize_srl_path(path))  
+                s = posixpath.join(self.base, normalize_srl_path(path))
             self.log.debug('sftp normalized: %s -> %s', path, s)
             return s
 
@@ -89,7 +90,7 @@ class TransportSFTP(Transport):
 
     def __str__(self):
         return 'sftp://{}@{}{}'.format(self.user, self.host, self.base)
-        
+
     def close(self):
         if self.sftp:
             self.sftp.close()
