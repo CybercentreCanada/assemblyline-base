@@ -96,6 +96,7 @@ class TransportFTP(Transport):
     """
     FTP Transport class.
     """
+
     def __init__(self, base=None, host=None, password=None, user=None, port=None, use_tls=None):
         self.log: logging.Logger = logging.getLogger('assemblyline.transport.ftp')
         self.base: str = base

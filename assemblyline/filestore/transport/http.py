@@ -12,6 +12,7 @@ class TransportHTTP(Transport):
     """
     HTTP Transport class.
     """
+
     def __init__(self, scheme='http', base=None, host=None, password=None, user=None, pki=None, port=None, verify=None):
         self.log = logging.getLogger('assemblyline.transport.http')
         self.base = base
@@ -60,7 +61,7 @@ class TransportHTTP(Transport):
         if self.base:
             out += self.base
         return out
-        
+
     def close(self):
         if self._session:
             self._session.close()
