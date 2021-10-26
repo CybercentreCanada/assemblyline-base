@@ -19,6 +19,7 @@ from assemblyline.datastore.support.elasticsearch.build import back_mapping, bui
 from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_templates, default_index,
                                                                   default_mapping, default_dynamic_strings)
 
+TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
 write_block_settings = {"settings": {"index.blocks.write": True}}
 write_unblock_settings = {"settings": {"index.blocks.write": None}}
 
@@ -1609,7 +1610,8 @@ class ESStore(BaseStore):
 
         self.client = elasticsearch.Elasticsearch(hosts=hosts,
                                                   connection_class=elasticsearch.RequestsHttpConnection,
-                                                  max_retries=0)
+                                                  max_retries=0,
+                                                  timeout=TRANSPORT_TIMEOUT)
         self.archive_access = archive_access
         self.url_path = 'elastic'
 
@@ -1626,4 +1628,5 @@ class ESStore(BaseStore):
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   connection_class=elasticsearch.RequestsHttpConnection,
-                                                  max_retries=0)
+                                                  max_retries=0,
+                                                  timeout=TRANSPORT_TIMEOUT)
