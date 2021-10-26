@@ -10,5 +10,7 @@
   "calendar.ics": "text/calendar",
   "gzip.gz": "archive/gzip",
   "powershell.ps1": "code/ps1",
-  "jpg.jpg": "image/jpg"
+  "jpg.jpg": "image/jpg",
+  "json.json": "text/json",
+  "javascript.js": "code/javascript"
 }
