@@ -109,3 +109,5 @@
 0	string	AntiVir\040\Qua			custom: quarantine/avira
 0	beshort	0x0BAD					custom: quarantine/windowsdefender
 0	belong	0xDBE8C501				custom: quarantine/windowsdefender
+# Memory Dump Files
+10   string _BIOPSY:                custom: metadata/memorydump
