@@ -191,6 +191,7 @@ RECOGNIZED_TYPES = {
     'java/unknown': True,
     'meta/torrent': True,
     'meta/shortcut/windows': True,
+    'metadata/memorydump': True,
     'metadata/sysmon': True,
     'network/sff': True,
     'network/tcpdump': True,
