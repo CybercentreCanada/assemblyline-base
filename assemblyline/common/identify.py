@@ -34,7 +34,7 @@ STRONG_INDICATORS = {
         re.compile(rb'Set[ \t]*\w+[ \t]*=[ \t]*'),
     ],
     'code/javascript': [
-        re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t]*{'),
+        re.compile(rb'function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t\n\r]*{'),
         re.compile(rb'\beval[ \t]*\('),
         re.compile(rb'new[ \t]+ActiveXObject\('),
         re.compile(rb'xfa\.((resolve|create)Node|datasets|form)'),
@@ -45,8 +45,10 @@ STRONG_INDICATORS = {
     ],
     'code/csharp': [
         re.compile(rb'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
-        re.compile(rb'(^|\n)[ \t]*using[ \t]+[\w.]+;'),
+        re.compile(rb'(^|\n)[ \t]*using[ \t]+(static[ \t]+)*([\w.]+;|\w+[ \t]*=[ \t]*[\w.:<>]+;)'),
         re.compile(rb'(^|\n)[ \t]*internal[ \t]+class[ \t]+'),
+        re.compile(rb'(^|\n)[ \t]*fixed[ \t]+\('),
+        re.compile(rb'IsNullOrWhiteSpace\('),
     ],
     'code/php': [
         re.compile(rb'(^|\n)<\?php'),
@@ -55,9 +57,13 @@ STRONG_INDICATORS = {
         re.compile(rb'\beval[ \t]*\('),
     ],
     'code/c': [
-        re.compile(rb'(^|\n)(static|typedef)?[ \t]+struct[ \t]+'),
+        re.compile(rb'(^|\n)(static|typedef)?[ \t]+(struct|const)[ \t]+'),
         re.compile(rb'(^|\n)#include[ \t]*([<"])[\w./]+([>"])'),
         re.compile(rb'(^|\n)#(ifndef|define|endif|pragma)[ \t]+'),
+        re.compile(rb'(^|\n)public[ \t]*:'),
+        # Microsoft Types
+        re.compile(rb'ULONG|HRESULT|STDMETHOD(_)?'),
+        re.compile(rb'THIS(_)?'),
     ],
     'code/python': [
         re.compile(rb'(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:'),
@@ -75,6 +81,9 @@ STRONG_INDICATORS = {
     'code/java': [
         re.compile(rb'(^|\n)[ \t]*public[ \t]+class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{'),
         re.compile(rb'(^|\n)[\w \t]+\([^)]*\)[ \t]+throws[ \t]+\w+[ \t]*(,[ \t]*\w+[ \t]*)*{'),
+        re.compile(rb'\.hasNext\('),
+        re.compile(rb'[ \t\n]*final[ \t]+\w'),
+        re.compile(rb'(ArrayList|Class|Stack|Map|Set|HashSet|PrivilegedAction|Vector)<(\w|\?)'),
     ],
     'code/perl': [
         re.compile(rb'(^|\n)[ \t]*my[ \t]+\$\w+[ \t]*='),
@@ -405,6 +414,9 @@ trusted_mimes = {
     'application/x-mach-binary': 'executable/mach-o',
     'application/vnd.ms-outlook': 'document/office/email',
     'application/x-iso9660-image': 'archive/iso',
+    'application/x-gettext-translation': 'resource/mo',
+    'application/json': 'text/json',
+    'application/x-dbf': 'db/dbf',
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]

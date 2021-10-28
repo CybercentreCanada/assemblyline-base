@@ -207,6 +207,7 @@ RECOGNIZED_TYPES = {
     'resource/sc': True,
     'resource/unity': True,
     'text/calendar': True,
+    'text/json': True,
     'text/markdown': True,
     'quarantine/ahnlab': True,
     'quarantine/avast': True,
