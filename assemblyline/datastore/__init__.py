@@ -2,7 +2,7 @@ from __future__ import annotations
 import concurrent.futures
 import logging
 import re
-from typing import Any, Iterable, Optional, Union, Generic, TypeVar
+from typing import Any, Iterable, Union, Generic, TypeVar
 import warnings
 
 from datemath import dm
@@ -536,8 +536,8 @@ class Collection(Generic[ModelType]):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def stream_search(self, query, fl=None, filters=(), access_control=None,
-                      item_buffer_size=200, as_obj=True, use_archive=False) -> Iterable[Union[dict[str, Any], ModelType]]:
+    def stream_search(self, query, fl=None, filters=(), access_control=None, item_buffer_size=200,
+                      as_obj=True, use_archive=False) -> Iterable[Union[dict[str, Any], ModelType]]:
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys
