@@ -286,7 +286,7 @@ class ESCollection(Collection):
             except elasticsearch.exceptions.ConnectionTimeout:
                 log.warning(f"Elasticsearch connection timeout, server(s): "
                             f"{' | '.join(self.datastore.get_hosts(safe=True))}"
-                            f", retrying {func}...")
+                            f", retrying {func.__name__}...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
@@ -297,7 +297,7 @@ class ESCollection(Collection):
                 if not isinstance(e, SearchRetryException):
                     log.warning(f"No connection to Elasticsearch server(s): "
                                 f"{' | '.join(self.datastore.get_hosts(safe=True))}"
-                                f", because [{e}] retrying {func}...")
+                                f", because [{e}] retrying {func.__name__}...")
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
