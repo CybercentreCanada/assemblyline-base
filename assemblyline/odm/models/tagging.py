@@ -106,7 +106,6 @@ class Tagging(odm.Model):
                 type = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 type_core = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
-            identity = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             libraries = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             interpreter = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             sections = odm.Optional(odm.Compound(FileELFSections))
