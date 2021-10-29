@@ -20,6 +20,7 @@ from assemblyline.common import forge, log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
 from assemblyline.common.security import get_totp_token, generate_random_secret
 from assemblyline.common.uid import get_random_id
+from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
 from assemblyline.odm.models.signature import RULE_STATUSES
 from assemblyline.remote.datatypes.hash import Hash
 
@@ -531,6 +532,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         Usage:
             service list
+                    cleanup
                     show    <name>
                     disable <name>
                     enable  <name>
@@ -538,6 +540,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         Actions:
             list      List all services on the system
+            cleanup   Remove services incompatible with your version
+                      and fix all service deltas
             disable   Disable the service in the system
             enable    Enable the service in the system
             remove    Remove the service from the system
@@ -550,7 +554,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             # Show service 'Extract'
             service show Extract
         """
-        valid_actions = ['list', 'show', 'disable', 'enable', 'remove']
+        valid_actions = ['list', 'cleanup', 'show', 'disable', 'enable', 'remove']
         args = self._parse_args(args)
 
         if len(args) == 1:
@@ -572,6 +576,33 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             for key in collection.keys():
                 self.logger.info(key)
             return
+        elif action_type == 'cleanup':
+            self.logger.info("Validating services deltas...")
+            versions = set()
+            for key in collection.keys():
+                self.logger.info(f"\t{key}")
+                svc_data = collection.get(key)
+                versions.add(f"{key}_{svc_data.version}")
+                collection.save(key, svc_data)
+
+            self.logger.info("Validating installed services...")
+            system_version = f"{FRAMEWORK_VERSION}.{SYSTEM_VERSION}."
+            to_del = []
+            svc_col = self.datastore.get_collection('service')
+            for key in svc_col.keys():
+                svc_data = svc_col.get(key)
+                if not svc_data.version.startswith(system_version) and key not in versions:
+                    to_del.append(key)
+                else:
+                    svc_col.get(key, svc_data)
+
+            self.logger.info("Removing services not matching your system...")
+            for svc_vers in to_del:
+                self.logger.info(f"\t{svc_vers}")
+                svc_col.delete(svc_vers)
+            self.logger.info("Done!")
+            return
+
         if item_id:
             item = collection.get(item_id)
             if item is None:
