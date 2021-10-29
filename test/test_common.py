@@ -19,7 +19,6 @@ from assemblyline.common import forge
 from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
 from assemblyline.common.chunk import chunked_list, chunk
 from assemblyline.common.classification import InvalidClassification
-from assemblyline.common.compat_tag_map import v3_lookup_map, tag_map, UNUSED
 from assemblyline.common.dict_utils import flatten, unflatten, recursive_update, get_recursive_delta
 from assemblyline.common.entropy import calculate_partition_entropy
 from assemblyline.common.heuristics import InvalidHeuristicException, HeuristicHandler
@@ -129,16 +128,6 @@ def test_classification():
     assert cl_engine.max_classification(dyn1, dyn2) == "UNRESTRICTED//ADMIN//REL TO TEST"
     assert cl_engine.normalize_classification(dyn1, long_format=True) == "UNRESTRICTED//REL TO TEST"
     assert cl_engine.normalize_classification(dyn1, long_format=False) == "U//REL TO TEST"
-
-
-def test_compat_tag_map():
-    flatten_map = flatten(tag_map)
-    for _ in range(10):
-        random_key = random.choice(list(v3_lookup_map.keys()))
-        try:
-            assert random_key in flatten_map[v3_lookup_map[random_key]]
-        except KeyError:
-            assert random_key in UNUSED
 
 
 def test_dict_flatten():
