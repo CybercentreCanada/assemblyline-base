@@ -12,7 +12,6 @@ import signal
 import shutil
 import sys
 import warnings
-from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
 import yaml
 
 from tempfile import gettempdir
@@ -21,6 +20,7 @@ from assemblyline.common import forge, log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
 from assemblyline.common.security import get_totp_token, generate_random_secret
 from assemblyline.common.uid import get_random_id
+from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
 from assemblyline.odm.models.signature import RULE_STATUSES
 from assemblyline.remote.datatypes.hash import Hash
 
