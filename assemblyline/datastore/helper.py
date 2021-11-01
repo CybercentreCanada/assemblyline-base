@@ -8,7 +8,7 @@ from datetime import datetime
 
 import elasticapm
 import elasticsearch
-from assemblyline.datastore.exceptions import MultiKeyError
+from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
@@ -34,7 +34,6 @@ from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.remote.datatypes.lock import Lock
 
 config = forge.get_config()
 
@@ -1054,9 +1053,12 @@ class AssemblylineDatastore(object):
     @elasticapm.capture_span(span_type='datastore')
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None, is_section_image=False):
-        with Lock(f'save-or-freshen-file-{sha256}', 5, host=redis):
-            current_fileinfo = self.ds.file.get_if_exists(
-                sha256, as_obj=False, force_archive_access=config.datastore.ilm.update_archive) or {}
+        while True:
+            current_fileinfo, version = self.ds.file.get_if_exists(
+                sha256, as_obj=False, force_archive_access=config.datastore.ilm.update_archive, version=True)
+
+            if current_fileinfo is None:
+                current_fileinfo = {}
 
             # Remove control fields from file info and update current file info
             for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
@@ -1091,4 +1093,9 @@ class AssemblylineDatastore(object):
             # Update section image status
             current_fileinfo['is_section_image'] = current_fileinfo.get('is_section_image', False) or is_section_image
 
-            self.ds.file.save(sha256, current_fileinfo, force_archive_access=config.datastore.ilm.update_archive)
+            try:
+                self.ds.file.save(sha256, current_fileinfo,
+                                  force_archive_access=config.datastore.ilm.update_archive, version=version)
+                return
+            except VersionConflictException as vce:
+                log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")
