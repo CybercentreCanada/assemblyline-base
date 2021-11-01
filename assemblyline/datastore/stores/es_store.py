@@ -1,9 +1,9 @@
 import json
 import logging
 import time
-
 from copy import deepcopy
 from os import environ
+from random import random
 from typing import Dict
 
 import elasticsearch
@@ -13,11 +13,11 @@ from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore import BaseStore, BulkPlan, Collection, log
-from assemblyline.datastore.exceptions import ILMException, MultiKeyError, SearchException, SearchRetryException, \
-    DataStoreException, VersionConflictException
+from assemblyline.datastore.exceptions import (DataStoreException, ILMException, MultiKeyError, SearchException,
+                                               SearchRetryException, VersionConflictException)
 from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
-from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_templates, default_index,
-                                                                  default_mapping, default_dynamic_strings)
+from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_strings, default_dynamic_templates,
+                                                                  default_index, default_mapping)
 
 write_block_settings = {"settings": {"index.blocks.write": True}}
 write_unblock_settings = {"settings": {"index.blocks.write": None}}
@@ -276,6 +276,8 @@ class ESCollection(Collection):
 
             except elasticsearch.exceptions.ConflictError as ce:
                 if raise_conflicts:
+                    # De-sync potential treads trying to write to the index
+                    time.sleep(random() * 0.1)
                     raise VersionConflictException(str(ce))
                 updated += ce.info.get('updated', 0)
                 deleted += ce.info.get('deleted', 0)
