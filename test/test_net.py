@@ -6,12 +6,11 @@ import requests
 
 def test_domain_list():
     """Make sure we aren't missing any domains."""
-    all_tld = set(TLDS_ALPHA_BY_DOMAIN)
     response = requests.get('https://data.iana.org/TLD/tlds-alpha-by-domain.txt')
     for line in response.text.splitlines():
         if not line or line.startswith('#'):
             continue
-        assert line in all_tld
+        assert line in TLDS_ALPHA_BY_DOMAIN
 
 
 def test_port_check():
@@ -58,4 +57,3 @@ def test_valid_email():
     assert is_valid_email('u#ser@cyber.gc.ca')
     assert is_valid_email('"u#ser"@cyber.gc.ca')
     assert is_valid_email('"user..name"@cyber.gc.ca')
-
