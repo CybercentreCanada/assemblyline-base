@@ -14,7 +14,7 @@ from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore import BaseStore, BulkPlan, Collection, log
 from assemblyline.datastore.exceptions import ILMException, MultiKeyError, SearchException, SearchRetryException, \
-    DataStoreException
+    DataStoreException, VersionConflictException
 from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
 from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_templates, default_index,
                                                                   default_mapping, default_dynamic_strings)
@@ -245,7 +245,7 @@ class ESCollection(Collection):
         else:
             return [self.index_name]
 
-    def with_retries(self, func, *args, **kwargs):
+    def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
         retries = 0
         updated = 0
         deleted = 0
@@ -275,6 +275,8 @@ class ESCollection(Collection):
                     raise
 
             except elasticsearch.exceptions.ConflictError as ce:
+                if raise_conflicts:
+                    raise VersionConflictException(str(ce))
                 updated += ce.info.get('updated', 0)
                 deleted += ce.info.get('deleted', 0)
 
@@ -708,7 +710,7 @@ class ESCollection(Collection):
 
         return found
 
-    def _get(self, key, retries, force_archive_access=False):
+    def _get(self, key, retries, force_archive_access=False, version=False):
 
         def normalize_output(data_output):
             if "__non_doc_raw__" in data_output:
@@ -722,8 +724,10 @@ class ESCollection(Collection):
         done = False
         while not done:
             try:
-                data = self.with_retries(self.datastore.client.get, index=self.name, id=key)['_source']
-                return normalize_output(data)
+                doc = self.with_retries(self.datastore.client.get, index=self.name, id=key)
+                if version:
+                    return normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
+                return normalize_output(doc['_source'])
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
@@ -732,7 +736,10 @@ class ESCollection(Collection):
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                          body=query_body)['hits']['hits']
                 if len(hits) > 0:
-                    return normalize_output(max(hits, key=lambda row: row['_index'])['_source'])
+                    doc = max(hits, key=lambda row: row['_index'])
+                if version:
+                    return normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
+                return normalize_output(doc['_source'])
 
             if retries > 0:
                 time.sleep(0.05)
@@ -742,9 +749,11 @@ class ESCollection(Collection):
             else:
                 done = True
 
+        if version:
+            return None, None
         return None
 
-    def _save(self, key, data, force_archive_access=False):
+    def _save(self, key, data, force_archive_access=False, version=None):
         if self.model_class:
             saved_data = data.as_primitives(hidden_fields=True)
         else:
@@ -755,11 +764,20 @@ class ESCollection(Collection):
 
         saved_data['id'] = key
 
+        if version:
+            seq_no, primary_term = version.split('---')
+        else:
+            seq_no = None
+            primary_term = None
+
         self.with_retries(
             self.datastore.client.index,
             index=self.name,
             id=key,
-            body=json.dumps(saved_data)
+            body=json.dumps(saved_data),
+            if_seq_no=seq_no,
+            if_primary_term=primary_term,
+            raise_conflicts=True
         )
 
         if self.archive_access or (self.ilm_config and force_archive_access):
