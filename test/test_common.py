@@ -202,6 +202,10 @@ def test_heuristics_valid():
         for software_attack_id in software_attack_ids:
             if software_attack_id in attack_map and software_attack_id not in attack_ids_to_fetch_details_for:
                 attack_ids_to_fetch_details_for.append(software_attack_id)
+            elif software_attack_id in revoke_map:
+                revoked_id = revoke_map[software_attack_id]
+                if revoked_id not in attack_ids_to_fetch_details_for:
+                    attack_ids_to_fetch_details_for.append(revoked_id)
             else:
                 print(f"Invalid related attack_id '{software_attack_id}' for software '{software_id}'. Ignoring it.")
     attack_id_details = {
