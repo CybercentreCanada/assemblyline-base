@@ -1053,8 +1053,7 @@ class AssemblylineDatastore(object):
     @elasticapm.capture_span(span_type='datastore')
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None, is_section_image=False):
-        succeeded = False
-        while not succeeded:
+        while True:
             current_fileinfo, version = self.ds.file.get_if_exists(
                 sha256, as_obj=False, force_archive_access=config.datastore.ilm.update_archive, version=True)
 
@@ -1097,7 +1096,6 @@ class AssemblylineDatastore(object):
             try:
                 self.ds.file.save(sha256, current_fileinfo,
                                   force_archive_access=config.datastore.ilm.update_archive, version=version)
-                succeeded = True
+                return
             except VersionConflictException as vce:
                 log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")
-                pass
