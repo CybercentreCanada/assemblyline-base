@@ -106,6 +106,8 @@ class Heuristic(object):
                 for s_a_id in software_def['attack_ids']:
                     if s_a_id in attack_map:
                         self.attack_ids.append(s_a_id)
+                    elif s_a_id in revoke_map:
+                        self.attack_ids.append(revoke_map[s_a_id])
                     else:
                         heur_logger.warning(f"Invalid related attack_id '{s_a_id}' for software '{a_id}' "
                                             f"in heuristic '{heur_id}'. Ignoring it.")
