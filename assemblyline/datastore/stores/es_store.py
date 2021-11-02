@@ -745,12 +745,12 @@ class ESCollection(Collection):
             if self.archive_access or (self.ilm_config and force_archive_access):
                 query_body = {"query": {"ids": {"values": [key]}}}
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
-                                         body=query_body)['hits']['hits']
+                                         body=query_body, seq_no_primary_term=True)['hits']['hits']
                 if len(hits) > 0:
                     doc = max(hits, key=lambda row: row['_index'])
-                if version:
-                    return normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
-                return normalize_output(doc['_source'])
+                    if version:
+                        return normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
+                    return normalize_output(doc['_source'])
 
             if retries > 0:
                 time.sleep(0.05)
