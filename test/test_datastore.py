@@ -2,12 +2,14 @@ import random
 import string
 import time
 import warnings
+import uuid
 
 from datemath import dm
 from retrying import retry
 import pytest
 
 from assemblyline.datastore import Collection
+from assemblyline.datastore.exceptions import VersionConflictException
 
 
 with warnings.catch_warnings():
@@ -399,3 +401,35 @@ def test_short_cursor_exhaustion(es_connection: Collection, reduced_scroll_curso
     for _ in range(20):
         result = es_connection.search(query, rows=2, deep_paging_id='*')
         assert result['total'] == 1
+
+
+def test_atomic_save(es_connection: Collection):
+    """Save a new document atomically, then try to save it again and detect the failure."""
+    unique_id = uuid.uuid4().hex
+    data = {
+        'id': unique_id,
+        'cats': 'good'
+    }
+
+    # Verify the document is new
+    no_data, version = es_connection.get_if_exists(unique_id, as_obj=False, version=True)
+    assert no_data is None
+    assert version is not None
+
+    # Save atomically with version set
+    es_connection.save(unique_id, data, version=version)
+
+    # Make sure we can't save again with the same 'version'
+    with pytest.raises(VersionConflictException):
+        es_connection.save(unique_id, data, version=version)
+
+    # Get the data, which exists now
+    new_data, version = es_connection.get_if_exists(unique_id, as_obj=False, version=True)
+    assert new_data is not None
+
+    # Overwrite with real version
+    es_connection.save(unique_id, data, version=version)
+
+    # But it should only work once
+    with pytest.raises(VersionConflictException):
+        es_connection.save(unique_id, data, version=version)
