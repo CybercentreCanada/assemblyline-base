@@ -23,6 +23,11 @@ TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
 write_block_settings = {"settings": {"index.blocks.write": True}}
 write_unblock_settings = {"settings": {"index.blocks.write": None}}
 
+# A token value to represent a document not existing. Its a string to match the
+# type used for version values. Any string will do as long as it never matches
+# a real version string.
+CREATE_TOKEN = 'create'
+
 
 def _strip_lists(model, data):
     """Elasticsearch returns everything as lists, regardless of whether
@@ -722,6 +727,20 @@ class ESCollection(Collection):
         return found
 
     def _get(self, key, retries, force_archive_access=False, version=False):
+        """
+
+        Versioned get-save for atomic update has three paths:
+            1. Document doesn't exist at all. Create token will be returned for version.
+               This way only the first query to try and create the document will succeed.
+            2. Document exists in archive. Create token will be returned for version.
+               This way only the first query to try and 'move' the value from archive to hot will succeed.
+            3. Document exists in hot. A version string with the info needed to do a versioned save is returned.
+
+        The create token is needed to differentiate between "I'm saving a new
+        document non-atomic (version=None)" and "I'm saving a new document
+        atomically (version=CREATE_TOKEN)".
+
+        """
 
         def normalize_output(data_output):
             if "__non_doc_raw__" in data_output:
@@ -745,11 +764,11 @@ class ESCollection(Collection):
             if self.archive_access or (self.ilm_config and force_archive_access):
                 query_body = {"query": {"ids": {"values": [key]}}}
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
-                                         body=query_body, seq_no_primary_term=True)['hits']['hits']
+                                         body=query_body)['hits']['hits']
                 if len(hits) > 0:
                     doc = max(hits, key=lambda row: row['_index'])
                     if version:
-                        return normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
+                        return normalize_output(doc['_source']), CREATE_TOKEN
                     return normalize_output(doc['_source'])
 
             if retries > 0:
@@ -761,7 +780,7 @@ class ESCollection(Collection):
                 done = True
 
         if version:
-            return None, None
+            return None, CREATE_TOKEN
         return None
 
     def _save(self, key, data, force_archive_access=False, version=None):
@@ -774,18 +793,21 @@ class ESCollection(Collection):
                 saved_data = deepcopy(data)
 
         saved_data['id'] = key
+        operation = 'index'
+        seq_no = None
+        primary_term = None
 
-        if version:
+        if version == CREATE_TOKEN:
+            operation = 'create'
+        elif version:
             seq_no, primary_term = version.split('---')
-        else:
-            seq_no = None
-            primary_term = None
 
         self.with_retries(
             self.datastore.client.index,
             index=self.name,
             id=key,
             body=json.dumps(saved_data),
+            op_type=operation,
             if_seq_no=seq_no,
             if_primary_term=primary_term,
             raise_conflicts=True
