@@ -804,8 +804,6 @@ class ESCollection(Collection):
             raise_conflicts=True
         )
 
-        if self.archive_access or (self.ilm_config and force_archive_access):
-            self._delete_async(f"{self.name}-*", {"query": {"ids": {"values": [key]}}})
         return True
 
     def delete(self, key):
