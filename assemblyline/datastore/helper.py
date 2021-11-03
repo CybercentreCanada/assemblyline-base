@@ -1094,8 +1094,7 @@ class AssemblylineDatastore(object):
             current_fileinfo['is_section_image'] = current_fileinfo.get('is_section_image', False) or is_section_image
 
             try:
-                self.ds.file.save(sha256, current_fileinfo,
-                                  force_archive_access=config.datastore.ilm.update_archive, version=version)
+                self.ds.file.save(sha256, current_fileinfo, version=version)
                 return
             except VersionConflictException as vce:
                 log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")

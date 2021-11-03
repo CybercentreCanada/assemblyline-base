@@ -318,7 +318,7 @@ class Collection(Generic[ModelType]):
             return self.normalize(data, as_obj=as_obj), version
         return self.normalize(data, as_obj=as_obj)
 
-    def save(self, key, data, force_archive_access=False, version=None):
+    def save(self, key, data, version=None):
         """
         Save a to document to the datastore using the key as its document id.
 
@@ -333,9 +333,9 @@ class Collection(Generic[ModelType]):
         if " " in key:
             raise DataStoreException("You are not allowed to use spaces in datastore keys.")
 
-        return self._save(key, self.normalize(data), force_archive_access=force_archive_access, version=version)
+        return self._save(key, self.normalize(data), version=version)
 
-    def _save(self, key, data, force_archive_access=False, version=None):
+    def _save(self, key, data, version=None):
         """
         This function should takes in an instance of the the model class as input
         and saves it to the database backend at the id mentioned by the key.
