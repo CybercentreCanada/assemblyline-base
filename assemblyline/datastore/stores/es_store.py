@@ -425,7 +425,7 @@ class ESCollection(Collection):
         if res['total'] == total_archived or max_docs == total_archived:
             if total_archived != 0:
                 delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-                info = self._delete_async(self.name, delete_body, max_docs=max_docs, sort=sort)
+                info = self._delete_async(self.name, delete_body, max_docs=max_docs, sort=sort_str(parse_sort(sort)))
                 return info.get('deleted', 0) == total_archived
             else:
                 return True
