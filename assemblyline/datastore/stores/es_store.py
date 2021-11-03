@@ -401,7 +401,7 @@ class ESCollection(Collection):
             else:
                 updated += res['updated']
 
-    def archive(self, query):
+    def archive(self, query, max_docs=None, sort=None):
         if not self.archive_access:
             return False
 
@@ -422,13 +422,19 @@ class ESCollection(Collection):
                 "index": f"{self.name}-archive"
             }
         }
+        if max_docs:
+            reindex_body['source']['size'] = max_docs
+
+        if sort:
+            reindex_body['source']['sort'] = parse_sort(sort)
+
         r_task = self.with_retries(self.datastore.client.reindex, reindex_body, wait_for_completion=False)
         res = self._get_task_results(r_task)
         total_archived = res['updated'] + res['created']
-        if res['total'] == total_archived:
+        if res['total'] == total_archived or max_docs == total_archived:
             if total_archived != 0:
                 delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-                info = self._delete_async(self.name, delete_body)
+                info = self._delete_async(self.name, delete_body, max_docs=max_docs, sort=sort_str(parse_sort(sort)))
                 return info.get('deleted', 0) == total_archived
             else:
                 return True
@@ -762,7 +768,7 @@ class ESCollection(Collection):
                 pass
 
             if self.archive_access or (self.ilm_config and force_archive_access):
-                query_body = {"query": {"ids": {"values": [key]}}}
+                query_body = {"query": {"ids": {"values": [key]}}, 'size': 1}
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                          body=query_body)['hits']['hits']
                 if len(hits) > 0:
