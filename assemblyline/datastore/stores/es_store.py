@@ -774,7 +774,7 @@ class ESCollection(Collection):
             return None, CREATE_TOKEN
         return None
 
-    def _save(self, key, data, force_archive_access=False, version=None):
+    def _save(self, key, data, version=None):
         if self.model_class:
             saved_data = data.as_primitives(hidden_fields=True)
         else:
