@@ -1,9 +1,9 @@
 import json
 import logging
 import time
-
 from copy import deepcopy
 from os import environ
+from random import random
 from typing import Dict
 
 import elasticsearch
@@ -13,14 +13,19 @@ from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore import BaseStore, BulkPlan, Collection, log
-from assemblyline.datastore.exceptions import ILMException, MultiKeyError, SearchException, SearchRetryException, \
-    DataStoreException
+from assemblyline.datastore.exceptions import (DataStoreException, ILMException, MultiKeyError, SearchException,
+                                               SearchRetryException, VersionConflictException)
 from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
-from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_templates, default_index,
-                                                                  default_mapping, default_dynamic_strings)
+from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_strings, default_dynamic_templates,
+                                                                  default_index, default_mapping)
 
 write_block_settings = {"settings": {"index.blocks.write": True}}
 write_unblock_settings = {"settings": {"index.blocks.write": None}}
+
+# A token value to represent a document not existing. Its a string to match the
+# type used for version values. Any string will do as long as it never matches
+# a real version string.
+CREATE_TOKEN = 'create'
 
 
 def _strip_lists(model, data):
@@ -245,7 +250,7 @@ class ESCollection(Collection):
         else:
             return [self.index_name]
 
-    def with_retries(self, func, *args, **kwargs):
+    def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
         retries = 0
         updated = 0
         deleted = 0
@@ -275,6 +280,10 @@ class ESCollection(Collection):
                     raise
 
             except elasticsearch.exceptions.ConflictError as ce:
+                if raise_conflicts:
+                    # De-sync potential treads trying to write to the index
+                    time.sleep(random() * 0.1)
+                    raise VersionConflictException(str(ce))
                 updated += ce.info.get('updated', 0)
                 deleted += ce.info.get('deleted', 0)
 
@@ -383,7 +392,7 @@ class ESCollection(Collection):
             else:
                 updated += res['updated']
 
-    def archive(self, query):
+    def archive(self, query, max_docs=None, sort=None):
         if not self.archive_access:
             return False
 
@@ -404,13 +413,19 @@ class ESCollection(Collection):
                 "index": f"{self.name}-archive"
             }
         }
+        if max_docs:
+            reindex_body['source']['size'] = max_docs
+
+        if sort:
+            reindex_body['source']['sort'] = parse_sort(sort)
+
         r_task = self.with_retries(self.datastore.client.reindex, reindex_body, wait_for_completion=False)
         res = self._get_task_results(r_task)
         total_archived = res['updated'] + res['created']
-        if res['total'] == total_archived:
+        if res['total'] == total_archived or max_docs == total_archived:
             if total_archived != 0:
                 delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
-                info = self._delete_async(self.name, delete_body)
+                info = self._delete_async(self.name, delete_body, max_docs=max_docs, sort=sort_str(parse_sort(sort)))
                 return info.get('deleted', 0) == total_archived
             else:
                 return True
@@ -708,7 +723,21 @@ class ESCollection(Collection):
 
         return found
 
-    def _get(self, key, retries, force_archive_access=False):
+    def _get(self, key, retries, force_archive_access=False, version=False):
+        """
+
+        Versioned get-save for atomic update has three paths:
+            1. Document doesn't exist at all. Create token will be returned for version.
+               This way only the first query to try and create the document will succeed.
+            2. Document exists in archive. Create token will be returned for version.
+               This way only the first query to try and 'move' the value from archive to hot will succeed.
+            3. Document exists in hot. A version string with the info needed to do a versioned save is returned.
+
+        The create token is needed to differentiate between "I'm saving a new
+        document non-atomic (version=None)" and "I'm saving a new document
+        atomically (version=CREATE_TOKEN)".
+
+        """
 
         def normalize_output(data_output):
             if "__non_doc_raw__" in data_output:
@@ -722,17 +751,21 @@ class ESCollection(Collection):
         done = False
         while not done:
             try:
-                data = self.with_retries(self.datastore.client.get, index=self.name, id=key)['_source']
-                return normalize_output(data)
+                doc = self.with_retries(self.datastore.client.get, index=self.name, id=key)
+                if version:
+                    return normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
+                return normalize_output(doc['_source'])
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
             if self.archive_access or (self.ilm_config and force_archive_access):
-                query_body = {"query": {"ids": {"values": [key]}}}
+                query_body = {"query": {"ids": {"values": [key]}}, 'size': 1, 'sort': {'_index': 'desc'}}
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                          body=query_body)['hits']['hits']
                 if len(hits) > 0:
-                    return normalize_output(max(hits, key=lambda row: row['_index'])['_source'])
+                    if version:
+                        return normalize_output(hits[0]['_source']), CREATE_TOKEN
+                    return normalize_output(hits[0]['_source'])
 
             if retries > 0:
                 time.sleep(0.05)
@@ -742,9 +775,11 @@ class ESCollection(Collection):
             else:
                 done = True
 
+        if version:
+            return None, CREATE_TOKEN
         return None
 
-    def _save(self, key, data, force_archive_access=False):
+    def _save(self, key, data, version=None):
         if self.model_class:
             saved_data = data.as_primitives(hidden_fields=True)
         else:
@@ -754,16 +789,26 @@ class ESCollection(Collection):
                 saved_data = deepcopy(data)
 
         saved_data['id'] = key
+        operation = 'index'
+        seq_no = None
+        primary_term = None
+
+        if version == CREATE_TOKEN:
+            operation = 'create'
+        elif version:
+            seq_no, primary_term = version.split('---')
 
         self.with_retries(
             self.datastore.client.index,
             index=self.name,
             id=key,
-            body=json.dumps(saved_data)
+            body=json.dumps(saved_data),
+            op_type=operation,
+            if_seq_no=seq_no,
+            if_primary_term=primary_term,
+            raise_conflicts=True
         )
 
-        if self.archive_access or (self.ilm_config and force_archive_access):
-            self._delete_async(f"{self.name}-*", {"query": {"ids": {"values": [key]}}})
         return True
 
     def delete(self, key):

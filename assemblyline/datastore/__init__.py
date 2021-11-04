@@ -248,7 +248,7 @@ class Collection(Generic[ModelType]):
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def _get(self, key, retries, force_archive_access=False) -> Any:
+    def _get(self, key, retries, force_archive_access=False, version=False) -> Any:
         """
         This function should be overloaded in a way that if the document is not found,
         the function retries to get the document the specified amount of time.
@@ -257,11 +257,12 @@ class Collection(Generic[ModelType]):
 
         :param key: key of the document to get from the datastore
         :param retries: number of time to retry if the document can't be found
+        :param version: should the version number be returned by the call
         :return: The document strait of the datastore
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
 
-    def get(self, key, as_obj=True, force_archive_access=False):
+    def get(self, key, as_obj=True, force_archive_access=False, version=False):
         """
         Get a document from the datastore, retry a few times if not found and normalize the
         document with the model provided with the collection.
@@ -271,12 +272,16 @@ class Collection(Generic[ModelType]):
         :param force_archive_access: Temporary force access to archive during this call
         :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
+        :param version: should the version number be returned by the call
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_NORMAL, force_archive_access=force_archive_access),
-                              as_obj=as_obj)
+        data = self._get(key, self.RETRY_NORMAL, force_archive_access=force_archive_access, version=version)
+        if version:
+            data, version = data
+            return self.normalize(data, as_obj=as_obj), version
+        return self.normalize(data, as_obj=as_obj)
 
-    def get_if_exists(self, key, as_obj=True, force_archive_access=False):
+    def get_if_exists(self, key, as_obj=True, force_archive_access=False, version=False):
         """
         Get a document from the datastore but do not retry if not found.
 
@@ -286,12 +291,16 @@ class Collection(Generic[ModelType]):
         :param force_archive_access: Temporary force access to archive during this call
         :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
+        :param version: should the version number be returned by the call
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_NONE, force_archive_access=force_archive_access),
-                              as_obj=as_obj)
+        data = self._get(key, self.RETRY_NONE, force_archive_access=force_archive_access, version=version)
+        if version:
+            data, version = data
+            return self.normalize(data, as_obj=as_obj), version
+        return self.normalize(data, as_obj=as_obj)
 
-    def require(self, key, as_obj=True, force_archive_access=False) -> Union[dict[str, Any], ModelType]:
+    def require(self, key, as_obj=True, force_archive_access=False, version=False) -> Union[dict[str, Any], ModelType]:
         """
         Get a document from the datastore and retry forever because we know for sure
         that this document should exist. If it does not right now, this will wait for the
@@ -300,12 +309,16 @@ class Collection(Generic[ModelType]):
         :param force_archive_access: Temporary force access to archive during this call
         :param as_obj: Should the data be returned as an ODM object
         :param key: key of the document to get from the datastore
+        :param version: should the version number be returned by the call
         :return: an instance of the model class loaded with the document data
         """
-        return self.normalize(self._get(key, self.RETRY_INFINITY, force_archive_access=force_archive_access),
-                              as_obj=as_obj)
+        data = self._get(key, self.RETRY_INFINITY, force_archive_access=force_archive_access, version=version)
+        if version:
+            data, version = data
+            return self.normalize(data, as_obj=as_obj), version
+        return self.normalize(data, as_obj=as_obj)
 
-    def save(self, key, data, force_archive_access=False):
+    def save(self, key, data, version=None):
         """
         Save a to document to the datastore using the key as its document id.
 
@@ -314,14 +327,15 @@ class Collection(Generic[ModelType]):
         :param force_archive_access: Temporary force access to archive during this call
         :param key: ID of the document to save
         :param data: raw data or instance of the model class to save as the document
+        :param version: version of the document to save over, if the version check fails this will raise an exception
         :return: True if the document was saved properly
         """
         if " " in key:
             raise DataStoreException("You are not allowed to use spaces in datastore keys.")
 
-        return self._save(key, self.normalize(data), force_archive_access=force_archive_access)
+        return self._save(key, self.normalize(data), version=version)
 
-    def _save(self, key, data, force_archive_access=False):
+    def _save(self, key, data, version=None):
         """
         This function should takes in an instance of the the model class as input
         and saves it to the database backend at the id mentioned by the key.
@@ -331,6 +345,7 @@ class Collection(Generic[ModelType]):
         :param force_archive_access: Temporary force access to archive during this call
         :param key: key to use to store the document
         :param data: instance of the model class to save to the database
+        :param version: version of the document to save over, if the version check fails this will raise an exception
         :return: True if save was successful
         """
         raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
