@@ -768,14 +768,13 @@ class ESCollection(Collection):
                 pass
 
             if self.archive_access or (self.ilm_config and force_archive_access):
-                query_body = {"query": {"ids": {"values": [key]}}, 'size': 1}
+                query_body = {"query": {"ids": {"values": [key]}}, 'size': 1, 'sort': {'_index': 'desc'}}
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                          body=query_body)['hits']['hits']
                 if len(hits) > 0:
-                    doc = max(hits, key=lambda row: row['_index'])
                     if version:
-                        return normalize_output(doc['_source']), CREATE_TOKEN
-                    return normalize_output(doc['_source'])
+                        return normalize_output(hits[0]['_source']), CREATE_TOKEN
+                    return normalize_output(hits[0]['_source'])
 
             if retries > 0:
                 time.sleep(0.05)
