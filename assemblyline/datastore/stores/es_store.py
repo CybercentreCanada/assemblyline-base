@@ -522,10 +522,11 @@ class ESCollection(Collection):
         method = None
         temp_name = f'{self.name}__fix_shards'
 
-        current_settings = self.with_retries(self.datastore.client.indices.get_settings).get(self.index_name, None)
+        indexes_settings = self.with_retries(self.datastore.client.indices.get_settings)
+        current_settings = indexes_settings.get(self.index_name, indexes_settings.get(temp_name, None))
         if not current_settings:
             raise DataStoreException(
-                'Could not get current index settings. Something is wrong and requires namual intervention...')
+                'Could not get current index settings. Something is wrong and requires manual intervention...')
 
         cur_replicas = int(current_settings['settings']['index']['number_of_replicas'])
         cur_shards = int(current_settings['settings']['index']['number_of_shards'])
