@@ -315,17 +315,19 @@ class ESCollection(Collection):
             except elasticsearch.exceptions.TransportError as e:
                 err_code, msg, cause = e.args
                 if err_code == 503 or err_code == '503':
-                    log.warning("Looks like index is not ready yet, retrying...")
+                    log.warning(f"Looks like index {self.name} is not ready yet, retrying...")
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.datastore.connection_reset()
                     retries += 1
                 elif err_code == 429 or err_code == '429':
-                    log.warning("Elasticsearch is too busy to perform the requested task, retrying...")
+                    log.warning("Elasticsearch is too busy to perform the requested "
+                                f"task on index {self.name}, retrying...")
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.datastore.connection_reset()
                     retries += 1
                 elif err_code == 403 or err_code == '403':
-                    log.warning("Elasticsearch cluster is preventing writing operations, retrying...")
+                    log.warning("Elasticsearch cluster is preventing writing operations "
+                                f"on index {self.name}, retrying...")
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.datastore.connection_reset()
                     retries += 1
