@@ -4,6 +4,7 @@ import logging
 import os
 import posixpath
 import threading
+import socket
 import time
 import errno
 import weakref
@@ -56,6 +57,9 @@ def reconnect_retry_on_fail(func):
 
             except ftplib.Error as e:
                 msg = str(e) or "Unknown FTP Error"
+
+            except socket.gaierror as e:
+                msg = str(e) or "Unknown DNS Error"
 
             except IOError as e:
                 # May need to ignore other errors as well
