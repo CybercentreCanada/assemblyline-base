@@ -1,26 +1,25 @@
-version: '3'
+version: "3"
 
 services:
-
   minio:
     image: minio/minio
     environment:
       MINIO_ACCESS_KEY: al_storage_key
       MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
     ports:
-      - '9000:9000'
+      - "9000:9000"
     command: server /data
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.1
     environment:
       - discovery.type=single-node
       - logger.level=WARN
       - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
     ports:
-      - '9200:9200'
+      - "9200:9200"
 
   redis:
     image: redis
     ports:
-      - '6379:6379'
+      - "6379:6379"
