@@ -1,10 +1,11 @@
-elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+elasticsearch.hosts: ["http://elasticsearch:9200"]
 elasticsearch.password: devpass
 elasticsearch.username: elastic
 
 logging.quiet: true
 
 server.basePath: /kibana
+server.publicBaseUrl: https://localhost/kibana
 server.rewriteBasePath: true
 server.name: kibana
 server.host: "0"
