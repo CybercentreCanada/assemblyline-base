@@ -89,10 +89,7 @@ def get_client(host, port, private, cluster=None):
         if cluster is False:
             return client
 
-    if private:
-        return redis.cluster.RedisCluster(host=host, port=port)
-    else:
-        return redis.cluster.RedisCluster(connection_pool=get_pool(host, port))
+    return redis.cluster.RedisCluster(host=host, port=port, max_connections=200)
 
 
 def get_pool(host, port):
