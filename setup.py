@@ -64,7 +64,10 @@ setup(
         'pysftp',
         'netifaces',
         'pyroute2.core',
-        'redis',
+        # 'redis', # START TEMPORARY DEPENDENCY UNTIL redis-py 4.1.0 is released
+        "https://github.com/barshaul/redis-py/archive/refs/heads/master.zip",
+        "hiredis",
+        # END TEMPORARY DEPENDENCY
         'requests',
         'elasticsearch>=7.0.0,<8.0.0,!=7.0.3',  # 7.0.3 is excluded due to an error
         'python-datemath',

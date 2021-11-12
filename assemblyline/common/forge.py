@@ -181,6 +181,17 @@ def get_tag_safelister(log=None, yml_config=None, config=None, datastore=None):
     return TagSafelister(tag_safelist_data, log=log)
 
 
+def get_pubsub_redis(host=None, port=None, private=False):
+    from assemblyline.remote.datatypes import get_client
+
+    if host is None or port is None:
+        config = get_config()
+        host = config.core.redis.pubsub.host
+        port = config.core.redis.pubsub.port
+
+    return get_client(host, port, private, cluster=False)
+
+
 class CachedObject:
     """An object proxy that automatically refreshes its target periodically."""
 
