@@ -468,11 +468,13 @@ DEFAULT_METRICS = {
 class Redis(odm.Model):
     nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
     persistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
+    pubsub: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
 
 
 DEFAULT_REDIS = {
     "nonpersistent": DEFAULT_REDIS_NP,
-    "persistent": DEFAULT_REDIS_P
+    "persistent": DEFAULT_REDIS_P,
+    "pubsub": DEFAULT_REDIS_NP,
 }
 
 

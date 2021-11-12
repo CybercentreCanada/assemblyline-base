@@ -1,12 +1,13 @@
 import json
 import redis
 
-from assemblyline.remote.datatypes import get_client, retry_call, log, decode
+from assemblyline.common.forge import get_pubsub_redis
+from assemblyline.remote.datatypes import retry_call, log, decode
 
 
-class CommsQueue(object):
+class CommsQueue:
     def __init__(self, names, host=None, port=None, private=False):
-        self.c = get_client(host, port, private)
+        self.c = get_pubsub_redis(host, port, private)
         self.p = retry_call(self.c.pubsub)
         if not isinstance(names, list):
             names = [names]

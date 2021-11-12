@@ -26,11 +26,7 @@ class MetricsFactory(object):
     """
     def __init__(self, metrics_type, schema, name=None, redis=None, config=None):
         self.config = config or forge.get_config()
-        self.redis = redis or get_client(
-            self.config.core.metrics.redis.host,
-            self.config.core.metrics.redis.port,
-            False
-        )
+        self.redis = redis or forge.get_pubsub_redis()
 
         # Separate out the timers and normal counters
         timer_schema = set()

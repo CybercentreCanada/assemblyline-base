@@ -135,11 +135,7 @@ def export_metrics_once(name, schema, metrics, host=None, counter_type=None, con
     the service server, but that may require significant downstream changes in the metrics system.
     """
     config = config or forge.get_config()
-    redis = redis or get_client(
-        config.core.metrics.redis.host,
-        config.core.metrics.redis.port,
-        False
-    )
+    redis = redis or forge.get_pubsub_redis()
 
     # Separate out the timers and normal counters
     timer_schema = set()
