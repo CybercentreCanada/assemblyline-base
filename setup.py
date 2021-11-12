@@ -65,7 +65,7 @@ setup(
         'netifaces',
         'pyroute2.core',
         # 'redis', # START TEMPORARY DEPENDENCY UNTIL redis-py 4.1.0 is released
-        "https://github.com/barshaul/redis-py/archive/refs/heads/master.zip",
+        "redis @ https://github.com/barshaul/redis-py/archive/refs/heads/master.zip",
         "hiredis",
         # END TEMPORARY DEPENDENCY
         'requests',
