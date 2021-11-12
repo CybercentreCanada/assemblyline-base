@@ -63,7 +63,7 @@ def retry_call(func, *args, **kw):
             exponent = exponent + 1 if exponent < maximum else exponent
 
 
-def get_client(host, port, private):
+def get_client(host, port, private, cluster=None):
     # In case a structure is passed a client as host
     if isinstance(host, (redis.Redis, redis.StrictRedis)):
         return host
@@ -74,10 +74,25 @@ def get_client(host, port, private):
         host = host or config.core.redis.nonpersistent.host
         port = int(port or config.core.redis.nonpersistent.port)
 
+    if cluster is None or cluster is False:
+        if private:
+            client = redis.StrictRedis(host=host, port=port)
+        else:
+            client = redis.StrictRedis(connection_pool=get_pool(host, port))
+
+        if cluster is False:
+            return client
+
+        info = retry_call(client.info)
+        cluster = info['redis_mode'] == 'cluster'
+
+        if cluster is False:
+            return client
+
     if private:
-        return redis.StrictRedis(host=host, port=port)
+        return redis.cluster.RedisCluster(host=host, port=port)
     else:
-        return redis.StrictRedis(connection_pool=get_pool(host, port))
+        return redis.cluster.RedisCluster(connection_pool=get_pool(host, port))
 
 
 def get_pool(host, port):

@@ -189,7 +189,7 @@ def get_pubsub_redis(host=None, port=None, private=False):
         host = config.core.redis.pubsub.host
         port = config.core.redis.pubsub.port
 
-    return get_client(host, port, private)
+    return get_client(host, port, private, cluster=False)
 
 
 class CachedObject:
