@@ -27,8 +27,7 @@ __type_mapping = {
     MD5: 'keyword',
     Platform: 'keyword',
     Processor: 'keyword',
-    FlattenedObject: 'nested',
-    Any: 'keyword',
+    FlattenedObject: 'nested'
 }
 __analyzer_mapping = {
     SSDeepHash: 'text_fuzzy',
