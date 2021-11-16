@@ -23,8 +23,8 @@ return 0
 
 
 h_pop_script = """
-local result = redis.call('hget', ARGV[1], ARGV[2])
-if result then redis.call('hdel', ARGV[1], ARGV[2]) end
+local result = redis.call('hget', KEYS[1], ARGV[1])
+if result then redis.call('hdel', KEYS[1], ARGV[1]) end
 return result
 """
 
@@ -132,7 +132,7 @@ class Hash(Generic[T]):
         return bool(retry_call(self._conditional_remove, keys=[self.name], args=[key, json.dumps(value)]))
 
     def pop(self, key: str):
-        item = retry_call(self._pop, args=[self.name, key])
+        item = retry_call(self._pop, keys=[self.name], args=[key])
         if not item:
             return item
         return json.loads(item)

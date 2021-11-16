@@ -65,10 +65,7 @@ setup(
         'netifaces',
         'pyroute2.core',
         'redis',
-        # START TEMPORARY DEPENDENCY UNTIL redis-py 4.1.0 is released
-        # "redis @ https://github.com/barshaul/redis-py/archive/refs/heads/master.zip",
-        # "hiredis",
-        # END TEMPORARY DEPENDENCY
+        'redis-py-cluster',
         'requests',
         'elasticsearch>=7.0.0,<8.0.0,!=7.0.3',  # 7.0.3 is excluded due to an error
         'python-datemath',

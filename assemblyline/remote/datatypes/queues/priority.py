@@ -1,4 +1,6 @@
 from __future__ import annotations
+from collections import defaultdict
+import time
 import json
 from typing import Generic, Optional, TypeVar, Union
 
@@ -30,8 +32,8 @@ return entries
 # ARGV[1]: <queue name>
 # ARGV[2]: <max items to pop minus one>
 pq_pop_script = """
-local result = redis.call('zrange', ARGV[1], 0, ARGV[2])
-if result then redis.call('zremrangebyrank', ARGV[1], 0, ARGV[2]) end
+local result = redis.call('zrange', KEYS[1], 0, ARGV[1])
+if result then redis.call('zremrangebyrank', KEYS[1], 0, ARGV[1]) end
 return result
 """
 
@@ -40,18 +42,18 @@ return result
 # ARGV[3]: <vip>,
 # ARGV[4]: <item (string) to push>
 pq_push_script = """
-local seq = string.format('%020d', redis.call('incr', 'global-sequence'))
-local vip = string.format('%1d', ARGV[3])
-local value = vip..seq..ARGV[4]
-redis.call('zadd', ARGV[1], 0 - ARGV[2], value)
+local seq = string.format('%020d', ARGV[4])
+local vip = string.format('%1d', ARGV[2])
+local value = vip..seq..ARGV[3]
+redis.call('zadd', KEYS[1], 0 - ARGV[1], value)
 return value
 """
 
 # ARGV[1]: <queue name>
 # ARGV[2]: <max items to unpush>
 pq_unpush_script = """
-local result = redis.call('zrange', ARGV[1], 0 - ARGV[2], 0 - 1)
-if result then redis.call('zremrangebyrank', ARGV[1], 0 - ARGV[2], 0 - 1) end
+local result = redis.call('zrange', KEYS[1], 0 - ARGV[1], 0 - 1)
+if result then redis.call('zremrangebyrank', KEYS[1], 0 - ARGV[1], 0 - 1) end
 return result
 """
 
@@ -87,9 +89,9 @@ class PriorityQueue(Generic[T]):
             return []
 
         if num:
-            return [decode(s[21:]) for s in retry_call(self.r, args=[self.name, num-1])]
+            return [decode(s[21:]) for s in retry_call(self.r, keys=[self.name], args=[num-1])]
         else:
-            ret_val = retry_call(self.r, args=[self.name, 0])
+            ret_val = retry_call(self.r, keys=[self.name], args=[0])
             if ret_val:
                 return decode(ret_val[0][21:])
             return None
@@ -119,7 +121,7 @@ class PriorityQueue(Generic[T]):
 
     def push(self, priority: int, data: T, vip=None):
         vip = 0 if vip else 9
-        return retry_call(self.s, args=[self.name, priority, vip, json.dumps(data)])
+        return retry_call(self.s, keys=[self.name], args=[priority, vip, json.dumps(data), int(time.time()*10000)])
 
     def rank(self, raw_value):
         return retry_call(self.c.zrank, self.name, raw_value)
@@ -132,9 +134,9 @@ class PriorityQueue(Generic[T]):
             return []
 
         if num:
-            return [decode(s[21:]) for s in retry_call(self.t, args=[self.name, num])]
+            return [decode(s[21:]) for s in retry_call(self.t, keys=[self.name], args=[num])]
         else:
-            ret_val = retry_call(self.t, args=[self.name, 1])
+            ret_val = retry_call(self.t, keys=[self.name], args=[1])
             if ret_val:
                 return decode(ret_val[0][21:])
             return None
@@ -166,9 +168,9 @@ class UniquePriorityQueue(PriorityQueue):
             return []
 
         if num:
-            return [decode(s) for s in retry_call(self.r, args=[self.name, num-1])]
+            return [decode(s) for s in retry_call(self.r, keys=[self.name], args=[num-1])]
         else:
-            ret_val = retry_call(self.r, args=[self.name, 0])
+            ret_val = retry_call(self.r, keys=[self.name], args=[0])
             if ret_val:
                 return decode(ret_val[0])
             return None
@@ -178,9 +180,9 @@ class UniquePriorityQueue(PriorityQueue):
             return []
 
         if num:
-            return [decode(s) for s in retry_call(self.t, args=[self.name, num])]
+            return [decode(s) for s in retry_call(self.t, keys=[self.name], args=[num])]
         else:
-            ret_val = retry_call(self.t, args=[self.name, 1])
+            ret_val = retry_call(self.t, keys=[self.name], args=[1])
             if ret_val:
                 return decode(ret_val[0])
             return None
@@ -203,19 +205,50 @@ class UniquePriorityQueue(PriorityQueue):
 
 
 def select(*queues, **kw):
+    """
+    Do a blocking pop on each queue in sequence.
+
+    Queues that map to the same keyslot will get bundled into the same call.
+
+    This isn't as efficent as it was on a single node. Consider carefully
+    the options if you need efficent select over many queues, this probably isn't it.
+    """
+
     timeout = kw.get('timeout', 0)
     if len(queues) < 1:
         raise TypeError('At least one queue must be specified')
     if any([type(q) != PriorityQueue for q in queues]):
         raise TypeError('Only NamedQueues supported')
 
-    c = queues[0].c
-    response = retry_call(c.bzpopmin, [q.name for q in queues], timeout)
+    client = queues[0].c
 
-    if not response:
-        return response
+    if hasattr(client.connection_pool, 'nodes'):
+        mapping = defaultdict(list)
+        for queue in queues:
+            keyslot = client.connection_pool.nodes.keyslot(queue.name)
+            mapping[keyslot].append(queue)
+    else:
+        mapping = {'': queues}
 
-    return response[0].decode('utf-8'), json.loads(response[1][21:])
+    if len(mapping) == 1:
+        response = retry_call(client.bzpopmin, [q.name for q in queues], timeout)
+
+        if not response:
+            return response
+
+        return response[0].decode('utf-8'), json.loads(response[1][21:])
+    else:
+        total = 0
+        while total <= timeout or timeout == 0:
+            for node_queues in mapping.values():
+                total += 1
+                response = retry_call(client.bzpopmin, [q.name for q in node_queues], 1)
+
+                if not response:
+                    continue
+
+                return response[0].decode('utf-8'), json.loads(response[1][21:])
+        return None
 
 
 def length(*queues: PriorityQueue) -> list[int]:
