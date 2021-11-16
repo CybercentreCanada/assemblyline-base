@@ -27,7 +27,8 @@ __type_mapping = {
     MD5: 'keyword',
     Platform: 'keyword',
     Processor: 'keyword',
-    FlattenedObject: 'nested'
+    FlattenedObject: 'nested',
+    Any: 'keyword'
 }
 __analyzer_mapping = {
     SSDeepHash: 'text_fuzzy',
@@ -41,7 +42,7 @@ __normalizer_mapping = {
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
                                                                      URIPath, MAC, PhoneNumber, SSDeepHash, Email,
                                                                      SHA1, SHA256, MD5, Platform, Processor,
-                                                                     ClassificationString]}
+                                                                     ClassificationString, Any]}
 back_mapping.update({x: Keyword for x in set(__analyzer_mapping.values())})
 
 

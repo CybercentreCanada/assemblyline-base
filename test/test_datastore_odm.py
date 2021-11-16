@@ -394,7 +394,7 @@ def test_dynamic_fields(es_store):
     col = getattr(es_store, collection_name)
     col.wipe()
 
-    assert list(sorted(col.fields().keys())) == ['id', 'number']
+    assert list(sorted(col.fields().keys())) == ['id', 'number', 'other']
 
     # Elasticsearch should ignore the type of other
     data = {
