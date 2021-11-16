@@ -6,9 +6,9 @@ begin_script = """
 local t = redis.call('time')
 local key = tonumber(t[1] .. string.format("%06d", t[2]))
 
-local name = ARGV[1]
-local max = tonumber(ARGV[2])
-local timeout = tonumber(ARGV[3] .. "000000")
+local name = KEYS[1]
+local max = tonumber(ARGV[1])
+local timeout = tonumber(ARGV[2] .. "000000")
 
 redis.call('zremrangebyscore', name, 0, key - timeout)
 if redis.call('zcard', name) < max then
@@ -32,12 +32,12 @@ class UserQuotaTracker(object):
 
     def begin(self, user, max_quota):
         try:
-            return retry_call(self.bs, args=[self._queue_name(user), max_quota, self.timeout]) == 1
+            return retry_call(self.bs, keys=[self._queue_name(user)], args=[max_quota, self.timeout]) == 1
         except redis.exceptions.ResponseError as er:
             # TODO: This is a failsafe for upgrade purposes could be removed in a future version
             if "WRONGTYPE" in str(er):
                 retry_call(self.c.delete, self._queue_name(user))
-                return retry_call(self.bs, args=[self._queue_name(user), max_quota, self.timeout]) == 1
+                return retry_call(self.bs, keys=[self._queue_name(user)], args=[max_quota, self.timeout]) == 1
             else:
                 raise
 

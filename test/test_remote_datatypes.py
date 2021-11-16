@@ -207,6 +207,7 @@ def test_priority_queue(redis_connection):
         assert pq.length() == 1  # Should be [<100, 5>] at this point
 
         for x in range(5):
+            time.sleep(0.002)
             pq.push(100 + x, x)
 
         assert pq.length() == 6

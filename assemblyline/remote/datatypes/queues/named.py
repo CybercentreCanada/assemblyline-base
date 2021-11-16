@@ -1,5 +1,6 @@
 import json
 from typing import Generic, TypeVar, Optional
+from collections import defaultdict
 
 from assemblyline.remote.datatypes import get_client, retry_call
 
@@ -63,16 +64,47 @@ class NamedQueue(Generic[T]):
 
 
 def select(*queues, **kw):
+    """
+    Do a blocking pop on each queue in sequence.
+
+    Queues that map to the same keyslot will get bundled into the same call.
+
+    This isn't as efficent as it was on a single node. Consider carefully
+    the options if you need efficent select over many queues, this probably isn't it.
+    """
+
     timeout = kw.get('timeout', 0)
     if len(queues) < 1:
         raise TypeError('At least one queue must be specified')
     if any([type(q) != NamedQueue for q in queues]):
         raise TypeError('Only NamedQueues supported')
 
-    c = queues[0].c
-    response = retry_call(c.blpop, [q.name for q in queues], timeout)
+    client = queues[0].c
 
-    if not response:
-        return response
+    if hasattr(client.connection_pool, 'nodes'):
+        mapping = defaultdict(list)
+        for queue in queues:
+            keyslot = client.connection_pool.nodes.keyslot(queue.name)
+            mapping[keyslot].append(queue)
+    else:
+        mapping = {'': queues}
 
-    return response[0].decode('utf-8'), json.loads(response[1])
+    if len(mapping) == 1:
+        response = retry_call(client.blpop, [q.name for q in queues], timeout)
+
+        if not response:
+            return response
+
+        return response[0].decode('utf-8'), json.loads(response[1])
+    else:
+        total = 0
+        while total <= timeout or timeout == 0:
+            for node_queues in mapping.values():
+                total += 1
+                response = retry_call(client.blpop, [q.name for q in node_queues], 1)
+
+                if not response:
+                    continue
+
+                return response[0].decode('utf-8'), json.loads(response[1])
+        return None

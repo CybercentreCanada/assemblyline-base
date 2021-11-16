@@ -3,6 +3,7 @@
 import json
 import logging
 import redis
+import rediscluster
 import time
 
 from datetime import datetime
@@ -89,7 +90,7 @@ def get_client(host, port, private, cluster=None):
         if cluster is False:
             return client
 
-    return redis.cluster.RedisCluster(host=host, port=port, max_connections=200)
+    return rediscluster.RedisCluster(host=host, port=port, max_connections=200)
 
 
 def get_pool(host, port):
