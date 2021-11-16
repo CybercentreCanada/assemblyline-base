@@ -155,8 +155,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
             mappings[name.strip(".")] = {
                 "type": "keyword",
                 "index": False,
-                "store": False,
-                "ignore_above": 8191
+                "store": False
             }
 
         else:
