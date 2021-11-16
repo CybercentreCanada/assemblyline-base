@@ -793,6 +793,9 @@ class Model:
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
 
+            elif isinstance(sub_field, Any):
+                continue
+
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
                                                  show_compound, skip_mappings,
@@ -824,6 +827,8 @@ class Model:
         for name, field in cls.__dict__.items():
             if isinstance(field, _Field):
                 if skip_mappings and isinstance(field, Mapping):
+                    continue
+                if isinstance(field, Any):
                     continue
                 out.update(Model._recurse_fields(name, field, show_compound, skip_mappings,
                                                  multivalued=isinstance(field, List)))
