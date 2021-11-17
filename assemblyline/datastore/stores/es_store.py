@@ -206,7 +206,8 @@ class ESCollection(Collection):
         'rows': Collection.DEFAULT_ROW_SIZE,
         'query': "*",
         'sort': DEFAULT_SORT,
-        'df': None
+        'df': None,
+        'script_fields': []
     }
 
     def __init__(self, datastore, name, model_class=None, validate=True):
@@ -944,47 +945,39 @@ class ESCollection(Collection):
 
     def _format_output(self, result, fields=None, as_obj=True):
         # Getting search document data
-        source = result.get('fields', {})
+        extra_fields = result.get('fields', {})
         source_data = result.pop('_source', None)
         item_id = result['_id']
 
-        # Remove extra fields that should not show up in the search results
-        source.pop('_version', None)
-        source.pop(self.DEFAULT_SEARCH_FIELD, None)
-        source.pop('id', None)
-
         if self.model_class:
-            if not fields or '*' in fields:
+            if not fields:
                 fields = list(self.stored_fields.keys())
                 fields.append('id')
             elif isinstance(fields, str):
                 fields = fields.split(',')
 
-            if source_data:
-                source_data.pop('id', None)
-                return self.model_class(source_data, docid=item_id)
-
-            source = _strip_lists(self.model_class, source)
+            extra_fields = _strip_lists(self.model_class, extra_fields)
             if as_obj:
-                return self.model_class(source, mask=fields, docid=item_id)
+                source_data.pop('id', None)
+                return self.model_class(source_data, mask=fields, docid=item_id, extra_fields=extra_fields)
             else:
+                source_data = recursive_update(source_data, extra_fields)
                 if 'id' in fields:
-                    source['id'] = item_id
+                    source_data['id'] = item_id
                 if '_index' in fields and '_index' in result:
-                    source['_index'] = result["_index"]
-
-                return source
+                    source_data['_index'] = result["_index"]
+                return source_data
 
         if isinstance(fields, str):
             fields = fields
 
         if fields is None or '*' in fields or 'id' in fields:
-            source['id'] = [item_id]
+            source_data['id'] = [item_id]
 
         if fields is None or '*' in fields:
-            return source
+            return source_data
 
-        return {key: val for key, val in source.items() if key in fields}
+        return {key: val for key, val in source_data.items() if key in fields}
 
     def _search(self, args=None, deep_paging_id=None, use_archive=False, track_total_hits=None):
         index = self.name
@@ -1023,8 +1016,19 @@ class ESCollection(Collection):
             'from': parsed_values['start'],
             'size': parsed_values['rows'],
             'sort': parse_sort(parsed_values['sort']),
-            "stored_fields": parsed_values['field_list'] or ['*']
+            "_source": parsed_values['field_list'] or list(self.stored_fields.keys())
         }
+
+        if parsed_values['script_fields']:
+            fields = {}
+            for (f_name, f_script) in parsed_values['script_fields']:
+                fields[f_name] = {
+                    "script": {
+                        "lang": "painless",
+                        "source": f_script
+                    }
+                }
+            query_body["script_fields"] = fields
 
         if parsed_values['df']:
             query_body["query"]["bool"]["must"]["query_string"]["default_field"] = parsed_values['df']
@@ -1075,7 +1079,7 @@ class ESCollection(Collection):
                 "field": parsed_values['group_field'],
                 "inner_hits": {
                     "name": "group",
-                    "stored_fields": parsed_values['field_list'] or ['*'],
+                    "_source": parsed_values['field_list'] or list(self.stored_fields.keys()),
                     "size": parsed_values['group_limit'],
                     "sort": parse_sort(parsed_values['group_sort']) or [{parsed_values['group_field']: 'asc'}]
                 }
@@ -1107,7 +1111,7 @@ class ESCollection(Collection):
 
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, use_archive=False, track_total_hits=None):
+               deep_paging_id=None, as_obj=True, use_archive=False, track_total_hits=None, script_fields=[]):
 
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
@@ -1142,6 +1146,9 @@ class ESCollection(Collection):
 
         if filters:
             args.append(('filters', filters))
+
+        if script_fields:
+            args.append(('script_fields', script_fields))
 
         result = self._search(args, deep_paging_id=deep_paging_id, use_archive=use_archive,
                               track_total_hits=track_total_hits)
@@ -1206,7 +1213,7 @@ class ESCollection(Collection):
                 }
             },
             "sort": parse_sort(self.datastore.DEFAULT_SORT),
-            "stored_fields": fl or ['*']
+            "_source": fl or list(self.stored_fields.keys())
         }
 
         iterator = RetryableIterator(
@@ -1410,7 +1417,7 @@ class ESCollection(Collection):
                 "default": self.DEFAULT_SEARCH_FIELD in p_val.get('copy_to', []),
                 "indexed": p_val.get('index', p_val.get('enabled', True)),
                 "list": field_model.multivalued if field_model else False,
-                "stored": p_val.get('store', False),
+                "stored": field_model.store if field_model else False,
                 "type": f_type
             }
 

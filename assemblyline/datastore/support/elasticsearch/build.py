@@ -57,7 +57,6 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
 
     def set_mapping(temp_field, body):
         body['index'] = temp_field.index
-        body['store'] = temp_field.store
         if temp_field.copyto:
             assert len(temp_field.copyto) == 1
             body['copy_to'] = temp_field.copyto[0]
@@ -77,19 +76,15 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 mappings.update({
                     "__access_lvl__": {
                         'type': 'integer',
-                        'store': False,
                         'index': True},
                     "__access_req__": {
                         'type': 'keyword',
-                        'store': False,
                         'index': True},
                     "__access_grp1__": {
                         'type': 'keyword',
-                        'store': False,
                         'index': True},
                     "__access_grp2__": {
                         'type': 'keyword',
-                        'store': False,
                         'index': True},
                 })
 
@@ -150,13 +145,12 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 dynamic.extend(build_templates(f'{name}.*', field.child_type, index=field.index))
 
         elif isinstance(field, Any):
-            if field.index or field.store:
-                raise ValueError(f"Any may not be indexed or stored: {name}")
+            if field.index:
+                raise ValueError(f"Any may not be indexed: {name}")
 
             mappings[name.strip(".")] = {
                 "type": "keyword",
-                "index": False,
-                "store": False
+                "index": False
             }
 
         else:
@@ -199,7 +193,6 @@ def build_templates(name, field, nested_template=False, index=True) -> list:
             }
 
             field_template['mapping']['index'] = field.index
-            field_template['mapping']['store'] = field.store
             if field.copyto:
                 assert len(field.copyto) == 1
                 field_template['mapping']['copy_to'] = field.copyto[0]
@@ -211,13 +204,12 @@ def build_templates(name, field, nested_template=False, index=True) -> list:
             "path_match": name,
             "mapping": {
                 "type": "keyword",
-                "index": False,
-                "store": False
+                "index": False
             }
         }
 
-        if field.index or field.store:
-            raise ValueError(f"Mapping to Any may not be indexed or stored: {name}")
+        if field.index:
+            raise ValueError(f"Mapping to Any may not be indexed: {name}")
         return [{f"{name}_tpl": field_template}]
 
     elif isinstance(field, (Mapping, List)):

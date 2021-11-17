@@ -518,7 +518,7 @@ class Collection(Generic[ModelType]):
 
     def search(self, query, offset=0, rows=DEFAULT_ROW_SIZE, sort=None, fl=None, timeout=None,
                filters=(), access_control=None, deep_paging_id=None, as_obj=True, use_archive=False,
-               track_total_hits=False) -> dict:
+               track_total_hits=False, script_fields=[]) -> dict:
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -535,6 +535,7 @@ class Collection(Generic[ModelType]):
                     }, ...]
             }
 
+        :param script_fields: List of name/script tuple of fields to be evaluated at runtime
         :param track_total_hits: Return to total matching document count
         :param use_archive: Query also the archive
         :param deep_paging_id: ID of the next page during deep paging searches
@@ -695,8 +696,6 @@ class Collection(Generic[ModelType]):
         for field_name in matching:
             if fields[field_name]['indexed'] != model[field_name].index and model[field_name].index:
                 raise RuntimeError(f"Field {field_name} should be indexed but is not.")
-            if fields[field_name]['stored'] != model[field_name].store and model[field_name].store:
-                raise RuntimeError(f"Field {field_name} should be stored but is not.")
 
             possible_field_types = self.__get_possible_fields(model[field_name].__class__)
 
