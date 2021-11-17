@@ -27,7 +27,8 @@ __type_mapping = {
     MD5: 'keyword',
     Platform: 'keyword',
     Processor: 'keyword',
-    FlattenedObject: 'nested'
+    FlattenedObject: 'nested',
+    Any: 'keyword'
 }
 __analyzer_mapping = {
     SSDeepHash: 'text_fuzzy',
@@ -41,7 +42,7 @@ __normalizer_mapping = {
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
                                                                      URIPath, MAC, PhoneNumber, SSDeepHash, Email,
                                                                      SHA1, SHA256, MD5, Platform, Processor,
-                                                                     ClassificationString]}
+                                                                     ClassificationString, Any]}
 back_mapping.update({x: Keyword for x in set(__analyzer_mapping.values())})
 
 
@@ -149,18 +150,14 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 dynamic.extend(build_templates(f'{name}.*', field.child_type, index=field.index))
 
         elif isinstance(field, Any):
-            field_template = {
-                "path_match": name,
-                "mapping": {
-                    "type": "keyword",
-                    "index": False,
-                    "store": False
-                }
-            }
-
             if field.index or field.store:
                 raise ValueError(f"Any may not be indexed or stored: {name}")
-            dynamic.append({f"{name}_tpl": field_template})
+
+            mappings[name.strip(".")] = {
+                "type": "keyword",
+                "index": False,
+                "store": False
+            }
 
         else:
             raise NotImplementedError(f"Unknown type for elasticsearch schema: {field.__class__}")

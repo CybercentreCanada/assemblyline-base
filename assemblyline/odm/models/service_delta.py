@@ -69,7 +69,7 @@ class SubmissionParamsDelta(odm.Model):
     type = odm.Optional(odm.Enum(values=['str', 'int', 'list', 'bool']))
     value = odm.Optional(odm.Any())
     list = odm.Optional(odm.Any())
-    hide = odm.Optional(odm.Any())
+    hide = odm.Optional(odm.Boolean())
 
 
 @odm.model(index=True, store=False)

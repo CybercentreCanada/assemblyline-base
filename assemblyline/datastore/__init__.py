@@ -693,10 +693,10 @@ class Collection(Generic[ModelType]):
 
         matching = set(fields.keys()) & set(model.keys())
         for field_name in matching:
-            if fields[field_name]['indexed'] != model[field_name].index:
-                raise RuntimeError(f"Field {field_name} didn't have the expected indexing value.")
-            if fields[field_name]['stored'] != model[field_name].store:
-                raise RuntimeError(f"Field {field_name} didn't have the expected store value.")
+            if fields[field_name]['indexed'] != model[field_name].index and model[field_name].index:
+                raise RuntimeError(f"Field {field_name} should be indexed but is not.")
+            if fields[field_name]['stored'] != model[field_name].store and model[field_name].store:
+                raise RuntimeError(f"Field {field_name} should be stored but is not.")
 
             possible_field_types = self.__get_possible_fields(model[field_name].__class__)
 

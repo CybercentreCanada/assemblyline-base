@@ -176,16 +176,6 @@ class _DeletedField:
     pass
 
 
-class Any(_Field):
-    def __init__(self, *args, **kwargs):
-        kwargs['index'] = False
-        kwargs['store'] = False
-        super().__init__(*args, **kwargs)
-
-    def check(self, value, **kwargs):
-        return value
-
-
 class Date(_Field):
     """A field storing a datetime value."""
 
@@ -232,6 +222,21 @@ class Keyword(_Field):
             return None
 
         return str(value)
+
+
+class Any(Keyword):
+    """
+    A field that can hold any value whatsoever but which is stored as a
+    Keyword in the datastore index
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs['index'] = False
+        kwargs['store'] = False
+        super().__init__(*args, **kwargs)
+
+    def check(self, value, **_):
+        return value
 
 
 class ValidatedKeyword(Keyword):
@@ -793,9 +798,6 @@ class Model:
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
 
-            elif isinstance(sub_field, Any):
-                continue
-
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
                                                  show_compound, skip_mappings,
@@ -827,8 +829,6 @@ class Model:
         for name, field in cls.__dict__.items():
             if isinstance(field, _Field):
                 if skip_mappings and isinstance(field, Mapping):
-                    continue
-                if isinstance(field, Any):
                     continue
                 out.update(Model._recurse_fields(name, field, show_compound, skip_mappings,
                                                  multivalued=isinstance(field, List)))
