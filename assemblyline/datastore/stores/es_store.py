@@ -5,6 +5,7 @@ from copy import deepcopy
 from os import environ
 from random import random
 from typing import Dict
+from assemblyline.odm.base import BANNED_FIELDS
 
 import elasticsearch
 import elasticsearch.helpers
@@ -947,6 +948,8 @@ class ESCollection(Collection):
         # Getting search document data
         extra_fields = result.get('fields', {})
         source_data = result.pop('_source', None)
+        for f in BANNED_FIELDS:
+            source_data.pop(f, None)
         item_id = result['_id']
 
         if self.model_class:
@@ -958,7 +961,10 @@ class ESCollection(Collection):
 
             extra_fields = _strip_lists(self.model_class, extra_fields)
             if as_obj:
-                source_data.pop('id', None)
+                if '_index' in fields and '_index' in result:
+                    extra_fields['_index'] = result["_index"]
+                if '*' in fields:
+                    fields = None
                 return self.model_class(source_data, mask=fields, docid=item_id, extra_fields=extra_fields)
             else:
                 source_data = recursive_update(source_data, extra_fields)
