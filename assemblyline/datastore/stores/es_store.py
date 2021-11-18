@@ -1188,9 +1188,6 @@ class ESCollection(Collection):
         if item_buffer_size > 500 or item_buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 500.")
 
-        if query in ["*", "*:*"] and fl != 'id':
-            raise SearchException("You did not specified a query, you just asked for everything... Play nice.")
-
         index = self.name
         if self.archive_access and use_archive:
             index = f"{index},{self.name}-*"
