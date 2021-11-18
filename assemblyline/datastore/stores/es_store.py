@@ -1037,10 +1037,14 @@ class ESCollection(Collection):
         # Add an histogram aggregation
         if parsed_values['histogram_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
+            if parsed_values['histogram_type'] == "date_histogram":
+                interval_type = "calendar_interval"
+            else:
+                interval_type = "interval"
             query_body["aggregations"]["histogram"] = {
                 parsed_values['histogram_type']: {
                     "field": parsed_values['histogram_field'],
-                    "interval": parsed_values['histogram_gap'],
+                    interval_type: parsed_values['histogram_gap'],
                     "min_doc_count": parsed_values['histogram_mincount'],
                     "extended_bounds": {
                         "min": parsed_values['histogram_start'],
