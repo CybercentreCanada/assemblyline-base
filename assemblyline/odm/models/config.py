@@ -491,14 +491,16 @@ class ScalerServiceDefaults(odm.Model):
 @odm.model(index=False, store=False)
 class Scaler(odm.Model):
     service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
-    # only available for docker hosts, not kubernetes
-    cpu_overallocation: float = odm.Float(default=1)
-    memory_overallocation: float = odm.Float(default=1)
+    cpu_overallocation: float = odm.Float()
+    memory_overallocation: float = odm.Float()
     # Additional labels to be applied to deployments in kubernetes('=' delimited)
     additional_labels: List[str] = odm.Optional(odm.List(odm.Text()))
 
 
 DEFAULT_SCALER = {
+    'additional_labels': None,
+    'cpu_overallocation': 1,
+    'memory_overallocation': 1,
     'service_defaults': {
         'growth': 60,
         'shrink': 30,
