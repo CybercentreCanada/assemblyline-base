@@ -4,7 +4,7 @@ from typing import Dict, Optional, AnyStr, List, Mapping as _Mapping, Union
 
 def strip_nulls(d):
     if isinstance(d, dict):
-        return {k: strip_nulls(v) for k, v in d.items() if v is not None and strip_nulls(v)}
+        return {k: strip_nulls(v) for k, v in d.items() if v is not None}
     else:
         return d
 
