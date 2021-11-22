@@ -874,7 +874,7 @@ class Model:
         if unused_keys and not ignore_extra_values:
             raise ValueError(f"'{self.__class__.__name__}' object was created with invalid parameters: "
                              f"{', '.join(unused_keys)}")
-        if unused_keys and ignore_extra_values:
+        if unused_keys and ignore_extra_values and mask is None:
             logger.warning(
                 f"The following parameters where ignored from object "
                 f"'{self.__class__.__name__}': {', '.join(unused_keys)}")
