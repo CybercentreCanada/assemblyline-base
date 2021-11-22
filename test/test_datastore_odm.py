@@ -296,9 +296,10 @@ def _test_groupsearch(col, as_obj):
 
 def _test_search_primitives(col, _):
     # Make sure as_obj=False produces the same result then obj.as_primitives()
-    obj_item = col.search('features:chocolate', fl='features')['items'][0]
-    dict_item = col.search('features:chocolate', fl='features', as_obj=False)['items'][0]
+    obj_item = col.search('features:chocolate', fl='flavour')['items'][0]
+    dict_item = col.search('features:chocolate', fl='flavour', as_obj=False)['items'][0]
     assert obj_item.as_primitives() == dict_item
+    assert dict_item.get('flavour', None) == "chocolate"
 
 
 def _test_streamsearch(col, as_obj):
