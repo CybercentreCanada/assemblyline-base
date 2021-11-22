@@ -2,6 +2,13 @@ from collections.abc import Mapping
 from typing import Dict, Optional, AnyStr, List, Mapping as _Mapping, Union
 
 
+def strip_nulls(d):
+    if isinstance(d, dict):
+        return {k: strip_nulls(v) for k, v in d.items() if v and strip_nulls(v)}
+    else:
+        return d
+
+
 def recursive_update(d: Dict, u: _Mapping,
                      stop_keys: List[AnyStr] = [],
                      allow_recursion: bool = True) -> Union[Dict, _Mapping]:

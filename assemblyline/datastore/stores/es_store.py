@@ -12,7 +12,7 @@ import elasticsearch.helpers
 
 from assemblyline import odm
 from assemblyline.common import forge
-from assemblyline.common.dict_utils import recursive_update
+from assemblyline.common.dict_utils import recursive_update, strip_nulls
 from assemblyline.datastore import BaseStore, BulkPlan, Collection, log
 from assemblyline.datastore.exceptions import (DataStoreException, ILMException, MultiKeyError, SearchException,
                                                SearchRetryException, VersionConflictException)
@@ -947,7 +947,7 @@ class ESCollection(Collection):
     def _format_output(self, result, fields=None, as_obj=True):
         # Getting search document data
         extra_fields = result.get('fields', {})
-        source_data = result.pop('_source', None)
+        source_data = strip_nulls(result.pop('_source', None))
         for f in BANNED_FIELDS:
             source_data.pop(f, None)
         item_id = result['_id']
