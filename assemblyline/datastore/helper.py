@@ -1029,7 +1029,7 @@ class AssemblylineDatastore(object):
                                                           as_obj=False, as_dictionary=False)]
 
         # Recursively update the service data with the service delta while stripping nulls
-        services = [recursive_update(data.as_primitives(), delta.as_primitives(strip_null=True),
+        services = [recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True),
                                      stop_keys=['config'])
                     for data, delta in zip(service_data, service_delta)]
 
