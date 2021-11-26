@@ -101,6 +101,7 @@ def test_constants():
         (b"unescape(", ["code/javascript"]),
         (b".createElement(", ["code/javascript"]),
         (b"submitForm(", ["code/javascript"]),
+        (b"document.write(", ["code/javascript"]),
         # C#
         (b"namespace blah", ["code/csharp", "code/php"]),
         (b"\nnamespace\tblah(", ["code/csharp", "code/php"]),
@@ -371,7 +372,6 @@ def test_strong_indicators(code_snippet, code_types):
         (b"blah", []),
         # Javascript
         (b"var ", ["code/javascript"]),
-        (b"document.write(", ["code/javascript"]),
         (b"String.fromCharCode(", ["code/javascript"]),
         (b"String.raw(", ["code/javascript"]),
         (b"Math.round(", ["code/javascript"]),
@@ -385,6 +385,9 @@ def test_strong_indicators(code_snippet, code_types):
         (b"WSH", ["code/javascript", "code/vbs"]),
         (b"document[", ["code/javascript"]),
         (b"window[", ["code/javascript"]),
+        (b"tthis.blah", []),
+        (b"this.blah", ["code/javascript"]),
+        (b"(this.blah", ["code/javascript"]),
         # JScript
         (b"new ActiveXObject(", ["code/jscript"]),
         (b"new\tActiveXObject(", ["code/jscript"]),
