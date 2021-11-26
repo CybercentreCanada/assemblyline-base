@@ -42,6 +42,7 @@ STRONG_INDICATORS = {
         re.compile(rb'unescape\('),
         re.compile(rb'\.createElement\('),
         re.compile(rb'submitForm\('),
+        re.compile(rb'document\.write\('),
     ],
     'code/csharp': [
         re.compile(rb'(^|\n)[ \t]*namespace[ \t]+[\w.]+'),
@@ -148,12 +149,12 @@ MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
     'code/javascript': [rb'var ',
-                        rb'document\.write\(',
                         rb'String\.(fromCharCode|raw)\(',
                         rb'Math\.(round|pow|sin|cos)\(',
                         rb'(isNaN|isFinite|parseInt|parseFloat)\(',
                         b'WSH',
-                        rb'(document|window)\['
+                        rb'(document|window)\[',
+                        rb'(?:[^\w]|^)this\.[\w]+',
                         ],
     'code/jscript': [rb'new[ \t]+ActiveXObject\(', rb'Scripting\.Dictionary'],
     'code/pdfjs': [rb'xfa\.((resolve|create)Node|datasets|form)', rb'\.oneOfChild'],
