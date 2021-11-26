@@ -20,6 +20,7 @@ from assemblyline.datastore.support.elasticsearch.build import back_mapping, bui
 from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                                   default_index, default_mapping)
 
+TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
 write_block_settings = {"settings": {"index.blocks.write": True}}
 write_unblock_settings = {"settings": {"index.blocks.write": None}}
 
@@ -293,14 +294,22 @@ class ESCollection(Collection):
                 self.datastore.connection_reset()
                 retries += 1
 
+            except elasticsearch.exceptions.ConnectionTimeout:
+                log.warning(f"Elasticsearch connection timeout, server(s): "
+                            f"{' | '.join(self.datastore.get_hosts(safe=True))}"
+                            f", retrying {func.__name__}...")
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.datastore.connection_reset()
+                retries += 1
+
             except (SearchRetryException,
                     elasticsearch.exceptions.ConnectionError,
-                    elasticsearch.exceptions.ConnectionTimeout,
                     elasticsearch.exceptions.AuthenticationException) as e:
                 if not isinstance(e, SearchRetryException):
                     log.warning(f"No connection to Elasticsearch server(s): "
                                 f"{' | '.join(self.datastore.get_hosts(safe=True))}"
-                                f", retrying...")
+                                f", because [{e}] retrying {func.__name__}...")
+
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.datastore.connection_reset()
                 retries += 1
@@ -1663,7 +1672,8 @@ class ESStore(BaseStore):
 
         self.client = elasticsearch.Elasticsearch(hosts=hosts,
                                                   connection_class=elasticsearch.RequestsHttpConnection,
-                                                  max_retries=0)
+                                                  max_retries=0,
+                                                  timeout=TRANSPORT_TIMEOUT)
         self.archive_access = archive_access
         self.url_path = 'elastic'
 
@@ -1680,4 +1690,5 @@ class ESStore(BaseStore):
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   connection_class=elasticsearch.RequestsHttpConnection,
-                                                  max_retries=0)
+                                                  max_retries=0,
+                                                  timeout=TRANSPORT_TIMEOUT)
