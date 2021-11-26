@@ -1018,26 +1018,23 @@ class AssemblylineDatastore(object):
         :param full: If true retrieve all the fields of the service object, otherwise only
                      fields returned by search are given.
         """
-        items = list(self.ds.service_delta.stream_search("id:*", as_obj=False))
+        mask = None if full else list(self.ds.service.stored_fields.keys())
 
-        if full:
-            service_data = self.ds.service.multiget([f"{item['id']}_{item['version']}" for item in items],
-                                                    as_dictionary=False)
-            service_delta = self.ds.service_delta.multiget([item['id'] for item in items], as_dictionary=False)
-            services = [recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True),
-                                         stop_keys=['config'])
-                        for data, delta in zip(service_data, service_delta)]
+        # List all services from service delta (Return all fields if full is true)
+        service_delta = list(self.ds.service_delta.stream_search("id:*", fl="*" if full else None))
 
-        else:
-            services_versions = {item['id']: item for item in self.ds.service.stream_search("id:*", as_obj=False)}
-            services = [recursive_update(services_versions[f"{item['id']}_{item['version']}"], item,
-                                         stop_keys=['config'])
-                        for item in items if f"{item['id']}_{item['version']}" in services_versions]
+        # Gather all matching services and apply a mask if we don't want the full source object
+        service_data = [Service(s, mask=mask)
+                        for s in self.ds.service.multiget([f"{item.id}_{item.version}" for item in service_delta],
+                                                          as_obj=False, as_dictionary=False)]
 
+        # Recursively update the service data with the service delta while stripping nulls
+        services = [recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True),
+                                     stop_keys=['config'])
+                    for data, delta in zip(service_data, service_delta)]
+
+        # Return as an objet if needs be...
         if as_obj:
-            mask = None
-            if not full and services:
-                mask = services[0].keys()
             return [Service(s, mask=mask) for s in services]
         else:
             return services

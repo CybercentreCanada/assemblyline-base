@@ -12,16 +12,16 @@ independent data models in python. This gives us:
 
 from __future__ import annotations
 
-import arrow
 import copy
 import json
 import logging
 import re
-import typing
 import sys
-
-from dateutil.tz import tzutc
+import typing
 from datetime import datetime
+
+import arrow
+from dateutil.tz import tzutc
 
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
@@ -722,10 +722,10 @@ class Compound(_Field):
         super().__init__(**kwargs)
         self.child_type = field_type
 
-    def check(self, value, mask=None, ignore_extra_values=False, **kwargs):
+    def check(self, value, mask=None, ignore_extra_values=False, extra_fields={}, **kwargs):
         if isinstance(value, self.child_type):
             return value
-        return self.child_type(value, mask=mask, ignore_extra_values=ignore_extra_values)
+        return self.child_type(value, mask=mask, ignore_extra_values=ignore_extra_values, extra_fields=extra_fields)
 
     def fields(self):
         out = dict()
@@ -837,7 +837,7 @@ class Model:
     # Allow attribute assignment by default in the constructor until it is removed
     __frozen = False
 
-    def __init__(self, data: dict = None, mask: list = None, docid=None, ignore_extra_values=True):
+    def __init__(self, data: dict = None, mask: list = None, docid=None, ignore_extra_values=True, extra_fields={}):
         if data is None:
             data = {}
         if not hasattr(data, 'items'):
@@ -870,10 +870,11 @@ class Model:
 
         # Check to make sure we can use all the data we are given
         unused_keys = set(data.keys()) - set(fields.keys()) - BANNED_FIELDS
+        extra_keys = set(extra_fields.keys()) - set(data.keys())
         if unused_keys and not ignore_extra_values:
             raise ValueError(f"'{self.__class__.__name__}' object was created with invalid parameters: "
                              f"{', '.join(unused_keys)}")
-        if unused_keys and ignore_extra_values:
+        if unused_keys and ignore_extra_values and mask is None:
             logger.warning(
                 f"The following parameters where ignored from object "
                 f"'{self.__class__.__name__}': {', '.join(unused_keys)}")
@@ -883,6 +884,8 @@ class Model:
             params = {"ignore_extra_values": ignore_extra_values}
             if name in mask_map and mask_map[name]:
                 params['mask'] = mask_map[name]
+            if name in extra_fields and extra_fields[name]:
+                params['extra_fields'] = extra_fields[name]
 
             try:
                 value = data[name]
@@ -894,6 +897,9 @@ class Model:
 
             self._odm_py_obj[name] = field_type.check(value, **params)
 
+        for key in extra_keys:
+            self._odm_py_obj[key] = Any().check(extra_fields[key])
+
         # Since the layout of model objects should be fixed, don't allow any further
         # attribute assignment
         self.__frozen = True
@@ -904,7 +910,7 @@ class Model:
 
         fields = self.fields()
         for key, value in self._odm_py_obj.items():
-            field_type = fields[key]
+            field_type = fields.get(key, Any)
             if value is not None or (value is None and field_type.default_set):
                 if strip_null and value is None:
                     continue
