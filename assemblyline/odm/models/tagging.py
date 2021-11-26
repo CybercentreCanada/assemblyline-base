@@ -91,6 +91,28 @@ class Tagging(odm.Model):
             last_modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         @odm.model(index=True, store=False)
+        class FileELF(odm.Model):
+            @odm.model(index=True, store=False)
+            class FileELFSections(odm.Model):
+                name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+            @odm.model(index=True, store=False)
+            class FileELFSegments(odm.Model):
+                type = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+            @odm.model(index=True, store=False)
+            class FileELFNotes(odm.Model):
+                name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+                type = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+                type_core = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+            libraries = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            interpreter = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            sections = odm.Optional(odm.Compound(FileELFSections))
+            segments = odm.Optional(odm.Compound(FileELFSegments))
+            notes = odm.Optional(odm.Compound(FileELFNotes))
+
+        @odm.model(index=True, store=False)
         class FileName(odm.Model):
             anomaly = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             extracted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -322,6 +344,7 @@ class Tagging(odm.Model):
 
                 frame = odm.Optional(odm.Compound(FileSWFHeaderFrame))
                 version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
             header = odm.Optional(odm.Compound(FileSWFHeader))
             tags_ssdeep = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")))
 
@@ -329,6 +352,7 @@ class Tagging(odm.Model):
         compiler = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         config = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         date = odm.Optional(odm.Compound(FileDate))
+        elf = odm.Optional(odm.Compound(FileELF))
         lib = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
         name = odm.Optional(odm.Compound(FileName))
         path = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
