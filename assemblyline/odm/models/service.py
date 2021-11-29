@@ -105,6 +105,8 @@ class Service(odm.Model):
     enabled: bool = odm.Boolean(store=True, default=False)
     is_external: bool = odm.Boolean(default=False)
     licence_count: int = odm.Integer(default=0)
+    # If more than this many jobs are queued for this service drop those over this limit. 0 is unlimited.
+    max_queue_length: int = odm.Integer(default=0)
 
     name: str = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
