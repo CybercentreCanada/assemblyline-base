@@ -1255,7 +1255,7 @@ class ESCollection(Collection):
             ('histogram_active', True),
             ('histogram_field', field),
             ('histogram_type', "date_histogram" if isinstance(gap, str) else 'histogram'),
-            ('histogram_gap', gap.strip('+') if isinstance(gap, str) else gap),
+            ('histogram_gap', gap.strip('+').strip('-') if isinstance(gap, str) else gap),
             ('histogram_mincount', mincount),
             ('histogram_start', start),
             ('histogram_end', end)

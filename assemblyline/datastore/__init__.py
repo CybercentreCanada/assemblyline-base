@@ -79,6 +79,15 @@ class Collection(Generic[ModelType]):
         UPDATE_SET,
         UPDATE_DELETE,
     ]
+    VALID_HISTOGRAM_GAPS = set(["1m", "1h", "1d", "1w", "1M", "1y"])
+    HISTOGRAM_MAP = {
+        "minute": "1m",
+        "hour": "1h",
+        "day": "1d",
+        "week": "1w",
+        "month": "1M",
+        "year": "1y",
+    }
 
     def __init__(self, datastore, name, model_class=None, validate=True):
         self.datastore = datastore
@@ -615,19 +624,23 @@ class Collection(Generic[ModelType]):
 
             if not gaps_count:
                 try:
-                    if not (gap.startswith("-") or gap.startswith("+")):
-                        raise SearchException("Gap must be preceded with either + or - sign.")
+                    t_gap = gap.strip('+').strip('-')
+                    t_gap = self.HISTOGRAM_MAP.get(t_gap, t_gap)
+                    if t_gap not in self.VALID_HISTOGRAM_GAPS:
+                        raise SearchException(
+                            f"{gap} is not a valid date historgram gap. "
+                            f"Valid gaps are: {', '.join(self.VALID_HISTOGRAM_GAPS)}")
 
                     parsed_start = dm(self.datastore.to_pydatemath(start)).int_timestamp
                     parsed_end = dm(self.datastore.to_pydatemath(end)).int_timestamp
-                    parsed_gap = dm(self.datastore.to_pydatemath(gap)).int_timestamp - dm('now').int_timestamp
+                    parsed_gap = dm(self.datastore.to_pydatemath(f"+{t_gap}")).int_timestamp - dm('now').int_timestamp
 
                     gaps_count = int((parsed_end - parsed_start) / parsed_gap)
                     ret_type = str
                 except (DateMathException, AttributeError):
                     pass
 
-            if not gaps_count:
+            if gaps_count is None:
                 raise SearchException(
                     "Could not parse histogram ranges. Either you've mix integer and dates values or you "
                     "have invalid date math values. (start='%s', end='%s', gap='%s')" % (start, end, gap))
