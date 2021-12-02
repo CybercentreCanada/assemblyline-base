@@ -726,10 +726,13 @@ class ESCollection(Collection):
 
         return out
 
-    def exists(self, key, force_archive_access=False):
+    def exists(self, key, archive_access=None):
+        if archive_access is None:
+            archive_access = self.archive_access
+
         found = self.with_retries(self.datastore.client.exists, index=self.name, id=key, _source=False)
 
-        if not found and (self.archive_access or (self.ilm_config and force_archive_access)):
+        if not found and self.ilm_config and archive_access:
             query_body = {"query": {"ids": {"values": [key]}}, "size": 0}
             res = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                     body=query_body)
@@ -737,7 +740,7 @@ class ESCollection(Collection):
 
         return found
 
-    def _get(self, key, retries, force_archive_access=False, version=False):
+    def _get(self, key, retries, archive_access=None, version=False):
         """
 
         Versioned get-save for atomic update has three paths:
@@ -759,6 +762,9 @@ class ESCollection(Collection):
             data_output.pop('id', None)
             return data_output
 
+        if archive_access is None:
+            archive_access = self.archive_access
+
         if retries is None:
             retries = self.RETRY_NONE
 
@@ -772,7 +778,7 @@ class ESCollection(Collection):
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
-            if self.archive_access or (self.ilm_config and force_archive_access):
+            if self.ilm_config and archive_access:
                 query_body = {"query": {"ids": {"values": [key]}}, 'size': 1, 'sort': {'_index': 'desc'}}
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                          body=query_body)['hits']['hits']

@@ -1052,7 +1052,7 @@ class AssemblylineDatastore(object):
                              cl_engine=forge.get_classification(), redis=None, is_section_image=False):
         while True:
             current_fileinfo, version = self.ds.file.get_if_exists(
-                sha256, as_obj=False, force_archive_access=config.datastore.ilm.update_archive, version=True)
+                sha256, as_obj=False, archive_access=config.datastore.ilm.update_archive, version=True)
 
             if current_fileinfo is None:
                 current_fileinfo = {}
