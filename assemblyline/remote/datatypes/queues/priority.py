@@ -94,9 +94,12 @@ class PriorityQueue(Generic[T]):
                 return decode(ret_val[0][21:])
             return None
 
-    def blocking_pop(self, timeout=0):
+    def blocking_pop(self, timeout=0, low_priority=False):
         """When only one item is requested, blocking is is possible."""
-        result = retry_call(self.c.bzpopmin, self.name, timeout)
+        if low_priority:
+            result = retry_call(self.c.bzpopmax, self.name, timeout)
+        else:
+            result = retry_call(self.c.bzpopmin, self.name, timeout)
         if result:
             return decode(result[1][21:])
         return None
