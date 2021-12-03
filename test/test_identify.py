@@ -354,6 +354,8 @@ def test_constants():
         (b"System.Net.WebClient", ["code/ps1"]),
         (b"Net.ServicePointManager", ["code/ps1"]),
         (b"Net.SecurityProtocolType", ["code/ps1"]),
+        (b"%!PS", ["code/postscript"]),
+        (b"def /blah", ["code/postscript"]),
     ]
 )
 def test_strong_indicators(code_snippet, code_types):
@@ -463,6 +465,11 @@ def test_strong_indicators(code_snippet, code_types):
         (b"Blah-Blah", ["code/ps1"]),
         (b"Blah-Blah-Blah", ["code/ps1"]),
         (b"BlahBlah-BlahBlah", ["code/ps1"]),
+        (b"pop ", ["code/postscript"]),
+        (b"}for ", ["code/postscript"]),
+        (b"dup ", ["code/postscript"]),
+        (b"xor ", ["code/postscript"]),
+        (b"copy ", ["code/postscript"]),
     ]
 )
 def test_weak_indicators(code_snippet, code_types):
