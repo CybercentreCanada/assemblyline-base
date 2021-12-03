@@ -142,6 +142,10 @@ STRONG_INDICATORS = {
         re.compile(rb'(?i)(System\.Net\.WebClient)'),
         re.compile(rb'(?i)(Net\.ServicePointManager)'),
         re.compile(rb'(?i)(Net\.SecurityProtocolType)'),
+    ],
+    'code/postscript': [
+        re.compile(rb'%!PS'),
+        re.compile(rb'def /\w+'),
     ]
 }
 STRONG_SCORE = 15
@@ -180,6 +184,14 @@ WEAK_INDICATORS = {
         rb'\s-([A-Z][a-z0-9]+)+',
         # Check for cmdlet names ex. Disable-WindowsOptionalFeature
         rb'([A-Z][a-z0-9]+)+-([A-Z][a-z0-9]+)+',
+    ],
+    'code/postscript': [
+        rb'pop ',
+        rb'\}for ',
+        rb'dup ',
+        rb'get ',
+        rb'xor ',
+        rb'copy ',
     ]
 }
 WEAK_SCORE = 1
