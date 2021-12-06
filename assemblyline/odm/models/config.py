@@ -713,6 +713,8 @@ class Services(odm.Model):
     preferred_update_channel: str = odm.Keyword()
     # Allow container registries with self signed certs for service updates
     allow_insecure_registry: bool = odm.Boolean()
+    # Global registry type to be used for fetching updates for a service (can be overridable by a service)
+    preferred_registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker')
     # How much CPU to reserve for services, at 1 a service's full cpu request will be reserved for them.
     # At 0 (only for very small appliances/dev boxes) the service's cpu will be limited
     # but no cpu will be reserved allowing for more flexible scheduling of containers.
