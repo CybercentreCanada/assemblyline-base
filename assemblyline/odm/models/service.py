@@ -34,29 +34,27 @@ class DockerConfig(odm.Model):
     image: str = odm.Keyword()                       # Complete name of the Docker image with tag, may include registry
     registry_username: Opt[str] = odm.Optional(odm.Keyword())  # The username to use when pulling the image
     registry_password: Opt[str] = odm.Optional(odm.Keyword())  # The password or token to use when pulling the image
-    registry_type: Opt[str] = odm.Optional(
-        odm.Enum(values=["docker", "harbor"]),
-        default='docker')  # The type of container registry
+    registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker')  # The type of container registry
     ports: list[str] = odm.List(odm.Keyword(), default=[])
     ram_mb: int = odm.Integer(default=512)
     ram_mb_min: int = odm.Integer(default=128)
 
 
-@odm.model(index=False, store=False)
+@ odm.model(index=False, store=False)
 class PersistentVolume(odm.Model):
     mount_path = odm.Keyword()  # Path into the container to mount volume
     capacity = odm.Keyword()  # Bytes
     storage_class = odm.Keyword()
 
 
-@odm.model(index=False, store=False)
+@ odm.model(index=False, store=False)
 class DependencyConfig(odm.Model):
     container: DockerConfig = odm.Compound(DockerConfig)
     volumes = odm.Mapping(odm.Compound(PersistentVolume), default={})
     run_as_core: bool = odm.Boolean(default=False)
 
 
-@odm.model(index=False, store=False)
+@ odm.model(index=False, store=False)
 class UpdateSource(odm.Model):
     name: str = odm.Keyword()
     password: Opt[str] = odm.Optional(odm.Keyword(default=""))
@@ -71,7 +69,7 @@ class UpdateSource(odm.Model):
     default_classification = odm.Classification(default=Classification.UNRESTRICTED)
 
 
-@odm.model(index=False, store=False)
+@ odm.model(index=False, store=False)
 class UpdateConfig(odm.Model):
     generates_signatures = odm.Boolean(index=True, default=False)
     sources = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
@@ -82,7 +80,7 @@ class UpdateConfig(odm.Model):
     custom_delimiter = odm.Optional(odm.Keyword())                      # Custom delimiter
 
 
-@odm.model(index=False, store=False)
+@ odm.model(index=False, store=False)
 class SubmissionParams(odm.Model):
     default = odm.Any()
     name = odm.Keyword()
@@ -92,7 +90,7 @@ class SubmissionParams(odm.Model):
     hide = odm.Boolean(default=False)
 
 
-@odm.model(index=True, store=False)
+@ odm.model(index=True, store=False)
 class Service(odm.Model):
     # Regexes applied to assemblyline style file type string
     accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS)
