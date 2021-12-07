@@ -40,21 +40,21 @@ class DockerConfig(odm.Model):
     ram_mb_min: int = odm.Integer(default=128)
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class PersistentVolume(odm.Model):
     mount_path = odm.Keyword()  # Path into the container to mount volume
     capacity = odm.Keyword()  # Bytes
     storage_class = odm.Keyword()
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class DependencyConfig(odm.Model):
     container: DockerConfig = odm.Compound(DockerConfig)
     volumes = odm.Mapping(odm.Compound(PersistentVolume), default={})
     run_as_core: bool = odm.Boolean(default=False)
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class UpdateSource(odm.Model):
     name: str = odm.Keyword()
     password: Opt[str] = odm.Optional(odm.Keyword(default=""))
@@ -69,7 +69,7 @@ class UpdateSource(odm.Model):
     default_classification = odm.Classification(default=Classification.UNRESTRICTED)
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class UpdateConfig(odm.Model):
     generates_signatures = odm.Boolean(index=True, default=False)
     sources = odm.List(odm.Compound(UpdateSource), default=[])    # Generic external resources we need
@@ -80,7 +80,7 @@ class UpdateConfig(odm.Model):
     custom_delimiter = odm.Optional(odm.Keyword())                      # Custom delimiter
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class SubmissionParams(odm.Model):
     default = odm.Any()
     name = odm.Keyword()
@@ -90,7 +90,7 @@ class SubmissionParams(odm.Model):
     hide = odm.Boolean(default=False)
 
 
-@ odm.model(index=True, store=False)
+@odm.model(index=True, store=False)
 class Service(odm.Model):
     # Regexes applied to assemblyline style file type string
     accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS)
