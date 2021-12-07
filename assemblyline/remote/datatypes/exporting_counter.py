@@ -1,5 +1,4 @@
 import collections
-import elasticapm
 import logging
 import pprint
 import threading
@@ -64,7 +63,6 @@ class AutoExportingCounters(object):
         assert(self.export_interval > 0)
 
     # noinspection PyUnresolvedReferences
-    @elasticapm.capture_span(span_type='metrics')
     def start(self):
         from apscheduler.schedulers.background import BackgroundScheduler
         import atexit
@@ -75,7 +73,6 @@ class AutoExportingCounters(object):
 
         atexit.register(lambda: self.stop())
 
-    @elasticapm.capture_span(span_type='metrics')
     def reset(self):
         with self.lock:
             old, self.counts = self.counts, Counters({key: 0 for key in self.counter_schema})
@@ -87,14 +84,12 @@ class AutoExportingCounters(object):
 
         return old
 
-    @elasticapm.capture_span(span_type='metrics')
     def stop(self):
         if self.scheduler:
             self.scheduler.shutdown(wait=False)
             self.scheduler = None
         self.export()
 
-    @elasticapm.capture_span(span_type='metrics')
     def export(self):
         try:
             # To avoid blocking increments on the redis operation
@@ -107,7 +102,6 @@ class AutoExportingCounters(object):
         except Exception:
             log.exception("Exporting counters")
 
-    @elasticapm.capture_span(span_type='metrics')
     def increment(self, name, increment_by=1):
         try:
             if name not in self.counter_schema:
@@ -119,7 +113,6 @@ class AutoExportingCounters(object):
             log.exception("Incrementing counter")
             return 0
 
-    @elasticapm.capture_span(span_type='metrics')
     def increment_execution_time(self, name, execution_time):
         try:
             if name not in self.timer_schema:
@@ -133,7 +126,6 @@ class AutoExportingCounters(object):
             return 0
 
 
-@elasticapm.capture_span(span_type='metrics')
 def export_metrics_once(name, schema, metrics, host=None, counter_type=None, config=None, redis=None):
     """Manually publish metric counts to the metrics system.
 
