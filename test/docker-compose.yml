@@ -4,8 +4,8 @@ services:
   minio:
     image: minio/minio
     environment:
-      MINIO_ACCESS_KEY: al_storage_key
-      MINIO_SECRET_KEY: Ch@ngeTh!sPa33w0rd
+      MINIO_ROOT_USER: al_storage_key
+      MINIO_ROOT_PASSWORD: Ch@ngeTh!sPa33w0rd
     ports:
       - "9000:9000"
     command: server /data
