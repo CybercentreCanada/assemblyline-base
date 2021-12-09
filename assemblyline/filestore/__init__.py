@@ -245,13 +245,13 @@ class FileStore(object):
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
-    def upload(self, src_path: str, dst_path: str, location='all', force=False) -> list[Transport]:
+    def upload(self, src_path: str, dst_path: str, location='all', force=False, verify=False) -> list[Transport]:
         transports = []
         for t in self.slice(location):
             if force or not t.exists(dst_path):
                 transports.append(t)
                 t.upload(src_path, dst_path)
-                if not t.exists(dst_path):
+                if verify and not t.exists(dst_path):
                     raise FileStoreException('File transfer failed. Remote file does not '
                                              'exist for %s on %s (%s)' % (dst_path, location, t))
         return transports
