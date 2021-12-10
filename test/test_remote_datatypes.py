@@ -290,6 +290,11 @@ def test_named_queue(redis_connection):
             for x in range(5):
                 nq.push(x)
 
+            assert nq.pop_batch(100) == [0, 1, 2, 3, 4]
+
+            for x in range(5):
+                nq.push(x)
+
             assert nq.length() == 5
             nq.push(*list(range(5)))
             assert nq.length() == 10
