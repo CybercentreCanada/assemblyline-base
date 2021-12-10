@@ -713,6 +713,8 @@ class Services(odm.Model):
     allow_insecure_registry: bool = odm.Boolean()
     # Global registry type to be used for fetching updates for a service (can be overridable by a service)
     preferred_registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker')
+    # Global preference that controls if services should be privileged to communicate with core infrastucture
+    prefer_service_privileged:  bool = odm.Boolean(default=False)
     # How much CPU to reserve for services, at 1 a service's full cpu request will be reserved for them.
     # At 0 (only for very small appliances/dev boxes) the service's cpu will be limited
     # but no cpu will be reserved allowing for more flexible scheduling of containers.
