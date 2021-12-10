@@ -3,7 +3,6 @@
 import json
 import logging
 import redis
-import rediscluster
 import time
 
 from datetime import datetime
@@ -58,7 +57,7 @@ def retry_call(func, *args, **kw):
 
             return ret_val
 
-        except (redis.ConnectionError, rediscluster.ClusterError) as ce:
+        except (redis.ConnectionError) as ce:
             log.warning(f'No connection to Redis, reconnecting... [{ce}]')
             time.sleep(2 ** exponent)
             exponent = exponent + 1 if exponent < maximum else exponent
@@ -90,7 +89,8 @@ def get_client(host, port, private, cluster=None):
         if cluster is False:
             return client
 
-    return rediscluster.RedisCluster(host=host, port=port, max_connections=200)
+    raise ValueError("Cluster redis not supported")
+    # return rediscluster.RedisCluster(host=host, port=port, max_connections=200)
 
 
 def get_pool(host, port):
