@@ -24,7 +24,7 @@ class MetricsFactory(object):
 
     Left in place until we decide we are absolutely not switching methods again.
     """
-    def __init__(self, metrics_type, schema, name=None, redis=None, config=None):
+    def __init__(self, metrics_type, schema, name=None, redis=None, config=None, export_zero=True):
         self.config = config or forge.get_config()
         self.redis = redis or forge.get_pubsub_redis()
 
@@ -51,7 +51,8 @@ class MetricsFactory(object):
             config=self.config,
             counter_type=metrics_type,
             timer_names=timer_schema,
-            counter_names=counter_schema
+            counter_names=counter_schema,
+            export_zero=export_zero
         )
         self.metrics_handler.start()
 
