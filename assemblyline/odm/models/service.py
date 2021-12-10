@@ -109,6 +109,8 @@ class Service(odm.Model):
     name: str = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
 
+    # Should the service be able to talk to core infra or just service-server for tasking?
+    privileged = odm.Boolean(default=False)
     # Should the result cache be disabled for this service
     disable_cache = odm.Boolean(default=False)
 

@@ -89,6 +89,7 @@ class ServiceDelta(odm.Model):
     name = odm.Optional(odm.Keyword(), store=True, copyto="__text__")
     version = odm.Keyword(store=True)
 
+    privileged = odm.Optional(odm.Boolean())
     disable_cache = odm.Optional(odm.Boolean())
 
     stage = odm.Optional(odm.Keyword(), store=True, copyto="__text__")
