@@ -100,7 +100,7 @@ class AutoExportingCounters(object):
             log.debug(f"{pprint.pformat(thread_copy)}")
 
             # Only export if needs be
-            if self.export_zero or any(thread_copy.values()):
+            if self.export_zero or any([isinstance(x, int) and x != 0 for x in thread_copy.values()]):
                 self.channel.publish(thread_copy)
 
             return thread_copy
