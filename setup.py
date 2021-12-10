@@ -65,7 +65,7 @@ setup(
         'netifaces',
         'pyroute2.core',
         'redis',
-        'redis-py-cluster',
+#         'redis-py-cluster',
         'requests',
         'elasticsearch>=7.0.0,<8.0.0,!=7.0.3',  # 7.0.3 is excluded due to an error
         'python-datemath',
