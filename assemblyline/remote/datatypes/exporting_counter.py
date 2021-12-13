@@ -43,13 +43,15 @@ class AutoExportingCounters(object):
                  config=None,
                  redis=None,
                  counter_names=None,
-                 timer_names=None):
+                 timer_names=None,
+                 export_zero=True):
         config = config or forge.get_config()
         self.channel = forge.get_metrics_sink(redis)
         self.export_interval = export_interval_secs or config.core.metrics.export_interval
         self.name = name
         self.host = host or get_random_id()
         self.type = counter_type or name
+        self.export_zero = export_zero
 
         self.counter_schema = set(counter_names)
         self.timer_schema = set(timer_names)
@@ -95,8 +97,11 @@ class AutoExportingCounters(object):
             # To avoid blocking increments on the redis operation
             # we only hold the long to do a copy.
             thread_copy = dict(self.reset().items())
-            self.channel.publish(thread_copy)
             log.debug(f"{pprint.pformat(thread_copy)}")
+
+            # Only export if needs be
+            if self.export_zero or any([isinstance(x, int) and x != 0 for x in thread_copy.values()]):
+                self.channel.publish(thread_copy)
 
             return thread_copy
         except Exception:
