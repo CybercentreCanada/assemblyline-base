@@ -203,7 +203,7 @@ def test_priority_queue(redis_connection):
         assert pq.unpush() == 9
         assert pq.length() == 8
         assert pq.pop(4) == [1, 2, 3, 4]
-        assert pq.unpush(3) == [6, 7, 8]
+        assert pq.unpush(3) == [8, 7, 6]
         assert pq.length() == 1  # Should be [<100, 5>] at this point
 
         for x in range(5):
@@ -257,7 +257,7 @@ def test_unique_priority_queue(redis_connection):
         assert pq.unpush() == 9
         assert pq.length() == 8
         assert pq.pop(4) == [1, 2, 3, 4]
-        assert pq.unpush(3) == [6, 7, 8]
+        assert pq.unpush(3) == [8, 7, 6]
         assert pq.length() == 1  # Should be [<100, 5>] at this point
 
         for x in range(5):

@@ -60,11 +60,11 @@ class PriorityQueue(Generic[T]):
             return []
 
         if num:
-            return [decode(s[SORTING_KEY_LEN:]) for s in retry_call(self.c.zpopmin, self.name, num-1)]
+            return [decode(s[0][SORTING_KEY_LEN:]) for s in retry_call(self.c.zpopmin, self.name, num)]
         else:
-            ret_val = retry_call(self.c.zpopmin, self.name, 0)
+            ret_val = retry_call(self.c.zpopmin, self.name, 1)
             if ret_val:
-                return decode(ret_val[0][SORTING_KEY_LEN:])
+                return decode(ret_val[0][0][SORTING_KEY_LEN:])
             return None
 
     def blocking_pop(self, timeout=0, low_priority=False):
@@ -95,8 +95,9 @@ class PriorityQueue(Generic[T]):
 
     def push(self, priority: int, data: T, vip=None):
         vip = 0 if vip else 9
-        return retry_call(self.c.zadd, self.name,
-                          {f"{vip}{f'{int(time.time()*1000000):020}'}{json.dumps(data)}": -priority})
+        value = f"{vip}{f'{int(time.time()*1000000):020}'}{json.dumps(data)}"
+        retry_call(self.c.zadd, self.name, {value: -priority})
+        return value
 
     def rank(self, raw_value):
         return retry_call(self.c.zrank, self.name, raw_value)
@@ -109,11 +110,11 @@ class PriorityQueue(Generic[T]):
             return []
 
         if num:
-            return [decode(s[SORTING_KEY_LEN:]) for s in retry_call(self.c.zpopmax, self.name, num)]
+            return [decode(s[0][SORTING_KEY_LEN:]) for s in retry_call(self.c.zpopmax, self.name, num)]
         else:
             ret_val = retry_call(self.c.zpopmax, self.name, 1)
             if ret_val:
-                return decode(ret_val[0][SORTING_KEY_LEN:])
+                return decode(ret_val[0][0][SORTING_KEY_LEN:])
             return None
 
 
@@ -142,11 +143,11 @@ class UniquePriorityQueue(PriorityQueue):
             return []
 
         if num:
-            return [decode(s) for s in retry_call(self.c.zpopmin, self.name, num-1)]
+            return [decode(s[0]) for s in retry_call(self.c.zpopmin, self.name, num)]
         else:
-            ret_val = retry_call(self.c.zpopmin, self.name, 0)
+            ret_val = retry_call(self.c.zpopmin, self.name, 1)
             if ret_val:
-                return decode(ret_val[0])
+                return decode(ret_val[0][0])
             return None
 
     def unpush(self, num=None):
@@ -154,11 +155,11 @@ class UniquePriorityQueue(PriorityQueue):
             return []
 
         if num:
-            return [decode(s) for s in retry_call(self.c.zpopmax, self.name, num)]
+            return [decode(s[0]) for s in retry_call(self.c.zpopmax, self.name, num)]
         else:
             ret_val = retry_call(self.c.zpopmax, self.name, 1)
             if ret_val:
-                return decode(ret_val[0])
+                return decode(ret_val[0][0])
             return None
 
     def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1):
