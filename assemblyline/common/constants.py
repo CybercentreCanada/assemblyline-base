@@ -108,6 +108,7 @@ RECOGNIZED_TYPES = {
     'code/c': True,
     'code/css': True,
     'code/csharp': True,
+    'code/postscript': True,
     'code/erlang': True,
     'code/gles': True,
     'code/glsl': True,
