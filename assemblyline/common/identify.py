@@ -337,6 +337,7 @@ sl_patterns = [
     ['office/word', r'Microsoft.*Word'],
     ['office/rtf', r'Rich Text Format'],
     ['office/ole', r'OLE 2'],
+    ['office/hwp', r'Hangul \(Korean\) Word Processor File'],
     ['office/unknown', r'Composite Document File|CDFV2'],
     ['office/unknown', r'Microsoft.*(OOXML|Document)'],
     ['office/unknown', r'Number of (Characters|Pages|Words)'],
@@ -397,6 +398,7 @@ tl_patterns = [
      r'Composite Document File|CDFV2|Corel|OLE 2|OpenDocument |Rich Text Format|Microsoft.*'
      r'(Document|Excel|PowerPoint|Word|OOXML)|Number of (Characters|Pages|Words)'],
     ['document', r'PostScript|pdf|MIME entity text'],
+    ['document', r'Hangul \(Korean\) Word Processor File'],
     ['java', r'jar |java'],
     ['code',
      r'Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python'
@@ -430,6 +432,7 @@ trusted_mimes = {
     'application/x-gettext-translation': 'resource/mo',
     'application/json': 'text/json',
     'application/x-dbf': 'db/dbf',
+    'application/x-hwp': 'document/office/hwp',
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
