@@ -108,6 +108,7 @@ class Service(odm.Model):
 
     uses_tags: bool = odm.Boolean(default=False)
     uses_auxillary_data: bool = odm.Boolean(default=False)
+    uses_metadata: bool = odm.Boolean(default=False)
 
     name: str = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
