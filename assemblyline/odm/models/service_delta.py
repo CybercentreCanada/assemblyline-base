@@ -88,6 +88,7 @@ class ServiceDelta(odm.Model):
 
     uses_tags: bool = odm.Optional(odm.Boolean())
     uses_auxillary_data: bool = odm.Optional(odm.Boolean())
+    uses_metadata: bool = odm.Optional(odm.Boolean())
 
     name = odm.Optional(odm.Keyword(), store=True, copyto="__text__")
     version = odm.Keyword(store=True)
