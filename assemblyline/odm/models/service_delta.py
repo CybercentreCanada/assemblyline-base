@@ -87,7 +87,7 @@ class ServiceDelta(odm.Model):
     max_queue_length = odm.Optional(odm.Integer())
 
     uses_tags: bool = odm.Optional(odm.Boolean())
-    uses_auxillary_data: bool = odm.Optional(odm.Boolean())
+    uses_auxiliary_data: bool = odm.Optional(odm.Boolean())
     uses_metadata: bool = odm.Optional(odm.Boolean())
 
     name = odm.Optional(odm.Keyword(), store=True, copyto="__text__")
