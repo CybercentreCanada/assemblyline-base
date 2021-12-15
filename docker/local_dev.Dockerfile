@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.10-slim-bullseye
 
 # SSDEEP pkg requirments
 RUN apt-get update -yy \
