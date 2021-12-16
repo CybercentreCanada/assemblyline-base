@@ -1,4 +1,4 @@
-FROM python:3.10-slim-bullseye
+FROM python:3.9-slim-buster
 # NOTE: to build this container you must be in a directory where assemblyline-base, assemblyline-ui,
 # assemblyline-core, assemblyline-service-server and assemblyline-service-client code is checked out
 
