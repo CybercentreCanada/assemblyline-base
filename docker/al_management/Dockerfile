@@ -1,4 +1,4 @@
-FROM python:3.10-slim-bullseye
+FROM python:3.9-slim-buster
 
 # Make sure root account is locked so 'su' commands fail all the time
 RUN passwd -l root
