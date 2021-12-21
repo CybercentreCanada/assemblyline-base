@@ -1012,7 +1012,7 @@ def _construct_field(field, value):
             _c, _d = _construct_field(field.child_type, item)
             if _c is not None:
                 clean.append(_c)
-            if _d is not None:
+            if _d is not None and _d != "":
                 dropped.append(_d)
         return clean or None, dropped or None
 
