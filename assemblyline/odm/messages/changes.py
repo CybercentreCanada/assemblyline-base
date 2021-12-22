@@ -13,6 +13,7 @@ class Operation(enum.IntEnum):
     Added = 1
     Removed = 2
     Modified = 3
+    Incompatible = 4
 
 
 @dataclass
