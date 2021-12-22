@@ -60,4 +60,3 @@ class Counters(object):
             self.tracker.delete()
         for queue in retry_call(self.c.keys, "%s-*" % self.prefix):
             retry_call(self.c.delete, queue)
-
