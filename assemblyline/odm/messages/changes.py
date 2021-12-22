@@ -1,7 +1,7 @@
 """
 Messages about configuration changes internal to assemblyline.
 
-Uses standard library 
+Uses standard library
 """
 from __future__ import annotations
 import enum
@@ -13,6 +13,7 @@ class Operation(enum.IntEnum):
     Added = 1
     Removed = 2
     Modified = 3
+    Incompatible = 4
 
 
 @dataclass
@@ -27,6 +28,7 @@ class ServiceChange:
     @staticmethod
     def deserialize(data: str) -> ServiceChange:
         return ServiceChange(**json.loads(data))
+
 
 @dataclass
 class SignatureChange:
