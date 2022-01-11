@@ -1,4 +1,6 @@
 import json
+import time
+
 from typing import Generic, TypeVar, Optional
 
 from assemblyline.remote.datatypes import get_client, retry_call
@@ -11,12 +13,20 @@ class NamedQueue(Generic[T]):
         self.c = get_client(host, port, private)
         self.name: str = name
         self.ttl: int = ttl
+        self.last_expire_time = 0
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.delete()
+
+    def _conditional_expire(self):
+        if self.ttl:
+            ctime = time.time()
+            if ctime > self.last_expire_time + (self.ttl / 2):
+                retry_call(self.c.expire, self.name, self.ttl)
+                self.last_expire_time = ctime
 
     def delete(self):
         retry_call(self.c.delete, self.name)
@@ -58,15 +68,13 @@ class NamedQueue(Generic[T]):
     def push(self, *messages: T):
         for message in messages:
             retry_call(self.c.rpush, self.name, json.dumps(message))
-        if self.ttl:
-            retry_call(self.c.expire, self.name, self.ttl)
+        self._conditional_expire()
 
     def unpop(self, *messages: T):
         """Put all messages passed back at the head of the FIFO queue."""
         for message in messages:
             retry_call(self.c.lpush, self.name, json.dumps(message))
-        if self.ttl:
-            retry_call(self.c.expire, self.name, self.ttl)
+        self._conditional_expire()
 
 
 def select(*queues, **kw):

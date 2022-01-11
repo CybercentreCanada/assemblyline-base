@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Generic, TypeVar, Optional, TYPE_CHECKING, Union
 
 import json
+import time
 
 from assemblyline.remote.datatypes import get_client, retry_call
 
@@ -156,28 +157,36 @@ class ExpiringHash(Hash):
     def __init__(self, name, ttl=86400, host=None, port=None):
         super(ExpiringHash, self).__init__(name, host, port)
         self.ttl = ttl
+        self.last_expire_time = 0
+
+    def _conditional_expire(self):
+        if self.ttl:
+            ctime = time.time()
+            if ctime > self.last_expire_time + (self.ttl / 2):
+                retry_call(self.c.expire, self.name, self.ttl)
+                self.last_expire_time = ctime
 
     def add(self, key, value):
         rval = super(ExpiringHash, self).add(key, value)
-        retry_call(self.c.expire, self.name, self.ttl)
+        self._conditional_expire()
         return rval
 
     def set(self, key, value):
         rval = super(ExpiringHash, self).set(key, value)
-        retry_call(self.c.expire, self.name, self.ttl)
+        self._conditional_expire()
         return rval
 
     def multi_set(self, data):
         rval = super(ExpiringHash, self).multi_set(data)
-        retry_call(self.c.expire, self.name, self.ttl)
+        self._conditional_expire()
         return rval
 
     def increment(self, key, increment=1):
         rval = super(ExpiringHash, self).increment(key, increment)
-        retry_call(self.c.expire, self.name, self.ttl)
+        self._conditional_expire()
         return rval
 
     def limited_add(self, key, value, size_limit):
         rval = super(ExpiringHash, self).limited_add(key, value, size_limit)
-        retry_call(self.c.expire, self.name, self.ttl)
+        self._conditional_expire()
         return rval

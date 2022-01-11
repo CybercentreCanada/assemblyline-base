@@ -1,4 +1,5 @@
 import json
+import time
 
 from assemblyline.remote.datatypes import get_client, retry_call
 
@@ -78,8 +79,16 @@ class ExpiringSet(Set):
     def __init__(self, name, ttl=86400, host=None, port=None):
         super(ExpiringSet, self).__init__(name, host, port)
         self.ttl = ttl
+        self.last_expire_time = 0
+
+    def _conditional_expire(self):
+        if self.ttl:
+            ctime = time.time()
+            if ctime > self.last_expire_time + (self.ttl / 2):
+                retry_call(self.c.expire, self.name, self.ttl)
+                self.last_expire_time = ctime
 
     def add(self, *values):
         rval = super(ExpiringSet, self).add(*values)
-        retry_call(self.c.expire, self.name, self.ttl)
+        self._conditional_expire()
         return rval
