@@ -288,7 +288,6 @@ def test_constants():
         (b"* `blah` - blah", ["text/markdown"]),
         (b"*\t`blah`\t-\tblah", ["text/markdown"]),
         # Email
-        (b"Content-Type: ", ["document/email"]),
         (b"Subject: ", ["document/email"]),
         (b"MIME-Version: ", ["document/email"]),
         (b"Message-ID: ", ["document/email"]),
@@ -475,6 +474,9 @@ def test_strong_indicators(code_snippet, code_types):
         (b"dup ", ["code/postscript"]),
         (b"xor ", ["code/postscript"]),
         (b"copy ", ["code/postscript"]),
+        # Email
+        (b"Content-Type: ", ["document/email"]),
+
     ]
 )
 def test_weak_indicators(code_snippet, code_types):
