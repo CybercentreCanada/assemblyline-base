@@ -106,7 +106,6 @@ STRONG_INDICATORS = {
         re.compile(rb'\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+'),
     ],
     'document/email': [
-        re.compile(rb'^Content-Type: ', re.MULTILINE),
         re.compile(rb'^Subject: ', re.MULTILINE),
         re.compile(rb'^MIME-Version: ', re.MULTILINE),
         re.compile(rb'^Message-ID: ', re.MULTILINE),
@@ -180,7 +179,8 @@ WEAK_INDICATORS = {
         rb'\s-([A-Z][a-z0-9]+)+',
         # Check for cmdlet names ex. Disable-WindowsOptionalFeature
         rb'([A-Z][a-z0-9]+)+-([A-Z][a-z0-9]+)+',
-    ]
+    ],
+    'document/email': [rb'^Content-Type: ']
 }
 WEAK_SCORE = 1
 
