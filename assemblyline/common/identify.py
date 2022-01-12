@@ -106,7 +106,6 @@ STRONG_INDICATORS = {
         re.compile(rb'\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+'),
     ],
     'document/email': [
-        re.compile(rb'^Content-Type: ', re.MULTILINE),
         re.compile(rb'^Subject: ', re.MULTILINE),
         re.compile(rb'^MIME-Version: ', re.MULTILINE),
         re.compile(rb'^Message-ID: ', re.MULTILINE),
@@ -192,7 +191,8 @@ WEAK_INDICATORS = {
         rb'get ',
         rb'xor ',
         rb'copy ',
-    ]
+    ],
+    'document/email': [rb'^Content-Type: ']
 }
 WEAK_SCORE = 1
 
