@@ -475,7 +475,7 @@ def test_strong_indicators(code_snippet, code_types):
         (b"xor ", ["code/postscript"]),
         (b"copy ", ["code/postscript"]),
         # Email
-        (b"Content-Type: ", ["document/email"]),
+        (b"Content-Type: ", ["code/ps1", "document/email"]),
 
     ]
 )
