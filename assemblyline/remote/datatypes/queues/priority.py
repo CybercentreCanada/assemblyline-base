@@ -1,8 +1,13 @@
 from __future__ import annotations
+
 import json
+import time
+
 from typing import Generic, Optional, TypeVar, Union
 
 from assemblyline.remote.datatypes import get_client, retry_call, decode
+
+SORTING_KEY_LEN = 21
 
 # Work around for inconsistency between ZRANGEBYSCORE and ZREMRANGEBYSCORE
 #   (No limit option available or we would just be using that directly)
@@ -26,44 +31,12 @@ if #entries > 0 then redis.call("zrem", KEYS[1], unpack(entries)) end
 return entries
 """
 
-
-# ARGV[1]: <queue name>
-# ARGV[2]: <max items to pop minus one>
-pq_pop_script = """
-local result = redis.call('zrange', ARGV[1], 0, ARGV[2])
-if result then redis.call('zremrangebyrank', ARGV[1], 0, ARGV[2]) end
-return result
-"""
-
-# ARGV[1]: <queue name>
-# ARGV[2]: <priority>
-# ARGV[3]: <vip>,
-# ARGV[4]: <item (string) to push>
-pq_push_script = """
-local seq = string.format('%020d', redis.call('incr', 'global-sequence'))
-local vip = string.format('%1d', ARGV[3])
-local value = vip..seq..ARGV[4]
-redis.call('zadd', ARGV[1], 0 - ARGV[2], value)
-return value
-"""
-
-# ARGV[1]: <queue name>
-# ARGV[2]: <max items to unpush>
-pq_unpush_script = """
-local result = redis.call('zrange', ARGV[1], 0 - ARGV[2], 0 - 1)
-if result then redis.call('zremrangebyrank', ARGV[1], 0 - ARGV[2], 0 - 1) end
-return result
-"""
-
 T = TypeVar('T')
 
 
 class PriorityQueue(Generic[T]):
     def __init__(self, name, host=None, port=None, private=False):
         self.c = get_client(host, port, private)
-        self.r = self.c.register_script(pq_pop_script)
-        self.s = self.c.register_script(pq_push_script)
-        self.t = self.c.register_script(pq_unpush_script)
         self._deque_range = self.c.register_script(pq_dequeue_range_script)
         self.name = name
 
@@ -87,11 +60,11 @@ class PriorityQueue(Generic[T]):
             return []
 
         if num:
-            return [decode(s[21:]) for s in retry_call(self.r, args=[self.name, num-1])]
+            return [decode(s[0][SORTING_KEY_LEN:]) for s in retry_call(self.c.zpopmin, self.name, num)]
         else:
-            ret_val = retry_call(self.r, args=[self.name, 0])
+            ret_val = retry_call(self.c.zpopmin, self.name, 1)
             if ret_val:
-                return decode(ret_val[0][21:])
+                return decode(ret_val[0][0][SORTING_KEY_LEN:])
             return None
 
     def blocking_pop(self, timeout=0, low_priority=False):
@@ -101,7 +74,7 @@ class PriorityQueue(Generic[T]):
         else:
             result = retry_call(self.c.bzpopmin, self.name, timeout)
         if result:
-            return decode(result[1][21:])
+            return decode(result[1][SORTING_KEY_LEN:])
         return None
 
     def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1) -> list[T]:
@@ -118,11 +91,13 @@ class PriorityQueue(Generic[T]):
         :return: list
         """
         results = retry_call(self._deque_range, keys=[self.name], args=[lower_limit, upper_limit, skip, num])
-        return [decode(res[21:]) for res in results]
+        return [decode(res[SORTING_KEY_LEN:]) for res in results]
 
     def push(self, priority: int, data: T, vip=None):
         vip = 0 if vip else 9
-        return retry_call(self.s, args=[self.name, priority, vip, json.dumps(data)])
+        value = f"{vip}{f'{int(time.time()*1000000):020}'}{json.dumps(data)}"
+        retry_call(self.c.zadd, self.name, {value: -priority})
+        return value
 
     def rank(self, raw_value):
         return retry_call(self.c.zrank, self.name, raw_value)
@@ -135,11 +110,11 @@ class PriorityQueue(Generic[T]):
             return []
 
         if num:
-            return [decode(s[21:]) for s in retry_call(self.t, args=[self.name, num])]
+            return [decode(s[0][SORTING_KEY_LEN:]) for s in retry_call(self.c.zpopmax, self.name, num)]
         else:
-            ret_val = retry_call(self.t, args=[self.name, 1])
+            ret_val = retry_call(self.c.zpopmax, self.name, 1)
             if ret_val:
-                return decode(ret_val[0][21:])
+                return decode(ret_val[0][0][SORTING_KEY_LEN:])
             return None
 
 
@@ -148,7 +123,6 @@ class UniquePriorityQueue(PriorityQueue):
 
     def __init__(self, name, host=None, port=None, private=False):
         super().__init__(name, host, port, private)
-        del self.s
 
     def remove(self, data: str):
         """Remove a value from the priority  queue."""
@@ -169,11 +143,11 @@ class UniquePriorityQueue(PriorityQueue):
             return []
 
         if num:
-            return [decode(s) for s in retry_call(self.r, args=[self.name, num-1])]
+            return [decode(s[0]) for s in retry_call(self.c.zpopmin, self.name, num)]
         else:
-            ret_val = retry_call(self.r, args=[self.name, 0])
+            ret_val = retry_call(self.c.zpopmin, self.name, 1)
             if ret_val:
-                return decode(ret_val[0])
+                return decode(ret_val[0][0])
             return None
 
     def unpush(self, num=None):
@@ -181,11 +155,11 @@ class UniquePriorityQueue(PriorityQueue):
             return []
 
         if num:
-            return [decode(s) for s in retry_call(self.t, args=[self.name, num])]
+            return [decode(s[0]) for s in retry_call(self.c.zpopmax, self.name, num)]
         else:
-            ret_val = retry_call(self.t, args=[self.name, 1])
+            ret_val = retry_call(self.c.zpopmax, self.name, 1)
             if ret_val:
-                return decode(ret_val[0])
+                return decode(ret_val[0][0])
             return None
 
     def dequeue_range(self, lower_limit='', upper_limit='', skip=0, num=1):
@@ -218,7 +192,7 @@ def select(*queues, **kw):
     if not response:
         return response
 
-    return response[0].decode('utf-8'), json.loads(response[1][21:])
+    return response[0].decode('utf-8'), json.loads(response[1][SORTING_KEY_LEN:])
 
 
 def length(*queues: PriorityQueue) -> list[int]:
