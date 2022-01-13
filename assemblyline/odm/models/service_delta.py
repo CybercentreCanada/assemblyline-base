@@ -86,6 +86,10 @@ class ServiceDelta(odm.Model):
     licence_count = odm.Optional(odm.Integer())
     max_queue_length = odm.Optional(odm.Integer())
 
+    uses_tags: bool = odm.Optional(odm.Boolean())
+    uses_temp_submission_data: bool = odm.Optional(odm.Boolean())
+    uses_metadata: bool = odm.Optional(odm.Boolean())
+
     name = odm.Optional(odm.Keyword(), store=True, copyto="__text__")
     version = odm.Keyword(store=True)
 

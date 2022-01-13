@@ -106,6 +106,10 @@ class Service(odm.Model):
     # If more than this many jobs are queued for this service drop those over this limit. 0 is unlimited.
     max_queue_length: int = odm.Integer(default=0)
 
+    uses_tags: bool = odm.Boolean(default=False)
+    uses_temp_submission_data: bool = odm.Boolean(default=False)
+    uses_metadata: bool = odm.Boolean(default=False)
+
     name: str = odm.Keyword(store=True, copyto="__text__")
     version = odm.Keyword(store=True)
 
