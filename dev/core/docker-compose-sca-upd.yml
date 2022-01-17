@@ -6,6 +6,8 @@ services:
     environment:
       DOCKER_CONFIGURATION_PATH: /mount/service_config/
       DOCKER_CONFIGURATION_VOLUME: service_config
+      UI_SERVER: "http://internal-ui:5000"
+      AL_CORE_NETWORK: external
     volumes:
       - type: volume
         source: service_config
@@ -26,7 +28,8 @@ services:
 
   al_updater:
     image: cccs/assemblyline_dev:4.0.19
-    # environment:
+    environment:
+      UI_SERVER: "http://internal-ui:5000"
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
