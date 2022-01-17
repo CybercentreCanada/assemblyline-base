@@ -1,6 +1,8 @@
 from collections.abc import Mapping
 from typing import Dict, Optional, AnyStr, List, Mapping as _Mapping, Union
 
+from assemblyline.common.uid import get_id_from_data
+
 
 def strip_nulls(d):
     if isinstance(d, dict):
@@ -53,6 +55,34 @@ def get_recursive_delta(d1: Union[Dict, Mapping], d2: Union[Dict, Mapping],
             out[k2] = v2
 
     return out
+
+
+def get_recursive_sorted_tuples(data: Dict):
+    def sort_lists(ldata: List):
+        new_list = []
+        for i in ldata:
+            if isinstance(i, list):
+                i = sort_lists(i)
+            elif isinstance(i, dict):
+                i = get_recursive_sorted_tuples(i)
+
+            new_list.append(i)
+        return new_list
+
+    items = []
+    for k, v in sorted(data.items()):
+        if isinstance(v, dict):
+            v = get_recursive_sorted_tuples(v)
+        elif isinstance(v, list):
+            v = sort_lists(v)
+
+        items.append((k, v))
+
+    return items
+
+
+def get_dict_fingerprint_hash(data: Dict):
+    return get_id_from_data(str(get_recursive_sorted_tuples(data)))
 
 
 def flatten(data: Dict, parent_key: Optional[str] = None) -> Dict:
