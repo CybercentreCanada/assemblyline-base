@@ -69,7 +69,7 @@ def get_client(host, port, private):
         return host
 
     if not host or not port:
-        config = forge.get_config(static=True)
+        config = forge.get_config()
 
         host = host or config.core.redis.nonpersistent.host
         port = int(port or config.core.redis.nonpersistent.port)
