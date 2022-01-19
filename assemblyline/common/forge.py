@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
 
 
-config_singletons = {}
+config_cache = {}
 
 
 def get_classification(yml_config=None):
@@ -82,9 +82,9 @@ def _get_config(yml_config=None):
 
 
 def get_config(yml_config=None) -> Config:
-    if yml_config not in config_singletons:
-        config_singletons[yml_config] = _get_config(yml_config=yml_config)
-    return config_singletons[yml_config]
+    if yml_config not in config_cache:
+        config_cache[yml_config] = _get_config(yml_config=yml_config)
+    return config_cache[yml_config]
 
 
 def get_constants(config=None):
