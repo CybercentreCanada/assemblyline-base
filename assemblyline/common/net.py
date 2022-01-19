@@ -114,7 +114,7 @@ def get_hostip() -> str:
     ip = None
     try:
         from assemblyline.common import forge
-        config = forge.get_config(static=True)
+        config = forge.get_config()
         ip = get_route_to(config.datastore.hosts[0])
     except Exception:
         pass
