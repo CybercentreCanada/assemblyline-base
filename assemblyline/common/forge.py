@@ -59,7 +59,7 @@ def _env_substitute(buffer):
     return Template(buffer).safe_substitute(os.environ, idpattern=None, bracedidpattern='(?a:[_a-z][_a-z0-9]*)')
 
 
-def _get_config(static=False, yml_config=None):
+def _get_config(yml_config=None):
     from assemblyline.odm.models.config import Config
 
     if yml_config is None:
@@ -75,22 +75,16 @@ def _get_config(static=False, yml_config=None):
             if yml_data:
                 config = recursive_update(config, yml_data)
 
-    if not static:
-        # TODO: Load a datastore object and load the config changes from the datastore
-        # config.update(datastore_changes)
-        pass
-
     if 'AL_LOG_LEVEL' in os.environ:
         config['logging']['log_level'] = os.environ['AL_LOG_LEVEL']
 
     return Config(config)
 
 
-def get_config(static=False, yml_config=None) -> Config:
-    if (static, yml_config) not in config_singletons:
-        config_singletons[(static, yml_config)] = CachedObject(_get_config, kwargs={'static': static,
-                                                                                    'yml_config': yml_config})
-    return config_singletons[(static, yml_config)]
+def get_config(yml_config=None) -> Config:
+    if yml_config not in config_singletons:
+        config_singletons[yml_config] = _get_config(yml_config=yml_config)
+    return config_singletons[yml_config]
 
 
 def get_constants(config=None):
@@ -102,7 +96,7 @@ def get_constants(config=None):
 def get_datastore(config=None, archive_access=False):
     from assemblyline.datastore.helper import AssemblylineDatastore
     if not config:
-        config = get_config(static=True)
+        config = get_config()
 
     if config.datastore.type == "elasticsearch":
         from assemblyline.datastore.stores.es_store import ESStore
