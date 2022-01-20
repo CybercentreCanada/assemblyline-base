@@ -225,6 +225,10 @@ class Tagging(odm.Model):
                 name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
             @odm.model(index=True, store=False)
+            class FilePERichHeader(odm.Model):
+                hash = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+            @odm.model(index=True, store=False)
             class FilePESections(odm.Model):
                 hash = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -241,6 +245,7 @@ class Tagging(odm.Model):
             oep = odm.Optional(odm.Compound(FilePEOEP))
             pdb_filename = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             resources = odm.Optional(odm.Compound(FilePEResources))
+            rich_header = odm.Optional(odm.Compound(FilePERichHeader))
             sections = odm.Optional(odm.Compound(FilePESections))
             versions = odm.Optional(odm.Compound(FilePEVersions))
 
