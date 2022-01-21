@@ -436,3 +436,8 @@ class Tagging(odm.Model):
     source = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
     technique = odm.Optional(odm.Compound(Technique))
     vector = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+
+if __name__ == "__main__":
+    from pprint import pprint
+    pprint(list(Tagging().flat_fields().keys()))
