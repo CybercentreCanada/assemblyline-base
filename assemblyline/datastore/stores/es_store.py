@@ -1,14 +1,16 @@
 import json
 import logging
 import time
+
 from copy import deepcopy
 from os import environ
 from random import random
 from typing import Dict
-from assemblyline.odm.base import BANNED_FIELDS
 
 import elasticsearch
 import elasticsearch.helpers
+
+from elasticsearch.helpers.errors import ScanError
 
 from assemblyline import odm
 from assemblyline.common import forge
@@ -19,6 +21,7 @@ from assemblyline.datastore.exceptions import (DataStoreException, ILMException,
 from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
 from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                                   default_index, default_mapping)
+from assemblyline.odm.base import BANNED_FIELDS
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
 write_block_settings = {"settings": {"index.blocks.write": True}}
@@ -98,18 +101,6 @@ def parse_sort(sort, ret_list=True):
             return [{parts[0]: parts[1]}]
         return {parts[0]: parts[1]}
     raise SearchException('Unknown sort parameter ' + sort)
-
-
-class RetryableIterator(object):
-    def __init__(self, collection, iterable):
-        self._iter = iter(iterable)
-        self.collection = collection
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self.collection.with_retries(self._iter.__next__)
 
 
 class ElasticBulkPlan(BulkPlan):
@@ -252,6 +243,48 @@ class ESCollection(Collection):
             return [self.index_name] + sorted(self._index_list, reverse=True)
         else:
             return [self.index_name]
+
+    def scan_with_retry(self, query, index=None, scroll="5m", size=1000, request_timeout=None):
+        if index is None:
+            index = self.index_name
+
+        # initial search
+        resp = self.with_retries(self.datastore.client.search, index=index, body=query, scroll=scroll,
+                                 size=size, request_timeout=request_timeout)
+        scroll_id = resp.get("_scroll_id")
+
+        try:
+            while scroll_id and resp["hits"]["hits"]:
+                for hit in resp["hits"]["hits"]:
+                    yield hit
+
+                # Default to 0 if the value isn't included in the response
+                shards_successful = resp["_shards"].get("successful", 0)
+                shards_skipped = resp["_shards"].get("skipped", 0)
+                shards_total = resp["_shards"].get("total", 0)
+
+                # check if we have any errors
+                if (shards_successful + shards_skipped) < shards_total:
+                    shards_message = "Scroll request has only succeeded on %d (+%d skipped) shards out of %d."
+                    raise ScanError(
+                        scroll_id,
+                        shards_message
+                        % (
+                            shards_successful,
+                            shards_skipped,
+                            shards_total,
+                        ),
+                    )
+                resp = self.with_retries(self.datastore.client.scroll, body={"scroll_id": scroll_id, "scroll": scroll})
+                scroll_id = resp.get("_scroll_id")
+
+        finally:
+            if scroll_id:
+                resp = self.with_retries(self.datastore.client.clear_scroll, body={"scroll_id": [scroll_id]},
+                                         ignore=(404,), params={"__elastic_client_meta": (("h", "s"),)})
+                if not resp.get('succeeded', False):
+                    log.warning(f"Could not clear scroll ID {scroll_id}, there is potential "
+                                "memory leak in you Elastic cluster...")
 
     def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
         retries = 0
@@ -704,17 +737,8 @@ class ESCollection(Collection):
 
             if key_list and self.archive_access:
                 query_body = {"query": {"ids": {"values": key_list}}}
-                iterator = RetryableIterator(
-                    self,
-                    elasticsearch.helpers.scan(
-                        self.datastore.client,
-                        query=query_body,
-                        index=f"{self.name}-*",
-                        preserve_order=True
-                    )
-                )
 
-                for row in iterator:
+                for row in self.scan_with_retry(query_body, index=f"{self.name}-*"):
                     try:
                         key_list.remove(row['_id'])
                         add_to_output(row['_source'], row['_id'])
@@ -1195,8 +1219,8 @@ class ESCollection(Collection):
 
     def stream_search(self, query, fl=None, filters=None, access_control=None,
                       item_buffer_size=200, as_obj=True, use_archive=False):
-        if item_buffer_size > 500 or item_buffer_size < 50:
-            raise SearchException("Variable item_buffer_size must be between 50 and 500.")
+        if item_buffer_size > 2000 or item_buffer_size < 50:
+            raise SearchException("Variable item_buffer_size must be between 50 and 2000.")
 
         index = self.name
         if self.archive_access and use_archive:
@@ -1229,17 +1253,7 @@ class ESCollection(Collection):
             "_source": fl or list(self.stored_fields.keys())
         }
 
-        iterator = RetryableIterator(
-            self,
-            elasticsearch.helpers.scan(
-                self.datastore.client,
-                query=query_body,
-                index=index,
-                preserve_order=True
-            )
-        )
-
-        for value in iterator:
+        for value in self.scan_with_retry(query_body, index=index, size=item_buffer_size):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl, as_obj=as_obj)
 
