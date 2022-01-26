@@ -791,6 +791,11 @@ class AlertingMeta(odm.Model):
 DEFAULT_ALERTING_META = {
     'important': [
         'protocol',
+        'subject',
+        'submitted_url',
+        'source_url'
+        'url',
+        'web_url',
         'from',
         'to',
         'cc',
