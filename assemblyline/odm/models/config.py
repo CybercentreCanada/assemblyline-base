@@ -780,9 +780,48 @@ DEFAULT_STATISTICS = {
 }
 
 
+# Option for the alerting perspective
+@odm.model(index=False, store=False)
+class AlertingMeta(odm.Model):
+    important: List[str] = odm.List(odm.Keyword())
+    subject: List[str] = odm.List(odm.Keyword())
+    url: List[str] = odm.List(odm.Keyword())
+
+
+DEFAULT_ALERTING_META = {
+    'important': [
+        'protocol',
+        'subject',
+        'submitted_url',
+        'source_url'
+        'url',
+        'web_url',
+        'from',
+        'to',
+        'cc',
+        'bcc',
+        'ip_src',
+        'ip_dst',
+        'source'
+    ],
+    'subject': [
+        'subject'
+    ],
+    'url': [
+        'submitted_url',
+        'source_url'
+        'url',
+        'web_url'
+    ]
+
+}
+
+
 # This is the model definition for the logging block
 @odm.model(index=False, store=False)
 class UI(odm.Model):
+    # Alerting metadata fields
+    alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META)
     # Allow user to tell in advance the system that a file is malicious
     allow_malicious_hinting: bool = odm.Boolean()
     # Allow to user to download raw files
@@ -836,6 +875,7 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
+    "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
     "allow_url_submissions": True,
