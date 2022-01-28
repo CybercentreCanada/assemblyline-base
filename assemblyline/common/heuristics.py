@@ -101,7 +101,7 @@ class Heuristic(object):
                 software_def = software_map[a_id]
                 implant_name = software_def.get('name', None)
                 if implant_name:
-                    self.associated_tags.append(('attribution.implant', implant_name))
+                    self.associated_tags.append(('attribution.implant', implant_name.upper()))
 
                 for s_a_id in software_def['attack_ids']:
                     if s_a_id in attack_map:
@@ -114,7 +114,7 @@ class Heuristic(object):
             elif a_id in group_map:
                 group_name = group_map[a_id].get('name', None)
                 if group_name:
-                    self.associated_tags.append(('attribution.actor', group_name))
+                    self.associated_tags.append(('attribution.actor', group_name.upper()))
             else:
                 heur_logger.warning(f"Invalid attack_id '{a_id}' in heuristic '{heur_id}'. Ignoring it.")
         self.attack_ids = list(set(self.attack_ids))
