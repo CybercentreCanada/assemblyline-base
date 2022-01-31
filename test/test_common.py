@@ -198,6 +198,7 @@ def test_heuristics_valid():
 
     attack_ids_to_fetch_details_for = attack_ids[:]
     for software_id in software_ids:
+        attack_ids_to_fetch_details_for.append(software_id)
         software_attack_ids = software_map[software_id]["attack_ids"]
         for software_attack_id in software_attack_ids:
             if software_attack_id in attack_map and software_attack_id not in attack_ids_to_fetch_details_for:
