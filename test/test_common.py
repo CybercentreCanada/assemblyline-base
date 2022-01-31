@@ -195,10 +195,10 @@ def test_heuristics_valid():
 
     software_ids = list(set([random.choice(list(software_map.keys())) for _ in range(random.randint(1, 3))]))
     attack_ids = list(set([random.choice(list(attack_map.keys())) for _ in range(random.randint(1, 3))]))
+    group_ids = list(set([random.choice(list(group_map.keys())) for _ in range(random.randint(1, 3))]))
 
     attack_ids_to_fetch_details_for = attack_ids[:]
     for software_id in software_ids:
-        attack_ids_to_fetch_details_for.append(software_id)
         software_attack_ids = software_map[software_id]["attack_ids"]
         for software_attack_id in software_attack_ids:
             if software_attack_id in attack_map and software_attack_id not in attack_ids_to_fetch_details_for:
@@ -213,6 +213,7 @@ def test_heuristics_valid():
         attack_id: {"pattern": attack_map[attack_id]["name"],
                     "categories": attack_map[attack_id]["categories"]} for attack_id in attack_ids_to_fetch_details_for}
     attack_ids.extend(software_ids)
+    attack_ids.extend(group_ids)
 
     signatures = {}
     score_map = {}
@@ -238,9 +239,18 @@ def test_heuristics_valid():
     assert service_heur['score'] != result_heur['score']
     for attack in result_heur['attack']:
         attack_id = attack['attack_id']
-        assert attack_id in attack_ids_to_fetch_details_for
-        assert attack['pattern'] == attack_id_details[attack_id]['pattern']
-        assert attack['categories'] == attack_id_details[attack_id]['categories']
+        if attack_id in attack_map:
+            assert attack_id in attack_ids_to_fetch_details_for
+            assert attack['pattern'] == attack_id_details[attack_id]['pattern']
+            assert attack['categories'] == attack_id_details[attack_id]['categories']
+        elif attack_id in software_map:
+            assert attack_id in software_ids
+            assert attack['pattern'] == software_map[attack_id].get('name', attack_id)
+            assert attack['categories'] == ['software']
+        elif attack_id in group_map:
+            assert attack_id in group_ids
+            assert attack['pattern'] == group_map[attack_id].get('name', attack_id)
+            assert attack['categories'] == ['group']
     for signature in result_heur['signature']:
         assert signature['name'] in signatures
         assert signature['frequency'] == signatures[signature['name']]
