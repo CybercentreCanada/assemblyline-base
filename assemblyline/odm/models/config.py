@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
@@ -267,6 +267,18 @@ DEFAULT_AUTH = {
 
 
 @odm.model(index=False, store=False)
+class AlertFilter(odm.Model):
+    key: str = odm.Keyword()
+    value_pattern: Optional[str] = odm.Optional(odm.Keyword())
+
+
+@odm.model(index=False, store=False)
+class AlertEnrichment(odm.Model):
+    url: str = odm.Keyword()
+    filters: list[AlertFilter] = odm.List(odm.Compound(AlertFilter))
+
+
+@odm.model(index=False, store=False)
 class Alerter(odm.Model):
     alert_ttl: int = odm.Integer()
     constant_alert_fields: List[str] = odm.List(odm.Keyword())
@@ -275,6 +287,7 @@ class Alerter(odm.Model):
     filtering_group_fields: List[str] = odm.List(odm.Keyword())
     non_filtering_group_fields: List[str] = odm.List(odm.Keyword())
     process_alert_message: str = odm.Keyword()
+    enrichment_endpoint: list[AlertEnrichment] = odm.List(odm.Compound(AlertEnrichment))
 
 
 DEFAULT_ALERTER = {
@@ -293,7 +306,7 @@ DEFAULT_ALERTER = {
         "file.sha256"
     ],
     "process_alert_message": "assemblyline_core.alerter.processing.process_alert_message",
-
+    "enrichment_endpoint": [],
 }
 
 
