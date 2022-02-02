@@ -774,7 +774,10 @@ class AssemblylineDatastore(object):
             out['missing_files'] = e.keys
 
         for key, item in items.items():
-            for section in item.get('result', {}).get('sections', []):
+            sorted_sections = sorted(item.get('result', {}).get('sections', []),
+                                     key=lambda i: i['heuristic']['score'] if i['heuristic'] is not None else 0,
+                                     reverse=True)
+            for section in sorted_sections:
                 file_classification = files.get(key[:64], {}).get('classification', section['classification'])
                 if user_classification:
                     if not cl_engine.is_accessible(user_classification, section['classification']):
