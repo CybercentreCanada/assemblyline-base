@@ -5,6 +5,7 @@ import time
 
 from typing import Union, List
 from datetime import datetime
+from assemblyline.common.uid import get_id_from_data
 
 import elasticapm
 import elasticsearch
@@ -734,7 +735,8 @@ class AssemblylineDatastore(object):
         return True
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_summary_from_keys(self, keys, cl_engine=forge.get_classification(), user_classification=None):
+    def get_summary_from_keys(self, keys, cl_engine=forge.get_classification(),
+                              user_classification=None, keep_heuristic_sections=False):
         out = {
             "tags": [],
             "attack_matrix": [],
@@ -745,12 +747,14 @@ class AssemblylineDatastore(object):
                 "malicious": []
             },
             "classification": cl_engine.UNRESTRICTED,
-            "filtered": False
+            "filtered": False,
+            "heuristic_sections": {}
         }
         done_map = {
             "heuristics": set(),
             "attack": set(),
-            "tags": set()
+            "tags": set(),
+            "sections": set()
         }
 
         if len(keys) == 0:
@@ -811,6 +815,13 @@ class AssemblylineDatastore(object):
                             'key': key
                         })
                         done_map['heuristics'].add(cache_key)
+                    if keep_heuristic_sections:
+                        out['heuristic_sections'].setdefault(section['heuristic']['name'], [])
+                        section_key = get_id_from_data(
+                            f"{section['title_text']}_{section['body']}_{section['heuristic']['score']}")
+                        if section_key not in done_map['sections']:
+                            out['heuristic_sections'][section['heuristic']['name']].append(section)
+                            done_map['sections'].add(section_key)
 
                     for attack in section['heuristic'].get('attack', []):
                         # Get attack matrix data
