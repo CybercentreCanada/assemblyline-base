@@ -5,6 +5,7 @@ import time
 
 from typing import Union, List
 from datetime import datetime
+from assemblyline.common.uid import get_id_from_data
 
 import elasticapm
 import elasticsearch
@@ -734,7 +735,8 @@ class AssemblylineDatastore(object):
         return True
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_summary_from_keys(self, keys, cl_engine=forge.get_classification(), user_classification=None):
+    def get_summary_from_keys(self, keys, cl_engine=forge.get_classification(),
+                              user_classification=None, keep_heuristic_sections=False):
         out = {
             "tags": [],
             "attack_matrix": [],
@@ -745,12 +747,15 @@ class AssemblylineDatastore(object):
                 "malicious": []
             },
             "classification": cl_engine.UNRESTRICTED,
-            "filtered": False
+            "filtered": False,
+            "heuristic_sections": {},
+            "heuristic_name_map": {}
         }
         done_map = {
             "heuristics": set(),
             "attack": set(),
-            "tags": set()
+            "tags": set(),
+            "sections": set()
         }
 
         if len(keys) == 0:
@@ -774,7 +779,10 @@ class AssemblylineDatastore(object):
             out['missing_files'] = e.keys
 
         for key, item in items.items():
-            for section in item.get('result', {}).get('sections', []):
+            sorted_sections = sorted(item.get('result', {}).get('sections', []),
+                                     key=lambda i: i['heuristic']['score'] if i['heuristic'] is not None else 0,
+                                     reverse=True)
+            for section in sorted_sections:
                 file_classification = files.get(key[:64], {}).get('classification', section['classification'])
                 if user_classification:
                     if not cl_engine.is_accessible(user_classification, section['classification']):
@@ -790,6 +798,9 @@ class AssemblylineDatastore(object):
                 h_type = "info"
 
                 if section.get('heuristic', False):
+                    heur_id = section['heuristic']['heur_id']
+                    heur_name = section['heuristic']['name']
+
                     # Get the heuristics data
                     if section['heuristic']['score'] < 0:
                         h_type = "safe"
@@ -800,14 +811,29 @@ class AssemblylineDatastore(object):
                     else:
                         h_type = "malicious"
 
-                    cache_key = f"{section['heuristic']['heur_id']}_{key}"
+                    cache_key = f"{heur_id}_{key}"
                     if cache_key not in done_map['heuristics']:
                         out['heuristics'][h_type].append({
-                            'heur_id': section['heuristic']['heur_id'],
-                            'name': section['heuristic']['name'],
+                            'heur_id': heur_id,
+                            'name': heur_name,
                             'key': key
                         })
                         done_map['heuristics'].add(cache_key)
+
+                    if keep_heuristic_sections:
+                        # Set defaults
+                        out['heuristic_sections'].setdefault(heur_id, [])
+                        out['heuristic_name_map'].setdefault(heur_name, [])
+
+                        # Set Name map
+                        if heur_id not in out['heuristic_name_map'][heur_name]:
+                            out['heuristic_name_map'][heur_name].append(heur_id)
+
+                        # Insert unique sections
+                        section_key = get_id_from_data(f"{heur_id}_{section['title_text']}_{section['body']}_{h_type}")
+                        if section_key not in done_map['sections']:
+                            out['heuristic_sections'][heur_id].append(section)
+                            done_map['sections'].add(section_key)
 
                     for attack in section['heuristic'].get('attack', []):
                         # Get attack matrix data
