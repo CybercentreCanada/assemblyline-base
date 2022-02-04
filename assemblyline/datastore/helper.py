@@ -748,7 +748,8 @@ class AssemblylineDatastore(object):
             },
             "classification": cl_engine.UNRESTRICTED,
             "filtered": False,
-            "heuristic_sections": {}
+            "heuristic_sections": {},
+            "heuristic_name_map": {}
         }
         done_map = {
             "heuristics": set(),
@@ -797,6 +798,9 @@ class AssemblylineDatastore(object):
                 h_type = "info"
 
                 if section.get('heuristic', False):
+                    heur_id = section['heuristic']['heur_id']
+                    heur_name = section['heuristic']['name']
+
                     # Get the heuristics data
                     if section['heuristic']['score'] < 0:
                         h_type = "safe"
@@ -807,20 +811,28 @@ class AssemblylineDatastore(object):
                     else:
                         h_type = "malicious"
 
-                    cache_key = f"{section['heuristic']['heur_id']}_{key}"
+                    cache_key = f"{heur_id}_{key}"
                     if cache_key not in done_map['heuristics']:
                         out['heuristics'][h_type].append({
-                            'heur_id': section['heuristic']['heur_id'],
-                            'name': section['heuristic']['name'],
+                            'heur_id': heur_id,
+                            'name': heur_name,
                             'key': key
                         })
                         done_map['heuristics'].add(cache_key)
+
                     if keep_heuristic_sections:
-                        out['heuristic_sections'].setdefault(section['heuristic']['name'], [])
-                        section_key = get_id_from_data(
-                            f"{section['title_text']}_{section['body']}_{section['heuristic']['score']}")
+                        # Set defaults
+                        out['heuristic_sections'].setdefault(heur_id, [])
+                        out['heuristic_name_map'].setdefault(heur_name, [])
+
+                        # Set Name map
+                        if heur_id not in out['heuristic_name_map'][heur_name]:
+                            out['heuristic_name_map'][heur_name].append(heur_id)
+
+                        # Insert unique sections
+                        section_key = get_id_from_data(f"{heur_id}_{section['title_text']}_{section['body']}_{h_type}")
                         if section_key not in done_map['sections']:
-                            out['heuristic_sections'][section['heuristic']['name']].append(section)
+                            out['heuristic_sections'][heur_id].append(section)
                             done_map['sections'].add(section_key)
 
                     for attack in section['heuristic'].get('attack', []):
