@@ -4,7 +4,8 @@ from assemblyline.common.caching import generate_conf_key
 from assemblyline.odm.models.tagging import Tagging
 
 
-BODY_FORMAT = {"TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "PROCESS_TREE", "TABLE", "IMAGE"}
+BODY_FORMAT = {
+    "TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "PROCESS_TREE", "TABLE", "IMAGE", "MULTI"}
 constants = forge.get_constants()
 
 
