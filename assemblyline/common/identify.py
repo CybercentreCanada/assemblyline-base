@@ -185,11 +185,12 @@ STRONG_INDICATORS = {
     ],
     'code/batch': [
         re.compile(rb'(?i)(^|\n| |\t|@)(chcp|set /p)[ \t]+'),
-        re.compile(rb'(?i)(^|\n| |\t)start[ \t]+/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?'),
+        re.compile(rb'(?i)(^|\n| |\t|&)start[ \t]*/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?'),
         re.compile(rb'(?i)(^|\n|@)cd[ \t]+(/d )?["\']%~dp0["\']'),
         re.compile(rb'(?i)(^|\n)taskkill[ \t]+(/F|/im)'),
         re.compile(rb'(?i)(^|\n)reg[ \t]+delete[ \t]+'),
         re.compile(rb'(?i)(^|\n)%comspec%[ \t]+/c[ \t]+'),
+        re.compile(rb'(?i)(^|\n)dir&echo[ \t]+'),
         re.compile(
             rb'(?i)(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)'),
     ],
