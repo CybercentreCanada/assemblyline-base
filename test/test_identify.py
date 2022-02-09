@@ -405,6 +405,8 @@ def test_constants():
         (b"chcp", []),
         (b"start /min", []),
         (b"start /min blahblahblah", ["code/batch"]),
+        (b"start/min blahblahblah", ["code/batch"]),
+        (b"&start /min blahblahblah", ["code/batch"]),
         (b"start /b ", ["code/batch"]),
         (b"start /b blahblahblah -win 1 -enc", ["code/batch"]),
         (b"cd /d '%~dp0'", ["code/batch"]),
@@ -413,6 +415,7 @@ def test_constants():
         (b"taskkill /im", ["code/batch"]),
         (b"reg delete ", ["code/batch"]),
         (b"%comspec% /c ", ["code/batch"]),
+        (b"dir&echo ", ["code/batch"]),
         (b"net share", ["code/batch"]),
         (b"net stop", ["code/batch"]),
     ]
