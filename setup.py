@@ -66,7 +66,7 @@ setup(
         'pyroute2.core',
         'redis',
         'requests',
-        'elasticsearch>=7.0.0,<8.0.0,!=7.0.3',  # 7.0.3 is excluded due to an error
+        'elasticsearch>=7.0.0,!=7.0.3,<9.0.0',  # 7.0.3 is excluded due to an error
         'python-datemath',
         'packaging',
         'tabulate',
