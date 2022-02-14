@@ -56,7 +56,8 @@ class AutoExportingCounters(object):
         self.counter_schema = set(counter_names)
         self.timer_schema = set(timer_names)
 
-        self.counts = None
+        self.counts = Counters({key: 0 for key in self.counter_schema})
+        self.values = {}
         self.lock = threading.Lock()
         self.scheduler = None
         self.reset()
@@ -78,6 +79,7 @@ class AutoExportingCounters(object):
     def reset(self):
         with self.lock:
             old, self.counts = self.counts, Counters({key: 0 for key in self.counter_schema})
+            old.update(self.values)
             self.counts.update({key + '.t': 0 for key in self.timer_schema})
             self.counts.update({key + '.c': 0 for key in self.timer_schema})
             self.counts['type'] = self.type
@@ -106,6 +108,17 @@ class AutoExportingCounters(object):
             return thread_copy
         except Exception:
             log.exception("Exporting counters")
+
+    def set(self, name, value):
+        try:
+            if name not in self.counter_schema:
+                raise ValueError(f"{name} is not an accepted counter for this module: f{self.counter_schema}")
+            with self.lock:
+                self.values[name] = value
+                return value
+        except Exception:  # Don't let increment fail anything.
+            log.exception("Setting Metric")
+            return 0
 
     def increment(self, name, increment_by=1):
         try:

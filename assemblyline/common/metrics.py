@@ -63,6 +63,9 @@ class MetricsFactory(object):
     def stop(self):
         self.metrics_handler.stop()
 
+    def set(self, name, value):
+        self.metrics_handler.set(name, value)
+
     def increment(self, name, increment_by=1):
         self.metrics_handler.increment(name, increment_by=increment_by)
 
