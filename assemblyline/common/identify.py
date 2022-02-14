@@ -640,7 +640,7 @@ def ident(buf, length: int, path) -> Dict:
     if data['type'] == 'unknown':
         for ext, tag_type in ext_to_tag.items():
             if path.endswith(ext):
-                data['type'] == tag_type
+                data['type'] = tag_type
                 break
 
     if data['type'] == 'document/office/unknown':
