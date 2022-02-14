@@ -29,6 +29,7 @@ class Metrics(odm.Model):
     cpu_seconds_count = odm.Integer()
     busy_seconds = PerformanceTimer()
     busy_seconds_count = odm.Integer()
+    save_queue = odm.Integer()
 
 
 @odm.model()
