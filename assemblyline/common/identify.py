@@ -300,6 +300,13 @@ OLE_CLSID_GUIDs = {
 
 recognized = constants.RECOGNIZED_TYPES
 
+# CONSIDERED A LAST RESORT FOR HARD TO IDENTIFY FILES (ie. scripts)
+ext_to_tag = {
+    '.bat': 'code/batch',
+    '.vbs': 'code/vbs',
+    '.ps1': 'code/ps1',
+}
+
 tag_to_extension = {
     'archive/chm': '.chm',
     'audiovisual/flash': '.swf',
@@ -628,6 +635,13 @@ def ident(buf, length: int, path) -> Dict:
 
     if not recognized.get(data['type'], False):
         data['type'] = 'unknown'
+
+    # ONLY USED IN A LAST RESORT
+    if data['type'] == 'unknown':
+        for ext, tag_type in ext_to_tag.items():
+            if path.endswith(ext):
+                data['type'] == tag_type
+                break
 
     if data['type'] == 'document/office/unknown':
         # noinspection PyBroadException
