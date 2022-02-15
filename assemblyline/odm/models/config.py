@@ -958,8 +958,10 @@ class Submission(odm.Model):
     max_extraction_depth: int = odm.Integer()
     # Maximum size for files submitted in the system
     max_file_size: int = odm.Integer()
-    # Maximum length for each metadata keys
+    # Maximum length for each metadata values
     max_metadata_length: int = odm.Integer()
+    # Maximum length for each temporary data values
+    max_temp_data_length: int = odm.Integer()
 
     # Summary tag types
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES)
@@ -973,6 +975,7 @@ DEFAULT_SUBMISSION = {
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
+    'max_temp_data_length': 4096,
     'tag_types': DEFAULT_TAG_TYPES
 }
 
