@@ -224,6 +224,20 @@ class Keyword(_Field):
         return str(value)
 
 
+class UpperKeyword(Keyword):
+    """
+    A field storing a short uppercase string with a technical interpretation.
+    """
+
+    def check(self, value, **kwargs):
+        kw_val = super().check(value, **kwargs)
+
+        if kw_val is None:
+            return None
+
+        return kw_val.upper()
+
+
 class Any(Keyword):
     """
     A field that can hold any value whatsoever but which is stored as a
