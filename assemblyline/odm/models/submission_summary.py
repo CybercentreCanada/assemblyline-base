@@ -11,3 +11,5 @@ class SubmissionSummary(odm.Model):
     tags = odm.Text()                                                         # Tags cache
     attack_matrix = odm.Text()                                                # Att&ck Matrix cache
     heuristics = odm.Text()                                                   # Heuristics cache
+    heuristic_sections = odm.Text()                                           # All sections mapping to the heuristics
+    heuristic_name_map = odm.Text()                                           # Map of heuristic names to IDs
