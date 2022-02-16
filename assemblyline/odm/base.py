@@ -199,6 +199,19 @@ class Boolean(_Field):
         return bool(value)
 
 
+class Json(_Field):
+    """
+    A field storing serializeable structure with their JSON encoded representations.
+
+    Examples: metadata
+    """
+
+    def check(self, value, **kwargs):
+        if not isinstance(value, str):
+            return json.dumps(value)
+        return value
+
+
 class Keyword(_Field):
     """
     A field storing a short string with a technical interpretation.
@@ -701,7 +714,7 @@ class FlattenedListObject(Mapping):
     """A field storing a flattened object"""
 
     def __init__(self, **kwargs):
-        super().__init__(List(Keyword()), **kwargs)
+        super().__init__(List(Json()), **kwargs)
 
     def check(self, value, **kwargs):
         return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
@@ -718,7 +731,7 @@ class FlattenedObject(Mapping):
     """A field storing a flattened object"""
 
     def __init__(self, **kwargs):
-        super().__init__(Keyword(), **kwargs)
+        super().__init__(Json(), **kwargs)
 
     def check(self, value, **kwargs):
         return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
