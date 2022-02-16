@@ -1,6 +1,7 @@
 from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
-    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword
+    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword, \
+    Json
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -29,7 +30,8 @@ __type_mapping = {
     Processor: 'keyword',
     FlattenedObject: 'nested',
     Any: 'keyword',
-    UpperKeyword: 'keyword'
+    UpperKeyword: 'keyword',
+    Json: 'keyword'
 }
 __analyzer_mapping = {
     SSDeepHash: 'text_fuzzy',
@@ -43,7 +45,7 @@ __normalizer_mapping = {
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
                                                                      URIPath, MAC, PhoneNumber, SSDeepHash, Email,
                                                                      SHA1, SHA256, MD5, Platform, Processor,
-                                                                     ClassificationString, Any, UpperKeyword]}
+                                                                     ClassificationString, Any, UpperKeyword, Json]}
 back_mapping.update({x: Keyword for x in set(__analyzer_mapping.values())})
 
 
@@ -175,7 +177,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
 
 
 def build_templates(name, field, nested_template=False, index=True) -> list:
-    if isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
+    if isinstance(field, (Keyword, Boolean, Integer, Float, Text, Json)):
         if nested_template:
             main_template = {
                 "match": f"{name}",
