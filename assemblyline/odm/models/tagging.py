@@ -200,6 +200,7 @@ class Tagging(odm.Model):
             class FilePEDebug(odm.Model):
                 guid = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
+            @odm.model(index=True, store=False)
             class FilePEExports(odm.Model):
                 function_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 module_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -444,4 +445,5 @@ class Tagging(odm.Model):
 
 if __name__ == "__main__":
     from pprint import pprint
+
     pprint(list(Tagging().flat_fields().keys()))
