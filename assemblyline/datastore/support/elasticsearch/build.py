@@ -177,7 +177,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
 
 
 def build_templates(name, field, nested_template=False, index=True) -> list:
-    if isinstance(field, (Keyword, Boolean, Integer, Float, Text)):
+    if isinstance(field, (Keyword, Boolean, Integer, Float, Text, Json)):
         if nested_template:
             main_template = {
                 "match": f"{name}",
