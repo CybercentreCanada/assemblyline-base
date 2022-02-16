@@ -6,7 +6,7 @@ from typing import Optional as _Optional, Dict, Any as _Any
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
     Classification, ClassificationString, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, \
-    URIPath, URI, SSDeepHash, Email, Platform, Processor
+    URIPath, URI, SSDeepHash, Email, Platform, Processor, UpperKeyword, Json
 from assemblyline.odm.models.tagging import Tagging
 
 config = forge.get_config()
@@ -14,16 +14,16 @@ config = forge.get_config()
 ALPHA = "ABCDEFGHIJKLMNOPQRSTUPVXYZabcdefghijklmnopqrstuvwxyz"
 HASH_ALPHA = "abcdef0123456789"
 SSDEEP_ALPHA = f"{ALPHA}0123456789"
-WORDS = """The Cyber Centre stays on the cutting edge of technology by working with commercial vendors of cyber security 
-technology to support their development of enhanced cyber defence tools To do this our experts survey the cyber 
-security market and evaluate emerging technologies in order to determine their potential to improve cyber security 
-across the country The Cyber Centre supports innovation by collaborating with all levels of government private 
-industry and academia to examine complex problems in cyber security We are constantly engaging partners to promote 
-an open and innovative environment We invite partners to work with us but also promote other Government of Canada 
-innovation programs One of our key partnerships is with the Government of Canada Build in Canada Innovation Program 
-BCIP The BCIP helps Canadian companies of all sizes transition their state of the art goods and services from the 
-laboratory to the marketplace For certain cyber security innovations the Cyber Centre performs the role of technical 
-authority We evaluate participating companies new technology and provide feedback in order to assist them in bringing 
+WORDS = """The Cyber Centre stays on the cutting edge of technology by working with commercial vendors of cyber security
+technology to support their development of enhanced cyber defence tools To do this our experts survey the cyber
+security market and evaluate emerging technologies in order to determine their potential to improve cyber security
+across the country The Cyber Centre supports innovation by collaborating with all levels of government private
+industry and academia to examine complex problems in cyber security We are constantly engaging partners to promote
+an open and innovative environment We invite partners to work with us but also promote other Government of Canada
+innovation programs One of our key partnerships is with the Government of Canada Build in Canada Innovation Program
+BCIP The BCIP helps Canadian companies of all sizes transition their state of the art goods and services from the
+laboratory to the marketplace For certain cyber security innovations the Cyber Centre performs the role of technical
+authority We evaluate participating companies new technology and provide feedback in order to assist them in bringing
 their product to market To learn more about selling or testing an innovation visit the BCIP website""".split()
 WORDS = list(set(WORDS))
 MAPPING_KEYS = ["key_a", "key_b", "key_c", "key_d", "key_e", "key_f"]
@@ -337,6 +337,15 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         return get_random_platform()
     elif isinstance(field, Processor):
         return get_random_processor()
+    elif isinstance(field, Json):
+        return random.choice([
+            get_random_word(),                                         # string
+            random.choice([True, False]),                              # boolean
+            [get_random_word() for _ in range(random.randint(2, 4))],  # list
+            random.randint(0, 100)]                                    # number
+        )
+    elif isinstance(field, UpperKeyword):
+        return get_random_word().upper()
     elif isinstance(field, Keyword):
         if name:
             if "sha256" in name:
