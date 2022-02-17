@@ -10,7 +10,7 @@ from datemath.helpers import DateMathException
 from datetime import datetime
 from urllib.parse import urlparse
 
-from assemblyline.datastore.exceptions import DataStoreException, UndefinedFunction, SearchException, MultiKeyError
+from assemblyline.datastore.exceptions import DataStoreException, SearchException, MultiKeyError
 from assemblyline.odm import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model, ClassificationObject
 from assemblyline.odm.base import _Field
 from assemblyline.remote.datatypes.lock import Lock
@@ -34,19 +34,19 @@ class BulkPlan(object):
         self.operations = []
 
     def add_delete_operation(self, doc_id, index=None):
-        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic BulkPlan object, none of the methods are defined.")
 
     def add_insert_operation(self, doc_id, doc, index=None):
-        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic BulkPlan object, none of the methods are defined.")
 
     def add_upsert_operation(self, doc_id, doc, index=None):
-        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic BulkPlan object, none of the methods are defined.")
 
     def add_update_operation(self, doc_id, doc, index=None):
-        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic BulkPlan object, none of the methods are defined.")
 
     def get_plan_data(self):
-        raise UndefinedFunction("This is the basic BulkPlan object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic BulkPlan object, none of the methods are defined.")
 
     @property
     def empty(self):
@@ -120,7 +120,7 @@ class Collection(Generic[ModelType]):
 
         :return: return the output of the function passed
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic datastore object, none of the methods are defined.")
 
     def normalize(self, data, as_obj=True) -> Union[ModelType, dict[str, Any], None]:
         """
@@ -145,7 +145,7 @@ class Collection(Generic[ModelType]):
         :return: Results of the bulk operation
         """
 
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic datastore object, none of the methods are defined.")
 
     def bulk(self, operations):
         """
@@ -174,7 +174,7 @@ class Collection(Generic[ModelType]):
 
         :return: Should return True of the commit was successful on all hosts
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic datastore object, none of the methods are defined.")
 
     def fix_ilm(self):
         """
@@ -183,7 +183,7 @@ class Collection(Generic[ModelType]):
 
         :return: Should return True of the fix was successful on all hosts
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic datastore object, none of the methods are defined.")
 
     def fix_replicas(self):
         """
@@ -192,16 +192,16 @@ class Collection(Generic[ModelType]):
 
         :return: Should return True of the fix was successful on all hosts
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic datastore object, none of the methods are defined.")
 
-    def fix_shards(self):
+    def fix_shards(self, logger=None):
         """
         This function should be overloaded to fix the shard configuration of the index of all the different hosts
         specified in self.datastore.hosts.
 
         :return: Should return True of the fix was successful on all hosts
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic datastore object, none of the methods are defined.")
 
     def reindex(self):
         """
@@ -210,7 +210,7 @@ class Collection(Generic[ModelType]):
 
         :return: Should return True of the commit was successful on all hosts
         """
-        raise UndefinedFunction("This is the basic datastore object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic datastore object, none of the methods are defined.")
 
     def multiget(self, key_list, as_dictionary=True, as_obj=True, error_on_missing=True):
         """
@@ -255,7 +255,7 @@ class Collection(Generic[ModelType]):
         :param key: key of the document to get from the datastore
         :return: true/false depending if the document exists or not
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def _get(self, key, retries, archive_access=None, version=False) -> Any:
         """
@@ -270,7 +270,7 @@ class Collection(Generic[ModelType]):
         :param version: should the version number be returned by the call
         :return: The document strait of the datastore
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def get(self, key, as_obj=True, archive_access=None, version=False):
         """
@@ -356,7 +356,7 @@ class Collection(Generic[ModelType]):
         :param version: version of the document to save over, if the version check fails this will raise an exception
         :return: True if save was successful
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def archive(self, query):
         """
@@ -365,7 +365,7 @@ class Collection(Generic[ModelType]):
         :param query: query to run to archive documents
         :return: Number of archived documents
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def delete(self, key):
         """
@@ -375,7 +375,7 @@ class Collection(Generic[ModelType]):
         :param key: id of the document to delete
         :return: True is delete successful
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def delete_by_query(self, query, workers=20, max_docs=None):
         """
@@ -386,7 +386,7 @@ class Collection(Generic[ModelType]):
         :param workers: Number of workers used for deletion if basic currency delete is used
         :return: True is delete successful
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def _validate_operations(self, operations):
         """
@@ -558,7 +558,7 @@ class Collection(Generic[ModelType]):
         :param access_control: access control parameters to limiti the scope of the query
         :return: a search result object
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def stream_search(self, query, fl=None, filters=(), access_control=None, item_buffer_size=200,
                       as_obj=True, use_archive=False) -> Iterable[Union[dict[str, Any], ModelType]]:
@@ -583,7 +583,7 @@ class Collection(Generic[ModelType]):
         :param buffer_size: number of items to buffer with each search call
         :return: a generator of dictionary of field list results
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def keys(self, access_control=None):
         """
@@ -651,19 +651,19 @@ class Collection(Generic[ModelType]):
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1,
                   filters=None, access_control=None, use_archive=False) -> dict[str, int]:
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
               mincount=1, filters=None, access_control=None, use_archive=False) -> dict[str, int]:
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=False):
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def grouped_search(self, group_field, query="id:*", offset=None, sort=None, group_sort=None, fl=None, limit=None,
                        rows=DEFAULT_ROW_SIZE, filters=(), access_control=None, as_obj=True, use_archive=False,
                        track_total_hits=False):
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def fields(self) -> dict:
         """
@@ -671,7 +671,7 @@ class Collection(Generic[ModelType]):
 
         :return:
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def _ensure_collection(self):
         """
@@ -680,7 +680,7 @@ class Collection(Generic[ModelType]):
 
         :return:
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
     def __get_possible_fields(self, field):
         field_types = [field.__name__.lower()]
@@ -728,7 +728,7 @@ class Collection(Generic[ModelType]):
 
         :return:
         """
-        raise UndefinedFunction("This is the basic collection object, none of the methods are defined.")
+        raise NotImplementedError("This is the basic collection object, none of the methods are defined.")
 
 
 class BaseStore(object):
@@ -874,10 +874,10 @@ class BaseStore(object):
         self._closed = True
 
     def connection_reset(self):
-        raise UndefinedFunction("This is the basic datastore object, connection_reset method is undefined.")
+        raise NotImplementedError("This is the basic datastore object, connection_reset method is undefined.")
 
     def ping(self):
-        raise UndefinedFunction("This is the basic datastore object, ping method is undefined.")
+        raise NotImplementedError("This is the basic datastore object, ping method is undefined.")
 
     def is_closed(self):
         return self._closed
