@@ -596,14 +596,22 @@ class ESCollection(Collection):
         if cur_shards > target_shards:
             logger.info(f"Current shards ({cur_shards}) is bigger then target shards ({target_shards}), "
                         "we will be shrinking the index.")
-            target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
-            clone_setup_settings = {"settings": {"index.number_of_replicas": 0,
-                                                 "index.routing.allocation.require._name": target_node}}
-            method = self.datastore.client.indices.shrink
+            if cur_shards % target_shards != 0:
+                logger.info("The target shards is not a factor of the current shards, aborting...")
+                return
+            else:
+                target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
+                clone_setup_settings = {"settings": {"index.number_of_replicas": 0,
+                                                     "index.routing.allocation.require._name": target_node}}
+                method = self.datastore.client.indices.shrink
         elif cur_shards < target_shards:
             logger.info(f"Current shards ({cur_shards}) is smaller then target shards ({target_shards}), "
                         "we will be splitting the index.")
-            method = self.datastore.client.indices.split
+            if target_shards % cur_shards != 0:
+                logger.info("The current shards is not a factor of the target shards, aborting...")
+                return
+            else:
+                method = self.datastore.client.indices.split
         else:
             logger.info(f"Current shards ({cur_shards}) is equal to the target shards ({target_shards}), "
                         "only house keeping operations will be performed.")
@@ -668,8 +676,8 @@ class ESCollection(Collection):
         self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
 
         # Restore normal routing and replicas
-        logger.info(f"Restore original routing table for {self.index_name.upper()}.")
-        self.with_retries(self.datastore.client.indices.put_settings, index=self.index_name, body=clone_finish_settings)
+        logger.info(f"Restore original routing table for {self.name.upper()}.")
+        self.with_retries(self.datastore.client.indices.put_settings, index=self.name, body=clone_finish_settings)
 
     def reindex(self):
         for index in self.index_list:
