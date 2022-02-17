@@ -604,6 +604,9 @@ class ESCollection(Collection):
             logger.info(f"Current shards ({cur_shards}) is smaller then target shards ({target_shards}), "
                         "we will be splitting the index.")
             method = self.datastore.client.indices.split
+        else:
+            logger.info(f"Current shards ({cur_shards}) is equal to the target shards ({target_shards}), "
+                        "only house keeping operations will be performed.")
 
         if method:
             # Before we do anything, we should make sure the source index is in a good state
@@ -645,8 +648,8 @@ class ESCollection(Collection):
                 self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
 
             # Make sure the original index is deleted
-            logger.info(f"Make sure {self.index_name.upper()} is deleted.")
             if self.with_retries(self.datastore.client.indices.exists, self.index_name):
+                logger.info(f"Delete extra {self.index_name.upper()} index.")
                 self.with_retries(self.datastore.client.indices.delete, self.index_name)
 
             # Shrink/split the temporary index into the original index
@@ -665,7 +668,7 @@ class ESCollection(Collection):
         self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
 
         # Restore normal routing and replicas
-        logger.info(f"Restore original routing table for {self.index_name}.")
+        logger.info(f"Restore original routing table for {self.index_name.upper()}.")
         self.with_retries(self.datastore.client.indices.put_settings, index=self.index_name, body=clone_finish_settings)
 
     def reindex(self):
