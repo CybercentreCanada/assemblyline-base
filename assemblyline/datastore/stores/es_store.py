@@ -395,7 +395,7 @@ class ESCollection(Collection):
 
     def _get_current_alias(self, index):
         if self.with_retries(self.datastore.client.indices.exists_alias, name=index):
-            return (list(self.with_retries(self.datastore.client.indices.get_alias, index).keys())[0])
+            return next(iter(self.with_retries(self.datastore.client.indices.get_alias, index)), None)
         return None
 
     def _wait_for_status(self, index, min_status='yellow'):
