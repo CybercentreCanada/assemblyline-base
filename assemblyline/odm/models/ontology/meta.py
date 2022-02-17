@@ -5,44 +5,7 @@ from assemblyline.odm.models.tagging import Tagging
 Classification = forge.get_classification()
 
 
-# Complex Types
-class FileInfo(odm.Model):
-    md5 = odm.MD5()
-    sha1 = odm.SHA1()
-    sha256 = odm.SHA256()
-    type = odm.Keyword()
-    size = odm.Integer()
-
-
-# Category Bases
-class Antivirus(odm.Model):
-    class Detection(odm.Model):
-        class Engine(odm.Model):
-            definition = odm.Optional(odm.Text())                               # Definition update
-            name = odm.Keyword()                                                # Name of AV engine
-            version = odm.Optional(odm.Keyword())                               # Version of AV engine
-
-        # What category does the verdict fall under?
-        category = odm.Optional(odm.Enum(['type-unsupported',                   # File sent to AV is unsupported
-                                          'undetected',                         # File not detected by AV
-                                          'failure',                            # AV failed during detection
-                                          'harmless',                           # AV deems harmless
-                                          'suspicious',                         # AV deems suspicious
-                                          'malicious']))                        # AV deems malicious
-        engine = odm.Compound(Engine)
-        verdict = odm.Keyword(default='null')                                                 # AV result
-
-    odm_version = odm.Text(default="1.0")                                       # Version of AV ontological result
-    detections = odm.List(odm.Compound(Detection))                              # List of AV detections
-
-
-class Sandbox(odm.Model):
-    # Perceived capabilities that the file may have
-    capabilities = odm.Optional(odm.List(odm.Text()))
-
-# Result Base
-
-
+# Result Metadata
 @odm.model(index=False, store=False)
 class ResultOntology(odm.Model):
     # Required metadata
@@ -56,7 +19,7 @@ class ResultOntology(odm.Model):
     classification = odm.Keyword(default=Classification.UNRESTRICTED)           # Classification of the service result
     service_name = odm.Keyword()                                                # Service Name
     service_version = odm.Keyword()                                             # Service Version
-    service_tool_version = odm.Optional(odm.Keyword(default=''))                          # Service Tool Version
+    service_tool_version = odm.Optional(odm.Keyword(default=''))                # Service Tool Version
 
     # Optional metadata
 
@@ -76,7 +39,4 @@ class ResultOntology(odm.Model):
     retention_id = odm.Optional(odm.Keyword())
     # What tags did the service associate to the result
     tags = odm.Optional(odm.List(odm.Compound(Tagging)))
-
-    # Categories
-    antivirus = odm.Optional(odm.Compound(Antivirus))                           # Antivirus Results
-    sandbox = odm.Optional(odm.Compound(Sandbox))                               # Sandbox Results
+    #heuristics = odm.Optional(odm.Mapping(odm.Mapping(odm.List(Tagging))))
