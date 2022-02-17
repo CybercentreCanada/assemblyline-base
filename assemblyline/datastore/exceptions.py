@@ -17,10 +17,6 @@ class SearchDepthException(Exception):
     pass
 
 
-class UndefinedFunction(Exception):
-    pass
-
-
 class ILMException(Exception):
     pass
 
