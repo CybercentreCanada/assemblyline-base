@@ -393,23 +393,31 @@ class ESCollection(Collection):
         except KeyError:
             return res['task']['status']
 
+    def _get_current_alias(self, index):
+        if self.with_retries(self.datastore.client.indices.exists_alias, name=index):
+            return (list(self.with_retries(self.datastore.client.indices.get_alias, index).keys())[0])
+        return None
+
+    def _wait_for_status(self, index, min_status='yellow'):
+        status_ok = False
+        while not status_ok:
+            try:
+                res = self.datastore.client.cluster.health(index=index, timeout='5s', wait_for_status=min_status)
+                status_ok = not res['timed_out']
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, _, _ = e.args
+                if err_code == 408 or err_code == '408':
+                    log.warning(f"Waiting for index {index} to get to status {min_status}...")
+                    pass
+                else:
+                    raise
+
     def _safe_index_copy(self, copy_function, src, target, body=None, min_status='yellow'):
         ret = copy_function(src, target, body=body, request_timeout=60)
         if not ret['acknowledged']:
             raise DataStoreException(f"Failed to create index {target} from {src}.")
 
-        status_ok = False
-        while not status_ok:
-            try:
-                res = self.datastore.client.cluster.health(index=target, timeout='5s', wait_for_status=min_status)
-                status_ok = not res['timed_out']
-            except elasticsearch.exceptions.TransportError as e:
-                err_code, _, _ = e.args
-                if err_code == 408 or err_code == '408':
-                    log.warning(f"Waiting for index {target} to get to status {min_status}...")
-                    pass
-                else:
-                    raise
+        self._wait_for_status(target, min_status=min_status)
 
     def _delete_async(self, index, body, max_docs=None, sort=None):
         deleted = 0
@@ -565,11 +573,13 @@ class ESCollection(Collection):
     def fix_shards(self):
         body = {"settings": self._get_index_definition()['settings']}
         clone_body = {"settings": {"index.number_of_replicas": 0}}
+        clone_finish_settings = None
+        clone_setup_settings = None
         method = None
         temp_name = f'{self.name}__fix_shards'
 
         indexes_settings = self.with_retries(self.datastore.client.indices.get_settings)
-        current_settings = indexes_settings.get(self.index_name, indexes_settings.get(temp_name, None))
+        current_settings = indexes_settings.get(self._get_current_alias(self.name), None)
         if not current_settings:
             raise DataStoreException(
                 'Could not get current index settings. Something is wrong and requires manual intervention...')
@@ -587,12 +597,13 @@ class ESCollection(Collection):
             method = self.datastore.client.indices.shrink
         elif cur_shards < target_shards:
             method = self.datastore.client.indices.split
-            clone_setup_settings = None
-            clone_finish_settings = None
 
-        if method:
-            try:
-                # Block write to the index
+        try:
+            # Before we do anything, we should make sure the source index is in a good state
+            self._wait_for_status(self.name, min_status='green')
+
+            if method:
+                # Block all indexes to be written to
                 self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
 
                 # Clone it onto a temporary index
@@ -606,32 +617,39 @@ class ESCollection(Collection):
                         while self.datastore.client.cluster.health(index=self.index_name)['relocating_shards'] != 0:
                             time.sleep(1)
 
+                    # Make a clone of the current index
                     self._safe_index_copy(self.datastore.client.indices.clone,
-                                          self.index_name, temp_name, body=clone_body)
+                                          self.index_name, temp_name, body=clone_body, min_status='green')
 
-                    # Make the hot index the new clone
+                # Make 100% sure temporary index is ready
+                self._wait_for_status(temp_name, 'green')
+
+                # Make sure temporary index is the alias if not already
+                if self._get_current_alias(self.name) != temp_name:
+                    # Make the hot index the temporary index while deleting the original index
                     alias_body = {"actions": [{"add":  {"index": temp_name, "alias": self.name}}, {
                         "remove_index": {"index": self.index_name}}]}
                     self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
 
+                # Make sure the original index is deleted
                 if self.with_retries(self.datastore.client.indices.exists, self.index_name):
                     self.with_retries(self.datastore.client.indices.delete, self.index_name)
 
-                # Shrink index into shrinked_name
+                # Shrink/split the temporary index into the original index
                 self._safe_index_copy(method, temp_name, self.index_name, body=body)
 
-                # Make the hot index the new clone
+                # Make the original index the new alias
                 alias_body = {"actions": [{"add":  {"index": self.index_name, "alias": self.name}}, {
                     "remove_index": {"index": temp_name}}]}
                 self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
-            finally:
-                # Restore writes
-                self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
+        finally:
+            # Restore writes
+            self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
 
-                # if there are specific settings to be applied to the index, apply them
-                if clone_finish_settings:
-                    self.with_retries(self.datastore.client.indices.put_settings,
-                                      index=self.index_name, body=clone_finish_settings)
+            # if there are specific settings to be applied to the index, apply them
+            if clone_finish_settings:
+                self.with_retries(self.datastore.client.indices.put_settings,
+                                  index=self.index_name, body=clone_finish_settings)
 
     def reindex(self):
         for index in self.index_list:
