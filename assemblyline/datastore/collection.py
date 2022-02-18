@@ -10,7 +10,7 @@ from datemath.helpers import DateMathException
 from datetime import datetime
 from os import environ
 from random import random
-from typing import Dict, Any, Union, TypeVar
+from typing import Dict, Any, Union, TypeVar, Generic
 
 import elasticsearch
 import elasticsearch.helpers
@@ -110,7 +110,7 @@ def parse_sort(sort, ret_list=True):
     raise SearchException('Unknown sort parameter ' + sort)
 
 
-class ESCollection(object):
+class ESCollection(Generic[ModelType]):
     DEFAULT_ROW_SIZE = 25
     DEFAULT_SEARCH_FIELD = '__text__'
     DEFAULT_SORT = [{'_id': 'asc'}]

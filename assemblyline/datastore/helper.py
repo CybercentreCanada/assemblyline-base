@@ -119,10 +119,6 @@ class AssemblylineDatastore(object):
         return self.ds.service
 
     @property
-    def service_client(self) -> ESCollection:
-        return self.ds.service_client
-
-    @property
     def service_delta(self) -> ESCollection[ServiceDelta]:
         return self.ds.service_delta
 
@@ -420,15 +416,15 @@ class AssemblylineDatastore(object):
                             item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
                         if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
                             parts = cl_engine.get_access_control_parts(new_class)
-                            update_params = [(Collection.UPDATE_SET, 'classification', new_class)]
-                            update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
+                            update_params = [(ESCollection.UPDATE_SET, 'classification', new_class)]
+                            update_params.extend([(ESCollection.UPDATE_SET, k, v) for k, v in parts.items()])
                             self.result.update(item['id'], update_params)
 
                     # Alter the file classification if the new classification does not match
                     if cur_file['classification'] != new_file_class:
                         parts = cl_engine.get_access_control_parts(new_file_class)
-                        update_params = [(Collection.UPDATE_SET, 'classification', new_file_class)]
-                        update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
+                        update_params = [(ESCollection.UPDATE_SET, 'classification', new_file_class)]
+                        update_params.extend([(ESCollection.UPDATE_SET, k, v) for k, v in parts.items()])
                         self.file.update(f, update_params)
 
                     # Fix associated supplementary files
@@ -437,8 +433,8 @@ class AssemblylineDatastore(object):
                         if cur_supp:
                             if cur_supp['classification'] != new_file_class:
                                 parts = cl_engine.get_access_control_parts(new_file_class)
-                                update_params = [(Collection.UPDATE_SET, 'classification', new_file_class)]
-                                update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
+                                update_params = [(ESCollection.UPDATE_SET, 'classification', new_file_class)]
+                                update_params.extend([(ESCollection.UPDATE_SET, k, v) for k, v in parts.items()])
                                 self.file.update(supp, update_params)
 
         # Delete the submission and cached trees and summaries
