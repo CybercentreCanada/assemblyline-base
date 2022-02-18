@@ -88,7 +88,7 @@ def setup_store(docstore, request):
 
 @pytest.fixture(scope='module')
 def es_connection(request):
-    from assemblyline.datastore.stores.es_store import ESStore
+    from assemblyline.datastore.store import ESStore
 
     try:
         collection = setup_store(ESStore(['127.0.0.1']), request)

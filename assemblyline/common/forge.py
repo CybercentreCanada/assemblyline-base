@@ -95,18 +95,15 @@ def get_constants(config=None):
 
 def get_datastore(config=None, archive_access=False):
     from assemblyline.datastore.helper import AssemblylineDatastore
+    from assemblyline.datastore.store import ESStore
+
     if not config:
         config = get_config()
 
-    if config.datastore.type == "elasticsearch":
-        from assemblyline.datastore.stores.es_store import ESStore
-        if archive_access:
-            return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=True))
-        else:
-            return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=False))
+    if archive_access:
+        return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=True))
     else:
-        from assemblyline.datastore.exceptions import DataStoreException
-        raise DataStoreException(f"Invalid datastore type: {config.datastore.type}")
+        return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=False))
 
 
 def get_cachestore(component, config=None, datastore=None):

@@ -121,7 +121,7 @@ def setup_store(docstore, request):
 
 @pytest.fixture(scope='module')
 def es_store():
-    from assemblyline.datastore.stores.es_store import ESStore
+    from assemblyline.datastore.store import ESStore
     store = ESStore(['127.0.0.1'])
     ret_val = store.ping()
     if ret_val:
