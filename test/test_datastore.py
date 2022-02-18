@@ -8,7 +8,7 @@ from datemath import dm
 from retrying import retry
 import pytest
 
-from assemblyline.datastore import Collection
+from assemblyline.datastore.collection import ESCollection
 from assemblyline.datastore.exceptions import VersionConflictException
 
 
@@ -101,7 +101,7 @@ def es_connection(request):
     return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
 
-def _test_exists(c: Collection):
+def _test_exists(c: ESCollection):
     # Test GET
     assert c.exists('test1')
     assert c.exists('test2')
@@ -112,7 +112,7 @@ def _test_exists(c: Collection):
     assert c.exists('int')
 
 
-def _test_get(c: Collection):
+def _test_get(c: ESCollection):
     # Test GET
     assert test_map.get('test1') == c.get('test1')
     assert test_map.get('test2') == c.get('test2')
@@ -123,7 +123,7 @@ def _test_get(c: Collection):
     assert test_map.get('int') == c.get('int')
 
 
-def _test_require(c: Collection):
+def _test_require(c: ESCollection):
     # Test GET
     assert test_map.get('test1') == c.require('test1')
     assert test_map.get('test2') == c.require('test2')
@@ -134,7 +134,7 @@ def _test_require(c: Collection):
     assert test_map.get('int') == c.require('int')
 
 
-def _test_get_if_exists(c: Collection):
+def _test_get_if_exists(c: ESCollection):
     # Test GET
     assert test_map.get('test1') == c.get_if_exists('test1')
     assert test_map.get('test2') == c.get_if_exists('test2')
@@ -145,7 +145,7 @@ def _test_get_if_exists(c: Collection):
     assert test_map.get('int') == c.get_if_exists('int')
 
 
-def _test_multiget(c: Collection):
+def _test_multiget(c: ESCollection):
     # TEST Multi-get
     raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
     ds_raw = c.multiget(['test1', 'int', 'test2'], as_dictionary=False)
@@ -159,7 +159,7 @@ def _test_multiget(c: Collection):
     assert c.multiget([]) == {}
 
 
-def _test_keys(c: Collection):
+def _test_keys(c: ESCollection):
     # Test KEYS
     test_keys = list(test_map.keys())
     for k in c.keys():
@@ -167,7 +167,7 @@ def _test_keys(c: Collection):
     assert len(test_keys) == 0
 
 
-def _test_update(c: Collection):
+def _test_update(c: ESCollection):
     # Test Update
     expected = {'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!'], "map": {'b': 99}}
     operations = [
@@ -183,7 +183,7 @@ def _test_update(c: Collection):
     assert c.get('to_update') == expected
 
 
-def _test_update_by_query(c: Collection):
+def _test_update_by_query(c: ESCollection):
     # Test update_by_query
     expected = {
         'bulk_b': True,
@@ -209,7 +209,7 @@ def _test_update_by_query(c: Collection):
     assert c.get('bulk_update2') == expected
 
 
-def _test_delete_by_query(c: Collection):
+def _test_delete_by_query(c: ESCollection):
     # Test Delete Matching
     key_len = len(list(c.keys()))
     c.delete_by_query("delete_b:true")
@@ -225,11 +225,11 @@ def _test_delete_by_query(c: Collection):
     assert key_len - 4 == len(list(c.keys()))
 
 
-def _test_fields(c: Collection):
+def _test_fields(c: ESCollection):
     assert c.fields() != {}
 
 
-def _test_search(c: Collection):
+def _test_search(c: ESCollection):
     for item in c.search('*:*', sort="id asc")['items']:
         assert item['id'][0] in test_map
     for item in c.search('*:*', offset=1, rows=1,
@@ -238,7 +238,7 @@ def _test_search(c: Collection):
         assert item.get('classification_s', None) is not None
 
 
-def _test_group_search(c: Collection):
+def _test_group_search(c: ESCollection):
     gs_simple = c.grouped_search('lvl_i', fl='classification_s')
     assert gs_simple['offset'] == 0
     assert gs_simple['rows'] == 25
@@ -272,7 +272,7 @@ def _test_group_search(c: Collection):
     assert total <= gs_complex['total']
 
 
-def _test_deepsearch(c: Collection):
+def _test_deepsearch(c: ESCollection):
     res = []
     deep_paging_id = "*"
     while True:
@@ -287,7 +287,7 @@ def _test_deepsearch(c: Collection):
         assert item['id'][0] in test_map
 
 
-def _test_streamsearch(c: Collection):
+def _test_streamsearch(c: ESCollection):
     items = list(c.stream_search('classification_s:*', filters="lvl_i:400", fl='id,classification_s'))
     assert len(items) > 0
     for item in items:
@@ -295,7 +295,7 @@ def _test_streamsearch(c: Collection):
         assert item.get('classification_s', None) is not None
 
 
-def _test_histogram(c: Collection):
+def _test_histogram(c: ESCollection):
     h_int = c.histogram('lvl_i', 0, 1000, 100, mincount=2)
     assert len(h_int) > 0
     for k, v in h_int.items():
@@ -315,7 +315,7 @@ def _test_histogram(c: Collection):
         assert v > 0
 
 
-def _test_facet(c: Collection):
+def _test_facet(c: ESCollection):
     facets = c.facet('classification_s')
     assert len(facets) > 0
     for k, v in facets.items():
@@ -324,7 +324,7 @@ def _test_facet(c: Collection):
         assert v > 0
 
 
-def _test_stats(c: Collection):
+def _test_stats(c: ESCollection):
     stats = c.stats('lvl_i')
     assert len(stats) > 0
     for k, v in stats.items():
@@ -356,13 +356,13 @@ TEST_FUNCTIONS = [
 
 # noinspection PyShadowingNames
 @pytest.mark.parametrize("function", [f[0] for f in TEST_FUNCTIONS], ids=[f[1] for f in TEST_FUNCTIONS])
-def test_es(es_connection: Collection, function):
+def test_es(es_connection: ESCollection, function):
     if es_connection:
         function(es_connection)
 
 
 @pytest.fixture
-def reduced_scroll_cursors(es_connection: Collection):
+def reduced_scroll_cursors(es_connection: ESCollection):
     """
     Doing the following scroll cursor tests on a desktop are reasonably fast, but CI servers
     can't do them in a reasonable amount of time. So we bring down the limit we were hitting
@@ -385,14 +385,14 @@ def reduced_scroll_cursors(es_connection: Collection):
         es_connection.datastore.client.cluster.put_settings(settings)
 
 
-def test_empty_cursor_exhaustion(es_connection: Collection, reduced_scroll_cursors):
+def test_empty_cursor_exhaustion(es_connection: ESCollection, reduced_scroll_cursors):
     """Test for a bug where short or empty searches with paging active would leak scroll cursors."""
     for _ in range(20):
         result = es_connection.search('id: "TEST STRING THAT IS NOT AN ID"', deep_paging_id='*')
         assert result['total'] == 0
 
 
-def test_short_cursor_exhaustion(es_connection: Collection, reduced_scroll_cursors):
+def test_short_cursor_exhaustion(es_connection: ESCollection, reduced_scroll_cursors):
     """Test for a bug where short or empty searches with paging active would leak scroll cursors."""
     result = es_connection.search("*:*")
     doc = result['items'][0]['id'][0]
@@ -403,7 +403,7 @@ def test_short_cursor_exhaustion(es_connection: Collection, reduced_scroll_curso
         assert result['total'] == 1
 
 
-def test_atomic_save(es_connection: Collection):
+def test_atomic_save(es_connection: ESCollection):
     """Save a new document atomically, then try to save it again and detect the failure."""
     unique_id = uuid.uuid4().hex
     data = {

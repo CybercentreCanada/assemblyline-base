@@ -14,7 +14,7 @@ from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictExce
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
-from assemblyline.datastore import Collection, log
+from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.odm import Model, DATEFORMAT
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
@@ -83,94 +83,94 @@ class AssemblylineDatastore(object):
         self.ds.archive_access = False
 
     @property
-    def alert(self) -> Collection[Alert]:
+    def alert(self) -> ESCollection[Alert]:
         return self.ds.alert
 
     @property
-    def cached_file(self) -> Collection[CachedFile]:
+    def cached_file(self) -> ESCollection[CachedFile]:
         return self.ds.cached_file
 
     @property
-    def emptyresult(self) -> Collection[EmptyResult]:
+    def emptyresult(self) -> ESCollection[EmptyResult]:
         return self.ds.emptyresult
 
     @property
-    def error(self) -> Collection[Error]:
+    def error(self) -> ESCollection[Error]:
         return self.ds.error
 
     @property
-    def file(self) -> Collection[File]:
+    def file(self) -> ESCollection[File]:
         return self.ds.file
 
     @property
-    def filescore(self) -> Collection[FileScore]:
+    def filescore(self) -> ESCollection[FileScore]:
         return self.ds.filescore
 
     @property
-    def heuristic(self) -> Collection[Heuristic]:
+    def heuristic(self) -> ESCollection[Heuristic]:
         return self.ds.heuristic
 
     @property
-    def result(self) -> Collection[Result]:
+    def result(self) -> ESCollection[Result]:
         return self.ds.result
 
     @property
-    def service(self) -> Collection[Service]:
+    def service(self) -> ESCollection[Service]:
         return self.ds.service
 
     @property
-    def service_client(self) -> Collection:
+    def service_client(self) -> ESCollection:
         return self.ds.service_client
 
     @property
-    def service_delta(self) -> Collection[ServiceDelta]:
+    def service_delta(self) -> ESCollection[ServiceDelta]:
         return self.ds.service_delta
 
     @property
-    def signature(self) -> Collection[Signature]:
+    def signature(self) -> ESCollection[Signature]:
         return self.ds.signature
 
     @property
-    def submission(self) -> Collection[Submission]:
+    def submission(self) -> ESCollection[Submission]:
         return self.ds.submission
 
     @property
-    def submission_summary(self) -> Collection[SubmissionSummary]:
+    def submission_summary(self) -> ESCollection[SubmissionSummary]:
         return self.ds.submission_summary
 
     @property
-    def submission_tree(self) -> Collection[SubmissionTree]:
+    def submission_tree(self) -> ESCollection[SubmissionTree]:
         return self.ds.submission_tree
 
     @property
-    def user(self) -> Collection[User]:
+    def user(self) -> ESCollection[User]:
         return self.ds.user
 
     @property
-    def user_avatar(self) -> Collection:
+    def user_avatar(self) -> ESCollection:
         return self.ds.user_avatar
 
     @property
-    def user_favorites(self) -> Collection[UserFavorites]:
+    def user_favorites(self) -> ESCollection[UserFavorites]:
         return self.ds.user_favorites
 
     @property
-    def user_settings(self) -> Collection[UserSettings]:
+    def user_settings(self) -> ESCollection[UserSettings]:
         return self.ds.user_settings
 
     @property
-    def vm(self) -> Collection:
+    def vm(self) -> ESCollection:
         return self.ds.vm
 
     @property
-    def safelist(self) -> Collection[Safelist]:
+    def safelist(self) -> ESCollection[Safelist]:
         return self.ds.safelist
 
     @property
-    def workflow(self) -> Collection[Workflow]:
+    def workflow(self) -> ESCollection[Workflow]:
         return self.ds.workflow
 
-    def get_collection(self, collection_name: str) -> Collection:
+    def get_collection(self, collection_name: str) -> ESCollection:
         if collection_name in self.ds.get_models():
             return getattr(self, collection_name)
         else:
