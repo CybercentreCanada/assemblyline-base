@@ -1,11 +1,16 @@
 import json
 import logging
+import re
 import time
+import warnings
 
 from copy import deepcopy
+from datemath import dm
+from datemath.helpers import DateMathException
+from datetime import datetime
 from os import environ
 from random import random
-from typing import Dict
+from typing import Dict, Any, Union, TypeVar, Generic
 
 import elasticsearch
 import elasticsearch.helpers
@@ -13,17 +18,19 @@ import elasticsearch.helpers
 from elasticsearch.helpers.errors import ScanError
 
 from assemblyline import odm
-from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
-from assemblyline.datastore import BaseStore, BulkPlan, Collection, log
+from assemblyline.datastore.bulk import ElasticBulkPlan
 from assemblyline.datastore.exceptions import (DataStoreException, ILMException, MultiKeyError, SearchException,
                                                SearchRetryException, VersionConflictException)
-from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
-from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_strings, default_dynamic_templates,
-                                                                  default_index, default_mapping)
-from assemblyline.odm.base import BANNED_FIELDS
+from assemblyline.datastore.support.build import back_mapping, build_mapping
+from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
+                                                    default_index, default_mapping)
+from assemblyline.odm.base import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model, ClassificationObject, _Field
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
+
+log = logging.getLogger('assemblyline.datastore')
+ModelType = TypeVar('ModelType', bound=Model)
 write_block_settings = {"settings": {"index.blocks.write": True}}
 write_unblock_settings = {"settings": {"index.blocks.write": None}}
 
@@ -103,77 +110,42 @@ def parse_sort(sort, ret_list=True):
     raise SearchException('Unknown sort parameter ' + sort)
 
 
-class ElasticBulkPlan(BulkPlan):
-    def __init__(self, indexes, model=None):
-        super().__init__(indexes, model)
-
-    def add_delete_operation(self, doc_id, index=None):
-        if index:
-            self.operations.append(json.dumps({"delete": {"_index": index, "_id": doc_id}}))
-        else:
-            for cur_index in self.indexes:
-                self.operations.append(json.dumps({"delete": {"_index": cur_index, "_id": doc_id}}))
-
-    def add_insert_operation(self, doc_id, doc, index=None):
-        if isinstance(doc, self.model):
-            saved_doc = doc.as_primitives(hidden_fields=True)
-        elif self.model:
-            saved_doc = self.model(doc).as_primitives(hidden_fields=True)
-        else:
-            if not isinstance(doc, dict):
-                saved_doc = {'__non_doc_raw__': doc}
-            else:
-                saved_doc = deepcopy(doc)
-        saved_doc['id'] = doc_id
-
-        self.operations.append(json.dumps({"create": {"_index": index or self.indexes[0], "_id": doc_id}}))
-        self.operations.append(json.dumps(saved_doc))
-
-    def add_upsert_operation(self, doc_id, doc, index=None):
-        if isinstance(doc, self.model):
-            saved_doc = doc.as_primitives(hidden_fields=True)
-        elif self.model:
-            saved_doc = self.model(doc).as_primitives(hidden_fields=True)
-        else:
-            if not isinstance(doc, dict):
-                saved_doc = {'__non_doc_raw__': doc}
-            else:
-                saved_doc = deepcopy(doc)
-        saved_doc['id'] = doc_id
-
-        self.operations.append(json.dumps({"update": {"_index": index or self.indexes[0], "_id": doc_id}}))
-        self.operations.append(json.dumps({"doc": saved_doc, "doc_as_upsert": True}))
-
-    def add_update_operation(self, doc_id, doc, index=None):
-
-        if isinstance(doc, self.model):
-            saved_doc = doc.as_primitives(hidden_fields=True)
-        elif self.model:
-            saved_doc = self.model(doc, mask=list(doc.keys())).as_primitives(hidden_fields=True)
-        else:
-            if not isinstance(doc, dict):
-                saved_doc = {'__non_doc_raw__': doc}
-            else:
-                saved_doc = deepcopy(doc)
-
-        if index:
-            self.operations.append(json.dumps({"update": {"_index": index, "_id": doc_id}}))
-            self.operations.append(json.dumps({"doc": saved_doc}))
-        else:
-            for cur_index in self.indexes:
-                self.operations.append(json.dumps({"update": {"_index": cur_index, "_id": doc_id}}))
-                self.operations.append(json.dumps({"doc": saved_doc}))
-
-    def get_plan_data(self):
-        return "\n".join(self.operations)
-
-
-class ESCollection(Collection):
+class ESCollection(Generic[ModelType]):
+    DEFAULT_ROW_SIZE = 25
+    DEFAULT_SEARCH_FIELD = '__text__'
     DEFAULT_SORT = [{'_id': 'asc'}]
-    MAX_SEARCH_ROWS = 500
+    FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
+    HISTOGRAM_MAP = {
+        "minute": "1m",
+        "hour": "1h",
+        "day": "1d",
+        "week": "1w",
+        "month": "1M",
+        "year": "1y",
+    }
     MAX_GROUP_LIMIT = 10
     MAX_FACET_LIMIT = 100
+    MAX_RETRY_BACKOFF = 10
+    MAX_SEARCH_ROWS = 500
+    RETRY_NORMAL = 1
+    RETRY_NONE = 0
+    RETRY_INFINITY = -1
     SCROLL_TIMEOUT = "5m"
+    UPDATE_SET = "SET"
+    UPDATE_INC = "INC"
+    UPDATE_DEC = "DEC"
+    UPDATE_APPEND = "APPEND"
+    UPDATE_REMOVE = "REMOVE"
+    UPDATE_DELETE = "DELETE"
+    UPDATE_OPERATIONS = [
+        UPDATE_APPEND,
+        UPDATE_DEC,
+        UPDATE_INC,
+        UPDATE_REMOVE,
+        UPDATE_SET,
+        UPDATE_DELETE,
+    ]
+    VALID_HISTOGRAM_GAPS = set(["1m", "1h", "1d", "1w", "1M", "1y"])
     DEFAULT_SEARCH_VALUES = {
         'timeout': None,
         'field_list': None,
@@ -195,7 +167,7 @@ class ESCollection(Collection):
         'histogram_start': None,
         'histogram_end': None,
         'start': 0,
-        'rows': Collection.DEFAULT_ROW_SIZE,
+        'rows': DEFAULT_ROW_SIZE,
         'query': "*",
         'sort': DEFAULT_SORT,
         'df': None,
@@ -212,9 +184,14 @@ class ESCollection(Collection):
         else:
             self.ilm_config = None
 
-        super().__init__(datastore, name, model_class=model_class, validate=validate)
+        self.datastore = datastore
+        self.name = name
+        self.index_name = f"{name}_hot"
+        self.model_class = model_class
+        self.validate = validate
 
-        self.bulk_plan_class = ElasticBulkPlan
+        self._ensure_collection()
+
         self.stored_fields = {}
         if model_class:
             for name, field in model_class.flat_fields().items():
@@ -236,6 +213,11 @@ class ESCollection(Collection):
 
     @property
     def index_list(self):
+        """
+        This property contains the list of valid indexes for the current collection.
+
+        :return: list of valid indexes for this collection
+        """
         if self.archive_access:
             if not self._index_list:
                 self._index_list = list(self.with_retries(self.datastore.client.indices.get, f"{self.name}-*").keys())
@@ -287,6 +269,11 @@ class ESCollection(Collection):
                                 "memory leak in you Elastic cluster...")
 
     def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
+        """
+        This function performs the passed function with the given args and kwargs and reconnect if it fails
+
+        :return: return the output of the function passed
+        """
         retries = 0
         updated = 0
         deleted = 0
@@ -447,6 +434,12 @@ class ESCollection(Collection):
                 updated += res['updated']
 
     def archive(self, query, max_docs=None, sort=None):
+        """
+        This function should archive to document that are matching to query to an time splitted index
+
+        :param query: query to run to archive documents
+        :return: Number of archived documents
+        """
         if not self.archive_access:
             return False
 
@@ -486,10 +479,33 @@ class ESCollection(Collection):
         else:
             return False
 
-    def _bulk(self, operations):
-        return self.with_retries(self.datastore.client.bulk, body=operations)
+    def bulk(self, operations):
+        """
+        Receives a bulk plan and executes the plan.
+
+        :return: Results of the bulk operation
+        """
+
+        if not isinstance(operations, ElasticBulkPlan):
+            return TypeError("Operations must be of type ElasticBulkPlan")
+
+        return self.with_retries(self.datastore.client.bulk, body=operations.get_plan_data())
+
+    def get_bulk_plan(self):
+        """
+        Creates a BulkPlan tailored for the current datastore
+
+        :return: The BulkPlan object
+        """
+        return ElasticBulkPlan(self.index_list, model=self.model_class)
 
     def commit(self):
+        """
+        This function should be overloaded to perform a commit of the index data of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the commit was successful on all hosts
+        """
         self.with_retries(self.datastore.client.indices.refresh, self.index_name)
         self.with_retries(self.datastore.client.indices.clear_cache, self.index_name)
         if self.archive_access:
@@ -498,6 +514,12 @@ class ESCollection(Collection):
         return True
 
     def fix_ilm(self):
+        """
+        This function should be overloaded to fix the ILM configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
+        """
         if self.ilm_config:
             # Create ILM policy
             while not self._ilm_policy_exists():
@@ -565,12 +587,24 @@ class ESCollection(Collection):
         return True
 
     def fix_replicas(self):
+        """
+        This function should be overloaded to fix the replica configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
+        """
         replicas = self._get_index_definition()['settings']['index']['number_of_replicas']
         body = {"number_of_replicas": replicas}
         return self.with_retries(
             self.datastore.client.indices.put_settings, index=self.index_name, body=body)['acknowledged']
 
     def fix_shards(self, logger=None):
+        """
+        This function should be overloaded to fix the shard configuration of the index of all the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the fix was successful on all hosts
+        """
         if logger is None:
             logger = self.log
         body = {"settings": self._get_index_definition()['settings']}
@@ -680,6 +714,12 @@ class ESCollection(Collection):
         self.with_retries(self.datastore.client.indices.put_settings, index=self.name, body=clone_finish_settings)
 
     def reindex(self):
+        """
+        This function should be overloaded to perform a reindex of all the data of the different hosts
+        specified in self.datastore.hosts.
+
+        :return: Should return True of the commit was successful on all hosts
+        """
         for index in self.index_list:
             new_name = f'{index}__reindex'
             if self.with_retries(self.datastore.client.indices.exists, index) and \
@@ -749,6 +789,16 @@ class ESCollection(Collection):
         return True
 
     def multiget(self, key_list, as_dictionary=True, as_obj=True, error_on_missing=True):
+        """
+        Get a list of documents from the datastore and make sure they are normalized using
+        the model class
+
+        :param error_on_missing: Should it raise a key error when keys are missing
+        :param as_dictionary: Return a disctionary of items or a list
+        :param as_obj: Return objects or not
+        :param key_list: list of keys of documents to get
+        :return: list of instances of the model class
+        """
 
         def add_to_output(data_output, data_id):
             if "__non_doc_raw__" in data_output:
@@ -796,7 +846,30 @@ class ESCollection(Collection):
 
         return out
 
+    def normalize(self, data, as_obj=True) -> Union[ModelType, dict[str, Any], None]:
+        """
+        Normalize the data using the model class
+
+        :param as_obj: Return an object instead of a dictionary
+        :param data: data to normalize
+        :return: instance of the model class
+        """
+        if as_obj and data is not None and self.model_class and not isinstance(data, self.model_class):
+            return self.model_class(data)
+
+        if isinstance(data, dict):
+            data = {k: v for k, v in data.items() if k not in BANNED_FIELDS}
+
+        return data
+
     def exists(self, key, archive_access=None):
+        """
+        Check if a document exists in the datastore.
+
+        :param archive_access: Temporary sets access value to archive during this call
+        :param key: key of the document to get from the datastore
+        :return: true/false depending if the document exists or not
+        """
         if archive_access is None:
             archive_access = self.archive_access
 
@@ -812,7 +885,6 @@ class ESCollection(Collection):
 
     def _get(self, key, retries, archive_access=None, version=False):
         """
-
         Versioned get-save for atomic update has three paths:
             1. Document doesn't exist at all. Create token will be returned for version.
                This way only the first query to try and create the document will succeed.
@@ -823,7 +895,6 @@ class ESCollection(Collection):
         The create token is needed to differentiate between "I'm saving a new
         document non-atomic (version=None)" and "I'm saving a new document
         atomically (version=CREATE_TOKEN)".
-
         """
 
         def normalize_output(data_output):
@@ -869,7 +940,78 @@ class ESCollection(Collection):
             return None, CREATE_TOKEN
         return None
 
-    def _save(self, key, data, version=None):
+    def get(self, key, as_obj=True, archive_access=None, version=False):
+        """
+        Get a document from the datastore, retry a few times if not found and normalize the
+        document with the model provided with the collection.
+
+        This is the normal way to get data of the system.
+
+        :param archive_access: Temporary sets access value to archive during this call
+        :param as_obj: Should the data be returned as an ODM object
+        :param key: key of the document to get from the datastore
+        :param version: should the version number be returned by the call
+        :return: an instance of the model class loaded with the document data
+        """
+        data = self._get(key, self.RETRY_NORMAL, archive_access=archive_access, version=version)
+        if version:
+            data, version = data
+            return self.normalize(data, as_obj=as_obj), version
+        return self.normalize(data, as_obj=as_obj)
+
+    def get_if_exists(self, key, as_obj=True, archive_access=None, version=False):
+        """
+        Get a document from the datastore but do not retry if not found.
+
+        Use this more in caching scenarios because eventually consistent database may lead
+        to have document reported has missing even if they exist.
+
+        :param archive_access: Temporary sets access value to archive during this call
+        :param as_obj: Should the data be returned as an ODM object
+        :param key: key of the document to get from the datastore
+        :param version: should the version number be returned by the call
+        :return: an instance of the model class loaded with the document data
+        """
+        data = self._get(key, self.RETRY_NONE, archive_access=archive_access, version=version)
+        if version:
+            data, version = data
+            return self.normalize(data, as_obj=as_obj), version
+        return self.normalize(data, as_obj=as_obj)
+
+    def require(self, key, as_obj=True, archive_access=None, version=False) -> Union[dict[str, Any], ModelType]:
+        """
+        Get a document from the datastore and retry forever because we know for sure
+        that this document should exist. If it does not right now, this will wait for the
+        document to show up in the datastore.
+
+        :param archive_access: Temporary sets access value to archive during this call
+        :param as_obj: Should the data be returned as an ODM object
+        :param key: key of the document to get from the datastore
+        :param version: should the version number be returned by the call
+        :return: an instance of the model class loaded with the document data
+        """
+        data = self._get(key, self.RETRY_INFINITY, archive_access=archive_access, version=version)
+        if version:
+            data, version = data
+            return self.normalize(data, as_obj=as_obj), version
+        return self.normalize(data, as_obj=as_obj)
+
+    def save(self, key, data, version=None):
+        """
+        Save a to document to the datastore using the key as its document id.
+
+        The document data will be normalized before being saved in the datastore.
+
+        :param key: ID of the document to save
+        :param data: raw data or instance of the model class to save as the document
+        :param version: version of the document to save over, if the version check fails this will raise an exception
+        :return: True if the document was saved properly
+        """
+        if " " in key:
+            raise DataStoreException("You are not allowed to use spaces in datastore keys.")
+
+        data = self.normalize(data)
+
         if self.model_class:
             saved_data = data.as_primitives(hidden_fields=True)
         else:
@@ -902,6 +1044,13 @@ class ESCollection(Collection):
         return True
 
     def delete(self, key):
+        """
+        This function should delete the underlying document referenced by the key.
+        It should return true if the document was in fact properly deleted.
+
+        :param key: id of the document to delete
+        :return: True is delete successful
+        """
         deleted = False
         try:
             info = self.with_retries(self.datastore.client.delete, id=key, index=self.name)
@@ -920,6 +1069,14 @@ class ESCollection(Collection):
         return deleted
 
     def delete_by_query(self, query, workers=20, sort=None, max_docs=None):
+        """
+        This function should delete the underlying documents referenced by the query.
+        It should return true if the documents were in fact properly deleted.
+
+        :param query: Query of the documents to download
+        :param workers: Number of workers used for deletion if basic currency delete is used
+        :return: True is delete successful
+        """
         index = self.name
         if self.archive_access:
             index = f"{index},{self.name}-*"
@@ -964,7 +1121,84 @@ class ESCollection(Collection):
         }
         return script
 
-    def _update(self, key, operations):
+    def _validate_operations(self, operations):
+        """
+        Validate the different operations received for a partial update
+
+        TODO: When the field is of type Mapping, the validation/check only works for depth 1. A full recursive
+              solution is needed to support multi-depth cases.
+
+        :param operations: list of operation tuples
+        :raises: DatastoreException if operation not valid
+        """
+        if self.model_class:
+            fields = self.model_class.flat_fields(show_compound=True)
+            if 'classification in fields':
+                fields.update({"__access_lvl__": Integer(),
+                               "__access_req__": List(Keyword()),
+                               "__access_grp1__": List(Keyword()),
+                               "__access_grp2__": List(Keyword())})
+        else:
+            fields = None
+
+        ret_ops = []
+        for op, doc_key, value in operations:
+            if op not in self.UPDATE_OPERATIONS:
+                raise DataStoreException(f"Not a valid Update Operation: {op}")
+
+            if fields is not None:
+                prev_key = None
+                if doc_key not in fields:
+                    if '.' in doc_key:
+                        prev_key = doc_key[:doc_key.rindex('.')]
+                        if prev_key in fields and not isinstance(fields[prev_key], Mapping):
+                            raise DataStoreException(f"Invalid field for model: {prev_key}")
+                    else:
+                        raise DataStoreException(f"Invalid field for model: {doc_key}")
+
+                if prev_key:
+                    field = fields[prev_key].child_type
+                else:
+                    field = fields[doc_key]
+
+                if op in [self.UPDATE_APPEND, self.UPDATE_REMOVE]:
+                    try:
+                        value = field.check(value)
+                    except (ValueError, TypeError, AttributeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in [self.UPDATE_SET, self.UPDATE_DEC, self.UPDATE_INC]:
+                    try:
+                        value = field.check(value)
+                    except (ValueError, TypeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                if isinstance(value, Model):
+                    value = value.as_primitives()
+                elif isinstance(value, datetime):
+                    value = value.isoformat()
+                elif isinstance(value, ClassificationObject):
+                    value = str(value)
+
+            ret_ops.append((op, doc_key, value))
+
+        return ret_ops
+
+    def update(self, key, operations):
+        """
+        This function performs an atomic update on some fields from the
+        underlying documents referenced by the id using a list of operations.
+
+        Operations supported by the update function are the following:
+        INTEGER ONLY: Increase and decreased value
+        LISTS ONLY: Append and remove items
+        ALL TYPES: Set value
+
+        :param key: ID of the document to modify
+        :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
+        :return: True is update successful
+        """
+        operations = self._validate_operations(operations)
         script = self._create_scripts_from_operations(operations)
 
         update_body = {
@@ -988,9 +1222,28 @@ class ESCollection(Collection):
 
         return False
 
-    def _update_by_query(self, query, operations, filters, max_docs=None):
+    def update_by_query(self, query, operations, filters=None, access_control=None, max_docs=None):
+        """
+        This function performs an atomic update on some fields from the
+        underlying documents matching the query and the filters using a list of operations.
+
+        Operations supported by the update function are the following:
+        INTEGER ONLY: Increase and decreased value
+        LISTS ONLY: Append and remove items
+        ALL TYPES: Set value
+
+        :param access_control:
+        :param filters: Filter queries to reduce the data
+        :param query: Query to find the matching documents
+        :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
+        :return: True is update successful
+        """
+        operations = self._validate_operations(operations)
         if filters is None:
             filters = []
+
+        if access_control:
+            filters.append(access_control)
 
         index = self.name
         if self.archive_access:
@@ -1198,6 +1451,37 @@ class ESCollection(Collection):
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None,
                deep_paging_id=None, as_obj=True, use_archive=False, track_total_hits=None, script_fields=[]):
+        """
+        This function should perform a search through the datastore and return a
+        search result object that consist on the following::
+
+            {
+                "offset": 0,      # Offset in the search index
+                "rows": 25,       # Number of document returned per page
+                "total": 123456,  # Total number of documents matching the query
+                "items": [        # List of dictionary where each keys are one of
+                    {             #   the field list parameter specified
+                        fl[0]: value,
+                        ...
+                        fl[x]: value
+                    }, ...]
+            }
+
+        :param script_fields: List of name/script tuple of fields to be evaluated at runtime
+        :param track_total_hits: Return to total matching document count
+        :param use_archive: Query also the archive
+        :param deep_paging_id: ID of the next page during deep paging searches
+        :param as_obj: Return objects instead of dictionaries
+        :param query: lucene query to search for
+        :param offset: offset at which you want the results to start at (paging)
+        :param rows: number of items that the search function should return
+        :param sort: field to sort the data with
+        :param fl: list of fields to return from the search
+        :param timeout: maximum time of execution
+        :param filters: additional queries to run on the original query to reduce the scope
+        :param access_control: access control parameters to limiti the scope of the query
+        :return: a search result object
+        """
 
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
@@ -1265,6 +1549,27 @@ class ESCollection(Collection):
 
     def stream_search(self, query, fl=None, filters=None, access_control=None,
                       item_buffer_size=200, as_obj=True, use_archive=False):
+        """
+        This function should perform a search through the datastore and stream
+        all related results as a dictionary of key value pair where each keys
+        are one of the field specified in the field list parameter.
+
+        >>> # noinspection PyUnresolvedReferences
+        >>> {
+        >>>     fl[0]: value,
+        >>>     ...
+        >>>     fl[x]: value
+        >>> }
+
+        :param use_archive: Query also the archive
+        :param as_obj: Return objects instead of dictionaries
+        :param query: lucene query to search for
+        :param fl: list of fields to return from the search
+        :param filters: additional queries to run on the original query to reduce the scope
+        :param access_control: access control parameters to run the query with
+        :param buffer_size: number of items to buffer with each search call
+        :return: a generator of dictionary of field list results
+        """
         if item_buffer_size > 2000 or item_buffer_size < 50:
             raise SearchException("Variable item_buffer_size must be between 50 and 2000.")
 
@@ -1302,6 +1607,69 @@ class ESCollection(Collection):
         for value in self.scan_with_retry(query_body, index=index, size=item_buffer_size):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl, as_obj=as_obj)
+
+    def keys(self, access_control=None):
+        """
+        This function streams the keys of all the documents of this collection.
+
+        :param access_control: access control parameter to limit the scope of the key scan
+        :return: a generator of keys
+        """
+        for item in self.stream_search("id:*", fl='id', access_control=access_control):
+            try:
+                yield item.id
+            except AttributeError:
+                value = item['id']
+                if isinstance(value, list):
+                    for v in value:
+                        yield v
+                else:
+                    yield value
+
+    def _validate_steps_count(self, start, end, gap):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            gaps_count = None
+            ret_type = None
+
+            try:
+                start = int(start)
+                end = int(end)
+                gap = int(gap)
+
+                gaps_count = int((end - start) / gap)
+                ret_type = int
+            except ValueError:
+                pass
+
+            if not gaps_count:
+                try:
+                    t_gap = gap.strip('+').strip('-')
+                    t_gap = self.HISTOGRAM_MAP.get(t_gap, t_gap)
+                    if t_gap not in self.VALID_HISTOGRAM_GAPS:
+                        raise SearchException(
+                            f"{gap} is not a valid date historgram gap. "
+                            f"Valid gaps are: {', '.join(self.VALID_HISTOGRAM_GAPS)}")
+
+                    parsed_start = dm(self.datastore.to_pydatemath(start)).int_timestamp
+                    parsed_end = dm(self.datastore.to_pydatemath(end)).int_timestamp
+                    parsed_gap = dm(self.datastore.to_pydatemath(f"+{t_gap}")).int_timestamp - dm('now').int_timestamp
+
+                    gaps_count = int((parsed_end - parsed_start) / parsed_gap)
+                    ret_type = str
+                except (DateMathException, AttributeError):
+                    pass
+
+            if gaps_count is None:
+                raise SearchException(
+                    "Could not parse histogram ranges. Either you've mix integer and dates values or you "
+                    "have invalid date math values. (start='%s', end='%s', gap='%s')" % (start, end, gap))
+
+            if gaps_count > self.MAX_FACET_LIMIT:
+                raise SearchException(f'Histograms are limited to a maximum of {self.MAX_FACET_LIMIT} steps. '
+                                      f'Current settings would generate {gaps_count} steps')
+            return ret_type
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1,
                   filters=None, access_control=None, use_archive=False):
@@ -1454,6 +1822,11 @@ class ESCollection(Collection):
             return ds_type.lower()
 
     def fields(self):
+        """
+        This function should return all the fields in the index with their types
+
+        :return:
+        """
 
         def flatten_fields(props):
             out = {}
@@ -1481,7 +1854,7 @@ class ESCollection(Collection):
         for p_name, p_val in properties.items():
             if p_name.startswith("_") or "//" in p_name:
                 continue
-            if not Collection.FIELD_SANITIZER.match(p_name):
+            if not self.FIELD_SANITIZER.match(p_name):
                 continue
 
             field_model = model_fields.get(p_name, None)
@@ -1591,7 +1964,48 @@ class ESCollection(Collection):
 
         return index_def
 
+    def __get_possible_fields(self, field):
+        field_types = [field.__name__.lower()]
+        if field.__bases__[0] != _Field:
+            field_types.extend(self.__get_possible_fields(field.__bases__[0]))
+
+        return field_types
+
+    def _check_fields(self, model=None):
+        if not self.validate:
+            return
+
+        if model is None:
+            if self.model_class:
+                return self._check_fields(self.model_class)
+            return
+
+        fields = self.fields()
+        model = self.model_class.flat_fields(skip_mappings=True)
+
+        missing = set(model.keys()) - set(fields.keys())
+        if missing:
+            self._add_fields({key: model[key] for key in missing})
+
+        matching = set(fields.keys()) & set(model.keys())
+        for field_name in matching:
+            if fields[field_name]['indexed'] != model[field_name].index and model[field_name].index:
+                raise RuntimeError(f"Field {field_name} should be indexed but is not.")
+
+            possible_field_types = self.__get_possible_fields(model[field_name].__class__)
+
+            if fields[field_name]['type'] not in possible_field_types:
+                raise RuntimeError(f"Field {field_name} didn't have the expected store "
+                                   f"type. [{fields[field_name]['type']} != "
+                                   f"{model[field_name].__class__.__name__.lower()}]")
+
     def _ensure_collection(self):
+        """
+        This function should test if the collection that you are trying to access does indeed exist
+        and should create it if it does not.
+
+        :return:
+        """
         # Create HOT index
         if not self.with_retries(self.datastore.client.indices.exists, self.name):
             log.debug(f"Index {self.name.upper()} does not exists. Creating it now...")
@@ -1694,6 +2108,13 @@ class ESCollection(Collection):
             self.with_retries(self.datastore.client.indices.put_template, self.name, body=current_template)
 
     def wipe(self):
+        """
+        This function should completely delete the collection
+
+        NEVER USE THIS!
+
+        :return:
+        """
         log.debug("Wipe operation started for collection: %s" % self.name.upper())
 
         for index in self.index_list:
@@ -1704,57 +2125,3 @@ class ESCollection(Collection):
             self.with_retries(self.datastore.client.indices.delete_template, self.name)
 
         self._ensure_collection()
-
-
-class ESStore(BaseStore):
-    """ Elasticsearch multi-index implementation of the ResultStore interface."""
-    DEFAULT_SORT = "id asc"
-    DATE_FORMAT = {
-        'NOW': 'now',
-        'YEAR': 'y',
-        'MONTH': 'M',
-        'WEEK': 'w',
-        'DAY': 'd',
-        'HOUR': 'h',
-        'MINUTE': 'm',
-        'SECOND': 's',
-        'MILLISECOND': 'ms',
-        'MICROSECOND': 'micros',
-        'NANOSECOND': 'nanos',
-        'SEPARATOR': '||',
-        'DATE_END': 'Z'
-    }
-
-    def __init__(self, hosts, collection_class=ESCollection, archive_access=True):
-        config = forge.get_config()
-        if config.datastore.ilm.enabled:
-            ilm_config = config.datastore.ilm.indexes.as_primitives()
-        else:
-            ilm_config = {}
-
-        super(ESStore, self).__init__(hosts, collection_class, ilm_config=ilm_config)
-        tracer = logging.getLogger('elasticsearch')
-        tracer.setLevel(logging.CRITICAL)
-
-        self.client = elasticsearch.Elasticsearch(hosts=hosts,
-                                                  connection_class=elasticsearch.RequestsHttpConnection,
-                                                  max_retries=0,
-                                                  timeout=TRANSPORT_TIMEOUT)
-        self.archive_access = archive_access
-        self.url_path = 'elastic'
-
-    def __str__(self):
-        return '{0} - {1}'.format(self.__class__.__name__, self._hosts)
-
-    def ping(self):
-        return self.client.ping()
-
-    def close(self):
-        super().close()
-        self.client = None
-
-    def connection_reset(self):
-        self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
-                                                  connection_class=elasticsearch.RequestsHttpConnection,
-                                                  max_retries=0,
-                                                  timeout=TRANSPORT_TIMEOUT)
