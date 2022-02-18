@@ -15,7 +15,7 @@ from elasticsearch.helpers.errors import ScanError
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
-from assemblyline.datastore import BaseStore, BulkPlan, Collection
+from assemblyline.datastore import BaseStore, Collection
 from assemblyline.datastore.exceptions import (DataStoreException, ILMException, MultiKeyError, SearchException,
                                                SearchRetryException, VersionConflictException)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
@@ -105,9 +105,15 @@ def parse_sort(sort, ret_list=True):
     raise SearchException('Unknown sort parameter ' + sort)
 
 
-class ElasticBulkPlan(BulkPlan):
+class ElasticBulkPlan(object):
     def __init__(self, indexes, model=None):
-        super().__init__(indexes, model)
+        self.indexes = indexes
+        self.model = model
+        self.operations = []
+
+    @property
+    def empty(self):
+        return len(self.operations) == 0
 
     def add_delete_operation(self, doc_id, index=None):
         if index:
