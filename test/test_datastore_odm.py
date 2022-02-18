@@ -11,7 +11,7 @@ from retrying import retry
 
 from assemblyline import odm
 from assemblyline.datastore import log, SearchException
-from assemblyline.datastore.support.elasticsearch.build import back_mapping
+from assemblyline.datastore.support.build import back_mapping
 from assemblyline.odm import Mapping
 
 

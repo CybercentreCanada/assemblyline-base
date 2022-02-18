@@ -15,15 +15,17 @@ from elasticsearch.helpers.errors import ScanError
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
-from assemblyline.datastore import BaseStore, BulkPlan, Collection, log
+from assemblyline.datastore import BaseStore, BulkPlan, Collection
 from assemblyline.datastore.exceptions import (DataStoreException, ILMException, MultiKeyError, SearchException,
                                                SearchRetryException, VersionConflictException)
-from assemblyline.datastore.support.elasticsearch.build import back_mapping, build_mapping
-from assemblyline.datastore.support.elasticsearch.schemas import (default_dynamic_strings, default_dynamic_templates,
-                                                                  default_index, default_mapping)
+from assemblyline.datastore.support.build import back_mapping, build_mapping
+from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
+                                                    default_index, default_mapping)
 from assemblyline.odm.base import BANNED_FIELDS
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
+
+log = logging.getLogger('assemblyline.datastore')
 write_block_settings = {"settings": {"index.blocks.write": True}}
 write_unblock_settings = {"settings": {"index.blocks.write": None}}
 
