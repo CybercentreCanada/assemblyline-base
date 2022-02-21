@@ -30,6 +30,7 @@ services:
     image: cccs/assemblyline_dev:4.2.0
     environment:
       UI_SERVER: "http://internal-ui:5000"
+      AL_CORE_NETWORK: external
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
