@@ -210,7 +210,8 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
 
 # noinspection PyBroadException,PyProtectedMember
-def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False):
+def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False,
+                  continue_services=None):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -266,14 +267,17 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                 if err_key not in errors['errors'].keys() and not allow_incomplete:
                     raise IncompleteBundle("Incomplete errors in bundle. Skipping %s..." % sid)
 
-            if datastore.submission.get(sid, as_obj=False):
+            if datastore.submission.get_if_exists(sid, as_obj=False):
                 raise SubmissionAlreadyExist("Submission %s already exists." % sid)
 
             # Make sure bundle's submission meets minimum classification and save the submission
             submission['classification'] = Classification.max_classification(submission['classification'],
                                                                              min_classification)
             submission.update(Classification.get_access_control_parts(submission['classification']))
-            datastore.submission.save(sid, submission)
+
+            if not continue_services:
+                # Save the submission in the system
+                datastore.submission.save(sid, submission)
 
             # Make sure files meet minimum classification and save the files
             with forge.get_filestore() as filestore:
@@ -297,6 +301,12 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
             # Make sure errors meet minimum classification and save the errors
             for ekey, err in errors['errors'].items():
                 datastore.error.save(ekey, err)
+
+            # If we should continue the scan
+            if continue_services:
+                submission['times'].pop('completed')
+                submission['state'] = 'submitted'
+                submission['params']['services']['continue'] = continue_services
 
             return submission
         finally:
