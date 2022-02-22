@@ -536,11 +536,11 @@ class AssemblylineDatastore(object):
                                 user_classification=None):
         if user_classification is not None:
             user_classification = cl_engine.normalize_classification(user_classification, long_format=False)
-            cache_key = f"{submission['sid']}_{user_classification}"
+            cache_key = f"{submission['sid']}_{user_classification}_supp"
             for illegal_char in [" ", ":", "/"]:
                 cache_key = cache_key.replace(illegal_char, "")
         else:
-            cache_key = submission['sid']
+            cache_key = f"{submission['sid']}_supp"
 
         if isinstance(submission, Model):
             submission = submission.as_primitives()
@@ -556,13 +556,15 @@ class AssemblylineDatastore(object):
                     "tree": tree,
                     "classification": cached_tree['classification'],
                     "filtered": cached_tree['filtered'],
-                    "partial": False
+                    "partial": False,
+                    "supplementary": json.loads(cached_tree['supplementary'])
                 }
 
         partial = submission['state'] != 'completed'
         files = {}
         scores = {}
         missing_files = []
+        supplementary = []
         file_hashes = [x[:64] for x in submission['results']]
         file_hashes.extend([x[:64] for x in submission['errors']])
         file_hashes.extend([f['sha256'] for f in submission['files']])
@@ -608,6 +610,11 @@ class AssemblylineDatastore(object):
             if sha256 not in files:
                 files[sha256] = []
             files[sha256].extend(extracted)
+
+            # Get supplementary files
+            if len(item['response']['supplementary']) == 0:
+                continue
+            supplementary.extend([x['sha256'] for x in item['response']['supplementary']])
 
         tree_cache = []
 
@@ -695,12 +702,16 @@ class AssemblylineDatastore(object):
                             "score": scores.get(sha256, 0),
                         }
 
+        # Cleanup supplementary
+        supplementary = list(set(supplementary))
+
         if not partial:
             cached_tree = {
                 'expiry_ts': now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
                 'tree': json.dumps(tree),
                 'classification': max_classification,
-                'filtered': len(forbidden_files) > 0
+                'filtered': len(forbidden_files) > 0,
+                "supplementary": json.dumps(supplementary)
             }
 
             self.submission_tree.save(cache_key, cached_tree)
@@ -709,7 +720,8 @@ class AssemblylineDatastore(object):
             'tree': tree,
             'classification': max_classification,
             'filtered': len(forbidden_files) > 0,
-            'partial': partial
+            'partial': partial,
+            "supplementary": supplementary
         }
 
     @staticmethod
