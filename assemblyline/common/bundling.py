@@ -212,7 +212,7 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
 # noinspection PyBroadException,PyProtectedMember
 def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False,
-                  rescan_services=None):
+                  rescan_services=None, completed_queue=None):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -306,8 +306,15 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
 
                 # Start the rescan
                 if rescan_services:
+                    extracted_file_infos = {
+                        k: {vk: v[vk] for vk in ['magic', 'md5', 'mime', 'sha1', 'sha256', 'size', 'type']}
+                        for k, v in files['infos'].items()
+                        if k in files['list']
+                    }
                     SubmissionClient(datastore=datastore, filestore=filestore,
-                                     config=config).rescan(submission, rescan_services=rescan_services)
+                                     config=config).rescan(submission, results['results'], extracted_file_infos,
+                                                           files['tree'], list(errors['errors'].keys()),
+                                                           rescan_services, completed_queue=completed_queue)
 
             return submission
         finally:
