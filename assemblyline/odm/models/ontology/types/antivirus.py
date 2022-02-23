@@ -19,7 +19,7 @@ class Antivirus(odm.Model):
                                           'suspicious',                         # AV deems suspicious
                                           'malicious']))                        # AV deems malicious
         engine = odm.Compound(Engine)
-        virus_name = odm.Keyword(default='null')                                # The name of the virus
+        virus_name = odm.Optional(odm.Keyword())                                # The name of the virus
 
     odm_version = odm.Text(default="1.0")                                       # Version of AV ontological result
     detections = odm.List(odm.Compound(Detection))                              # List of AV detections
