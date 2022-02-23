@@ -14,6 +14,7 @@ from assemblyline.common import forge
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore.exceptions import MultiKeyError
 from assemblyline.filestore import FileStoreException
+from assemblyline_core.submission_client import SubmissionClient
 
 config = forge.get_config()
 Classification = forge.get_classification()
@@ -211,7 +212,7 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
 # noinspection PyBroadException,PyProtectedMember
 def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False,
-                  continue_services=None):
+                  rescan_services=None):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -275,7 +276,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                                                                              min_classification)
             submission.update(Classification.get_access_control_parts(submission['classification']))
 
-            if not continue_services:
+            if not rescan_services:
                 # Save the submission in the system
                 datastore.submission.save(sid, submission)
 
@@ -290,23 +291,23 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                     except IOError:
                         pass
 
-            # Make sure results meet minimum classification and save the results
-            for key, res in results['results'].items():
-                if key.endswith(".e"):
-                    datastore.emptyresult.save(key, {"expiry_ts": res['expiry_ts']})
-                else:
-                    res['classification'] = Classification.max_classification(res['classification'], min_classification)
-                    datastore.result.save(key, res)
+                # Make sure results meet minimum classification and save the results
+                for key, res in results['results'].items():
+                    if key.endswith(".e"):
+                        datastore.emptyresult.save(key, {"expiry_ts": res['expiry_ts']})
+                    else:
+                        res['classification'] = Classification.max_classification(
+                            res['classification'], min_classification)
+                        datastore.result.save(key, res)
 
-            # Make sure errors meet minimum classification and save the errors
-            for ekey, err in errors['errors'].items():
-                datastore.error.save(ekey, err)
+                # Make sure errors meet minimum classification and save the errors
+                for ekey, err in errors['errors'].items():
+                    datastore.error.save(ekey, err)
 
-            # If we should continue the scan
-            if continue_services:
-                submission['times'].pop('completed')
-                submission['state'] = 'submitted'
-                submission['params']['services']['continue'] = continue_services
+                # Start the rescan
+                if rescan_services:
+                    SubmissionClient(datastore=datastore, filestore=filestore,
+                                     config=config).rescan(submission, rescan_services=rescan_services)
 
             return submission
         finally:
