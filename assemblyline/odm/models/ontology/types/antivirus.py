@@ -4,12 +4,9 @@ from assemblyline import odm
 class Antivirus(odm.Model):
     class Detection(odm.Model):
         class Engine(odm.Model):
-            class Definition(odm.Model):
-                update_time = odm.Optional(odm.Date())                          # Time of last update
-                version = odm.Optional(odm.Keyword())                           # Version of definition set
+            definition_version = odm.Optional(odm.Keyword())                    # Version of definition set
             name = odm.Keyword()                                                # Name of AV engine
             version = odm.Optional(odm.Keyword())                               # Version of AV engine
-            definition = odm.Optional(odm.Compound(Definition))                 # Details about definition
 
         # What category does the verdict fall under?
         category = odm.Optional(odm.Enum(['type-unsupported',                   # File sent to AV is unsupported
