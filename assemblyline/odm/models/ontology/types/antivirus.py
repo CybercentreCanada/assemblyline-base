@@ -7,7 +7,6 @@ class Antivirus(odm.Model):
             definition_version = odm.Optional(odm.Keyword())                    # Version of definition set
             name = odm.Keyword()                                                # Name of AV engine
             version = odm.Optional(odm.Keyword())                               # Version of AV engine
-            definition = odm.Optional(odm.Compound(Definition))                 # Details about definition
 
         # What category does the verdict fall under?
         category = odm.Optional(odm.Enum(['type-unsupported',                   # File sent to AV is unsupported
