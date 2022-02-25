@@ -61,7 +61,6 @@ class Alert(odm.Model):
     heuristic = odm.Compound(Heuristic)                                 # Heuristic result block
     label = odm.List(odm.Keyword(), copyto="__text__", default=[])      # List of labels applied to the alert
     metadata = odm.FlattenedObject(default={}, store=False)             # Metadata submitted with the file
-    modified_ts = odm.Date(default='NOW')                               # Time at which the alert last modified
     owner = odm.Optional(odm.Keyword())                                 # Owner of the alert
     priority = odm.Optional(odm.Enum(values=PRIORITIES))                # Priority applied to the alert
     reporting_ts = odm.Date()                                           # Time at which the alert was created
