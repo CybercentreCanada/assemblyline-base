@@ -220,8 +220,10 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
         except Exception as e:
             raise BundlingException("Could not bundle submission '%s'. [%s: %s]" % (sid, type(e).__name__, str(e)))
         finally:
-            if current_working_dir:
+            if os.path.exists(current_working_dir):
                 subprocess.check_call(["rm", "-rf", current_working_dir])
+            if os.path.exists(tgz_file):
+                os.unlink(tgz_file)
 
 
 # noinspection PyBroadException,PyProtectedMember
