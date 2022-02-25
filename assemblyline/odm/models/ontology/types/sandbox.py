@@ -1,22 +1,31 @@
 from assemblyline import odm
 from assemblyline.odm.models.alert import Attack
+from assemblyline.odm.models.ontology.types.process import Process
+from assemblyline.odm.models.ontology.types.network import NetworkConnection, NetworkDNS, NetworkHTTP
 
 
+# The result ontology for sandbox output
 class Sandbox(odm.Model):
+
+    # The metadata of the analysis, per analysis
     class AnalysisMetadata(odm.Model):
+
+        # The metadata regarding the machine where the analysis took place
         class MachineMetadata(odm.Model):
             # The IP of the machine used for analysis
             ip = odm.Optional(odm.IP())
             # The hypervisor of the machine used for analysis
             hypervisor = odm.Optional(odm.Keyword())
             # The name of the machine used for analysis
-            name = odm.Optional(odm.Keyword())
-            # The platform of the machine used for analysis (windows, linux)
+            hostname = odm.Optional(odm.Keyword())
+            # The platform of the machine used for analysis
             platform = odm.Optional(odm.Platform())
-            # The processor of the machine used for analysis (x64, x86)
-            processor = odm.Optional(odm.Processor())
+            # The version of the operating system of the machine used for analysis
+            version = odm.Optional(odm.List(odm.Keyword()))
+            # The architecture of the machine used for analysis
+            architecture = odm.Optional(odm.Processor())
 
-        # The ID used for identifying the task
+        # The ID used for identifying the analysis task
         task_id = odm.Optional(odm.Keyword())
         # The start time of the analysis
         start_time = odm.Date()
@@ -24,74 +33,53 @@ class Sandbox(odm.Model):
         end_time = odm.Date()
         # The routing used in the sandbox setup (Spoofed, Internet, Tor, VPN)
         routing = odm.Optional(odm.Keyword())
+        # The metadata of the analysis
         machine_metadata = odm.Optional(odm.Compound(MachineMetadata))
 
-    class Capability(odm.Model):
-        # Capablity == Signature
-        class IOC(odm.Model):
-            ip = odm.Optional(odm.IP())
-            domain = odm.Optional(odm.Domain())
-            uri = odm.Optional(odm.URI())
-            uri_path = odm.Optional(odm.URIPath())
-            file = odm.Optional(odm.Text())
+    # A signature that was raised during the analysis of the task
+    class Signature(odm.Model):
 
-        # The process ID of the process that caused the flagged behaviour
-        pid = odm.Optional(odm.Keyword())
-        # The process name of the process that caused the flagged behaviour
-        image = odm.Optional(odm.Keyword())
-        # The name of the capability
+        # An indicator of compromise, aka something interesting that the signature was raised on that is worth reporting
+        class IOC(odm.Model):
+            # An IP that is an indicator of compromise
+            ip = odm.Optional(odm.IP())
+            # A domain that is an indicator of compromise
+            domain = odm.Optional(odm.Domain())
+            # An URI that is an indicator of compromise
+            uri = odm.Optional(odm.URI())
+            # The path of an URI that is an indicator of compromise
+            uri_path = odm.Optional(odm.URIPath())
+            # A process that is an indicator of compromise
+            process = odm.Optional(Process)
+
+            # TODO: Require ODM models for these values
+            # file = odm.Optional(odm.Text())
+            # registry = odm.Optional(odm.Text())
+
+        # The process associated with the signature
+        process = odm.Optional(odm.Compound(Process))
+        # The name of the signature
         name = odm.Keyword()
-        # The description of the capability
+        # The description of the signature
         description = odm.Optional(odm.Keyword())
-        # The Att&ck pattern and category of the capability
-        attack = odm.Optional(odm.Compound(Attack))
+        # A list of Att&ck patterns and categories of the signature
+        attack = odm.Optional(odm.List(odm.Compound(Attack)))
+        # A list of indicators of compromise. A signature can have more than one IOC.
         iocs = odm.Optional(odm.List(odm.Compound(IOC)))
 
-    class Process(odm.Model):
-        pid = odm.Integer()
-        ppid = odm.Integer()
-        iamge = odm.Text()
-        command_line = odm.Text()
-        timestamp = odm.Text()
-        guid = odm.Text()
-        pguid = odm.Text()
-
-    class IpTraffic(odm.Model):
-        pid = odm.Optional(odm.Keyword())
-        image = odm.Optional(odm.Keyword())
-        destination_ip = odm.IP()
-        destination_port = odm.Integer()
-        transport_layer_protocol = odm.Keyword()
-
-    class DnsTraffic(odm.Model):
-        pid = odm.Optional(odm.Keyword())
-        image = odm.Optional(odm.Keyword())
-        # The hostname requested
-        hostname = odm.IP()
-        # A list of IPs returned from the request
-        resolved_ips = odm.List(odm.IP())
-
-    class HttpTraffic(odm.Model):
-        pid = odm.Optional(odm.Keyword())
-        image = odm.Optional(odm.Keyword())
-        uri = odm.URI()
-        request_headers = odm.TypedMapping(type_p=str)
-        request_method = odm.Keyword()
-        response_status_code = odm.Optional(odm.Integer())
-
-    # Perceived capabilities that the file may have
-    capabilities = odm.Optional(odm.List(odm.Compound(Capability)))
+    # Signatures that the file may have
+    signatures = odm.Optional(odm.List(odm.Compound(Signature)))
     # The IP traffic observed during analysis
-    ip_traffic = odm.Optional(odm.List(odm.Compound(IpTraffic)))
+    network_connections = odm.Optional(odm.List(odm.Compound(NetworkConnection)))
     # The DNS traffic observed during analysis
-    dns_traffic = odm.Optional(odm.List(odm.Compound(DnsTraffic)))
+    network_dns = odm.Optional(odm.List(odm.Compound(NetworkDNS)))
     # The HTTP traffic observed during analysis
-    http_traffic = odm.Optional(odm.List(odm.Compound(HttpTraffic)))
+    network_http = odm.Optional(odm.List(odm.Compound(NetworkHTTP)))
     # A list of processes
     processes = odm.Optional(odm.List(odm.Compound(Process)))
     # The name of the sandbox
-    name = odm.Keyword()
+    sandbox_name = odm.Keyword()
     # The version of the sandbox
-    version = odm.Optional(odm.Keyword())
+    sandbox_version = odm.Optional(odm.Keyword())
     # Version of AV ontological result
     odm_version = odm.Text(default="1.0")
