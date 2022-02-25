@@ -237,6 +237,26 @@ class Keyword(_Field):
         return str(value)
 
 
+class EmptyableKeyword(_Field):
+    """
+    A keyword which allow to differentiate between empty and None values.
+    """
+
+    def check(self, value, **kwargs):
+        # We have a special case for bytes here due to how often strings and bytes
+        # get mixed up in python apis
+        if isinstance(value, bytes):
+            raise ValueError(f"[{self.name or self.parent_name}] EmptyableKeyword doesn't accept bytes values")
+
+        if value is None and self.default_set:
+            value = self.default
+
+        if value is None:
+            return None
+
+        return str(value)
+
+
 class UpperKeyword(Keyword):
     """
     A field storing a short uppercase string with a technical interpretation.
