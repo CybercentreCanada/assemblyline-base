@@ -34,11 +34,13 @@ DEFAULT_CLIENT = {
 @odm.model(index=False, store=False)
 class InputModule(odm.Model):
     enabled: bool = odm.Boolean()
+    threads: int = odm.Integer()
     filter_queries = odm.List(odm.Keyword())
 
 
 DEFAULT_ALERT_INPUT = {
     'enabled': True,
+    'threads': 6,
     'filter_queries': [
         'NOT extended_scan:submitted'
     ]
@@ -46,6 +48,7 @@ DEFAULT_ALERT_INPUT = {
 
 DEFAULT_SUBMISSION_INPUT = {
     'enabled': True,
+    'threads': 6,
     'filter_queries': [
         'metadata.replay:true'
     ]
@@ -55,6 +58,7 @@ DEFAULT_SUBMISSION_INPUT = {
 @odm.model(index=False, store=False)
 class Creator(odm.Model):
     client = odm.Compound(Client, default=DEFAULT_CLIENT)
+    cache_save_interval: int = odm.Integer()
     alert_input = odm.Compound(InputModule, default=DEFAULT_ALERT_INPUT)
     submission_input = odm.Compound(InputModule, default=DEFAULT_SUBMISSION_INPUT)
     output_directory: str = odm.Keyword()
@@ -63,6 +67,7 @@ class Creator(odm.Model):
 
 DEFAULT_CREATOR = {
     'client': DEFAULT_CLIENT,
+    'cache_save_interval': 60,
     'alert_input': DEFAULT_ALERT_INPUT,
     'submission_input': DEFAULT_SUBMISSION_INPUT,
     'output_directory': '/tmp/replay/input',
@@ -72,12 +77,14 @@ DEFAULT_CREATOR = {
 
 @odm.model(index=False, store=False)
 class Loader(odm.Model):
+    input_threads: int = odm.Integer()
     input_directory: str = odm.Keyword()
     client = odm.Compound(Client, default=DEFAULT_CLIENT)
     rescan: List[str] = odm.List(odm.Keyword())
 
 
 DEFAULT_LOADER = {
+    'input_threads': 6,
     'input_directory': '/tmp/replay/input',
     'client': DEFAULT_CLIENT,
     'rescan': []
