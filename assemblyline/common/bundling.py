@@ -297,7 +297,8 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                 # Save the submission in the system
                 datastore.submission.save(sid, submission)
 
-                # Save alert if present
+            # Save alert if present
+            if alert:
                 datastore.alert.save(alert['alert_id'], alert)
 
             # Make sure files meet minimum classification and save the files
