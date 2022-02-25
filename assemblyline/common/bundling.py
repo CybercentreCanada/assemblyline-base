@@ -30,6 +30,10 @@ class BundlingException(Exception):
     pass
 
 
+class AlertNotFound(Exception):
+    pass
+
+
 class SubmissionNotFound(Exception):
     pass
 
@@ -143,11 +147,19 @@ def recursive_flatten_tree(tree):
 
 
 # noinspection PyBroadException
-def create_bundle(sid, working_dir=WORK_DIR):
+def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
     with forge.get_datastore() as datastore:
         temp_bundle_file = f"bundle_{get_random_id()}"
         current_working_dir = os.path.join(working_dir, temp_bundle_file)
         try:
+            if use_alert:
+                alert = datastore.alert.get(sid, as_obj=False)
+                if alert is None:
+                    raise AlertNotFound("Can't find alert %s, skipping." % sid)
+
+                sid = alert['sid']
+            else:
+                alert = None
             submission = datastore.submission.get(sid, as_obj=False)
             if submission is None:
                 raise SubmissionNotFound("Can't find submission %s, skipping." % sid)
@@ -181,6 +193,8 @@ def create_bundle(sid, working_dir=WORK_DIR):
                     'results': get_results(submission.get("results", []), file_infos, datastore),
                     'errors': get_errors(submission.get("errors", []), datastore)
                 }
+                if alert:
+                    data['alert'] = alert
 
                 # Save result files
                 with open(os.path.join(current_working_dir, "results.json"), "w") as fp:
@@ -246,6 +260,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
         with open(res_file, 'rb') as fh:
             data = json.load(fh)
 
+        alert = data.get('alert', None)
         submission = data['submission']
         results = data['results']
         files = data['files']
@@ -279,6 +294,9 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
             if not rescan_services:
                 # Save the submission in the system
                 datastore.submission.save(sid, submission)
+
+                # Save alert if present
+                datastore.alert.save(alert['alert_id'], alert)
 
             # Make sure files meet minimum classification and save the files
             with forge.get_filestore() as filestore:
