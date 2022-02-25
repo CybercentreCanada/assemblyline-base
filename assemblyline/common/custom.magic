@@ -103,6 +103,10 @@
 >&0 short   0xA1B2        custom: network\tcpdump
 # Email
 0   string  DKIM-Signature:     custom: document/email
+# Email with MultipartBoundary
+0    string
+>&0 search/300 Content-Type:\ multipart/
+>>&0 search/300 ------MultipartBoundary-- custom: document/email
 # Quarantine Files
 0	string	AhnLab\040Inc.\0402006	custom: quarantine/ahnlab
 0	string	\055chest\055\040		custom: quarantine/avast

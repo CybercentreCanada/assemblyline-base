@@ -59,6 +59,28 @@ class NullLogger(object):
         pass
 
 
+class IndentedPrintLogger():
+    @staticmethod
+    def info(msg, end=None):
+        print(f"    {msg}", end=end)
+
+    @staticmethod
+    def warning(msg, end=None):
+        print(f"    [W] {msg}", end=end)
+
+    @staticmethod
+    def warn(msg, end=None):
+        print(f"    [W] {msg}", end=end)
+
+    @staticmethod
+    def error(msg, end=None):
+        print(f"    [E] {msg}", end=end)
+
+    @staticmethod
+    def exception(msg, end=None):
+        print(f"    [EX] {msg}", end=end)
+
+
 class PrintLogger(object):
     @staticmethod
     def info(msg, end=None):
@@ -987,7 +1009,8 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
                 for bucket in buckets:
                     collection = self.datastore.get_collection(bucket)
-                    collection.fix_shards()
+                    collection.fix_shards(logger=IndentedPrintLogger()
+                                          if isinstance(self.logger, PrintLogger) else self.logger)
                     self.logger.info(f"    Index {bucket.upper()} shards configuration updated.")
 
                 self.logger.info("Completed!")

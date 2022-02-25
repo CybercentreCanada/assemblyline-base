@@ -111,6 +111,43 @@ STRONG_INDICATORS = {
         re.compile(rb'^Message-ID: ', re.MULTILINE),
         re.compile(rb'^To: ', re.MULTILINE),
         re.compile(rb'^From: ', re.MULTILINE),
+        re.compile(rb'^VBR-Info: ', re.MULTILINE),
+        re.compile(rb'^TLS-Required: ', re.MULTILINE),
+        re.compile(rb'^TLS-Report-Submitter: ', re.MULTILINE),
+        re.compile(rb'^TLS-Report-Domain: ', re.MULTILINE),
+        re.compile(rb'^Sender: ', re.MULTILINE),
+        re.compile(rb'^Return-Path: ', re.MULTILINE),
+        re.compile(rb'^Resent-To: ', re.MULTILINE),
+        re.compile(rb'^Resent-Sender: ', re.MULTILINE),
+        re.compile(rb'^Resent-Message-ID: ', re.MULTILINE),
+        re.compile(rb'^Resent-From: ', re.MULTILINE),
+        re.compile(rb'^Resent-Date: ', re.MULTILINE),
+        re.compile(rb'^Resent-Cc: ', re.MULTILINE),
+        re.compile(rb'^Resent-Bcc: ', re.MULTILINE),
+        re.compile(rb'^Require-Recipient-Valid-Since: ', re.MULTILINE),
+        re.compile(rb'^Reply-To: ', re.MULTILINE),
+        re.compile(rb'^References: ', re.MULTILINE),
+        re.compile(rb'^Received-SPF: ', re.MULTILINE),
+        re.compile(rb'^Received: ', re.MULTILINE),
+        re.compile(rb'^Original-Subject: ', re.MULTILINE),
+        re.compile(rb'^Original-Recipient: ', re.MULTILINE),
+        re.compile(rb'^Original-From: ', re.MULTILINE),
+        re.compile(rb'^MT-Priority: ', re.MULTILINE),
+        re.compile(rb'^List-Unsubscribe-Post: ', re.MULTILINE),
+        re.compile(rb'^Keywords: ', re.MULTILINE),
+        re.compile(rb'^In-Reply-To: ', re.MULTILINE),
+        re.compile(rb'^Downgraded-References: ', re.MULTILINE),
+        re.compile(rb'^Downgraded-Original-Recipient: ', re.MULTILINE),
+        re.compile(rb'^Downgraded-Message-Id: ', re.MULTILINE),
+        re.compile(rb'^Downgraded-In-Reply-To: ', re.MULTILINE),
+        re.compile(rb'^Downgraded-Final-Recipient: ', re.MULTILINE),
+        re.compile(rb'^DKIM-Signature: ', re.MULTILINE),
+        re.compile(rb'^Date: ', re.MULTILINE),
+        re.compile(rb'^Cc: ', re.MULTILINE),
+        re.compile(rb'^Bcc: ', re.MULTILINE),
+        re.compile(rb'^Auto-Submitted: ', re.MULTILINE),
+        re.compile(rb'^Authentication-Results: ', re.MULTILINE),
+        re.compile(rb'^Archived-At: ', re.MULTILINE),
     ],
     'metadata/sysmon': [
         re.compile(rb'<Events>[^>]+'),
@@ -145,7 +182,18 @@ STRONG_INDICATORS = {
     'code/postscript': [
         re.compile(rb'%!PS'),
         re.compile(rb'def /\w+'),
-    ]
+    ],
+    'code/batch': [
+        re.compile(rb'(?i)(^|\n| |\t|@)(chcp|set /p)[ \t]+'),
+        re.compile(rb'(?i)(^|\n| |\t|&)start[ \t]*/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?'),
+        re.compile(rb'(?i)(^|\n|@)cd[ \t]+(/d )?["\']%~dp0["\']'),
+        re.compile(rb'(?i)(^|\n)taskkill[ \t]+(/F|/im)'),
+        re.compile(rb'(?i)(^|\n)reg[ \t]+delete[ \t]+'),
+        re.compile(rb'(?i)(^|\n)%comspec%[ \t]+/c[ \t]+'),
+        re.compile(rb'(?i)(^|\n)dir&echo[ \t]+'),
+        re.compile(
+            rb'(?i)(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)'),
+    ],
 }
 STRONG_SCORE = 15
 MINIMUM_GUESS_SCORE = 20
@@ -192,7 +240,12 @@ WEAK_INDICATORS = {
         rb'xor ',
         rb'copy ',
     ],
-    'document/email': [rb'^Content-Type: ']
+    'document/email': [rb'^Content-Type: '],
+    'code/batch': [
+        rb'(?i)(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+',
+        rb'(?i)(^|\n)pause',
+        rb'(?i)(^|\n)shutdown[ \t]*(/s)?',
+    ]
 }
 WEAK_SCORE = 1
 
@@ -246,6 +299,13 @@ OLE_CLSID_GUIDs = {
 }
 
 recognized = constants.RECOGNIZED_TYPES
+
+# CONSIDERED A LAST RESORT FOR HARD TO IDENTIFY FILES (ie. scripts)
+ext_to_tag = {
+    '.bat': 'code/batch',
+    '.vbs': 'code/vbs',
+    '.ps1': 'code/ps1',
+}
 
 tag_to_extension = {
     'archive/chm': '.chm',
@@ -575,6 +635,13 @@ def ident(buf, length: int, path) -> Dict:
 
     if not recognized.get(data['type'], False):
         data['type'] = 'unknown'
+
+    # ONLY USED IN A LAST RESORT
+    if data['type'] == 'unknown':
+        for ext, tag_type in ext_to_tag.items():
+            if path.endswith(ext):
+                data['type'] = tag_type
+                break
 
     if data['type'] == 'document/office/unknown':
         # noinspection PyBroadException

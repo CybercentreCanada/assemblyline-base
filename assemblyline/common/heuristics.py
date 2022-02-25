@@ -47,12 +47,30 @@ class HeuristicHandler():
 
             # Assign the multiple attack IDs to the heuristic
             for attack_id in heuristic.attack_ids:
-                attack_item = dict(
-                    attack_id=attack_id,
-                    pattern=attack_map[attack_id]['name'],
-                    categories=attack_map[attack_id]['categories']
-                )
-                output['attack'].append(attack_item)
+                attack_item = None
+                if attack_id in attack_map:
+                    attack_item = dict(
+                        attack_id=attack_id,
+                        pattern=attack_map[attack_id]['name'],
+                        categories=attack_map[attack_id]['categories']
+                    )
+                elif attack_id in software_map:
+                    attack_item = dict(
+                        attack_id=attack_id,
+                        pattern=software_map[attack_id].get('name', attack_id),
+                        categories=["software"]
+                    )
+                elif attack_id in group_map:
+                    attack_item = dict(
+                        attack_id=attack_id,
+                        pattern=group_map[attack_id].get('name', attack_id),
+                        categories=["group"]
+                    )
+
+                if attack_item:
+                    output['attack'].append(attack_item)
+                else:
+                    heur_logger.warning(f"Could not generate Att&ck output for ID: {attack_id}")
 
             # Assign the multiple signatures to the heuristic
             for sig_name, freq in heuristic.signatures.items():
@@ -98,10 +116,11 @@ class Heuristic(object):
             if a_id in attack_map:
                 self.attack_ids.append(a_id)
             elif a_id in software_map:
+                self.attack_ids.append(a_id)
                 software_def = software_map[a_id]
                 implant_name = software_def.get('name', None)
                 if implant_name:
-                    self.associated_tags.append(('attribution.implant', implant_name))
+                    self.associated_tags.append(('attribution.implant', implant_name.upper()))
 
                 for s_a_id in software_def['attack_ids']:
                     if s_a_id in attack_map:
@@ -112,9 +131,10 @@ class Heuristic(object):
                         heur_logger.warning(f"Invalid related attack_id '{s_a_id}' for software '{a_id}' "
                                             f"in heuristic '{heur_id}'. Ignoring it.")
             elif a_id in group_map:
+                self.attack_ids.append(a_id)
                 group_name = group_map[a_id].get('name', None)
                 if group_name:
-                    self.associated_tags.append(('attribution.actor', group_name))
+                    self.associated_tags.append(('attribution.actor', group_name.upper()))
             else:
                 heur_logger.warning(f"Invalid attack_id '{a_id}' in heuristic '{heur_id}'. Ignoring it.")
         self.attack_ids = list(set(self.attack_ids))

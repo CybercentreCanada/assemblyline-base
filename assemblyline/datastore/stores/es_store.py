@@ -393,23 +393,31 @@ class ESCollection(Collection):
         except KeyError:
             return res['task']['status']
 
+    def _get_current_alias(self, index):
+        if self.with_retries(self.datastore.client.indices.exists_alias, name=index):
+            return next(iter(self.with_retries(self.datastore.client.indices.get_alias, index)), None)
+        return None
+
+    def _wait_for_status(self, index, min_status='yellow'):
+        status_ok = False
+        while not status_ok:
+            try:
+                res = self.datastore.client.cluster.health(index=index, timeout='5s', wait_for_status=min_status)
+                status_ok = not res['timed_out']
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, _, _ = e.args
+                if err_code == 408 or err_code == '408':
+                    log.warning(f"Waiting for index {index} to get to status {min_status}...")
+                    pass
+                else:
+                    raise
+
     def _safe_index_copy(self, copy_function, src, target, body=None, min_status='yellow'):
         ret = copy_function(src, target, body=body, request_timeout=60)
         if not ret['acknowledged']:
             raise DataStoreException(f"Failed to create index {target} from {src}.")
 
-        status_ok = False
-        while not status_ok:
-            try:
-                res = self.datastore.client.cluster.health(index=target, timeout='5s', wait_for_status=min_status)
-                status_ok = not res['timed_out']
-            except elasticsearch.exceptions.TransportError as e:
-                err_code, _, _ = e.args
-                if err_code == 408 or err_code == '408':
-                    log.warning(f"Waiting for index {target} to get to status {min_status}...")
-                    pass
-                else:
-                    raise
+        self._wait_for_status(target, min_status=min_status)
 
     def _delete_async(self, index, body, max_docs=None, sort=None):
         deleted = 0
@@ -562,14 +570,19 @@ class ESCollection(Collection):
         return self.with_retries(
             self.datastore.client.indices.put_settings, index=self.index_name, body=body)['acknowledged']
 
-    def fix_shards(self):
+    def fix_shards(self, logger=None):
+        if logger is None:
+            logger = self.log
         body = {"settings": self._get_index_definition()['settings']}
         clone_body = {"settings": {"index.number_of_replicas": 0}}
+        clone_finish_settings = None
+        clone_setup_settings = None
         method = None
+        target_node = ""
         temp_name = f'{self.name}__fix_shards'
 
         indexes_settings = self.with_retries(self.datastore.client.indices.get_settings)
-        current_settings = indexes_settings.get(self.index_name, indexes_settings.get(temp_name, None))
+        current_settings = indexes_settings.get(self._get_current_alias(self.name), None)
         if not current_settings:
             raise DataStoreException(
                 'Could not get current index settings. Something is wrong and requires manual intervention...')
@@ -577,61 +590,94 @@ class ESCollection(Collection):
         cur_replicas = int(current_settings['settings']['index']['number_of_replicas'])
         cur_shards = int(current_settings['settings']['index']['number_of_shards'])
         target_shards = int(body['settings']['index']['number_of_shards'])
+        clone_finish_settings = {"settings": {"index.number_of_replicas": cur_replicas,
+                                              "index.routing.allocation.require._name": None}}
 
         if cur_shards > target_shards:
-            target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
-            clone_setup_settings = {"settings": {"index.number_of_replicas": 0,
-                                                 "index.routing.allocation.require._name": target_node}}
-            clone_finish_settings = {"settings": {"index.number_of_replicas": cur_replicas,
-                                                  "index.routing.allocation.require._name": None}}
-            method = self.datastore.client.indices.shrink
+            logger.info(f"Current shards ({cur_shards}) is bigger then target shards ({target_shards}), "
+                        "we will be shrinking the index.")
+            if cur_shards % target_shards != 0:
+                logger.info("The target shards is not a factor of the current shards, aborting...")
+                return
+            else:
+                target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
+                clone_setup_settings = {"settings": {"index.number_of_replicas": 0,
+                                                     "index.routing.allocation.require._name": target_node}}
+                method = self.datastore.client.indices.shrink
         elif cur_shards < target_shards:
-            method = self.datastore.client.indices.split
-            clone_setup_settings = None
-            clone_finish_settings = None
+            logger.info(f"Current shards ({cur_shards}) is smaller then target shards ({target_shards}), "
+                        "we will be splitting the index.")
+            if target_shards % cur_shards != 0:
+                logger.info("The current shards is not a factor of the target shards, aborting...")
+                return
+            else:
+                method = self.datastore.client.indices.split
+        else:
+            logger.info(f"Current shards ({cur_shards}) is equal to the target shards ({target_shards}), "
+                        "only house keeping operations will be performed.")
 
         if method:
-            try:
-                # Block write to the index
-                self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
+            # Before we do anything, we should make sure the source index is in a good state
+            logger.info(f"Waiting for {self.name.upper()} status to be GREEN.")
+            self._wait_for_status(self.name, min_status='green')
 
-                # Clone it onto a temporary index
-                if not self.with_retries(self.datastore.client.indices.exists, temp_name):
-                    # if there are specific settings to be applied to the index, apply them
-                    if clone_setup_settings:
-                        self.with_retries(self.datastore.client.indices.put_settings,
-                                          index=self.index_name, body=clone_setup_settings)
+            # Block all indexes to be written to
+            logger.info("Set a datastore wide write block on Elastic.")
+            self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
 
-                        # Make sure no shard are relocating
-                        while self.datastore.client.cluster.health(index=self.index_name)['relocating_shards'] != 0:
-                            time.sleep(1)
-
-                    self._safe_index_copy(self.datastore.client.indices.clone,
-                                          self.index_name, temp_name, body=clone_body)
-
-                    # Make the hot index the new clone
-                    alias_body = {"actions": [{"add":  {"index": temp_name, "alias": self.name}}, {
-                        "remove_index": {"index": self.index_name}}]}
-                    self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
-
-                if self.with_retries(self.datastore.client.indices.exists, self.index_name):
-                    self.with_retries(self.datastore.client.indices.delete, self.index_name)
-
-                # Shrink index into shrinked_name
-                self._safe_index_copy(method, temp_name, self.index_name, body=body)
-
-                # Make the hot index the new clone
-                alias_body = {"actions": [{"add":  {"index": self.index_name, "alias": self.name}}, {
-                    "remove_index": {"index": temp_name}}]}
-                self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
-            finally:
-                # Restore writes
-                self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
-
+            # Clone it onto a temporary index
+            if not self.with_retries(self.datastore.client.indices.exists, temp_name):
                 # if there are specific settings to be applied to the index, apply them
-                if clone_finish_settings:
+                if clone_setup_settings:
+                    logger.info(f"Rellocating index to node {target_node.upper()}.")
                     self.with_retries(self.datastore.client.indices.put_settings,
-                                      index=self.index_name, body=clone_finish_settings)
+                                      index=self.index_name, body=clone_setup_settings)
+
+                    # Make sure no shard are relocating
+                    while self.datastore.client.cluster.health(index=self.index_name)['relocating_shards'] != 0:
+                        time.sleep(1)
+
+                # Make a clone of the current index
+                logger.info(f"Cloning {self.index_name.upper()} into {temp_name.upper()}.")
+                self._safe_index_copy(self.datastore.client.indices.clone,
+                                      self.index_name, temp_name, body=clone_body, min_status='green')
+
+            # Make 100% sure temporary index is ready
+            logger.info(f"Waiting for {temp_name.upper()} status to be GREEN.")
+            self._wait_for_status(temp_name, 'green')
+
+            # Make sure temporary index is the alias if not already
+            if self._get_current_alias(self.name) != temp_name:
+                logger.info(f"Make {temp_name.upper()} the current alias for {self.name.upper()} "
+                            f"and delete {self.index_name.upper()}.")
+                # Make the hot index the temporary index while deleting the original index
+                alias_body = {"actions": [{"add":  {"index": temp_name, "alias": self.name}}, {
+                    "remove_index": {"index": self.index_name}}]}
+                self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+
+            # Make sure the original index is deleted
+            if self.with_retries(self.datastore.client.indices.exists, self.index_name):
+                logger.info(f"Delete extra {self.index_name.upper()} index.")
+                self.with_retries(self.datastore.client.indices.delete, self.index_name)
+
+            # Shrink/split the temporary index into the original index
+            logger.info(f"Perform shard fix operation from {temp_name.upper()} to {self.index_name.upper()}.")
+            self._safe_index_copy(method, temp_name, self.index_name, body=body)
+
+            # Make the original index the new alias
+            logger.info(f"Make {self.index_name.upper()} the current alias for {self.name.upper()} "
+                        f"and delete {temp_name.upper()}.")
+            alias_body = {"actions": [{"add":  {"index": self.index_name, "alias": self.name}}, {
+                "remove_index": {"index": temp_name}}]}
+            self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+
+        # Restore writes
+        logger.info("Restore datastore wide write operation on Elastic.")
+        self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
+
+        # Restore normal routing and replicas
+        logger.info(f"Restore original routing table for {self.name.upper()}.")
+        self.with_retries(self.datastore.client.indices.put_settings, index=self.name, body=clone_finish_settings)
 
     def reindex(self):
         for index in self.index_list:

@@ -6,12 +6,12 @@ from assemblyline import odm
 class Tagging(odm.Model):
     @odm.model(index=True, store=False)
     class Attribution(odm.Model):
-        actor = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-        campaign = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-        exploit = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-        implant = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-        family = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-        network = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+        actor = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")))
+        campaign = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")))
+        exploit = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")))
+        implant = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")))
+        family = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")))
+        network = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")))
 
     @odm.model(index=True, store=False)
     class AV(odm.Model):

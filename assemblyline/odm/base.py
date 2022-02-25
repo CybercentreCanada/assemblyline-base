@@ -199,6 +199,19 @@ class Boolean(_Field):
         return bool(value)
 
 
+class Json(_Field):
+    """
+    A field storing serializeable structure with their JSON encoded representations.
+
+    Examples: metadata
+    """
+
+    def check(self, value, **kwargs):
+        if not isinstance(value, str):
+            return json.dumps(value)
+        return value
+
+
 class Keyword(_Field):
     """
     A field storing a short string with a technical interpretation.
@@ -222,6 +235,40 @@ class Keyword(_Field):
             return None
 
         return str(value)
+
+
+class EmptyableKeyword(_Field):
+    """
+    A keyword which allow to differentiate between empty and None values.
+    """
+
+    def check(self, value, **kwargs):
+        # We have a special case for bytes here due to how often strings and bytes
+        # get mixed up in python apis
+        if isinstance(value, bytes):
+            raise ValueError(f"[{self.name or self.parent_name}] EmptyableKeyword doesn't accept bytes values")
+
+        if value is None and self.default_set:
+            value = self.default
+
+        if value is None:
+            return None
+
+        return str(value)
+
+
+class UpperKeyword(Keyword):
+    """
+    A field storing a short uppercase string with a technical interpretation.
+    """
+
+    def check(self, value, **kwargs):
+        kw_val = super().check(value, **kwargs)
+
+        if kw_val is None:
+            return None
+
+        return kw_val.upper()
 
 
 class Any(Keyword):
@@ -687,7 +734,7 @@ class FlattenedListObject(Mapping):
     """A field storing a flattened object"""
 
     def __init__(self, **kwargs):
-        super().__init__(List(Keyword()), **kwargs)
+        super().__init__(List(Json()), **kwargs)
 
     def check(self, value, **kwargs):
         return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
@@ -704,7 +751,7 @@ class FlattenedObject(Mapping):
     """A field storing a flattened object"""
 
     def __init__(self, **kwargs):
-        super().__init__(Keyword(), **kwargs)
+        super().__init__(Json(), **kwargs)
 
     def check(self, value, **kwargs):
         return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
