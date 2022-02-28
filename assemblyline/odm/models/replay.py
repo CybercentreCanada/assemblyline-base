@@ -78,6 +78,7 @@ DEFAULT_CREATOR = {
 @odm.model(index=False, store=False)
 class Loader(odm.Model):
     client = odm.Compound(Client, default=DEFAULT_CLIENT)
+    failed_directory: str = odm.Keyword()
     input_threads: int = odm.Integer()
     input_directory: str = odm.Keyword()
     min_classification: str = odm.Optional(odm.Keyword())
@@ -87,6 +88,7 @@ class Loader(odm.Model):
 
 DEFAULT_LOADER = {
     'client': DEFAULT_CLIENT,
+    'failed_directory': '/tmp/replay/work/failed',
     'input_threads': 6,
     'input_directory': '/tmp/replay/input',
     'min_classification': None,
