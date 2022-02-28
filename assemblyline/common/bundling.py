@@ -228,7 +228,7 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
 
 # noinspection PyBroadException,PyProtectedMember
 def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False,
-                  rescan_services=None, completed_queue=None):
+                  rescan_services=None, completed_queue=None, exist_ok=False):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -286,6 +286,8 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                     raise IncompleteBundle("Incomplete errors in bundle. Skipping %s..." % sid)
 
             if datastore.submission.get_if_exists(sid, as_obj=False):
+                if exist_ok:
+                    return submission
                 raise SubmissionAlreadyExist("Submission %s already exists." % sid)
 
             # Make sure bundle's submission meets minimum classification and save the submission
