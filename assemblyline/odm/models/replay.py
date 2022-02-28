@@ -58,7 +58,6 @@ DEFAULT_SUBMISSION_INPUT = {
 @odm.model(index=False, store=False)
 class Creator(odm.Model):
     client = odm.Compound(Client, default=DEFAULT_CLIENT)
-    cache_save_interval: int = odm.Integer()
     alert_input = odm.Compound(InputModule, default=DEFAULT_ALERT_INPUT)
     submission_input = odm.Compound(InputModule, default=DEFAULT_SUBMISSION_INPUT)
     output_directory: str = odm.Keyword()
@@ -67,7 +66,6 @@ class Creator(odm.Model):
 
 DEFAULT_CREATOR = {
     'client': DEFAULT_CLIENT,
-    'cache_save_interval': 60,
     'alert_input': DEFAULT_ALERT_INPUT,
     'submission_input': DEFAULT_SUBMISSION_INPUT,
     'output_directory': '/tmp/replay/input',
