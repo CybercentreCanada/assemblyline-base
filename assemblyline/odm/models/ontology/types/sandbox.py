@@ -67,6 +67,8 @@ class Sandbox(odm.Model):
         # A list of indicators of compromise. A signature can have more than one IOC.
         iocs = odm.Optional(odm.List(odm.Compound(IOC)))
 
+    # Metadata for the analysis
+    analysis_metadata = odm.Compound(AnalysisMetadata)
     # Signatures that the file may have
     signatures = odm.Optional(odm.List(odm.Compound(Signature)))
     # The IP traffic observed during analysis
