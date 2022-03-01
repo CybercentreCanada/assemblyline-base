@@ -50,7 +50,7 @@ class Sandbox(odm.Model):
             # The path of an URI that is an indicator of compromise
             uri_path = odm.Optional(odm.URIPath())
             # A process that is an indicator of compromise
-            process = odm.Optional(Process)
+            process = odm.Optional(odm.Compound(Process))
 
             # TODO: Require ODM models for these values
             # file = odm.Optional(odm.Text())
