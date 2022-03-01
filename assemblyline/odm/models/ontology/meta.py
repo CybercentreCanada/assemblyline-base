@@ -38,5 +38,12 @@ class ResultOntology(odm.Model):
     # Used to link to knowledge base retaining long-term data
     retention_id = odm.Optional(odm.Keyword())
     # What tags did the service associate to the result
-    tags = odm.Optional(odm.List(odm.Compound(Tagging)))
-    #heuristics = odm.Optional(odm.Mapping(odm.Mapping(odm.List(Tagging))))
+    tags = odm.Optional(odm.Mapping(odm.List(odm.Compound(Tagging))))
+    # What tags are related to certain heuristics raised
+    # {
+    #   "Bad Things happened": {
+    #       "network.static.uri": ["bad.domain", ...],
+    #       ...
+    #   }
+    # }
+    heuristics = odm.Optional(odm.Mapping(odm.Mapping(odm.List(odm.Compound(Tagging)))))
