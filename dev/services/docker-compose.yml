@@ -103,6 +103,12 @@ services:
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
+  # PE service
+  alsvc_pe:
+    image: cccs/assemblyline-service-pe:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
   # PEFile service
   alsvc_pefile:
     image: cccs/assemblyline-service-pefile:latest

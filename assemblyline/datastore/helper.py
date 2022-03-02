@@ -14,7 +14,7 @@ from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictExce
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
-from assemblyline.datastore import Collection, log
+from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.odm import Model, DATEFORMAT
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
@@ -83,94 +83,90 @@ class AssemblylineDatastore(object):
         self.ds.archive_access = False
 
     @property
-    def alert(self) -> Collection[Alert]:
+    def alert(self) -> ESCollection[Alert]:
         return self.ds.alert
 
     @property
-    def cached_file(self) -> Collection[CachedFile]:
+    def cached_file(self) -> ESCollection[CachedFile]:
         return self.ds.cached_file
 
     @property
-    def emptyresult(self) -> Collection[EmptyResult]:
+    def emptyresult(self) -> ESCollection[EmptyResult]:
         return self.ds.emptyresult
 
     @property
-    def error(self) -> Collection[Error]:
+    def error(self) -> ESCollection[Error]:
         return self.ds.error
 
     @property
-    def file(self) -> Collection[File]:
+    def file(self) -> ESCollection[File]:
         return self.ds.file
 
     @property
-    def filescore(self) -> Collection[FileScore]:
+    def filescore(self) -> ESCollection[FileScore]:
         return self.ds.filescore
 
     @property
-    def heuristic(self) -> Collection[Heuristic]:
+    def heuristic(self) -> ESCollection[Heuristic]:
         return self.ds.heuristic
 
     @property
-    def result(self) -> Collection[Result]:
+    def result(self) -> ESCollection[Result]:
         return self.ds.result
 
     @property
-    def service(self) -> Collection[Service]:
+    def service(self) -> ESCollection[Service]:
         return self.ds.service
 
     @property
-    def service_client(self) -> Collection:
-        return self.ds.service_client
-
-    @property
-    def service_delta(self) -> Collection[ServiceDelta]:
+    def service_delta(self) -> ESCollection[ServiceDelta]:
         return self.ds.service_delta
 
     @property
-    def signature(self) -> Collection[Signature]:
+    def signature(self) -> ESCollection[Signature]:
         return self.ds.signature
 
     @property
-    def submission(self) -> Collection[Submission]:
+    def submission(self) -> ESCollection[Submission]:
         return self.ds.submission
 
     @property
-    def submission_summary(self) -> Collection[SubmissionSummary]:
+    def submission_summary(self) -> ESCollection[SubmissionSummary]:
         return self.ds.submission_summary
 
     @property
-    def submission_tree(self) -> Collection[SubmissionTree]:
+    def submission_tree(self) -> ESCollection[SubmissionTree]:
         return self.ds.submission_tree
 
     @property
-    def user(self) -> Collection[User]:
+    def user(self) -> ESCollection[User]:
         return self.ds.user
 
     @property
-    def user_avatar(self) -> Collection:
+    def user_avatar(self) -> ESCollection:
         return self.ds.user_avatar
 
     @property
-    def user_favorites(self) -> Collection[UserFavorites]:
+    def user_favorites(self) -> ESCollection[UserFavorites]:
         return self.ds.user_favorites
 
     @property
-    def user_settings(self) -> Collection[UserSettings]:
+    def user_settings(self) -> ESCollection[UserSettings]:
         return self.ds.user_settings
 
     @property
-    def vm(self) -> Collection:
+    def vm(self) -> ESCollection:
         return self.ds.vm
 
     @property
-    def safelist(self) -> Collection[Safelist]:
+    def safelist(self) -> ESCollection[Safelist]:
         return self.ds.safelist
 
     @property
-    def workflow(self) -> Collection[Workflow]:
+    def workflow(self) -> ESCollection[Workflow]:
         return self.ds.workflow
 
-    def get_collection(self, collection_name: str) -> Collection:
+    def get_collection(self, collection_name: str) -> ESCollection:
         if collection_name in self.ds.get_models():
             return getattr(self, collection_name)
         else:
@@ -420,15 +416,15 @@ class AssemblylineDatastore(object):
                             item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
                         if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
                             parts = cl_engine.get_access_control_parts(new_class)
-                            update_params = [(Collection.UPDATE_SET, 'classification', new_class)]
-                            update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
+                            update_params = [(ESCollection.UPDATE_SET, 'classification', new_class)]
+                            update_params.extend([(ESCollection.UPDATE_SET, k, v) for k, v in parts.items()])
                             self.result.update(item['id'], update_params)
 
                     # Alter the file classification if the new classification does not match
                     if cur_file['classification'] != new_file_class:
                         parts = cl_engine.get_access_control_parts(new_file_class)
-                        update_params = [(Collection.UPDATE_SET, 'classification', new_file_class)]
-                        update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
+                        update_params = [(ESCollection.UPDATE_SET, 'classification', new_file_class)]
+                        update_params.extend([(ESCollection.UPDATE_SET, k, v) for k, v in parts.items()])
                         self.file.update(f, update_params)
 
                     # Fix associated supplementary files
@@ -437,8 +433,8 @@ class AssemblylineDatastore(object):
                         if cur_supp:
                             if cur_supp['classification'] != new_file_class:
                                 parts = cl_engine.get_access_control_parts(new_file_class)
-                                update_params = [(Collection.UPDATE_SET, 'classification', new_file_class)]
-                                update_params.extend([(Collection.UPDATE_SET, k, v) for k, v in parts.items()])
+                                update_params = [(ESCollection.UPDATE_SET, 'classification', new_file_class)]
+                                update_params.extend([(ESCollection.UPDATE_SET, k, v) for k, v in parts.items()])
                                 self.file.update(supp, update_params)
 
         # Delete the submission and cached trees and summaries
@@ -536,11 +532,11 @@ class AssemblylineDatastore(object):
                                 user_classification=None):
         if user_classification is not None:
             user_classification = cl_engine.normalize_classification(user_classification, long_format=False)
-            cache_key = f"{submission['sid']}_{user_classification}"
+            cache_key = f"{submission['sid']}_{user_classification}_supp"
             for illegal_char in [" ", ":", "/"]:
                 cache_key = cache_key.replace(illegal_char, "")
         else:
-            cache_key = submission['sid']
+            cache_key = f"{submission['sid']}_supp"
 
         if isinstance(submission, Model):
             submission = submission.as_primitives()
@@ -556,13 +552,15 @@ class AssemblylineDatastore(object):
                     "tree": tree,
                     "classification": cached_tree['classification'],
                     "filtered": cached_tree['filtered'],
-                    "partial": False
+                    "partial": False,
+                    "supplementary": json.loads(cached_tree['supplementary'])
                 }
 
         partial = submission['state'] != 'completed'
         files = {}
         scores = {}
         missing_files = []
+        supplementary = []
         file_hashes = [x[:64] for x in submission['results']]
         file_hashes.extend([x[:64] for x in submission['errors']])
         file_hashes.extend([f['sha256'] for f in submission['files']])
@@ -608,6 +606,11 @@ class AssemblylineDatastore(object):
             if sha256 not in files:
                 files[sha256] = []
             files[sha256].extend(extracted)
+
+            # Get supplementary files
+            if len(item['response']['supplementary']) == 0:
+                continue
+            supplementary.extend([x['sha256'] for x in item['response']['supplementary']])
 
         tree_cache = []
 
@@ -695,12 +698,16 @@ class AssemblylineDatastore(object):
                             "score": scores.get(sha256, 0),
                         }
 
+        # Cleanup supplementary
+        supplementary = list(set(supplementary))
+
         if not partial:
             cached_tree = {
                 'expiry_ts': now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
                 'tree': json.dumps(tree),
                 'classification': max_classification,
-                'filtered': len(forbidden_files) > 0
+                'filtered': len(forbidden_files) > 0,
+                "supplementary": json.dumps(supplementary)
             }
 
             self.submission_tree.save(cache_key, cached_tree)
@@ -709,7 +716,8 @@ class AssemblylineDatastore(object):
             'tree': tree,
             'classification': max_classification,
             'filtered': len(forbidden_files) > 0,
-            'partial': partial
+            'partial': partial,
+            "supplementary": supplementary
         }
 
     @staticmethod
