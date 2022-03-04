@@ -28,8 +28,6 @@ class NetworkDNS(odm.Model):
 
     # The GUID associated with the connection
     guid = odm.Text()
-    # The process that spawned the network connection
-    process = odm.Optional(odm.Compound(Process))
     # The low-level details of the DNS request
     connection_details = odm.Compound(NetworkConnection)
     # The domain requested
@@ -43,8 +41,6 @@ class NetworkHTTP(odm.Model):
 
     # The GUID associated with the connection
     guid = odm.Text()
-    # The process that spawned the network connection
-    process = odm.Optional(odm.Compound(Process))
     # The low-level details of the DNS request
     connection_details = odm.Compound(NetworkConnection)
     # The URI requested
