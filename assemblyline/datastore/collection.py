@@ -143,6 +143,8 @@ class ESCollection(Generic[ModelType]):
         UPDATE_APPEND,
         UPDATE_DEC,
         UPDATE_INC,
+        UPDATE_MAX,
+        UPDATE_MIN,
         UPDATE_REMOVE,
         UPDATE_SET,
         UPDATE_DELETE,
