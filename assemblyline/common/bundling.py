@@ -162,11 +162,13 @@ def create_bundle(sid, working_dir=WORK_DIR):
                     pass
 
                 # Create file information data
-                file_tree = datastore.get_or_create_file_tree(submission,
-                                                              config.submission.max_extraction_depth)['tree']
+                tree_data = datastore.get_or_create_file_tree(submission, config.submission.max_extraction_depth)
+                file_tree = tree_data['tree']
+                supplementary = tree_data['supplementary']
                 flatten_tree = list(set(recursive_flatten_tree(file_tree) +
                                         [r[:64] for r in submission.get("results", [])]))
-                file_infos, _ = get_file_infos(copy(flatten_tree), datastore)
+                all_files = flatten_tree + supplementary
+                file_infos, _ = get_file_infos(copy(all_files), datastore)
 
                 # Add bundling metadata
                 if 'bundle.source' not in submission['metadata']:
@@ -176,7 +178,8 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
                 data = {
                     'submission': submission,
-                    'files': {"list": flatten_tree, "tree": file_tree, "infos": file_infos},
+                    'files': {"list": flatten_tree, "tree": file_tree,
+                              "infos": file_infos, "supplementary": supplementary},
                     'results': get_results(submission.get("results", []), file_infos, datastore),
                     'errors': get_errors(submission.get("errors", []), datastore)
                 }
@@ -187,7 +190,7 @@ def create_bundle(sid, working_dir=WORK_DIR):
 
                 # Download all related files
                 with forge.get_filestore() as filestore:
-                    for sha256 in flatten_tree:
+                    for sha256 in all_files:
                         try:
                             filestore.download(sha256, os.path.join(current_working_dir, sha256))
                         except FileStoreException:
