@@ -1114,12 +1114,12 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(f"ctx._source.{doc_key} -= params.value{val_id}")
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_MAX:
-                script = f"if (ctx._source.{doc_key} == null || ctx._source.{doc_key} < params.value{val_id}) " \
+                script = f"if (ctx._source.{doc_key} == null || ctx._source.{doc_key}.compareTo(params.value{val_id}) < 0) " \
                          f"{{ctx._source.{doc_key} = params.value{val_id}}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_MIN:
-                script = f"if (ctx._source.{doc_key} == null || ctx._source.{doc_key} > params.value{val_id}) " \
+                script = f"if (ctx._source.{doc_key} == null || ctx._source.{doc_key}.compareTo(params.value{val_id}) > 0) " \
                          f"{{ctx._source.{doc_key} = params.value{val_id}}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
