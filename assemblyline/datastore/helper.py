@@ -1111,10 +1111,11 @@ class AssemblylineDatastore(object):
                     ]
                     operations.extend([
                         (self.ds.file.UPDATE_MAX, 'archive_ts', archive_time),
-                        (self.ds.file.UPDATE_MAX, 'expiry_ts', expiry),
                         (self.ds.file.UPDATE_INC, 'seen.count', 1),
                         (self.ds.file.UPDATE_MAX, 'seen.last', now_as_iso()),
                     ])
+                    if expiry:
+                        operations.append((self.ds.file.UPDATE_MAX, 'expiry_ts', expiry))
                     if self.ds.file.update(sha256, operations):
                         return
 
