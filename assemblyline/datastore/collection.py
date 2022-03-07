@@ -134,6 +134,8 @@ class ESCollection(Generic[ModelType]):
     UPDATE_SET = "SET"
     UPDATE_INC = "INC"
     UPDATE_DEC = "DEC"
+    UPDATE_MAX = "MAX"
+    UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
     UPDATE_REMOVE = "REMOVE"
     UPDATE_DELETE = "DELETE"
@@ -1108,6 +1110,16 @@ class ESCollection(Generic[ModelType]):
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_DEC:
                 op_sources.append(f"ctx._source.{doc_key} -= params.value{val_id}")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_MAX:
+                script = f"if (ctx._source.{doc_key} < params.value{val_id}) " \
+                         f"{{ctx._source.{doc_key} = params.value{val_id}}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_MIN:
+                script = f"if (ctx._source.{doc_key} > params.value{val_id}) " \
+                         f"{{ctx._source.{doc_key} = params.value{val_id}}}"
+                op_sources.append(script)
                 op_params[f'value{val_id}'] = value
 
             val_id += 1

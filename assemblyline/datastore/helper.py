@@ -1084,23 +1084,45 @@ class AssemblylineDatastore(object):
     @elasticapm.capture_span(span_type='datastore')
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None, is_section_image=False):
+        # Remove control fields from new file info
+        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
+            fileinfo.pop(x, None)
+        # Clean up and prepare timestamps
+        if isinstance(expiry, datetime):
+            expiry = expiry.strftime(DATEFORMAT)
+        archive_time = now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60)
+
         while True:
             current_fileinfo, version = self.ds.file.get_if_exists(
                 sha256, as_obj=False, archive_access=config.datastore.ilm.update_archive, version=True)
 
             if current_fileinfo is None:
                 current_fileinfo = {}
+            else:
+                # If the freshen we are doing won't change classification, we can do it via an update operation
+                classification = cl_engine.min_classification(
+                    str(current_fileinfo.get('classification', classification)),
+                    str(classification)
+                )
+                if classification == current_fileinfo.get('classification', None):
+                    operations = [
+                        (self.ds.file.UPDATE_SET, key, value)
+                        for key, value in fileinfo.items()
+                    ]
+                    operations.extend([
+                        (self.ds.file.UPDATE_MAX, 'archive_ts', archive_time),
+                        (self.ds.file.UPDATE_MAX, 'expiry_ts', expiry),
+                        (self.ds.file.UPDATE_ADD, 'seen.count', 1),
+                        (self.ds.file.UPDATE_SET, 'seen.last', now_as_iso()),
+                    ])
+                    if self.ds.file.update(sha256, operations):
+                        return
 
-            # Remove control fields from file info and update current file info
-            for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
-                fileinfo.pop(x, None)
+            # Add new fileinfo to current from database
             current_fileinfo.update(fileinfo)
-
-            current_fileinfo['archive_ts'] = now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60)
+            current_fileinfo['archive_ts'] = archive_time
 
             # Update expiry time
-            if isinstance(expiry, datetime):
-                expiry = expiry.strftime(DATEFORMAT)
             current_expiry = current_fileinfo.get('expiry_ts', expiry)
             if current_expiry and expiry:
                 current_fileinfo['expiry_ts'] = max(current_expiry, expiry)
@@ -1115,10 +1137,6 @@ class AssemblylineDatastore(object):
             seen['first'] = seen.get('first', now)
 
             # Update Classification
-            classification = cl_engine.min_classification(
-                str(current_fileinfo.get('classification', classification)),
-                str(classification)
-            )
             current_fileinfo['classification'] = classification
 
             # Update section image status
