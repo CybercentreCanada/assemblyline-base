@@ -10,8 +10,9 @@ from datemath import dm
 from retrying import retry
 
 from assemblyline import odm
-from assemblyline.datastore import log, SearchException
-from assemblyline.datastore.support.elasticsearch.build import back_mapping
+from assemblyline.datastore.collection import log
+from assemblyline.datastore.exceptions import SearchException
+from assemblyline.datastore.support.build import back_mapping
 from assemblyline.odm import Mapping
 
 
@@ -121,7 +122,7 @@ def setup_store(docstore, request):
 
 @pytest.fixture(scope='module')
 def es_store():
-    from assemblyline.datastore.stores.es_store import ESStore
+    from assemblyline.datastore.store import ESStore
     store = ESStore(['127.0.0.1'])
     ret_val = store.ping()
     if ret_val:

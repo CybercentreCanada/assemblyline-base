@@ -2,8 +2,8 @@ import pytest
 
 from retrying import retry
 
-from assemblyline.datastore import BaseStore, SearchException
-from assemblyline.datastore.stores.es_store import ESStore
+from assemblyline.datastore.store import ESStore
+from assemblyline.datastore.exceptions import SearchException
 from assemblyline.odm import Model, Mapping, Classification
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
@@ -191,7 +191,7 @@ def _get_value(key, data):
         return value
 
 
-def _perform_single_collection_test(ds: BaseStore, idx_name: str, doc: Model):
+def _perform_single_collection_test(ds: ESStore, idx_name: str, doc: Model):
     c = _setup_collection(ds, idx_name, doc)
     field_list = doc.flat_fields()
     doc_data = doc.as_primitives()
@@ -212,15 +212,8 @@ def _perform_single_collection_test(ds: BaseStore, idx_name: str, doc: Model):
 
         if not field.index:
             # Test non-indexed field searches, should fail of return no results
-            if isinstance(ds, ESStore):
-                with pytest.raises(SearchException):
-                    c.search(f"{name}:{_get_value(name, doc_data)}", rows=0)
-            else:
-                value = _get_value(name, doc_data)
-                if value:
-                    query = f"{name}:{value}"
-                    if c.search(query, rows=0)["total"] != 0:
-                        pytest.fail(f"Search query ({query}) was able to find documents using a non-indexed field.")
+            with pytest.raises(SearchException):
+                c.search(f"{name}:{_get_value(name, doc_data)}", rows=0)
         else:
             # Test indexed field searches lead to results
             value = _get_value(name, doc_data)
