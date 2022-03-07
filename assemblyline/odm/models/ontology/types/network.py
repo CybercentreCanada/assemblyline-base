@@ -26,8 +26,6 @@ class NetworkConnection(odm.Model):
 # Details for a DNS request
 class NetworkDNS(odm.Model):
 
-    # The GUID associated with the connection
-    guid = odm.Text()
     # The low-level details of the DNS request
     connection_details = odm.Compound(NetworkConnection)
     # The domain requested
@@ -39,8 +37,6 @@ class NetworkDNS(odm.Model):
 # Details for an HTTP request
 class NetworkHTTP(odm.Model):
 
-    # The GUID associated with the connection
-    guid = odm.Text()
     # The low-level details of the DNS request
     connection_details = odm.Compound(NetworkConnection)
     # The URI requested
