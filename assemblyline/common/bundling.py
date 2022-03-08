@@ -14,7 +14,10 @@ from assemblyline.common import forge
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore.exceptions import MultiKeyError
 from assemblyline.filestore import FileStoreException
-from assemblyline_core.submission_client import SubmissionClient
+try:
+    from assemblyline_core.submission_client import SubmissionClient
+except ImportError:
+    SubmissionClient = None
 
 config = forge.get_config()
 Classification = forge.get_classification()
@@ -177,13 +180,11 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                 data = {}
                 if submission:
                     # Create file information data
-                    tree_data = datastore.get_or_create_file_tree(submission, config.submission.max_extraction_depth)
-                    file_tree = tree_data['tree']
-                    supplementary = tree_data['supplementary']
+                    file_tree = datastore.get_or_create_file_tree(submission,
+                                                                  config.submission.max_extraction_depth)['tree']
                     flatten_tree = list(set(recursive_flatten_tree(file_tree) +
-                                        [r[:64] for r in submission.get("results", [])]))
-                    all_files = flatten_tree + supplementary
-                    file_infos, _ = get_file_infos(copy(all_files), datastore)
+                                            [r[:64] for r in submission.get("results", [])]))
+                    file_infos, _ = get_file_infos(copy(flatten_tree), datastore)
 
                     # Add bundling metadata
                     if 'bundle.source' not in submission['metadata']:
@@ -193,8 +194,7 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
 
                     data.update({
                         'submission': submission,
-                        'files': {"list": flatten_tree, "tree": file_tree,
-                              "infos": file_infos, "supplementary": supplementary},
+                        'files': {"list": flatten_tree, "tree": file_tree, "infos": file_infos},
                         'results': get_results(submission.get("results", []), file_infos, datastore),
                         'errors': get_errors(submission.get("errors", []), datastore)
                     })
@@ -344,7 +344,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                         datastore.error.save(ekey, err)
 
                     # Start the rescan
-                    if rescan_services:
+                    if rescan_services and SubmissionClient:
                         extracted_file_infos = {
                             k: {vk: v[vk] for vk in ['magic', 'md5', 'mime', 'sha1', 'sha256', 'size', 'type']}
                             for k, v in files['infos'].items()
