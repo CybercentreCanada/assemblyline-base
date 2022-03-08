@@ -86,6 +86,28 @@ class Tagging(odm.Model):
     @odm.model(index=True, store=False)
     class File(odm.Model):
         @odm.model(index=True, store=False)
+        class FileAPK(odm.Model):
+            @odm.model(index=True, store=False)
+            class FileAPKApp(odm.Model):
+                label = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+                version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+            @odm.model(index=True, store=False)
+            class FileAPKSDK(odm.Model):
+                min = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+                target = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+            activity = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            app = odm.Optional(odm.Compound(FileAPKApp))
+            feature = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            locale = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            permission = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            pkg_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            provides_component = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            sdk = odm.Optional(odm.Compound(FileAPKSDK))
+            used_library = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
         class FileDate(odm.Model):
             creation = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             last_modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -113,45 +135,6 @@ class Tagging(odm.Model):
             notes = odm.Optional(odm.Compound(FileELFNotes))
 
         @odm.model(index=True, store=False)
-        class FileName(odm.Model):
-            anomaly = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            extracted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-        @odm.model(index=True, store=False)
-        class FileStrings(odm.Model):
-            api = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            blacklisted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            decoded = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            extracted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-        @odm.model(index=True, store=False)
-        class FileAPK(odm.Model):
-            @odm.model(index=True, store=False)
-            class FileAPKApp(odm.Model):
-                label = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-                version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-            @odm.model(index=True, store=False)
-            class FileAPKSDK(odm.Model):
-                min = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-                target = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-            activity = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            app = odm.Optional(odm.Compound(FileAPKApp))
-            feature = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            locale = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            permission = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            pkg_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            provides_component = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            sdk = odm.Optional(odm.Compound(FileAPKSDK))
-            used_library = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-        @odm.model(index=True, store=False)
-        class FileJAR(odm.Model):
-            main_class = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-            main_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-        @odm.model(index=True, store=False)
         class FileIMG(odm.Model):
             @odm.model(index=True, store=False)
             class FileIMGExiftool(odm.Model):
@@ -166,6 +149,16 @@ class Tagging(odm.Model):
             mode = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             size = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             sorted_metadata_hash = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
+        class FileJAR(odm.Model):
+            main_class = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            main_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
+        class FileName(odm.Model):
+            anomaly = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            extracted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         @odm.model(index=True, store=False)
         class FileOLE(odm.Model):
@@ -193,6 +186,26 @@ class Tagging(odm.Model):
             clsid = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             dde_link = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
             fib_timestamp = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
+        class FilePDF(odm.Model):
+            @odm.model(index=True, store=False)
+            class FilePDFDate(odm.Model):
+                modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+                pdfx = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+                source_modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+            @odm.model(index=True, store=False)
+            class FilePDFJavascript(odm.Model):
+                sha1 = odm.Optional(odm.List(odm.SHA1(copyto="__text__")))
+
+            @odm.model(index=True, store=False)
+            class FilePDFStats(odm.Model):
+                sha1 = odm.Optional(odm.List(odm.SHA1(copyto="__text__")))
+
+            date = odm.Optional(odm.Compound(FilePDFDate))
+            javascript = odm.Optional(odm.Compound(FilePDFJavascript))
+            stats = odm.Optional(odm.Compound(FilePDFStats))
 
         @odm.model(index=True, store=False)
         class FilePE(odm.Model):
@@ -253,26 +266,6 @@ class Tagging(odm.Model):
             rich_header = odm.Optional(odm.Compound(FilePERichHeader))
             sections = odm.Optional(odm.Compound(FilePESections))
             versions = odm.Optional(odm.Compound(FilePEVersions))
-
-        @odm.model(index=True, store=False)
-        class FilePDF(odm.Model):
-            @odm.model(index=True, store=False)
-            class FilePDFDate(odm.Model):
-                modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-                pdfx = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-                source_modified = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
-
-            @odm.model(index=True, store=False)
-            class FilePDFJavascript(odm.Model):
-                sha1 = odm.Optional(odm.List(odm.SHA1(copyto="__text__")))
-
-            @odm.model(index=True, store=False)
-            class FilePDFStats(odm.Model):
-                sha1 = odm.Optional(odm.List(odm.SHA1(copyto="__text__")))
-
-            date = odm.Optional(odm.Compound(FilePDFDate))
-            javascript = odm.Optional(odm.Compound(FilePDFJavascript))
-            stats = odm.Optional(odm.Compound(FilePDFStats))
 
         @odm.model(index=True, store=False)
         class FilePList(odm.Model):
@@ -342,6 +335,18 @@ class Tagging(odm.Model):
         @odm.model(index=True, store=False)
         class FilePowerShell(odm.Model):
             cmdlet = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
+        class FileShortcut(odm.Model):
+            command_line = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            icon_location = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+        @odm.model(index=True, store=False)
+        class FileStrings(odm.Model):
+            api = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            blacklisted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            decoded = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            extracted = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
         @odm.model(index=True, store=False)
         class FileSWF(odm.Model):
