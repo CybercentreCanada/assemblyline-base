@@ -197,6 +197,10 @@ class Tagging(odm.Model):
         @odm.model(index=True, store=False)
         class FilePE(odm.Model):
             @odm.model(index=True, store=False)
+            class FilePEDebug(odm.Model):
+                guid = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+
+            @odm.model(index=True, store=False)
             class FilePEExports(odm.Model):
                 function_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
                 module_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
@@ -239,6 +243,7 @@ class Tagging(odm.Model):
                 filename = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
 
             api_vector = odm.Optional(odm.List(odm.Keyword(copyto="__text__")))
+            debug = odm.Optional(odm.Compound(FilePEDebug))
             exports = odm.Optional(odm.Compound(FilePEExports))
             imports = odm.Optional(odm.Compound(FilePEImports))
             linker = odm.Optional(odm.Compound(FilePELinker))
@@ -440,4 +445,5 @@ class Tagging(odm.Model):
 
 if __name__ == "__main__":
     from pprint import pprint
+
     pprint(list(Tagging().flat_fields().keys()))
