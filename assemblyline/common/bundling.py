@@ -14,6 +14,10 @@ from assemblyline.common import forge
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore.exceptions import MultiKeyError
 from assemblyline.filestore import FileStoreException
+try:
+    from assemblyline_core.submission_client import SubmissionClient
+except ImportError:
+    SubmissionClient = None
 
 config = forge.get_config()
 Classification = forge.get_classification()
@@ -29,15 +33,19 @@ class BundlingException(Exception):
     pass
 
 
-class SubmissionNotFound(Exception):
+class AlertNotFound(BundlingException):
     pass
 
 
-class IncompleteBundle(Exception):
+class SubmissionNotFound(BundlingException):
     pass
 
 
-class SubmissionAlreadyExist(Exception):
+class IncompleteBundle(BundlingException):
+    pass
+
+
+class SubmissionAlreadyExist(BundlingException):
     pass
 
 
@@ -142,17 +150,25 @@ def recursive_flatten_tree(tree):
 
 
 # noinspection PyBroadException
-def create_bundle(sid, working_dir=WORK_DIR):
+def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
     with forge.get_datastore() as datastore:
         temp_bundle_file = f"bundle_{get_random_id()}"
         current_working_dir = os.path.join(working_dir, temp_bundle_file)
+        target_file = os.path.join(working_dir, f"{temp_bundle_file}.cart")
+        tgz_file = os.path.join(working_dir, f"{temp_bundle_file}.tgz")
         try:
+            if use_alert:
+                alert = datastore.alert.get(sid, as_obj=False)
+                if alert is None:
+                    raise AlertNotFound("Can't find alert %s, skipping." % sid)
+
+                sid = alert['sid']
+            else:
+                alert = None
             submission = datastore.submission.get(sid, as_obj=False)
-            if submission is None:
+            if submission is None and alert is None:
                 raise SubmissionNotFound("Can't find submission %s, skipping." % sid)
             else:
-                target_file = os.path.join(working_dir, f"{temp_bundle_file}.cart")
-                tgz_file = os.path.join(working_dir, f"{temp_bundle_file}.tgz")
 
                 try:
                     os.makedirs(current_working_dir)
@@ -161,40 +177,46 @@ def create_bundle(sid, working_dir=WORK_DIR):
                 except Exception:
                     pass
 
-                # Create file information data
-                tree_data = datastore.get_or_create_file_tree(submission, config.submission.max_extraction_depth)
-                file_tree = tree_data['tree']
-                supplementary = tree_data['supplementary']
-                flatten_tree = list(set(recursive_flatten_tree(file_tree) +
-                                        [r[:64] for r in submission.get("results", [])]))
-                all_files = flatten_tree + supplementary
-                file_infos, _ = get_file_infos(copy(all_files), datastore)
+                data = {}
+                if submission:
+                    # Create file information data
+                    file_tree = datastore.get_or_create_file_tree(submission,
+                                                                  config.submission.max_extraction_depth)['tree']
+                    flatten_tree = list(set(recursive_flatten_tree(file_tree) +
+                                            [r[:64] for r in submission.get("results", [])]))
+                    file_infos, _ = get_file_infos(copy(flatten_tree), datastore)
 
-                # Add bundling metadata
-                if 'bundle.source' not in submission['metadata']:
-                    submission['metadata']['bundle.source'] = config.ui.fqdn
-                if Classification.enforce and 'bundle.classification' not in submission['metadata']:
-                    submission['metadata']['bundle.classification'] = submission['classification']
+                    # Add bundling metadata
+                    if 'bundle.source' not in submission['metadata']:
+                        submission['metadata']['bundle.source'] = config.ui.fqdn
+                    if Classification.enforce and 'bundle.classification' not in submission['metadata']:
+                        submission['metadata']['bundle.classification'] = submission['classification']
 
-                data = {
-                    'submission': submission,
-                    'files': {"list": flatten_tree, "tree": file_tree,
-                              "infos": file_infos, "supplementary": supplementary},
-                    'results': get_results(submission.get("results", []), file_infos, datastore),
-                    'errors': get_errors(submission.get("errors", []), datastore)
-                }
+                    data.update({
+                        'submission': submission,
+                        'files': {"list": flatten_tree, "tree": file_tree, "infos": file_infos},
+                        'results': get_results(submission.get("results", []), file_infos, datastore),
+                        'errors': get_errors(submission.get("errors", []), datastore)
+                    })
+
+                    # Download all related files
+                    with forge.get_filestore() as filestore:
+                        for sha256 in flatten_tree:
+                            try:
+                                filestore.download(sha256, os.path.join(current_working_dir, sha256))
+                            except FileStoreException:
+                                pass
+
+                if alert:
+                    if 'bundle.source' not in alert['metadata']:
+                        alert['metadata']['bundle.source'] = config.ui.fqdn
+                    if Classification.enforce and 'bundle.classification' not in alert['metadata']:
+                        alert['metadata']['bundle.classification'] = alert['classification']
+                    data['alert'] = alert
 
                 # Save result files
                 with open(os.path.join(current_working_dir, "results.json"), "w") as fp:
                     json.dump(data, fp)
-
-                # Download all related files
-                with forge.get_filestore() as filestore:
-                    for sha256 in all_files:
-                        try:
-                            filestore.download(sha256, os.path.join(current_working_dir, sha256))
-                        except FileStoreException:
-                            pass
 
                 # Create the bundle
                 subprocess.check_call("tar czf %s *" % tgz_file, shell=True, cwd=current_working_dir)
@@ -204,16 +226,20 @@ def create_bundle(sid, working_dir=WORK_DIR):
                         pack_stream(ih, oh, {'al': {"type": BUNDLE_TYPE}, 'name': f"{sid}.tgz"})
 
                 return target_file
-
+        except (SubmissionNotFound, AlertNotFound):
+            raise
         except Exception as e:
             raise BundlingException("Could not bundle submission '%s'. [%s: %s]" % (sid, type(e).__name__, str(e)))
         finally:
-            if current_working_dir:
+            if os.path.exists(current_working_dir):
                 subprocess.check_call(["rm", "-rf", current_working_dir])
+            if os.path.exists(tgz_file):
+                os.unlink(tgz_file)
 
 
 # noinspection PyBroadException,PyProtectedMember
-def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False):
+def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False,
+                  rescan_services=None, completed_queue=None, exist_ok=False, cleanup=True):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -247,73 +273,95 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
         with open(res_file, 'rb') as fh:
             data = json.load(fh)
 
-        submission = data['submission']
-        results = data['results']
-        files = data['files']
-        errors = data['errors']
+        alert = data.get('alert', None)
+        submission = data.get('submission', None)
+        results = data.get('results', None)
+        files = data.get('files', None)
+        errors = data.get('errors', None)
 
         try:
-            sid = submission['sid']
-            # Check if we have all the service results
-            for res_key in submission['results']:
-                if res_key not in results['results'].keys() and not allow_incomplete:
-                    raise IncompleteBundle("Incomplete results in bundle. Skipping %s..." % sid)
+            if submission:
+                sid = submission['sid']
+                # Check if we have all the service results
+                for res_key in submission['results']:
+                    if results is None or (res_key not in results['results'].keys() and not allow_incomplete):
+                        raise IncompleteBundle("Incomplete results in bundle. Skipping %s..." % sid)
 
-            # Check if we have all files
-            for sha256 in list(set([x[:64] for x in submission['results']])):
-                if sha256 not in files['infos'].keys() and not allow_incomplete:
-                    raise IncompleteBundle("Incomplete files in bundle. Skipping %s..." % sid)
+                # Check if we have all files
+                for sha256 in list(set([x[:64] for x in submission['results']])):
+                    if files is None or (sha256 not in files['infos'].keys() and not allow_incomplete):
+                        raise IncompleteBundle("Incomplete files in bundle. Skipping %s..." % sid)
 
-            # Check if we all errors
-            for err_key in submission['errors']:
-                if err_key not in errors['errors'].keys() and not allow_incomplete:
-                    raise IncompleteBundle("Incomplete errors in bundle. Skipping %s..." % sid)
+                # Check if we all errors
+                for err_key in submission['errors']:
+                    if errors is None or (err_key not in errors['errors'].keys() and not allow_incomplete):
+                        raise IncompleteBundle("Incomplete errors in bundle. Skipping %s..." % sid)
 
-            if datastore.submission.get(sid, as_obj=False):
-                raise SubmissionAlreadyExist("Submission %s already exists." % sid)
+                if datastore.submission.get_if_exists(sid, as_obj=False):
+                    if exist_ok:
+                        return submission
+                    raise SubmissionAlreadyExist("Submission %s already exists." % sid)
 
-            # Make sure bundle's submission meets minimum classification and save the submission
-            submission['classification'] = Classification.max_classification(submission['classification'],
-                                                                             min_classification)
-            submission.update(Classification.get_access_control_parts(submission['classification']))
-            datastore.submission.save(sid, submission)
+                # Make sure bundle's submission meets minimum classification and save the submission
+                submission['classification'] = Classification.max_classification(submission['classification'],
+                                                                                 min_classification)
+                submission.update(Classification.get_access_control_parts(submission['classification']))
 
-            # Make sure files meet minimum classification and save the files
-            with forge.get_filestore() as filestore:
-                for f, f_data in files['infos'].items():
-                    f_classification = Classification.max_classification(f_data['classification'], min_classification)
-                    datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_classification,
-                                                   cl_engine=Classification)
-                    try:
-                        filestore.upload(os.path.join(current_working_dir, f), f)
-                    except IOError:
-                        pass
+                if not rescan_services:
+                    # Save the submission in the system
+                    datastore.submission.save(sid, submission)
 
-            # Make sure results meet minimum classification and save the results
-            for key, res in results['results'].items():
-                if key.endswith(".e"):
-                    datastore.emptyresult.save(key, {"expiry_ts": res['expiry_ts']})
-                else:
-                    res['classification'] = Classification.max_classification(res['classification'], min_classification)
-                    datastore.result.save(key, res)
+            # Save alert if present
+            if alert:
+                alert['classification'] = Classification.max_classification(alert['classification'],
+                                                                            min_classification)
+                datastore.alert.save(alert['alert_id'], alert)
 
-            # Make sure errors meet minimum classification and save the errors
-            for ekey, err in errors['errors'].items():
-                datastore.error.save(ekey, err)
+            if files:
+                # Make sure files meet minimum classification and save the files
+                with forge.get_filestore() as filestore:
+                    for f, f_data in files['infos'].items():
+                        f_classification = Classification.max_classification(
+                            f_data['classification'], min_classification)
+                        datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_classification,
+                                                       cl_engine=Classification)
+                        try:
+                            filestore.upload(os.path.join(current_working_dir, f), f)
+                        except IOError:
+                            pass
+
+                    # Make sure results meet minimum classification and save the results
+                    for key, res in results['results'].items():
+                        if key.endswith(".e"):
+                            datastore.emptyresult.save(key, {"expiry_ts": res['expiry_ts']})
+                        else:
+                            res['classification'] = Classification.max_classification(
+                                res['classification'], min_classification)
+                            datastore.result.save(key, res)
+
+                    # Make sure errors meet minimum classification and save the errors
+                    for ekey, err in errors['errors'].items():
+                        datastore.error.save(ekey, err)
+
+                    # Start the rescan
+                    if rescan_services and SubmissionClient:
+                        extracted_file_infos = {
+                            k: {vk: v[vk] for vk in ['magic', 'md5', 'mime', 'sha1', 'sha256', 'size', 'type']}
+                            for k, v in files['infos'].items()
+                            if k in files['list']
+                        }
+                        SubmissionClient(datastore=datastore, filestore=filestore,
+                                         config=config).rescan(submission, results['results'], extracted_file_infos,
+                                                               files['tree'], list(errors['errors'].keys()),
+                                                               rescan_services, completed_queue=completed_queue)
 
             return submission
         finally:
-            try:
+            if extracted_path != path and os.path.exists(extracted_path):
                 os.remove(extracted_path)
-            except Exception:
-                pass
 
-            try:
+            if cleanup and os.path.exists(path):
                 os.remove(path)
-            except Exception:
-                pass
 
-            try:
+            if os.path.exists(current_working_dir):
                 shutil.rmtree(current_working_dir, ignore_errors=True)
-            except Exception:
-                pass

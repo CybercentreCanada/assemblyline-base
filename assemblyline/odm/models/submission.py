@@ -20,6 +20,7 @@ class File(odm.Model):
 class ServiceSelection(odm.Model):
     selected = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL)   # List of selected services
     excluded = odm.List(odm.Keyword(), default=[])                # List of excluded services
+    rescan = odm.List(odm.Keyword(), default=[])                  # List of services to rescan
     resubmit = odm.List(odm.Keyword(), default=DEFAULT_RESUBMIT)  # Add to service selection when resubmitting
     runtime_excluded = odm.List(odm.Keyword(), default=[])        # List of runtime excluded services
 
