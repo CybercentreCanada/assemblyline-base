@@ -81,7 +81,7 @@ def _escape(t, reversible=True):
 
 
 def dotdump(s):
-    return ''.join('.' if x < 32 or x > 126 else chr(x) for x in s)
+    return ''.join('.' if ord(x) < 32 or ord(x) > 126 else chr(x) for x in s)
 
 
 def escape_str(s, reversible=True, force_str=False):
