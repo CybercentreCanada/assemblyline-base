@@ -382,6 +382,7 @@ class Tagging(odm.Model):
         pdf = odm.Optional(odm.Compound(FilePDF))
         plist = odm.Optional(odm.Compound(FilePList))
         powershell = odm.Optional(odm.Compound(FilePowerShell))
+        shortcut = odm.Optional(odm.Compound(FileShortcut))
         swf = odm.Optional(odm.Compound(FileSWF))
 
     @odm.model(index=True, store=False)
