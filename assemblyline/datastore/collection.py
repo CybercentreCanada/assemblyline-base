@@ -850,7 +850,7 @@ class ESCollection(Generic[ModelType]):
 
         return out
 
-    def normalize(self, data, as_obj=True) -> Union[ModelType, dict[str, Any], None]:
+    def normalize(self, data, as_obj=True) -> Union[ModelType, Dict[str, Any], None]:
         """
         Normalize the data using the model class
 
@@ -982,7 +982,7 @@ class ESCollection(Generic[ModelType]):
             return self.normalize(data, as_obj=as_obj), version
         return self.normalize(data, as_obj=as_obj)
 
-    def require(self, key, as_obj=True, archive_access=None, version=False) -> Union[dict[str, Any], ModelType]:
+    def require(self, key, as_obj=True, archive_access=None, version=False) -> Union[Dict[str, Any], ModelType]:
         """
         Get a document from the datastore and retry forever because we know for sure
         that this document should exist. If it does not right now, this will wait for the
