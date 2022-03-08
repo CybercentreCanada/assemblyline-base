@@ -23,7 +23,7 @@ def test_named_constants():
 
 
 def test_dotdump():
-    result = str_utils.dotdump([1, 8, 22, 33, 66, 99, 126, 127, 1000])
+    result = str_utils.dotdump(''.join([chr(i) for i in [1, 8, 22, 33, 66, 99, 126, 127, 1000]]))
     assert result == "...!Bc~.."
 
 
