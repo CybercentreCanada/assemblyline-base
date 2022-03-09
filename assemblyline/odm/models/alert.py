@@ -69,3 +69,4 @@ class Alert(odm.Model):
     ts = odm.Date()                                                     # Timestamp at which the file was submitted
     type = odm.Keyword()                                                # Type of alert
     verdict = odm.Compound(Verdict, default={})                         # Verdict timing
+    workflows_completed = odm.Boolean(default=False)                    # Have all workflows ran on this alert?

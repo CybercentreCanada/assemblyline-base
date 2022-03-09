@@ -42,7 +42,8 @@ DEFAULT_ALERT_INPUT = {
     'enabled': True,
     'threads': 6,
     'filter_queries': [
-        'NOT extended_scan:submitted'
+        'NOT extended_scan:submitted',
+        'workflows_completed:true'
     ]
 }
 
