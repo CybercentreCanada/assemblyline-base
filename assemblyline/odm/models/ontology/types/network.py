@@ -21,6 +21,10 @@ class NetworkConnection(odm.Model):
     transport_layer_protocol = odm.Enum(["tcp", "udp"])
     # The direction of the network connection
     direction = odm.Enum(["outbound", "inbound", "unknown"])
+    # The hash of the tree ID
+    tree_id = odm.Text()
+    #  The normalized tag of the object
+    tag = odm.Text()
 
 
 # Details for a DNS request
