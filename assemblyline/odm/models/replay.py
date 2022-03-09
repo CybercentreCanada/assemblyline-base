@@ -68,7 +68,7 @@ DEFAULT_CREATOR = {
     'client': DEFAULT_CLIENT,
     'alert_input': DEFAULT_ALERT_INPUT,
     'submission_input': DEFAULT_SUBMISSION_INPUT,
-    'output_directory': '/tmp/replay/input',
+    'output_directory': '/tmp/replay/output',
     'working_directory': '/tmp/replay/work',
 }
 
@@ -86,7 +86,7 @@ class Loader(odm.Model):
 
 DEFAULT_LOADER = {
     'client': DEFAULT_CLIENT,
-    'failed_directory': '/tmp/replay/work/failed',
+    'failed_directory': '/tmp/replay/failed',
     'input_threads': 6,
     'input_directory': '/tmp/replay/input',
     'min_classification': None,
