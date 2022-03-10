@@ -7,6 +7,7 @@ from typing import Optional
 from azure.core.exceptions import ServiceRequestError, DecodeError, \
     ResourceExistsError, ResourceNotFoundError, ClientAuthenticationError, \
     ResourceModifiedError, ResourceNotModifiedError, TooManyRedirectsError, ODataV4Error
+from azure.identity import ClientSecretCredential
 from azure.storage.blob import BlobServiceClient
 from io import BytesIO
 
@@ -22,19 +23,36 @@ This class assumes a flat file structure in the Azure storage blob.
 @ChainAll(TransportException)
 class TransportAzure(Transport):
 
-    def __init__(self, base=None, access_key=None, host=None, connection_attempts=None):
+    def __init__(self, base=None, access_key=None, tenant_id=None, client_id=None, client_secret=None,
+                 host=None, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
         self.connection_attempts: Optional[int] = connection_attempts
 
-        # Data
-        self.blob_container = base.strip("/")
-        self.access_key = access_key
+        # Get URL
         self.host = host
         self.endpoint_url = f"https://{self.host}"
 
+        # Get container and base_path
+        parts = base.strip("/").split("/", 1)
+        self.blob_container = parts[0]
+        if len(parts) > 1:
+            self.base_path = parts[1]
+        else:
+            self.base_path = None
+
+        # Get credentials
+        if access_key:
+            self.credential = access_key
+        elif tenant_id and client_id and client_secret:
+            self.credential = ClientSecretCredential(tenant_id=tenant_id,
+                                                     client_id=client_id,
+                                                     client_secret=client_secret)
+        else:
+            self.credential - None
+
         # Clients
-        self.service_client = BlobServiceClient(account_url=self.endpoint_url, credential=self.access_key)
+        self.service_client = BlobServiceClient(account_url=self.endpoint_url, credential=self.credential)
         self.container_client = self.service_client.get_container_client(self.blob_container)
 
         # Init
@@ -53,7 +71,10 @@ class TransportAzure(Transport):
 
         def azure_normalize(path):
             # flatten path to just the basename
-            return os.path.basename(path)
+            if self.base_path:
+                return os.path.join(self.base_path, os.path.basename(path))
+            else:
+                return os.path.basename(path)
 
         super(TransportAzure, self).__init__(normalize=azure_normalize)
 
