@@ -131,7 +131,7 @@ def create_transport(url, connection_attempts=None):
                         connection_attempts=connection_attempts, **extras)
 
     elif scheme == 'azure':
-        valid_str_keys = ['access_key']
+        valid_str_keys = ['access_key', 'tenant_id', 'client_id', 'client_secret']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys)
 
         t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, **extras)
