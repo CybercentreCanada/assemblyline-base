@@ -49,7 +49,7 @@ class TransportAzure(Transport):
                                                      client_id=client_id,
                                                      client_secret=client_secret)
         else:
-            self.credential - None
+            self.credential = None
 
         # Clients
         self.service_client = BlobServiceClient(account_url=self.endpoint_url, credential=self.credential)
