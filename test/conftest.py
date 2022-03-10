@@ -34,6 +34,14 @@ def config():
 
 
 @pytest.fixture(scope='module')
+def filestore(config):
+    try:
+        return forge.get_filestore(config, connection_attempts=1)
+    except ConnectionError as err:
+        pytest.skip(str(err))
+
+
+@pytest.fixture(scope='module')
 def datastore_connection(config):
 
     store = ESStore(config.datastore.hosts)
