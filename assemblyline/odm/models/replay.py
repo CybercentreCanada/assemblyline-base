@@ -61,7 +61,7 @@ class Creator(odm.Model):
     client = odm.Compound(Client, default=DEFAULT_CLIENT)
     alert_input = odm.Compound(InputModule, default=DEFAULT_ALERT_INPUT)
     submission_input = odm.Compound(InputModule, default=DEFAULT_SUBMISSION_INPUT)
-    output_directory: str = odm.Keyword()
+    output_filestore: str = odm.Keyword()
     working_directory: str = odm.Keyword()
 
 
@@ -69,7 +69,7 @@ DEFAULT_CREATOR = {
     'client': DEFAULT_CLIENT,
     'alert_input': DEFAULT_ALERT_INPUT,
     'submission_input': DEFAULT_SUBMISSION_INPUT,
-    'output_directory': '/tmp/replay/output',
+    'output_filestore': 'file:///tmp/replay/output',
     'working_directory': '/tmp/replay/work',
 }
 
