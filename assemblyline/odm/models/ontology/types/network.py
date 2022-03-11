@@ -52,8 +52,12 @@ class NetworkHTTP(odm.Model):
     request_uri = odm.URI()
     # Headers included in the request
     request_headers = odm.Mapping(odm.Json())
+    # The body of the request
+    request_body = odm.Optional(odm.Text())
     # The method of the request
     request_method = odm.Enum(["GET", "POST", "PUT", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE", "PATCH"])
+    # Headers included in the response
+    response_headers = odm.Mapping(odm.Json())
     # The status code of the response
     response_status_code = odm.Optional(odm.Integer())
     # The body of the response
