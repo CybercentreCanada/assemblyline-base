@@ -1,5 +1,5 @@
 from assemblyline import odm
-from assemblyline.odm.models.alert import Attack
+from assemblyline.odm.models.result import Attack
 from assemblyline.odm.models.ontology.types.process import Process
 from assemblyline.odm.models.ontology.types.network import NetworkConnection, NetworkDNS, NetworkHTTP
 
@@ -70,15 +70,15 @@ class Sandbox(odm.Model):
     # Metadata for the analysis
     analysis_metadata = odm.Compound(AnalysisMetadata)
     # Signatures that the file may have
-    signatures = odm.Optional(odm.List(odm.Compound(Signature)))
+    signatures = odm.List(odm.Compound(Signature), default=[])
     # The IP traffic observed during analysis
-    network_connections = odm.Optional(odm.List(odm.Compound(NetworkConnection)))
+    network_connections = odm.List(odm.Compound(NetworkConnection), default=[])
     # The DNS traffic observed during analysis
-    network_dns = odm.Optional(odm.List(odm.Compound(NetworkDNS)))
+    network_dns = odm.List(odm.Compound(NetworkDNS), default=[])
     # The HTTP traffic observed during analysis
-    network_http = odm.Optional(odm.List(odm.Compound(NetworkHTTP)))
+    network_http = odm.List(odm.Compound(NetworkHTTP), default=[])
     # A list of processes
-    processes = odm.Optional(odm.List(odm.Compound(Process)))
+    processes = odm.List(odm.Compound(Process), default=[])
     # The name of the sandbox
     sandbox_name = odm.Keyword()
     # The version of the sandbox
