@@ -47,7 +47,7 @@ def get_classification(yml_config=None):
     return Classification(classification_definition)
 
 
-def _env_substitute(buffer):
+def env_substitute(buffer):
     """Replace environment variables in the buffer with their value.
 
     Use the built in template expansion tool that expands environment variable style strings ${}
@@ -71,7 +71,7 @@ def _get_config(yml_config=None):
     # Load modifiers from the yaml config
     if os.path.exists(yml_config):
         with open(yml_config) as yml_fh:
-            yml_data = yaml.safe_load(_env_substitute(yml_fh.read()))
+            yml_data = yaml.safe_load(env_substitute(yml_fh.read()))
             if yml_data:
                 config = recursive_update(config, yml_data)
 
