@@ -46,7 +46,7 @@ class ResultOntology(odm.Model):
     # What tags are related to certain heuristics raised
     # {
     #   "SERVICENAME_1": {
-    #       "description": "Bad Things happened"
+    #       "name": "Bad Things happened"
     #       "tags": {
     #           "network": {
     #               "static": {
