@@ -8,6 +8,10 @@ Classification = forge.get_classification()
 # Result Metadata
 @odm.model(index=False, store=False)
 class ResultOntology(odm.Model):
+    class HeuristicDetails(odm.Model):
+        name = odm.Text()
+        tags = odm.Compound(Tagging)
+
     # Required metadata
     md5 = odm.MD5()                                                             # MD5 of file
     sha1 = odm.SHA1()                                                           # SHA1 of file
@@ -41,15 +45,18 @@ class ResultOntology(odm.Model):
     tags = odm.Optional(odm.Compound(Tagging))
     # What tags are related to certain heuristics raised
     # {
-    #   "Bad Things happened": {
-    #       "network": {
-    #           "static": {
-    #               "uri": ["bad.domain", ...]
+    #   "SERVICENAME_1": {
+    #       "description": "Bad Things happened"
+    #       "tags": {
+    #           "network": {
+    #               "static": {
+    #                   "uri": ["bad.domain", ...]
+    #                   ...
+    #               }
     #               ...
     #           }
     #           ...
     #       }
-    #       ...
     #   }
     # }
-    heuristics = odm.Optional(odm.Mapping(odm.Compound(Tagging)))
+    heuristics = odm.Optional(odm.Mapping(odm.Compound(HeuristicDetails)))
