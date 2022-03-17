@@ -824,8 +824,10 @@ class UI(odm.Model):
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META)
     # Allow user to tell in advance the system that a file is malicious
     allow_malicious_hinting: bool = odm.Boolean()
-    # Allow to user to download raw files
+    # Allow user to download raw files
     allow_raw_downloads: bool = odm.Boolean()
+    # Allow users to request replay on another server
+    allow_replay: bool = odm.Boolean()
     # Allow file submissions via url
     allow_url_submissions: bool = odm.Boolean()
     # Should API calls be audited and saved to a separate log file?
@@ -878,6 +880,7 @@ DEFAULT_UI = {
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
+    "allow_replay": False,
     "allow_url_submissions": True,
     "audit": True,
     "banner": None,
