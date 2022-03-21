@@ -1,19 +1,15 @@
 from assemblyline import odm
+from assemblyline.odm.models.ontology.types.objectid import ObjectID
 
 
 # Details about a process
 class Process(odm.Model):
-
-    # The GUID associated with the process
-    guid = odm.Text()
-    # The normalized tag of the object
-    tag = odm.Optional(odm.Text())
+    # The object ID of the process object
+    objectid = odm.Compound(ObjectID)
 
     # Parent process details
     # The GUID associated with the parent process
-    pguid = odm.Optional(odm.Text())
-    # The normalized tag of the parent object
-    ptag = odm.Optional(odm.Text())
+    pobjectid = odm.Compound(ObjectID)
     # The image of the parent process that spawned this process
     pimage = odm.Optional(odm.Text())
     # The command line that the parent process ran
@@ -31,8 +27,6 @@ class Process(odm.Model):
     start_time = odm.Date()
     # The time of termination for the process
     end_time = odm.Date()
-    # The hash of the tree ID
-    tree_id = odm.Optional(odm.Text())
     # Human readable tree ID (concatenation of process names)
     rich_id = odm.Optional(odm.Text())
     # The integrity level of the process
