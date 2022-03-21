@@ -21,7 +21,7 @@ class Sandbox(odm.Model):
             # The platform of the machine used for analysis
             platform = odm.Optional(odm.Platform())
             # The version of the operating system of the machine used for analysis
-            version = odm.Optional(odm.List(odm.Keyword()))
+            version = odm.Optional(odm.Keyword())
             # The architecture of the machine used for analysis
             architecture = odm.Optional(odm.Processor())
 
@@ -39,46 +39,39 @@ class Sandbox(odm.Model):
     # A signature that was raised during the analysis of the task
     class Signature(odm.Model):
 
-        # An indicator of compromise, aka something interesting that the signature was raised on that is worth reporting
-        class IOC(odm.Model):
-            # An IP that is an indicator of compromise
+        # The subject of the signature, aka something interesting that the signature was raised on that is worth reporting
+        class Subject(odm.Model):
             ip = odm.Optional(odm.IP())
-            # A domain that is an indicator of compromise
             domain = odm.Optional(odm.Domain())
-            # An URI that is an indicator of compromise
             uri = odm.Optional(odm.URI())
-            # The path of an URI that is an indicator of compromise
             uri_path = odm.Optional(odm.URIPath())
-            # A process that is an indicator of compromise
             process = odm.Optional(odm.Compound(Process))
+            file = odm.Optional(odm.Text())
+            registry = odm.Optional(odm.Text())
 
-            # TODO: Require ODM models for these values
-            # file = odm.Optional(odm.Text())
-            # registry = odm.Optional(odm.Text())
-
-        # The process associated with the signature
-        process = odm.Optional(odm.Compound(Process))
         # The name of the signature
         name = odm.Keyword()
+        # The process associated with the signature
+        process = odm.Optional(odm.Compound(Process))
+        # A list of subjects. A signature can have more than one subject.
+        subjects = odm.Optional(odm.List(odm.Compound(Subject)))
         # The description of the signature
         description = odm.Optional(odm.Keyword())
         # A list of Att&ck patterns and categories of the signature
         attack = odm.Optional(odm.List(odm.Compound(Attack)))
-        # A list of indicators of compromise. A signature can have more than one IOC.
-        iocs = odm.Optional(odm.List(odm.Compound(IOC)))
 
     # Metadata for the analysis
     analysis_metadata = odm.Compound(AnalysisMetadata)
-    # Signatures that the file may have
-    signatures = odm.List(odm.Compound(Signature), default=[])
+    # A list of processes
+    processes = odm.List(odm.Compound(Process), default=[])
     # The IP traffic observed during analysis
     network_connections = odm.List(odm.Compound(NetworkConnection), default=[])
+    # Signatures that the file may have
+    signatures = odm.List(odm.Compound(Signature), default=[])
     # The DNS traffic observed during analysis
     network_dns = odm.List(odm.Compound(NetworkDNS), default=[])
     # The HTTP traffic observed during analysis
     network_http = odm.List(odm.Compound(NetworkHTTP), default=[])
-    # A list of processes
-    processes = odm.List(odm.Compound(Process), default=[])
     # The name of the sandbox
     sandbox_name = odm.Keyword()
     # The version of the sandbox
