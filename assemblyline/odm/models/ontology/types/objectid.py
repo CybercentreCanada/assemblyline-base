@@ -8,6 +8,6 @@ class ObjectID(odm.Model):
     # The normalized tag of the object
     tag = odm.Optional(odm.Text())
     # The hash of the tree ID
-    tree_id = odm.Optional(odm.Text())
+    treeid = odm.Optional(odm.Text())
     # The time at which the object was observed
     time_observed = odm.Optional(odm.Date())
