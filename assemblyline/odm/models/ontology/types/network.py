@@ -1,14 +1,12 @@
 from assemblyline import odm
 from assemblyline.odm.models.ontology.types.process import Process
+from assemblyline.odm.models.ontology.types.objectid import ObjectID
 
 
 # Details for a low-level network connection by IP
 class NetworkConnection(odm.Model):
-
-    # The GUID associated with the connection
-    guid = odm.Text()
-    # The normalized tag of the object
-    tag = odm.Optional(odm.Text())
+    # The object ID of the process object
+    objectid = odm.Compound(ObjectID)
 
     # The process that spawned the network connection
     process = odm.Optional(odm.Compound(Process))
@@ -24,10 +22,6 @@ class NetworkConnection(odm.Model):
     transport_layer_protocol = odm.Enum(["tcp", "udp"])
     # The direction of the network connection
     direction = odm.Enum(["outbound", "inbound", "unknown"])
-    # The time at which the network connection was first observed
-    timestamp = odm.Optional(odm.Date())
-    # The hash of the tree ID
-    tree_id = odm.Optional(odm.Text())
 
 
 # Details for a DNS request
