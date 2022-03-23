@@ -420,6 +420,7 @@ sl_patterns = [
     ['shortcut/windows', r'^MS Windows shortcut'],
     ['email', r'Mime entity text'],
     ['sysmon', r'MS Windows Vista Event Log'],
+    ['emf', r'Windows Enhanced Metafile']
 ]
 
 sl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in sl_patterns]
@@ -496,6 +497,10 @@ trusted_mimes = {
     'application/json': 'text/json',
     'application/x-dbf': 'db/dbf',
     'application/x-hwp': 'document/office/hwp',
+    'application/vnd.iccprofile': 'metadata/iccprofile',
+    'application/vnd.lotus-1-2-3': 'document/lotus/spreadsheet',
+    'image/wmf': 'image/wmf',
+    'image/vnd.microsoft.icon': 'image/icon'
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
@@ -562,11 +567,22 @@ def ident(buf, length: int, path) -> Dict:
         # For user feedback set the mime and magic meta data to always be the primary
         # libmagic responses
         if len(labels) > 0:
-            # If this Word label is not the first label returned by Magic, then make it so
-            special_word_case = b'OLE 2 Compound Document : Microsoft Word Document'
-            if special_word_case != labels[0] and any(label == special_word_case for label in labels):
-                special_word_case_index = labels.index(special_word_case)
-                labels.insert(0, labels.pop(special_word_case_index))
+            def find_special_words(word, labels):
+                for index, label in enumerate(labels):
+                    if word in label:
+                        return index
+                return -1
+
+            # If an expected label is not the first label returned by Magic, then make it so
+            special_word_cases = [b'OLE 2 Compound Document : Microsoft Word Document', b'Lotus 1-2-3 WorKsheet']
+            for word in special_word_cases:
+                index = find_special_words(word, labels)
+                if index >= 0:
+                    labels.insert(0, labels.pop(index))
+                    # Assumption:
+                    # If the # of mimes matches # of labels, each mime corresponds to a label in the same position
+                    if len(labels) == len(mimes):
+                        mimes.insert(0, mimes.pop(index))
             data['magic'] = safe_str(labels[0])
 
         if len(mimes) > 0 and mimes[0] != b'':
@@ -913,6 +929,15 @@ def fileinfo(path: str) -> Dict:
             # If msoffcrypto can't handle the file to confirm that it is/isn't password protected,
             # then it's not meant to be. Moving on!
             pass
+
+    if data['type'] == 'document/pdf':
+        # Password protected documents typically contain '/Encrypt'
+        pdf_content = open(path, 'rb').read()
+        if re.search(b'/Encrypt', pdf_content):
+            data['type'] = 'document/pdf/passwordprotected'
+        # Portfolios typically contain '/Type/Catalog/Collection
+        elif re.search(b'/Type/Catalog/Collection', pdf_content):
+            data['type'] = 'document/pdf/portfolio'
 
     if not recognized.get(data['type'], False) and not cart_metadata_set:
         data['type'] = 'unknown'
