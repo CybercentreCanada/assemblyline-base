@@ -177,6 +177,7 @@ RECOGNIZED_TYPES = {
     'image/jpg': True,
     'image/png': True,
     'image/svg': True,
+    'image/webp': True,
     'image/texture/ka3d': True,
     'image/texture/ktx': True,
     'image/texture/pkm': True,

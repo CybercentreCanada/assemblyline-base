@@ -191,8 +191,8 @@ STRONG_INDICATORS = {
         re.compile(rb'(?i)(^|\n)reg[ \t]+delete[ \t]+'),
         re.compile(rb'(?i)(^|\n)%comspec%[ \t]+/c[ \t]+'),
         re.compile(rb'(?i)(^|\n)dir&echo[ \t]+'),
-        re.compile(
-            rb'(?i)(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)'),
+        re.compile(rb'(?i)(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|'
+                   rb'file|group|localgroup|pause|session|statistics|time|use|user|view)'),
     ],
 }
 STRONG_SCORE = 15
@@ -391,6 +391,7 @@ sl_patterns = [
     ['gif', r'^gif image data'],
     ['jpg', r'^jpeg image data'],
     ['png', r'^png image data'],
+    ['webp', r'Web/P image'],
     ['installer/windows', r'(Installation Database|Windows Installer)'],
     ['office/excel', r'Microsoft.*Excel'],
     ['office/powerpoint', r'Microsoft.*PowerPoint'],
@@ -449,6 +450,7 @@ sl_to_tl = {
     'gif': 'image',
     'jpg': 'image',
     'png': 'image',
+    'webp': 'image',
     'shortcut/windows': 'meta',
 }
 
@@ -486,6 +488,7 @@ trusted_mimes = {
     'message/rfc822': 'document/email',
     'text/calendar': 'text/calendar',
     'image/svg+xml': 'image/svg',
+    'image/webp': 'image/webp',
     'application/x-mach-binary': 'executable/mach-o',
     'application/vnd.ms-outlook': 'document/office/email',
     'application/x-iso9660-image': 'archive/iso',
