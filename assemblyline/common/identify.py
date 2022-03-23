@@ -574,14 +574,16 @@ def ident(buf, length: int, path) -> Dict:
                 return -1
 
             # If an expected label is not the first label returned by Magic, then make it so
-            special_word_cases = [b'OLE 2 Compound Document : Microsoft Word Document', b'Lotus 1-2-3 WorKsheet']
-            for word in special_word_cases:
+            # Manipulating the mime accordingly varies between special word cases
+            special_word_cases = [
+                (b'OLE 2 Compound Document : Microsoft Word Document', False),
+                (b'Lotus 1-2-3 WorKsheet', True)
+            ]
+            for word, alter_mime in special_word_cases:
                 index = find_special_words(word, labels)
                 if index >= 0:
                     labels.insert(0, labels.pop(index))
-                    # Assumption:
-                    # If the # of mimes matches # of labels, each mime corresponds to a label in the same position
-                    if len(labels) == len(mimes):
+                    if len(labels) == len(mimes) and alter_mime:
                         mimes.insert(0, mimes.pop(index))
             data['magic'] = safe_str(labels[0])
 
