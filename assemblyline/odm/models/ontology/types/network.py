@@ -49,7 +49,13 @@ class NetworkHTTP(odm.Model):
     # The body of the request
     request_body = odm.Optional(odm.Text())
     # The method of the request
-    request_method = odm.Enum(["GET", "POST", "PUT", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE", "PATCH"])
+    request_method = odm.Enum([
+        # Standard HTTP methods
+        "GET", "POST", "PUT", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE", "PATCH",
+        # WebDAV HTTP methods
+        "BCOPY", "BDELETE", "BMOVE", "BPROPFIND", "BPROPPATCH", "COPY", "DELETE", "LOCK", "MKCOL", "MOVE",
+        "NOTIFY", "POLL", "PROPFIND", "PROPPATCH", "SEARCH", "SUBSCRIBE", "UNLOCK", "UNSUBSCRIBE", "X-MS-ENUMATTS"
+    ])
     # Headers included in the response
     response_headers = odm.Mapping(odm.Json())
     # The status code of the response
