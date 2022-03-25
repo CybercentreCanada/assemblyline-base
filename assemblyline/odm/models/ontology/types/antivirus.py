@@ -12,7 +12,6 @@ class Antivirus(odm.Model):
         category = odm.Optional(odm.Enum(['type-unsupported',                   # File sent to AV is unsupported
                                           'undetected',                         # File not detected by AV
                                           'failure',                            # AV failed during detection
-                                          'harmless',                           # AV deems harmless
                                           'suspicious',                         # AV deems suspicious
                                           'malicious']))                        # AV deems malicious
         engine = odm.Compound(Engine)
