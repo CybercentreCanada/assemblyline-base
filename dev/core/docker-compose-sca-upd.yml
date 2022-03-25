@@ -2,7 +2,7 @@ version: "2.4"
 
 services:
   al_scaler:
-    image: cccs/assemblyline_dev:4.2.0
+    image: cccs/assemblyline_dev:4.2.1
     environment:
       DOCKER_CONFIGURATION_PATH: /mount/service_config/
       DOCKER_CONFIGURATION_VOLUME: service_config
@@ -27,7 +27,7 @@ services:
         ]
 
   al_updater:
-    image: cccs/assemblyline_dev:4.2.0
+    image: cccs/assemblyline_dev:4.2.1
     environment:
       UI_SERVER: "http://internal-ui:5000"
       AL_CORE_NETWORK: external
