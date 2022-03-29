@@ -37,7 +37,7 @@ if sys.version_info <= (3, 7):
     # noinspection PyProtectedMember
     copy._deepcopy_dispatch[type(re.compile(''))] = lambda r, _: r
 
-BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "__access_grp2__"}
+BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "__access_grp2__", "description"}
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
 FLATTENED_OBJECT_SANITIZER = re.compile("^[a-z][a-z0-9_.]*$")
@@ -912,7 +912,7 @@ class Model:
             field_type = get_type(info)
             description = info.description
             if field_type == "Enum":
-                values = info.child_type.values if  info.__class__ != Enum else info.values
+                values = info.child_type.values if info.__class__ != Enum else info.values
                 values = [f'"{v}"' if v else str(v) for v in values]
                 description = f'{description}<br>Values: {", ".join(values)}'
             required = ":material-checkbox-marked-outline: Yes" if info.__class__ != Optional else ":material-minus-box-outline: Optional"
@@ -925,7 +925,6 @@ class Model:
         nested = [s for s in cls.__dict__.values() if isclass(s) and issubclass(s, Model)]
         for n in nested:
             markdown_content += n.markdown()
-
 
         return markdown_content
 
