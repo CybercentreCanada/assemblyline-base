@@ -28,10 +28,10 @@ class ResultOntology(odm.Model):
 
     # Optional metadata
 
-    parent = odm.Optional(odm.SHA256(),description="Immediate parent of file relative to submission")
+    parent = odm.Optional(odm.SHA256(), description="Immediate parent of file relative to submission")
     sid = odm.Optional(odm.Keyword(), description="Submission ID associated to file")
     source_system = odm.Optional(odm.Text(), description="Which Assemblyline instance does the result originate from?")
-    original_source = odm.Optional(odm.Text(),description="Source as specified by submitter (from metadata)")
+    original_source = odm.Optional(odm.Text(), description="Source as specified by submitter (from metadata)")
     submitted_classification = odm.Keyword(default=Classification.UNRESTRICTED, description="Submitted classification")
     submitter = odm.Optional(odm.Keyword(), description="Submitter")
     retention_id = odm.Optional(odm.Keyword(), description="Reference to knowledge base for long-term data retention.")
