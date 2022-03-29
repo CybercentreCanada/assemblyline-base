@@ -27,8 +27,6 @@ class Process(odm.Model):
     start_time = odm.Date()
     # The time of termination for the process
     end_time = odm.Date()
-    # Human readable tree ID (concatenation of process names)
-    rich_id = odm.Optional(odm.Text())
     # The integrity level of the process
     integrity_level = odm.Optional(odm.Text())
     # The hash of the file run
