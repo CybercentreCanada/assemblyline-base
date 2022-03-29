@@ -9,40 +9,34 @@ Classification = forge.get_classification()
 @odm.model(index=False, store=False)
 class ResultOntology(odm.Model):
     class HeuristicDetails(odm.Model):
-        name = odm.Text()
-        tags = odm.Compound(Tagging)
+        name = odm.Text(description="Name of the heuristic raised.")
+        tags = odm.Compound(Tagging, description="Tags associated to heuristic")
 
     # Required metadata
-    md5 = odm.MD5()                                                             # MD5 of file
-    sha1 = odm.SHA1()                                                           # SHA1 of file
-    sha256 = odm.SHA256()                                                       # SHA256 of file
-    type = odm.Keyword()                                                        # Type of file as identified by Assemblyline
-    size = odm.Integer()                                                        # Size of the file in bytes
-    filename = odm.Text()                                                       # Name of the file as submitted
-    date = odm.Date()                                                           # Date of analysis
-    classification = odm.Keyword(default=Classification.UNRESTRICTED)           # Classification of the service result
-    service_name = odm.Keyword()                                                # Service Name
-    service_version = odm.Keyword()                                             # Service Version
-    service_tool_version = odm.Optional(odm.Keyword(default=''))                # Service Tool Version
+    md5 = odm.MD5(description="MD5 of file")
+    sha1 = odm.SHA1(description="SHA1 of file")
+    sha256 = odm.SHA256(description="SHA256 of file")
+    type = odm.Keyword(description="Type of file as identified by Assemblyline")
+    size = odm.Integer(description="Size of the file in bytes")
+    filename = odm.Text(description="Name of the file as submitted")
+    date = odm.Date(description="Date of analysis")
+    classification = odm.Keyword(default=Classification.UNRESTRICTED,
+                                 description="Classification of the service result")
+    service_name = odm.Keyword(description="Service Name")
+    service_version = odm.Keyword(description="Service Version")
+    service_tool_version = odm.Optional(odm.Keyword(default=''), description="Service Tool Version")
 
     # Optional metadata
 
-    # Who's the parent of this file, if any.
-    parent = odm.Optional(odm.SHA256())
-    # Used to link to the submission id in Assemblyline
-    sid = odm.Optional(odm.Keyword())
-    # Which instance of Assemblyline did this come from?
-    source_system = odm.Optional(odm.Text())
-    # Source as specified by submitter (from metadata)
-    original_source = odm.Optional(odm.Text())
-    # What classification did the submitter submit under?
-    submitted_classification = odm.Keyword(default=Classification.UNRESTRICTED)
-    # Who submitted this file?
-    submitter = odm.Optional(odm.Keyword())
-    # Used to link to knowledge base retaining long-term data
-    retention_id = odm.Optional(odm.Keyword())
+    parent = odm.Optional(odm.SHA256(),description="Immediate parent of file relative to submission")
+    sid = odm.Optional(odm.Keyword(), description="Submission ID associated to file")
+    source_system = odm.Optional(odm.Text(), description="Which Assemblyline instance does the result originate from?")
+    original_source = odm.Optional(odm.Text(),description="Source as specified by submitter (from metadata)")
+    submitted_classification = odm.Keyword(default=Classification.UNRESTRICTED, description="Submitted classification")
+    submitter = odm.Optional(odm.Keyword(), description="Submitter")
+    retention_id = odm.Optional(odm.Keyword(), description="Reference to knowledge base for long-term data retention.")
     # What tags did the service associate to the result
-    tags = odm.Optional(odm.Compound(Tagging))
+    tags = odm.Optional(odm.Compound(Tagging), description="Tags raised by service")
     # What tags are related to certain heuristics raised
     # {
     #   "SERVICENAME_1": {
@@ -59,4 +53,4 @@ class ResultOntology(odm.Model):
     #       }
     #   }
     # }
-    heuristics = odm.Optional(odm.Mapping(odm.Compound(HeuristicDetails)))
+    heuristics = odm.Optional(odm.Mapping(odm.Compound(HeuristicDetails)), description="Heuristics raised by service.")
