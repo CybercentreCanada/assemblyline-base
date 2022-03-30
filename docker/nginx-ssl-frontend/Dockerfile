@@ -14,6 +14,9 @@ ENV SOCKET_HOST al_socketio
 ENV UI_HOST al_ui
 ENV KIBANA_HOST kibana
 ENV TEMPLATE full
+ENV ACCESS_LOG off
+ENV ERROR_LOG /dev/stderr
+ENV ERROR_LEVEL notice
 
 COPY http_redirect.conf /etc/nginx/conf.d/
 COPY full.template /opt/
