@@ -1,3 +1,5 @@
+error_log    ${ERROR_LOG} ${ERROR_LEVEL};
+
 server {
     server_name               ${FQDN};
     listen                    443 ssl;
@@ -15,7 +17,7 @@ server {
 
     server_tokens off;
 
-    access_log    off;
+    access_log    ${ACCESS_LOG};
 
     location / {
         try_files    ${DOLLAR}uri @frontend;
