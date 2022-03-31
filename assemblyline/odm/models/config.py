@@ -793,7 +793,7 @@ DEFAULT_ALERTING_META = {
         'protocol',
         'subject',
         'submitted_url',
-        'source_url'
+        'source_url',
         'url',
         'web_url',
         'from',
@@ -809,7 +809,7 @@ DEFAULT_ALERTING_META = {
     ],
     'url': [
         'submitted_url',
-        'source_url'
+        'source_url',
         'url',
         'web_url'
     ]

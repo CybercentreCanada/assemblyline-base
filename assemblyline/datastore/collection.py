@@ -158,6 +158,7 @@ class ESCollection(Generic[ModelType]):
         'facet_fields': [],
         'stats_active': False,
         'stats_fields': [],
+        'field_script': None,
         'filters': [],
         'group_active': False,
         'group_field': None,
@@ -1114,12 +1115,14 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(f"ctx._source.{doc_key} -= params.value{val_id}")
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_MAX:
-                script = f"if (ctx._source.{doc_key} == null || ctx._source.{doc_key}.compareTo(params.value{val_id}) < 0) " \
+                script = f"if (ctx._source.{doc_key} == null || " \
+                         f"ctx._source.{doc_key}.compareTo(params.value{val_id}) < 0) " \
                          f"{{ctx._source.{doc_key} = params.value{val_id}}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_MIN:
-                script = f"if (ctx._source.{doc_key} == null || ctx._source.{doc_key}.compareTo(params.value{val_id}) > 0) " \
+                script = f"if (ctx._source.{doc_key} == null || " \
+                         f"ctx._source.{doc_key}.compareTo(params.value{val_id}) > 0) " \
                          f"{{ctx._source.{doc_key} = params.value{val_id}}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
@@ -1409,21 +1412,41 @@ class ESCollection(Generic[ModelType]):
         if parsed_values['facet_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
             for field in parsed_values['facet_fields']:
-                query_body["aggregations"][field] = {
-                    "terms": {
+                field_script = parsed_values['field_script']
+                if field_script:
+                    facet_body = {
+                        "script": {
+                            "source": field_script
+                        },
+                        "min_doc_count": parsed_values['facet_mincount']
+                    }
+                else:
+                    facet_body = {
                         "field": field,
                         "min_doc_count": parsed_values['facet_mincount']
                     }
+                query_body["aggregations"][field] = {
+                    "terms": facet_body
                 }
 
         # Add a facet aggregation
         if parsed_values['stats_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
             for field in parsed_values['stats_fields']:
-                query_body["aggregations"][f"{field}_stats"] = {
-                    "stats": {
+                field_script = parsed_values['field_script']
+                if field_script:
+                    stats_body = {
+                        "script": {
+                            "source": field_script
+                        }
+                    }
+                else:
+                    stats_body = {
                         "field": field
                     }
+
+                query_body["aggregations"][f"{field}_stats"] = {
+                    "stats": stats_body
                 }
 
         # Add a group aggregation
@@ -1722,7 +1745,7 @@ class ESCollection(Generic[ModelType]):
                 for row in result['aggregations']['histogram']['buckets']}
 
     def facet(self, field, query="id:*", prefix=None, contains=None, ignore_case=False, sort=None, limit=10,
-              mincount=1, filters=None, access_control=None, use_archive=False):
+              mincount=1, filters=None, access_control=None, use_archive=False, field_script=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1744,13 +1767,16 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
+        if field_script:
+            args.append(('field_script', field_script))
+
         result = self._search(args, use_archive=use_archive)
 
         # Convert the histogram into a dictionary
         return {row.get('key_as_string', row['key']): row['doc_count']
                 for row in result['aggregations'][field]['buckets']}
 
-    def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=False):
+    def stats(self, field, query="id:*", filters=None, access_control=None, use_archive=False, field_script=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1768,6 +1794,9 @@ class ESCollection(Generic[ModelType]):
 
         if filters:
             args.append(('filters', filters))
+
+        if field_script:
+            args.append(('field_script', field_script))
 
         result = self._search(args, use_archive=use_archive)
         return result['aggregations'][f"{field}_stats"]
