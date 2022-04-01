@@ -44,7 +44,6 @@ class Sandbox(odm.Model):
             ip = odm.Optional(odm.IP())
             domain = odm.Optional(odm.Domain())
             uri = odm.Optional(odm.URI())
-            uri_path = odm.Optional(odm.URIPath())
             process = odm.Optional(odm.Compound(Process))
             file = odm.Optional(odm.Text())
             registry = odm.Optional(odm.Text())
