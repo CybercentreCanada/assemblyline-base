@@ -534,7 +534,7 @@ OLE_CLSID_GUIDs = {
     "0003000A-0000-0000-C000-000000000046": "document/office/paintbrush",  # "Paintbrush Picture",
     "0003000C-0000-0000-C000-000000000046": "document/office/package",  # "Package"
     "000C1084-0000-0000-C000-000000000046": "document/installer/windows",  # "Installer Package (MSI)"
-    "00020D0B-0000-0000-C000-000000000046": "document/email",  # "MailMessage"
+    "00020D0B-0000-0000-C000-000000000046": "document/office/email",  # "MailMessage"
     # GUID v1 (Timestamp & MAC-48)
     "29130400-2EED-1069-BF5D-00DD011186B7": "document/office/wordpro",  # "Lotus WordPro"
     "46E31370-3F7A-11CE-BED6-00AA00611080": "document/office/word",  # "MS Forms 2.0 MultiPage"
@@ -947,7 +947,7 @@ def ident(buf, length: int, path) -> Dict:
                 # Get root entry's GUID and try to guess document type
                 clsid_offset = root_entry_property_offset + 0x50
                 if len(buf) >= clsid_offset + 16:
-                    clsid = buf[clsid_offset : clsid_offset + 16]
+                    clsid = buf[clsid_offset: clsid_offset + 16]
                     if len(clsid) == 16 and clsid != b"\0" * len(clsid):
                         clsid_str = uuid.UUID(bytes_le=clsid)
                         clsid_str = clsid_str.urn.rsplit(":", 1)[-1].upper()
