@@ -800,7 +800,7 @@ def test_executables(executable, general_result):
         ("0003000A-0000-0000-C000-000000000046", "document/office/paintbrush"),
         ("0003000C-0000-0000-C000-000000000046", "document/office/package"),
         ("000C1084-0000-0000-C000-000000000046", "document/installer/windows"),
-        ("00020D0B-0000-0000-C000-000000000046", "document/email"),
+        ("00020D0B-0000-0000-C000-000000000046", "document/office/email"),
         # GUID v1 (Timestamp & MAC-48)
         ("29130400-2EED-1069-BF5D-00DD011186B7", "document/office/wordpro"),
         ("46E31370-3F7A-11CE-BED6-00AA00611080", "document/office/word"),
