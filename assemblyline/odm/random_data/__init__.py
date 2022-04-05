@@ -61,7 +61,7 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None):
     ds.alert.commit()
 
 
-def create_heuristics(ds, log=None, heuristics_count=40):
+def create_heuristics(ds, log=None):
     for srv in SERVICES.keys():
         for x in range(5):
             h = random_model_obj(Heuristic)
@@ -153,9 +153,15 @@ def _create_results_for_file(ds, f, possible_childs=None, log=None):
     section_depth = random.choice(section_depth_list)
     for _ in range(random.randint(2, 5)):
         r = random_model_obj(Result)
+
+        # Only one result per service per file
+        while r.response.service_name in services_done:
+            r.response.service_name = random.choice(list(SERVICES.keys()))
+
         for depth_id, section in enumerate(r.result.sections):
             section.depth = section_depth[depth_id % len(section_depth)]
             section.body_format = random.choice(section_body_format)
+            section.heuristic.heur_id = random.choice([f"{r.response.service_name.upper()}.{x+1}" for x in range(5)])
             if section.body_format == "GRAPH_DATA":
                 cmap_min = 0
                 cmap_max = random.choice([5, 10, 20])
@@ -174,9 +180,6 @@ def _create_results_for_file(ds, f, possible_childs=None, log=None):
                 data = {get_random_word(): get_random_id() for _ in range(random.randint(3, 9))}
                 section.body = json.dumps(data)
 
-        # Only one result per service per file
-        while r.response.service_name in services_done:
-            r.response.service_name = random.choice(list(SERVICES.keys()))
         services_done.append(r.response.service_name)
 
         # Set the sha256
