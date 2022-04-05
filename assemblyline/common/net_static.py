@@ -2,7 +2,7 @@
 # DO NOT EDIT! Re-run the script instead...
 
 # Top level domains from: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-# Version 2021110100, Last Updated Mon Nov  1 07:07:02 2021 UTC
+# Version 2022040402, Last Updated Tue Apr  5 07:07:01 2022 UTC
 TLDS_ALPHA_BY_DOMAIN = {
     "AAA",
     "AARP",
@@ -30,7 +30,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "AERO",
     "AETNA",
     "AF",
-    "AFAMILYCOMPANY",
     "AFL",
     "AFRICA",
     "AG",
@@ -182,7 +181,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "BRUSSELS",
     "BS",
     "BT",
-    "BUDAPEST",
     "BUGATTI",
     "BUILD",
     "BUILDERS",
@@ -306,7 +304,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "CRS",
     "CRUISE",
     "CRUISES",
-    "CSC",
     "CU",
     "CUISINELLA",
     "CV",
@@ -365,7 +362,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "DRIVE",
     "DTV",
     "DUBAI",
-    "DUCK",
     "DUNLOP",
     "DUPONT",
     "DURBAN",
@@ -499,7 +495,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "GIVES",
     "GIVING",
     "GL",
-    "GLADE",
     "GLASS",
     "GLE",
     "GLOBAL",
@@ -663,6 +658,7 @@ TLDS_ALPHA_BY_DOMAIN = {
     "KH",
     "KI",
     "KIA",
+    "KIDS",
     "KIM",
     "KINDER",
     "KINDLE",
@@ -725,7 +721,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "LIPSY",
     "LIVE",
     "LIVING",
-    "LIXIL",
     "LK",
     "LLC",
     "LLP",
@@ -883,7 +878,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "NZ",
     "OBI",
     "OBSERVER",
-    "OFF",
     "OFFICE",
     "OKINAWA",
     "OLAYAN",
@@ -984,7 +978,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "QUEST",
     "RACING",
     "RADIO",
-    "RAID",
     "RE",
     "READ",
     "REALESTATE",
@@ -1061,7 +1054,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "SCHULE",
     "SCHWARZ",
     "SCIENCE",
-    "SCJOHNSON",
     "SCOT",
     "SD",
     "SE",
