@@ -148,7 +148,7 @@ def _create_errors_for_file(ds, f, services_done, log=None):
 def _create_results_for_file(ds, f, possible_childs=None, log=None):
     r_list = []
     services_done = []
-    section_body_format = ["TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "ORDERED_KEY_VALUE"]
+    section_body_format = ["TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE"]
     section_depth_list = [[1, 1, 2, 3, 1], [1, 2, 1], [1, 2, 3, 1], [1, 2]]
     section_depth = random.choice(section_depth_list)
     for _ in range(random.randint(2, 5)):
@@ -176,7 +176,7 @@ def _create_results_for_file(ds, f, possible_childs=None, log=None):
             elif section.body_format == "URL":
                 data = [{"url": get_random_uri()} for _ in range(random.randint(1, 4))]
                 section.body = json.dumps(data)
-            elif section.body_format in ["JSON", "KEY_VALUE", "ORDERED_KEY_VALUE"]:
+            elif section.body_format in ["JSON", "KEY_VALUE"]:
                 data = {get_random_word(): get_random_id() for _ in range(random.randint(3, 9))}
                 section.body = json.dumps(data)
 
