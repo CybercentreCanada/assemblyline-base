@@ -602,7 +602,7 @@ class ESCollection(Generic[ModelType]):
         :return: Should return True of the fix was successful on all hosts
         """
         if logger is None:
-            logger = self.log
+            logger = log
         body = {"settings": self._get_index_definition()['settings']}
         clone_body = {"settings": {"index.number_of_replicas": 0}}
         clone_finish_settings = None
