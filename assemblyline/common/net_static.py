@@ -663,6 +663,7 @@ TLDS_ALPHA_BY_DOMAIN = {
     "KH",
     "KI",
     "KIA",
+    "KIDS",
     "KIM",
     "KINDER",
     "KINDLE",
