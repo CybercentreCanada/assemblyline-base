@@ -84,7 +84,7 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
             "enabled": True,
             "category": svc[0],
             "stage": svc[1],
-            "version": "3.3.0",
+            "version": "4.2.0.0",
             "docker_config": {
                 "image": f"cccs/alsvc_{svc_name.lower()}:latest",
             },
@@ -98,12 +98,10 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
             }
 
         service_data = Service(service_data)
-        # Save a v3 service
-        ds.service.save(f"{service_data.name}_{service_data.version}", service_data)
-
-        # Save the same service as v4
-        service_data.version = "4.0.0"
-        ds.service.save(f"{service_data.name}_{service_data.version}", service_data)
+        for x in range(4):
+            # Save the same service as v4
+            service_data.version = f"4.2.0.{x}"
+            ds.service.save(f"{service_data.name}_{service_data.version}", service_data)
 
         # Save the default delta entry
         ds.service_delta.save(service_data.name, {"version": service_data.version})
@@ -150,12 +148,14 @@ def _create_errors_for_file(ds, f, services_done, log=None):
 def _create_results_for_file(ds, f, possible_childs=None, log=None):
     r_list = []
     services_done = []
+    section_body_format = ["TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "ORDERED_KEY_VALUE"]
     section_depth_list = [[1, 1, 2, 3, 1], [1, 2, 1], [1, 2, 3, 1], [1, 2]]
     section_depth = random.choice(section_depth_list)
     for _ in range(random.randint(2, 5)):
         r = random_model_obj(Result)
         for depth_id, section in enumerate(r.result.sections):
             section.depth = section_depth[depth_id % len(section_depth)]
+            section.body_format = random.choice(section_body_format)
             if section.body_format == "GRAPH_DATA":
                 cmap_min = 0
                 cmap_max = random.choice([5, 10, 20])
@@ -170,7 +170,7 @@ def _create_results_for_file(ds, f, possible_childs=None, log=None):
             elif section.body_format == "URL":
                 data = [{"url": get_random_uri()} for _ in range(random.randint(1, 4))]
                 section.body = json.dumps(data)
-            elif section.body_format in ["JSON", "KEY_VALUE"]:
+            elif section.body_format in ["JSON", "KEY_VALUE", "ORDERED_KEY_VALUE"]:
                 data = {get_random_word(): get_random_id() for _ in range(random.randint(3, 9))}
                 section.body = json.dumps(data)
 

@@ -176,7 +176,7 @@ def get_random_service_name() -> str:
 
 
 def get_random_service_version() -> str:
-    return f"4.0.0.{get_random_hash(7)}"
+    return f"4.2.0.stable{random.randint(1, 4)}"
 
 
 def get_random_ip() -> str:
