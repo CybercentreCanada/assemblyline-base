@@ -1335,6 +1335,9 @@ class ESCollection(Generic[ModelType]):
         if self.archive_access and use_archive:
             index = f"{index},{self.name}-*"
 
+        if args is None:
+            args = []
+
         params = {}
         if deep_paging_id is not None:
             params = {'scroll': self.SCROLL_TIMEOUT}
@@ -1364,7 +1367,7 @@ class ESCollection(Generic[ModelType]):
                     'filter': [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
                 }
             },
-            'from': parsed_values['start'],
+            'from_': parsed_values['start'],
             'size': parsed_values['rows'],
             'sort': parse_sort(parsed_values['sort']),
             "_source": parsed_values['field_list'] or list(self.stored_fields.keys())
@@ -1390,7 +1393,7 @@ class ESCollection(Generic[ModelType]):
 
         # Add an histogram aggregation
         if parsed_values['histogram_active']:
-            query_body["aggregations"] = query_body.get("aggregations", {})
+            query_body.setdefault("aggregations", {})
             if parsed_values['histogram_type'] == "date_histogram":
                 interval_type = "fixed_interval"
             else:
@@ -1409,7 +1412,7 @@ class ESCollection(Generic[ModelType]):
 
         # Add a facet aggregation
         if parsed_values['facet_active']:
-            query_body["aggregations"] = query_body.get("aggregations", {})
+            query_body.setdefault("aggregations", {})
             for field in parsed_values['facet_fields']:
                 field_script = parsed_values['field_script']
                 if field_script:
@@ -1430,7 +1433,7 @@ class ESCollection(Generic[ModelType]):
 
         # Add a facet aggregation
         if parsed_values['stats_active']:
-            query_body["aggregations"] = query_body.get("aggregations", {})
+            query_body.setdefault("aggregations", {})
             for field in parsed_values['stats_fields']:
                 field_script = parsed_values['field_script']
                 if field_script:
@@ -1467,7 +1470,7 @@ class ESCollection(Generic[ModelType]):
             else:
                 # Run the query
                 result = self.with_retries(self.datastore.client.search, index=index,
-                                           body=json.dumps(query_body), params=params)
+                                           params=params, **query_body)
 
             return result
 
