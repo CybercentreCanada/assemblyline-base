@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import json
 import logging
 import re
 import time
+import typing
 import warnings
 
 from copy import deepcopy
@@ -26,6 +29,11 @@ from assemblyline.datastore.support.build import back_mapping, build_mapping
 from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                     default_index, default_mapping)
 from assemblyline.odm.base import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model, ClassificationObject, _Field
+
+
+if typing.TYPE_CHECKING:
+    from .store import ESStore
+
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
 
@@ -141,7 +149,7 @@ class ESCollection(Generic[ModelType]):
         UPDATE_SET,
         UPDATE_DELETE,
     ]
-    DEFAULT_SEARCH_VALUES = {
+    DEFAULT_SEARCH_VALUES: dict[str, typing.Any] = {
         'timeout': None,
         'field_list': None,
         'facet_active': False,
@@ -170,10 +178,10 @@ class ESCollection(Generic[ModelType]):
         'script_fields': []
     }
 
-    def __init__(self, datastore, name, model_class=None, validate=True):
+    def __init__(self, datastore: ESStore, name, model_class=None, validate=True):
         self.replicas = environ.get(f"ELASTIC_{name.upper()}_REPLICAS", environ.get('ELASTIC_DEFAULT_REPLICAS', 0))
         self.shards = environ.get(f"ELASTIC_{name.upper()}_SHARDS", environ.get('ELASTIC_DEFAULT_SHARDS', 1))
-        self._index_list = []
+        self._index_list: list[str] = []
 
         if name in datastore.ilm_config:
             self.ilm_config = datastore.ilm_config[name]
@@ -253,7 +261,7 @@ class ESCollection(Generic[ModelType]):
                             shards_total,
                         ),
                     )
-                resp = self.with_retries(self.datastore.client.scroll, body={"scroll_id": scroll_id, "scroll": scroll})
+                resp = self.with_retries(self.datastore.client.scroll, scroll_id=scroll_id, scroll=scroll)
                 scroll_id = resp.get("_scroll_id")
 
         finally:
@@ -376,7 +384,7 @@ class ESCollection(Generic[ModelType]):
         except KeyError:
             return res['task']['status']
 
-    def _get_current_alias(self, index):
+    def _get_current_alias(self, index: str) -> typing.Optional[str]:
         if self.with_retries(self.datastore.client.indices.exists_alias, name=index):
             return next(iter(self.with_retries(self.datastore.client.indices.get_alias, index)), None)
         return None
@@ -872,9 +880,8 @@ class ESCollection(Generic[ModelType]):
         found = self.with_retries(self.datastore.client.exists, index=self.name, id=key, _source=False)
 
         if not found and self.ilm_config and archive_access:
-            query_body = {"query": {"ids": {"values": [key]}}, "size": 0}
             res = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
-                                    body=query_body)
+                                    query={"ids": {"values": [key]}}, size=0)
             found = res['hits']['total']['value'] > 0
 
         return found
@@ -916,9 +923,9 @@ class ESCollection(Generic[ModelType]):
                 pass
 
             if self.ilm_config and archive_access:
-                query_body = {"query": {"ids": {"values": [key]}}, 'size': 1, 'sort': {'_index': 'desc'}}
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
-                                         body=query_body)['hits']['hits']
+                                         query={"ids": {"values": [key]}}, size=1,
+                                         sort={'_index': 'desc'})['hits']['hits']
                 if len(hits) > 0:
                     if version:
                         return normalize_output(hits[0]['_source']), CREATE_TOKEN
@@ -1030,7 +1037,7 @@ class ESCollection(Generic[ModelType]):
             self.datastore.client.index,
             index=self.name,
             id=key,
-            body=json.dumps(saved_data),
+            document=json.dumps(saved_data),
             op_type=operation,
             if_seq_no=seq_no,
             if_primary_term=primary_term,
@@ -1869,7 +1876,7 @@ class ESCollection(Generic[ModelType]):
                     raise ValueError("Unknown field data " + str(props))
             return out
 
-        data = self.with_retries(self.datastore.client.indices.get, self.name)
+        data = self.with_retries(self.datastore.client.indices.get, index=self.name)
         index_name = list(data.keys())[0]
         properties = flatten_fields(data[index_name]['mappings'].get('properties', {}))
 

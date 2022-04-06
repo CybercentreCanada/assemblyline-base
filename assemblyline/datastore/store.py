@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 import re
-
 from os import environ
+import typing
 from urllib.parse import urlparse
 
 import elasticsearch
@@ -144,7 +146,9 @@ class ESStore(object):
 
     def close(self):
         self._closed = True
-        self.client = None
+        # Flatten the client object so that attempts to access without reconnecting errors hard
+        # But 'cast' it so that mypy and other linters don't think that its normal for client to be None
+        self.client = typing.cast(elasticsearch.Elasticsearch, None)
 
     def get_hosts(self, safe=False):
         if not safe:
@@ -166,7 +170,8 @@ class ESStore(object):
         return self.client.ping()
 
     def register(self, name: str, model_class=None):
-        if re.match(r'[a-z0-9_]*', name).string != name:
+        name_match = re.match(r'[a-z0-9_]*', name)
+        if not name_match or name_match.string != name:
             raise DataStoreException('Invalid characters in model name. '
                                      'You can only use lower case letters, numbers and underscores.')
 
