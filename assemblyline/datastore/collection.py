@@ -1217,13 +1217,9 @@ class ESCollection(Generic[ModelType]):
         operations = self._validate_operations(operations)
         script = self._create_scripts_from_operations(operations)
 
-        update_body = {
-            "script": script
-        }
-
         # noinspection PyBroadException
         try:
-            res = self.with_retries(self.datastore.client.update, index=self.name, id=key, body=update_body)
+            res = self.with_retries(self.datastore.client.update, index=self.name, id=key, script=script)
             return res['result'] == "updated"
         except elasticsearch.NotFoundError:
             pass
@@ -1231,8 +1227,10 @@ class ESCollection(Generic[ModelType]):
             return False
 
         if self.archive_access:
-            query_body = {"query": {"ids": {"values": [key]}}}
-            update_body.update(query_body)
+            update_body = {
+                "script": script,
+                "query": {"ids": {"values": [key]}}
+            }
             info = self._update_async(f"{self.name}-*", update_body)
             return info.get('updated', 0) != 0
 
