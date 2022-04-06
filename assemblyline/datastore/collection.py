@@ -267,7 +267,7 @@ class ESCollection(Generic[ModelType]):
 
         finally:
             if scroll_id:
-                resp = self.with_retries(self.datastore.client.clear_scroll, body={"scroll_id": [scroll_id]},
+                resp = self.with_retries(self.datastore.client.clear_scroll, scroll_id=[scroll_id],
                                          ignore=(404,), params={"__elastic_client_meta": (("h", "s"),)})
                 if not resp.get('succeeded', False):
                     log.warning(f"Could not clear scroll ID {scroll_id}, there is potential "
@@ -1570,12 +1570,11 @@ class ESCollection(Generic[ModelType]):
 
         # Check if the scroll is finished and close it
         if deep_paging_id is not None and new_deep_paging_id is None:
-            self.with_retries(self.datastore.client.clear_scroll, body={"scroll_id": [deep_paging_id]}, ignore=(404,))
+            self.with_retries(self.datastore.client.clear_scroll, scroll_id=[deep_paging_id], ignore=(404,))
 
         # Check if we can tell from inspection that we have finished the scroll
         if new_deep_paging_id is not None and len(ret_data["items"]) < ret_data["rows"]:
-            self.with_retries(self.datastore.client.clear_scroll,
-                              body={"scroll_id": [new_deep_paging_id]}, ignore=(404,))
+            self.with_retries(self.datastore.client.clear_scroll, scroll_id=[new_deep_paging_id], ignore=(404,))
             new_deep_paging_id = None
 
         if new_deep_paging_id is not None:
