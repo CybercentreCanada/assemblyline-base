@@ -136,7 +136,7 @@ def get_random_hash(hash_len: int) -> str:
 
 
 def get_random_heuristic_id() -> str:
-    return f"AL_{get_random_service_name().upper()}_{random.randint(1, 5)}"
+    return f"{get_random_service_name().upper()}.{random.randint(1, 5)}"
 
 
 def get_random_label() -> str:
@@ -176,7 +176,7 @@ def get_random_service_name() -> str:
 
 
 def get_random_service_version() -> str:
-    return f"4.0.0.{get_random_hash(7)}"
+    return f"4.2.0.stable{random.randint(1, 4)}"
 
 
 def get_random_ip() -> str:
