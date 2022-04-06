@@ -231,13 +231,13 @@ class ESCollection(Generic[ModelType]):
         else:
             return [self.index_name]
 
-    def scan_with_retry(self, query, index=None, scroll="5m", size=1000, request_timeout=None):
+    def scan_with_retry(self, query, sort=None, source=None, index=None, scroll="5m", size=1000, request_timeout=None):
         if index is None:
             index = self.index_name
 
         # initial search
-        resp = self.with_retries(self.datastore.client.search, index=index, body=query, scroll=scroll,
-                                 size=size, request_timeout=request_timeout)
+        resp = self.with_retries(self.datastore.client.search, index=index, query=query, scroll=scroll,
+                                 size=size, request_timeout=request_timeout, sort=sort, _source=source)
         scroll_id = resp.get("_scroll_id")
 
         try:
@@ -841,9 +841,7 @@ class ESCollection(Generic[ModelType]):
                     log.error(f'MGet returned multiple documents for id: {row["_id"]}')
 
             if key_list and self.archive_access:
-                query_body = {"query": {"ids": {"values": key_list}}}
-
-                for row in self.scan_with_retry(query_body, index=f"{self.name}-*"):
+                for row in self.scan_with_retry(query={"ids": {"values": key_list}}, index=f"{self.name}-*"):
                     try:
                         key_list.remove(row['_id'])
                         add_to_output(row['_source'], row['_id'])
@@ -1625,23 +1623,22 @@ class ESCollection(Generic[ModelType]):
         if fl:
             fl = fl.split(',')
 
-        query_body = {
-            "query": {
-                "bool": {
-                    "must": {
-                        "query_string": {
-                            "query": query,
-                            "default_field": self.DEFAULT_SEARCH_FIELD
-                        }
-                    },
-                    'filter': [{'query_string': {'query': ff}} for ff in filters]
-                }
-            },
-            "sort": parse_sort(self.datastore.DEFAULT_SORT),
-            "_source": fl or list(self.stored_fields.keys())
+        query_expression = {
+            "bool": {
+                "must": {
+                    "query_string": {
+                        "query": query,
+                        "default_field": self.DEFAULT_SEARCH_FIELD
+                    }
+                },
+                'filter': [{'query_string': {'query': ff}} for ff in filters]
+            }
         }
+        sort = parse_sort(self.datastore.DEFAULT_SORT)
+        source = fl or list(self.stored_fields.keys())
 
-        for value in self.scan_with_retry(query_body, index=index, size=item_buffer_size):
+        for value in self.scan_with_retry(query=query_expression, sort=sort, source=source,
+                                          index=index, size=item_buffer_size):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl, as_obj=as_obj)
 
