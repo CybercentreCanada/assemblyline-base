@@ -100,7 +100,7 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
         service_data = Service(service_data)
         for x in range(4):
             # Save the same service as v4
-            service_data.version = f"4.2.0.{x}"
+            service_data.version = f"4.2.0.{x+1}"
             ds.service.save(f"{service_data.name}_{service_data.version}", service_data)
 
         # Save the default delta entry
