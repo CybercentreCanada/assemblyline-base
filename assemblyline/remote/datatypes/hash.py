@@ -125,9 +125,7 @@ class Hash(Generic[T]):
         items = retry_call(self.c.hgetall, self.name)
         if not isinstance(items, dict):
             return {}
-        for k in items.keys():
-            items[k] = json.loads(items[k])
-        return {k.decode('utf-8'): v for k, v in items.items()}
+        return {k.decode('utf-8'): json.loads(v) for k, v in items.items()}
 
     def conditional_remove(self, key: str, value) -> bool:
         return bool(retry_call(self._conditional_remove, keys=[self.name], args=[key, json.dumps(value)]))
@@ -147,7 +145,7 @@ class Hash(Generic[T]):
         if any(isinstance(key, bytes) for key in data.keys()):
             raise ValueError("Cannot use bytes for hashmap keys")
         encoded = {key: json.dumps(value) for key, value in data.items()}
-        return retry_call(self.c.hmset, self.name, mapping=encoded)
+        return retry_call(self.c.hset, self.name, mapping=encoded)
 
     def delete(self):
         retry_call(self.c.delete, self.name)
