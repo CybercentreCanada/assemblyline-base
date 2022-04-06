@@ -211,7 +211,7 @@ class ESCollection(Generic[ModelType]):
     @property
     def index_list_full(self):
         if not self._index_list:
-            self._index_list = list(self.with_retries(self.datastore.client.indices.get, f"{self.name}-*").keys())
+            self._index_list = list(self.with_retries(self.datastore.client.indices.get, index=f"{self.name}-*").keys())
 
         return [self.index_name] + sorted(self._index_list, reverse=True)
 
@@ -224,7 +224,8 @@ class ESCollection(Generic[ModelType]):
         """
         if self.archive_access:
             if not self._index_list:
-                self._index_list = list(self.with_retries(self.datastore.client.indices.get, f"{self.name}-*").keys())
+                index_data = self.with_retries(self.datastore.client.indices.get, index=f"{self.name}-*")
+                self._index_list = list(index_data.keys())
 
             return [self.index_name] + sorted(self._index_list, reverse=True)
         else:
@@ -370,7 +371,7 @@ class ESCollection(Generic[ModelType]):
         res = None
         while res is None:
             try:
-                res = self.with_retries(self.datastore.client.tasks.get, task['task'],
+                res = self.with_retries(self.datastore.client.tasks.get, task_id=task['task'],
                                         wait_for_completion=True, timeout='5s')
             except elasticsearch.exceptions.TransportError as e:
                 err_code, msg, _ = e.args
@@ -386,7 +387,7 @@ class ESCollection(Generic[ModelType]):
 
     def _get_current_alias(self, index: str) -> typing.Optional[str]:
         if self.with_retries(self.datastore.client.indices.exists_alias, name=index):
-            return next(iter(self.with_retries(self.datastore.client.indices.get_alias, index)), None)
+            return next(iter(self.with_retries(self.datastore.client.indices.get_alias, index=index)), None)
         return None
 
     def _wait_for_status(self, index, min_status='yellow'):
@@ -404,7 +405,7 @@ class ESCollection(Generic[ModelType]):
                     raise
 
     def _safe_index_copy(self, copy_function, src, target, body=None, min_status='yellow'):
-        ret = copy_function(src, target, body=body, request_timeout=60)
+        ret = copy_function(index=src, target=target, body=body, request_timeout=60)
         if not ret['acknowledged']:
             raise DataStoreException(f"Failed to create index {target} from {src}.")
 
@@ -470,7 +471,7 @@ class ESCollection(Generic[ModelType]):
         if sort:
             reindex_body['source']['sort'] = parse_sort(sort)
 
-        r_task = self.with_retries(self.datastore.client.reindex, reindex_body, wait_for_completion=False)
+        r_task = self.with_retries(self.datastore.client.reindex, body=reindex_body, wait_for_completion=False)
         res = self._get_task_results(r_task)
         total_archived = res['updated'] + res['created']
         if res['total'] == total_archived or max_docs == total_archived:
@@ -510,11 +511,11 @@ class ESCollection(Generic[ModelType]):
 
         :return: Should return True of the commit was successful on all hosts
         """
-        self.with_retries(self.datastore.client.indices.refresh, self.index_name)
-        self.with_retries(self.datastore.client.indices.clear_cache, self.index_name)
+        self.with_retries(self.datastore.client.indices.refresh, index=self.index_name)
+        self.with_retries(self.datastore.client.indices.clear_cache, index=self.index_name)
         if self.archive_access:
-            self.with_retries(self.datastore.client.indices.refresh, f"{self.name}-archive")
-            self.with_retries(self.datastore.client.indices.clear_cache, f"{self.name}-archive")
+            self.with_retries(self.datastore.client.indices.refresh, index=f"{self.name}-archive")
+            self.with_retries(self.datastore.client.indices.clear_cache, index=f"{self.name}-archive")
         return True
 
     def fix_ilm(self):
@@ -534,7 +535,7 @@ class ESCollection(Generic[ModelType]):
                     pass
 
             # Create WARM index template
-            if not self.with_retries(self.datastore.client.indices.exists_template, self.name):
+            if not self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
                 log.debug(f"Index template {self.name.upper()} does not exists. Creating it now...")
 
                 index = self._get_index_definition()
@@ -545,19 +546,19 @@ class ESCollection(Generic[ModelType]):
                 index["settings"]["index.lifecycle.rollover_alias"] = f"{self.name}-archive"
 
                 try:
-                    self.with_retries(self.datastore.client.indices.put_template, self.name, index)
+                    self.with_retries(self.datastore.client.indices.put_template, name=self.name, body=index)
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
                     log.warning(f"Tried to create an index template that already exists: {self.name.upper()}")
 
-            if not self.with_retries(self.datastore.client.indices.exists_alias, f"{self.name}-archive"):
+            if not self.with_retries(self.datastore.client.indices.exists_alias, name=f"{self.name}-archive"):
                 log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
 
                 index = {"aliases": {f"{self.name}-archive": {"is_write_index": True}}}
 
                 try:
-                    self.with_retries(self.datastore.client.indices.create, f"{self.name}-000001", index)
+                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-000001", body=index)
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
@@ -574,19 +575,19 @@ class ESCollection(Generic[ModelType]):
                         }
                     }
 
-                    r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
+                    r_task = self.with_retries(self.datastore.client.reindex, body=body, wait_for_completion=False)
                     self._get_task_results(r_task)
 
-                    self.with_retries(self.datastore.client.indices.refresh, self.index_name)
-                    self.with_retries(self.datastore.client.indices.clear_cache, self.index_name)
+                    self.with_retries(self.datastore.client.indices.refresh, index=self.index_name)
+                    self.with_retries(self.datastore.client.indices.clear_cache, index=self.index_name)
 
-                    self.with_retries(self.datastore.client.indices.delete, idx)
+                    self.with_retries(self.datastore.client.indices.delete, index=idx)
 
             if self._ilm_policy_exists():
                 self.with_retries(self._delete_ilm_policy)
 
-            if self.with_retries(self.datastore.client.indices.exists_template, self.name):
-                self.with_retries(self.datastore.client.indices.delete_template, self.name)
+            if self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
+                self.with_retries(self.datastore.client.indices.delete_template, name=self.name)
 
         return True
 
@@ -664,7 +665,7 @@ class ESCollection(Generic[ModelType]):
             self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
 
             # Clone it onto a temporary index
-            if not self.with_retries(self.datastore.client.indices.exists, temp_name):
+            if not self.with_retries(self.datastore.client.indices.exists, index=temp_name):
                 # if there are specific settings to be applied to the index, apply them
                 if clone_setup_settings:
                     logger.info(f"Rellocating index to node {target_node.upper()}.")
@@ -691,12 +692,12 @@ class ESCollection(Generic[ModelType]):
                 # Make the hot index the temporary index while deleting the original index
                 alias_body = {"actions": [{"add":  {"index": temp_name, "alias": self.name}}, {
                     "remove_index": {"index": self.index_name}}]}
-                self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+                self.with_retries(self.datastore.client.indices.update_aliases, body=alias_body)
 
             # Make sure the original index is deleted
-            if self.with_retries(self.datastore.client.indices.exists, self.index_name):
+            if self.with_retries(self.datastore.client.indices.exists, index=self.index_name):
                 logger.info(f"Delete extra {self.index_name.upper()} index.")
-                self.with_retries(self.datastore.client.indices.delete, self.index_name)
+                self.with_retries(self.datastore.client.indices.delete, index=self.index_name)
 
             # Shrink/split the temporary index into the original index
             logger.info(f"Perform shard fix operation from {temp_name.upper()} to {self.index_name.upper()}.")
@@ -707,7 +708,7 @@ class ESCollection(Generic[ModelType]):
                         f"and delete {temp_name.upper()}.")
             alias_body = {"actions": [{"add":  {"index": self.index_name, "alias": self.name}}, {
                 "remove_index": {"index": temp_name}}]}
-            self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+            self.with_retries(self.datastore.client.indices.update_aliases, body=alias_body)
 
         # Restore writes
         logger.info("Restore datastore wide write operation on Elastic.")
@@ -726,14 +727,14 @@ class ESCollection(Generic[ModelType]):
         """
         for index in self.index_list:
             new_name = f'{index}__reindex'
-            if self.with_retries(self.datastore.client.indices.exists, index) and \
-                    not self.with_retries(self.datastore.client.indices.exists, new_name):
+            if self.with_retries(self.datastore.client.indices.exists, index=index) and \
+                    not self.with_retries(self.datastore.client.indices.exists, index=new_name):
 
                 # Get information about the index to reindex
-                index_data = self.with_retries(self.datastore.client.indices.get, index)[index]
+                index_data = self.with_retries(self.datastore.client.indices.get, index=index)[index]
 
                 # Create reindex target
-                self.with_retries(self.datastore.client.indices.create, new_name, self._get_index_definition())
+                self.with_retries(self.datastore.client.indices.create, index=new_name, body=self._get_index_definition())
 
                 # For all aliases related to the index, add a new alias to the reindex index
                 for alias, alias_data in index_data['aliases'].items():
@@ -745,7 +746,7 @@ class ESCollection(Generic[ModelType]):
                     else:
                         alias_body = {"actions": [
                             {"add": {"index": new_name, "alias": alias}}]}
-                    self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+                    self.with_retries(self.datastore.client.indices.update_aliases, body=alias_body)
 
                 # Reindex data into target
                 body = {
@@ -756,15 +757,15 @@ class ESCollection(Generic[ModelType]):
                         "index": new_name
                     }
                 }
-                r_task = self.with_retries(self.datastore.client.reindex, body, wait_for_completion=False)
+                r_task = self.with_retries(self.datastore.client.reindex, body=body, wait_for_completion=False)
                 self._get_task_results(r_task)
 
                 # Commit reindexed data
-                self.with_retries(self.datastore.client.indices.refresh, new_name)
-                self.with_retries(self.datastore.client.indices.clear_cache, new_name)
+                self.with_retries(self.datastore.client.indices.refresh, index=new_name)
+                self.with_retries(self.datastore.client.indices.clear_cache, index=new_name)
 
                 # Delete old index
-                self.with_retries(self.datastore.client.indices.delete, index)
+                self.with_retries(self.datastore.client.indices.delete, index=index)
 
                 # Block write to the index
                 self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
@@ -781,11 +782,11 @@ class ESCollection(Generic[ModelType]):
                             alias_body = {"actions": [
                                 {"add": {"index": index, "alias": alias, "is_write_index": True}},
                                 {"remove_index": {"index": new_name}}]}
-                            self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+                            self.with_retries(self.datastore.client.indices.update_aliases, body=alias_body)
 
                     # Delete the reindex target if it still exists
-                    if self.with_retries(self.datastore.client.indices.exists, new_name):
-                        self.with_retries(self.datastore.client.indices.delete, new_name)
+                    if self.with_retries(self.datastore.client.indices.exists, index=new_name):
+                        self.with_retries(self.datastore.client.indices.delete, index=new_name)
                 finally:
                     # Unblock write to the index
                     self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
@@ -823,7 +824,7 @@ class ESCollection(Generic[ModelType]):
             out = []
 
         if key_list:
-            data = self.with_retries(self.datastore.client.mget, {'ids': key_list}, index=self.name)
+            data = self.with_retries(self.datastore.client.mget, body={'ids': key_list}, index=self.name)
 
             for row in data.get('docs', []):
                 if 'found' in row and not row['found']:
@@ -2043,18 +2044,18 @@ class ESCollection(Generic[ModelType]):
         :return:
         """
         # Create HOT index
-        if not self.with_retries(self.datastore.client.indices.exists, self.name):
+        if not self.with_retries(self.datastore.client.indices.exists, index=self.name):
             log.debug(f"Index {self.name.upper()} does not exists. Creating it now...")
             try:
-                self.with_retries(self.datastore.client.indices.create, self.index_name, self._get_index_definition())
+                self.with_retries(self.datastore.client.indices.create, index=self.index_name, body=self._get_index_definition())
             except elasticsearch.exceptions.RequestError as e:
                 if "resource_already_exists_exception" not in str(e):
                     raise
                 log.warning(f"Tried to create an index template that already exists: {self.name.upper()}")
 
-            self.with_retries(self.datastore.client.indices.put_alias, self.index_name, self.name)
-        elif not self.with_retries(self.datastore.client.indices.exists, self.index_name) and \
-                not self.with_retries(self.datastore.client.indices.exists_alias, self.name):
+            self.with_retries(self.datastore.client.indices.put_alias, index=self.index_name, name=self.name)
+        elif not self.with_retries(self.datastore.client.indices.exists, index=self.index_name) and \
+                not self.with_retries(self.datastore.client.indices.exists_alias, name=self.name):
             # Turn on write block
             self.with_retries(self.datastore.client.indices.put_settings, body=write_block_settings)
 
@@ -2064,7 +2065,7 @@ class ESCollection(Generic[ModelType]):
             # Make the hot index the new clone
             alias_body = {"actions": [{"add":  {"index": self.index_name, "alias": self.name}}, {
                 "remove_index": {"index": self.name}}]}
-            self.with_retries(self.datastore.client.indices.update_aliases, alias_body)
+            self.with_retries(self.datastore.client.indices.update_aliases, body=alias_body)
 
             self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
 
@@ -2078,7 +2079,7 @@ class ESCollection(Generic[ModelType]):
                     pass
 
             # Create WARM index template
-            if not self.with_retries(self.datastore.client.indices.exists_template, self.name):
+            if not self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
                 log.debug(f"Index template {self.name.upper()} does not exists. Creating it now...")
 
                 index = self._get_index_definition()
@@ -2089,19 +2090,19 @@ class ESCollection(Generic[ModelType]):
                 index["settings"]["index.lifecycle.rollover_alias"] = f"{self.name}-archive"
 
                 try:
-                    self.with_retries(self.datastore.client.indices.put_template, self.name, index)
+                    self.with_retries(self.datastore.client.indices.put_template, name=self.name, body=index)
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
                     log.warning(f"Tried to create an index template that already exists: {self.name.upper()}")
 
-            if not self.with_retries(self.datastore.client.indices.exists_alias, f"{self.name}-archive"):
+            if not self.with_retries(self.datastore.client.indices.exists_alias, name=f"{self.name}-archive"):
                 log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
 
                 index = {"aliases": {f"{self.name}-archive": {"is_write_index": True}}}
 
                 try:
-                    self.with_retries(self.datastore.client.indices.create, f"{self.name}-000001", index)
+                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-000001", body=index)
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
@@ -2138,10 +2139,10 @@ class ESCollection(Generic[ModelType]):
         for index in self.index_list_full:
             self.with_retries(self.datastore.client.indices.put_mapping, index=index, body=mappings)
 
-        if self.with_retries(self.datastore.client.indices.exists_template, self.name):
-            current_template = self.with_retries(self.datastore.client.indices.get_template, self.name)[self.name]
+        if self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
+            current_template = self.with_retries(self.datastore.client.indices.get_template, name=self.name)[self.name]
             recursive_update(current_template, {'mappings': mappings})
-            self.with_retries(self.datastore.client.indices.put_template, self.name, body=current_template)
+            self.with_retries(self.datastore.client.indices.put_template, name=self.name, body=current_template)
 
     def wipe(self):
         """
@@ -2154,10 +2155,10 @@ class ESCollection(Generic[ModelType]):
         log.debug("Wipe operation started for collection: %s" % self.name.upper())
 
         for index in self.index_list:
-            if self.with_retries(self.datastore.client.indices.exists, index):
-                self.with_retries(self.datastore.client.indices.delete, index)
+            if self.with_retries(self.datastore.client.indices.exists, index=index):
+                self.with_retries(self.datastore.client.indices.delete, index=index)
 
-        if self.with_retries(self.datastore.client.indices.exists_template, self.name):
-            self.with_retries(self.datastore.client.indices.delete_template, self.name)
+        if self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
+            self.with_retries(self.datastore.client.indices.delete_template, name=self.name)
 
         self._ensure_collection()
