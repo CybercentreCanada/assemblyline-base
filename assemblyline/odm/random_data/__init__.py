@@ -6,6 +6,7 @@ import random
 from assemblyline.common import forge
 from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
+from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION, BUILD_MINOR
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
@@ -84,7 +85,7 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
             "enabled": True,
             "category": svc[0],
             "stage": svc[1],
-            "version": "4.2.0.0",
+            "version": f"{FRAMEWORK_VERSION}.{SYSTEM_VERSION}.{BUILD_MINOR}.1",
             "docker_config": {
                 "image": f"cccs/alsvc_{svc_name.lower()}:latest",
             },
@@ -100,7 +101,7 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
         service_data = Service(service_data)
         for x in range(4):
             # Save the same service as v4
-            service_data.version = f"4.2.0.{x+1}"
+            service_data.version = f"{FRAMEWORK_VERSION}.{SYSTEM_VERSION}.{BUILD_MINOR}.{x+1}"
             ds.service.save(f"{service_data.name}_{service_data.version}", service_data)
 
         # Save the default delta entry
