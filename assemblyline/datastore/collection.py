@@ -538,7 +538,10 @@ class ESCollection(Generic[ModelType]):
             if not self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
                 log.debug(f"Index template {self.name.upper()} does not exists. Creating it now...")
 
-                index = self._get_index_definition()
+                index: dict[str, Any] = {
+                    'mappings': self._get_index_mappings(),
+                    'settings': self._get_index_settings()
+                }
 
                 index["index_patterns"] = [f"{self.name}-*"]
                 index["order"] = 1
@@ -598,7 +601,7 @@ class ESCollection(Generic[ModelType]):
 
         :return: Should return True of the fix was successful on all hosts
         """
-        replicas = self._get_index_definition()['settings']['index']['number_of_replicas']
+        replicas = self._get_index_settings()['index']['number_of_replicas']
         body = {"number_of_replicas": replicas}
         return self.with_retries(
             self.datastore.client.indices.put_settings, index=self.index_name, body=body)['acknowledged']
@@ -612,7 +615,7 @@ class ESCollection(Generic[ModelType]):
         """
         if logger is None:
             logger = log
-        body = {"settings": self._get_index_definition()['settings']}
+        body = {"settings": self._get_index_settings()}
         clone_body = {"settings": {"index.number_of_replicas": 0}}
         clone_finish_settings = None
         clone_setup_settings = None
@@ -734,7 +737,8 @@ class ESCollection(Generic[ModelType]):
                 index_data = self.with_retries(self.datastore.client.indices.get, index=index)[index]
 
                 # Create reindex target
-                self.with_retries(self.datastore.client.indices.create, index=new_name, body=self._get_index_definition())
+                self.with_retries(self.datastore.client.indices.create, index=new_name,
+                                  mappings=self._get_index_mappings(), settings=self._get_index_settings())
 
                 # For all aliases related to the index, add a new alias to the reindex index
                 for alias, alias_data in index_data['aliases'].items():
@@ -772,7 +776,7 @@ class ESCollection(Generic[ModelType]):
 
                 # Rename reindexed index
                 try:
-                    clone_body = {"settings": self._get_index_definition()['settings']}
+                    clone_body = {"settings": self._get_index_settings()}
                     self._safe_index_copy(self.datastore.client.indices.clone, new_name, index, body=clone_body)
 
                     # Restore original aliases for the index
@@ -1469,15 +1473,15 @@ class ESCollection(Generic[ModelType]):
 
             return result
 
+        except (elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
+            raise SearchRetryException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
+
         except (elasticsearch.TransportError, elasticsearch.RequestError) as e:
             try:
                 err_msg = e.info['error']['root_cause'][0]['reason']
             except (ValueError, KeyError, IndexError):
                 err_msg = str(e)
             raise SearchException(err_msg)
-
-        except (elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
-            raise SearchRetryException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
 
         except Exception as error:
             raise SearchException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
@@ -1962,16 +1966,18 @@ class ESCollection(Generic[ModelType]):
         if not pol_req.ok:
             raise ILMException(f"ERROR: Failed to create ILM policy: {self.name}_policy")
 
-    def _get_index_definition(self):
-        index_def = deepcopy(default_index)
-        if 'settings' not in index_def:
-            index_def['settings'] = {}
-        if 'index' not in index_def['settings']:
-            index_def['settings']['index'] = {}
-        index_def['settings']['index']['number_of_shards'] = self.shards
-        index_def['settings']['index']['number_of_replicas'] = self.replicas
+    def _get_index_settings(self) -> dict:
+        default_stub: dict = deepcopy(default_index)
+        settings: dict = default_stub.pop('settings', {})
 
-        mappings = deepcopy(default_mapping)
+        if 'index' not in settings:
+            settings['index'] = {}
+        settings['index']['number_of_shards'] = self.shards
+        settings['index']['number_of_replicas'] = self.replicas
+        return settings
+
+    def _get_index_mappings(self) -> dict:
+        mappings: dict = deepcopy(default_mapping)
         if self.model_class:
             mappings['properties'], mappings['dynamic_templates'] = \
                 build_mapping(self.model_class.fields().values())
@@ -1994,9 +2000,7 @@ class ESCollection(Generic[ModelType]):
             "type": 'text',
         }
 
-        index_def['mappings'] = mappings
-
-        return index_def
+        return mappings
 
     def __get_possible_fields(self, field):
         field_types = [field.__name__.lower()]
@@ -2044,7 +2048,8 @@ class ESCollection(Generic[ModelType]):
         if not self.with_retries(self.datastore.client.indices.exists, index=self.name):
             log.debug(f"Index {self.name.upper()} does not exists. Creating it now...")
             try:
-                self.with_retries(self.datastore.client.indices.create, index=self.index_name, body=self._get_index_definition())
+                self.with_retries(self.datastore.client.indices.create, index=self.index_name,
+                                  mappings=self._get_index_mappings(), settings=self._get_index_settings())
             except elasticsearch.exceptions.RequestError as e:
                 if "resource_already_exists_exception" not in str(e):
                     raise
@@ -2079,7 +2084,10 @@ class ESCollection(Generic[ModelType]):
             if not self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
                 log.debug(f"Index template {self.name.upper()} does not exists. Creating it now...")
 
-                index = self._get_index_definition()
+                index: dict[str, Any] = {
+                    'mappings': self._get_index_mappings(),
+                    'settings': self._get_index_settings()
+                }
 
                 index["index_patterns"] = [f"{self.name}-*"]
                 index["order"] = 1
