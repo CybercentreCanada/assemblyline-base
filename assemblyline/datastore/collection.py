@@ -115,14 +115,6 @@ class ESCollection(Generic[ModelType]):
     DEFAULT_SEARCH_FIELD = '__text__'
     DEFAULT_SORT = [{'_id': 'asc'}]
     FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
-    HISTOGRAM_MAP = {
-        "minute": "1m",
-        "hour": "1h",
-        "day": "1d",
-        "week": "1w",
-        "month": "1M",
-        "year": "1y",
-    }
     MAX_GROUP_LIMIT = 10
     MAX_FACET_LIMIT = 100
     MAX_RETRY_BACKOFF = 10
@@ -149,7 +141,6 @@ class ESCollection(Generic[ModelType]):
         UPDATE_SET,
         UPDATE_DELETE,
     ]
-    VALID_HISTOGRAM_GAPS = set(["1m", "1h", "1d", "1w", "1M", "1y"])
     DEFAULT_SEARCH_VALUES = {
         'timeout': None,
         'field_list': None,
@@ -1393,7 +1384,7 @@ class ESCollection(Generic[ModelType]):
         if parsed_values['histogram_active']:
             query_body["aggregations"] = query_body.get("aggregations", {})
             if parsed_values['histogram_type'] == "date_histogram":
-                interval_type = "calendar_interval"
+                interval_type = "fixed_interval"
             else:
                 interval_type = "interval"
             query_body["aggregations"]["histogram"] = {
@@ -1683,11 +1674,6 @@ class ESCollection(Generic[ModelType]):
             if not gaps_count:
                 try:
                     t_gap = gap.strip('+').strip('-')
-                    t_gap = self.HISTOGRAM_MAP.get(t_gap, t_gap)
-                    if t_gap not in self.VALID_HISTOGRAM_GAPS:
-                        raise SearchException(
-                            f"{gap} is not a valid date historgram gap. "
-                            f"Valid gaps are: {', '.join(self.VALID_HISTOGRAM_GAPS)}")
 
                     parsed_start = dm(self.datastore.to_pydatemath(start)).int_timestamp
                     parsed_end = dm(self.datastore.to_pydatemath(end)).int_timestamp
