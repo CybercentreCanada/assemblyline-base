@@ -1,5 +1,5 @@
 from assemblyline import odm
-from . import PerformanceTimer
+from assemblyline.odm.messages import PerformanceTimer
 
 MSG_TYPES = {"WatcherHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.watcher_heartbeat.WatcherMessage"
