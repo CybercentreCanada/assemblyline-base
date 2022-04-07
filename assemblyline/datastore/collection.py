@@ -558,10 +558,9 @@ class ESCollection(Generic[ModelType]):
             if not self.with_retries(self.datastore.client.indices.exists_alias, name=f"{self.name}-archive"):
                 log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
 
-                index = {"aliases": {f"{self.name}-archive": {"is_write_index": True}}}
-
                 try:
-                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-000001", body=index)
+                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-000001",
+                                      aliases={f"{self.name}-archive": {"is_write_index": True}})
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
@@ -2104,10 +2103,9 @@ class ESCollection(Generic[ModelType]):
             if not self.with_retries(self.datastore.client.indices.exists_alias, name=f"{self.name}-archive"):
                 log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
 
-                index = {"aliases": {f"{self.name}-archive": {"is_write_index": True}}}
-
                 try:
-                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-000001", body=index)
+                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-000001",
+                                      aliases={f"{self.name}-archive": {"is_write_index": True}})
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
