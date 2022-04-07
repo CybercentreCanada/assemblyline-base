@@ -1,5 +1,4 @@
 from assemblyline import odm
-from cv2 import DescriptorMatcher
 
 
 @odm.model(index=True, store=False, description="Tagging Model")
