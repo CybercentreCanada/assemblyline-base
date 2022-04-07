@@ -3,7 +3,6 @@
 # Push core containers
 docker push cccs/elasticsearch --all-tags
 docker push cccs/minio --all-tags
-docker push cccs/nginx-ssl --all-tags
 docker push cccs/nginx-ssl-frontend --all-tags
 
 # Push dev containers

@@ -17,6 +17,9 @@ ENV TEMPLATE full
 ENV ACCESS_LOG off
 ENV ERROR_LOG /dev/stderr
 ENV ERROR_LEVEL notice
+ENV READ_TIMEOUT 60s
+ENV CONNECT_TIMEOUT 60s
+ENV SEND_TIMEOUT 60s
 
 COPY http_redirect.conf /etc/nginx/conf.d/
 COPY full.template /opt/

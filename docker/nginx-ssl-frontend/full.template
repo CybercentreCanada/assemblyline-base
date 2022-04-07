@@ -19,6 +19,10 @@ server {
 
     access_log    ${ACCESS_LOG};
 
+    proxy_read_timeout ${READ_TIMEOUT};
+    proxy_connect_timeout ${CONNECT_TIMEOUT};
+    proxy_send_timeout ${SEND_TIMEOUT};
+
     location / {
         try_files    ${DOLLAR}uri @frontend;
     }
@@ -27,7 +31,7 @@ server {
         add_header            X-Frame-Options            SAMEORIGIN;
         add_header            Strict-Transport-Security  "max-age=31536000; includeSubDomains";
 
-	    proxy_set_header      X-Forwarded-For            ${DOLLAR}proxy_add_x_forwarded_for;
+        proxy_set_header      X-Forwarded-For            ${DOLLAR}proxy_add_x_forwarded_for;
         proxy_set_header      X-Remote-Cert-Verified     ${DOLLAR}ssl_client_verify;
         proxy_set_header      X-Remote-DN                ${DOLLAR}ssl_client_s_dn;
         proxy_set_header      Host                       ${DOLLAR}http_host;
@@ -66,7 +70,7 @@ server {
         add_header            X-Frame-Options            SAMEORIGIN;
         add_header            Strict-Transport-Security  "max-age=31536000; includeSubDomains";
 
-	    proxy_set_header      X-Forwarded-For            ${DOLLAR}proxy_add_x_forwarded_for;
+        proxy_set_header      X-Forwarded-For            ${DOLLAR}proxy_add_x_forwarded_for;
         proxy_set_header      X-Remote-Cert-Verified     ${DOLLAR}ssl_client_verify;
         proxy_set_header      X-Remote-DN                ${DOLLAR}ssl_client_s_dn;
         proxy_set_header      Host                       ${DOLLAR}http_host;
