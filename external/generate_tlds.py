@@ -22,7 +22,7 @@ if __name__ == "__main__":
     tlds_url = 'https://data.iana.org/TLD/tlds-alpha-by-domain.txt'
     tlds_location = "../assemblyline/common/net_static.py"
     if not os.path.exists(tlds_location):
-        print("Could not find attack_map.py file. Make sure you run this script "
+        print("Could not find net_static.py file. Make sure you run this script "
               "in its home directory otherwise this won't work.")
         exit(1)
 
