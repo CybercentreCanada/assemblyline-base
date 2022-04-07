@@ -5,15 +5,17 @@ from assemblyline.odm.models.statistics import Statistics
 Classification = forge.get_classification()
 
 
-@odm.model(index=True, store=True)
+@odm.model(index=True, store=True, description="Model of Service Heuristics")
 class Heuristic(odm.Model):
-    attack_id = odm.List(odm.Keyword(copyto="__text__"), default=[])          # List of all associated Att&ck IDs
-    classification = odm.Classification(default=Classification.UNRESTRICTED)  # Classification of the heuristic
-    description = odm.Text(copyto="__text__")                                 # Description of the heuristic
-    filetype = odm.Keyword(copyto="__text__")                                 # Type of file targeted
-    heur_id = odm.Keyword(copyto="__text__")                                  # Heuristic ID
-    name = odm.Keyword(copyto="__text__")                                     # Name of the heuristic
-    score = odm.Integer()                                                     # Default score of the heuristic
-    signature_score_map = odm.Mapping(odm.Integer(), default={})              # Score of signatures for this heuristic
-    stats = odm.Compound(Statistics, default={})
-    max_score = odm.Optional(odm.Integer())                                   # Maximum score for heuristic
+    attack_id = odm.List(odm.Keyword(copyto="__text__"), default=[], description="List of all associated ATT&CK IDs")
+    classification = odm.Classification(default=Classification.UNRESTRICTED,
+                                        description="Classification of the heuristic")
+    description = odm.Text(copyto="__text__", description="Description of the heuristic")
+    filetype = odm.Keyword(copyto="__text__", description="What type of files does this heuristic target?")
+    heur_id = odm.Keyword(copyto="__text__", description="ID of the Heuristic")
+    name = odm.Keyword(copyto="__text__", description="Name of the heuristic")
+    score = odm.Integer(description="Default score of the heuristic")
+    signature_score_map = odm.Mapping(odm.Integer(), default={},
+                                      description="Score of signatures for this heuristic")
+    stats = odm.Compound(Statistics, default={}, description="Statistics related to the Heuristic")
+    max_score = odm.Optional(odm.Integer(), description="Maximum score for heuristic")
