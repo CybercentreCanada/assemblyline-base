@@ -2,7 +2,6 @@ from typing import Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
-from pandas import describe_option
 
 OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'role']
 
