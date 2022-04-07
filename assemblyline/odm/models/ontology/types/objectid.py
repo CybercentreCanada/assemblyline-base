@@ -9,7 +9,7 @@ class ObjectID(odm.Model):
     tag = odm.Optional(odm.Text())
     # The hash of the tree ID
     treeid = odm.Optional(odm.Text())
-    # Human readable tree ID (concatenation of process names)
-    richid = odm.Optional(odm.Text())
+    # Human readable tree ID (concatenation of tags)
+    processtree = odm.Optional(odm.Text())
     # The time at which the object was observed
     time_observed = odm.Optional(odm.Date())
