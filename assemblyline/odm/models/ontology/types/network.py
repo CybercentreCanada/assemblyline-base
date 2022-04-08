@@ -15,7 +15,6 @@ class NetworkConnection(odm.Model):
     direction = odm.Enum(["outbound", "inbound", "unknown"], description="The direction of the network connection")
 
 
-
 @odm.model(description="Details for a DNS request")
 class NetworkDNS(odm.Model):
     connection_details = odm.Compound(NetworkConnection, description="The low-level details of the DNS request")
@@ -26,7 +25,7 @@ class NetworkDNS(odm.Model):
 
 @odm.model(description="Details for an HTTP request")
 class NetworkHTTP(odm.Model):
-    connection_details = odm.Compound(NetworkConnection, description="The low-level details of the DNS request")
+    connection_details = odm.Compound(NetworkConnection, description="The low-level details of the HTTP request")
     request_uri = odm.URI(description="The URI requested")
     request_headers = odm.Mapping(odm.Json(), description="Headers included in the request")
     request_body = odm.Optional(odm.Text(), description="The body of the request")

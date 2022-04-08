@@ -7,7 +7,7 @@ class Process(odm.Model):
     objectid = odm.Compound(ObjectID, description="The object ID of the process object")
 
     # Parent process details
-    pobjectid = odm.Compound(ObjectID, description="The GUID associated with the parent process")
+    pobjectid = odm.Compound(ObjectID, description="The object ID of the parent process object")
     pimage = odm.Optional(odm.Text(), description="The image of the parent process that spawned this process")
     pcommand_line = odm.Optional(odm.Text(), description="The command line that the parent process ran")
     ppid = odm.Optional(odm.Integer(), description="The process ID of the parent process")
