@@ -1,6 +1,5 @@
 from assemblyline import odm
 from assemblyline.odm.models.alert import Alert
-from cv2 import DescriptorMatcher
 
 MSG_TYPES = {"AlertCreated", "AlertUpdated"}
 LOADER_CLASS = "assemblyline.odm.messages.alert.AlertMessage"
