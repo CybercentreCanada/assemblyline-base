@@ -6,7 +6,7 @@ from assemblyline.odm.models.service import EnvironmentVariable
 OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'role']
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
     lower: bool = odm.Boolean(description="Password must contain lowercase letters")
     number: bool = odm.Boolean(description="Password must contain numbers")
@@ -80,9 +80,9 @@ DEFAULT_SIGNUP = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="LDAP Configuration")
 class LDAP(odm.Model):
-    enabled: bool = odm.Boolean()
+    enabled: bool = odm.Boolean(description="LDAP enabled?")
     admin_dn: str = odm.Optional(odm.Keyword())
     bind_user: str = odm.Optional(odm.Keyword())
     bind_pass: str = odm.Optional(odm.Keyword())
@@ -123,14 +123,15 @@ DEFAULT_LDAP = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Internal Authentication Configuration")
 class Internal(odm.Model):
-    enabled: bool = odm.Boolean()
-    failure_ttl: int = odm.Integer()
-    max_failures: int = odm.Integer()
+    enabled: bool = odm.Boolean(description="Internal authentication allowed?")
+    failure_ttl: int = odm.Integer(description="How long to wait after `max_failures` before re-attempting login?")
+    max_failures: int = odm.Integer(description="Maximum number of fails allowed before timeout")
     password_requirements: PasswordRequirement = odm.Compound(PasswordRequirement,
-                                                              default=DEFAULT_PASSWORD_REQUIREMENTS)
-    signup: Signup = odm.Compound(Signup, default=DEFAULT_SIGNUP)
+                                                              default=DEFAULT_PASSWORD_REQUIREMENTS,
+                                                              description="Password requirements")
+    signup: Signup = odm.Compound(Signup, default=DEFAULT_SIGNUP, description="Signup method")
 
 
 DEFAULT_INTERNAL = {
@@ -160,7 +161,7 @@ class AppProvider(odm.Model):
     client_secret: str = odm.Optional(odm.Keyword())
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="OAuth Provider Configuration")
 class OAuthProvider(odm.Model):
     auto_create: str = odm.Boolean(default=True)
     auto_sync: str = odm.Boolean(default=False)
@@ -230,11 +231,12 @@ DEFAULT_OAUTH_PROVIDERS = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="OAuth Configuration")
 class OAuth(odm.Model):
-    enabled: bool = odm.Boolean()
-    gravatar_enabled: bool = odm.Boolean()
-    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider), default=DEFAULT_OAUTH_PROVIDERS)
+    enabled: bool = odm.Boolean(description="Enable use of OAuth?")
+    gravatar_enabled: bool = odm.Boolean(description="Enable gravatar?")
+    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider), default=DEFAULT_OAUTH_PROVIDERS,
+                                                      description="OAuth provider configuration")
 
 
 DEFAULT_OAUTH = {
@@ -244,15 +246,16 @@ DEFAULT_OAUTH = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Authentication Methods")
 class Auth(odm.Model):
-    allow_2fa: bool = odm.Boolean()
-    allow_apikeys: bool = odm.Boolean()
-    allow_extended_apikeys: bool = odm.Boolean()
-    allow_security_tokens: bool = odm.Boolean()
-    internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
-    ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP)
-    oauth: OAuth = odm.Compound(OAuth, default=DEFAULT_OAUTH)
+    allow_2fa: bool = odm.Boolean(description="Allow 2FA?")
+    allow_apikeys: bool = odm.Boolean(description="Allow API keys?")
+    allow_extended_apikeys: bool = odm.Boolean(description="Allow extended API keys?")
+    allow_security_tokens: bool = odm.Boolean(description="Allow security tokens?")
+    internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL,
+                                      description="Internal authentication settings")
+    ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP, description="LDAP settings")
+    oauth: OAuth = odm.Compound(OAuth, default=DEFAULT_OAUTH, description="OAuth settings")
 
 
 DEFAULT_AUTH = {
