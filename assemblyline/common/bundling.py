@@ -8,6 +8,7 @@ import tempfile
 import time
 
 from copy import copy
+from assemblyline.common.isotime import now_as_iso
 from cart import pack_stream, unpack_stream, is_cart
 
 from assemblyline.common import forge
@@ -210,6 +211,8 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                 if alert:
                     if 'bundle.source' not in alert['metadata']:
                         alert['metadata']['bundle.source'] = config.ui.fqdn
+                    if 'bundle.created' not in alert['metadata']:
+                        alert['metadata']['bundle.created'] = now_as_iso()
                     if Classification.enforce and 'bundle.classification' not in alert['metadata']:
                         alert['metadata']['bundle.classification'] = alert['classification']
                     data['alert'] = alert
@@ -315,6 +318,8 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
             if alert:
                 alert['classification'] = Classification.max_classification(alert['classification'],
                                                                             min_classification)
+                alert.setdefault('metadata', {})
+                alert['metadata']['bundle.loaded'] = now_as_iso()
                 datastore.alert.save(alert['alert_id'], alert)
 
             if files:
