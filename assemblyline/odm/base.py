@@ -913,32 +913,46 @@ class Model:
                 return field_class.__name__, None
 
             return field_class.__class__.__name__, None
-        model_deps = dict()
+
+        model_deps = list()
         for field, info in cls.fields().items():
             field_type, field_class = get_type(info)
+
+            # If the field is in fact a model class, generate markdown and append to list
             if field_class and issubclass(field_class, Model) and field_class.__module__ == cls.__module__:
-                model_deps[field_class.__name__] = field_class.markdown(toc_depth=toc_depth+1, defaults=info.default)
+                model_deps.append(field_class.markdown(toc_depth=toc_depth+1, defaults=info.default))
+
+            # Field description
             description = info.description
+
+            # If field type is Enum, then show the possible values that can be used in the description
             if field_type == "Enum":
                 values = info.child_type.values if info.__class__ != Enum else info.values
                 values = [f'"{v}"' if v else str(v) for v in values]
                 description = f'{description}<br>Values:<br>`{", ".join(values)}`'
+
+            # Is this a required field?
             required = ":material-checkbox-marked-outline: Yes" if info.__class__ != Optional else ":material-minus-box-outline: Optional"
 
+            # Determine the correct default values to display
             default = f"`{info.default}`"
+            # If the field is a model, then provide a link to that documentation
             if field_class and issubclass(field_class, Model) and isinstance(info.default, dict):
                 ref_link = field_type[field_type.index('('):field_type.index(')')+1]
                 default = f"See [{field_class.__name__}]{ref_link} for more details."
+
+            # Handle how to display values from provided defaults (different from field defaults)
             elif isinstance(defaults, dict):
                 val = defaults.get(field, {})
                 default = f"`{val if not isinstance(val, dict) else info.default}`"
             elif isinstance(defaults, list):
-                default = defaults
+                default = f'`{defaults}`'
             row = f"| {field} | {field_type} | {description} | {required} | {default} |\n"
             table += row
 
         markdown_content += table + "\n\n"
-        for markdown in sorted(model_deps.values()):
+        # Display model dependencies in order
+        for markdown in sorted(model_deps):
             markdown_content += markdown
 
         return markdown_content

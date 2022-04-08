@@ -24,14 +24,15 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False,
+           description="Configuration block for [GC Notify](https://notification.canada.ca/) signup and password reset")
 class Notify(odm.Model):
-    base_url: str = odm.Optional(odm.Keyword())
-    api_key: str = odm.Optional(odm.Keyword())
-    registration_template: str = odm.Optional(odm.Keyword())
-    password_reset_template: str = odm.Optional(odm.Keyword())
-    authorization_template: str = odm.Optional(odm.Keyword())
-    activated_template: str = odm.Optional(odm.Keyword())
+    base_url: str = odm.Optional(odm.Keyword(), description="Base URL")
+    api_key: str = odm.Optional(odm.Keyword(), description="API key")
+    registration_template: str = odm.Optional(odm.Keyword(), description="Registration template")
+    password_reset_template: str = odm.Optional(odm.Keyword(), description="Password reset template")
+    authorization_template: str = odm.Optional(odm.Keyword(), description="Authorization template")
+    activated_template: str = odm.Optional(odm.Keyword(), description="Activated Template")
 
 
 DEFAULT_NOTIFY = {
@@ -44,14 +45,14 @@ DEFAULT_NOTIFY = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Configuration block for SMTP signup and password reset")
 class SMTP(odm.Model):
-    from_adr: str = odm.Optional(odm.Keyword())
-    host: str = odm.Optional(odm.Keyword())
-    password: str = odm.Optional(odm.Keyword())
-    port: int = odm.Integer()
-    tls: bool = odm.Boolean()
-    user: str = odm.Optional(odm.Keyword())
+    from_adr: str = odm.Optional(odm.Keyword(), description="Email address used for sender")
+    host: str = odm.Optional(odm.Keyword(), description="SMTP host")
+    password: str = odm.Optional(odm.Keyword(), description="Password for SMTP server")
+    port: int = odm.Integer(description="Port of SMTP server")
+    tls: bool = odm.Boolean(description="Should we communicate with SMTP server via TLS?")
+    user: str = odm.Optional(odm.Keyword(), description="User to authenticate to the SMTP server")
 
 
 DEFAULT_SMTP = {
@@ -64,12 +65,14 @@ DEFAULT_SMTP = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Signup Configuration")
 class Signup(odm.Model):
-    enabled: bool = odm.Boolean()
-    smtp: SMTP = odm.Compound(SMTP, default=DEFAULT_SMTP)
-    notify: Notify = odm.Compound(Notify, default=DEFAULT_NOTIFY)
-    valid_email_patterns: List[str] = odm.List(odm.Keyword())
+    enabled: bool = odm.Boolean(description="Can a user automatically signup for the system")
+    smtp: SMTP = odm.Compound(SMTP, default=DEFAULT_SMTP, description="Signup via SMTP")
+    notify: Notify = odm.Compound(Notify, default=DEFAULT_NOTIFY, description="Signup via GC Notify")
+    valid_email_patterns: List[str] = odm.List(
+        odm.Keyword(),
+        description="Email patterns that will be allowed to automatically signup for an account")
 
 
 DEFAULT_SIGNUP = {
@@ -82,23 +85,27 @@ DEFAULT_SIGNUP = {
 
 @odm.model(index=False, store=False, description="LDAP Configuration")
 class LDAP(odm.Model):
-    enabled: bool = odm.Boolean(description="LDAP enabled?")
-    admin_dn: str = odm.Optional(odm.Keyword())
-    bind_user: str = odm.Optional(odm.Keyword())
-    bind_pass: str = odm.Optional(odm.Keyword())
-    auto_create: bool = odm.Boolean()
-    auto_sync: bool = odm.Boolean()
-    base: str = odm.Keyword()
-    classification_mappings: Dict[str, str] = odm.Any()
-    email_field: str = odm.Keyword()
-    group_lookup_query: str = odm.Keyword()
-    image_field: str = odm.Keyword()
-    image_format: str = odm.Keyword()
-    name_field: str = odm.Keyword()
-    signature_importer_dn: str = odm.Optional(odm.Keyword())
-    signature_manager_dn: str = odm.Optional(odm.Keyword())
-    uid_field: str = odm.Keyword()
-    uri: str = odm.Keyword()
+    enabled: bool = odm.Boolean(description="Should LDAP be enabled or not?")
+    admin_dn: str = odm.Optional(odm.Keyword(), description="DN of the group or the user who will get admin privileges")
+    bind_user: str = odm.Optional(odm.Keyword(), description="User use to query the LDAP server")
+    bind_pass: str = odm.Optional(odm.Keyword(), description="Password used to query the LDAP server")
+    auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
+    auto_sync: bool = odm.Boolean(description="Should we automatically sync with LDAP server on each login?")
+    base: str = odm.Keyword(description="Base DN for the users")
+    classification_mappings: Dict[str, str] = odm.Any(description="Classification mapping")
+    email_field: str = odm.Keyword(description="Name of the field containing the email address")
+    group_lookup_query: str = odm.Keyword(description="How the group lookup is queried")
+    image_field: str = odm.Keyword(description="Name of the field containing the user's avatar")
+    image_format: str = odm.Keyword(description="Type of image used to store the avatar")
+    name_field: str = odm.Keyword(description="Name of the field containing the user's name")
+    signature_importer_dn: str = odm.Optional(
+        odm.Keyword(),
+        description="DN of the group or the user who will get signature_importer role")
+    signature_manager_dn: str = odm.Optional(
+        odm.Keyword(),
+        description="DN of the group or the user who will get signature_manager role")
+    uid_field: str = odm.Keyword(description="Field name for the UID")
+    uri: str = odm.Keyword(description="URI to the LDAP server")
 
 
 DEFAULT_LDAP = {
@@ -145,50 +152,65 @@ DEFAULT_INTERNAL = {
 
 @odm.model(index=False, store=False)
 class OAuthAutoProperty(odm.Model):
-    field: str = odm.Keyword()
-    pattern: str = odm.Keyword()
-    type: str = odm.Enum(OAUTH_AUTO_PROPERTY_TYPE)
-    value: str = odm.Keyword()
+    field: str = odm.Keyword(description="Field to apply `pattern` to")
+    pattern: str = odm.Keyword(description="Regex pattern for auto-prop assignment")
+    type: str = odm.Enum(OAUTH_AUTO_PROPERTY_TYPE, description="Type of property assignment on pattern match")
+    value: str = odm.Keyword(description="Assigned property value")
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="App provider")
 class AppProvider(odm.Model):
-    access_token_url: str = odm.Keyword()
-    user_get: str = odm.Optional(odm.Keyword())
-    group_get: str = odm.Optional(odm.Keyword())
+    access_token_url: str = odm.Keyword(description="URL used to get the access token")
+    user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
+    group_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
     scope: str = odm.Keyword()
-    client_id: str = odm.Optional(odm.Keyword())
-    client_secret: str = odm.Optional(odm.Keyword())
+    client_id: str = odm.Optional(odm.Keyword(), description="ID of your application to authenticate to the OAuth")
+    client_secret: str = odm.Optional(odm.Keyword(),
+                                      description="Password to your application to authenticate to the OAuth provider")
 
 
 @odm.model(index=False, store=False, description="OAuth Provider Configuration")
 class OAuthProvider(odm.Model):
-    auto_create: str = odm.Boolean(default=True)
-    auto_sync: str = odm.Boolean(default=False)
-    auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[])
+    auto_create: str = odm.Boolean(default=True, description="Auto-create users if they are missing")
+    auto_sync: str = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
+    auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[],
+                                                        description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
-    uid_randomize: str = odm.Boolean(default=False)
-    uid_randomize_digits: str = odm.Integer(default=0)
-    uid_randomize_delimiter: str = odm.Keyword(default="-")
-    uid_regex: str = odm.Optional(odm.Keyword())
-    uid_format: str = odm.Optional(odm.Keyword())
-    client_id: str = odm.Optional(odm.Keyword())
-    client_secret: str = odm.Optional(odm.Keyword())
-    request_token_url: str = odm.Optional(odm.Keyword())
-    request_token_params: str = odm.Optional(odm.Keyword())
-    access_token_url: str = odm.Optional(odm.Keyword())
-    access_token_params: str = odm.Optional(odm.Keyword())
-    authorize_url: str = odm.Optional(odm.Keyword())
-    authorize_params: str = odm.Optional(odm.Keyword())
-    api_base_url: str = odm.Optional(odm.Keyword())
-    client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
-    jwks_uri: str = odm.Optional(odm.Keyword())
-    uid_field: str = odm.Optional(odm.Keyword())
-    user_get: str = odm.Optional(odm.Keyword())
-    user_groups: str = odm.Optional(odm.Keyword())
-    user_groups_data_field: str = odm.Optional(odm.Keyword())
-    user_groups_name_field: str = odm.Optional(odm.Keyword())
-    use_new_callback_format: str = odm.Boolean(default=False)
+    uid_randomize: str = odm.Boolean(default=False,
+                                     description="Should we generate a random username for the authenticated user?")
+    uid_randomize_digits: str = odm.Integer(default=0,
+                                            description="How many digits should we add at the end of the username?")
+    uid_randomize_delimiter: str = odm.Keyword(default="-",
+                                               description="What is the delimiter used by the random name generator?")
+    uid_regex: str = odm.Optional(
+        odm.Keyword(),
+        description="Regex used to parse an email address and capture parts to create a user ID out of it")
+    uid_format: str = odm.Optional(odm.Keyword(),
+                                   description="Format of the user ID based on the captured parts from the regex")
+    client_id: str = odm.Optional(odm.Keyword(),
+                                  description="ID of your application to authenticate to the OAuth provider")
+    client_secret: str = odm.Optional(odm.Keyword(),
+                                      description="Password to your application to authenticate to the OAuth provider")
+    request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
+    request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
+    access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
+    access_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to get access token")
+    authorize_url: str = odm.Optional(odm.Keyword(), description="URL used to authorize access to a resource")
+    authorize_params: str = odm.Optional(odm.Keyword(), description="Parameters used to authorize access to a resource")
+    api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
+    client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                                 description="Keyword arguments passed to the different URLs")
+    jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
+    uid_field: str = odm.Optional(odm.Keyword(), description="Name of the field that will contain the user ID")
+    user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
+    user_groups: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
+    user_groups_data_field: str = odm.Optional(
+        odm.Keyword(),
+        description="Field return by the group info API call that contains the list of groups")
+    user_groups_name_field: str = odm.Optional(
+        odm.Keyword(),
+        description="Name of the field in the list of groups that contains the name of the group")
+    use_new_callback_format: str = odm.Boolean(default=False, description="Should we use the new callback method?")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
