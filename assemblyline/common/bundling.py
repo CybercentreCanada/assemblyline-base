@@ -190,6 +190,8 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                     # Add bundling metadata
                     if 'bundle.source' not in submission['metadata']:
                         submission['metadata']['bundle.source'] = config.ui.fqdn
+                    if 'bundle.created' not in submission['metadata']:
+                        submission['metadata']['bundle.created'] = now_as_iso()
                     if Classification.enforce and 'bundle.classification' not in submission['metadata']:
                         submission['metadata']['bundle.classification'] = submission['classification']
 
@@ -308,6 +310,8 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                 # Make sure bundle's submission meets minimum classification and save the submission
                 submission['classification'] = Classification.max_classification(submission['classification'],
                                                                                  min_classification)
+                submission.setdefault('metadata', {})
+                submission['metadata']['bundle.loaded'] = now_as_iso()
                 submission.update(Classification.get_access_control_parts(submission['classification']))
 
                 if not rescan_services:
