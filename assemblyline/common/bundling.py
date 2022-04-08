@@ -312,6 +312,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                                                                                  min_classification)
                 submission.setdefault('metadata', {})
                 submission['metadata']['bundle.loaded'] = now_as_iso()
+                submission['metadata'].pop('replay', None)
                 submission.update(Classification.get_access_control_parts(submission['classification']))
 
                 if not rescan_services:
@@ -324,6 +325,10 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                                                                             min_classification)
                 alert.setdefault('metadata', {})
                 alert['metadata']['bundle.loaded'] = now_as_iso()
+
+                alert['metadata'].pop('replay', None)
+                alert['workflows_completed'] = False
+
                 datastore.alert.save(alert['alert_id'], alert)
 
             if files:
