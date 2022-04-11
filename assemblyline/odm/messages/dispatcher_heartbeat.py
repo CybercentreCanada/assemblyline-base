@@ -1,49 +1,49 @@
 from assemblyline import odm
-from . import PerformanceTimer
+from assemblyline.odm.messages import PerformanceTimer
 
 MSG_TYPES = {"DispatcherHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.dispatcher_heartbeat.DispatcherMessage"
 
 
-@odm.model()
+@odm.model(description="Queue Model")
 class Queues(odm.Model):
-    ingest = odm.Integer()
-    start = odm.List(odm.Integer())
-    result = odm.List(odm.Integer())
-    command = odm.List(odm.Integer())
+    ingest = odm.Integer(description="Number of submissions in ingest queue")
+    start = odm.List(odm.Integer(), description="Number of submissions that started")
+    result = odm.List(odm.Integer(), description="Number of results in queue")
+    command = odm.List(odm.Integer(), description="Number of commands in queue")
 
 
-@odm.model()
+@odm.model(description="Inflight Model")
 class Inflight(odm.Model):
-    max = odm.Integer()
-    outstanding = odm.Integer()
-    per_instance = odm.List(odm.Integer())
+    max = odm.Integer(description="Maximum number of submissions")
+    outstanding = odm.Integer(description="Number of outstanding submissions")
+    per_instance = odm.List(odm.Integer(), description="Number of submissions per Dispatcher instance")
 
 
-@odm.model()
+@odm.model(description="Metrics Model")
 class Metrics(odm.Model):
-    files_completed = odm.Integer()
-    submissions_completed = odm.Integer()
-    service_timeouts = odm.Integer()
-    cpu_seconds = PerformanceTimer()
-    cpu_seconds_count = odm.Integer()
-    busy_seconds = PerformanceTimer()
-    busy_seconds_count = odm.Integer()
-    save_queue = odm.Integer()
+    files_completed = odm.Integer(description="Number of files completed")
+    submissions_completed = odm.Integer(description="Number of submissions completed")
+    service_timeouts = odm.Integer(description="Number of service timeouts")
+    cpu_seconds = PerformanceTimer(description="CPU time")
+    cpu_seconds_count = odm.Integer(description="CPU count")
+    busy_seconds = PerformanceTimer(description="Busy CPU time")
+    busy_seconds_count = odm.Integer(description="Busy CPU count")
+    save_queue = odm.Integer(description="Number of items in save queue")
 
 
-@odm.model()
+@odm.model(description="Heartbeat Model")
 class Heartbeat(odm.Model):
-    inflight = odm.Compound(Inflight)
-    instances = odm.Integer()
-    metrics = odm.Compound(Metrics)
-    queues = odm.Compound(Queues)
-    component = odm.Keyword()
+    inflight = odm.Compound(Inflight, description="Inflight submissions")
+    instances = odm.Integer(description="Number of instances")
+    metrics = odm.Compound(Metrics, description="Dispatcher metrics")
+    queues = odm.Compound(Queues, description="Dispatcher queues")
+    component = odm.Keyword(description="Component name")
 
 
-@odm.model()
+@odm.model(description="Model of Dispatcher Heartbeat Messages")
 class DispatcherMessage(odm.Model):
-    msg = odm.Compound(Heartbeat)
-    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
-    msg_type = odm.Enum(values=MSG_TYPES, default="DispatcherHeartbeat")
-    sender = odm.Keyword()
+    msg = odm.Compound(Heartbeat, description="Heartbeat message")
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS, description="Loader class for message")
+    msg_type = odm.Enum(values=MSG_TYPES, default="DispatcherHeartbeat", description="Type of message")
+    sender = odm.Keyword(description="Sender of message")

@@ -4,29 +4,29 @@ MSG_TYPES = {"AlerterHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.alerter_heartbeat.AlerterMessage"
 
 
-@odm.model()
+@odm.model(description="Alerter Queues")
 class Queues(odm.Model):
-    alert = odm.Integer()
+    alert = odm.Integer(description="Number of alerts in queue")
 
 
-@odm.model()
+@odm.model(description="Alerter Metrics")
 class Metrics(odm.Model):
-    created = odm.Integer()
-    error = odm.Integer()
-    received = odm.Integer()
-    updated = odm.Integer()
+    created = odm.Integer(description="Number of alerts created")
+    error = odm.Integer(description="Number of alerts with errors")
+    received = odm.Integer(description="Number of alerts received")
+    updated = odm.Integer(description="Number of alerts updated")
 
 
-@odm.model()
+@odm.model(description="Heartbeat Model for Alerter")
 class Heartbeat(odm.Model):
-    instances = odm.Integer()
-    metrics = odm.Compound(Metrics)
-    queues = odm.Compound(Queues)
+    instances = odm.Integer(description="Number of Alerter instances")
+    metrics = odm.Compound(Metrics, description="Alert metrics")
+    queues = odm.Compound(Queues, description="Alert queues")
 
 
-@odm.model()
+@odm.model(description="Model of Alerter Heartbeat Message")
 class AlerterMessage(odm.Model):
-    msg = odm.Compound(Heartbeat)
-    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
-    msg_type = odm.Enum(values=MSG_TYPES, default="AlerterHeartbeat")
-    sender = odm.Keyword()
+    msg = odm.Compound(Heartbeat, description="Heartbeat message from Alerter")
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS, description="Loader class for message")
+    msg_type = odm.Enum(values=MSG_TYPES, default="AlerterHeartbeat", description="Type of message")
+    sender = odm.Keyword(description="Sender of message")

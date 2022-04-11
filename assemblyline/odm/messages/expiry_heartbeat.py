@@ -4,29 +4,30 @@ MSG_TYPES = {"ExpiryHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.expiry_heartbeat.ExpiryMessage"
 
 
-@odm.model()
+@odm.model(description="Expiry Stats")
 class Metrics(odm.Model):
-    alert = odm.Integer()
-    cached_file = odm.Integer()
-    emptyresult = odm.Integer()
-    error = odm.Integer()
-    file = odm.Integer()
-    filescore = odm.Integer()
-    result = odm.Integer()
-    submission = odm.Integer()
-    submission_tree = odm.Integer()
-    submission_summary = odm.Integer()
+    alert = odm.Integer(description="Number of alerts")
+    cached_file = odm.Integer(description="Number of cached files")
+    emptyresult = odm.Integer(description="Number of empty results")
+    error = odm.Integer(description="Number of errors")
+    file = odm.Integer(description="Number of files")
+    filescore = odm.Integer(description="Number of filscores")
+    result = odm.Integer(description="Number of results")
+    submission = odm.Integer(description="Number of submissions")
+    submission_tree = odm.Integer(description="Number of submission trees")
+    submission_summary = odm.Integer(description="Number of submission summaries")
 
-@odm.model()
+
+@odm.model(description="Heartbeat Model")
 class Heartbeat(odm.Model):
-    instances = odm.Integer()
-    metrics = odm.Compound(Metrics)
-    queues = odm.Compound(Metrics)
+    instances = odm.Integer(description="Number of instances")
+    metrics = odm.Compound(Metrics, description="Expiry metrics")
+    queues = odm.Compound(Metrics, description="Expiry queues")
 
 
-@odm.model()
+@odm.model(description="Model of Expiry Heartbeat Message")
 class ExpiryMessage(odm.Model):
-    msg = odm.Compound(Heartbeat)
-    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS)
-    msg_type = odm.Enum(values=MSG_TYPES, default="ExpiryHeartbeat")
-    sender = odm.Keyword()
+    msg = odm.Compound(Heartbeat, description="Hearbeat message")
+    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS, description="Loader class for message")
+    msg_type = odm.Enum(values=MSG_TYPES, default="ExpiryHeartbeat", description="Type of message")
+    sender = odm.Keyword(description="Sender of message")
