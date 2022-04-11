@@ -8,6 +8,7 @@ import tempfile
 import time
 
 from copy import copy
+from assemblyline.common.isotime import now_as_iso
 from cart import pack_stream, unpack_stream, is_cart
 
 from assemblyline.common import forge
@@ -189,6 +190,8 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                     # Add bundling metadata
                     if 'bundle.source' not in submission['metadata']:
                         submission['metadata']['bundle.source'] = config.ui.fqdn
+                    if 'bundle.created' not in submission['metadata']:
+                        submission['metadata']['bundle.created'] = now_as_iso()
                     if Classification.enforce and 'bundle.classification' not in submission['metadata']:
                         submission['metadata']['bundle.classification'] = submission['classification']
 
@@ -210,6 +213,8 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                 if alert:
                     if 'bundle.source' not in alert['metadata']:
                         alert['metadata']['bundle.source'] = config.ui.fqdn
+                    if 'bundle.created' not in alert['metadata']:
+                        alert['metadata']['bundle.created'] = now_as_iso()
                     if Classification.enforce and 'bundle.classification' not in alert['metadata']:
                         alert['metadata']['bundle.classification'] = alert['classification']
                     data['alert'] = alert
@@ -275,13 +280,16 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
 
         alert = data.get('alert', None)
         submission = data.get('submission', None)
-        results = data.get('results', None)
-        files = data.get('files', None)
-        errors = data.get('errors', None)
 
         try:
             if submission:
                 sid = submission['sid']
+
+                # Load results, files and errors
+                results = data.get('results', None)
+                files = data.get('files', None)
+                errors = data.get('errors', None)
+
                 # Check if we have all the service results
                 for res_key in submission['results']:
                     if results is None or (res_key not in results['results'].keys() and not allow_incomplete):
@@ -297,63 +305,70 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                     if errors is None or (err_key not in errors['errors'].keys() and not allow_incomplete):
                         raise IncompleteBundle("Incomplete errors in bundle. Skipping %s..." % sid)
 
-                if datastore.submission.get_if_exists(sid, as_obj=False):
-                    if exist_ok:
-                        return submission
+                # Check if the submission does not already exist
+                if not datastore.submission.exists(sid):
+                    # Make sure bundle's submission meets minimum classification and save the submission
+                    submission['classification'] = Classification.max_classification(submission['classification'],
+                                                                                     min_classification)
+                    submission.setdefault('metadata', {})
+                    submission['metadata']['bundle.loaded'] = now_as_iso()
+                    submission['metadata'].pop('replay', None)
+                    submission.update(Classification.get_access_control_parts(submission['classification']))
+
+                    if not rescan_services:
+                        # Save the submission in the system
+                        datastore.submission.save(sid, submission)
+
+                    # Make sure files meet minimum classification and save the files
+                    with forge.get_filestore() as filestore:
+                        for f, f_data in files['infos'].items():
+                            f_classification = Classification.max_classification(
+                                f_data['classification'], min_classification)
+                            datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_classification,
+                                                           cl_engine=Classification)
+                            try:
+                                filestore.upload(os.path.join(current_working_dir, f), f)
+                            except IOError:
+                                pass
+
+                        # Make sure results meet minimum classification and save the results
+                        for key, res in results['results'].items():
+                            if key.endswith(".e"):
+                                datastore.emptyresult.save(key, {"expiry_ts": res['expiry_ts']})
+                            else:
+                                res['classification'] = Classification.max_classification(
+                                    res['classification'], min_classification)
+                                datastore.result.save(key, res)
+
+                        # Make sure errors meet minimum classification and save the errors
+                        for ekey, err in errors['errors'].items():
+                            datastore.error.save(ekey, err)
+
+                        # Start the rescan
+                        if rescan_services and SubmissionClient:
+                            extracted_file_infos = {
+                                k: {vk: v[vk] for vk in ['magic', 'md5', 'mime', 'sha1', 'sha256', 'size', 'type']}
+                                for k, v in files['infos'].items()
+                                if k in files['list']
+                            }
+                            SubmissionClient(datastore=datastore, filestore=filestore,
+                                             config=config).rescan(submission, results['results'], extracted_file_infos,
+                                                                   files['tree'], list(errors['errors'].keys()),
+                                                                   rescan_services, completed_queue=completed_queue)
+                elif not exist_ok:
                     raise SubmissionAlreadyExist("Submission %s already exists." % sid)
 
-                # Make sure bundle's submission meets minimum classification and save the submission
-                submission['classification'] = Classification.max_classification(submission['classification'],
-                                                                                 min_classification)
-                submission.update(Classification.get_access_control_parts(submission['classification']))
-
-                if not rescan_services:
-                    # Save the submission in the system
-                    datastore.submission.save(sid, submission)
-
-            # Save alert if present
-            if alert:
+            # Save alert if present and does not exist
+            if alert and not datastore.alert.exists(alert['alert_id']):
                 alert['classification'] = Classification.max_classification(alert['classification'],
                                                                             min_classification)
+                alert.setdefault('metadata', {})
+                alert['metadata']['bundle.loaded'] = now_as_iso()
+
+                alert['metadata'].pop('replay', None)
+                alert['workflows_completed'] = False
+
                 datastore.alert.save(alert['alert_id'], alert)
-
-            if files:
-                # Make sure files meet minimum classification and save the files
-                with forge.get_filestore() as filestore:
-                    for f, f_data in files['infos'].items():
-                        f_classification = Classification.max_classification(
-                            f_data['classification'], min_classification)
-                        datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_classification,
-                                                       cl_engine=Classification)
-                        try:
-                            filestore.upload(os.path.join(current_working_dir, f), f)
-                        except IOError:
-                            pass
-
-                    # Make sure results meet minimum classification and save the results
-                    for key, res in results['results'].items():
-                        if key.endswith(".e"):
-                            datastore.emptyresult.save(key, {"expiry_ts": res['expiry_ts']})
-                        else:
-                            res['classification'] = Classification.max_classification(
-                                res['classification'], min_classification)
-                            datastore.result.save(key, res)
-
-                    # Make sure errors meet minimum classification and save the errors
-                    for ekey, err in errors['errors'].items():
-                        datastore.error.save(ekey, err)
-
-                    # Start the rescan
-                    if rescan_services and SubmissionClient:
-                        extracted_file_infos = {
-                            k: {vk: v[vk] for vk in ['magic', 'md5', 'mime', 'sha1', 'sha256', 'size', 'type']}
-                            for k, v in files['infos'].items()
-                            if k in files['list']
-                        }
-                        SubmissionClient(datastore=datastore, filestore=filestore,
-                                         config=config).rescan(submission, results['results'], extracted_file_infos,
-                                                               files['tree'], list(errors['errors'].keys()),
-                                                               rescan_services, completed_queue=completed_queue)
 
             return submission
         finally:
