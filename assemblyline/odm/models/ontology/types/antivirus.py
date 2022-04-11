@@ -22,5 +22,5 @@ class Antivirus(odm.Model):
                                 "<li>`suspicious`: Antivirus deems suspicious</li>"
                                 "<li>`malicious`: Antivirus deems malicious</li></ul>")
 
-    odm_version = odm.Text(default="1.0", description="Version of antivirus ontological result")
+    odm_version = odm.Text(default="2.0", description="Version of antivirus ontological result")
     detections = odm.List(odm.Compound(Detection), description="List of antivirus detections")
