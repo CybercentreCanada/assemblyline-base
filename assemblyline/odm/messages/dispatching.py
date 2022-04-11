@@ -1,27 +1,26 @@
 from assemblyline import odm
 
 
-# These are messages sent by dispatcher on the watch queue
-@odm.model()
+@odm.model(description="These are messages sent by dispatcher on the watch queue")
 class WatchQueueMessage(odm.Model):
-    cache_key = odm.Optional(odm.Keyword())
-    status = odm.Enum(values=['FAIL', 'OK', 'START', 'STOP'])
+    cache_key = odm.Optional(odm.Keyword(), description="Cache key")
+    status = odm.Enum(values=['FAIL', 'OK', 'START', 'STOP'], description="Watch statuses")
 
 
 CREATE_WATCH = 'CREATE_WATCH'
 LIST_OUTSTANDING = 'LIST_OUTSTANDING'
 
 
-@odm.model()
+@odm.model(description="Create Watch Message")
 class CreateWatch(odm.Model):
-    queue_name: str = odm.Keyword()
-    submission: str = odm.Keyword()
+    queue_name: str = odm.Keyword(description="Name of queue")
+    submission: str = odm.Keyword(description="Submission ID")
 
 
-@odm.model()
+@odm.model(description="List Outstanding Message")
 class ListOutstanding(odm.Model):
-    response_queue: str = odm.Keyword()
-    submission: str = odm.Keyword()
+    response_queue: str = odm.Keyword(description="Response queue")
+    submission: str = odm.Keyword(description="Submission ID")
 
 
 MESSAGE_CLASSES = {
@@ -30,10 +29,10 @@ MESSAGE_CLASSES = {
 }
 
 
-@odm.model()
+@odm.model(description="Model of Dispatcher Command Message")
 class DispatcherCommandMessage(odm.Model):
-    kind: str = odm.Enum(values=list(MESSAGE_CLASSES.keys()))
-    payload_data = odm.Any()
+    kind: str = odm.Enum(values=list(MESSAGE_CLASSES.keys()), description="Kind of message")
+    payload_data = odm.Any(description="Message payload")
 
     def payload(self):
         return MESSAGE_CLASSES[self.kind](self.payload_data)

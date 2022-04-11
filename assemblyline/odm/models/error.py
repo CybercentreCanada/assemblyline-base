@@ -15,24 +15,24 @@ ERROR_TYPES = {
 }
 
 
-@odm.model(index=True, store=True)
+@odm.model(index=True, store=True, description="Error Response from a Service")
 class Response(odm.Model):
-    message = odm.Text(copyto="__text__")                                # Error message
-    service_debug_info = odm.Optional(odm.Keyword())                     # Info about where the service was processed
-    service_name = odm.Keyword(copyto="__text__")                        # Name of the service that had an error
-    service_tool_version = odm.Optional(odm.Keyword(copyto="__text__"))  # Tool version of the service
-    service_version = odm.Keyword()                                      # Version of the service
-    status = odm.Enum(values=STATUSES)                                   # Status of the error
+    message = odm.Text(copyto="__text__", description="Error message")
+    service_debug_info = odm.Optional(odm.Keyword(), description="Information about where the service was processed")
+    service_name = odm.Keyword(copyto="__text__", description="Service Name")
+    service_tool_version = odm.Optional(odm.Keyword(copyto="__text__"), description="Service Tool Version")
+    service_version = odm.Keyword(description="Service Version")
+    status = odm.Enum(values=STATUSES, description="Status of error produced by service")
 
 
-@odm.model(index=True, store=True)
+@odm.model(index=True, store=True, description="Error Model used by Error Viewer")
 class Error(odm.Model):
-    archive_ts = odm.Date(store=False)                                     # Archiving timestamp
-    created = odm.Date(default="NOW")                                      # Date at which the error was created
-    expiry_ts = odm.Optional(odm.Date(store=False))                        # Expiry time stamp
-    response: Response = odm.Compound(Response)                            # Response from the service
-    sha256 = odm.SHA256(copyto="__text__")                                 # Hash of the file the error is related to
-    type = odm.Enum(values=list(ERROR_TYPES.keys()), default="EXCEPTION")  # Type of error
+    archive_ts = odm.Date(store=False, description="Archiving timestamp")
+    created = odm.Date(default="NOW", description="Error creation timestamp")
+    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
+    response: Response = odm.Compound(Response, description="Response from the service")
+    sha256 = odm.SHA256(copyto="__text__", description="SHA256 of file related to service error")
+    type = odm.Enum(values=list(ERROR_TYPES.keys()), default="EXCEPTION", description="Type of error")
 
     def build_key(self, service_tool_version=None, task=None):
         key_list = [

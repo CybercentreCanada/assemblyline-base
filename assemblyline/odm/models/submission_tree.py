@@ -3,10 +3,10 @@ from assemblyline.common import forge
 Classification = forge.get_classification()
 
 
-@odm.model(index=True, store=False)
+@odm.model(index=True, store=False, description="Submission Tree Model")
 class SubmissionTree(odm.Model):
-    classification = odm.Classification(default=Classification.UNRESTRICTED)  # Classification of the cache
-    filtered = odm.Boolean(default=False)                                     # Has this cache entry been filtered
-    expiry_ts = odm.Date()                                                    # Expiry date
-    supplementary = odm.Text(index=False)                                     # Tree supplementary files
-    tree = odm.Text(index=False)                                              # Tree cache
+    classification = odm.Classification(default=Classification.UNRESTRICTED, description="Classification of the cache")
+    filtered = odm.Boolean(default=False, description="Has this cache entry been filtered?")
+    expiry_ts = odm.Date(description="Expiry timestamp")
+    supplementary = odm.Text(index=False, description="Tree of supplementary files")
+    tree = odm.Text(index=False, description="File tree cache")

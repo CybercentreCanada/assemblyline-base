@@ -6,13 +6,13 @@ from assemblyline.odm.models.service import EnvironmentVariable
 OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'role']
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
-    lower: bool = odm.Boolean()
-    number: bool = odm.Boolean()
-    special: bool = odm.Boolean()
-    upper: bool = odm.Boolean()
-    min_length: int = odm.Integer()
+    lower: bool = odm.Boolean(description="Password must contain lowercase letters")
+    number: bool = odm.Boolean(description="Password must contain numbers")
+    special: bool = odm.Boolean(description="Password must contain special characters")
+    upper: bool = odm.Boolean(description="Password must contain uppercase letters")
+    min_length: int = odm.Integer(description="Minimum password length")
 
 
 DEFAULT_PASSWORD_REQUIREMENTS = {
@@ -24,14 +24,15 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False,
+           description="Configuration block for [GC Notify](https://notification.canada.ca/) signup and password reset")
 class Notify(odm.Model):
-    base_url: str = odm.Optional(odm.Keyword())
-    api_key: str = odm.Optional(odm.Keyword())
-    registration_template: str = odm.Optional(odm.Keyword())
-    password_reset_template: str = odm.Optional(odm.Keyword())
-    authorization_template: str = odm.Optional(odm.Keyword())
-    activated_template: str = odm.Optional(odm.Keyword())
+    base_url: str = odm.Optional(odm.Keyword(), description="Base URL")
+    api_key: str = odm.Optional(odm.Keyword(), description="API key")
+    registration_template: str = odm.Optional(odm.Keyword(), description="Registration template")
+    password_reset_template: str = odm.Optional(odm.Keyword(), description="Password reset template")
+    authorization_template: str = odm.Optional(odm.Keyword(), description="Authorization template")
+    activated_template: str = odm.Optional(odm.Keyword(), description="Activated Template")
 
 
 DEFAULT_NOTIFY = {
@@ -44,14 +45,14 @@ DEFAULT_NOTIFY = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Configuration block for SMTP signup and password reset")
 class SMTP(odm.Model):
-    from_adr: str = odm.Optional(odm.Keyword())
-    host: str = odm.Optional(odm.Keyword())
-    password: str = odm.Optional(odm.Keyword())
-    port: int = odm.Integer()
-    tls: bool = odm.Boolean()
-    user: str = odm.Optional(odm.Keyword())
+    from_adr: str = odm.Optional(odm.Keyword(), description="Email address used for sender")
+    host: str = odm.Optional(odm.Keyword(), description="SMTP host")
+    password: str = odm.Optional(odm.Keyword(), description="Password for SMTP server")
+    port: int = odm.Integer(description="Port of SMTP server")
+    tls: bool = odm.Boolean(description="Should we communicate with SMTP server via TLS?")
+    user: str = odm.Optional(odm.Keyword(), description="User to authenticate to the SMTP server")
 
 
 DEFAULT_SMTP = {
@@ -64,12 +65,14 @@ DEFAULT_SMTP = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Signup Configuration")
 class Signup(odm.Model):
-    enabled: bool = odm.Boolean()
-    smtp: SMTP = odm.Compound(SMTP, default=DEFAULT_SMTP)
-    notify: Notify = odm.Compound(Notify, default=DEFAULT_NOTIFY)
-    valid_email_patterns: List[str] = odm.List(odm.Keyword())
+    enabled: bool = odm.Boolean(description="Can a user automatically signup for the system")
+    smtp: SMTP = odm.Compound(SMTP, default=DEFAULT_SMTP, description="Signup via SMTP")
+    notify: Notify = odm.Compound(Notify, default=DEFAULT_NOTIFY, description="Signup via GC Notify")
+    valid_email_patterns: List[str] = odm.List(
+        odm.Keyword(),
+        description="Email patterns that will be allowed to automatically signup for an account")
 
 
 DEFAULT_SIGNUP = {
@@ -80,25 +83,29 @@ DEFAULT_SIGNUP = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="LDAP Configuration")
 class LDAP(odm.Model):
-    enabled: bool = odm.Boolean()
-    admin_dn: str = odm.Optional(odm.Keyword())
-    bind_user: str = odm.Optional(odm.Keyword())
-    bind_pass: str = odm.Optional(odm.Keyword())
-    auto_create: bool = odm.Boolean()
-    auto_sync: bool = odm.Boolean()
-    base: str = odm.Keyword()
-    classification_mappings: Dict[str, str] = odm.Any()
-    email_field: str = odm.Keyword()
-    group_lookup_query: str = odm.Keyword()
-    image_field: str = odm.Keyword()
-    image_format: str = odm.Keyword()
-    name_field: str = odm.Keyword()
-    signature_importer_dn: str = odm.Optional(odm.Keyword())
-    signature_manager_dn: str = odm.Optional(odm.Keyword())
-    uid_field: str = odm.Keyword()
-    uri: str = odm.Keyword()
+    enabled: bool = odm.Boolean(description="Should LDAP be enabled or not?")
+    admin_dn: str = odm.Optional(odm.Keyword(), description="DN of the group or the user who will get admin privileges")
+    bind_user: str = odm.Optional(odm.Keyword(), description="User use to query the LDAP server")
+    bind_pass: str = odm.Optional(odm.Keyword(), description="Password used to query the LDAP server")
+    auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
+    auto_sync: bool = odm.Boolean(description="Should we automatically sync with LDAP server on each login?")
+    base: str = odm.Keyword(description="Base DN for the users")
+    classification_mappings: Dict[str, str] = odm.Any(description="Classification mapping")
+    email_field: str = odm.Keyword(description="Name of the field containing the email address")
+    group_lookup_query: str = odm.Keyword(description="How the group lookup is queried")
+    image_field: str = odm.Keyword(description="Name of the field containing the user's avatar")
+    image_format: str = odm.Keyword(description="Type of image used to store the avatar")
+    name_field: str = odm.Keyword(description="Name of the field containing the user's name")
+    signature_importer_dn: str = odm.Optional(
+        odm.Keyword(),
+        description="DN of the group or the user who will get signature_importer role")
+    signature_manager_dn: str = odm.Optional(
+        odm.Keyword(),
+        description="DN of the group or the user who will get signature_manager role")
+    uid_field: str = odm.Keyword(description="Field name for the UID")
+    uri: str = odm.Keyword(description="URI to the LDAP server")
 
 
 DEFAULT_LDAP = {
@@ -123,14 +130,15 @@ DEFAULT_LDAP = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Internal Authentication Configuration")
 class Internal(odm.Model):
-    enabled: bool = odm.Boolean()
-    failure_ttl: int = odm.Integer()
-    max_failures: int = odm.Integer()
+    enabled: bool = odm.Boolean(description="Internal authentication allowed?")
+    failure_ttl: int = odm.Integer(description="How long to wait after `max_failures` before re-attempting login?")
+    max_failures: int = odm.Integer(description="Maximum number of fails allowed before timeout")
     password_requirements: PasswordRequirement = odm.Compound(PasswordRequirement,
-                                                              default=DEFAULT_PASSWORD_REQUIREMENTS)
-    signup: Signup = odm.Compound(Signup, default=DEFAULT_SIGNUP)
+                                                              default=DEFAULT_PASSWORD_REQUIREMENTS,
+                                                              description="Password requirements")
+    signup: Signup = odm.Compound(Signup, default=DEFAULT_SIGNUP, description="Signup method")
 
 
 DEFAULT_INTERNAL = {
@@ -144,50 +152,65 @@ DEFAULT_INTERNAL = {
 
 @odm.model(index=False, store=False)
 class OAuthAutoProperty(odm.Model):
-    field: str = odm.Keyword()
-    pattern: str = odm.Keyword()
-    type: str = odm.Enum(OAUTH_AUTO_PROPERTY_TYPE)
-    value: str = odm.Keyword()
+    field: str = odm.Keyword(description="Field to apply `pattern` to")
+    pattern: str = odm.Keyword(description="Regex pattern for auto-prop assignment")
+    type: str = odm.Enum(OAUTH_AUTO_PROPERTY_TYPE, description="Type of property assignment on pattern match")
+    value: str = odm.Keyword(description="Assigned property value")
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="App provider")
 class AppProvider(odm.Model):
-    access_token_url: str = odm.Keyword()
-    user_get: str = odm.Optional(odm.Keyword())
-    group_get: str = odm.Optional(odm.Keyword())
+    access_token_url: str = odm.Keyword(description="URL used to get the access token")
+    user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
+    group_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
     scope: str = odm.Keyword()
-    client_id: str = odm.Optional(odm.Keyword())
-    client_secret: str = odm.Optional(odm.Keyword())
+    client_id: str = odm.Optional(odm.Keyword(), description="ID of your application to authenticate to the OAuth")
+    client_secret: str = odm.Optional(odm.Keyword(),
+                                      description="Password to your application to authenticate to the OAuth provider")
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="OAuth Provider Configuration")
 class OAuthProvider(odm.Model):
-    auto_create: str = odm.Boolean(default=True)
-    auto_sync: str = odm.Boolean(default=False)
-    auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[])
+    auto_create: str = odm.Boolean(default=True, description="Auto-create users if they are missing")
+    auto_sync: str = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
+    auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[],
+                                                        description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
-    uid_randomize: str = odm.Boolean(default=False)
-    uid_randomize_digits: str = odm.Integer(default=0)
-    uid_randomize_delimiter: str = odm.Keyword(default="-")
-    uid_regex: str = odm.Optional(odm.Keyword())
-    uid_format: str = odm.Optional(odm.Keyword())
-    client_id: str = odm.Optional(odm.Keyword())
-    client_secret: str = odm.Optional(odm.Keyword())
-    request_token_url: str = odm.Optional(odm.Keyword())
-    request_token_params: str = odm.Optional(odm.Keyword())
-    access_token_url: str = odm.Optional(odm.Keyword())
-    access_token_params: str = odm.Optional(odm.Keyword())
-    authorize_url: str = odm.Optional(odm.Keyword())
-    authorize_params: str = odm.Optional(odm.Keyword())
-    api_base_url: str = odm.Optional(odm.Keyword())
-    client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
-    jwks_uri: str = odm.Optional(odm.Keyword())
-    uid_field: str = odm.Optional(odm.Keyword())
-    user_get: str = odm.Optional(odm.Keyword())
-    user_groups: str = odm.Optional(odm.Keyword())
-    user_groups_data_field: str = odm.Optional(odm.Keyword())
-    user_groups_name_field: str = odm.Optional(odm.Keyword())
-    use_new_callback_format: str = odm.Boolean(default=False)
+    uid_randomize: str = odm.Boolean(default=False,
+                                     description="Should we generate a random username for the authenticated user?")
+    uid_randomize_digits: str = odm.Integer(default=0,
+                                            description="How many digits should we add at the end of the username?")
+    uid_randomize_delimiter: str = odm.Keyword(default="-",
+                                               description="What is the delimiter used by the random name generator?")
+    uid_regex: str = odm.Optional(
+        odm.Keyword(),
+        description="Regex used to parse an email address and capture parts to create a user ID out of it")
+    uid_format: str = odm.Optional(odm.Keyword(),
+                                   description="Format of the user ID based on the captured parts from the regex")
+    client_id: str = odm.Optional(odm.Keyword(),
+                                  description="ID of your application to authenticate to the OAuth provider")
+    client_secret: str = odm.Optional(odm.Keyword(),
+                                      description="Password to your application to authenticate to the OAuth provider")
+    request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
+    request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
+    access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
+    access_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to get access token")
+    authorize_url: str = odm.Optional(odm.Keyword(), description="URL used to authorize access to a resource")
+    authorize_params: str = odm.Optional(odm.Keyword(), description="Parameters used to authorize access to a resource")
+    api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
+    client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                                 description="Keyword arguments passed to the different URLs")
+    jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
+    uid_field: str = odm.Optional(odm.Keyword(), description="Name of the field that will contain the user ID")
+    user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
+    user_groups: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
+    user_groups_data_field: str = odm.Optional(
+        odm.Keyword(),
+        description="Field return by the group info API call that contains the list of groups")
+    user_groups_name_field: str = odm.Optional(
+        odm.Keyword(),
+        description="Name of the field in the list of groups that contains the name of the group")
+    use_new_callback_format: str = odm.Boolean(default=False, description="Should we use the new callback method?")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -230,11 +253,12 @@ DEFAULT_OAUTH_PROVIDERS = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="OAuth Configuration")
 class OAuth(odm.Model):
-    enabled: bool = odm.Boolean()
-    gravatar_enabled: bool = odm.Boolean()
-    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider), default=DEFAULT_OAUTH_PROVIDERS)
+    enabled: bool = odm.Boolean(description="Enable use of OAuth?")
+    gravatar_enabled: bool = odm.Boolean(description="Enable gravatar?")
+    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider), default=DEFAULT_OAUTH_PROVIDERS,
+                                                      description="OAuth provider configuration")
 
 
 DEFAULT_OAUTH = {
@@ -244,15 +268,16 @@ DEFAULT_OAUTH = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Authentication Methods")
 class Auth(odm.Model):
-    allow_2fa: bool = odm.Boolean()
-    allow_apikeys: bool = odm.Boolean()
-    allow_extended_apikeys: bool = odm.Boolean()
-    allow_security_tokens: bool = odm.Boolean()
-    internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL)
-    ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP)
-    oauth: OAuth = odm.Compound(OAuth, default=DEFAULT_OAUTH)
+    allow_2fa: bool = odm.Boolean(description="Allow 2FA?")
+    allow_apikeys: bool = odm.Boolean(description="Allow API keys?")
+    allow_extended_apikeys: bool = odm.Boolean(description="Allow extended API keys?")
+    allow_security_tokens: bool = odm.Boolean(description="Allow security tokens?")
+    internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL,
+                                      description="Internal authentication settings")
+    ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP, description="LDAP settings")
+    oauth: OAuth = odm.Compound(OAuth, default=DEFAULT_OAUTH, description="OAuth settings")
 
 
 DEFAULT_AUTH = {
@@ -266,7 +291,7 @@ DEFAULT_AUTH = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Alerter Configuration")
 class Alerter(odm.Model):
     alert_ttl: int = odm.Integer()
     constant_alert_fields: List[str] = odm.List(odm.Keyword())
@@ -297,12 +322,12 @@ DEFAULT_ALERTER = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Dispatcher Configuration")
 class Dispatcher(odm.Model):
-    # Time between re-dispatching attempts, as long as some action (submission or any task completion)
-    # happens before this timeout ends, the timeout resets.
-    timeout: float = odm.Integer()
-    max_inflight: int = odm.Integer()
+    timeout: float = odm.Integer(
+        description="Time between re-dispatching attempts, as long as some action (submission or any task completion) "
+        "happens before this timeout ends, the timeout resets.")
+    max_inflight: int = odm.Integer(description="Maximum submissions allowed to be in-flight")
 
 
 DEFAULT_DISPATCHER = {
@@ -314,18 +339,14 @@ DEFAULT_DISPATCHER = {
 # Configuration options regarding data expiry
 @odm.model(index=False, store=False)
 class Expiry(odm.Model):
-    # By turning on batch delete, delete queries are rounded by day therefore
-    # all delete operation happen at the same time at midnight
-    batch_delete = odm.Boolean()
-    # Delay in hours that will be applied to the expiry query so we can keep
-    # data longer then previously set or we can offset deletion during non busy hours
-    delay = odm.Integer()
-    # Should we also cleanup the file storage?
-    delete_storage = odm.Boolean()
-    # Time to sleep in between each expiry run (seconds)
-    sleep_time = odm.Integer()
-    # Number of concurrent workers for linear operations
-    workers = odm.Integer()
+    batch_delete = odm.Boolean(
+        description="Perform expiry in batches?<br>"
+        "Delete queries are rounded by day therefore all delete operation happen at the same time at midnight")
+    delay = odm.Integer(description="Delay, in hours, that will be applied to the expiry query so we can keep"
+                        "data longer then previously set or we can offset deletion during non busy hours")
+    delete_storage = odm.Boolean(description="Should we also cleanup the file storage?")
+    sleep_time = odm.Integer(description="Time, in seconds, to sleep in between each expiry run")
+    workers = odm.Integer(description="Number of concurrent workers")
 
 
 DEFAULT_EXPIRY = {
@@ -337,41 +358,30 @@ DEFAULT_EXPIRY = {
 }
 
 
-# Configuration options regarding bulk ingestion and unattended submissions
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Ingester Configuration")
 class Ingester(odm.Model):
-    default_user: str = odm.Keyword()
-    default_services: List[str] = odm.List(odm.Keyword())
-    default_resubmit_services: List[str] = odm.List(odm.Keyword())
-    # When a description is automatically generated, it will be the
-    # hash prefixed by this string
-    description_prefix: str = odm.Keyword()
-    # Path to a callback function filtering ingestion tasks that should have their
-    # priority forcefully reset to low
-    is_low_priority: str = odm.Keyword()
+    default_user: str = odm.Keyword(description="Default user for bulk ingestion and unattended submissions")
+    default_services: List[str] = odm.List(odm.Keyword(), description="Default service selection")
+    default_resubmit_services: List[str] = odm.List(odm.Keyword(),
+                                                    description="Default service selection for resubmits")
+    description_prefix: str = odm.Keyword(
+        description="A prefix for descriptions. When a description is automatically generated, it will be the hash prefixed by this string")
+    is_low_priority: str = odm.Keyword(
+        description="Path to a callback function filtering ingestion tasks that should have their priority forcefully reset to low")
     get_whitelist_verdict: str = odm.Keyword()
     whitelist: str = odm.Keyword()
-
-    # Default values for parameters that may be overridden on a per submission basis
-    # How many extracted files may be added to a Submission
-    default_max_extracted: int = odm.Integer()
-    # How many supplementary files may be added to a submission
-    default_max_supplementary: int = odm.Integer()
-
-    # Drop a task altogether after this many seconds
-    expire_after: int = odm.Integer()
-    stale_after_seconds: int = odm.Integer()
-
-    # How long should scores be cached in the ingester
-    incomplete_expire_after_seconds: int = odm.Integer()
-    incomplete_stale_after_seconds: int = odm.Integer()
-
-    # How long can a queue get before we start dropping files
-    sampling_at: Dict[str, int] = odm.Mapping(odm.Integer())
-    max_inflight = odm.Integer()
-
-    # How long are files results cached
-    cache_dtl: int = odm.Integer()
+    default_max_extracted: int = odm.Integer(
+        description="How many extracted files may be added to a Submission. Overrideable via submission parameters.")
+    default_max_supplementary: int = odm.Integer(
+        description="How many supplementary files may be added to a Submission. Overrideable via submission parameters")
+    expire_after: int = odm.Integer(description="Period, in seconds, in which a task should be expired")
+    stale_after_seconds: int = odm.Integer(description="Drop a task altogether after this many seconds")
+    incomplete_expire_after_seconds: int = odm.Integer(description="How long should scores be kept before expiry")
+    incomplete_stale_after_seconds: int = odm.Integer(description="How long should scores be cached in the ingester")
+    sampling_at: Dict[str, int] = odm.Mapping(odm.Integer(),
+                                              description="Thresholds at certain buckets before sampling")
+    max_inflight = odm.Integer(description="How long can a queue get before we start dropping files")
+    cache_dtl: int = odm.Integer(description="How long are files results cached")
 
 
 DEFAULT_INGESTER = {
@@ -399,10 +409,10 @@ DEFAULT_INGESTER = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Redis Service configuration")
 class RedisServer(odm.Model):
-    host: str = odm.Keyword()
-    port: int = odm.Integer()
+    host: str = odm.Keyword(description="Hostname of Redis instance")
+    port: int = odm.Integer(description="Port of Redis instance")
 
 
 DEFAULT_REDIS_NP = {
@@ -418,12 +428,12 @@ DEFAULT_REDIS_P = {
 
 @odm.model(index=False, store=False)
 class ESMetrics(odm.Model):
-    hosts: str = odm.Optional(odm.List(odm.Keyword()))
-    host_certificates: str = odm.Optional(odm.Keyword())
-    warm: int = odm.Integer()
-    cold: int = odm.Integer()
-    delete: int = odm.Integer()
-    unit = odm.Enum(['d', 'h', 'm'])
+    hosts: List[str] = odm.Optional(odm.List(odm.Keyword()), description="Elasticsearch hosts")
+    host_certificates: str = odm.Optional(odm.Keyword(), description="Host certificates")
+    warm = odm.Integer(description="How long, per unit of time, should a document remain in the 'warm' tier?")
+    cold = odm.Integer(description="How long, per unit of time, should a document remain in the 'cold' tier?")
+    delete = odm.Integer(description="How long, per unit of time, should a document remain before being deleted?")
+    unit = odm.Enum(['d', 'h', 'm'], description="Unit of time used by `warm`, `cold`, `delete` phases")
 
 
 DEFAULT_ES_METRICS = {
@@ -438,8 +448,8 @@ DEFAULT_ES_METRICS = {
 
 @odm.model(index=False, store=False)
 class APMServer(odm.Model):
-    server_url: str = odm.Optional(odm.Keyword())
-    token: str = odm.Optional(odm.Keyword())
+    server_url: str = odm.Optional(odm.Keyword(), description="URL to API server")
+    token: str = odm.Optional(odm.Keyword(), description="Authentication token for server")
 
 
 DEFAULT_APM_SERVER = {
@@ -448,12 +458,13 @@ DEFAULT_APM_SERVER = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Metrics Configuration")
 class Metrics(odm.Model):
-    apm_server: APMServer = odm.Compound(APMServer, default=DEFAULT_APM_SERVER)
-    elasticsearch: ESMetrics = odm.Compound(ESMetrics, default=DEFAULT_ES_METRICS)
-    export_interval: int = odm.Integer()
-    redis: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
+    apm_server: APMServer = odm.Compound(APMServer, default=DEFAULT_APM_SERVER, description="APM server configuration")
+    elasticsearch: ESMetrics = odm.Compound(ESMetrics, default=DEFAULT_ES_METRICS,
+                                            description="Where to export metrics?")
+    export_interval: int = odm.Integer(description="How often should we be exporting metrics?")
+    redis: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP, description="Redis for Dashboard metrics")
 
 
 DEFAULT_METRICS = {
@@ -464,10 +475,12 @@ DEFAULT_METRICS = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Redis Configuration")
 class Redis(odm.Model):
-    nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP)
-    persistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_P)
+    nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP,
+                                              description="A volatile Redis instance")
+    persistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_P,
+                                           description="A persistent Redis instance")
 
 
 DEFAULT_REDIS = {
@@ -476,23 +489,25 @@ DEFAULT_REDIS = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False,
+           description="A set of default values to be used running a service when no other value is set")
 class ScalerServiceDefaults(odm.Model):
-    """A set of default values to be used running a service when no other value is set."""
-    growth: int = odm.Integer()
-    shrink: int = odm.Integer()
-    backlog: int = odm.Integer()
-    min_instances: int = odm.Integer()
-    environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[])
+    growth: int = odm.Integer(description="Period, in seconds, to wait before scaling up a service deployment")
+    shrink: int = odm.Integer(description="Period, in seconds, to wait before scaling down a service deployment")
+    backlog: int = odm.Integer(description="Backlog threshold that dictates scaling adjustments")
+    min_instances: int = odm.Integer(description="The minimum number of service instances to be running")
+    environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[],
+                                                      description="Environment variables to pass onto services")
 
 
 @odm.model(index=False, store=False)
 class Scaler(odm.Model):
-    service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults)
-    cpu_overallocation: float = odm.Float()
-    memory_overallocation: float = odm.Float()
-    # Additional labels to be applied to deployments in kubernetes('=' delimited)
-    additional_labels: List[str] = odm.Optional(odm.List(odm.Text()))
+    service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults,
+                                                           description="Defaults Scaler will assign to a service.")
+    cpu_overallocation: float = odm.Float(description="Percentage of CPU overallocation")
+    memory_overallocation: float = odm.Float(description="Percentage of RAM overallocation")
+    additional_labels: List[str] = odm.Optional(odm.List(odm.Text()),
+                                                description="Additional labels to be applied to services('=' delimited)")
 
 
 DEFAULT_SCALER = {
@@ -512,15 +527,17 @@ DEFAULT_SCALER = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Core Component Configuration")
 class Core(odm.Model):
-    alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER)
-    dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER)
-    expiry: Expiry = odm.Compound(Expiry, default=DEFAULT_EXPIRY)
-    ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER)
-    metrics: Metrics = odm.Compound(Metrics, default=DEFAULT_METRICS)
-    redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS)
-    scaler: Scaler = odm.Compound(Scaler, default=DEFAULT_SCALER)
+    alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER, description="Configuration for Alerter")
+    dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER,
+                                          description="Configuration for Dispatcher")
+    expiry: Expiry = odm.Compound(Expiry, default=DEFAULT_EXPIRY, description="Configuration for Expiry")
+    ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER, description="Configuration for Ingester")
+    metrics: Metrics = odm.Compound(Metrics, default=DEFAULT_METRICS,
+                                    description="Configuration for Metrics Collection")
+    redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS, description="Configuration for Redis instances")
+    scaler: Scaler = odm.Compound(Scaler, default=DEFAULT_SCALER, description="Configuration for Scaler")
 
 
 DEFAULT_CORE = {
@@ -534,12 +551,12 @@ DEFAULT_CORE = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Parameters associated to ILM Policies")
 class ILMParams(odm.Model):
-    warm = odm.Integer()
-    cold = odm.Integer()
-    delete = odm.Integer()
-    unit = odm.Enum(['d', 'h', 'm'])
+    warm = odm.Integer(description="How long, per unit of time, should a document remain in the 'warm' tier?")
+    cold = odm.Integer(description="How long, per unit of time, should a document remain in the 'cold' tier?")
+    delete = odm.Integer(description="How long, per unit of time, should a document remain before being deleted?")
+    unit = odm.Enum(['d', 'h', 'm'], description="Unit of time used by `warm`, `cold`, `delete` phases")
 
 
 DEFAULT_ILM_PARAMS = {
@@ -550,13 +567,13 @@ DEFAULT_ILM_PARAMS = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="ILM Policies for Core Indices")
 class ILMIndexes(odm.Model):
-    alert = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
-    error = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
-    file = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
-    result = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
-    submission = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS)
+    alert = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'alert' index")
+    error = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'error' index")
+    file = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'file' index")
+    result = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'result' index")
+    submission = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'submission' index")
 
 
 DEFAULT_ILM_INDEXES = {
@@ -568,12 +585,12 @@ DEFAULT_ILM_INDEXES = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Index Lifecycle Management")
 class ILM(odm.Model):
-    enabled = odm.Boolean()
-    days_until_archive = odm.Integer()
-    indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES)
-    update_archive = odm.Boolean()
+    enabled = odm.Boolean(description="Are we enabling ILM across indices?")
+    days_until_archive = odm.Integer(description="Days until documents get archived")
+    indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES, description="Index-specific ILM policies")
+    update_archive = odm.Boolean(description="Do we want to update documents in the archive?")
 
 
 DEFAULT_ILM = {
@@ -584,11 +601,11 @@ DEFAULT_ILM = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Datastore Configuration")
 class Datastore(odm.Model):
-    hosts: List[str] = odm.List(odm.Keyword())
-    ilm = odm.Compound(ILM, default=DEFAULT_ILM)
-    type = odm.Enum({"elasticsearch"})
+    hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
+    ilm = odm.Compound(ILM, default=DEFAULT_ILM, description="Index Lifecycle Management Policy")
+    type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
 
 
 DEFAULT_DATASTORE = {
@@ -598,7 +615,7 @@ DEFAULT_DATASTORE = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Datasource Configuration")
 class Datasource(odm.Model):
     classpath: str = odm.Keyword()
     config: Dict[str, str] = odm.Mapping(odm.Keyword())
@@ -616,10 +633,10 @@ DEFAULT_DATASOURCES = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Filestore Configuration")
 class Filestore(odm.Model):
-    cache: List[str] = odm.List(odm.Keyword())
-    storage: List[str] = odm.List(odm.Keyword())
+    cache: List[str] = odm.List(odm.Keyword(), description="List of filestores used for caching")
+    storage: List[str] = odm.List(odm.Keyword(), description="List of filestores used for storage")
 
 
 DEFAULT_FILESTORE = {
@@ -628,35 +645,22 @@ DEFAULT_FILESTORE = {
 }
 
 
-# This is the model definition for the logging block
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Model Definition for the Logging Configuration")
 class Logging(odm.Model):
-    # What level of logging should we have
-    log_level: str = odm.Enum(values=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "DISABLED"])
-
-    # Should we log to console?
-    log_to_console: bool = odm.Boolean()
-
-    # Should we log to files on the server?
-    log_to_file: bool = odm.Boolean()
-    # if yes, what is the log directory
-    log_directory: str = odm.Keyword()
-
-    # Should logs be sent to a syslog server?
-    log_to_syslog: bool = odm.Boolean()
-    # if yes, what is the syslog server hostname/ip?
-    syslog_host: str = odm.Keyword()
-    syslog_port: int = odm.Integer()
-
-    # How often should counters log their values (seconds)
-    export_interval: int = odm.Integer()
-
-    # Log in JSON format
-    log_as_json: bool = odm.Boolean()
-
-    # If set, core components will touch this path regularly to tell the container
-    # environment it is healthy
-    heartbeat_file: str = odm.Optional(odm.Keyword())
+    log_level: str = odm.Enum(values=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "DISABLED"],
+                              description="What level of logging should we have?")
+    log_to_console: bool = odm.Boolean(description="Should we log to console?")
+    log_to_file: bool = odm.Boolean(description="Should we log to files on the server?")
+    log_directory: str = odm.Keyword(description="If `log_to_file: true`, what is the directory to store logs?")
+    log_to_syslog: bool = odm.Boolean(description="Should logs be sent to a syslog server?")
+    syslog_host: str = odm.Keyword(description="If `log_to_syslog: true`, provide hostname/IP of the syslog server?")
+    syslog_port: int = odm.Integer(description="If `log_to_syslog: true`, provide port of the syslog server?")
+    export_interval: int = odm.Integer(description="How often, in seconds, should counters log their values?")
+    log_as_json: bool = odm.Boolean(description="Log in JSON format?")
+    heartbeat_file: str = odm.Optional(
+        odm.Keyword(),
+        description="Add a health check to core components.<br>"
+        "If `true`, core components will touch this path regularly to tell the container environment it is healthy")
 
 
 DEFAULT_LOGGING = {
@@ -691,35 +695,32 @@ SERVICE_STAGES = [
 ]
 
 
-# This is the model definition for the System block
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Services Configuration")
 class Services(odm.Model):
-    # Different possible categories
-    categories: List[str] = odm.List(odm.Keyword())
-    # Default service timeout time in seconds
-    default_timeout: int = odm.Integer()
-    # How many instances of a service should be kept in reserve running even
-    # when there doesn't seem to be any work for them to do
-    min_service_workers: int = odm.Integer()
-    # Different stages of execution in order
-    stages: List[str] = odm.List(odm.Keyword())
-    # Substitution variables for image paths (for custom registry support)
-    image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
-    # Same as above, but only applied in the updater, used in dev setups and local registries
-    update_image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''))
-    # Default update channel to be used for new services
-    preferred_update_channel: str = odm.Keyword()
-    # Allow container registries with self signed certs for service updates
-    allow_insecure_registry: bool = odm.Boolean()
-    # Global registry type to be used for fetching updates for a service (can be overridable by a service)
-    preferred_registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker')
-    # Global preference that controls if services should be privileged to communicate with core infrastucture
-    prefer_service_privileged:  bool = odm.Boolean(default=False)
-    # How much CPU to reserve for services, at 1 a service's full cpu request will be reserved for them.
-    # At 0 (only for very small appliances/dev boxes) the service's cpu will be limited
-    # but no cpu will be reserved allowing for more flexible scheduling of containers.
-    # Docker doesn't have the concept of cpu reservation only limits.
-    cpu_reservation: float = odm.Float()
+    categories: List[str] = odm.List(odm.Keyword(), description="List of categories a service can be assigned to")
+    default_timeout: int = odm.Integer(description="Default service timeout time in seconds")
+    min_service_workers: int = odm.Integer(description="The minimum number of service instances to always be running.")
+    stages: List[str] = odm.List(odm.Keyword(), description="List of execution stages a service can be assigned to")
+    image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''),
+                                                  description="Substitution variables for image paths "
+                                                  "(for custom registry support)")
+    update_image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''),
+                                                         description="Similar to `image_variables` "
+                                                         "but only applied to the updater. Intended for use with local registries.")
+    preferred_update_channel: str = odm.Keyword(description="Default update channel to be used for new services")
+    allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
+    preferred_registry_type: str = odm.Enum(
+        values=["docker", "harbor"],
+        default='docker',
+        description="Global registry type to be used for fetching updates for a service (overridable by a service)")
+    prefer_service_privileged: bool = odm.Boolean(
+        default=False,
+        description="Global preference that controls if services should be privileged to communicate with core infrastucture")
+    cpu_reservation: float = odm.Float(
+        description="How much CPU do we want to reserve relative to the service's request?<br>"
+        "At `1`, a service's full CPU request will be reserved for them.<br>"
+        "At `0` (only for very small appliances/dev boxes), the service's CPU will be limited "
+        "but no CPU will be reserved allowing for more flexible scheduling of containers.")
 
 
 DEFAULT_SERVICES = {
@@ -735,15 +736,11 @@ DEFAULT_SERVICES = {
 }
 
 
-# This is the model definition for the System block
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="System Configuration")
 class System(odm.Model):
-    # Module path to the assemblyline constants
-    constants: str = odm.Keyword()
-    # Organisation acronym used for signatures
-    organisation: str = odm.Text()
-    # Type of system (production, staging, development)
-    type: str = odm.Enum(values=['production', 'staging', 'development'])
+    constants: str = odm.Keyword(description="Module path to the assemblyline constants")
+    organisation: str = odm.Text(description="Organisation acronym used for signatures")
+    type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
 
 
 DEFAULT_SYSTEM = {
@@ -753,13 +750,11 @@ DEFAULT_SYSTEM = {
 }
 
 
-# This is the model definition for the System block
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Statistics")
 class Statistics(odm.Model):
-    # fields to generated statistics from in the alert page
-    alert: List[str] = odm.List(odm.Keyword())
-    # fields to generate statistics from in the submission page
-    submission: List[str] = odm.List(odm.Keyword())
+    alert: List[str] = odm.List(odm.Keyword(), description="Fields used to generate statistics in the Alerts page")
+    submission: List[str] = odm.List(odm.Keyword(),
+                                     description="Fields used to generate statistics in the Submissions page")
 
 
 DEFAULT_STATISTICS = {
@@ -780,12 +775,11 @@ DEFAULT_STATISTICS = {
 }
 
 
-# Option for the alerting perspective
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Alerting Metadata")
 class AlertingMeta(odm.Model):
-    important: List[str] = odm.List(odm.Keyword())
-    subject: List[str] = odm.List(odm.Keyword())
-    url: List[str] = odm.List(odm.Keyword())
+    important: List[str] = odm.List(odm.Keyword(), description="Metadata keys that are considered important")
+    subject: List[str] = odm.List(odm.Keyword(), description="Metadata keys that refer to an email's subject")
+    url: List[str] = odm.List(odm.Keyword(), description="Metadata keys that refer to a URL")
 
 
 DEFAULT_ALERTING_META = {
@@ -817,63 +811,47 @@ DEFAULT_ALERTING_META = {
 }
 
 
-# This is the model definition for the logging block
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
-    # Alerting metadata fields
-    alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META)
-    # Allow user to tell in advance the system that a file is malicious
-    allow_malicious_hinting: bool = odm.Boolean()
-    # Allow user to download raw files
-    allow_raw_downloads: bool = odm.Boolean()
-    # Allow users to request replay on another server
-    allow_replay: bool = odm.Boolean()
-    # Allow file submissions via url
-    allow_url_submissions: bool = odm.Boolean()
-    # Should API calls be audited and saved to a separate log file?
-    audit: bool = odm.Boolean()
-    # Banner message display on the main page (format: {<language_code>: message})
-    banner: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
-    # Banner message display on the main page (format: {<language_code>: message})
-    banner_level: str = odm.Enum(values=["info", "warning", "success", "error"])
-    # Turn on debugging
-    debug: bool = odm.Boolean()
-    # Discover URL
-    discover_url: str = odm.Optional(odm.Keyword())
-    # Which encoding will be used
-    download_encoding = odm.Enum(values=["raw", "cart"])
-    # Assemblyline admins email address
-    email: str = odm.Optional(odm.Email())
-    # Enforce the user's quotas
-    enforce_quota: bool = odm.Boolean()
-    # Fully qualified domain name to use for the 2-factor authentication validation
-    fqdn: str = odm.Text()
-    # Maximum priority for ingest API
-    ingest_max_priority: int = odm.Integer()
-    # Turn on read only mode in the UI
-    read_only: bool = odm.Boolean()
-    # Offset of the read only mode for all paging and searches
-    read_only_offset: str = odm.Keyword(default="")
-    # Flask secret key to store cookies and stuff
-    secret_key: str = odm.Keyword()
-    # Duration of the user session before the user has to login again
-    session_duration: int = odm.Integer()
-    # Statistics configuration
-    statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS)
-    # Terms of service
-    tos: str = odm.Optional(odm.Text())
-    # Lock out user after accepting the terms of service
-    tos_lockout: bool = odm.Boolean()
-    # List of admins to notify when a user gets locked out
-    tos_lockout_notify: bool = odm.Optional(odm.List(odm.Keyword()))
-    # Headers that will be used by the url_download method
-    url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
-    # Proxy that will be used by the url_download method
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()))
-    # Validate if the session ip matches the ip the session was created from
-    validate_session_ip: bool = odm.Boolean()
-    # Validate if the session useragent matches the useragent the session was created with
-    validate_session_useragent: bool = odm.Boolean()
+    alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
+                                               description="Alerting metadata fields")
+    allow_malicious_hinting: bool = odm.Boolean(
+        description="Allow user to tell in advance the system that a file is malicious?")
+    allow_raw_downloads: bool = odm.Boolean(description="Allow user to download raw files?")
+    allow_replay: bool = odm.Boolean(description="Allow users to request replay on another server?")
+    allow_url_submissions: bool = odm.Boolean(description="Allow file submissions via url?")
+    audit: bool = odm.Boolean(description="Should API calls be audited and saved to a separate log file?")
+    banner: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Banner message display on the main page (format: {<language_code>: message})")
+    banner_level: str = odm.Enum(
+        values=["info", "warning", "success", "error"],
+        description="Banner message level")
+    debug: bool = odm.Boolean(description="Enable debugging?")
+    discover_url: str = odm.Optional(odm.Keyword(), description="Discover URL")
+    download_encoding = odm.Enum(values=["raw", "cart"], description="Which encoding will be used for downloads?")
+    email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
+    enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
+    fqdn: str = odm.Text(description="Fully qualified domain name to use for the 2-factor authentication validation")
+    ingest_max_priority: int = odm.Integer(description="Maximum priority for ingest API")
+    read_only: bool = odm.Boolean(description="Turn on read only mode in the UI")
+    read_only_offset: str = odm.Keyword(
+        default="", description="Offset of the read only mode for all paging and searches")
+    secret_key: str = odm.Keyword(description="Flask secret key to store cookies, etc.")
+    session_duration: int = odm.Integer(description="Duration of the user session before the user has to login again")
+    statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS,
+                                          description="Statistics configuration")
+    tos: str = odm.Optional(odm.Text(), description="Terms of service")
+    tos_lockout: bool = odm.Boolean(description="Lock out user after accepting the terms of service?")
+    tos_lockout_notify: List[str] = odm.Optional(odm.List(odm.Keyword()),
+                                                 description="List of admins to notify when a user gets locked out")
+    url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                                          description="Headers used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                                          description="Proxy used by the url_download method")
+    validate_session_ip: bool = \
+        odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
+    validate_session_useragent: bool = \
+        odm.Boolean(description="Validate if the session useragent matches the useragent the session was created with")
 
 
 DEFAULT_UI = {
@@ -910,9 +888,9 @@ DEFAULT_UI = {
 # Options regarding all submissions, regardless of their input method
 @odm.model(index=False, store=False)
 class TagTypes(odm.Model):
-    attribution: List[str] = odm.List(odm.Keyword())
-    behavior: List[str] = odm.List(odm.Keyword())
-    ioc: List[str] = odm.List(odm.Keyword())
+    attribution: List[str] = odm.List(odm.Keyword(), description="Attibution tags")
+    behavior: List[str] = odm.List(odm.Keyword(), description="Behaviour tags")
+    ioc: List[str] = odm.List(odm.Keyword(), description="IOC tags")
 
 
 DEFAULT_TAG_TYPES = {
@@ -943,31 +921,20 @@ DEFAULT_TAG_TYPES = {
 }
 
 
-# Options regarding all submissions, regardless of their input method
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False,
+           description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
-    # Default values for parameters that may be overridden on a per submission basis
-    # How many extracted files may be added to a Submission
-    default_max_extracted: int = odm.Integer()
-    # How many supplementary files may be added to a submission
-    default_max_supplementary: int = odm.Integer()
-
-    # Number of days submissions will remain in the system by default
-    dtl: int = odm.Integer()
-
-    # Maximum number of days submissions will remain in the system
-    max_dtl: int = odm.Integer()
-    # Maximum files extraction depth
-    max_extraction_depth: int = odm.Integer()
-    # Maximum size for files submitted in the system
-    max_file_size: int = odm.Integer()
-    # Maximum length for each metadata values
-    max_metadata_length: int = odm.Integer()
-    # Maximum length for each temporary data values
-    max_temp_data_length: int = odm.Integer()
-
-    # Summary tag types
-    tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES)
+    default_max_extracted: int = odm.Integer(description="How many extracted files may be added to a submission?")
+    default_max_supplementary: int = odm.Integer(
+        description="How many supplementary files may be added to a submission?")
+    dtl: int = odm.Integer(description="Number of days submissions will remain in the system by default")
+    max_dtl: int = odm.Integer(description="Maximum number of days submissions will remain in the system")
+    max_extraction_depth: int = odm.Integer(description="Maximum files extraction depth")
+    max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
+    max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
+    max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
+    tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
+                             description="Tag types that show up in the submission summary")
 
 
 DEFAULT_SUBMISSION = {
@@ -983,28 +950,20 @@ DEFAULT_SUBMISSION = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
 class Config(odm.Model):
-    # Authentication module configuration
-    auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH)
-    # Core component configuration
-    core: Core = odm.Compound(Core, default=DEFAULT_CORE)
-    # Datastore configuration
-    datastore: Datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE)
-    # Datasources configuration
-    datasources: Dict[str, Datasource] = odm.Mapping(odm.Compound(Datasource), default=DEFAULT_DATASOURCES)
-    # Filestore configuration
-    filestore: Filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE)
-    # Logging configuration
-    logging: Logging = odm.Compound(Logging, default=DEFAULT_LOGGING)
-    # Service configuration
-    services: Services = odm.Compound(Services, default=DEFAULT_SERVICES)
-    # System configuration
-    system: System = odm.Compound(System, default=DEFAULT_SYSTEM)
-    # UI configuration parameters
-    ui: UI = odm.Compound(UI, default=DEFAULT_UI)
-    # Options for how submissions will be processed
-    submission: Submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION)
+    auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH, description="Authentication module configuration")
+    core: Core = odm.Compound(Core, default=DEFAULT_CORE, description="Core component configuration")
+    datastore: Datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE, description="Datastore configuration")
+    datasources: Dict[str, Datasource] = odm.Mapping(odm.Compound(Datasource), default=DEFAULT_DATASOURCES,
+                                                     description="Datasources configuration")
+    filestore: Filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE, description="Filestore configuration")
+    logging: Logging = odm.Compound(Logging, default=DEFAULT_LOGGING, description="Logging configuration")
+    services: Services = odm.Compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
+    system: System = odm.Compound(System, default=DEFAULT_SYSTEM, description="System configuration")
+    ui: UI = odm.Compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
+    submission: Submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION,
+                                          description="Options for how submissions will be processed")
 
 
 DEFAULT_CONFIG = {

@@ -100,10 +100,8 @@ DEFAULT_LOADER = {
 
 @odm.model(index=False, store=False)
 class ReplayConfig(odm.Model):
-    # Replay creator options
-    creator: Creator = odm.Compound(Creator, default=DEFAULT_CREATOR)
-    # Replay loader options
-    loader: Loader = odm.Compound(Loader, default=DEFAULT_LOADER)
+    creator: Creator = odm.Compound(Creator, default=DEFAULT_CREATOR, description="Replay creator options")
+    loader: Loader = odm.Compound(Loader, default=DEFAULT_LOADER, description="Replay loader options")
 
 
 DEFAULT_REPLAY = {
