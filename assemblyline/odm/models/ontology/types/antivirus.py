@@ -5,12 +5,10 @@ from assemblyline import odm
 class Antivirus(odm.Model):
     @odm.model(description="Antivirus Detection Model")
     class Detection(odm.Model):
-        @odm.model(description="Antivirus Engine Model")
-        class Engine(odm.Model):
-            definition_version = odm.Optional(odm.Keyword(), description="Version of definition set")
-            name = odm.Keyword(description="Name of antivirus engine")
-            version = odm.Optional(odm.Keyword(), description="Version of antivirus engine")
-
+        engine_name = odm.Keyword(description="Name of antivirus engine")
+        engine_version = odm.Optional(odm.Keyword(), description="Version of antivirus engine")
+        engine_definition_version = odm.Optional(odm.Keyword(), description="Version of definition set")
+        virus_name = odm.Optional(odm.Keyword(), description="The name of the virus")
         # What category does the verdict fall under?
         category = odm.Optional(odm.Enum(['type-unsupported',
                                           'undetected',
@@ -23,8 +21,6 @@ class Antivirus(odm.Model):
                                 "<li>`failure`: Antivirus failed during detection</li>"
                                 "<li>`suspicious`: Antivirus deems suspicious</li>"
                                 "<li>`malicious`: Antivirus deems malicious</li></ul>")
-        engine = odm.Compound(Engine, description="Antivirus engine information")
-        virus_name = odm.Optional(odm.Keyword(), description="The name of the virus")
 
     odm_version = odm.Text(default="1.0", description="Version of antivirus ontological result")
     detections = odm.List(odm.Compound(Detection), description="List of antivirus detections")
