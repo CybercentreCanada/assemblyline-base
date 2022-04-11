@@ -8,6 +8,7 @@ import tempfile
 import time
 
 from copy import copy
+from assemblyline.common.isotime import now_as_iso
 from cart import pack_stream, unpack_stream, is_cart
 
 from assemblyline.common import forge
@@ -189,6 +190,8 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                     # Add bundling metadata
                     if 'bundle.source' not in submission['metadata']:
                         submission['metadata']['bundle.source'] = config.ui.fqdn
+                    if 'bundle.created' not in submission['metadata']:
+                        submission['metadata']['bundle.created'] = now_as_iso()
                     if Classification.enforce and 'bundle.classification' not in submission['metadata']:
                         submission['metadata']['bundle.classification'] = submission['classification']
 
@@ -210,6 +213,8 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                 if alert:
                     if 'bundle.source' not in alert['metadata']:
                         alert['metadata']['bundle.source'] = config.ui.fqdn
+                    if 'bundle.created' not in alert['metadata']:
+                        alert['metadata']['bundle.created'] = now_as_iso()
                     if Classification.enforce and 'bundle.classification' not in alert['metadata']:
                         alert['metadata']['bundle.classification'] = alert['classification']
                     data['alert'] = alert
@@ -305,6 +310,9 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                 # Make sure bundle's submission meets minimum classification and save the submission
                 submission['classification'] = Classification.max_classification(submission['classification'],
                                                                                  min_classification)
+                submission.setdefault('metadata', {})
+                submission['metadata']['bundle.loaded'] = now_as_iso()
+                submission['metadata'].pop('replay', None)
                 submission.update(Classification.get_access_control_parts(submission['classification']))
 
                 if not rescan_services:
@@ -315,6 +323,12 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
             if alert:
                 alert['classification'] = Classification.max_classification(alert['classification'],
                                                                             min_classification)
+                alert.setdefault('metadata', {})
+                alert['metadata']['bundle.loaded'] = now_as_iso()
+
+                alert['metadata'].pop('replay', None)
+                alert['workflows_completed'] = False
+
                 datastore.alert.save(alert['alert_id'], alert)
 
             if files:
