@@ -29,7 +29,8 @@ class Metrics(odm.Model):
     cpu_seconds_count = odm.Integer(description="CPU count")
     busy_seconds = PerformanceTimer(description="Busy CPU time")
     busy_seconds_count = odm.Integer(description="Busy CPU count")
-    save_queue = odm.Integer(description="Number of items in save queue")
+    save_queue = odm.Integer(description="Processed submissions waiting to be saved")
+    error_queue = odm.Integer(description="Errors waiting to be saved")
 
 
 @odm.model(description="Heartbeat Model")
