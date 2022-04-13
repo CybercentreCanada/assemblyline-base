@@ -600,8 +600,18 @@ def test_constants():
         (b"System.Net.WebClient", ["code/ps1"]),
         (b"Net.ServicePointManager", ["code/ps1"]),
         (b"Net.SecurityProtocolType", ["code/ps1"]),
+        (b"[System.Text.Encoding]::UTF8", ["code/ps1"]),
+        (b"[System.Convert]::ToInt32", ["code/ps1"]),
+        (b"[System.String]::Join(", ["code/ps1"]),
+        (b"[byte[]]$blah=", ["code/ps1"]),
+        (b"[byte[]] $blah= ", ["code/ps1"]),
+        (b"[byte[]]\t$blah=\t", ["code/ps1"]),
+        (b"[Microsoft.VisualBasic.Interaction]", ["code/ps1"]),
+        (b"[Microsoft.VisualBasic.CallType]", ["code/ps1"]),
+        # Postscript
         (b"%!PS", ["code/postscript"]),
         (b"def /blah", ["code/postscript"]),
+        # Batch
         (b"chcp ", ["code/batch"]),
         (b"@chcp ", ["code/batch"]),
         (b"set /p ", ["code/batch"]),
@@ -744,6 +754,8 @@ def test_strong_indicators(code_snippet, code_types):
         (b"Blah-Blah", ["code/ps1"]),
         (b"Blah-Blah-Blah", ["code/ps1"]),
         (b"BlahBlah-BlahBlah", ["code/ps1"]),
+        (b"::", ["code/ps1"]),
+        # Postscript
         (b"pop ", ["code/postscript"]),
         (b"}for ", ["code/postscript"]),
         (b"dup ", ["code/postscript"]),
@@ -751,6 +763,7 @@ def test_strong_indicators(code_snippet, code_types):
         (b"copy ", ["code/postscript"]),
         # Email
         (b"Content-Type: ", ["code/ps1", "document/email"]),
+        # Batch
         (b"echo ", ["code/batch"]),
         (b"@echo ", ["code/batch"]),
         (b"echo\t", ["code/batch"]),
@@ -762,7 +775,7 @@ def test_strong_indicators(code_snippet, code_types):
         (b"pkgmgr ", ["code/batch"]),
         (b"netstat ", ["code/batch"]),
         (b"rem ", ["code/batch"]),
-        (b":: ", ["code/batch"]),
+        (b":: ", ["code/ps1", "code/batch"]),
         (b"move ", ["code/batch"]),
         (b"pause", ["code/batch"]),
         (b"shutdown", ["code/batch"]),
