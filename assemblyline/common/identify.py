@@ -428,6 +428,13 @@ STRONG_INDICATORS = {
         re.compile(rb"(?i)(System\.Net\.WebClient)"),
         re.compile(rb"(?i)(Net\.ServicePointManager)"),
         re.compile(rb"(?i)(Net\.SecurityProtocolType)"),
+        # String conversion libraries
+        re.compile(rb"(?i)\[System\.Text\.Encoding\]::UTF8"),
+        re.compile(rb"(?i)\[System\.Convert\]::ToInt32"),
+        re.compile(rb"(?i)\[System.String]::Join\("),
+
+        re.compile(rb"(?i)\[byte\[\]\][ \t]*\$\w+[ \t]*="),
+        re.compile(rb"(?i)\[Microsoft\.VisualBasic\.(?:Interaction|CallType)\]"),
     ],
     "code/postscript": [
         re.compile(rb"%!PS"),
@@ -488,6 +495,7 @@ WEAK_INDICATORS = {
         rb"\s-([A-Z][a-z0-9]+)+",
         # Check for cmdlet names ex. Disable-WindowsOptionalFeature
         rb"([A-Z][a-z0-9]+)+-([A-Z][a-z0-9]+)+",
+        rb"::",
     ],
     "code/postscript": [
         rb"pop ",
