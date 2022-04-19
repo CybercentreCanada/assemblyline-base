@@ -127,6 +127,10 @@ def create_transport(url, connection_attempts=None):
         valid_bool_keys = ['use_ssl', 'verify']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
+        # If user/password not specified, access might be dictated by IAM roles
+        if not user and not password:
+            user, password = None, None
+
         t = TransportS3(base=base, host=host, port=port, accesskey=user, secretkey=password,
                         connection_attempts=connection_attempts, **extras)
 
