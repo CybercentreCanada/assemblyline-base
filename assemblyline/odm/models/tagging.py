@@ -81,6 +81,7 @@ class Tagging(odm.Model):
         ssdeep = odm.Optional(odm.Compound(DynamicSSDeep), description="Sandbox SSDeep")
         window = odm.Optional(odm.Compound(DynamicWindow), description="Sandbox Window")
         operating_system = odm.Optional(odm.Compound(DynamicOperatingSystem), description="Sandbox Operating System")
+        processtree_id = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Process Tree ID")
 
     @odm.model(index=True, store=False, description="General Information Tag Model")
     class Info(odm.Model):
