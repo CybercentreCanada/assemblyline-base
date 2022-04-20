@@ -55,6 +55,8 @@ class Task(odm.Model):
         default=False,
         description="Whether the service should ignore the dynamic recursion prevention or not")
 
+    ignore_filtering = odm.Boolean(default=False, description="Should the service filter it's output?")
+
     priority = odm.Integer(default=0, description="Priority for processing order")
 
     @staticmethod
