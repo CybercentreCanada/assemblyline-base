@@ -31,7 +31,6 @@ STRONG_INDICATORS = {
         re.compile(rb"(?i)(^|\n)REM[ \t]+"),
         re.compile(rb"(?i)(ubound|lbound)\("),
         re.compile(rb"(?i)CreateObject\("),
-        re.compile(rb"(?i)Set[ \t]+\w+[ \t]*="),
         re.compile(rb"(?i)\.Run[ \t]+\w+,\d(?:,(?:False|True))?"),
         re.compile(rb"(?i)replace\((?:[\"']?.+?[\"']?,){2}(?:[\"']?.+?[\"']?)\)"),
     ],
@@ -434,7 +433,6 @@ STRONG_INDICATORS = {
         re.compile(rb"(?i)\[System\.Text\.Encoding\]::UTF8"),
         re.compile(rb"(?i)\[System\.Convert\]::ToInt32"),
         re.compile(rb"(?i)\[System.String]::Join\("),
-
         re.compile(rb"(?i)\[byte\[\]\][ \t]*\$\w+[ \t]*="),
         re.compile(rb"(?i)\[Microsoft\.VisualBasic\.(?:Interaction|CallType)\]"),
     ],
@@ -481,6 +479,7 @@ WEAK_INDICATORS = {
         rb"(?i).SpawnInstance_",
         rb"(?i).Security_",
         rb"(?i)WSH",
+        rb"(?i)Set[ \t]+\w+[ \t]*=",
     ],
     "code/csharp": [rb"(^|\n)(protected[ \t]+)?[ \t]*override"],
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
@@ -512,6 +511,7 @@ WEAK_INDICATORS = {
         rb"(?i)(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+",
         rb"(?i)(^|\n)pause",
         rb"(?i)(^|\n)shutdown[ \t]*(/s)?",
+        rb"(?i)Set[ \t]+\w+[ \t]*=",
     ],
 }
 WEAK_SCORE = 1
@@ -957,7 +957,7 @@ def ident(buf, length: int, path) -> Dict:
                 # Get root entry's GUID and try to guess document type
                 clsid_offset = root_entry_property_offset + 0x50
                 if len(buf) >= clsid_offset + 16:
-                    clsid = buf[clsid_offset: clsid_offset + 16]
+                    clsid = buf[clsid_offset : clsid_offset + 16]
                     if len(clsid) == 16 and clsid != b"\0" * len(clsid):
                         clsid_str = uuid.UUID(bytes_le=clsid)
                         clsid_str = clsid_str.urn.rsplit(":", 1)[-1].upper()
