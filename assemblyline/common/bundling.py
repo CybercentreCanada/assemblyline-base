@@ -244,7 +244,7 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
 
 # noinspection PyBroadException,PyProtectedMember
 def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False,
-                  rescan_services=None, completed_queue=None, exist_ok=False, cleanup=True):
+                  rescan_services=None, exist_ok=False, cleanup=True):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -354,7 +354,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                             SubmissionClient(datastore=datastore, filestore=filestore,
                                              config=config).rescan(submission, results['results'], extracted_file_infos,
                                                                    files['tree'], list(errors['errors'].keys()),
-                                                                   rescan_services, completed_queue=completed_queue)
+                                                                   rescan_services)
                 elif not exist_ok:
                     raise SubmissionAlreadyExist("Submission %s already exists." % sid)
 
