@@ -307,6 +307,7 @@ class Alerter(odm.Model):
         odm.Keyword(), description="List of group fields that are sure to be present in all alerts.")
     process_alert_message: str = odm.Keyword(
         decription="Python path to the function that will process an alert message.")
+    threshold: int = odm.Integer(description="Minimum score to reach for a submission to be considered an alert.")
 
 
 DEFAULT_ALERTER = {
@@ -325,7 +326,7 @@ DEFAULT_ALERTER = {
         "file.sha256"
     ],
     "process_alert_message": "assemblyline_core.alerter.processing.process_alert_message",
-
+    "threshold": 500
 }
 
 
