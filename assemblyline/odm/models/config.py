@@ -293,13 +293,20 @@ DEFAULT_AUTH = {
 
 @odm.model(index=False, store=False, description="Alerter Configuration")
 class Alerter(odm.Model):
-    alert_ttl: int = odm.Integer()
-    constant_alert_fields: List[str] = odm.List(odm.Keyword())
-    default_group_field: str = odm.Keyword()
-    delay: int = odm.Integer()
-    filtering_group_fields: List[str] = odm.List(odm.Keyword())
-    non_filtering_group_fields: List[str] = odm.List(odm.Keyword())
-    process_alert_message: str = odm.Keyword()
+    alert_ttl: int = odm.Integer(description="Time to live (days) for an alert in the system")
+    constant_alert_fields: List[str] = odm.List(
+        odm.Keyword(), description="List of field that should not change during an alert update")
+    default_group_field: str = odm.Keyword(description="Default field used for alert grouping view")
+    delay: int = odm.Integer(
+        description="Time in seconds that we let extended scans and workflow to complete their work "
+                    "before we start showing alerts in the alert viewer.")
+    filtering_group_fields: List[str] = odm.List(
+        odm.Keyword(),
+        description="List of group field that when selected will ignore certain alerts where this field is missing.")
+    non_filtering_group_fields: List[str] = odm.List(
+        odm.Keyword(), description="List of group fields that are sure to be present in all alerts.")
+    process_alert_message: str = odm.Keyword(
+        decription="Python path to the function that will process an alert message.")
 
 
 DEFAULT_ALERTER = {
@@ -365,9 +372,11 @@ class Ingester(odm.Model):
     default_resubmit_services: List[str] = odm.List(odm.Keyword(),
                                                     description="Default service selection for resubmits")
     description_prefix: str = odm.Keyword(
-        description="A prefix for descriptions. When a description is automatically generated, it will be the hash prefixed by this string")
+        description="A prefix for descriptions. When a description is automatically generated, it will be "
+                    "the hash prefixed by this string")
     is_low_priority: str = odm.Keyword(
-        description="Path to a callback function filtering ingestion tasks that should have their priority forcefully reset to low")
+        description="Path to a callback function filtering ingestion tasks that should have their priority "
+                    "forcefully reset to low")
     get_whitelist_verdict: str = odm.Keyword()
     whitelist: str = odm.Keyword()
     default_max_extracted: int = odm.Integer(
@@ -506,8 +515,8 @@ class Scaler(odm.Model):
                                                            description="Defaults Scaler will assign to a service.")
     cpu_overallocation: float = odm.Float(description="Percentage of CPU overallocation")
     memory_overallocation: float = odm.Float(description="Percentage of RAM overallocation")
-    additional_labels: List[str] = odm.Optional(odm.List(odm.Text()),
-                                                description="Additional labels to be applied to services('=' delimited)")
+    additional_labels: List[str] = odm.Optional(
+        odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
 
 
 DEFAULT_SCALER = {
@@ -704,9 +713,9 @@ class Services(odm.Model):
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''),
                                                   description="Substitution variables for image paths "
                                                   "(for custom registry support)")
-    update_image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''),
-                                                         description="Similar to `image_variables` "
-                                                         "but only applied to the updater. Intended for use with local registries.")
+    update_image_variables: Dict[str, str] = odm.Mapping(
+        odm.Keyword(default=''), description="Similar to `image_variables` but only applied to the updater. "
+                                             "Intended for use with local registries.")
     preferred_update_channel: str = odm.Keyword(description="Default update channel to be used for new services")
     allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
     preferred_registry_type: str = odm.Enum(
@@ -715,7 +724,8 @@ class Services(odm.Model):
         description="Global registry type to be used for fetching updates for a service (overridable by a service)")
     prefer_service_privileged: bool = odm.Boolean(
         default=False,
-        description="Global preference that controls if services should be privileged to communicate with core infrastucture")
+        description="Global preference that controls if services should be "
+                    "privileged to communicate with core infrastucture")
     cpu_reservation: float = odm.Float(
         description="How much CPU do we want to reserve relative to the service's request?<br>"
         "At `1`, a service's full CPU request will be reserved for them.<br>"
