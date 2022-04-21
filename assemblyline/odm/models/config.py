@@ -694,6 +694,18 @@ SERVICE_STAGES = [
     'POST'
 ]
 
+SAFELIST_HASH_TYPES = ['sha1', 'sha256', 'md5']
+
+
+@odm.model(index=False, store=False, description="Service's Safelisting Configuration")
+class ServiceSafelist(odm.Model):
+    enabled = odm.Boolean(default=True,
+                          description="Should services be allowed to check extracted files against safelist?")
+    hash_types = odm.List(odm.Enum(values=SAFELIST_HASH_TYPES, default=['sha1', 'sha256']),
+                          description="Types of file hashes used for safelist checks")
+    enforce_safelist_service = odm.Boolean(default=False,
+                                           description="Should the Safelist service always run on extracted files?")
+
 
 @odm.model(index=False, store=False, description="Services Configuration")
 class Services(odm.Model):
@@ -721,6 +733,7 @@ class Services(odm.Model):
         "At `1`, a service's full CPU request will be reserved for them.<br>"
         "At `0` (only for very small appliances/dev boxes), the service's CPU will be limited "
         "but no CPU will be reserved allowing for more flexible scheduling of containers.")
+    safelist = odm.Compound(ServiceSafelist)
 
 
 DEFAULT_SERVICES = {
@@ -732,7 +745,12 @@ DEFAULT_SERVICES = {
     "update_image_variables": {},
     "preferred_update_channel": "stable",
     "allow_insecure_registry": False,
-    "cpu_reservation": 0.25
+    "cpu_reservation": 0.25,
+    "safelist": {
+        "enabled": True,
+        "hash_types": ['sha1', 'sha256'],
+        "enforce_safelist_service": False
+    }
 }
 
 
