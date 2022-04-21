@@ -306,7 +306,7 @@ class Alerter(odm.Model):
     non_filtering_group_fields: List[str] = odm.List(
         odm.Keyword(), description="List of group fields that are sure to be present in all alerts.")
     process_alert_message: str = odm.Keyword(
-        decription="Python path to the function that will process an alert message.")
+        description="Python path to the function that will process an alert message.")
     threshold: int = odm.Integer(description="Minimum score to reach for a submission to be considered an alert.")
 
 
