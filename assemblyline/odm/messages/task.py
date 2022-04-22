@@ -1,5 +1,6 @@
 from assemblyline import odm
 from assemblyline.common import forge
+from assemblyline.odm.models.config import ServiceSafelist
 Classification = forge.get_classification()
 
 MSG_TYPES = {"Task"}
@@ -55,7 +56,11 @@ class Task(odm.Model):
         default=False,
         description="Whether the service should ignore the dynamic recursion prevention or not")
 
+    ignore_filtering = odm.Boolean(default=False, description="Should the service filter it's output?")
+
     priority = odm.Integer(default=0, description="Priority for processing order")
+    safelist_config = odm.Compound(ServiceSafelist,
+                                   description="Safelisting configuration (as defined in global configuration)")
 
     @staticmethod
     def make_key(sid, service_name, sha):
