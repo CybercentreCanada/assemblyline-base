@@ -18,8 +18,6 @@ class ResultOntology(odm.Model):
     sha256 = odm.SHA256(description="SHA256 of file")
     type = odm.Keyword(description="Type of file as identified by Assemblyline")
     size = odm.Integer(description="Size of the file in bytes")
-    filename = odm.Text(description="Name of the file as submitted")
-    date = odm.Date(description="Date of analysis")
     classification = odm.Keyword(default=Classification.UNRESTRICTED,
                                  description="Classification of the service result")
     service_name = odm.Keyword(description="Service Name")
@@ -27,7 +25,8 @@ class ResultOntology(odm.Model):
     service_tool_version = odm.Optional(odm.Keyword(default=''), description="Service Tool Version")
 
     # Optional metadata
-
+    filenames = odm.Optional(odm.List(odm.Text()), description="Known filenames associated to file")
+    date = odm.Optional(odm.Date(), description="Date of analysis")
     parent = odm.Optional(odm.SHA256(), description="Immediate parent of file relative to submission")
     sid = odm.Optional(odm.Keyword(), description="Submission ID associated to file")
     source_system = odm.Optional(odm.Text(), description="Which Assemblyline instance does the result originate from?")
