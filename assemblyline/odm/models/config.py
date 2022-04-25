@@ -711,7 +711,8 @@ SAFELIST_HASH_TYPES = ['sha1', 'sha256', 'md5']
 class ServiceSafelist(odm.Model):
     enabled = odm.Boolean(default=True,
                           description="Should services be allowed to check extracted files against safelist?")
-    hash_types = odm.List(odm.Enum(values=SAFELIST_HASH_TYPES, default=['sha1', 'sha256']),
+    hash_types = odm.List(odm.Enum(values=SAFELIST_HASH_TYPES),
+                          default=['sha1', 'sha256'],
                           description="Types of file hashes used for safelist checks")
     enforce_safelist_service = odm.Boolean(default=False,
                                            description="Should the Safelist service always run on extracted files?")

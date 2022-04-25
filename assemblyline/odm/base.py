@@ -901,7 +901,7 @@ class Model:
                 if '/' in module_path:
                     module_path = module_path[module_path.index('/odm'):-3]
                 else:
-                    module_path = module_path.strip('assemblyline').replace('.', '/')
+                    module_path = module_path.split('assemblyline')[1].replace('.', '/')
                 name = field_class.child_type.__name__
                 return f"[{name}]({module_path}/#{name.lower()})", field_class.child_type
             elif field_class.__class__ in [Mapping, List]:

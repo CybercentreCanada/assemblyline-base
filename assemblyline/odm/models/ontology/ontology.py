@@ -1,13 +1,14 @@
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.odm.models.tagging import Tagging
+from assemblyline.odm.models.ontology.types import Antivirus, PE, Sandbox
 
 Classification = forge.get_classification()
 
 
 # Result Metadata
-@odm.model(index=False, store=False, description="Service Result Ontology Header")
-class ResultOntology(odm.Model):
+@odm.model(index=False, store=False, description="Service Result Ontology Header (filled in by Assemblyline)")
+class ResultOntologyHeader(odm.Model):
     class HeuristicDetails(odm.Model):
         name = odm.Text(description="Name of the heuristic raised.")
         tags = odm.Compound(Tagging, description="Tags associated to heuristic")
@@ -53,3 +54,12 @@ class ResultOntology(odm.Model):
     #   }
     # }
     heuristics = odm.Optional(odm.Mapping(odm.Compound(HeuristicDetails)), description="Heuristics raised by service.")
+
+
+# ResultOntology
+@odm.model(index=False, store=False, description="Service Result Ontology")
+class ResultOntology(odm.Model):
+    header = odm.Compound(ResultOntologyHeader, description="Result Ontology Header")
+    antivirus = odm.Optional(odm.List(odm.Compound(Antivirus)), description="List of Antivirus Ontologies")
+    pe = odm.Optional(odm.List(odm.Compound(PE)), description="List of PE Ontologies")
+    sandbox = odm.Optional(odm.List(odm.Compound(Sandbox)), description="List of Sandbox Ontologies")
