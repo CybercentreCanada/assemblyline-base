@@ -60,7 +60,8 @@ class Task(odm.Model):
 
     priority = odm.Integer(default=0, description="Priority for processing order")
     safelist_config = odm.Compound(ServiceSafelist,
-                                   description="Safelisting configuration (as defined in global configuration)")
+                                   description="Safelisting configuration (as defined in global configuration)",
+                                   default={'enabled': False})
 
     @staticmethod
     def make_key(sid, service_name, sha):
