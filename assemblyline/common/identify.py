@@ -417,11 +417,11 @@ STRONG_INDICATORS = {
             rb"Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|"
             rb"New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|"
             rb"Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|"
-            rb"Invoke-(Expression|WebRequest))"
+            rb"Invoke-(Expression|WebRequest)|IWR)"
         ),
         # Match one of the common Classes (case-insensitive)
         re.compile(
-            rb"(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split)"
+            rb"(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-OutFile)"
         ),
         # Match one of the common Methods (case-insensitive)
         re.compile(rb"(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\("),
@@ -435,6 +435,8 @@ STRONG_INDICATORS = {
         re.compile(rb"(?i)\[System.String]::Join\("),
         re.compile(rb"(?i)\[byte\[\]\][ \t]*\$\w+[ \t]*="),
         re.compile(rb"(?i)\[Microsoft\.VisualBasic\.(?:Interaction|CallType)\]"),
+        # Environment Variable Access
+        re.compile(rb"(?i)\$env:\w"),
     ],
     "code/postscript": [
         re.compile(rb"%!PS"),
