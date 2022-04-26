@@ -20,8 +20,8 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_model_obj, get_random_phrase, \
-    get_random_uri, get_random_word
+from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_minimal_obj, random_model_obj, \
+    get_random_phrase, get_random_uri, get_random_word
 from assemblyline.run.suricata_importer import SuricataImporter
 from assemblyline.run.yara_importer import YaraImporter
 from assemblyline.datastore.helper import AssemblylineDatastore
@@ -206,7 +206,7 @@ def _create_results_for_file(ds, fs, f, possible_childs=None, log=None):
                 s = r.response.supplementary[0]
 
                 # Create a random ontology
-                onto = random_model_obj(ResultOntology).as_primitives()
+                onto = random_minimal_obj(ResultOntology).as_primitives(strip_null=True)
                 onto['header']['sha256'] = f
                 onto['header']['service_name'] = r.response.service_name
                 onto['header']['service_version'] = r.response.service_version
