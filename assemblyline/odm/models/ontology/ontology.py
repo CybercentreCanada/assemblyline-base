@@ -9,6 +9,8 @@ Classification = forge.get_classification()
 # Result Metadata
 @odm.model(index=False, store=False, description="Service Result Ontology Header (filled in by Assemblyline)")
 class ResultOntologyHeader(odm.Model):
+
+    @odm.model(index=False, store=False, description="Details about the Heuristics raised by a service")
     class HeuristicDetails(odm.Model):
         name = odm.Text(description="Name of the heuristic raised.")
         tags = odm.Compound(Tagging, description="Tags associated to heuristic")

@@ -928,7 +928,13 @@ class Model:
             # If field type is Enum, then show the possible values that can be used in the description
             if field_type == "Enum":
                 values = info.child_type.values if info.__class__ != Enum else info.values
-                values = [f'"{v}"' if v else str(v) for v in values]
+                none_value = False
+                if None in values:
+                    none_value = True
+                    values.remove(None)
+
+                values = [f'"{v}"' if v else str(v) for v in sorted(values)]
+                values.append("None") if none_value else None
                 description = f'{description}<br>Values:<br>`{", ".join(values)}`'
 
             # Is this a required field?
