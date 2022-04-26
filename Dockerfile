@@ -20,7 +20,8 @@ RUN apt-get update \
 # Install assemblyline base (setup.py is just a file we know exists so the command
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
 COPY setup.py dist* dist/
-RUN pip install --no-cache-dir -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
+RUN chmod -R 750 /root/
+RUN pip install --no-cache-dir -f dist/ --no-warn-script-location --user assemblyline==$version && rm -rf ~/.cache/pip
 
 FROM base
 
@@ -29,22 +30,22 @@ RUN useradd -b /var/lib -U -m assemblyline
 
 # Create assemblyline config directory
 RUN mkdir -p /etc/assemblyline
-RUN chmod 750 /etc/assemblyline
+RUN chmod -R 750 /etc/assemblyline
 RUN chown root:assemblyline /etc/assemblyline
 
 # Create assemblyline cache directory
 RUN mkdir -p /var/cache/assemblyline
-RUN chmod 770 /var/cache/assemblyline
+RUN chmod -R 770 /var/cache/assemblyline
 RUN chown assemblyline:assemblyline /var/cache/assemblyline
 
 # Create assemblyline home directory
 RUN mkdir -p /var/lib/assemblyline
-RUN chmod 770 /var/lib/assemblyline
+RUN chmod -R 750 /var/lib/assemblyline
 RUN chown assemblyline:assemblyline /var/lib/assemblyline
 
 # Create assemblyline log directory
 RUN mkdir -p /var/log/assemblyline
-RUN chmod 770 /var/log/assemblyline
+RUN chmod -R 770 /var/log/assemblyline
 RUN chown assemblyline:assemblyline /var/log/assemblyline
 
 # Install assemblyline base
