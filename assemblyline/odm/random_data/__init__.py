@@ -12,6 +12,7 @@ from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.heuristic import Heuristic
+from assemblyline.odm.models.ontology import ResultOntology
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service, UpdateSource
 from assemblyline.odm.models.submission import Submission
@@ -19,8 +20,8 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_model_obj, get_random_phrase, \
-    get_random_uri, get_random_word
+from assemblyline.odm.randomizer import SERVICES, get_random_hash, random_minimal_obj, random_model_obj, \
+    get_random_phrase, get_random_uri, get_random_word
 from assemblyline.run.suricata_importer import SuricataImporter
 from assemblyline.run.yara_importer import YaraImporter
 from assemblyline.datastore.helper import AssemblylineDatastore
@@ -146,7 +147,7 @@ def _create_errors_for_file(ds, f, services_done, log=None):
     return e_list
 
 
-def _create_results_for_file(ds, f, possible_childs=None, log=None):
+def _create_results_for_file(ds, fs, f, possible_childs=None, log=None):
     r_list = []
     services_done = []
     section_body_format = ["TEXT", "MEMORY_DUMP", "GRAPH_DATA", "URL", "JSON", "KEY_VALUE"]
@@ -200,11 +201,32 @@ def _create_results_for_file(ds, f, possible_childs=None, log=None):
                     e.sha256 = random.choice(possible_childs)
 
             # Set random supplementary files that are not top level
-            if not possible_childs:
-                r.response.supplementary = []
-            else:
-                for s in r.response.supplementary:
-                    s.sha256 = random.choice(possible_childs)
+            if r.response.supplementary:
+                # Edit the first file to be an ontology file
+                s = r.response.supplementary[0]
+
+                # Create a random ontology
+                onto = random_minimal_obj(ResultOntology).as_primitives(strip_null=True)
+                onto['header']['sha256'] = f
+                onto['header']['service_name'] = r.response.service_name
+                onto['header']['service_version'] = r.response.service_version
+                onto['header']['service_tool_version'] = r.response.service_tool_version
+
+                # Create it's file record
+                supp_file = random_model_obj(File)
+                byte_str = json.dumps(onto).encode('utf-8')
+                sha256 = hashlib.sha256(byte_str).hexdigest()
+                supp_file.sha256 = sha256
+                ds.file.save(sha256, supp_file)
+                fs.put(sha256, byte_str)
+
+                # Add the random files
+                s.sha256 = sha256
+                s.name = "random.ontology"
+                s.description = f"Random Ontology file for: {f}"
+
+                r.response.supplementary = [s]
+
             ds.result.save(r_key, r)
 
         if log:
@@ -225,7 +247,7 @@ def create_submission(ds, fs, log=None):
     if log:
         log.info(f"\t{s.sid}")
         log.info("\tGenerating files for submission...")
-    for _ in range(random.randint(4, 8)):
+    for _ in range(random.randint(3, 6)):
         f = random_model_obj(File)
         byte_str = get_random_phrase(wmin=8, wmax=20).encode()
         sha256 = hashlib.sha256(byte_str).hexdigest()
@@ -244,13 +266,13 @@ def create_submission(ds, fs, log=None):
     if log:
         log.info("\t\tGenerating results and errors for top level files...")
     for f in first_level_files:
-        r_list.extend(_create_results_for_file(ds, f, possible_childs=f_list, log=log))
+        r_list.extend(_create_results_for_file(ds, fs, f, possible_childs=f_list, log=log))
         e_list.extend(_create_errors_for_file(ds, f, [x.split('.')[1] for x in r_list if x.startswith(f)], log=log))
 
     if log:
         log.info("\t\tGenerating results and errors for children files...")
     for f in f_list:
-        r_list.extend(_create_results_for_file(ds, f, log=log))
+        r_list.extend(_create_results_for_file(ds, fs, f, log=log))
         e_list.extend(_create_errors_for_file(ds, f, [x.split('.')[1] for x in r_list if x.startswith(f)], log=log))
 
     s.results = r_list

@@ -236,7 +236,7 @@ def test_restore(datastore, cli, fs):
     assert result_len == datastore.result.search("id:*", rows=0)['total']
     assert submission_len == datastore.submission.search("id:*", rows=0)['total']
     assert error_len == datastore.error.search("id:*", rows=0)['total']
-    assert file_len == datastore.file.search("id:*", rows=0)['total']
+    assert file_len >= datastore.file.search("id:*", rows=0)['total'] > 0
 
 
 def test_service(datastore, cli):
