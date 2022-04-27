@@ -26,7 +26,7 @@ class Client(odm.Model):
 
 
 DEFAULT_CLIENT = {
-    'type': 'api',
+    'type': 'direct',
     'options': DEFAULT_CLIENT_OPTIONS
 }
 
