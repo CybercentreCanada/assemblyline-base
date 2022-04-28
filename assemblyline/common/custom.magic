@@ -100,7 +100,7 @@
 >&0    search/0x30    \<script\ language   custom: code/wsf
 # TCPDump capture
 0   short   0x3C4D
->&0 short   0xA1B2        custom: network\tcpdump
+>&0 short   0xA1B2        custom: network/tcpdump
 # Email
 0   string  DKIM-Signature:     custom: document/email
 # Email with MultipartBoundary
