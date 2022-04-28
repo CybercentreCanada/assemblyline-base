@@ -775,6 +775,8 @@ trusted_mimes = {
     "application/vnd.lotus-1-2-3": "document/lotus/spreadsheet",
     "image/wmf": "image/wmf",
     "image/vnd.microsoft.icon": "image/icon",
+    "image/svg": "image/svg",
+    "image/x-icon": "image/icon",
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
@@ -957,7 +959,7 @@ def ident(buf, length: int, path) -> Dict:
                 # Get root entry's GUID and try to guess document type
                 clsid_offset = root_entry_property_offset + 0x50
                 if len(buf) >= clsid_offset + 16:
-                    clsid = buf[clsid_offset : clsid_offset + 16]
+                    clsid = buf[clsid_offset: clsid_offset + 16]
                     if len(clsid) == 16 and clsid != b"\0" * len(clsid):
                         clsid_str = uuid.UUID(bytes_le=clsid)
                         clsid_str = clsid_str.urn.rsplit(":", 1)[-1].upper()
