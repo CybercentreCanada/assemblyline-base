@@ -21,6 +21,7 @@ RUN apt-get update \
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
 COPY setup.py dist* dist/
 RUN pip install --no-cache-dir -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
+RUN chmod 750 /root/.local/lib/python3.9/site-packages
 
 FROM base
 
@@ -39,7 +40,7 @@ RUN chown assemblyline:assemblyline /var/cache/assemblyline
 
 # Create assemblyline home directory
 RUN mkdir -p /var/lib/assemblyline
-RUN chmod 770 /var/lib/assemblyline
+RUN chmod 750 /var/lib/assemblyline
 RUN chown assemblyline:assemblyline /var/lib/assemblyline
 
 # Create assemblyline log directory
@@ -50,6 +51,7 @@ RUN chown assemblyline:assemblyline /var/log/assemblyline
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
+ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.9/site-packages
 ENV ASSEMBLYLINE_VERSION=${version}
 ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
 

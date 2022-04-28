@@ -18,6 +18,7 @@ ARG version_tag=${version}
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
+ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.9/site-packages
 ENV ASSEMBLYLINE_VERSION=${version}
 ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
 
