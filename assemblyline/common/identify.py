@@ -561,8 +561,6 @@ OLE_CLSID_GUIDs = {
     "BDD1F04B-858B-11D1-B16A-00C0F0283628": "document/office/word",  # Doc (see CVE2012-0158)
 }
 
-recognized = constants.RECOGNIZED_TYPES
-
 # CONSIDERED A LAST RESORT FOR HARD TO IDENTIFY FILES (ie. scripts)
 ext_to_tag = {
     ".bat": "code/batch",
@@ -621,12 +619,12 @@ tag_to_extension = {
 sl_patterns = [
     ["tnef", r"Transport Neutral Encapsulation Format"],
     ["chm", r"MS Windows HtmlHelp Data"],
-    ["windows/dll64", r"^pe32\+ .*dll.*x86\-64"],
-    ["windows/pe64", r"^pe32\+ .*x86\-64.*windows"],
-    ["windows/dll32", r"^pe32 .*dll"],
-    ["windows/pe32", r"^pe32 .*windows"],
-    ["windows/pe", r"^pe unknown.*windows"],
-    ["windows/dos", r"^(ms-)?dos executable"],
+    ["windows/dll64", r"pe32\+ .*dll.*x86\-64"],
+    ["windows/pe64", r"pe32\+ .*x86\-64.*windows"],
+    ["windows/dll32", r"pe32 .*dll"],
+    ["windows/pe32", r"pe32 .*windows"],
+    ["windows/pe", r"pe unknown.*windows"],
+    ["windows/dos", r"(ms-)?dos executable"],
     ["windows/com", r"^com executable"],
     ["windows/dos", r"^8086 relocatable"],
     ["linux/elf32", r"^elf 32-bit (l|m)sb +executable"],
@@ -727,10 +725,9 @@ tl_patterns = [
     ],
     ["document", r"PostScript|pdf|MIME entity text"],
     ["document", r"Hangul \(Korean\) Word Processor File"],
-    ["java", r"jar |java"],
     [
         "code",
-        r"Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|program|python"
+        r"Autorun|HTML |KML |LLVM |SGML |Visual C|XML |awk|batch |bytecode|perl|php|python"
         r"|ruby|script text exe|shell script|tcl",
     ],
     ["network", r"capture"],
@@ -745,6 +742,7 @@ tl_patterns = [
         "executable",
         r"803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object",
     ],
+    ["java", r"jar |java"],
     ["unknown", r"Emulator"],
     ["image", r"DjVu|Surface|XCursor|bitmap|cursor|font|graphics|icon|image|jpeg"],
     [
@@ -940,9 +938,6 @@ def ident(buf, length: int, path) -> Dict:
     except Exception as e:
         print(str(e))
         pass
-
-    if not recognized.get(data["type"], False):
-        data["type"] = "unknown"
 
     # ONLY USED IN A LAST RESORT
     if data["type"] == "unknown":
@@ -1184,9 +1179,6 @@ def fileinfo(path: str) -> Dict:
             data.update(ident(buf, buflen, path))
     data["ssdeep"] = ssdeep_from_file(path) if ssdeep_from_file else ""
 
-    # When data is parsed from a cart file we trust its metatdata and can skip the recognition test later
-    cart_metadata_set = False
-
     if not int(data.get("size", -1)):
         data["type"] = "empty"
     elif data["type"] in ["archive/zip", "java/jar"]:
@@ -1236,9 +1228,6 @@ def fileinfo(path: str) -> Dict:
         # Portfolios typically contain '/Type/Catalog/Collection
         elif re.search(b"/Type/Catalog/Collection", pdf_content):
             data["type"] = "document/pdf/portfolio"
-
-    if not recognized.get(data["type"], False) and not cart_metadata_set:
-        data["type"] = "unknown"
 
     return data
 
