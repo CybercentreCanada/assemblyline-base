@@ -445,6 +445,7 @@ STRONG_INDICATORS = {
         re.compile(
             rb"(?i)(^|\n| |\t|&)start[ \t]*/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?"
         ),
+        re.compile(rb"(?i)(^|\n| |\t|&)start[ \t]*/wait[ \t]+.*?"),
         re.compile(rb'(?i)(^|\n|@)cd[ \t]+(/d )?["\']%~dp0["\']'),
         re.compile(rb"(?i)(^|\n)taskkill[ \t]+(/F|/im)"),
         re.compile(rb"(?i)(^|\n)reg[ \t]+delete[ \t]+"),
@@ -671,17 +672,20 @@ sl_patterns = [
     ["class", r"java class data"],
     ["perl", r"perl .*script"],
     ["php", r"php script"],
-    ["python", r"python .*(script|byte)"],
+    ["python", r"python .*script"],
+    ["pyc", r"python .*byte"],
     ["shell", r"(shell|sh) script"],
     ["xml", r"OpenGIS KML"],
     ["html", r"html"],
     ["sgml", r"sgml"],
     ["xml", r"xml"],
+    ["tim", r"TIM image"],
     ["sff", r"Frame Format"],
     ["shortcut/windows", r"^MS Windows shortcut"],
     ["email", r"Mime entity text"],
     ["sysmon", r"MS Windows Vista Event Log"],
     ["emf", r"Windows Enhanced Metafile"],
+    ["c", r"MSVC \.res"],
 ]
 
 sl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in sl_patterns]
@@ -713,7 +717,10 @@ sl_to_tl = {
     "jpg": "image",
     "png": "image",
     "webp": "image",
+    "tim": "image",
     "shortcut/windows": "meta",
+    "c": "code",
+    "pyc": "resource"
 }
 
 # pylint:disable=C0301
@@ -756,25 +763,190 @@ tl_patterns = [
 ]
 
 trusted_mimes = {
+    # Mpeg Audio
+    "audio/mp2": "audio/mp2",
+    "audio/x-mp2": "audio/mp2",
+    "audio/mpeg": "audio/mp3",
+    "audio/mp3": "audio/mp3",
+    "audio/mpg": "audio/mp3",
+    "audio/x-mpeg": "audio/mp3",
+    "audio/x-mp3": "audio/mp3",
+    "audio/x-mpg": "audio/mp3",
+    "audio/x-mp4a-latm": "audio/mp4",
+    "audio/x-m4a": "audio/mp4",
+    "audio/m4a": "audio/mp4",
+    # Wav Audio
+    "audio/x-wav": "audio/wav",
+    "audio/wav": "audio/wav",
+    "audio/vnd.wav": "audio/wav",
+    # Ogg Audio
+    "audio/ogg": "audio/ogg",
+    "audio/x-ogg": "audio/ogg",
+    # S3M Audio
+    "audio/s3m": "audio/s3m",
+    "audio/x-s3m": "audio/s3m",
+    # MIDI Audio
+    "audio/midi": "audio/midi",
+    "audio/x-midi": "audiomidi",
+    # Mpeg video
+    "video/mp4": "video/mp4",
+    # Avi video
+    "video/x-msvideo": "video/avi",
+    "video/x-avi": "video/avi",
+    "video/avi": "video/avi",
+    "video/msvideo": "video/avi",
+    # Divx video
+    "video/divx": "video/divx",
+    "video/vnd.divx": "video/divx",
+    # Quicktime video
+    "video/quicktime": "video/quicktime",
+    # Source code C/C++
+    "text/x-c++": "code/c",
+    "text/x-c": "code/c",
+    # Configuration file
+    "application/x-wine-extension-ini": "text/ini",
+    # Python
+    "text/x-python": "code/python",
+    # PHP
+    "text/x-php": "code/php",
+    # Plain text (will do code detection later)
+    "text/plain": "text/plain",
+    # XML file
+    "text/xml": "code/xml",
+    # HTML file
+    "text/html": "code/html",
+    # Shell script
+    "text/x-shellscript": "code/shell",
+    # RTF
+    "text/rtf": "document/office/rtf",
+    # Java
+    "text/x-java": "code/java",
+
+    # JSON file
+    "application/json": "text/json",
+
+    # Autorun files
+    "application/x-setupscript": "code/autorun",
+    # Bittorrent files
     "application/x-bittorrent": "meta/torrent",
+    "application/x-torrent": "meta/torrent",
+    # Database files
+    "application/x-dbt": "db/dbt",
+    "application/x-dbf": "db/dbf",
+    "application/x-sqlite3": "db/sqlite",
+    # Font
+    "application/vnd.ms-opentype": "resource/font/opentype",
+    "application/x-font-sfn": "resource/font/x11",
+
+    # Image Icon
+    "image/vnd.microsoft.icon": "image/icon",
+    "application/ico": "image/icon",
+    "image/ico": "image/icon",
+    "image/icon": "image/icon",
+    "image/x-ico": "image/icon",
+    "image/x-icon": "image/icon",
+    "text/ico": "image/icon",
+    "image/x-icns": "image/icon",
+    # Image gif
+    "image/gif": "image/gif",
+    # Image WebP
+    "image/webp": "image/webp",
+    # Image BMP
+    "image/bmp": "image/bmp",
+    "image/x-bmp": "image/bmp",
+    "image/x-ms-bmp": "image/bmp",
+    # Image metafile
+    "image/wmf": "image/wmf",
+    # Image SVG
+    "image/svg": "image/svg",
+    "image/svg+xml": "image/svg",
+    # Image JPEG
+    "image/jpeg": "image/jpg",
+    "image/pjpeg": "image/jpg",
+    # Image PNG
+    "image/png": "image/png",
+    # Image TGA
+    "image/x-tga": "image/tga",
+    "image/x-icb": "image/tga",
+    # Image Cursor
+    "image/x-win-bitmap": "image/cursor",
+
+    # Office Outlook email
+    "application/vnd.ms-outlook": "document/office/email",
+    # Office Powerpoint
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "document/office/powerpoint",
+    "application/vnd.ms-powerpoint": "document/office/powerpoint",
+    # Office Excel
+    "application/vnd.ms-excel": "document/office/excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "document/office/excel",
+    # Office Word
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "document/office/word",
+    "application/msword": "document/office/word",
+    # Office encrypted docs
+    "application/encrypted": "document/office/passwordprotected",
+    # MSI file
+    "application/vnd.ms-msi": "document/installer/windows",
+    # PDF Document
+    "application/pdf": "document/pdf",
+    # Postscript document
+    "application/postscript": "document/ps",
+    # Open Document files
+    "application/vnd.oasis.opendocument.chart": "document/odt/chart",
+    "application/vnd.oasis.opendocument.chart-template": "document/odt/chart",
+    "application/vnd.oasis.opendocument.database": "db/odt",
+    "application/vnd.oasis.opendocument.formula": "document/odt/formula",
+    "application/vnd.oasis.opendocument.formula-template": "document/odt/formula",
+    "application/vnd.oasis.opendocument.graphics": "document/odt/graphics",
+    "application/vnd.oasis.opendocument.graphics-flat-xml": "document/odt/graphics",
+    "application/vnd.oasis.opendocument.graphics-template": "document/odt/graphics",
+    "application/vnd.oasis.opendocument.presentation": "document/odt/presentation",
+    "application/vnd.oasis.opendocument.presentation-flat-xml": "document/odt/presentation",
+    "application/vnd.oasis.opendocument.presentation-template": "document/odt/presentation",
+    "application/vnd.oasis.opendocument.spreadsheet": "document/odt/spreadsheet",
+    "application/vnd.oasis.opendocument.spreadsheet-flat-xml": "document/odt/spreadsheet",
+    "application/vnd.oasis.opendocument.spreadsheet-template": "document/odt/spreadsheet",
+    "application/vnd.oasis.opendocument.text": "document/odt/text",
+    "application/vnd.oasis.opendocument.text-flat-xml": "document/odt/text",
+    "application/vnd.oasis.opendocument.text-template": "document/odt/text",
+    "application/vnd.oasis.opendocument.text-master": "document/odt/text",
+    "application/vnd.oasis.opendocument.text-master-template": "document/odt/text",
+    "application/vnd.oasis.opendocument.web": "document/odt/web",
+
+    # Archives
+    "application/x-7z-compressed": "archive/7-zip",
     "application/x-tar": "archive/tar",
+    "application/x-tarapplication/x-dbt": "archive/tar",
+    "application/gzip": "archive/gzip",
+    "application/vnd.ms-tnef": "archive/tnef",
+    "application/x-cpio": "archive/cpio",
+    "application/x-archive": "archive/ar",
+    "application/zip": "archive/zip",
+    "application/zlib": "archive/zlib",
+    "application/x-arj": "archive/arj",
+    "application/x-lzip": "archive/lzip",
+    "application/x-lzh-compressed": "archive/lzh",
+    "application/x-ms-compress-szdd": "archive/szdd",
+    "application/x-arc": "archive/arc",
+    "application/x-iso9660-image": "archive/iso",
+    "application/x-rar": "archive/rar",
+    "application/x-xz": "archive/xz",
+    "application/vnd.ms-cab-compressed": "archive/cabinet",
+
+    # JAVA Class
+    "application/x-java-applet": "java/class",
+
+    # Packet capture
+    "application/vnd.tcpdump.pcap": "network/tcpdump",
+
+
     "message/rfc822": "document/email",
     "text/calendar": "text/calendar",
-    "image/svg+xml": "image/svg",
-    "image/webp": "image/webp",
     "application/x-mach-binary": "executable/mach-o",
-    "application/vnd.ms-outlook": "document/office/email",
     "application/x-iso9660-image": "archive/iso",
     "application/x-gettext-translation": "resource/mo",
-    "application/json": "text/json",
-    "application/x-dbf": "db/dbf",
     "application/x-hwp": "document/office/hwp",
     "application/vnd.iccprofile": "metadata/iccprofile",
     "application/vnd.lotus-1-2-3": "document/lotus/spreadsheet",
-    "image/wmf": "image/wmf",
-    "image/vnd.microsoft.icon": "image/icon",
-    "image/svg": "image/svg",
-    "image/x-icon": "image/icon",
 }
 
 tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
@@ -1190,11 +1362,10 @@ def fileinfo(path: str) -> Dict:
         # For unknown document files try identifying them by unziping,
         # but don't commit to it being a zip if it can't be extracted
         data["type"] = zip_ident(path, data["type"])
-    elif data["type"] == "unknown":
+    elif data["type"] == "text/plain" or data["type"] == "code/c":
         data["type"], _ = _guess_language(path)
     elif data["type"] == "archive/cart":
         data["type"] = cart_ident(path)
-        cart_metadata_set = True
     elif data["type"] == "executable/windows/dos":
         # The default magic file misidentifies PE files with a munged DOS header
         data["type"] = dos_ident(path)
