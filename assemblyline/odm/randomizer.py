@@ -16,15 +16,15 @@ HASH_ALPHA = "abcdef0123456789"
 SSDEEP_ALPHA = f"{ALPHA}0123456789"
 WORDS = """The Cyber Centre stays on the cutting edge of technology by working with commercial vendors of cyber security
 technology to support their development of enhanced cyber defence tools To do this our experts survey the cyber
-security market and evaluate emerging technologies in order to determine their potential to improve cyber security
+security market evaluate emerging technologies in order to determine their potential to improve cyber security
 across the country The Cyber Centre supports innovation by collaborating with all levels of government private
-industry and academia to examine complex problems in cyber security We are constantly engaging partners to promote
-an open and innovative environment We invite partners to work with us but also promote other Government of Canada
+industry academia to examine complex problems in cyber security We are constantly engaging partners to promote
+an open innovative environment We invite partners to work with us but also promote other Government of Canada
 innovation programs One of our key partnerships is with the Government of Canada Build in Canada Innovation Program
-BCIP The BCIP helps Canadian companies of all sizes transition their state of the art goods and services from the
+BCIP The BCIP helps Canadian companies of all sizes transition their state of the art goods services from the
 laboratory to the marketplace For certain cyber security innovations the Cyber Centre performs the role of technical
-authority We evaluate participating companies new technology and provide feedback in order to assist them in bringing
-their product to market To learn more about selling or testing an innovation visit the BCIP website""".split()
+authority We evaluate participating companies new technology provide feedback in order to assist them in bringing
+their product to market To learn more about selling testing an innovation visit the BCIP website""".split()
 WORDS = list(set(WORDS))
 MAPPING_KEYS = ["key_a", "key_b", "key_c", "key_d", "key_e", "key_f"]
 META_KEYS = ["ingest.name", "ingest.id", "date", "source", "file.original_ext", "file.original_name"]

@@ -1,6 +1,7 @@
 import chardet
 import re
 from copy import copy
+from typing import Union
 
 
 def remove_bidir_unicode_controls(in_str):
@@ -146,6 +147,19 @@ def translate_str(s, min_confidence=0.7) -> dict:
 # This method not really necessary. More to stop people from rolling their own.
 def unescape_str(s):
     return s.decode('string_escape')
+
+
+def truncate(data: Union[bytes, str], length: int = 100) -> str:
+    """
+    This method is a helper used to avoid cluttering output
+    :param data: The buffer that will be determined if it needs to be sliced
+    :param length: The limit of characters to the buffer
+    :return str: The potentially truncated buffer
+    """
+    string = safe_str(data)
+    if len(string) > length:
+        return string[:length] + '...'
+    return string
 
 
 class NamedConstants(object):
