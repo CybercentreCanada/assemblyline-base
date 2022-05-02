@@ -32,6 +32,7 @@ class Networking(odm.Model):
     oid = odm.UUID(description="Unique identifier of ontology")
     oid_parent = odm.Optional(odm.UUID(), description="Parent of this ontology")
     oid_children = odm.Optional(odm.List(odm.UUID()), description="Children of this ontology")
+
     objectid = odm.Compound(ObjectID, description="The object ID of the process object")
     process = odm.Optional(odm.Compound(Process), description="The process that spawned the network connection")
     source_ip = odm.Optional(odm.IP(), description="The source IP of the connection")

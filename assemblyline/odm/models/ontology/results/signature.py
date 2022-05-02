@@ -1,6 +1,9 @@
 from assemblyline import odm
+from assemblyline.common.dict_utils import get_dict_fingerprint_hash
 from assemblyline.odm.models.result import Attack
 from assemblyline.odm.models.ontology.types import Process
+
+OID_PARTS = ['name', 'signature_type', 'description']
 
 
 @odm.model(description="A signature that was raised during the analysis of the task")
@@ -27,3 +30,6 @@ class Signature(odm.Model):
     attack = odm.Optional(odm.List(odm.Compound(Attack)),
                           description="A list of ATT&CK patterns and categories of the signature")
     signature_type = odm.Enum(values=['CUCKOO', 'YARA', 'SIGMA', 'SURICATA'])
+
+    def get_oid(data: dict):
+        return f"signature_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"
