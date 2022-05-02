@@ -40,6 +40,8 @@ def test_valid_ip():
     assert not is_valid_ip('5..5.5')
     assert not is_valid_ip('5.5.5.5.5')
     assert not is_valid_ip('0.5.5.5')
+    assert not is_valid_ip('5.256.5.5')
+    assert not is_valid_ip('5.5.-1.5')
     assert is_valid_ip('5.0.5.5')
     assert is_valid_ip('5.5.0.5')
     assert not is_valid_ip('5.5.5.0')
