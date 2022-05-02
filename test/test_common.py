@@ -29,7 +29,7 @@ from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local
 from assemblyline.common.iprange import is_ip_reserved, is_ip_private
 from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.security import get_random_password, get_password_hash, verify_password
-from assemblyline.common.str_utils import safe_str, translate_str
+from assemblyline.common.str_utils import safe_str, translate_str, truncate
 from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.randomizer import random_model_obj, get_random_word
@@ -420,6 +420,12 @@ def test_translate_str():
     assert translate_str(b"fran\xc3\xa7ais \xc3\xa9l\xc3\xa8ve")['encoding'] == "utf-8"
     assert translate_str(b'\x83G\x83\x93\x83R\x81[\x83f\x83B\x83\x93\x83O\x82'
                          b'\xcd\x93\xef\x82\xb5\x82\xad\x82\xc8\x82\xa2')['language'] == "Japanese"
+
+
+def test_truncate():
+    assert truncate(b"blah") == "blah"
+    assert truncate(b"blah", 10) == "blah"
+    assert truncate(b"blahblahblahblah", 10) == "blahblahbl..."
 
 
 def test_uid():
