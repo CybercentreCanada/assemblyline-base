@@ -851,7 +851,6 @@ trusted_mimes = {
     "application/x-bittorrent": "meta/torrent",
     "application/x-torrent": "meta/torrent",
     # Database files
-    "application/x-dbt": "db/dbt",
     "application/x-dbf": "db/dbf",
     "application/x-sqlite3": "db/sqlite",
     # Font
