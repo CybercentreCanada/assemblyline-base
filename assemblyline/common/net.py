@@ -36,8 +36,8 @@ def is_valid_ip(ip: str) -> bool:
     if len(parts) == 4:
         for p in parts:
             try:
-                if 0 <= int(p) <= 255:
-                    continue
+                if not (0 <= int(p) <= 255):
+                    return False
             except ValueError:
                 return False
 
