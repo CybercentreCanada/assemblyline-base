@@ -829,8 +829,6 @@ trusted_mimes = {
     "text/x-python": "code/python",
     # PHP
     "text/x-php": "code/php",
-    # Plain text (will do code detection later)
-    "text/plain": "text/plain",
     # XML file
     "text/xml": "code/xml",
     # HTML file
@@ -1126,17 +1124,20 @@ def ident(buf, length: int, path) -> Dict:
             tl_tag = sl_to_tl.get(sl_tag, tl_patterns[minimum][0])
             data["type"] = "/".join((tl_tag, sl_tag))
 
+            # Do not allow double unknown data type
+            if data['type'] == "unknown/unknown":
+                data['type'] = "unknown"
+
     except Exception as e:
         print(str(e))
         pass
 
-    # ONLY USED IN A LAST RESORT
-    if data["type"] == "unknown":
-        for ext, tag_type in ext_to_tag.items():
-            if path.endswith(ext):
-                data["type"] = tag_type
-                break
+    # If mime is text/plain and type is unknown, set text/plain to trigger
+    # language detection later.
+    if data["type"] == "unknown" and data['mime'] == "text/plain":
+        data["type"] = data['mime']
 
+    # Lookup office documents by GUID
     if data["type"] == "document/office/unknown":
         # noinspection PyBroadException
         try:
@@ -1182,7 +1183,7 @@ def _differentiate(lang: str, scores_map: Dict) -> str:
 
 
 # Pass a filepath and this will return the guessed language in the AL tag format.
-def _guess_language(path: str) -> Tuple[str, Union[str, int]]:
+def _guess_language(path: str, fallback="unknown") -> Tuple[str, Union[str, int]]:
     file_length = os.path.getsize(path)
     with open(path, "rb") as fh:
         if file_length > 131070:
@@ -1219,7 +1220,7 @@ def _guess_language(path: str) -> Tuple[str, Union[str, int]]:
     high_scores = [(_differentiate(k, scores), v) for k, v in high_scores]
 
     if len(high_scores) != 1:
-        return "unknown", 0
+        return fallback, 0
     else:
         confidences = [(k, _confidence(v)) for k, v in high_scores]
         return confidences[0]
@@ -1382,7 +1383,7 @@ def fileinfo(path: str) -> Dict:
         # but don't commit to it being a zip if it can't be extracted
         data["type"] = zip_ident(path, data["type"])
     elif data["type"] == "text/plain" or data["type"] == "code/c":
-        data["type"], _ = _guess_language(path)
+        data["type"], _ = _guess_language(path, fallback="text/plain")
     elif data["type"] == "archive/cart":
         data["type"] = cart_ident(path)
     elif data["type"] == "executable/windows/dos":
@@ -1391,7 +1392,7 @@ def fileinfo(path: str) -> Dict:
     elif data["type"] == "code/html":
         # Magic detects .hta files as .html, guess_language detects .hta files as .js/.vbs
         # If both conditions are met, it's fair to say that the file is an .hta
-        lang, _ = _guess_language(path)
+        lang, _ = _guess_language(path, fallback="code/html")
         if lang in ["code/javascript", "code/vbs"]:
             data["type"] = "code/hta"
 
