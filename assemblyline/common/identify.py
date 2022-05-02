@@ -1132,10 +1132,10 @@ def ident(buf, length: int, path) -> Dict:
         print(str(e))
         pass
 
-    # If mime is text/plain and type is unknown, set text/plain to trigger
+    # If mime is text/* and type is unknown, set text/plain to trigger
     # language detection later.
-    if data["type"] == "unknown" and data['mime'] == "text/plain":
-        data["type"] = data['mime']
+    if data["type"] == "unknown" and data['mime'].startswith("text/"):
+        data["type"] = "text/plain"
 
     # Lookup office documents by GUID
     if data["type"] == "document/office/unknown":
@@ -1382,7 +1382,7 @@ def fileinfo(path: str) -> Dict:
         # For unknown document files try identifying them by unziping,
         # but don't commit to it being a zip if it can't be extracted
         data["type"] = zip_ident(path, data["type"])
-    elif data["type"] == "text/plain" or data["type"] == "code/c":
+    elif data["type"] == "text/plain":
         data["type"], _ = _guess_language(path, fallback="text/plain")
     elif data["type"] == "archive/cart":
         data["type"] = cart_ident(path)
