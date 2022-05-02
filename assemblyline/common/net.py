@@ -1,3 +1,4 @@
+from ipaddress import ip_address, IPv4Network
 import socket
 import subprocess
 import sys
@@ -50,6 +51,13 @@ def is_valid_ip(ip: str) -> bool:
         return True
 
     return False
+
+
+def is_ip_in_network(ip: str, network: IPv4Network) -> bool:
+    if not is_valid_ip(ip):
+        return False
+
+    return ip_address(ip) in network
 
 
 def is_valid_email(email: str) -> bool:
