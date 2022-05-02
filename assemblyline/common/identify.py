@@ -474,13 +474,13 @@ WEAK_INDICATORS = {
     "code/pdfjs": [rb"xfa\.((resolve|create)Node|datasets|form)", rb"\.oneOfChild"],
     "code/vbs": [
         rb"(?i)(^|\n)*[ \t]{0,1000}((Dim|Sub|Loop|Attribute|Function|End[ \t]+Function)[ \t]+)|(End[ \t]+Sub)",
-        rb"(?i)CreateObject",
-        rb"(?i)WScript",
-        rb"(?i)window_onload",
-        rb"(?i).SpawnInstance_",
-        rb"(?i).Security_",
-        rb"(?i)WSH",
-        rb"(?i)Set[ \t]+\w+[ \t]*=",
+        rb"CreateObject",
+        rb"WScript",
+        rb"window_onload",
+        rb".SpawnInstance_",
+        rb".Security_",
+        rb"WSH",
+        rb"Set[ \t]+\w+[ \t]*=",
     ],
     "code/csharp": [rb"(^|\n)(protected[ \t]+)?[ \t]*override"],
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
@@ -510,9 +510,9 @@ WEAK_INDICATORS = {
     "document/email": [rb"^Content-Type: "],
     "code/batch": [
         rb"(?i)(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+",
-        rb"(?i)(^|\n)pause",
-        rb"(?i)(^|\n)shutdown[ \t]*(/s)?",
-        rb"(?i)Set[ \t]+\w+[ \t]*=",
+        rb"(^|\n)pause",
+        rb"(^|\n)shutdown[ \t]*(/s)?",
+        rb"Set[ \t]+\w+[ \t]*=",
     ],
 }
 WEAK_SCORE = 1
