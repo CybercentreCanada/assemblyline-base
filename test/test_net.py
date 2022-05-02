@@ -62,7 +62,8 @@ def test_valid_email():
 
 
 def test_is_ip_in_network():
+    from ipaddress import ip_network
     assert not is_ip_in_network(None, None)
     assert not is_ip_in_network(1.0, 1.0)
-    assert not is_ip_in_network("1.1.1.1", "2.0.0.0/24")
-    assert is_ip_in_network("2.2.2.2", "2.0.0.0/8")
+    assert not is_ip_in_network("1.1.1.1", ip_network("2.0.0.0/24"))
+    assert is_ip_in_network("2.2.2.2", ip_network("2.0.0.0/8"))
