@@ -1,4 +1,4 @@
-from assemblyline.common.net import is_valid_port, is_valid_domain, is_valid_ip, is_valid_email
+from assemblyline.common.net import is_valid_port, is_valid_domain, is_valid_ip, is_valid_email, is_ip_in_network
 from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN
 
 import requests
@@ -43,6 +43,8 @@ def test_valid_ip():
     assert is_valid_ip('5.0.5.5')
     assert is_valid_ip('5.5.0.5')
     assert not is_valid_ip('5.5.5.0')
+    assert not is_valid_ip(None)
+    assert not is_valid_ip(1.0)
 
 
 def test_valid_email():
@@ -57,3 +59,10 @@ def test_valid_email():
     assert is_valid_email('u#ser@cyber.gc.ca')
     assert is_valid_email('"u#ser"@cyber.gc.ca')
     assert is_valid_email('"user..name"@cyber.gc.ca')
+
+
+def test_is_ip_in_network():
+    assert not is_ip_in_network(None, None)
+    assert not is_ip_in_network(1.0, 1.0)
+    assert not is_ip_in_network("1.1.1.1", "2.0.0.0/24")
+    assert is_ip_in_network("2.2.2.2", "2.0.0.0/8")

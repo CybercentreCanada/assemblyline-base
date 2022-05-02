@@ -1,3 +1,4 @@
+from ipaddress import ip_address, ip_network
 import socket
 import subprocess
 import sys
@@ -32,6 +33,9 @@ def is_valid_domain(domain: str) -> bool:
 
 
 def is_valid_ip(ip: str) -> bool:
+    if not isinstance(ip, str):
+        return False
+
     parts = ip.split(".")
     if len(parts) == 4:
         for p in parts:
@@ -50,6 +54,18 @@ def is_valid_ip(ip: str) -> bool:
         return True
 
     return False
+
+
+def is_ip_in_network(ip: str, network: str) -> bool:
+    if not is_valid_ip:
+        return False
+
+    try:
+        ip_is_in_network = ip_address(ip) in ip_network(network)
+    except Exception:
+        ip_is_in_network = False
+
+    return ip_is_in_network
 
 
 def is_valid_email(email: str) -> bool:
