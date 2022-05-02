@@ -1,4 +1,4 @@
-from ipaddress import ip_address, ip_network
+from ipaddress import ip_address, ip_network, IPv4Network
 import socket
 import subprocess
 import sys
@@ -56,13 +56,13 @@ def is_valid_ip(ip: str) -> bool:
     return False
 
 
-def is_ip_in_network(ip: str, network: str) -> bool:
+def is_ip_in_network(ip: str, network: IPv4Network) -> bool:
     if not is_valid_ip:
         return False
 
     try:
-        ip_is_in_network = ip_address(ip) in ip_network(network)
-    except Exception:
+        ip_is_in_network = ip_address(ip) in network
+    except ValueError:
         ip_is_in_network = False
 
     return ip_is_in_network
