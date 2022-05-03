@@ -163,6 +163,13 @@ class Tagging(odm.Model):
             main_class = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Main Class")
             main_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Main Package")
 
+        @odm.model(index=True, store=False, description="LNK File Tag Model")
+        class FileLNK(odm.Model):
+            machine_id = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Machine ID")
+            tracker_mac = odm.Optional(
+                odm.List(odm.Keyword(copyto="__text__")), description="Possible MAC address from the Tracker block"
+            )
+
         @odm.model(index=True, store=False, description="File Name Model")
         class FileName(odm.Model):
             anomaly = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Name of Anomaly")
@@ -394,6 +401,7 @@ class Tagging(odm.Model):
         string = odm.Optional(odm.Compound(FileStrings), description="File Strings Properties")
         apk = odm.Optional(odm.Compound(FileAPK), description="APK File Properties")
         jar = odm.Optional(odm.Compound(FileJAR), description="JAR File Properties")
+        lnk = odm.Optional(odm.Compound(FileLNK), description="LNK File Properties")
         img = odm.Optional(odm.Compound(FileIMG), description="Image File Properties")
         ole = odm.Optional(odm.Compound(FileOLE), description="OLE File Properties")
         pe = odm.Optional(odm.Compound(FilePE), description="PE File Properties")
