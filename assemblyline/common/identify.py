@@ -562,13 +562,6 @@ OLE_CLSID_GUIDs = {
     "BDD1F04B-858B-11D1-B16A-00C0F0283628": "document/office/word",  # Doc (see CVE2012-0158)
 }
 
-# CONSIDERED A LAST RESORT FOR HARD TO IDENTIFY FILES (ie. scripts)
-ext_to_tag = {
-    ".bat": "code/batch",
-    ".vbs": "code/vbs",
-    ".ps1": "code/ps1",
-}
-
 tag_to_extension = {
     "archive/chm": ".chm",
     "audiovisual/flash": ".swf",
@@ -971,7 +964,6 @@ tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
 custom = re.compile(r"^custom: ", re.IGNORECASE)
 
 ssdeep_from_file = None
-
 magic_lock = None
 file_type = None
 mime_type = None
@@ -1227,7 +1219,7 @@ def _guess_language(path: str, fallback="unknown") -> Tuple[str, Union[str, int]
 
 
 # noinspection PyBroadException
-def zip_ident(path: str, fallback: str = None) -> str:
+def zip_ident(path: str, fallback: str) -> str:
     file_list = []
 
     try:
@@ -1243,8 +1235,7 @@ def zip_ident(path: str, fallback: str = None) -> str:
             for file_name in lines[3:-2]:
                 file_list.append(safe_str(file_name[index:]))
         except Exception:
-            if fallback is not None:
-                return fallback
+            return fallback
 
     tot_files = 0
     tot_class = 0
@@ -1354,48 +1345,37 @@ def dos_ident(path: str) -> str:
 
 def fileinfo(path: str) -> Dict:
     path = safe_str(path)
-
     data = get_digests_for_file(path, on_first_block=ident)
-
-    # This is a special case, we know if the mime is set to one of these values
-    # then the input file is almost certainly an office file, but based on only the first
-    # block magic can't figure out any more than that. To handle that case we will read the
-    # entire file, and identify again.
-    if data["mime"] is not None and data["mime"].lower() in [
-        "application/cdfv2-corrupt",
-        "application/cdfv2-unknown",
-    ]:
-        with open(path, "rb") as fh:
-            buf = fh.read()
-            buflen = len(buf)
-            data.update(ident(buf, buflen, path))
     data["ssdeep"] = ssdeep_from_file(path) if ssdeep_from_file else ""
 
+    # Check if file empty
     if not int(data.get("size", -1)):
         data["type"] = "empty"
-    elif data["type"] in ["archive/zip", "java/jar"]:
-        # In addition to explicit zip files, we also want to run zip_ident when
-        # a file is a jar as there is a high rate of false positive (magic
-        # matching eclipse and other java related files as jars)
-        data["type"] = zip_ident(path)
-    elif data["type"] == "document/office/unknown":
-        # For unknown document files try identifying them by unziping,
-        # but don't commit to it being a zip if it can't be extracted
+
+    # Futher identify zip files based of their content
+    elif data["type"] in ["archive/zip", "java/jar", "document/office/unknown"]:
         data["type"] = zip_ident(path, data["type"])
-    elif data["type"] == "text/plain":
-        data["type"], _ = _guess_language(path, fallback="text/plain")
+
+    # Further check CaRT files, they may have an explicit type set
     elif data["type"] == "archive/cart":
         data["type"] = cart_ident(path)
+
+    # Further identify dos executables has this may be a PE that has been misidentified
     elif data["type"] == "executable/windows/dos":
-        # The default magic file misidentifies PE files with a munged DOS header
         data["type"] = dos_ident(path)
+
+    # Further identify html files to see if they contain scripting
     elif data["type"] == "code/html":
-        # Magic detects .hta files as .html, guess_language detects .hta files as .js/.vbs
-        # If both conditions are met, it's fair to say that the file is an .hta
         lang, _ = _guess_language(path, fallback="code/html")
         if lang in ["code/javascript", "code/vbs"]:
             data["type"] = "code/hta"
 
+    # Try an alternative identify method if we don't know what the file is yet
+    elif data["type"] in ["unknown", "text/plain"]:
+        data["type"], _ = _guess_language(path, fallback=data["type"])
+
+    # Extra checks for office documents
+    #  - Check for encryption
     if data["type"] in [
         "document/office/word",
         "document/office/excel",
@@ -1411,6 +1391,9 @@ def fileinfo(path: str) -> Dict:
             # then it's not meant to be. Moving on!
             pass
 
+    # Extra checks for PDF documents
+    #  - Check for encryption
+    #  - Check for PDF collection (portfolio)
     if data["type"] == "document/pdf":
         # Password protected documents typically contain '/Encrypt'
         pdf_content = open(path, "rb").read()
