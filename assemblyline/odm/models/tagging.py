@@ -86,6 +86,7 @@ class Tagging(odm.Model):
     @odm.model(index=True, store=False, description="General Information Tag Model")
     class Info(odm.Model):
         phone_number = odm.Optional(odm.List(odm.PhoneNumber(copyto="__text__")))
+        password = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Password")
 
     @odm.model(index=True, store=False, description="File Tag Model")
     class File(odm.Model):
