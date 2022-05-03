@@ -358,6 +358,10 @@ class Tagging(odm.Model):
         class FileShortcut(odm.Model):
             command_line = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Command Line")
             icon_location = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Icon Location")
+            machine_id = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Machine ID")
+            tracker_mac = odm.Optional(
+                odm.List(odm.Keyword(copyto="__text__")), description="Possible MAC address from the Tracker block"
+            )
 
         @odm.model(index=True, store=False, description="Strings File Model")
         class FileStrings(odm.Model):
