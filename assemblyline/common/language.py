@@ -1,9 +1,11 @@
 import os
 import re
+import yara
 
 from collections import defaultdict
 from typing import Tuple, Union, Dict
 
+from assemblyline.common.forge import get_constants
 from assemblyline.common.str_utils import safe_str
 
 STRONG_INDICATORS = {
@@ -574,3 +576,20 @@ def guess_language(path: str, fallback="unknown") -> Tuple[str, Union[str, int]]
     else:
         confidences = [(k, _confidence(v)) for k, v in high_scores]
         return confidences[0]
+
+
+constants = get_constants()
+default_externals = {'mime': '', 'magic': '', 'type': ''}
+rules_list = {"default": constants.YARA_RULE_PATH}
+rules = yara.compile(filepaths=rules_list, externals=default_externals)
+
+
+def guess_language_new(path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
+    externals = {k: v for k, v in info.items() if k in default_externals}
+    matches = rules.match(path, externals=externals, fast=True)
+    if len(matches) > 1:
+        print(matches)
+    for match in matches:
+        return match.meta['type']
+
+    return fallback

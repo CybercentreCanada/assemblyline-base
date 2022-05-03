@@ -15,7 +15,7 @@ from cart import get_metadata_only
 from typing import Dict
 
 from assemblyline.common.digests import get_digests_for_file
-from assemblyline.common.language import guess_language
+from assemblyline.common.language import guess_language_new
 from assemblyline.common.forge import get_constants
 from assemblyline.common.str_utils import dotdump, safe_str
 
@@ -317,7 +317,7 @@ trusted_mimes = {
     # XML file
     "text/xml": "code/xml",
     # HTML file
-    "text/html": "code/html",
+    "text/html": "text/plain",
     # Shell script
     "text/x-shellscript": "code/shell",
     # RTF
@@ -795,15 +795,8 @@ def fileinfo(path: str) -> Dict:
     elif data["type"] == "executable/windows/dos":
         data["type"] = dos_ident(path)
 
-    # Further identify html files to see if they contain scripting
-    elif data["type"] == "code/html":
-        lang, _ = guess_language(path, fallback="code/html")
-        if lang in ["code/javascript", "code/vbs"]:
-            data["type"] = "code/hta"
-
-    # Try an alternative identify method if we don't know what the file is yet
     elif data["type"] in ["unknown", "text/plain"]:
-        data["type"], _ = guess_language(path, fallback=data["type"])
+        data["type"] = guess_language_new(path, data, fallback=data["type"])
 
     # Extra checks for office documents
     #  - Check for encryption
