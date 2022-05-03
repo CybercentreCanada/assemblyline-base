@@ -1,4 +1,7 @@
 from assemblyline import odm
+from assemblyline.common.dict_utils import get_dict_fingerprint_hash
+
+OID_PARTS = ['pid', 'ppid', 'image', 'command_line']
 
 
 @odm.model(description="Details about the characteristics used to identify an object")
@@ -32,3 +35,6 @@ class Process(odm.Model):
     integrity_level = odm.Optional(odm.Text(), description="The integrity level of the process")
     image_hash = odm.Optional(odm.Text(), description="The hash of the file run")
     original_file_name = odm.Optional(odm.Text(), description="The original name of the file")
+
+    def get_oid(data: dict):
+        return f"process_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"

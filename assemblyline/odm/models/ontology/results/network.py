@@ -1,6 +1,11 @@
 from assemblyline import odm
 from assemblyline.odm.models.ontology.types.process import Process
 from assemblyline.odm.models.ontology.types.objectid import ObjectID
+from assemblyline.common.dict_utils import get_dict_fingerprint_hash
+
+OID_PARTS = ['source_ip', 'source_port',
+             'destination_ip', 'destination_port',
+             'transport_layer_protocol', 'connection_type']
 
 
 @odm.model(description="Details for a DNS request")
@@ -44,3 +49,6 @@ class Networking(odm.Model):
     http_details = odm.Optional(odm.Compound(NetworkHTTP), description="HTTP-specific details of request")
     dns_details = odm.Optional(odm.Compound(NetworkDNS), description="DNS-specific details of request")
     connection_type = odm.Enum(values=['http', 'dns'], description="Type of connection being made")
+
+    def get_oid(data: dict):
+        return f"network_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"
