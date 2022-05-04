@@ -587,8 +587,7 @@ rules = yara.compile(filepaths=rules_list, externals=default_externals)
 def guess_language_new(path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
     externals = {k: v for k, v in info.items() if k in default_externals}
     matches = rules.match(path, externals=externals, fast=True)
-    if len(matches) > 1:
-        print(matches)
+    matches.sort(key=lambda x: x.meta.get('score', 0), reverse=True)
     for match in matches:
         return match.meta['type']
 
