@@ -323,7 +323,8 @@ rule code_csharp {
         $ = "IsNullOrWhiteSpace("
 
     condition:
-        2 of them
+        mime startswith "text"
+        and 2 of them
 }
 
 /*
@@ -343,6 +344,7 @@ rule code_php {
         $rec4 = /\$this\->/
 
     condition:
-        $php in (0..256)
+        mime startswith "text"
+        and $php in (0..256)
         and 1 of ($rec*)
 }
