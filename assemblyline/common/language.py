@@ -535,7 +535,7 @@ def _differentiate(lang: str, scores_map: Dict) -> str:
 
 
 # Pass a filepath and this will return the guessed language in the AL tag format.
-def guess_language(path: str, fallback="unknown") -> Tuple[str, Union[str, int]]:
+def guess_language(path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
     file_length = os.path.getsize(path)
     with open(path, "rb") as fh:
         if file_length > 131070:
@@ -572,10 +572,10 @@ def guess_language(path: str, fallback="unknown") -> Tuple[str, Union[str, int]]
     high_scores = [(_differentiate(k, scores), v) for k, v in high_scores]
 
     if len(high_scores) != 1:
-        return fallback, 0
+        return fallback
     else:
         confidences = [(k, _confidence(v)) for k, v in high_scores]
-        return confidences[0]
+        return confidences[0][0]
 
 
 constants = get_constants()
