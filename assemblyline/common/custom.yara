@@ -2,6 +2,7 @@ rule code_hta {
 
 	meta:
 		type = "code/hta"
+        score = 10
 
     strings:
         $hta = "<hta:application " nocase
@@ -14,10 +15,11 @@ rule code_html_with_script {
 
 	meta:
 		type = "code/hta"
+        score = 10
 
     strings:
-        $html1 = "<html" nocase
-        $html2 = "</html" nocase
+        $html_start = "<html" nocase
+        $html_end = "</html" nocase
         $script = "<script" nocase
         $lang_js1 = "language=\"javascript\"" nocase
         $lang_js2 = "language=\"jscript\"" nocase
@@ -26,7 +28,8 @@ rule code_html_with_script {
         $lang_vbs2 = "language=\"vb\"" nocase
 
 	condition:
-		1 of ($html*)
+		($html_start in (0..256)
+        or $html_end in (filesize-256..filesize))
         and $script
         and 1 of ($lang*)
 }
@@ -35,6 +38,7 @@ rule code_htc {
 
 	meta:
 		type = "code/htc"
+        score = 15
 
     strings:
         $component1 = "public:component " nocase
@@ -104,10 +108,22 @@ rule code_html {
 		type = "code/html"
 
     strings:
-        $html1 = "<!doctype html>" nocase
-        $html2 = "<html" nocase
-        $html3 = "</html" nocase
+        $html_doctype = "<!doctype html>" nocase
+        $html_start = "<html" nocase
+        $html_end = "</html" nocase
 
 	condition:
-		2 of ($html*)
+		$html_doctype in (0..256)
+		or $html_start in (0..256)
+        or $html_end in (filesize-256..filesize)
+}
+
+rule code_html_with_js {
+
+	meta:
+		type = "code/hta"
+        score = 10
+
+    condition:
+		code_html and 1 of (code_javascript*)
 }
