@@ -12,15 +12,6 @@ from assemblyline.common.str_utils import safe_str
 LOGGER = logging.getLogger('assemblyline.identify')
 
 STRONG_INDICATORS = {
-    "code/csharp": [
-        re.compile(rb"(^|\n)[ \t]*namespace[ \t]+[\w.]+"),
-        re.compile(
-            rb"(^|\n)[ \t]*using[ \t]+(static[ \t]+)*([\w.]+;|\w+[ \t]*=[ \t]*[\w.:<>]+;)"
-        ),
-        re.compile(rb"(^|\n)[ \t]*internal[ \t]+class[ \t]+"),
-        re.compile(rb"(^|\n)[ \t]*fixed[ \t]+\("),
-        re.compile(rb"IsNullOrWhiteSpace\("),
-    ],
     "code/php": [
         re.compile(rb"(^|\n)<\?php"),
         re.compile(rb"namespace[ \t]+[\w.]+"),
@@ -154,7 +145,6 @@ STRONG_SCORE = 15
 MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
-    "code/csharp": [rb"(^|\n)(protected[ \t]+)?[ \t]*override"],
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
     "code/php": [rb"\$this\->"],
     "code/c": [

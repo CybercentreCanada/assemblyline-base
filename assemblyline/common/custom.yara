@@ -301,3 +301,27 @@ rule text_json {
         and $valid_keys1
         and $end at filesize-1
 }
+
+/*
+code/csharp
+*/
+
+rule code_csharp {
+
+    meta:
+        type = "code/csharp"
+        score = 1
+
+    strings:
+        $ = /(^|\n)[ \t]*namespace[ \t]+[\w.]+/
+        $ = /(^|\n)[ \t]*using[ \t]+(static[ \t]+)?([\w.]+;|\w+[ \t]*=[ \t]*[\w.:<>]+;)/
+        $ = /(^|\n)[ \t]*(internal|public)[ \t]+((static|sealed)[ \t]+)?class[ \t]+/
+        $ = /(^|\n)[ \t]*fixed[ \t]+\(/
+        $ = /(^|\n)[ \t]*(protected[ \t]+)?[ \t]*override/
+        $ = /(^|\n)[ \t]*\[DllImport\("\w"\)\]public static extern/
+        $ = /(^|\n)[ \t]*\[assembly: \w+\([\.\w"]+\)\]/
+        $ = "IsNullOrWhiteSpace("
+
+    condition:
+        2 of them
+}
