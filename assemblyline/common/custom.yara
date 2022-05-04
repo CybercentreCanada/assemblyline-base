@@ -214,3 +214,44 @@ rule code_htc {
         and $script
         and 1 of ($lang*)
 }
+
+/*
+document/email
+*/
+
+rule document_email_1 {
+
+    meta:
+        type = "document/email"
+        score = 15
+
+    strings:
+        $rec = "From: "
+        $rec2 = "Date: "
+        $subrec1 = "Bcc: "
+        $subrec2 = "To: "
+        $opt1 = "Subject: "
+        $opt2 = "Received: from"
+        $opt3 = "MIME-Version: "
+        $opt4 = "Content-Type: "
+
+    condition:
+        all of ($rec*)
+        and 1 of ($subrec*)
+        and 1 of ($opt*)
+}
+
+rule document_email_2 {
+
+    meta:
+        type = "document/email"
+        score = 10
+
+    strings:
+        $ = "MIME-Version: "
+        $ = "Content-Type: "
+        $ = "This is a multipart message in MIME format."
+
+    condition:
+        all of them
+}
