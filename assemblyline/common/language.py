@@ -9,28 +9,6 @@ from assemblyline.common.forge import get_constants
 from assemblyline.common.str_utils import safe_str
 
 STRONG_INDICATORS = {
-    "code/vbs": [
-        re.compile(rb"(?i)(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next"),
-        re.compile(rb"(?i)(^|\n)(?:Private)?[ \t]*Sub[ \t]+\w+\(*"),
-        re.compile(rb"(?i)(^|\n)End[ \t]+Module"),
-        re.compile(rb"(?i)(^|\n)ExecuteGlobal"),
-        re.compile(rb"(?i)(^|\n)REM[ \t]+"),
-        re.compile(rb"(?i)(ubound|lbound)\("),
-        re.compile(rb"(?i)CreateObject\("),
-        re.compile(rb"(?i)\.Run[ \t]+\w+,\d(?:,(?:False|True))?"),
-        re.compile(rb"(?i)replace\((?:[\"']?.+?[\"']?,){2}(?:[\"']?.+?[\"']?)\)"),
-    ],
-    "code/javascript": [
-        re.compile(rb"function([ \t]*|[ \t]+[\w]+[ \t]*)\([\w \t,]*\)[ \t\n\r]*{"),
-        re.compile(rb"\beval[ \t]*\("),
-        re.compile(rb"new[ \t]+ActiveXObject\("),
-        re.compile(rb"xfa\.((resolve|create)Node|datasets|form)"),
-        re.compile(rb"\.oneOfChild"),
-        re.compile(rb"unescape\("),
-        re.compile(rb"\.createElement\("),
-        re.compile(rb"submitForm\("),
-        re.compile(rb"document\.write\("),
-    ],
     "code/csharp": [
         re.compile(rb"(^|\n)[ \t]*namespace[ \t]+[\w.]+"),
         re.compile(
@@ -447,27 +425,6 @@ STRONG_SCORE = 15
 MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
-    "code/javascript": [
-        rb"var ",
-        rb"String\.(fromCharCode|raw)\(",
-        rb"Math\.(round|pow|sin|cos)\(",
-        rb"(isNaN|isFinite|parseInt|parseFloat)\(",
-        b"WSH",
-        rb"(document|window)\[",
-        rb"(?:[^\w]|^)this\.[\w]+",
-    ],
-    "code/jscript": [rb"new[ \t]+ActiveXObject\(", rb"Scripting\.Dictionary"],
-    "code/pdfjs": [rb"xfa\.((resolve|create)Node|datasets|form)", rb"\.oneOfChild"],
-    "code/vbs": [
-        rb"(?i)(^|\n)*[ \t]{0,1000}((Dim|Sub|Loop|Attribute|Function|End[ \t]+Function)[ \t]+)|(End[ \t]+Sub)",
-        rb"CreateObject",
-        rb"WScript",
-        rb"window_onload",
-        rb".SpawnInstance_",
-        rb".Security_",
-        rb"WSH",
-        rb"Set[ \t]+\w+[ \t]*=",
-    ],
     "code/csharp": [rb"(^|\n)(protected[ \t]+)?[ \t]*override"],
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
     "code/php": [rb"\$this\->"],
@@ -535,7 +492,7 @@ def _differentiate(lang: str, scores_map: Dict) -> str:
 
 
 # Pass a filepath and this will return the guessed language in the AL tag format.
-def guess_language(path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
+def guess_language_old(path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
     file_length = os.path.getsize(path)
     with open(path, "rb") as fh:
         if file_length > 131070:
@@ -584,7 +541,7 @@ rules_list = {"default": constants.YARA_RULE_PATH}
 rules = yara.compile(filepaths=rules_list, externals=default_externals)
 
 
-def guess_language_new(path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
+def guess_language(path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
     externals = {k: v for k, v in info.items() if k in default_externals}
     matches = rules.match(path, externals=externals, fast=True)
     matches.sort(key=lambda x: x.meta.get('score', 0), reverse=True)
