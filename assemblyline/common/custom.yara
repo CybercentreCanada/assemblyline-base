@@ -374,3 +374,26 @@ rule code_ps1 {
     condition:
         2 of them
 }
+
+/*
+code/c
+*/
+
+rule code_c {
+
+    meta:
+        type = "code/c"
+        score = 1
+
+    strings:
+        $ = /(^|\n)(static|typedef)?[ \t]+(struct|const)[ \t]+/
+        $ = /(^|\n)#include[ \t]*([<"])[\w.\/]+([>"])/
+        $ = /(^|\n)#(ifndef|define|endif|pragma)[ \t]+/
+        $ = /(^|\n)public[ \t]*:/
+        $ = /ULONG|HRESULT|STDMETHOD(_)?/
+        $ = /THIS(_)?/
+        $ = /(^|\n)(const[ \t]+char[ \t]+\w+;|extern[ \t]+|uint(8|16|32)_t[ \t]+)/
+
+    condition:
+        2 of them
+}

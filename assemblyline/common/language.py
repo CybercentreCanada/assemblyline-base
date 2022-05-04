@@ -12,15 +12,6 @@ from assemblyline.common.str_utils import safe_str
 LOGGER = logging.getLogger('assemblyline.identify')
 
 STRONG_INDICATORS = {
-    "code/c": [
-        re.compile(rb"(^|\n)(static|typedef)?[ \t]+(struct|const)[ \t]+"),
-        re.compile(rb'(^|\n)#include[ \t]*([<"])[\w./]+([>"])'),
-        re.compile(rb"(^|\n)#(ifndef|define|endif|pragma)[ \t]+"),
-        re.compile(rb"(^|\n)public[ \t]*:"),
-        # Microsoft Types
-        re.compile(rb"ULONG|HRESULT|STDMETHOD(_)?"),
-        re.compile(rb"THIS(_)?"),
-    ],
     "code/python": [
         re.compile(
             rb"(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:"
@@ -114,9 +105,6 @@ MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
-    "code/c": [
-        rb"(^|\n)(const[ \t]+char[ \t]+\w+;|extern[ \t]+|uint(8|16|32)_t[ \t]+)"
-    ],
     "code/python": [b"try:", b"except:", b"else:"],
     "code/java": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;"],
     "code/perl": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;", b"@_"],
@@ -129,7 +117,6 @@ WEAK_INDICATORS = {
         rb"xor ",
         rb"copy ",
     ],
-    "document/email": [rb"^Content-Type: "],
     "code/batch": [
         rb"(?i)(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+",
         rb"(^|\n)pause",
