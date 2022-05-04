@@ -325,3 +325,24 @@ rule code_csharp {
     condition:
         2 of them
 }
+
+/*
+code/php
+*/
+
+rule code_php {
+
+    meta:
+        type = "code/php"
+
+    strings:
+        $php = /(^|\n)<\?php/
+        $rec1 = /namespace[ \t]+[\w.]+/
+        $rec2 = /function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{/
+        $rec3 = /\beval[ \t]*\(/
+        $rec4 = /\$this\->/
+
+    condition:
+        $php in (0..256)
+        and 1 of ($rec*)
+}

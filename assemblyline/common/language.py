@@ -12,12 +12,6 @@ from assemblyline.common.str_utils import safe_str
 LOGGER = logging.getLogger('assemblyline.identify')
 
 STRONG_INDICATORS = {
-    "code/php": [
-        re.compile(rb"(^|\n)<\?php"),
-        re.compile(rb"namespace[ \t]+[\w.]+"),
-        re.compile(rb"function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{"),
-        re.compile(rb"\beval[ \t]*\("),
-    ],
     "code/c": [
         re.compile(rb"(^|\n)(static|typedef)?[ \t]+(struct|const)[ \t]+"),
         re.compile(rb'(^|\n)#include[ \t]*([<"])[\w./]+([>"])'),
@@ -146,7 +140,6 @@ MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
-    "code/php": [rb"\$this\->"],
     "code/c": [
         rb"(^|\n)(const[ \t]+char[ \t]+\w+;|extern[ \t]+|uint(8|16|32)_t[ \t]+)"
     ],
