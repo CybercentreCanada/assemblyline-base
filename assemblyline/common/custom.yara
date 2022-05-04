@@ -255,3 +255,25 @@ rule document_email_2 {
     condition:
         all of them
 }
+
+/*
+log/vipermonkey
+*/
+rule log_vipermonkey {
+
+    meta:
+        type = "log/vipermonkey"
+        score = 20
+
+    strings:
+        $ = "======================="
+        $ = "FILE: /"
+        $ = "-----------------------"
+        $ = "VBA MACRO"
+        $ = "in file: "
+        $ = "VBA CODE (with long lines collapsed):"
+        $ = "PARSING VBA CODE:"
+
+    condition:
+        all of them
+}
