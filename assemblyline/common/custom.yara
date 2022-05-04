@@ -348,3 +348,29 @@ rule code_php {
         and $php in (0..256)
         and 1 of ($rec*)
 }
+
+/*
+code/ps1
+*/
+
+rule code_ps1 {
+
+    meta:
+        type = "code/ps1"
+
+    strings:
+        $ = /(IWR|Start-BitsTransfer|Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i
+        $ = /(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass)/i
+        $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i
+        $ = /(System\.Net\.WebClient)/i
+        $ = /(Net\.ServicePointManager)/i
+        $ = /(Net\.SecurityProtocolType)/i
+        $ = /\[(System\.)?Text\.Encoding\]::UTF8/i
+        $ = /\[(System\.)?Convert\]::ToInt32/i
+        $ = /\[(System\.)?String]::Join\(/i
+        $ = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i
+        $ = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i
+
+    condition:
+        2 of them
+}

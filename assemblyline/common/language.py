@@ -88,32 +88,6 @@ STRONG_INDICATORS = {
         # Check if a tag has an xmlns attribute
         re.compile(rb"<[^>]+xmlns[:=][^>]+>", re.MULTILINE),
     ],
-    "code/ps1": [
-        # Match one of the common Cmdlets (case-insensitive)
-        re.compile(
-            rb"(?i)(Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|"
-            rb"Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|"
-            rb"New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|"
-            rb"Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|"
-            rb"Invoke-(Expression|WebRequest))"
-        ),
-        # Match one of the common Classes (case-insensitive)
-        re.compile(
-            rb"(?i)(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split)"
-        ),
-        # Match one of the common Methods (case-insensitive)
-        re.compile(rb"(?i)(\.Get(String|Field|Type|Method)|FromBase64String)\("),
-        # Commonly used .NET classed found in PowerShell
-        re.compile(rb"(?i)(System\.Net\.WebClient)"),
-        re.compile(rb"(?i)(Net\.ServicePointManager)"),
-        re.compile(rb"(?i)(Net\.SecurityProtocolType)"),
-        # String conversion libraries
-        re.compile(rb"(?i)\[System\.Text\.Encoding\]::UTF8"),
-        re.compile(rb"(?i)\[System\.Convert\]::ToInt32"),
-        re.compile(rb"(?i)\[System.String]::Join\("),
-        re.compile(rb"(?i)\[byte\[\]\][ \t]*\$\w+[ \t]*="),
-        re.compile(rb"(?i)\[Microsoft\.VisualBasic\.(?:Interaction|CallType)\]"),
-    ],
     "code/postscript": [
         re.compile(rb"%!PS"),
         re.compile(rb"def /\w+"),
@@ -147,13 +121,6 @@ WEAK_INDICATORS = {
     "code/java": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;"],
     "code/perl": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;", b"@_"],
     "text/markdown": [rb"\[[\w]+\]:[ \t]*http:"],
-    "code/ps1": [
-        # Check for PowerShell Parameters ex.  -Online -FeatureName
-        rb"\s-([A-Z][a-z0-9]+)+",
-        # Check for cmdlet names ex. Disable-WindowsOptionalFeature
-        rb"([A-Z][a-z0-9]+)+-([A-Z][a-z0-9]+)+",
-        rb"::",
-    ],
     "code/postscript": [
         rb"pop ",
         rb"\}for ",
