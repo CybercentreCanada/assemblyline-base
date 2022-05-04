@@ -259,6 +259,7 @@ rule document_email_2 {
 /*
 log/vipermonkey
 */
+
 rule log_vipermonkey {
 
     meta:
@@ -276,4 +277,27 @@ rule log_vipermonkey {
 
     condition:
         all of them
+}
+
+/*
+text/json
+*/
+
+rule text_json {
+
+    meta:
+        type = "text/json"
+        score = 1
+
+    strings:
+        $start = "{"
+        $invalid_keys1 = /\w+:[\s]*[\{\["\d]/
+        $valid_keys1 = /"\w+":[\s]*[\{\["\d]/
+        $end = "}"
+
+    condition:
+        $start at 0
+        and none of ($invalid_keys*)
+        and $valid_keys1
+        and $end at filesize-1
 }
