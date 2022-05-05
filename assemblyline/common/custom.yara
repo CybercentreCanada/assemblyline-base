@@ -485,7 +485,24 @@ rule code_protobuf {
         and 2 of them
 }
 
+/*
+code/xml
+*/
 
+rule code_xml {
+
+    meta:
+        type = "code/xml"
+
+    strings:
+        $ = /^\s*<\?xml[^>]+\?>/
+        $ = /<[^>]+xmlns[:=][^>]+>/
+        $ = /<\/xml>/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
 
 
 

@@ -27,14 +27,6 @@ STRONG_INDICATORS = {
         re.compile(rb"<\/Event>"),
         re.compile(rb"<\/Events>"),
     ],
-    "code/xml": [
-        # Check if it has an xml declaration header
-        re.compile(rb"^\s*<\?xml[^>]+\?>", re.DOTALL | re.MULTILINE),
-        # Check if it begins and ends with <tag ... and </tag ...> (for informal xml usages)
-        re.compile(rb"^\s*<(?P<open>[\w:]+).+</(?P=open)>\s*$", re.DOTALL),
-        # Check if a tag has an xmlns attribute
-        re.compile(rb"<[^>]+xmlns[:=][^>]+>", re.MULTILINE),
-    ],
     "code/postscript": [
         re.compile(rb"%!PS"),
         re.compile(rb"def /\w+"),
