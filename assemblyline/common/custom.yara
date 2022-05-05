@@ -522,19 +522,18 @@ rule code_css {
 }
 
 /*
-metadata/sysmon
+metadata/sysmon/evtx
 */
 
-rule metadata_sysmon {
+rule metadata_sysmon_evtx {
 
     meta:
-        type = "metadata/sysmon"
+        type = "metadata/sysmon/evtx"
 
     strings:
-        $ = /<Events>[^>]+/
-        $ = /<Event>[^>]+/
-        $ = /<\/Event>/
-        $ = /<\/Events>/
+        $ = /<Events[^>]*>/
+        $ = /<Event[^s][^>]*(\/)?>/
+        $ = /<\/Event(s)?>/
 
     condition:
         mime startswith "text"

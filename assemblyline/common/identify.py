@@ -173,7 +173,7 @@ sl_patterns = [
     ["sff", r"Frame Format"],
     ["windows", r"^MS Windows shortcut"],
     ["email", r"Mime entity text"],
-    ["sysmon", r"MS Windows Vista Event Log"],
+    ["sysmon/evt", r"MS Windows Vista Event Log"],
     ["emf", r"Windows Enhanced Metafile"],
     ["msvc", r"MSVC \.res"],
 ]
