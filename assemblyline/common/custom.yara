@@ -344,11 +344,33 @@ rule code_php {
         $rec2 = /function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{/
         $rec3 = /\beval[ \t]*\(/
         $rec4 = /\$this\->/
+        $rec5 = /require[ \t]+([\w\.]+)?['"].+\.php['"][ \t]*;/
+        $rec6 = /require\(([\w\.]+)?['"].+\.php['"]\);/
 
     condition:
         mime startswith "text"
         and $php in (0..256)
         and 1 of ($rec*)
+}
+
+/*
+code/jsp
+*/
+
+rule code_jsp {
+
+    meta:
+        type = "code/jsp"
+        score = 3
+
+    strings:
+        $ = /(^|\n)<%@page[ \t]+import=['"][\w\.]+['"][ \t]*%>/
+        $ = /(^|\n)<%![^%]*%>/
+        $ = /<%=\w+%>/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
 }
 
 /*

@@ -219,7 +219,9 @@ sl_to_tl = {
     "webp": "image",
     "tim": "image",
     "msvc": "resource",
-    "pyc": "resource"
+    "pyc": "resource",
+    "batch": "code",
+    "sgml": "code"
 }
 
 # pylint:disable=C0301
@@ -313,6 +315,8 @@ trusted_mimes = {
     "text/rtf": "document/office/rtf",
     # Java
     "text/x-java": "code/java",
+    # Batch
+    "text/x-msdos-batch": "code/batch",
 
     # JSON file
     "application/json": "text/json",
@@ -428,7 +432,6 @@ trusted_mimes = {
 
     # Packet capture
     "application/vnd.tcpdump.pcap": "network/tcpdump",
-
 
     "message/rfc822": "document/email",
     "text/calendar": "text/calendar",
