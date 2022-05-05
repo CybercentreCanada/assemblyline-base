@@ -15,7 +15,7 @@ from cart import get_metadata_only
 from typing import Dict
 
 from assemblyline.common.digests import get_digests_for_file
-from assemblyline.common.language import guess_language, guess_language_old
+from assemblyline.common.language import guess_language
 from assemblyline.common.forge import get_constants
 from assemblyline.common.str_utils import dotdump, safe_str
 
@@ -788,9 +788,6 @@ def fileinfo(path: str) -> Dict:
 
     elif data["type"] in ["unknown", "text/plain"] or "unknown" in data["type"]:
         data["type"] = guess_language(path, data, fallback=data["type"])
-
-    if data["type"] in ["unknown", "text/plain"] or "unknown" in data["type"]:
-        data["type"] = guess_language_old(path, data, fallback=data["type"])
 
     # Extra checks for office documents
     #  - Check for encryption

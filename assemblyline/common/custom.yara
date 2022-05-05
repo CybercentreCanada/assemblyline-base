@@ -540,8 +540,94 @@ rule metadata_sysmon_evtx {
         and all of them
 }
 
+/*
+code/batch
+*/
 
+rule code_batch {
 
+    meta:
+        type = "code/batch"
+
+    strings:
+        $ = /(^|\n| |\t|@)(chcp|set \/p)[ \t]+/i
+        $ = /(^|\n| |\t|&)start[ \t]*\/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?"/i
+        $ = /(^|\n| |\t|&)start[ \t]*\/wait[ \t]+.*/i
+        $ = /(^|\n|@)cd[ \t]+(\/d )?["\']%~dp0["\']/i
+        $ = /(^|\n)taskkill[ \t]+(\/F|\/im)/i
+        $ = /(^|\n)reg[ \t]+delete[ \t]+/i
+        $ = /(^|\n)%comspec%[ \t]+\/c[ \t]+/i
+        $ = /(^|\n)dir&echo[ \t]+/i
+        $ = /(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
+
+        $ = /(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+/i
+        $ = /(^|\n)pause/
+        $ = /(^|\n)shutdown[ \t]*(\/s)?/
+        $ = /Set[ \t]+\w+[ \t]*=/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
+code/postscript
+*/
+
+rule code_postscript {
+
+    meta:
+        type = "code/postscript"
+
+    strings:
+        $ = /%!PS/
+        $ = /def \/\w+/
+        $ = /pop /
+        $ = /\}for /
+        $ = /dup /
+        $ = /get /
+        $ = /xor /
+        $ = /copy /
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
+code/markdown
+*/
+
+rule code_markdown {
+
+    meta:
+        type = "code/markdown"
+
+    strings:
+        $ = /\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+/
+        $ = /\[[\w]+\]:[ \t]*http:/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
+code/sql
+*/
+
+rule code_sql {
+
+    meta:
+        type = "code/sql"
+
+    strings:
+        $ = /(^|\n)(create|drop|select|returns|declare)[ \t]+(view|table)[ \t]+/i
+
+    condition:
+        mime startswith "text"
+        and for all of them : ( # > 2 )
+}
 
 
 
