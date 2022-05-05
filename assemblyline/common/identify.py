@@ -541,10 +541,12 @@ def ident(buf, length: int, path) -> Dict:
                     labels.insert(0, labels.pop(index))
                     if len(labels) == len(mimes) and alter_mime:
                         mimes.insert(0, mimes.pop(index))
-            data["magic"] = safe_str(labels[0])
+            data["magic"] = safe_str(b" | ".join(labels))
 
-        if len(mimes) > 0 and mimes[0] != b"":
-            data["mime"] = safe_str(mimes[0])
+        for mime in mimes:
+            if mime != b"":
+                data["mime"] = safe_str(mime)
+                break
 
         # Highest priority is given to mime type matching something
         tagged = False
@@ -618,7 +620,7 @@ def ident(buf, length: int, path) -> Dict:
 
     # If mime is text/* and type is unknown, set text/plain to trigger
     # language detection later.
-    if data["type"] == "unknown" and data['mime'].startswith("text/"):
+    if data["type"] == "unknown" and data['mime'] is not None and data['mime'].startswith("text/"):
         data["type"] = "text/plain"
 
     # Lookup office documents by GUID
@@ -795,10 +797,10 @@ def fileinfo(path: str) -> Dict:
     elif data["type"] == "executable/windows/dos":
         data["type"] = dos_ident(path)
 
-    elif data["type"] in ["unknown", "text/plain"]:
+    elif data["type"] in ["unknown", "text/plain"] or "unknown" in data["type"]:
         data["type"] = guess_language(path, data, fallback=data["type"])
 
-    if data["type"] in ["unknown", "text/plain"]:
+    if data["type"] in ["unknown", "text/plain"] or "unknown" in data["type"]:
         data["type"] = guess_language_old(path, data, fallback=data["type"])
 
     # Extra checks for office documents

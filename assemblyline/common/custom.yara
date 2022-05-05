@@ -441,3 +441,98 @@ rule code_python {
         mime startswith "text"
         and 2 of them
 }
+
+/*
+code/java
+*/
+
+rule code_java {
+
+    meta:
+        type = "code/java"
+
+    strings:
+        $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+((abstract|final)[ \t]+)?class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{/
+        $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+(static[ \t]+)?((abstract|final)[ \t]+)?(\w+[ \t]+){2}=/
+        $ = /(^|\n)[\w \t]+\([^)]*\)[ \t]+throws[ \t]+\w+[ \t]*(,[ \t]*\w+[ \t]*)*{/
+        $ = /\.hasNext\(/
+        $ = /[ \t\n]*final[ \t]+\w/
+        $ = /(ArrayList|Class|Stack|Map|Set|HashSet|PrivilegedAction|Vector)<(\w|\?)/
+        $ = /(^|\n)[ \t]*package[ \t]+[\w\.]+;/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// The following have to be at the end with no score since I have no testing files for them. //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+code/rust
+*/
+
+rule code_rust {
+
+    meta:
+        type = "code/rust"
+
+    strings:
+        $ = /(^|\n)(pub|priv)[ \t]+(struct|enum|impl|const)[ \t]+/
+        $ = /(^|\n)[ \t]*fn[ \t]+\w+[ \t]*\(&self/
+        $ = /(println!|panic!)/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
+code/lisp
+*/
+
+rule code_lisp {
+
+    meta:
+        type = "code/lisp"
+
+    strings:
+        $ = /(^|\n)[ \t]*\(defvar[ \t]+/
+        $ = /(^|\n)[ \t]*\(defmacro[ \t]+/
+        $ = /(^|\n)[ \t]*\(eval-when[ \t]+/
+        $ = /(^|\n)[ \t]*\(in-package[ \t]+/
+        $ = /(^|\n)[ \t]*\(list[ \t]+/
+        $ = /(^|\n)[ \t]*\(export[ \t]+/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}

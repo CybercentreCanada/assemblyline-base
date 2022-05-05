@@ -12,29 +12,6 @@ from assemblyline.common.str_utils import safe_str
 LOGGER = logging.getLogger('assemblyline.identify')
 
 STRONG_INDICATORS = {
-    "code/rust": [
-        re.compile(rb"(^|\n)(pub|priv)[ \t]+(struct|enum|impl|const)[ \t]+"),
-        re.compile(rb"(^|\n)[ \t]*fn[ \t]+\w+[ \t]*\(&self"),
-        re.compile(rb"(println!|panic!)"),
-    ],
-    "code/lisp": [
-        re.compile(
-            rb"(^|\n)[ \t]*\((defmacro|defun|eval-when|in-package|list|export|defvar)[ \t]+"
-        ),
-    ],
-    "code/java": [
-        re.compile(
-            rb"(^|\n)[ \t]*public[ \t]+class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{"
-        ),
-        re.compile(
-            rb"(^|\n)[\w \t]+\([^)]*\)[ \t]+throws[ \t]+\w+[ \t]*(,[ \t]*\w+[ \t]*)*{"
-        ),
-        re.compile(rb"\.hasNext\("),
-        re.compile(rb"[ \t\n]*final[ \t]+\w"),
-        re.compile(
-            rb"(ArrayList|Class|Stack|Map|Set|HashSet|PrivilegedAction|Vector)<(\w|\?)"
-        ),
-    ],
     "code/perl": [
         re.compile(rb"(^|\n)[ \t]*my[ \t]+\$\w+[ \t]*="),
         re.compile(rb"(^|\n)[ \t]*sub[ \t]+\w+[ \t]*{"),
@@ -96,7 +73,6 @@ MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
-    "code/java": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;"],
     "code/perl": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;", b"@_"],
     "text/markdown": [rb"\[[\w]+\]:[ \t]*http:"],
     "code/postscript": [
