@@ -99,7 +99,7 @@ tag_to_extension = {
     "executable/linux/so64": ".so",
     "java/jar": ".jar",
     "silverlight/xap": ".xap",
-    "meta/shortcut/windows": ".lnk",
+    "shortcut/windows": ".lnk",
 }
 
 sl_patterns = [
@@ -171,7 +171,7 @@ sl_patterns = [
     ["xml", r"xml"],
     ["tim", r"TIM image"],
     ["sff", r"Frame Format"],
-    ["shortcut/windows", r"^MS Windows shortcut"],
+    ["windows", r"^MS Windows shortcut"],
     ["email", r"Mime entity text"],
     ["sysmon", r"MS Windows Vista Event Log"],
     ["emf", r"Windows Enhanced Metafile"],
@@ -218,7 +218,6 @@ sl_to_tl = {
     "png": "image",
     "webp": "image",
     "tim": "image",
-    "shortcut/windows": "meta",
     "msvc": "resource",
     "pyc": "resource"
 }
@@ -252,7 +251,7 @@ tl_patterns = [
         r"BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt"
         r"|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660",
     ],
-    ["meta", r"^MS Windows shortcut"],
+    ["shortcut", r"^MS Windows shortcut"],
     ["metadata", r"MS Windows Vista Event Log"],
     ["unknown", r".*"],
 ]
@@ -321,8 +320,8 @@ trusted_mimes = {
     # Autorun files
     "application/x-setupscript": "code/autorun",
     # Bittorrent files
-    "application/x-bittorrent": "meta/torrent",
-    "application/x-torrent": "meta/torrent",
+    "application/x-bittorrent": "application/torrent",
+    "application/x-torrent": "application/torrent",
     # Database files
     "application/x-dbf": "db/dbf",
     "application/x-sqlite3": "db/sqlite",
