@@ -566,30 +566,66 @@ rule metadata_sysmon_evtx {
 code/batch
 */
 
+// rule code_batch {
+
+//     meta:
+//         type = "code/batch"
+
+//     strings:
+//         $ = /(^|\n| |\t|@)(chcp|set \/p)[ \t]+/i
+//         $ = /(^|\n| |\t|&)start[ \t]*\/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?"/i
+//         $ = /(^|\n| |\t|&)start[ \t]*\/wait[ \t]+.*/i
+//         $ = /(^|\n|@)cd[ \t]+(\/d )?["\']%~dp0["\']/i
+//         $ = /(^|\n)taskkill[ \t]+(\/F|\/im)/i
+//         $ = /(^|\n)reg[ \t]+delete[ \t]+/i
+//         $ = /(^|\n)%comspec%[ \t]+\/c[ \t]+/i
+//         $ = /(^|\n)dir&echo[ \t]+/i
+//         $ = /(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
+
+//         $ = /(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+/i
+//         $ = /(^|\n)pause/
+//         $ = /(^|\n)shutdown[ \t]*(\/s)?/
+//         $ = /Set[ \t]+\w+[ \t]*=/
+
+//     condition:
+//         mime startswith "text"
+//         and 2 of them
+// }
+
 rule code_batch {
 
     meta:
         type = "code/batch"
+        score = 1
 
     strings:
-        $ = /(^|\n| |\t|@)(chcp|set \/p)[ \t]+/i
-        $ = /(^|\n| |\t|&)start[ \t]*\/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?"/i
-        $ = /(^|\n| |\t|&)start[ \t]*\/wait[ \t]+.*/i
-        $ = /(^|\n|@)cd[ \t]+(\/d )?["\']%~dp0["\']/i
-        $ = /(^|\n)taskkill[ \t]+(\/F|\/im)/i
-        $ = /(^|\n)reg[ \t]+delete[ \t]+/i
-        $ = /(^|\n)%comspec%[ \t]+\/c[ \t]+/i
-        $ = /(^|\n)dir&echo[ \t]+/i
-        $ = /(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
-
-        $ = /(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+/i
-        $ = /(^|\n)pause/
-        $ = /(^|\n)shutdown[ \t]*(\/s)?/
-        $ = /Set[ \t]+\w+[ \t]*=/
+        $ = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/
+        $ = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?[ \t]+-c[ \t]"/
 
     condition:
         mime startswith "text"
-        and 2 of them
+        and 1 of them
+
+}
+
+rule code_batch_small {
+
+    meta:
+        type = "code/batch"
+        score = -1
+
+    strings:
+        $ = /(^|\n|@|&)\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/
+        $ = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/
+        $ = /(^|\n|@|&)\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+&[ \t]+/
+        $ = /(^|\n)[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/
+        $ = /(^|\n) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/
+        $ = /(^|\n)(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/
+
+    condition:
+        mime startswith "text"
+        and 1 of them
+        and filesize < 512
 }
 
 /*
