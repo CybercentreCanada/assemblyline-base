@@ -504,6 +504,23 @@ rule code_xml {
         and 2 of them
 }
 
+/*
+code/css
+*/
+
+rule code_css {
+
+    meta:
+        type = "code/css"
+
+    strings:
+        $css = /(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}/
+
+    condition:
+        mime startswith "text"
+        and for all of ($css) : ( # > 2 )
+}
+
 
 
 

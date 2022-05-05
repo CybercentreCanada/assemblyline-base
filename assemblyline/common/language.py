@@ -12,12 +12,6 @@ from assemblyline.common.str_utils import safe_str
 LOGGER = logging.getLogger('assemblyline.identify')
 
 STRONG_INDICATORS = {
-    "code/css": [
-        re.compile(
-            rb"(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{"
-            rb"[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}"
-        ),
-    ],
     "text/markdown": [
         re.compile(rb"\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+"),
     ],
