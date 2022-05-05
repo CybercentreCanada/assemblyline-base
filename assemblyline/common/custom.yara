@@ -388,12 +388,33 @@ rule code_c {
     strings:
         $ = /(^|\n)(static|typedef)?[ \t]+(struct|const)[ \t]+/
         $ = /(^|\n)#include[ \t]*([<"])[\w.\/]+([>"])/
-        $ = /(^|\n)#(ifndef|define|endif|pragma)[ \t]+/
+        $ = /(^|\n)#(if !defined|ifndef|define|endif|pragma)[ \t]+/
         $ = /(^|\n)public[ \t]*:/
         $ = /ULONG|HRESULT|STDMETHOD(_)?/
         $ = /THIS(_)?/
         $ = /(^|\n)(const[ \t]+char[ \t]+\w+;|extern[ \t]+|uint(8|16|32)_t[ \t]+)/
 
     condition:
-        2 of them
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
+code/glsl
+*/
+
+rule code_glsl {
+
+    meta:
+        type = "code/glsl"
+        score = 2
+
+    strings:
+        $ = /(^|\n)#version\s+\d{1,4}\s*(es)?/
+        $ = /(^|\n)precision(\s+\w+){2};/
+        $ = /(^|\n)uniform(\s+\w+){2};/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
 }

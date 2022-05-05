@@ -180,7 +180,7 @@ sl_patterns = [
     ["email", r"Mime entity text"],
     ["sysmon", r"MS Windows Vista Event Log"],
     ["emf", r"Windows Enhanced Metafile"],
-    ["c", r"MSVC \.res"],
+    ["msvc", r"MSVC \.res"],
 ]
 
 sl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in sl_patterns]
@@ -224,7 +224,7 @@ sl_to_tl = {
     "webp": "image",
     "tim": "image",
     "shortcut/windows": "meta",
-    "c": "code",
+    "msvc": "resource",
     "pyc": "resource"
 }
 
