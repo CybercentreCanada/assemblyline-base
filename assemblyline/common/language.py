@@ -12,15 +12,6 @@ from assemblyline.common.str_utils import safe_str
 LOGGER = logging.getLogger('assemblyline.identify')
 
 STRONG_INDICATORS = {
-    "code/python": [
-        re.compile(
-            rb"(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:"
-        ),
-        re.compile(
-            rb"(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?"
-        ),
-        re.compile(rb"(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:"),
-    ],
     "code/rust": [
         re.compile(rb"(^|\n)(pub|priv)[ \t]+(struct|enum|impl|const)[ \t]+"),
         re.compile(rb"(^|\n)[ \t]*fn[ \t]+\w+[ \t]*\(&self"),
@@ -105,7 +96,6 @@ MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
-    "code/python": [b"try:", b"except:", b"else:"],
     "code/java": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;"],
     "code/perl": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;", b"@_"],
     "text/markdown": [rb"\[[\w]+\]:[ \t]*http:"],

@@ -14,7 +14,8 @@ rule code_javascript_1 {
         $lang_js4 = "type=\"text/javascript\"" nocase
 
     condition:
-        $script
+        mime startswith "text"
+        and $script
         and 1 of ($lang*)
 }
 
@@ -43,9 +44,10 @@ rule code_javascript_2 {
         $weak_js7 = /([^\w]|^)this\.[\w]+/
 
     condition:
-        2 of ($strong_js*)
-        or (1 of ($strong_js*)
-            and 2 of ($weak_js*))
+        mime startswith "text"
+        and (2 of ($strong_js*)
+             or (1 of ($strong_js*)
+                 and 2 of ($weak_js*)))
 }
 
 /*
@@ -372,7 +374,8 @@ rule code_ps1 {
         $ = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i
 
     condition:
-        2 of them
+        mime startswith "text"
+        and 2 of them
 }
 
 /*
@@ -413,6 +416,26 @@ rule code_glsl {
         $ = /(^|\n)#version\s+\d{1,4}\s*(es)?/
         $ = /(^|\n)precision(\s+\w+){2};/
         $ = /(^|\n)uniform(\s+\w+){2};/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
+code/python
+*/
+
+rule code_python {
+
+    meta:
+        type = "code/python"
+
+    strings:
+        $ = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:/
+        $ = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?/
+        $ = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
+        $ = /(try:|except:|else:)/
 
     condition:
         mime startswith "text"
