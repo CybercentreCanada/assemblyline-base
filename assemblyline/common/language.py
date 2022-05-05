@@ -15,12 +15,6 @@ STRONG_INDICATORS = {
     "text/markdown": [
         re.compile(rb"\*[ \t]*`[^`]+`[ \t]*-[ \t]*\w+"),
     ],
-    "metadata/sysmon": [
-        re.compile(rb"<Events>[^>]+"),
-        re.compile(rb"<Event>[^>]+"),
-        re.compile(rb"<\/Event>"),
-        re.compile(rb"<\/Events>"),
-    ],
     "code/postscript": [
         re.compile(rb"%!PS"),
         re.compile(rb"def /\w+"),

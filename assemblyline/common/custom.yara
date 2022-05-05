@@ -521,6 +521,26 @@ rule code_css {
         and for all of ($css) : ( # > 2 )
 }
 
+/*
+metadata/sysmon
+*/
+
+rule metadata_sysmon {
+
+    meta:
+        type = "metadata/sysmon"
+
+    strings:
+        $ = /<Events>[^>]+/
+        $ = /<Event>[^>]+/
+        $ = /<\/Event>/
+        $ = /<\/Events>/
+
+    condition:
+        mime startswith "text"
+        and all of them
+}
+
 
 
 
