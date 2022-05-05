@@ -465,9 +465,25 @@ rule code_java {
         and 2 of them
 }
 
+/*
+code/protobuf
+*/
 
+rule code_protobuf {
 
+    meta:
+        type = "code/protobuf"
+        score = 3
 
+    strings:
+        $ = /(^|\n)[ \t]*syntax[ \t]+=[ \t]+"proto\d"[ \t]*;/
+        $ = /(^|\n)[ \t]*package[ \t]+google\.protobuf[ \t]*;/
+        $ = /(^|\n)[ \t]*option[ \t]+\w+[ \t]+=[ \t]+"?.+"?[ \t]*;/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
 
 
 
@@ -495,6 +511,61 @@ rule code_java {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // The following have to be at the end with no score since I have no testing files for them. //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+code/go
+*/
+
+rule code_go {
+
+    meta:
+        type = "code/go"
+
+    strings:
+        $ = /(^|\n)[ \t]*import[ \t]+\(/
+        $ = /(^|\n)[ \t]*func[ \t]+\w+\(/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
+code/ruby
+*/
+
+rule code_ruby {
+
+    meta:
+        type = "code/ruby"
+
+    strings:
+        $ = /(^|\n)[ \t]*require(_all)?[ \t]*\'[\w\/]+\'/
+        $ = /rescue[ \t]+\w+[ \t]+=>/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
+code/perl
+*/
+
+rule code_perl {
+
+    meta:
+        type = "code/perl"
+
+    strings:
+        $ = /(^|\n)[ \t]*my[ \t]+\$\w+[ \t]*=/
+        $ = /(^|\n)[ \t]*sub[ \t]+\w+[ \t]*{/
+        $ = /(^|\n)[ \t]*package[ \t]+[\w\.]+;", b"@_/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
 
 /*
 code/rust

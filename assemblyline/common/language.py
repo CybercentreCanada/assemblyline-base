@@ -12,18 +12,6 @@ from assemblyline.common.str_utils import safe_str
 LOGGER = logging.getLogger('assemblyline.identify')
 
 STRONG_INDICATORS = {
-    "code/perl": [
-        re.compile(rb"(^|\n)[ \t]*my[ \t]+\$\w+[ \t]*="),
-        re.compile(rb"(^|\n)[ \t]*sub[ \t]+\w+[ \t]*{"),
-    ],
-    "code/ruby": [
-        re.compile(rb"(^|\n)[ \t]*require(_all)?[ \t]*\'[\w/]+\'"),
-        re.compile(rb"rescue[ \t]+\w+[ \t]+=>"),
-    ],
-    "code/go": [
-        re.compile(rb"(^|\n)[ \t]*import[ \t]+\("),
-        re.compile(rb"(^|\n)[ \t]*func[ \t]+\w+\("),
-    ],
     "code/css": [
         re.compile(
             rb"(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{"
@@ -73,7 +61,6 @@ MINIMUM_GUESS_SCORE = 20
 
 WEAK_INDICATORS = {
     "code/sql": [rb"(^|\n)(create|drop|select|returns|declare)[ \t]+"],
-    "code/perl": [rb"(^|\n)[ \t]*package[ \t]+[\w\.]+;", b"@_"],
     "text/markdown": [rb"\[[\w]+\]:[ \t]*http:"],
     "code/postscript": [
         rb"pop ",
