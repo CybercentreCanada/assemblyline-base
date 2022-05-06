@@ -106,7 +106,7 @@ rule code_vbs {
         $strong_vbs6 = "ubound(" nocase
         $strong_vbs7 = "CreateObject(" nocase
         $strong_vbs8 = /\.Run[ \t]+\w+,\d(,(False|True))?/
-        $strong_vbs9 = /replace\(([\"']?.+[\"']?,){2}([\"']?.+[\"']?)\)/
+        $strong_vbs9 = /replace\(([^,]+,){2}([^)]+)\)/
         $strong_vbs10 = "lbound(" nocase
 
         $weak_vbs1 = /(^|\n)[ \t]{0,1000}((Dim|Sub|Loop|Attribute|Function|End[ \t]+Function)[ \t]+)|(End[ \t]+Sub)/i
@@ -299,7 +299,7 @@ rule text_json {
 
     condition:
         $start at 0
-        and none of ($invalid_keys*)
+        and 0 of ($invalid_keys*)
         and $valid_keys1
         and $end at filesize-1
 }
@@ -344,8 +344,8 @@ rule code_php {
         $rec2 = /function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{/
         $rec3 = /\beval[ \t]*\(/
         $rec4 = /\$this\->/
-        $rec5 = /require[ \t]+([\w\.]+)?['"].+\.php['"][ \t]*;/
-        $rec6 = /require\(([\w\.]+)?['"].+\.php['"]\);/
+        $rec5 = /require[ \t]+([\w\.]+)?('[^']+\.php'|"[^"]+\.php")[ \t]*;/
+        $rec6 = /require\(([\w\.]+)?('[^']+\.php'|"[^"]+\.php")\);/
 
     condition:
         mime startswith "text"
@@ -425,6 +425,48 @@ rule code_c {
 }
 
 /*
+code/h
+*/
+
+rule code_h {
+
+    meta:
+        type = "code/h"
+
+    strings:
+        $if = /(^|\n)#if[ \t]+!defined[ \t]+\w+/
+        $if2 = /(^|\n)#ifndef[ \t]+\w+/
+        $if3 = /(^|\n)#endif[ \t]*(\n|$)/
+        $def = /(^|\n)#define[ \t]+\w+[ \t]+[^\n]+/
+
+    condition:
+        mime startswith "text"
+        and not code_c
+        and for all of ($def) : ( # > 2 )
+        and 1 of ($if*)
+}
+
+/*
+code/idl
+*/
+
+rule code_idl {
+
+    meta:
+        type = "code/idl"
+
+    strings:
+        $ = /(^|\n)[ \t]*\[helpstring\([^\)]+\)\][ \t]*[^,]+,/
+        $ = /(^|\n)[ \t]*importlib\("[^\)]+.tlb"\)[ \t]*;/
+        $ = /(^|\n)[ \t]*import[ \t]*"[^"]+.idl"[ \t]*;/
+        $ = /(^|\n)[ \t]*typedef[ \t]*\[\w+\][ \t]*\w+[ \t]*\w+[^{]*/
+
+    condition:
+        mime startswith "text"
+        and 2 of them
+}
+
+/*
 code/glsl
 */
 
@@ -454,7 +496,7 @@ rule code_python {
         type = "code/python"
 
     strings:
-        $ = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*[\'\"]__main__[\'\"][ \t]*:/
+        $ = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*['"]__main__['"][ \t]*:/
         $ = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?/
         $ = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
         $ = /(try:|except:|else:)/
@@ -500,7 +542,7 @@ rule code_protobuf {
     strings:
         $ = /(^|\n)[ \t]*syntax[ \t]+=[ \t]+"proto\d"[ \t]*;/
         $ = /(^|\n)[ \t]*package[ \t]+google\.protobuf[ \t]*;/
-        $ = /(^|\n)[ \t]*option[ \t]+\w+[ \t]+=[ \t]+"?.+"?[ \t]*;/
+        $ = /(^|\n)[ \t]*option[ \t]+\w+[ \t]+=[ \t]+[^;^\n]+[ \t]*;/
 
     condition:
         mime startswith "text"
@@ -575,7 +617,7 @@ code/batch
 //         $ = /(^|\n| |\t|@)(chcp|set \/p)[ \t]+/i
 //         $ = /(^|\n| |\t|&)start[ \t]*\/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?"/i
 //         $ = /(^|\n| |\t|&)start[ \t]*\/wait[ \t]+.*/i
-//         $ = /(^|\n|@)cd[ \t]+(\/d )?["\']%~dp0["\']/i
+//         $ = /(^|\n|@)cd[ \t]+(\/d )?["']%~dp0["']/i
 //         $ = /(^|\n)taskkill[ \t]+(\/F|\/im)/i
 //         $ = /(^|\n)reg[ \t]+delete[ \t]+/i
 //         $ = /(^|\n)%comspec%[ \t]+\/c[ \t]+/i
@@ -599,13 +641,18 @@ rule code_batch {
         score = 1
 
     strings:
-        $ = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/
-        $ = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?[ \t]+-c[ \t]"/
+        $obf = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/
+        $power = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?[ \t]+-c[ \t]"/
+        $cmd1 = /(^|\n)(echo|set|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
+        $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
+        $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
+        $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
 
     condition:
         mime startswith "text"
-        and 1 of them
-
+        and (for all of ($obf) :( # > 3 )
+             or $power
+             or for all of ($cmd*) :( # > 3 ))
 }
 
 rule code_batch_small {
@@ -737,7 +784,7 @@ rule code_ruby {
         type = "code/ruby"
 
     strings:
-        $ = /(^|\n)[ \t]*require(_all)?[ \t]*\'[\w\/]+\'/
+        $ = /(^|\n)[ \t]*require(_all)?[ \t]*'[\w\/]+'/
         $ = /rescue[ \t]+\w+[ \t]+=>/
 
     condition:
