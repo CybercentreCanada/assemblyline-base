@@ -196,8 +196,10 @@ rule code_htc {
         $lang_js1 = "language=\"javascript\"" nocase
         $lang_js2 = "language=\"jscript\"" nocase
         $lang_js3 = "language=\"js\"" nocase
+        $lang_js4 = "type=\"text/javascript\"" nocase
         $lang_vbs1 = "language=\"vbscript\"" nocase
         $lang_vbs2 = "language=\"vb\"" nocase
+        $lang_vbs3 = "type=\"text/vbscript\"" nocase
 
     condition:
         all of ($component*)
