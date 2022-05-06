@@ -228,14 +228,14 @@ rule document_email_1 {
         score = 15
 
     strings:
-        $rec = "From: "
-        $rec2 = "Date: "
-        $subrec1 = "Bcc: "
-        $subrec2 = "To: "
-        $opt1 = "Subject: "
-        $opt2 = "Received: from"
-        $opt3 = "MIME-Version: "
-        $opt4 = "Content-Type: "
+        $rec = /(^|\n)From: /
+        $rec2 = /(^|\n)Date: /
+        $subrec1 = /(^|\n)Bcc: /
+        $subrec2 = /(^|\n)To: /
+        $opt1 = /(^|\n)Subject: /
+        $opt2 = /(^|\n)Received: from/
+        $opt3 = /(^|\n)MIME-Version: /
+        $opt4 = /(^|\n)Content-Type: /
 
     condition:
         all of ($rec*)
@@ -250,8 +250,8 @@ rule document_email_2 {
         score = 10
 
     strings:
-        $ = "MIME-Version: "
-        $ = "Content-Type: "
+        $ = /(^|\n)MIME-Version: /
+        $ = /(^|\n)Content-Type: /
         $ = "This is a multipart message in MIME format."
 
     condition:
@@ -676,27 +676,25 @@ rule code_batch_small {
 }
 
 /*
-code/postscript
+document/ps
 */
 
-rule code_postscript {
+rule document_ps {
 
     meta:
-        type = "code/postscript"
+        type = "document/ps"
 
     strings:
-        $ = /%!PS/
-        $ = /def \/\w+/
-        $ = /pop /
-        $ = /\}for /
-        $ = /dup /
-        $ = /get /
-        $ = /xor /
-        $ = /copy /
+        $header = /(^|\n)%!PS[ \t]*\n/
+        $opt1 = /(^|\n)[ \t]+\d+[ \t]+(selectfont|scalefont|setlinejoin|setlinewidth)[ \t]*[^\n]*/
+        $opt2 = /(^|\n)[ \t]+\d+[ \t]+\d+[ \t]+(moveto|lineto|scale|translate)[ \t]*[^\n]*/
+        $opt3 = /(^|\n)[ \t]+(showpage|newpath|stroke|setfont)[ \t]*[^\n]*/
+        $opt4 = /(^|\n)[ \t]+\([^\)]+\)[ \t]+show[ \t]*[^\n]*/
 
     condition:
         mime startswith "text"
-        and 2 of them
+        and $header
+        and for all of ($opt*) : ( # > 2 )
 }
 
 /*
@@ -734,7 +732,19 @@ rule code_sql {
         and for all of them : ( # > 2 )
 }
 
+rule text_config {
 
+    meta:
+        type = "text/config"
+        score = -1
+
+    strings:
+        $ = /(^|\n)#?\w+[ \t]*=[ \t]*\w+(\n|$)/
+
+    condition:
+        mime startswith "text"
+        and for all of them : ( # > 4 )
+}
 
 
 
