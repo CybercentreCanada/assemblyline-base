@@ -354,8 +354,8 @@ rule code_ps1 {
         type = "code/ps1"
 
     strings:
-        $ = /(IWR|Start-BitsTransfer|Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i
-        $ = /(-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass)/i
+        $ = /(Add-MpPreference|IWR|Start-BitsTransfer|Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i
+        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass)/i
         $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i
         $ = /(System\.Net\.WebClient)/i
         $ = /(Net\.ServicePointManager)/i
@@ -530,13 +530,13 @@ rule code_xml {
         type = "code/xml"
 
     strings:
-        $ = /^\s*<\?xml[^>]+\?>/
-        $ = /<[^>]+xmlns[:=][^>]+>/
-        $ = /<\/xml>/
+        $header = /^\s*<\?xml[^>]+\?>/
+        $ns1 = /<xml[^>]+xmlns[:=][^>]+>/
+        $ns2 = /<\/xml>/
 
     condition:
-        mime startswith "text"
-        and 2 of them
+        $header
+        or 2 of ($ns*)
 }
 
 /*
