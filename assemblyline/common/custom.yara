@@ -20,10 +20,10 @@ rule code_javascript {
         $strong_js7  = /unescape\(/
         $strong_js8  = /\.createElement\(/
         $strong_js9  = /submitForm\(['"]/
-        $strong_js10 = /(document|window)(\[['"]|\.)\w/
+        $strong_js10 = /(document|window)(\[['"]|\.)\w+/
         $strong_js11 = /setTimeout\(/
+        $strong_js12 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
 
-        $weak_js1 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
@@ -85,30 +85,19 @@ rule code_vbs {
         type = "code/vbs"
 
     strings:
-        $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/
-        $strong_vbs2 = /(^|\n)(Private)?[ \t]*Sub[ \t]+\w+\(*/
-        $strong_vbs3 = /(^|\n)End[ \t]+Module/
+        $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i
+        $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\n]/i
+        $strong_vbs3 = /(^|\n)[ \t]+End[ \t]+(Module|Function|Sub|If)/i
         $strong_vbs4 = /(^|\n)ExecuteGlobal/
-        $strong_vbs5 = /(^|\n)REM[ \t]+/
-        $strong_vbs6 = "ubound(" nocase
-        $strong_vbs7 = "CreateObject(" nocase
-        $strong_vbs8 = /\.Run[ \t]+\w+,\d(,(False|True))?/
-        $strong_vbs9 = /replace\(([^,]+,){2}([^)]+)\)/
-        $strong_vbs10 = "lbound(" nocase
-
-        $weak_vbs1 = /(^|\n)[ \t]{0,1000}((Dim|Sub|Loop|Attribute|Function|End[ \t]+Function)[ \t]+)|(End[ \t]+Sub)/i
-        $weak_vbs2 = "CreateObject" wide ascii nocase
-        $weak_vbs3 = "WScript" wide ascii nocase
-        $weak_vbs4 = "window_onload" wide ascii nocase
-        $weak_vbs5 = ".SpawnInstance_" wide ascii nocase
-        $weak_vbs6 = ".Security_" wide ascii nocase
-        $weak_vbs7 = "WSH" wide ascii nocase
-        $weak_vbs8 = /Set[ \t]+\w+[ \t]*=/i
+        $strong_vbs5 = /(^|\n)[ \t]+Rem[ \t]+[^\n]+/i
+        $strong_vbs6 = /(^|\n)(Attribute|Set|const)[ \t]+\w+[ \t]+=[ \t]+[^\n]+/i
+        $strong_vbs7 = /(^|\n)[ \t]+Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i
+        $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i
+        $strong_vbs9 = /CreateObject\([^)]+\)/i
+        $strong_vbs10 = /GetObject\([^)]+\)/i
 
     condition:
         2 of ($strong_vbs*)
-        or (1 of ($strong_vbs*)
-            and 2 of ($weak_vbs*))
 }
 
 /*
@@ -121,9 +110,9 @@ rule code_html {
         type = "code/html"
 
     strings:
-        $html_doctype = "<!doctype html>" nocase
-        $html_start = "<html" nocase
-        $html_end = "</html" nocase
+        $html_doctype = /(^|\n|\>)[ \t]*<!doctype html>/i
+        $html_start = /(^|\n|\>)[ \t]*<html/i
+        $html_end = /(^|\n|\>)[ \t]*<\/html/i
 
     condition:
         $html_doctype in (0..256)
@@ -142,7 +131,7 @@ rule code_hta1 {
         score = 10
 
     strings:
-        $hta = "<hta:application " nocase
+        $hta = /(^|\n|\>)[ \t]*<hta:application /i
 
     condition:
         $hta
@@ -154,19 +143,11 @@ rule code_html_with_script {
         score = 10
 
     strings:
-        $script = "<script" nocase
-        $lang_js1 = "language=\"javascript\"" nocase
-        $lang_js2 = "language=\"jscript\"" nocase
-        $lang_js3 = "language=\"js\"" nocase
-        $lang_js4 = "type=\"text/javascript\"" nocase
-        $lang_vbs1 = "language=\"vbscript\"" nocase
-        $lang_vbs2 = "language=\"vb\"" nocase
-        $lang_vbs3 = "type=\"text/vbscript\"" nocase
+        $script = /(^|\n|\>)[ \t]*<script[^\>]+(language|type)="(javascript|js|jscript|text\/javascript|vbscript|vb|text\/vbscript)?[^\>]*>/i
 
     condition:
         (code_html or mime startswith "text")
         and $script
-        and 1 of ($lang*)
 }
 
 rule code_html_with_code {
@@ -633,16 +614,16 @@ rule code_batch {
     strings:
         $obf = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/
         $power = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?[ \t]+-c[ \t]"/
-        $cmd1 = /(^|\n)(echo|set|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
+        $cmd1 = /(^|\n)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
 
     condition:
         mime startswith "text"
-        and (for all of ($obf) :( # > 3 )
+        and (for 1 of ($obf) :( # > 3 )
              or $power
-             or for all of ($cmd*) :( # > 3 ))
+             or for 1 of ($cmd*) :( # > 3 ))
 }
 
 rule code_batch_small {
