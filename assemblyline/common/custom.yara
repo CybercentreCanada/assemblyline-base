@@ -2,49 +2,36 @@
 code/javascript
 */
 
-rule code_javascript_1 {
+rule code_javascript {
     meta:
         type = "code/javascript"
 
     strings:
-        $script = "<script" nocase
-        $lang_js1 = "language=\"javascript\"" nocase
-        $lang_js2 = "language=\"jscript\"" nocase
-        $lang_js3 = "language=\"js\"" nocase
-        $lang_js4 = "type=\"text/javascript\"" nocase
+        $not_html = /^\s*<\w/
 
-    condition:
-        mime startswith "text"
-        and $script
-        and 1 of ($lang*)
-}
+        $strong_js1  = /(^|;|\s|\()function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
+        $strong_js2  = /\beval[ \t]*\(['"]/
+        // jscript
+        $strong_js3  = /new[ \t]+ActiveXObject\(['"]/
+        $strong_js4  = /Scripting\.Dictionary['"]/
+        // pdfjs
+        $strong_js5  = /xfa\.((resolve|create)Node|datasets|form)['"]/
+        $strong_js6  = /\.oneOfChild['"]/
+        $strong_js7  = /unescape\(/
+        $strong_js8  = /\.createElement\(/
+        $strong_js9  = /submitForm\(['"]/
+        $strong_js10 = /(document|window)(\[['"]|\.)\w/
+        $strong_js11 = /setTimeout\(/
 
-rule code_javascript_2 {
-    meta:
-        type = "code/javascript"
-
-    strings:
-        $strong_js1 = /function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
-        $strong_js2 = /\beval[ \t]*\("/
-        $strong_js3 = /new[ \t]+ActiveXObject\("/
-        $strong_js4 = /xfa\.((resolve|create)Node|datasets|form)"/
-        $strong_js5 = /\.oneOfChild"/
-        $strong_js6 = /unescape\(/
-        $strong_js7 = /\.createElement\(/
-        $strong_js8 = /submitForm\("/
-        $strong_js9 = /document\.write\(/
-        $strong_js10 = /setTimeout\(/
-
-        $weak_js1 = /var /
-        $weak_js2 = /String\.(fromCharCode|raw)\(/
+        $weak_js1 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
+        $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
-        $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat)\(/
-        $weak_js5 = /WSH/
-        $weak_js6 = /(document|window)\[/
-        $weak_js7 = /([^\w]|^)this\.[\w]+/
+        $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
+        $weak_js5 = /([^\w]|^)this\.[\w]+/
 
     condition:
         mime startswith "text"
+        and not $not_html
         and (2 of ($strong_js*)
              or (1 of ($strong_js*)
                  and 2 of ($weak_js*)))
@@ -62,10 +49,10 @@ rule code_jscript {
 
     strings:
         $jscript1 = /new[ \t]+ActiveXObject\(/
-        $jscript2 = /Scripting\.Dictionary"/
+        $jscript2 = /Scripting\.Dictionary['"]/
 
     condition:
-        1 of (code_javascript*)
+        code_javascript
         and 1 of ($jscript*)
 }
 
@@ -80,11 +67,11 @@ rule code_pdfjs {
         score = 5
 
     strings:
-        $pdfjs1 = /xfa\.((resolve|create)Node|datasets|form)/
-        $pdfjs2 = /\.oneOfChild"/
+        $pdfjs1 = /xfa\.((resolve|create)Node|datasets|form)['"]/
+        $pdfjs2 = /\.oneOfChild['"]/
 
     condition:
-        1 of (code_javascript*)
+        code_javascript
         and 1 of ($pdfjs*)
 }
 
@@ -145,10 +132,10 @@ rule code_html {
 }
 
 /*
-code/html
+code/hta
 */
 
-rule code_hta {
+rule code_hta1 {
 
     meta:
         type = "code/hta"
@@ -162,7 +149,6 @@ rule code_hta {
 }
 
 rule code_html_with_script {
-
     meta:
         type = "code/hta"
         score = 10
@@ -172,16 +158,18 @@ rule code_html_with_script {
         $lang_js1 = "language=\"javascript\"" nocase
         $lang_js2 = "language=\"jscript\"" nocase
         $lang_js3 = "language=\"js\"" nocase
+        $lang_js4 = "type=\"text/javascript\"" nocase
         $lang_vbs1 = "language=\"vbscript\"" nocase
         $lang_vbs2 = "language=\"vb\"" nocase
+        $lang_vbs3 = "type=\"text/vbscript\"" nocase
 
     condition:
-        code_html
+        (code_html or mime startswith "text")
         and $script
         and 1 of ($lang*)
 }
 
-rule code_html_with_js {
+rule code_html_with_code {
 
     meta:
         type = "code/hta"
@@ -731,36 +719,6 @@ rule code_sql {
         mime startswith "text"
         and for all of them : ( # > 2 )
 }
-
-rule text_config {
-
-    meta:
-        type = "text/config"
-        score = -1
-
-    strings:
-        $ = /(^|\n)#?\w+[ \t]*=[ \t]*\w+(\n|$)/
-
-    condition:
-        mime startswith "text"
-        and for all of them : ( # > 4 )
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // The following have to be at the end with no score since I have no testing files for them. //
