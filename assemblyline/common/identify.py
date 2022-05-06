@@ -226,6 +226,7 @@ sl_to_tl = {
 
 # pylint:disable=C0301
 tl_patterns = [
+    ["shortcut", r"^MS Windows shortcut"],
     [
         "document",
         r"Composite Document File|CDFV2|Corel|OLE 2|OpenDocument |Rich Text Format|Microsoft.*"
@@ -253,7 +254,6 @@ tl_patterns = [
         r"BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt"
         r"|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660",
     ],
-    ["shortcut", r"^MS Windows shortcut"],
     ["metadata", r"MS Windows Vista Event Log"],
     ["unknown", r".*"],
 ]
