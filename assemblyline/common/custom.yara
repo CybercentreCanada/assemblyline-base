@@ -613,8 +613,8 @@ rule code_batch {
 
     strings:
         $obf = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/
-        $power = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?[ \t]+-c[ \t]"/
-        $cmd1 = /(^|\n)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
+        $power = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?.+(-c|-command)[ \t]/i
+        $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
@@ -633,12 +633,12 @@ rule code_batch_small {
         score = -1
 
     strings:
-        $ = /(^|\n|@|&)\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/
+        $ = /(^|\n|@|&| )\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/
         $ = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/
-        $ = /(^|\n|@|&)\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+&[ \t]+/
-        $ = /(^|\n)[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/
-        $ = /(^|\n) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/
-        $ = /(^|\n)(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/
+        $ = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/
+        $ = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/
+        $ = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/
+        $ = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/
 
     condition:
         mime startswith "text"
