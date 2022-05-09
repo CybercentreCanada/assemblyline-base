@@ -85,16 +85,16 @@ rule code_vbs {
         type = "code/vbs"
 
     strings:
-        $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i
-        $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\n]/i
-        $strong_vbs3 = /(^|\n)[ \t]+End[ \t]+(Module|Function|Sub|If)/i
-        $strong_vbs4 = /(^|\n)ExecuteGlobal/
-        $strong_vbs5 = /(^|\n)[ \t]+Rem[ \t]+[^\n]+/i
-        $strong_vbs6 = /(^|\n)(Attribute|Set|const)[ \t]+\w+[ \t]+=[ \t]+[^\n]+/i
-        $strong_vbs7 = /(^|\n)[ \t]+Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i
-        $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i
-        $strong_vbs9 = /CreateObject\([^)]+\)/i
-        $strong_vbs10 = /GetObject\([^)]+\)/i
+        $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
+        $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\n]/i ascii wide
+        $strong_vbs3 = /(^|\n)[ \t]+End[ \t]+(Module|Function|Sub|If)/i ascii wide
+        $strong_vbs4 = /(^|\n)ExecuteGlobal/ ascii wide
+        $strong_vbs5 = /(^|\n)[ \t]+Rem[ \t]+[^\n]+/i ascii wide
+        $strong_vbs6 = /(^|\n)(Attribute|Set|const)[ \t]+\w+[ \t]+=[ \t]+[^\n]+/i ascii wide
+        $strong_vbs7 = /(^|\n)[ \t]+Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
+        $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i ascii wide
+        $strong_vbs9 = /CreateObject\([^)]+\)/i ascii wide
+        $strong_vbs10 = /GetObject\([^)]+\)/i ascii wide
 
     condition:
         2 of ($strong_vbs*)
@@ -354,17 +354,17 @@ rule code_ps1 {
         type = "code/ps1"
 
     strings:
-        $ = /(Add-MpPreference|IWR|Start-BitsTransfer|Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i
-        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass)/i
-        $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i
-        $ = /(System\.Net\.WebClient)/i
-        $ = /(Net\.ServicePointManager)/i
-        $ = /(Net\.SecurityProtocolType)/i
-        $ = /\[(System\.)?Text\.Encoding\]::UTF8/i
-        $ = /\[(System\.)?Convert\]::ToInt32/i
-        $ = /\[(System\.)?String]::Join\(/i
-        $ = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i
-        $ = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i
+        $ = /(Add-MpPreference|IWR|Start-BitsTransfer|Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
+        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass)/i ascii wide
+        $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
+        $ = /(System\.Net\.WebClient)/i ascii wide
+        $ = /(Net\.ServicePointManager)/ ascii wide
+        $ = /(Net\.SecurityProtocolType)/i ascii wide
+        $ = /\[(System\.)?Text\.Encoding\]::UTF8/i ascii wide
+        $ = /\[(System\.)?Convert\]::ToInt32/i ascii wide
+        $ = /\[(System\.)?String]::Join\(/i ascii wide
+        $ = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
+        $ = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
 
     condition:
         mime startswith "text"
@@ -633,12 +633,12 @@ rule code_batch_small {
         score = -1
 
     strings:
-        $ = /(^|\n|@|&| )\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/
-        $ = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/
-        $ = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/
-        $ = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/
-        $ = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/
-        $ = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/
+        $ = /(^|\n|@|&| )\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
+        $ = /%(commonprogramfiles|programfiles|comspec|pathext):~\-?\d{1,2},\d%/i
+        $ = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/i
+        $ = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
+        $ = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/i
+        $ = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
 
     condition:
         mime startswith "text"
