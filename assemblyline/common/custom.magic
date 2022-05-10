@@ -21,12 +21,6 @@
 # Open XML files with Microsoft Word
 0   string
 >0  search/0x100 =<?mso-application\ progid="Word.Document"?>    custom: document/office/word
-# VBE files
-0   string
->&0     regex/20        \^#@~\\^[^=]{6}==     custom: code/vbe
-# VBS files
-0   string
->&0     regex/300        \(On\ Error\ Resume\ Next|WScript\.CreateObject)     custom: code/vbs
 # Android
 # XML compiled files
 0	string	\003\000\010\000	custom: android/xml
@@ -36,11 +30,11 @@
 0	string	dex\n	custom: android/dex
 # Games sound files
 # FSB
-0   string  FSB     custom: audiovisual/fsb
+0   string  FSB     custom: audio/fsb
 # AFS
-0	string	AFS2 	custom: audiovisual/afs
+0	string	AFS2 	custom: audio/afs
 # ACB
-0	string	@UTF\000 	custom: audiovisual/acb
+0	string	@UTF\000 	custom: resource/acb
 # Textures
 0	string	PVR custom: resource/texture/powervr
 0	string	KA3D	custom: resource/texture/ka3d
