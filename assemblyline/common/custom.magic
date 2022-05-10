@@ -42,13 +42,13 @@
 # ACB
 0	string	@UTF\000 	custom: audiovisual/acb
 # Textures
-0	string	PVR custom: image/texture/powervr
-0	string	KA3D	custom: image/texture/ka3d
-0	string	RVIO	custom: image/texture/rvio
-0	string	PKM 	custom: image/texture/pkm
-0	string	\253KTX\040 	custom: image/texture/ktx
+0	string	PVR custom: resource/texture/powervr
+0	string	KA3D	custom: resource/texture/ka3d
+0	string	RVIO	custom: resource/texture/rvio
+0	string	PKM 	custom: resource/texture/pkm
+0	string	\253KTX\040 	custom: resource/texture/ktx
 0   string  4\000\000\000
->&0 search/0x40 PVR!	custom: font/texture/pvr
+>&0 search/0x40 PVR!	custom: resource/font/pvr
 # Opengl code (gles)
 0       search/0x100     technique
 >&0     search/0x100     pass
