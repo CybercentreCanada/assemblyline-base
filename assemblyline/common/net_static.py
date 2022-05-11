@@ -2,7 +2,7 @@
 # DO NOT EDIT! Re-run the script instead...
 
 # Top level domains from: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-# Version 2022040402, Last Updated Tue Apr  5 07:07:01 2022 UTC
+# Version 2022040701, Last Updated Thu Apr  7 07:07:01 2022 UTC
 TLDS_ALPHA_BY_DOMAIN = {
     "AAA",
     "AARP",

@@ -5,7 +5,7 @@ import os
 
 from assemblyline.common import forge
 from assemblyline.datastore.helper import AssemblylineDatastore
-from assemblyline.datastore.store import ESStore
+from assemblyline.datastore.store import ESStore, ESCollection
 from redis.exceptions import ConnectionError
 
 import pytest
@@ -43,7 +43,7 @@ def filestore(config):
 
 @pytest.fixture(scope='module')
 def datastore_connection(config):
-
+    ESCollection.MAX_RETRY_BACKOFF = 0.5
     store = ESStore(config.datastore.hosts)
     ret_val = store.ping()
     if not ret_val:
