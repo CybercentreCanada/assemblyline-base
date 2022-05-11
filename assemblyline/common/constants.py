@@ -73,6 +73,5 @@ PRIORITY_THRESHOLDS = {
     'high': 100,
 }
 
-custom_rules = os.path.join(modulepath(__name__), 'custom.magic')
-RULE_PATH = ':'.join((custom_rules, '/usr/share/file/magic.mgc'))
+MAGIC_RULE_PATH = os.path.join(modulepath(__name__), 'custom.magic')
 YARA_RULE_PATH = os.path.join(modulepath(__name__), 'custom.yara')

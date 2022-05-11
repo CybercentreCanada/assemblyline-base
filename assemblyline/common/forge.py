@@ -1,22 +1,27 @@
 # This file contains the loaders for the different components of the system
 from __future__ import annotations
-import importlib
-from string import Template
-from typing import TYPE_CHECKING
-import os
-import time
 
 import elasticapm
+import importlib
+import os
+import time
 import yaml
-from assemblyline.common.constants import service_queue_name
 
+from string import Template
+from typing import TYPE_CHECKING
+
+from assemblyline.common import constants
+from assemblyline.common.constants import service_queue_name
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
+from assemblyline.filestore import FileStoreException
 
 if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
 
-
+PATHS_LOADED = False
+CUSTOM_MAGIC = constants.MAGIC_RULE_PATH
+CUSTOM_YARA = constants.YARA_RULE_PATH
 config_cache = {}
 
 
@@ -131,6 +136,30 @@ def get_metrics_sink(redis=None):
 def get_service_queue(service: str, redis=None):
     from assemblyline.remote.datatypes.queues.priority import PriorityQueue
     return PriorityQueue(service_queue_name(service), redis)
+
+
+def get_identify_paths(config=None, datastore=None, force=False):
+    global PATHS_LOADED, CUSTOM_MAGIC, CUSTOM_YARA
+
+    if not __file__.endswith("run_service_once.py") and (not PATHS_LOADED or force):
+        with get_cachestore('system', config=config, datastore=datastore) as cache:
+            try:
+                custom_magic = "/tmp/custom.magic"
+                cache.download('custom_magic', custom_magic)
+                CUSTOM_MAGIC = custom_magic
+            except FileStoreException:
+                pass
+
+            try:
+                custom_yara = "/tmp/custom.yara"
+                cache.download('custom_yara', custom_yara)
+                CUSTOM_YARA = custom_yara
+            except FileStoreException:
+                pass
+
+        PATHS_LOADED = True
+
+    return ':'.join((CUSTOM_MAGIC, '/usr/share/file/magic.mgc')), CUSTOM_YARA
 
 
 def get_tag_safelist_data(yml_config=None):

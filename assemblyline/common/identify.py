@@ -1,3 +1,4 @@
+import logging
 import magic
 import msoffcrypto
 import platform
@@ -8,18 +9,19 @@ import subprocess
 import sys
 import threading
 import uuid
+import yara
 import zipfile
 
 from binascii import hexlify
 from cart import get_metadata_only
-from typing import Dict
+from typing import Tuple, Union, Dict
 
 from assemblyline.common.digests import get_digests_for_file
-from assemblyline.common.language import guess_language
-from assemblyline.common.forge import get_constants
+from assemblyline.common.forge import get_constants, get_identify_paths
 from assemblyline.common.str_utils import dotdump, safe_str
 
 constants = get_constants()
+LOGGER = logging.getLogger('assemblyline.identify')
 
 OLE_CLSID_GUIDs = {
     # GUID v0 (0)
@@ -481,17 +483,22 @@ magic_lock = None
 file_type = None
 mime_type = None
 
+magic_file, yara_file = get_identify_paths()
+
 if platform.system() != "Windows":
     magic_lock = threading.Lock()
 
     file_type = magic.magic_open(magic.MAGIC_CONTINUE + magic.MAGIC_RAW)
-    magic.magic_load(file_type, constants.RULE_PATH)
+    magic.magic_load(file_type, magic_file)
 
     mime_type = magic.magic_open(
         magic.MAGIC_CONTINUE + magic.MAGIC_RAW + magic.MAGIC_MIME
     )
-    magic.magic_load(mime_type, constants.RULE_PATH)
+    magic.magic_load(mime_type, magic_file)
     ssdeep_from_file = ssdeep.hash_from_file
+
+yara_default_externals = {'mime': '', 'magic': '', 'type': ''}
+yara_rules = yara.compile(filepaths={"default": yara_file}, externals=yara_default_externals)
 
 
 # Translate the match object into a sub-type label.
@@ -636,7 +643,7 @@ def ident(buf, length: int, path) -> Dict:
                 data['type'] = "unknown"
 
     except Exception as e:
-        print(str(e))
+        LOGGER.error(str(e))
         pass
 
     # If mime is text/* and type is unknown, set text/plain to trigger
@@ -797,6 +804,20 @@ def dos_ident(path: str) -> str:
     return "executable/windows/dos"
 
 
+def yara_ident(path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
+    externals = {k: v or "" for k, v in info.items() if k in yara_default_externals}
+    try:
+        matches = yara_rules.match(path, externals=externals, fast=True)
+        matches.sort(key=lambda x: x.meta.get('score', 0), reverse=True)
+        for match in matches:
+            return match.meta['type']
+    except Exception as e:
+        LOGGER.warning(f"Yara file identifier failed with error: {str(e)}")
+        matches = []
+
+    return fallback
+
+
 def fileinfo(path: str) -> Dict:
     path = safe_str(path)
     data = get_digests_for_file(path, on_first_block=ident)
@@ -818,8 +839,9 @@ def fileinfo(path: str) -> Dict:
     elif data["type"] == "executable/windows/dos":
         data["type"] = dos_ident(path)
 
+    # Use yara rules to identify the files
     elif data["type"] in ["unknown", "text/plain"] or "unknown" in data["type"]:
-        data["type"] = guess_language(path, data, fallback=data["type"])
+        data["type"] = yara_ident(path, data, fallback=data["type"])
 
     # Extra checks for office documents
     #  - Check for encryption
