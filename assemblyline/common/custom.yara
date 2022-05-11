@@ -87,11 +87,11 @@ rule code_vbs {
     strings:
         $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
         $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\n]/i ascii wide
-        $strong_vbs3 = /(^|\n)[ \t]+End[ \t]+(Module|Function|Sub|If)/i ascii wide
+        $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)/i ascii wide
         $strong_vbs4 = /(^|\n)ExecuteGlobal/ ascii wide
-        $strong_vbs5 = /(^|\n)[ \t]+Rem[ \t]+[^\n]+/i ascii wide
+        $strong_vbs5 = /(^|\n)[ \t]*Rem[ \t]+[^\n]+/i ascii wide
         $strong_vbs6 = /(^|\n)(Attribute|Set|const)[ \t]+\w+[ \t]+=[ \t]+[^\n]+/i ascii wide
-        $strong_vbs7 = /(^|\n)[ \t]+Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
+        $strong_vbs7 = /(^|\n)[ \t]*Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
         $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i ascii wide
         $strong_vbs9 = /CreateObject\([^)]+\)/i ascii wide
         $strong_vbs10 = /GetObject\([^)]+\)/i ascii wide
