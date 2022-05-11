@@ -1,7 +1,7 @@
 from assemblyline import odm
 from assemblyline.common.dict_utils import get_dict_fingerprint_hash
 from assemblyline.odm.models.result import Attack
-from assemblyline.odm.models.ontology.types import Process
+from assemblyline.odm.models.ontology.results import Process
 
 OID_PARTS = ['name', 'signature_type', 'description']
 

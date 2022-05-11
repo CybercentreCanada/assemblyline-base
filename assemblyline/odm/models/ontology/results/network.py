@@ -1,6 +1,5 @@
 from assemblyline import odm
-from assemblyline.odm.models.ontology.types.process import Process
-from assemblyline.odm.models.ontology.types.objectid import ObjectID
+from assemblyline.odm.models.ontology.results.process import Process, ObjectID
 from assemblyline.common.dict_utils import get_dict_fingerprint_hash
 
 OID_PARTS = ['source_ip', 'source_port',

@@ -2,7 +2,7 @@ from pydoc import describe
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.odm.models.tagging import Tagging
-from assemblyline.odm.models.ontology.types import Antivirus, Process, Sandbox, Networking, Signature
+from assemblyline.odm.models.ontology.results import Antivirus, Process, Sandbox, Networking, Signature
 from assemblyline.odm.models.ontology.filetypes import PE
 
 Classification = forge.get_classification()
