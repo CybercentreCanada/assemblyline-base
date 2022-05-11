@@ -207,10 +207,12 @@ def _create_results_for_file(ds, fs, f, possible_childs=None, log=None):
 
                 # Create a random ontology
                 onto = random_minimal_obj(ResultOntology).as_primitives(strip_null=True)
-                onto['header']['sha256'] = f
-                onto['header']['service_name'] = r.response.service_name
-                onto['header']['service_version'] = r.response.service_version
-                onto['header']['service_tool_version'] = r.response.service_tool_version
+                onto['file']['sha256'] = f
+                onto['service'] = {
+                    'name': r.response.service_name,
+                    'version': r.response.service_version,
+                    'tool_version': r.response.service_tool_version
+                }
 
                 # Create it's file record
                 supp_file = random_model_obj(File)
