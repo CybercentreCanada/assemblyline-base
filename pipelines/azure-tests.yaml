@@ -12,7 +12,7 @@ resources:
     name: $(unittest_samples_repository)
     ref: main
     endpoint: github-repo-sa
-    trigger: none
+    trigger: ["*"]
 
 trigger: ["*"]
 pr: ["*"]
