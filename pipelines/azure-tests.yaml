@@ -3,7 +3,7 @@ name: tests
 variables:
   - group: unittest-samples
   - name: samples_location
-    value: "/tmp/samples"
+    value: "$(Agent.BuildDirectory)/samples"
 
 trigger: ["*"]
 pr: ["*"]
