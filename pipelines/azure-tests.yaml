@@ -5,15 +5,6 @@ variables:
   - name: samples_location
     value: "/tmp/samples"
 
-resources:
-  repositories:
-  - repository: unittest-samples
-    type: github
-    name: $(unittest_samples_repository)
-    ref: main
-    endpoint: github-repo-sa
-    trigger: ["*"]
-
 trigger: ["*"]
 pr: ["*"]
 
@@ -21,6 +12,13 @@ pool:
   vmImage: "ubuntu-20.04"
 
 resources:
+  repositories:
+    - repository: unittest-samples
+      type: github
+      name: $(unittest_samples_repository)
+      ref: main
+      endpoint: github-repo-sa
+      trigger: ["*"]
   containers:
     - container: redis
       image: redis
