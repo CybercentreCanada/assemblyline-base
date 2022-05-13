@@ -59,6 +59,7 @@ jobs:
     steps:
       - checkout: self
         fetchDepth: 1
+        path: ""
       - checkout: unittest-samples
         fetchDepth: 1
         path: $(checkout_location)
