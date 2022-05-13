@@ -2,8 +2,10 @@ name: tests
 
 variables:
   - group: unittest-samples
+  - name: checkout_location
+    value: "samples"
   - name: samples_location
-    value: "$(Agent.BuildDirectory)/samples"
+    value: "$(Agent.BuildDirectory)/$(checkout_location)"
 
 trigger: ["*"]
 pr: ["*"]
@@ -59,7 +61,7 @@ jobs:
         fetchDepth: 1
       - checkout: unittest-samples
         fetchDepth: 1
-        path: $(samples_location)
+        path: $(checkout_location)
       - task: UsePythonVersion@0
         displayName: Set python version
         inputs:
