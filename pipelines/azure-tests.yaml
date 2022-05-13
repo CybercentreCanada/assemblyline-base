@@ -57,7 +57,6 @@ jobs:
     steps:
       - checkout: self
         fetchDepth: 1
-        path: $(Agent.BuildDirectory)
       - checkout: unittest-samples
         fetchDepth: 1
         path: $(samples_location)
