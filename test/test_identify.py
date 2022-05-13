@@ -581,14 +581,12 @@ def test_constants():
         (b"Write-Error", ["code/ps1"]),
         (b"Invoke-Expression", ["code/ps1"]),
         (b"Invoke-WebRequest", ["code/ps1"]),
-        (b"IWR", ["code/ps1"]),
         (b"-memberDefinition", ["code/ps1"]),
         (b"-Name", ["code/ps1"]),
         (b"-namespace", ["code/ps1"]),
         (b"-passthru", ["code/ps1"]),
         (b"-join", ["code/ps1"]),
         (b"-split", ["code/ps1"]),
-        (b"-OutFile", ["code/ps1"]),
         (b".GetString(", ["code/ps1"]),
         (b".GetField(", ["code/ps1"]),
         (b".GetType(", ["code/ps1"]),
@@ -605,7 +603,6 @@ def test_constants():
         (b"[byte[]]\t$blah=\t", ["code/ps1"]),
         (b"[Microsoft.VisualBasic.Interaction]", ["code/ps1"]),
         (b"[Microsoft.VisualBasic.CallType]", ["code/ps1"]),
-        (b"$env:blah", ["code/ps1"]),
         # Postscript
         (b"%!PS", ["code/postscript"]),
         (b"def /blah", ["code/postscript"]),
@@ -1642,3 +1639,26 @@ def test_fileinfo(
         mocker.patch("msoffcrypto.OfficeFile", return_value=dummy_office_file_class())
     assert identify.fileinfo(path) == expected_return
     remove(path)
+
+
+def test_id_file_base():
+    from assemblyline.common.identify import fileinfo
+
+    tests_dir = path.dirname(__file__)
+    id_file_base = "id_file_base"
+    file_base_dir = path.join(tests_dir, id_file_base)
+    map_file = "id_file_base.json"
+    map_path = path.join(file_base_dir, map_file)
+    with open(map_path, "r") as f:
+        contents = f.read()
+        json_contents = loads(contents)
+    for _, _, files in walk(file_base_dir):
+        for file_name in files:
+            if file_name == map_file:
+                continue
+
+            file_path = path.join(file_base_dir, file_name)
+            data = fileinfo(file_path)
+            actual_value = data.get("type", "")
+            expected_value = json_contents[file_name]
+            assert actual_value == expected_value

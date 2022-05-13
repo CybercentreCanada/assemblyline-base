@@ -1,0 +1,16 @@
+{
+  "text.txt": "unknown",
+  "excel.xls": "document/office/excel",
+  "powerpoint.pptx": "document/office/powerpoint",
+  "word.docx": "document/office/word",
+  "png.png": "image/png",
+  "pdf.pdf": "document/pdf",
+  "html.html": "code/html",
+  "xml.xml": "code/xml",
+  "calendar.ics": "text/calendar",
+  "gzip.gz": "archive/gzip",
+  "powershell.ps1": "code/ps1",
+  "jpg.jpg": "image/jpg",
+  "json.json": "text/json",
+  "javascript.js": "code/javascript"
+}
