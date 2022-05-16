@@ -104,190 +104,83 @@ tag_to_extension = {
     "shortcut/windows": ".lnk",
 }
 
-sl_patterns = [
-    ["tnef", r"Transport Neutral Encapsulation Format"],
-    ["chm", r"MS Windows HtmlHelp Data"],
-    ["windows/dll64", r"pe32\+[^\|]+dll[^\|]+x86\-64"],
-    ["windows/pe64", r"pe32\+[^\|]+x86\-64[^\|]+windows"],
-    ["windows/ia/dll64", r"pe32\+?[^\|]+dll[^\|]+Intel Itanium[^\|]+windows"],
-    ["windows/ia/pe64", r"pe32\+?[^\|]+Intel Itanium[^\|]+windows"],
-    ["windows/arm/dll64", r"pe32\+?[^\|]+dll[^\|]+Aarch64[^\|]+windows"],
-    ["windows/arm/pe64", r"pe32\+?[^\|]+Aarch64[^\|]+windows"],
-    ["windows/dll64", r"pe32\+[^\|]+dll[^\|]+windows"],
-    ["windows/pe64", r"pe32\+[^\|]+windows"],
-    ["windows/dll32", r"pe32[^\|]+dll"],
-    ["windows/pe32", r"pe32[^\|]+windows"],
-    ["windows/pe", r"pe unknown[^\|]+windows"],
-    ["windows/dos", r"(ms-)?dos executable"],
-    ["windows/com", r"^com executable"],
-    ["windows/dos", r"^8086 relocatable"],
-    ["windows/coff", r"^MS Windows COFF"],
-    ["linux/elf32", r"^elf 32-bit (l|m)sb +executable"],
-    ["linux/elf64", r"^elf 64-bit (l|m)sb +(pie )?executable"],
-    ["linux/so32", r"^elf 32-bit (l|m)sb +shared object"],
-    ["linux/so64", r"^elf 64-bit (l|m)sb +shared object"],
-    ["linux/coff32", r"^(Intel 80386|i386|80386) COFF"],
-    ["linux/coff64", r"^64-bit XCOFF"],
-    ["linux/ia/coff64", r"^Intel ia64 COFF"],
-    ["linux/misp/ecoff", r"^MIPS[^\|]+ ECOFF"],
-    ["linux/a.out", r"^a.out"],
-    ["mach-o", r"^Mach-O"],
-    ["7-zip", r"^7-zip archive data"],
-    ["ace", r"^ACE archive data"],
-    ["bzip2", r"^bzip2 compressed data"],
-    ["cabinet", r"^installshield cab"],
-    ["cabinet", r"^microsoft cabinet archive data"],
-    ["cpio", r"cpio archive"],
-    ["gzip", r"^gzip compressed data"],
-    ["iso", r"ISO 9660"],
-    ["lzma", r"^LZMA compressed data"],
-    ["rar", r"^rar archive data"],
-    ["tar", r"^(GNU|POSIX) tar archive"],
-    ["ar", r"ar archive"],
-    ["xz", r"^XZ compressed data"],
-    ["zip", r"^zip archive data"],
-    ["tcpdump", r"^(tcpdump|pcap)"],
-    ["pdf", r"^pdf document"],
-    ["bmp", r"^pc bitmap"],
-    ["gif", r"^gif image data"],
-    ["jpg", r"^jpeg image data"],
-    ["png", r"^png image data"],
-    ["webp", r"Web/P image"],
-    ["installer/windows", r"(Installation Database|Windows Installer)"],
-    ["office/excel", r"Microsoft[^\|]+Excel"],
-    ["office/powerpoint", r"Microsoft.*PowerPoint"],
-    ["office/word", r"Microsoft[^\|]+Word"],
-    ["office/rtf", r"Rich Text Format"],
-    ["office/ole", r"OLE 2"],
-    ["office/hwp", r"Hangul \(Korean\) Word Processor File"],
-    ["office/unknown", r"Composite Document File|CDFV2"],
-    ["office/unknown", r"Microsoft[^\|]+(OOXML|Document)"],
-    ["office/unknown", r"Number of (Characters|Pages|Words)"],
-    ["flash", r"Macromedia Flash"],
-    ["autorun", r"microsoft windows autorun"],
-    ["batch", r"dos batch file"],
-    ["jar", r"[ (]Jar[) ]"],
-    ["class", r"java class data"],
-    ["pyc", r"python [^\|]+byte"],
-    ["xml", r"OpenGIS KML"],
-    ["html", r"html"],
-    ["sgml", r"sgml"],
-    ["xml", r"xml"],
-    ["tim", r"TIM image"],
-    ["sff", r"Frame Format"],
-    ["windows", r"^MS Windows shortcut"],
-    ["email", r"Mime entity text"],
-    ["sysmon/evt", r"MS Windows Vista Event Log"],
-    ["emf", r"Windows Enhanced Metafile"],
-    ["msvc", r"MSVC \.res"],
+magic_patterns = [
+    ["network/tnef", r"Transport Neutral Encapsulation Format"],
+    ["archive/chm", r"MS Windows HtmlHelp Data"],
+    ["executable/windows/dll64", r"pe32\+[^\|]+dll[^\|]+x86\-64"],
+    ["executable/windows/pe64", r"pe32\+[^\|]+x86\-64[^\|]+windows"],
+    ["executable/windows/ia/dll64", r"pe32\+?[^\|]+dll[^\|]+Intel Itanium[^\|]+windows"],
+    ["executable/windows/ia/pe64", r"pe32\+?[^\|]+Intel Itanium[^\|]+windows"],
+    ["executable/windows/arm/dll64", r"pe32\+?[^\|]+dll[^\|]+Aarch64[^\|]+windows"],
+    ["executable/windows/arm/pe64", r"pe32\+?[^\|]+Aarch64[^\|]+windows"],
+    ["executable/windows/dll64", r"pe32\+[^\|]+dll[^\|]+windows"],
+    ["executable/windows/pe64", r"pe32\+[^\|]+windows"],
+    ["executable/windows/dll32", r"pe32[^\|]+dll"],
+    ["executable/windows/pe32", r"pe32[^\|]+windows"],
+    ["executable/windows/pe", r"pe unknown[^\|]+windows"],
+    ["executable/windows/dos", r"(ms-)?dos executable"],
+    ["executable/windows/com", r"^com executable"],
+    ["executable/windows/dos", r"^8086 relocatable"],
+    ["executable/windows/coff", r"^MS Windows COFF"],
+    ["executable/linux/elf32", r"^elf 32-bit (l|m)sb +executable"],
+    ["executable/linux/elf64", r"^elf 64-bit (l|m)sb +(pie )?executable"],
+    ["executable/linux/so32", r"^elf 32-bit (l|m)sb +shared object"],
+    ["executable/linux/so64", r"^elf 64-bit (l|m)sb +shared object"],
+    ["executable/linux/coff32", r"^(Intel 80386|i386|80386) COFF"],
+    ["executable/linux/coff64", r"^64-bit XCOFF"],
+    ["executable/linux/ia/coff64", r"^Intel ia64 COFF"],
+    ["executable/linux/misp/ecoff", r"^MIPS[^\|]+ ECOFF"],
+    ["executable/linux/a.out", r"^a.out"],
+    ["executable/mach-o", r"^Mach-O"],
+    ["archive/7-zip", r"^7-zip archive data"],
+    ["archive/ace", r"^ACE archive data"],
+    ["archive/bzip2", r"^bzip2 compressed data"],
+    ["archive/cabinet", r"^installshield cab"],
+    ["archive/cabinet", r"^microsoft cabinet archive data"],
+    ["archive/cpio", r"cpio archive"],
+    ["archive/gzip", r"^gzip compressed data"],
+    ["archive/iso", r"ISO 9660"],
+    ["archive/lzma", r"^LZMA compressed data"],
+    ["archive/rar", r"^rar archive data"],
+    ["archive/tar", r"^(GNU|POSIX) tar archive"],
+    ["archive/ar", r"ar archive"],
+    ["archive/xz", r"^XZ compressed data"],
+    ["archive/zip", r"^zip archive data"],
+    ["network/tcpdump", r"^(tcpdump|pcap)"],
+    ["document/pdf", r"^pdf document"],
+    ["image/bmp", r"^pc bitmap"],
+    ["image/gif", r"^gif image data"],
+    ["image/jpg", r"^jpeg image data"],
+    ["image/png", r"^png image data"],
+    ["image/webp", r"Web/P image"],
+    ["document/installer/windows", r"(Installation Database|Windows Installer)"],
+    ["document/office/excel", r"Microsoft[^\|]+Excel"],
+    ["document/office/powerpoint", r"Microsoft.*PowerPoint"],
+    ["document/office/word", r"Microsoft[^\|]+Word"],
+    ["document/office/rtf", r"Rich Text Format"],
+    ["document/office/ole", r"OLE 2"],
+    ["document/office/hwp", r"Hangul \(Korean\) Word Processor File"],
+    ["document/office/unknown", r"Composite Document File|CDFV2"],
+    ["document/office/unknown", r"Microsoft[^\|]+(OOXML|Document)"],
+    ["document/office/unknown", r"Number of (Characters|Pages|Words)"],
+    ["audiovisual/flash", r"Macromedia Flash"],
+    ["code/autorun", r"microsoft windows autorun"],
+    ["code/batch", r"dos batch file"],
+    ["java/jar", r"[ (]Jar[) ]"],
+    ["java/class", r"java class data"],
+    ["resource/pyc", r"python [^\|]+byte"],
+    ["code/xml", r"OpenGIS KML"],
+    ["code/xml", r"xml"],
+    ["image/tim", r"TIM image"],
+    ["network/sff", r"Frame Format"],
+    ["shortcut/windows", r"^MS Windows shortcut"],
+    ["document/email", r"Mime entity text"],
+    ["metadata/sysmon/evt", r"MS Windows Vista Event Log"],
+    ["image/emf", r"Windows Enhanced Metafile"],
+    ["resource/msvc", r"MSVC \.res"],
 ]
 
-sl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in sl_patterns]
-
-sl_to_tl = {
-    "windows/com": "executable",
-    "windows/dos": "executable",
-    "windows/pe": "executable",
-    "windows/pe32": "executable",
-    "windows/pe64": "executable",
-    "windows/dll32": "executable",
-    "windows/dll64": "executable",
-    "windows/ia/pe64": "executable",
-    "windows/ia/dll64": "executable",
-    "windows/arm/pe64": "executable",
-    "windows/arm/dll64": "executable",
-    "windows/coff": "executable",
-    "windows": "shortcut",
-    "linux/elf32": "executable",
-    "linux/elf64": "executable",
-    "linux/so32": "executable",
-    "linux/so64": "executable",
-    "linux/coff32": "executable",
-    "linux/coff64": "executable",
-    "linux/ia/coff64": "executable",
-    "linux/misp/ecoff": "executable",
-    "linux/a.out": "executable",
-    "mach-o": "executable",
-    "7-zip": "archive",
-    "flash": "audiovisual",
-    "sff": "network",
-    "ar": "archive",
-    "ace": "archive",
-    "chm": "archive",
-    "cpio": "archive",
-    "bzip2": "archive",
-    "cabinet": "archive",
-    "gzip": "archive",
-    "iso": "archive",
-    "lzma": "archive",
-    "rar": "archive",
-    "tar": "archive",
-    "xz": "archive",
-    "zip": "archive",
-    "tnef": "network",
-    "tcpdump": "network",
-    "installer/windows": "document",
-    "office/excel": "document",
-    "office/powerpoint": "document",
-    "office/word": "document",
-    "office/ole": "document",
-    "office/hwp": "document",
-    "office/rtf": "document",
-    "office/unknown": "document",
-    "pdf": "document",
-    "email": "document",
-    "bmp": "image",
-    "emf": "image",
-    "gif": "image",
-    "jpg": "image",
-    "png": "image",
-    "webp": "image",
-    "tim": "image",
-    "msvc": "resource",
-    "pyc": "resource",
-    "sysmon/evt": "metadata",
-    "jar": "java",
-    "class": "java",
-    "autorun": "code",
-    "batch": "code",
-    "html": "code",
-    "sgml": "code",
-    "xml": "code"
-}
-
-# pylint:disable=C0301
-tl_patterns = [
-    ["shortcut", r"^MS Windows shortcut"],
-    [
-        "document",
-        r"Composite Document File|CDFV2|Corel|OLE 2|OpenDocument |Rich Text Format|Microsoft.*"
-        r"(Document|Excel|PowerPoint|Word|OOXML)|Number of (Characters|Pages|Words)",
-    ],
-    ["document", r"PostScript|pdf|MIME entity text"],
-    ["document", r"Hangul \(Korean\) Word Processor File"],
-    ["network", r"capture"],
-    ["unknown", r"CoreFoundation|Dreamcast|KEYBoard|OSF/Rose|Zope|quota|uImage"],
-    ["unknown", r"disk|file[ ]*system|floppy|tape"],
-    [
-        "audiovisual",
-        r"Macromedia Flash|Matroska|MIDI data|MPEG|MP4|MPG|MP3|QuickTime|RIFF|WebM|animation|audio|movie|music|ogg"
-        r"|sound|tracker|video|voice data",
-    ],
-    [
-        "executable",
-        r"803?86|COFF|ELF|Mach-O|ia32|executable|kernel|library|libtool|object",
-    ],
-    ["java", r"jar |java"],
-    ["unknown", r"Emulator"],
-    ["image", r"DjVu|Surface|XCursor|bitmap|cursor|font|graphics|icon|image|jpeg"],
-    [
-        "archive",
-        r"BinHex|InstallShield CAB|Transport Neutral Encapsulation Format|archive data|compress|mcrypt"
-        r"|MS Windows HtmlHelp Data|current ar archive|cpio archive|ISO 9660",
-    ],
-    ["metadata", r"MS Windows Vista Event Log"],
-    ["unknown", r".*"],
-]
+magic_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in magic_patterns]
 
 trusted_mimes = {
     # Mpeg Audio
@@ -472,9 +365,12 @@ trusted_mimes = {
     "application/x-hwp": "document/office/hwp",
     "application/vnd.iccprofile": "metadata/iccprofile",
     "application/vnd.lotus-1-2-3": "document/lotus/spreadsheet",
-}
 
-tl_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in tl_patterns]
+    # Firefox modules
+    "application/x-xpinstall": "application/mozilla/extension",
+    # Chrome extensions
+    "application/x-chrome-extension": "application/chrome/extension"
+}
 
 custom = re.compile(r"^custom: ", re.IGNORECASE)
 
@@ -499,15 +395,6 @@ if platform.system() != "Windows":
 
 yara_default_externals = {'mime': '', 'magic': '', 'type': ''}
 yara_rules = yara.compile(filepaths={"default": yara_file}, externals=yara_default_externals)
-
-
-# Translate the match object into a sub-type label.
-def _subtype(label: str) -> str:
-    for entry in sl_patterns:
-        if entry[1].search(label):  # pylint: disable=E1101
-            return entry[0]
-
-    return "unknown"
 
 
 def ident(buf, length: int, path) -> Dict:
@@ -541,7 +428,7 @@ def ident(buf, length: int, path) -> Dict:
                 try:
                     mimes = magic.magic_file(mime_type, path).split(b"\n")
                 except magic.MagicException as me:
-                    labels = me.message.split(b"\n")
+                    mimes = me.message.split(b"\n")
                 mimes = [
                     mime[2:].strip() if mime.startswith(b"- ") else mime.strip()
                     for mime in mimes
@@ -569,78 +456,41 @@ def ident(buf, length: int, path) -> Dict:
                     labels.insert(0, labels.pop(index))
                     if len(labels) == len(mimes) and alter_mime:
                         mimes.insert(0, mimes.pop(index))
-            data["magic"] = safe_str(b" | ".join(labels))
+            data["magic"] = safe_str(labels[0])
 
         for mime in mimes:
             if mime != b"":
                 data["mime"] = safe_str(mime)
                 break
 
-        # Highest priority is given to mime type matching something
-        tagged = False
-
+        # First lets try to find any custom types
         for label in labels:
             label = dotdump(label)
 
             if custom.match(label):
                 data["type"] = label.split("custom: ")[1].strip()
-                tagged = True
                 break
 
         # Second priority is mime times marked as trusted
-        if not tagged:
+        if data["type"] == "unknown":
             for mime in mimes:
                 mime = dotdump(mime)
 
                 if mime in trusted_mimes:
                     data["type"] = trusted_mimes[mime]
-                    tagged = True
                     break
 
-        # As a third priority try matching the tl_patterns
-        if not tagged:
-            minimum = len(tl_patterns)
-            sl_tag = None
-
-            # Try each label and see how far down the tl_patterns list we go
-            # before we hit a match, the closer to the beginning of the list we are the better
-            # the tag match is. The final line of tl_patterns matches anything and sets
-            # tag to 'unknown', so this loop should never finish with sl_tag as None
-            # Unless the tl_patters table has been changed inappropriately
+        # As a third priority try matching the magic_patterns
+        if data["type"] == "unknown":
+            found = False
             for label in labels:
-                label = dotdump(label)
-
-                # ... match against our patterns and, ...
-                index = 0
-                for entry in tl_patterns:
-                    if index >= minimum:
+                for entry in magic_patterns:
+                    if entry[1].search(dotdump(label)):  # pylint: disable=E1101
+                        data['type'] = entry[0]
+                        found = True
                         break
-
-                    if entry[1].search(label):  # pylint:disable=E1101
-                        break
-
-                    index += 1
-
-                # ... keep highest precedence (lowest index) match.
-                if index < minimum:
-                    minimum = index
-                    sl_tag = _subtype(label)
-
-                    # If a label does match, take the best from that label
-                    # Further labels from magic are probably terrible
+                if found:
                     break
-
-            assert (
-                sl_tag is not None
-            ), "tl_patterns seems to be missing a match all => unknown rule at the end"
-
-            # Based on the sub tag we found, figure out the top level tag to use
-            tl_tag = sl_to_tl.get(sl_tag, tl_patterns[minimum][0])
-            data["type"] = "/".join((tl_tag, sl_tag))
-
-            # Do not allow double unknown data type
-            if data['type'] == "unknown/unknown":
-                data['type'] = "unknown"
 
     except Exception as e:
         LOGGER.error(str(e))
@@ -651,7 +501,7 @@ def ident(buf, length: int, path) -> Dict:
     if data["type"] == "unknown" and data['mime'] is not None and data['mime'].startswith("text/"):
         data["type"] = "text/plain"
 
-    # Lookup office documents by GUID
+    # Lookup office documents by GUID if we're still not sure what they are
     if data["type"] == "document/office/unknown":
         # noinspection PyBroadException
         try:
@@ -676,8 +526,6 @@ def ident(buf, length: int, path) -> Dict:
             pass
 
     return data
-
-# noinspection PyBroadException
 
 
 def zip_ident(path: str, fallback: str) -> str:
@@ -839,8 +687,8 @@ def fileinfo(path: str) -> Dict:
     elif data["type"] == "executable/windows/dos":
         data["type"] = dos_ident(path)
 
-    # Use yara rules to identify the files
-    elif data["type"] in ["unknown", "text/plain"] or "unknown" in data["type"]:
+    # If we're so far failed to identified the file, lets run the yara rules
+    elif "unknown" in data["type"] or data["type"] == "text/plain":
         data["type"] = yara_ident(path, data, fallback=data["type"])
 
     # Extra checks for office documents
