@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 from assemblyline.common import constants
 from assemblyline.common.constants import service_queue_name
+from assemblyline.common.identify_defaults import magic_patterns, trusted_mimes
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
 from assemblyline.filestore import FileStoreException
@@ -136,6 +137,14 @@ def get_metrics_sink(redis=None):
 def get_service_queue(service: str, redis=None):
     from assemblyline.remote.datatypes.queues.priority import PriorityQueue
     return PriorityQueue(service_queue_name(service), redis)
+
+
+def get_identify_magic_patterns(config=None, datastore=None, force=False):
+    return magic_patterns
+
+
+def get_identify_trusted_mimes(config=None, datastore=None, force=False):
+    return trusted_mimes
 
 
 def get_identify_paths(config=None, datastore=None, force=False):
