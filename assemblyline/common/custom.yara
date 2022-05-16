@@ -533,10 +533,30 @@ rule code_xml {
         $header = /^\s*<\?xml[^>]+\?>/
         $ns1 = /<xml[^>]+xmlns[:=][^>]+>/
         $ns2 = /<\/xml>/
+        $tag1 = /^\s*<[^>^\n]+>/
+        $tag2 = /<\/[^>^\n]+>\s*$/
 
     condition:
         $header
-        or 2 of ($ns*)
+        or all of ($ns*)
+        or all of ($tag*)
+}
+
+/*
+code/clickonce
+*/
+
+rule code_clickonce {
+
+    meta:
+        type = "code/clickonce"
+
+    strings:
+        $ns1 = /<assembly[^>]+xmlns=[^>]+>/
+        $ns2 = /<\/assembly>/
+
+    condition:
+       all of ($ns*)
 }
 
 /*
