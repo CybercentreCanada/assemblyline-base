@@ -231,6 +231,8 @@ trusted_mimes = {
     "text/x-php": "code/php",
     # XML file
     "text/xml": "code/xml",
+    # SGML file
+    "text/sgml": "code/sgml",
     # HTML file
     "text/html": "text/plain",
     # Shell script

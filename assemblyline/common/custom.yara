@@ -101,13 +101,51 @@ rule code_vbs {
 }
 
 /*
+code/xml
+*/
+
+rule code_xml {
+
+    meta:
+        type = "code/xml"
+
+    strings:
+        $header = /^\s*<\?xml[^>]+\?>/
+        $ns1 = /<xml[^>]+xmlns[:=][^>]+>/
+        $ns2 = /<\/xml>/
+
+    condition:
+        $header
+        or all of ($ns*)
+}
+
+/*
+code/xml
+*/
+
+rule code_xml_tags {
+
+    meta:
+        type = "code/xml"
+
+    strings:
+        $tag_start = /^\s*<[^>^\n]+>/
+        $tag_end = /<\/[^>^\n]+>\s*$/
+
+    condition:
+        $tag_start in (0..256)
+        and $tag_end in (filesize-256..filesize)
+}
+
+/*
 code/html
 */
 
-rule code_html {
+rule code_html_1 {
 
     meta:
         type = "code/html"
+        score = 10
 
     strings:
         $html_doctype = /(^|\n|\>)[ \t]*<!doctype html>/i
@@ -121,10 +159,28 @@ rule code_html {
 }
 
 /*
-code/hta
+code/html
 */
 
-rule code_hta1 {
+rule code_html_2 {
+
+    meta:
+        type = "code/html"
+        score = 10
+
+    strings:
+        $html_tag = /(^|\n)\s*<(div|script|body|head|img|iframe|pre|span|style|table|title|strong|link|input|form)[ \t>]/i
+
+    condition:
+        code_xml_tags
+        and $html_tag
+}
+
+/*
+code/html/application
+*/
+
+rule code_html_application {
 
     meta:
         type = "code/hta"
@@ -137,38 +193,15 @@ rule code_hta1 {
         $hta
 }
 
-rule code_html_with_script {
-    meta:
-        type = "code/hta"
-        score = 10
-
-    strings:
-        $script = /(^|\n|\>)[ \t]*<script[^\>]+(language|type)="(javascript|js|jscript|text\/javascript|vbscript|vb|text\/vbscript)?[^\>]*>/i
-
-    condition:
-        (code_html or mime startswith "text")
-        and $script
-}
-
-rule code_html_with_code {
-
-    meta:
-        type = "code/hta"
-        score = 10
-
-    condition:
-        code_html and (1 of (code_javascript*) or 1 of (code_vbs*))
-}
-
 /*
-code/htc
+code/html/component
 */
 
-rule code_htc {
+rule code_html_component {
 
     meta:
-        type = "code/htc"
-        score = 15
+        type = "code/html/component"
+        score = 10
 
     strings:
         $component1 = "public:component " nocase
@@ -521,28 +554,6 @@ rule code_protobuf {
 }
 
 /*
-code/xml
-*/
-
-rule code_xml {
-
-    meta:
-        type = "code/xml"
-
-    strings:
-        $header = /^\s*<\?xml[^>]+\?>/
-        $ns1 = /<xml[^>]+xmlns[:=][^>]+>/
-        $ns2 = /<\/xml>/
-        $tag1 = /^\s*<[^>^\n]+>/
-        $tag2 = /<\/[^>^\n]+>\s*$/
-
-    condition:
-        $header
-        or all of ($ns*)
-        or all of ($tag*)
-}
-
-/*
 code/clickonce
 */
 
@@ -552,7 +563,7 @@ rule code_clickonce {
         type = "code/clickonce"
 
     strings:
-        $ns1 = /<assembly[^>]+xmlns=[^>]+>/
+        $ns1 = /^\s*<assembly[^>]+xmlns=[^>]+>/
         $ns2 = /<\/assembly>/
 
     condition:
@@ -584,6 +595,7 @@ rule metadata_sysmon_evtx {
 
     meta:
         type = "metadata/sysmon/evtx"
+        score = 1
 
     strings:
         $ = /<Events[^>]*>/
