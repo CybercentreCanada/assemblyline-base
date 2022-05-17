@@ -28,7 +28,7 @@ LOGGER = logging.getLogger('assemblyline.identify')
 magic_patterns = get_identify_magic_patterns()
 trusted_mimes = get_identify_trusted_mimes()
 
-magic_patterns = [[x[0], re.compile(x[1], re.IGNORECASE)] for x in magic_patterns]
+magic_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)] for x in magic_patterns]
 
 custom = re.compile(r"^custom: ", re.IGNORECASE)
 

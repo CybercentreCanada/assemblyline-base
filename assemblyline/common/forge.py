@@ -23,6 +23,11 @@ if TYPE_CHECKING:
 PATHS_LOADED = False
 CUSTOM_MAGIC = constants.MAGIC_RULE_PATH
 CUSTOM_YARA = constants.YARA_RULE_PATH
+PATTERNS_LOADED = False
+MAGIC_PATTERNS = magic_patterns
+MIMES_LOADED = False
+TRUSTED_MIMES = trusted_mimes
+
 config_cache = {}
 
 
@@ -140,11 +145,35 @@ def get_service_queue(service: str, redis=None):
 
 
 def get_identify_magic_patterns(config=None, datastore=None, force=False):
-    return magic_patterns
+    global PATTERNS_LOADED, MAGIC_PATTERNS
+
+    if not PATTERNS_LOADED or force:
+        with get_cachestore('system', config=config, datastore=datastore) as cache:
+            try:
+                patterns = cache.get('custom_patterns')
+                if patterns:
+                    MAGIC_PATTERNS = yaml.safe_load(patterns)
+                PATTERNS_LOADED = True
+            except FileStoreException:
+                pass
+
+    return MAGIC_PATTERNS
 
 
 def get_identify_trusted_mimes(config=None, datastore=None, force=False):
-    return trusted_mimes
+    global MIMES_LOADED, TRUSTED_MIMES
+
+    if not MIMES_LOADED or force:
+        with get_cachestore('system', config=config, datastore=datastore) as cache:
+            try:
+                mimes = cache.get('custom_mimes')
+                if mimes:
+                    TRUSTED_MIMES = yaml.safe_load(mimes)
+                MIMES_LOADED = True
+            except FileStoreException:
+                pass
+
+    return TRUSTED_MIMES
 
 
 def get_identify_paths(config=None, datastore=None, force=False):
