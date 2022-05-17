@@ -88,7 +88,8 @@ setup(
         'azure-storage-blob!=12.4.0',
         'azure-identity',
         'msoffcrypto-tool',
-        'chardet'
+        'chardet',
+        'yara-python'
     ],
     extras_require={
         'test': [
@@ -105,6 +106,7 @@ setup(
             "*classification.yml",
             "*tag_safelist.yml",
             "*.magic",
+            "*.yara",
             "*sample_rules.yar",
             "*sample_suricata.rules",
             "*.pyx",
