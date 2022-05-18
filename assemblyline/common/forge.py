@@ -10,23 +10,12 @@ import yaml
 from string import Template
 from typing import TYPE_CHECKING
 
-from assemblyline.common import constants
 from assemblyline.common.constants import service_queue_name
-from assemblyline.common.identify_defaults import magic_patterns, trusted_mimes
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
-from assemblyline.filestore import FileStoreException
 
 if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
-
-PATHS_LOADED = False
-CUSTOM_MAGIC = constants.MAGIC_RULE_PATH
-CUSTOM_YARA = constants.YARA_RULE_PATH
-PATTERNS_LOADED = False
-MAGIC_PATTERNS = magic_patterns
-MIMES_LOADED = False
-TRUSTED_MIMES = trusted_mimes
 
 config_cache = {}
 
@@ -129,6 +118,11 @@ def get_filestore(config=None, connection_attempts=None):
     return FileStore(*config.filestore.storage, connection_attempts=connection_attempts)
 
 
+def get_identify(use_cache=True, config=None, datastore=None, log=None):
+    from assemblyline.common.identify import Identify
+    return Identify(use_cache=use_cache, config=config, datastore=datastore, log=log)
+
+
 def get_process_alert_message():
     config = get_config()
     return load_module_by_path(config.core.alerter.process_alert_message)
@@ -142,62 +136,6 @@ def get_metrics_sink(redis=None):
 def get_service_queue(service: str, redis=None):
     from assemblyline.remote.datatypes.queues.priority import PriorityQueue
     return PriorityQueue(service_queue_name(service), redis)
-
-
-def get_identify_magic_patterns(config=None, datastore=None, force=False):
-    global PATTERNS_LOADED, MAGIC_PATTERNS
-
-    if not PATTERNS_LOADED or force:
-        with get_cachestore('system', config=config, datastore=datastore) as cache:
-            try:
-                patterns = cache.get('custom_patterns')
-                if patterns:
-                    MAGIC_PATTERNS = yaml.safe_load(patterns)
-                PATTERNS_LOADED = True
-            except FileStoreException:
-                pass
-
-    return MAGIC_PATTERNS
-
-
-def get_identify_trusted_mimes(config=None, datastore=None, force=False):
-    global MIMES_LOADED, TRUSTED_MIMES
-
-    if not MIMES_LOADED or force:
-        with get_cachestore('system', config=config, datastore=datastore) as cache:
-            try:
-                mimes = cache.get('custom_mimes')
-                if mimes:
-                    TRUSTED_MIMES = yaml.safe_load(mimes)
-                MIMES_LOADED = True
-            except FileStoreException:
-                pass
-
-    return TRUSTED_MIMES
-
-
-def get_identify_paths(config=None, datastore=None, force=False):
-    global PATHS_LOADED, CUSTOM_MAGIC, CUSTOM_YARA
-
-    if not __file__.endswith("run_service_once.py") and (not PATHS_LOADED or force):
-        with get_cachestore('system', config=config, datastore=datastore) as cache:
-            try:
-                custom_magic = "/tmp/custom.magic"
-                cache.download('custom_magic', custom_magic)
-                CUSTOM_MAGIC = custom_magic
-            except FileStoreException:
-                pass
-
-            try:
-                custom_yara = "/tmp/custom.yara"
-                cache.download('custom_yara', custom_yara)
-                CUSTOM_YARA = custom_yara
-            except FileStoreException:
-                pass
-
-        PATHS_LOADED = True
-
-    return ':'.join((CUSTOM_MAGIC, '/usr/share/file/magic.mgc')), CUSTOM_YARA
 
 
 def get_tag_safelist_data(yml_config=None):

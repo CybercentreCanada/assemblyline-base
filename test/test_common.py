@@ -23,7 +23,6 @@ from assemblyline.common.dict_utils import flatten, unflatten, recursive_update,
 from assemblyline.common.entropy import calculate_partition_entropy
 from assemblyline.common.heuristics import InvalidHeuristicException, HeuristicHandler
 from assemblyline.common.hexdump import hexdump
-from assemblyline.common.identify import fileinfo
 from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
     now_as_local
 from assemblyline.common.iprange import is_ip_reserved, is_ip_private
@@ -277,6 +276,8 @@ def test_hexdump():
 
 
 def test_identify():
+    identify = forge.get_identify(use_cache=False)
+
     # Setup test data
     aaaa = f"{'A' * 10000}".encode()
     sha256 = hashlib.sha256(aaaa).hexdigest()
@@ -300,7 +301,7 @@ def test_identify():
         assert meta.get("sha256", None) == sha256
 
         # Validate identify file detection
-        info = fileinfo(output_path)
+        info = identify.fileinfo(output_path)
         assert info.get("type", None) == "archive/cart"
 
         # Validate identify hashing

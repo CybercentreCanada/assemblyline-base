@@ -6,9 +6,9 @@ from cart import unpack_file
 from json import loads
 from pathlib import Path
 
-from assemblyline.common.identify import fileinfo
+from assemblyline.common import forge
 
-
+identify = forge.get_identify(use_cache=False)
 SAMPLES_LOCATION = os.environ.get("SAMPLES_LOCATION", None)
 
 
@@ -27,7 +27,7 @@ def test_id_file_base():
                 continue
 
             file_path = os.path.join(file_base_dir, file_name)
-            data = fileinfo(file_path)
+            data = identify.fileinfo(file_path)
             actual_value = data.get("type", "")
             expected_value = json_contents[file_name]
             assert actual_value == expected_value
@@ -59,4 +59,4 @@ def sample(request):
 if SAMPLES_LOCATION:
     @pytest.mark.parametrize("sample", Path(SAMPLES_LOCATION).rglob("*.cart"), ids=get_ids, indirect=True)
     def test_identify_samples(sample):
-        assert fileinfo(sample[0])["type"] == sample[1]
+        assert identify.fileinfo(sample[0])["type"] == sample[1]
