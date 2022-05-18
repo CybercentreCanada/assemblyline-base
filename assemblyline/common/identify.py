@@ -85,6 +85,8 @@ class Identify():
                                                     for x in self.magic_patterns]
 
                     self.log.info("Custom magic patterns loaded!")
+                else:
+                    self.log.info("No custom magic patterns found.")
             except FileStoreException:
                 self.log.info("No custom magic patterns found.")
 
@@ -96,6 +98,8 @@ class Identify():
                 if mimes:
                     self.trusted_mimes = yaml.safe_load(mimes)
                     self.log.info("Custom trusted mimes loaded!")
+                else:
+                    self.log.info("No custom magic patterns found.")
             except FileStoreException:
                 self.log.info("No custom trusted mimes found.")
 
