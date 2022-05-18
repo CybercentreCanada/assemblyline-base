@@ -184,7 +184,7 @@ rule code_html_application {
 
     meta:
         type = "code/hta"
-        score = 10
+        score = 12
 
     strings:
         $hta = /(^|\n|\>)[ \t]*<hta:application /i
