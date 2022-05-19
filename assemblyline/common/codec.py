@@ -3,13 +3,10 @@ import tempfile
 
 from cart import is_cart, pack_stream, unpack_stream
 from cart.cart import _unpack_header
-from assemblyline.common import forge
 from assemblyline.common.dict_utils import flatten
 
-identify = forge.get_identify(use_cache=True)
 
-
-def decode_file(original_path, fileinfo):
+def decode_file(original_path, fileinfo, identify):
     extracted_path = None
     hdr = {}
     with open(original_path, 'rb') as original_file:
