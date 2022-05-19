@@ -8,29 +8,29 @@ from pathlib import Path
 
 from assemblyline.common import forge
 
-identify = forge.get_identify(use_cache=False)
 SAMPLES_LOCATION = os.environ.get("SAMPLES_LOCATION", None)
 
 
 def test_id_file_base():
-    tests_dir = os.path.dirname(__file__)
-    id_file_base = "id_file_base"
-    file_base_dir = os.path.join(tests_dir, id_file_base)
-    map_file = "id_file_base.json"
-    map_path = os.path.join(file_base_dir, map_file)
-    with open(map_path, "r") as f:
-        contents = f.read()
-        json_contents = loads(contents)
-    for _, _, files in os.walk(file_base_dir):
-        for file_name in files:
-            if file_name == map_file:
-                continue
+    with forge.get_identify(use_cache=False) as identify:
+        tests_dir = os.path.dirname(__file__)
+        id_file_base = "id_file_base"
+        file_base_dir = os.path.join(tests_dir, id_file_base)
+        map_file = "id_file_base.json"
+        map_path = os.path.join(file_base_dir, map_file)
+        with open(map_path, "r") as f:
+            contents = f.read()
+            json_contents = loads(contents)
+        for _, _, files in os.walk(file_base_dir):
+            for file_name in files:
+                if file_name == map_file:
+                    continue
 
-            file_path = os.path.join(file_base_dir, file_name)
-            data = identify.fileinfo(file_path)
-            actual_value = data.get("type", "")
-            expected_value = json_contents[file_name]
-            assert actual_value == expected_value
+                file_path = os.path.join(file_base_dir, file_name)
+                data = identify.fileinfo(file_path)
+                actual_value = data.get("type", "")
+                expected_value = json_contents[file_name]
+                assert actual_value == expected_value
 
 
 def get_ids(filepath):
@@ -59,4 +59,5 @@ def sample(request):
 if SAMPLES_LOCATION:
     @pytest.mark.parametrize("sample", Path(SAMPLES_LOCATION).rglob("*.cart"), ids=get_ids, indirect=True)
     def test_identify_samples(sample):
-        assert identify.fileinfo(sample[0])["type"] == sample[1]
+        with forge.get_identify(use_cache=False) as identify:
+            assert identify.fileinfo(sample[0])["type"] == sample[1]

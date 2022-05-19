@@ -351,12 +351,10 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                                 for k, v in files['infos'].items()
                                 if k in files['list']
                             }
-                            SubmissionClient(
-                                datastore=datastore, filestore=filestore,
-                                config=config, identify=identify).rescan(submission, results['results'],
-                                                                         extracted_file_infos,
-                                                                         files['tree'], list(errors['errors'].keys()),
-                                                                         rescan_services)
+                            with SubmissionClient(datastore=datastore, filestore=filestore,
+                                                  config=config, identify=identify) as sc:
+                                sc.rescan(submission, results['results'], extracted_file_infos,
+                                          files['tree'], list(errors['errors'].keys()), rescan_services)
                 elif not exist_ok:
                     raise SubmissionAlreadyExist("Submission %s already exists." % sid)
 
