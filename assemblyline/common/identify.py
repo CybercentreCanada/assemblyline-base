@@ -81,18 +81,15 @@ class Identify():
                     patterns = cache.get('custom_patterns')
                     if patterns:
                         self.magic_patterns = yaml.safe_load(patterns)
-                        self.compiled_magic_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)]
-                                                        for x in self.magic_patterns]
-
                         self.log.info("Custom magic patterns loaded!")
                     else:
                         self.log.info("No custom magic patterns found.")
                 except FileStoreException:
                     self.log.info("No custom magic patterns found.")
 
+        compiled_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)] for x in self.magic_patterns]
         with self.lock:
-            self.compiled_magic_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)]
-                                            for x in self.magic_patterns]
+            self.compiled_magic_patterns = compiled_patterns
 
     def _load_trusted_mimes(self):
         trusted_mimes = default_trusted_mimes
@@ -131,9 +128,7 @@ class Identify():
             self.file_type = magic.magic_open(magic.MAGIC_CONTINUE + magic.MAGIC_RAW)
             magic.magic_load(self.file_type, self.magic_file)
 
-            self.mime_type = magic.magic_open(
-                magic.MAGIC_CONTINUE + magic.MAGIC_RAW + magic.MAGIC_MIME
-            )
+            self.mime_type = magic.magic_open(magic.MAGIC_CONTINUE + magic.MAGIC_RAW + magic.MAGIC_MIME)
             magic.magic_load(self.mime_type, self.magic_file)
 
     def _load_yara_file(self):
@@ -150,8 +145,9 @@ class Identify():
                 except FileStoreException:
                     self.log.info("No custom magic file found.")
 
+        yara_rules = yara.compile(filepaths={"default": self.yara_file}, externals=self.yara_default_externals)
         with self.lock:
-            self.yara_rules = yara.compile(filepaths={"default": self.yara_file}, externals=self.yara_default_externals)
+            self.yara_rules = yara_rules
 
     def ident(self, buf, length: int, path) -> Dict:
         data = {"ascii": None, "hex": None, "magic": None, "mime": None, "type": "unknown"}
@@ -167,26 +163,21 @@ class Identify():
         try:
             # Loop over the labels returned by libmagic, ...
             labels = []
+            mimes = []
+
             with self.lock:
                 try:
                     labels = magic.magic_file(self.file_type, path).split(b"\n")
                 except magic.MagicException as me:
                     labels = me.message.split(b"\n")
-                labels = [
-                    label[2:].strip() if label.startswith(b"- ") else label.strip()
-                    for label in labels
-                ]
 
-            mimes = []
-            with self.lock:
                 try:
                     mimes = magic.magic_file(self.mime_type, path).split(b"\n")
                 except magic.MagicException as me:
                     mimes = me.message.split(b"\n")
-                mimes = [
-                    mime[2:].strip() if mime.startswith(b"- ") else mime.strip()
-                    for mime in mimes
-                ]
+
+            mimes = [mime[2:].strip() if mime.startswith(b"- ") else mime.strip() for mime in mimes]
+            labels = [label[2:].strip() if label.startswith(b"- ") else label.strip() for label in labels]
 
             # For user feedback set the mime and magic meta data to always be the primary
             # libmagic responses
@@ -228,25 +219,29 @@ class Identify():
             # Second priority is mime times marked as trusted
             if data["type"] == "unknown":
                 with self.lock:
-                    for mime in mimes:
-                        mime = dotdump(mime)
+                    trusted_mimes = self.trusted_mimes
 
-                        if mime in self.trusted_mimes:
-                            data["type"] = self.trusted_mimes[mime]
-                            break
+                for mime in mimes:
+                    mime = dotdump(mime)
+
+                    if mime in trusted_mimes:
+                        data["type"] = trusted_mimes[mime]
+                        break
 
             # As a third priority try matching the magic_patterns
             if data["type"] == "unknown":
                 found = False
+                with self.lock:
+                    compiled_magic_patterns = self.compiled_magic_patterns
+
                 for label in labels:
-                    with self.lock:
-                        for entry in self.compiled_magic_patterns:
-                            if entry[1].search(dotdump(label)):  # pylint: disable=E1101
-                                data['type'] = entry[0]
-                                found = True
-                                break
-                        if found:
+                    for entry in compiled_magic_patterns:
+                        if entry[1].search(dotdump(label)):  # pylint: disable=E1101
+                            data['type'] = entry[0]
+                            found = True
                             break
+                    if found:
+                        break
 
         except Exception as e:
             self.log.error(f"An error occured during file identification: {e.__class__.__name__}({str(e)})")
@@ -287,7 +282,8 @@ class Identify():
         externals = {k: v or "" for k, v in info.items() if k in self.yara_default_externals}
         try:
             with self.lock:
-                matches = self.yara_rules.match(path, externals=externals, fast=True)
+                yara_rules = self.yara_rules
+            matches = yara_rules.match(path, externals=externals, fast=True)
             matches.sort(key=lambda x: x.meta.get('score', 0), reverse=True)
             for match in matches:
                 return match.meta['type']
