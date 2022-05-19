@@ -1,7 +1,6 @@
 import logging
 import magic
 import msoffcrypto
-import platform
 import re
 import ssdeep
 import struct
@@ -23,6 +22,7 @@ from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs, magic_pattern
     trusted_mimes as default_trusted_mimes
 from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
+from assemblyline.remote.datatypes.events import EventWatcher
 
 constants = get_constants()
 
@@ -32,29 +32,102 @@ class Identify():
         self.log = log or logging.getLogger('assemblyline.identify')
         self.config = None
         self.datastore = None
-
-        self.magic_file = ':'.join((constants.MAGIC_RULE_PATH, '/usr/share/file/magic.mgc'))
-        self.yara_file = constants.YARA_RULE_PATH
-        self.magic_patterns = default_magic_patterns
-        self.compiled_magic_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)]
-                                        for x in self.magic_patterns]
-        self.trusted_mimes = default_trusted_mimes
+        self.use_cache = use_cache
+        self.custom = re.compile(r"^custom: ", re.IGNORECASE)
+        self.lock = threading.Lock()
+        self.yara_default_externals = {'mime': '', 'magic': '', 'type': ''}
 
         # If cache is use, load the config and datastore objects to load potential items from cache
-        if use_cache:
+        if self.use_cache:
             self.log.info("Using cache with identify")
             self.config = config or get_config()
             self.datastore = datastore or get_datastore(config)
-            self._load_magic_file()
-            self._load_yara_file()
-            self._load_magic_patterns()
-            self._load_trusted_mimes()
 
-        self.custom = re.compile(r"^custom: ", re.IGNORECASE)
+        # Load all data for the first time
+        self._load_magic_file()
+        self._load_yara_file()
+        self._load_magic_patterns()
+        self._load_trusted_mimes()
 
-        if platform.system() != "Windows":
-            self.magic_lock = threading.Lock()
+        # Register hot reloader
+        if self.use_cache:
+            self.reload_map = {
+                'magic': self._load_magic_file,
+                'mimes': self._load_trusted_mimes,
+                'patterns': self._load_magic_patterns,
+                'yara': self._load_yara_file
+            }
+            self.reload_watcher = EventWatcher()
+            self.reload_watcher.register('system.identify', self._handle_reload_event)
+            self.reload_watcher.start()
+        else:
+            self.reload_watcher = None
+            self.reload_map = {}
 
+    def _handle_reload_event(self, data):
+        func = self.reload_map.get(data, None)
+        if func:
+            func()
+        else:
+            self.log.error(f"Invalid system.identify message received: {data}")
+
+    def _load_magic_patterns(self):
+        self.magic_patterns = default_magic_patterns
+
+        if self.use_cache:
+            self.log.info("Checking for custom magic patterns...")
+            with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
+                try:
+                    patterns = cache.get('custom_patterns')
+                    if patterns:
+                        self.magic_patterns = yaml.safe_load(patterns)
+                        self.compiled_magic_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)]
+                                                        for x in self.magic_patterns]
+
+                        self.log.info("Custom magic patterns loaded!")
+                    else:
+                        self.log.info("No custom magic patterns found.")
+                except FileStoreException:
+                    self.log.info("No custom magic patterns found.")
+
+        with self.lock:
+            self.compiled_magic_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)]
+                                            for x in self.magic_patterns]
+
+    def _load_trusted_mimes(self):
+        trusted_mimes = default_trusted_mimes
+
+        if self.use_cache:
+            self.log.info("Checking for custom trusted mimes...")
+            with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
+                try:
+                    mimes = cache.get('custom_mimes')
+                    if mimes:
+                        trusted_mimes = yaml.safe_load(mimes)
+                        self.log.info("Custom trusted mimes loaded!")
+                    else:
+                        self.log.info("No custom magic patterns found.")
+                except FileStoreException:
+                    self.log.info("No custom trusted mimes found.")
+
+        with self.lock:
+            self.trusted_mimes = trusted_mimes
+
+    def _load_magic_file(self):
+        self.magic_file = ':'.join((constants.MAGIC_RULE_PATH, '/usr/share/file/magic.mgc'))
+
+        if self.use_cache:
+            self.log.info("Checking for custom magic file...")
+            with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
+                try:
+                    custom_magic = "/tmp/custom.magic"
+                    cache.download('custom_magic', custom_magic)
+                    self.magic_file = ':'.join((custom_magic, '/usr/share/file/magic.mgc'))
+                    self.log.info("Custom magic file loaded!")
+                except FileStoreException:
+                    self.log.info("No custom magic file found.")
+
+        with self.lock:
             self.file_type = magic.magic_open(magic.MAGIC_CONTINUE + magic.MAGIC_RAW)
             magic.magic_load(self.file_type, self.magic_file)
 
@@ -62,68 +135,23 @@ class Identify():
                 magic.MAGIC_CONTINUE + magic.MAGIC_RAW + magic.MAGIC_MIME
             )
             magic.magic_load(self.mime_type, self.magic_file)
-            self.ssdeep_from_file = ssdeep.hash_from_file
-        else:
-            self.ssdeep_from_file = None
-            self.magic_lock = None
-            self.file_type = None
-            self.mime_type = None
-
-        self.yara_default_externals = {'mime': '', 'magic': '', 'type': ''}
-        self.yara_rules = yara.compile(filepaths={"default": self.yara_file}, externals=self.yara_default_externals)
-
-        # TODO: register hot reloader
-
-    def _load_magic_patterns(self):
-        self.log.info("Checking for custom magic patterns...")
-        with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
-            try:
-                patterns = cache.get('custom_patterns')
-                if patterns:
-                    self.magic_patterns = yaml.safe_load(patterns)
-                    self.compiled_magic_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)]
-                                                    for x in self.magic_patterns]
-
-                    self.log.info("Custom magic patterns loaded!")
-                else:
-                    self.log.info("No custom magic patterns found.")
-            except FileStoreException:
-                self.log.info("No custom magic patterns found.")
-
-    def _load_trusted_mimes(self):
-        self.log.info("Checking for custom trusted mimes...")
-        with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
-            try:
-                mimes = cache.get('custom_mimes')
-                if mimes:
-                    self.trusted_mimes = yaml.safe_load(mimes)
-                    self.log.info("Custom trusted mimes loaded!")
-                else:
-                    self.log.info("No custom magic patterns found.")
-            except FileStoreException:
-                self.log.info("No custom trusted mimes found.")
-
-    def _load_magic_file(self):
-        self.log.info("Checking for custom magic file...")
-        with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
-            try:
-                custom_magic = "/tmp/custom.magic"
-                cache.download('custom_magic', custom_magic)
-                self.magic_file = ':'.join((custom_magic, '/usr/share/file/magic.mgc'))
-                self.log.info("Custom magic file loaded!")
-            except FileStoreException:
-                self.log.info("No custom magic file found.")
 
     def _load_yara_file(self):
-        self.log.info("Checking for custom yara file...")
-        with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
-            try:
-                custom_yara = "/tmp/custom.yara"
-                cache.download('custom_yara', custom_yara)
-                self.yara_file = custom_yara
-                self.log.info("Custom yara file loaded!")
-            except FileStoreException:
-                self.log.info("No custom magic file found.")
+        self.yara_file = constants.YARA_RULE_PATH
+
+        if self.use_cache:
+            self.log.info("Checking for custom yara file...")
+            with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
+                try:
+                    custom_yara = "/tmp/custom.yara"
+                    cache.download('custom_yara', custom_yara)
+                    self.yara_file = custom_yara
+                    self.log.info("Custom yara file loaded!")
+                except FileStoreException:
+                    self.log.info("No custom magic file found.")
+
+        with self.lock:
+            self.yara_rules = yara.compile(filepaths={"default": self.yara_file}, externals=self.yara_default_externals)
 
     def ident(self, buf, length: int, path) -> Dict:
         data = {"ascii": None, "hex": None, "magic": None, "mime": None, "type": "unknown"}
@@ -139,28 +167,26 @@ class Identify():
         try:
             # Loop over the labels returned by libmagic, ...
             labels = []
-            if self.file_type:
-                with self.magic_lock:
-                    try:
-                        labels = magic.magic_file(self.file_type, path).split(b"\n")
-                    except magic.MagicException as me:
-                        labels = me.message.split(b"\n")
-                    labels = [
-                        label[2:].strip() if label.startswith(b"- ") else label.strip()
-                        for label in labels
-                    ]
+            with self.lock:
+                try:
+                    labels = magic.magic_file(self.file_type, path).split(b"\n")
+                except magic.MagicException as me:
+                    labels = me.message.split(b"\n")
+                labels = [
+                    label[2:].strip() if label.startswith(b"- ") else label.strip()
+                    for label in labels
+                ]
 
             mimes = []
-            if self.mime_type:
-                with self.magic_lock:
-                    try:
-                        mimes = magic.magic_file(self.mime_type, path).split(b"\n")
-                    except magic.MagicException as me:
-                        mimes = me.message.split(b"\n")
-                    mimes = [
-                        mime[2:].strip() if mime.startswith(b"- ") else mime.strip()
-                        for mime in mimes
-                    ]
+            with self.lock:
+                try:
+                    mimes = magic.magic_file(self.mime_type, path).split(b"\n")
+                except magic.MagicException as me:
+                    mimes = me.message.split(b"\n")
+                mimes = [
+                    mime[2:].strip() if mime.startswith(b"- ") else mime.strip()
+                    for mime in mimes
+                ]
 
             # For user feedback set the mime and magic meta data to always be the primary
             # libmagic responses
@@ -201,24 +227,26 @@ class Identify():
 
             # Second priority is mime times marked as trusted
             if data["type"] == "unknown":
-                for mime in mimes:
-                    mime = dotdump(mime)
+                with self.lock:
+                    for mime in mimes:
+                        mime = dotdump(mime)
 
-                    if mime in self.trusted_mimes:
-                        data["type"] = self.trusted_mimes[mime]
-                        break
+                        if mime in self.trusted_mimes:
+                            data["type"] = self.trusted_mimes[mime]
+                            break
 
             # As a third priority try matching the magic_patterns
             if data["type"] == "unknown":
                 found = False
                 for label in labels:
-                    for entry in self.compiled_magic_patterns:
-                        if entry[1].search(dotdump(label)):  # pylint: disable=E1101
-                            data['type'] = entry[0]
-                            found = True
+                    with self.lock:
+                        for entry in self.compiled_magic_patterns:
+                            if entry[1].search(dotdump(label)):  # pylint: disable=E1101
+                                data['type'] = entry[0]
+                                found = True
+                                break
+                        if found:
                             break
-                    if found:
-                        break
 
         except Exception as e:
             self.log.error(f"An error occured during file identification: {e.__class__.__name__}({str(e)})")
@@ -258,7 +286,8 @@ class Identify():
     def yara_ident(self, path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
         externals = {k: v or "" for k, v in info.items() if k in self.yara_default_externals}
         try:
-            matches = self.yara_rules.match(path, externals=externals, fast=True)
+            with self.lock:
+                matches = self.yara_rules.match(path, externals=externals, fast=True)
             matches.sort(key=lambda x: x.meta.get('score', 0), reverse=True)
             for match in matches:
                 return match.meta['type']
@@ -271,7 +300,7 @@ class Identify():
     def fileinfo(self, path: str) -> Dict:
         path = safe_str(path)
         data = get_digests_for_file(path, on_first_block=self.ident)
-        data["ssdeep"] = self.ssdeep_from_file(path) if self.ssdeep_from_file else ""
+        data["ssdeep"] = ssdeep.hash_from_file(path)
 
         # Check if file empty
         if not int(data.get("size", -1)):
