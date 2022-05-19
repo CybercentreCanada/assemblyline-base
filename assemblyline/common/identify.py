@@ -149,6 +149,16 @@ class Identify():
         with self.lock:
             self.yara_rules = yara_rules
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.stop()
+
+    def stop(self):
+        if self.reload_watcher:
+            self.reload_watcher.stop()
+
     def ident(self, buf, length: int, path) -> Dict:
         data = {"ascii": None, "hex": None, "magic": None, "mime": None, "type": "unknown"}
 

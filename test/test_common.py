@@ -276,45 +276,44 @@ def test_hexdump():
 
 
 def test_identify():
-    identify = forge.get_identify(use_cache=False)
+    with forge.get_identify(use_cache=False) as identify:
+        # Setup test data
+        aaaa = f"{'A' * 10000}".encode()
+        sha256 = hashlib.sha256(aaaa).hexdigest()
 
-    # Setup test data
-    aaaa = f"{'A' * 10000}".encode()
-    sha256 = hashlib.sha256(aaaa).hexdigest()
+        # Prep temp file
+        _, input_path = tempfile.mkstemp()
+        output_path = f"{input_path}.cart"
 
-    # Prep temp file
-    _, input_path = tempfile.mkstemp()
-    output_path = f"{input_path}.cart"
+        try:
+            # Write temp file
+            with open(input_path, 'wb') as oh:
+                oh.write(aaaa)
 
-    try:
-        # Write temp file
-        with open(input_path, 'wb') as oh:
-            oh.write(aaaa)
+            # Create a cart file
+            with open(output_path, 'wb') as oh:
+                with open(input_path, 'rb') as ih:
+                    pack_stream(ih, oh, {'name': 'test_identify.a'})
 
-        # Create a cart file
-        with open(output_path, 'wb') as oh:
-            with open(input_path, 'rb') as ih:
-                pack_stream(ih, oh, {'name': 'test_identify.a'})
+            # Validate the cart file created
+            meta = get_metadata_only(output_path)
+            assert meta.get("sha256", None) == sha256
 
-        # Validate the cart file created
-        meta = get_metadata_only(output_path)
-        assert meta.get("sha256", None) == sha256
+            # Validate identify file detection
+            info = identify.fileinfo(output_path)
+            assert info.get("type", None) == "archive/cart"
 
-        # Validate identify file detection
-        info = identify.fileinfo(output_path)
-        assert info.get("type", None) == "archive/cart"
+            # Validate identify hashing
+            output_sha256 = subprocess.check_output(['sha256sum', output_path])[:64].decode()
+            assert info.get("sha256", None) == output_sha256
+        finally:
+            # Cleanup output file
+            if os.path.exists(output_path):
+                os.unlink(output_path)
 
-        # Validate identify hashing
-        output_sha256 = subprocess.check_output(['sha256sum', output_path])[:64].decode()
-        assert info.get("sha256", None) == output_sha256
-    finally:
-        # Cleanup output file
-        if os.path.exists(output_path):
-            os.unlink(output_path)
-
-        # Cleanup input file
-        if os.path.exists(input_path):
-            os.unlink(input_path)
+            # Cleanup input file
+            if os.path.exists(input_path):
+                os.unlink(input_path)
 
 
 def test_iprange():
