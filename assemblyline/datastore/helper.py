@@ -616,7 +616,7 @@ class AssemblylineDatastore(object):
 
         def recurse_tree(child_p, placeholder, parents_p, lvl):
             if lvl == max_depth + 1:
-                # Enforce depth protection while building the trees
+                # Enforce depth protection while building the tree
                 return
 
             c_sha256 = child_p['sha256']
