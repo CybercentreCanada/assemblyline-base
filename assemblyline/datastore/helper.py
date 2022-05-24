@@ -626,7 +626,6 @@ class AssemblylineDatastore(object):
             else:
                 children_list = {}
                 truncated = False
-                truncated_items = []
                 child_list = files.get(c_sha256, [])
                 for new_child in child_list:
                     if new_child['sha256'] in tree_cache:
@@ -644,7 +643,6 @@ class AssemblylineDatastore(object):
                         "size": file_data_map[c_sha256]['size'],
                         "children": children_list,
                         "truncated": truncated,
-                        "truncated_items": truncated_items,
                         "score": scores.get(c_sha256, 0),
                     }
                 except KeyError:
@@ -657,7 +655,6 @@ class AssemblylineDatastore(object):
                             "size": file_data_map[c_sha256]['size'],
                             "children": children_list,
                             "truncated": truncated,
-                            "truncated_items": truncated_items,
                             "score": scores.get(c_sha256, 0),
                         }
 
