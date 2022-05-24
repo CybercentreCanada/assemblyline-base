@@ -35,6 +35,8 @@ class File(odm.Model):
 @odm.model(index=False, store=False, description="Heuristics raised")
 class Heuristics(odm.Model):
     heur_id = odm.Keyword(description="Heuristic ID")
+    score = odm.Integer(description="Score associated to heurstic")
+    times_raised = odm.Integer(description="The number of times the heuristic was raised")
     name = odm.Text(description="Name of the heuristic raised")
     tags = odm.Compound(Tagging, description="Tags associated to heuristic")
 
@@ -45,7 +47,7 @@ class Results(odm.Model):
     networking = odm.Optional(odm.List(odm.Compound(Networking)), description="List of Networking Ontologies")
     process = odm.Optional(odm.List(odm.Compound(Process)), description="List of Process Ontologies")
     sandbox = odm.Optional(odm.List(odm.Compound(Sandbox)), description="List of Sandbox Ontologies")
-    signatures = odm.Optional(odm.List(odm.Compound(Signature)), description="List of Signature Ontologies")
+    signature = odm.Optional(odm.List(odm.Compound(Signature)), description="List of Signature Ontologies")
     tags = odm.Optional(odm.Compound(Tagging), description="Tags raised during analysis")
     heuristics = odm.Optional(odm.List(odm.Compound(Heuristics)), description="Heuristics raised during analysis")
 

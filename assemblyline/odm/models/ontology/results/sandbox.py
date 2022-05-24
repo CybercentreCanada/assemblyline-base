@@ -23,9 +23,7 @@ class Sandbox(odm.Model):
                                description="The routing used in the sandbox setup (Spoofed, Internet, Tor, VPN)")
         machine_metadata = odm.Optional(odm.Compound(MachineMetadata), description="The metadata of the analysis")
 
-    oid = odm.UUID(description="Unique identifier of ontology")
-    oid_parent = odm.Optional(odm.UUID(), description="Parent of this ontology")
-    oid_children = odm.Optional(odm.List(odm.UUID()), description="Children of this ontology")
+    oid = odm.Keyword(description="Unique identifier of ontology")
 
     analysis_metadata = odm.Compound(AnalysisMetadata, description="Metadata for the analysis")
     sandbox_name = odm.Keyword(description="The name of the sandbox")
