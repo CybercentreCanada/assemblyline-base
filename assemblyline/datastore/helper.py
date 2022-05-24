@@ -612,9 +612,9 @@ class AssemblylineDatastore(object):
                 continue
             supplementary.extend([x['sha256'] for x in item['response']['supplementary']])
 
-        tree_cache = []
+        tree_cache = set()
 
-        def recurse_tree(child_p, placeholder, parents_p, lvl=0):
+        def recurse_tree(child_p, placeholder, lvl):
             if lvl == max_depth + 1:
                 # Enforce depth protection while building the tree
                 return
@@ -630,12 +630,9 @@ class AssemblylineDatastore(object):
                 for new_child in child_list:
                     if new_child['sha256'] in tree_cache:
                         truncated = True
-                        continue
-                    tree_cache.append(child['sha256'])
-
-                    if new_child['sha256'] not in parents_p:
-                        recurse_tree(new_child, children_list,
-                                     parents_p + [c_sha256], lvl + 1)
+                    else:
+                        tree_cache.add(new_child['sha256'])
+                        recurse_tree(new_child, children_list, lvl + 1)
 
                 try:
                     placeholder[c_sha256] = {
@@ -668,12 +665,12 @@ class AssemblylineDatastore(object):
             if sha256 in tree:
                 tree[sha256]['name'].append(name)
             else:
-                parents = [sha256]
+                tree_cache.add(sha256)
                 children = {}
                 c_list = files.get(sha256, [])
                 for child in c_list:
-                    tree_cache.append(child['sha256'])
-                    recurse_tree(child, children, parents)
+                    tree_cache.add(child['sha256'])
+                    recurse_tree(child, children, 0)
 
                 try:
                     tree[sha256] = {
