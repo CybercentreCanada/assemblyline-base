@@ -630,10 +630,12 @@ class AssemblylineDatastore(object):
                 for new_child in child_list:
                     if new_child['sha256'] in tree_cache:
                         truncated = True
-                    else:
-                        tree_cache.add(child_p['sha256'])
-                        if new_child['sha256'] not in parents_p:
-                            recurse_tree(new_child, children_list, parents_p.union({c_sha256}), lvl + 1)
+                        continue
+
+                    tree_cache.add(child_p['sha256'])
+
+                    if new_child['sha256'] not in parents_p:
+                        recurse_tree(new_child, children_list, parents_p.union({c_sha256}), lvl + 1)
 
                 try:
                     placeholder[c_sha256] = {
