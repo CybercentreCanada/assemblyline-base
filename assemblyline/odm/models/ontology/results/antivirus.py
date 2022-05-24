@@ -6,10 +6,7 @@ OID_PARTS = ['engine_name', 'engine_version', 'virus_name']
 
 @odm.model(description="Antivirus Ontology Model")
 class Antivirus(odm.Model):
-    oid = odm.UUID(description="Unique identifier of ontology")
-    oid_parent = odm.Optional(odm.UUID(), description="Parent of this ontology")
-    oid_children = odm.Optional(odm.List(odm.UUID()), description="Children of this ontology")
-
+    oid = odm.Keyword(description="Unique identifier of ontology")
     engine_name = odm.Keyword(description="Name of antivirus engine")
     engine_version = odm.Optional(odm.Keyword(), description="Version of antivirus engine")
     engine_definition_version = odm.Optional(odm.Keyword(), description="Version of definition set")
