@@ -398,6 +398,9 @@ rule code_ps1 {
         $ = /\[(System\.)?String]::Join\(/i ascii wide
         $ = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
         $ = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
+        $ = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
+        $ = /\$\w+[ \t]*=[ \t]*[^;^\n^|]+[;\n|]/ ascii wide
+        $ = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
 
     condition:
         mime startswith "text"
