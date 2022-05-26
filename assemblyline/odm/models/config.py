@@ -847,6 +847,7 @@ class UI(odm.Model):
                                                description="Alerting metadata fields")
     allow_malicious_hinting: bool = odm.Boolean(
         description="Allow user to tell in advance the system that a file is malicious?")
+    allow_protected_downloads: bool = odm.Boolean(description="Allow user to download files as protected ZIPs?")
     allow_raw_downloads: bool = odm.Boolean(description="Allow user to download raw files?")
     allow_replay: bool = odm.Boolean(description="Allow users to request replay on another server?")
     allow_url_submissions: bool = odm.Boolean(description="Allow file submissions via url?")
@@ -887,6 +888,7 @@ class UI(odm.Model):
 DEFAULT_UI = {
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
+    "allow_protected_downloads": True,
     "allow_raw_downloads": True,
     "allow_replay": False,
     "allow_url_submissions": True,

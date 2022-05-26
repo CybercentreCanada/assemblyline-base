@@ -4,7 +4,7 @@ from assemblyline.odm.models.submission import ServiceSelection
 
 Classification = forge.get_classification()
 
-ENCODINGS = {"cart", "raw"}
+ENCODINGS = {"cart", "raw", "protected"}
 VIEWS = {"report", "details"}
 
 
@@ -16,6 +16,10 @@ class UserSettings(odm.Model):
     description = odm.Keyword(default="", description="Default description")
     download_encoding = odm.Enum(values=ENCODINGS, default="cart",
                                  description="Default download encoding when downloading files")
+    default_protected_password = odm.Text(
+        default="",
+        description="Default user-defined password for creating protected ZIPs when downloading files"
+    )
     expand_min_score = odm.Integer(default=500, description="Auto-expand section when score bigger then this")
     ignore_cache = odm.Boolean(default=False, description="Ignore service caching?")
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False, description="Ignore dynamic recursion prevention?")
