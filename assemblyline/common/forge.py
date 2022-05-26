@@ -1,21 +1,21 @@
 # This file contains the loaders for the different components of the system
 from __future__ import annotations
-import importlib
-from string import Template
-from typing import TYPE_CHECKING
-import os
-import time
 
 import elasticapm
+import importlib
+import os
+import time
 import yaml
-from assemblyline.common.constants import service_queue_name
 
+from string import Template
+from typing import TYPE_CHECKING
+
+from assemblyline.common.constants import service_queue_name
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
 
 if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
-
 
 config_cache = {}
 
@@ -116,6 +116,11 @@ def get_filestore(config=None, connection_attempts=None):
     if config is None:
         config = get_config()
     return FileStore(*config.filestore.storage, connection_attempts=connection_attempts)
+
+
+def get_identify(use_cache=True, config=None, datastore=None, log=None):
+    from assemblyline.common.identify import Identify
+    return Identify(use_cache=use_cache, config=config, datastore=datastore, log=log)
 
 
 def get_process_alert_message():

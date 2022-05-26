@@ -3,12 +3,10 @@ import tempfile
 
 from cart import is_cart, pack_stream, unpack_stream
 from cart.cart import _unpack_header
-from assemblyline.common import identify
 from assemblyline.common.dict_utils import flatten
 
 
-# noinspection PyBroadException
-def decode_file(original_path, fileinfo):
+def decode_file(original_path, fileinfo, identify):
     extracted_path = None
     hdr = {}
     with open(original_path, 'rb') as original_file:
@@ -42,7 +40,6 @@ def decode_file(original_path, fileinfo):
     return extracted_path, fileinfo, hdr
 
 
-# noinspection PyUnusedLocal
 def encode_file(input_path, name, metadata=None):
     if metadata is None:
         metadata = {}

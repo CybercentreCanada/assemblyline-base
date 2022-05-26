@@ -24,9 +24,6 @@
 # VBE files
 0   string
 >&0     regex/20        \^#@~\\^[^=]{6}==     custom: code/vbe
-# VBS files
-0   string
->&0     regex/300        \(On\ Error\ Resume\ Next|WScript\.CreateObject)     custom: code/vbs
 # Android
 # XML compiled files
 0	string	\003\000\010\000	custom: android/xml
@@ -36,19 +33,19 @@
 0	string	dex\n	custom: android/dex
 # Games sound files
 # FSB
-0   string  FSB     custom: audiovisual/fsb
+0   string  FSB     custom: audio/fsb
 # AFS
-0	string	AFS2 	custom: audiovisual/afs
+0	string	AFS2 	custom: audio/afs
 # ACB
-0	string	@UTF\000 	custom: audiovisual/acb
+0	string	@UTF\000 	custom: resource/acb
 # Textures
-0	string	PVR custom: image/texture/powervr
-0	string	KA3D	custom: image/texture/ka3d
-0	string	RVIO	custom: image/texture/rvio
-0	string	PKM 	custom: image/texture/pkm
-0	string	\253KTX\040 	custom: image/texture/ktx
+0	string	PVR custom: resource/texture/powervr
+0	string	KA3D	custom: resource/texture/ka3d
+0	string	RVIO	custom: resource/texture/rvio
+0	string	PKM 	custom: resource/texture/pkm
+0	string	\253KTX\040 	custom: resource/texture/ktx
 0   string  4\000\000\000
->&0 search/0x40 PVR!	custom: font/texture/pvr
+>&0 search/0x40 PVR!	custom: resource/font/pvr
 # Opengl code (gles)
 0       search/0x100     technique
 >&0     search/0x100     pass
@@ -100,7 +97,7 @@
 >&0    search/0x30    \<script\ language   custom: code/wsf
 # TCPDump capture
 0   short   0x3C4D
->&0 short   0xA1B2        custom: network\tcpdump
+>&0 short   0xA1B2        custom: network/tcpdump
 # Email
 0   string  DKIM-Signature:     custom: document/email
 # Email with MultipartBoundary

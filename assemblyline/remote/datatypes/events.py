@@ -46,7 +46,7 @@ class EventWatcher(Generic[MessageType]):
         self.pubsub.psubscribe(**{path.lower(): _callback})
 
     def start(self):
-        self.worker = self.pubsub.run_in_thread(0.01)
+        self.worker = self.pubsub.run_in_thread(0.01, daemon=True)
 
     def stop(self):
         if self.worker is not None:

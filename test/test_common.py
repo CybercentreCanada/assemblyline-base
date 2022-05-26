@@ -23,7 +23,6 @@ from assemblyline.common.dict_utils import flatten, unflatten, recursive_update,
 from assemblyline.common.entropy import calculate_partition_entropy
 from assemblyline.common.heuristics import InvalidHeuristicException, HeuristicHandler
 from assemblyline.common.hexdump import hexdump
-from assemblyline.common.identify import fileinfo
 from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
     now_as_local
 from assemblyline.common.iprange import is_ip_reserved, is_ip_private
@@ -277,43 +276,44 @@ def test_hexdump():
 
 
 def test_identify():
-    # Setup test data
-    aaaa = f"{'A' * 10000}".encode()
-    sha256 = hashlib.sha256(aaaa).hexdigest()
+    with forge.get_identify(use_cache=False) as identify:
+        # Setup test data
+        aaaa = f"{'A' * 10000}".encode()
+        sha256 = hashlib.sha256(aaaa).hexdigest()
 
-    # Prep temp file
-    _, input_path = tempfile.mkstemp()
-    output_path = f"{input_path}.cart"
+        # Prep temp file
+        _, input_path = tempfile.mkstemp()
+        output_path = f"{input_path}.cart"
 
-    try:
-        # Write temp file
-        with open(input_path, 'wb') as oh:
-            oh.write(aaaa)
+        try:
+            # Write temp file
+            with open(input_path, 'wb') as oh:
+                oh.write(aaaa)
 
-        # Create a cart file
-        with open(output_path, 'wb') as oh:
-            with open(input_path, 'rb') as ih:
-                pack_stream(ih, oh, {'name': 'test_identify.a'})
+            # Create a cart file
+            with open(output_path, 'wb') as oh:
+                with open(input_path, 'rb') as ih:
+                    pack_stream(ih, oh, {'name': 'test_identify.a'})
 
-        # Validate the cart file created
-        meta = get_metadata_only(output_path)
-        assert meta.get("sha256", None) == sha256
+            # Validate the cart file created
+            meta = get_metadata_only(output_path)
+            assert meta.get("sha256", None) == sha256
 
-        # Validate identify file detection
-        info = fileinfo(output_path)
-        assert info.get("type", None) == "archive/cart"
+            # Validate identify file detection
+            info = identify.fileinfo(output_path)
+            assert info.get("type", None) == "archive/cart"
 
-        # Validate identify hashing
-        output_sha256 = subprocess.check_output(['sha256sum', output_path])[:64].decode()
-        assert info.get("sha256", None) == output_sha256
-    finally:
-        # Cleanup output file
-        if os.path.exists(output_path):
-            os.unlink(output_path)
+            # Validate identify hashing
+            output_sha256 = subprocess.check_output(['sha256sum', output_path])[:64].decode()
+            assert info.get("sha256", None) == output_sha256
+        finally:
+            # Cleanup output file
+            if os.path.exists(output_path):
+                os.unlink(output_path)
 
-        # Cleanup input file
-        if os.path.exists(input_path):
-            os.unlink(input_path)
+            # Cleanup input file
+            if os.path.exists(input_path):
+                os.unlink(input_path)
 
 
 def test_iprange():
