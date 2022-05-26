@@ -625,7 +625,7 @@ class AssemblylineDatastore(object):
             supplementary.extend([x['sha256'] for x in item['response']['supplementary']])
 
         # Process a file and its children
-        def process_file(current_file, tree_branch, lvl):
+        def process_file(current_file, tree_branch, partial, lvl=0):
             # Enforce depth protection while building the tree
             if lvl >= max_depth + 1:
                 return
@@ -643,6 +643,16 @@ class AssemblylineDatastore(object):
                 children = {}
                 truncated = False
 
+                # Load file data information if still missing
+                if file_sha256 not in file_data_map:
+                    file_data_map[file_sha256] = self.file.get(file_sha256, as_obj=False)
+
+                # If file data still can't be found, bail out
+                if file_sha256 not in file_data_map:
+                    log.warning(f"Trying to generate file tree but we are missing a file: {file_sha256}")
+                    partial = True
+                    return
+
                 # Process each children of the file
                 for new_child in files.get(file_sha256, []):
                     # Check if the file has already been processed elsewhere in the tree
@@ -651,11 +661,7 @@ class AssemblylineDatastore(object):
                     else:
                         # Process file children
                         tree_cache.add(new_child['sha256'])
-                        process_file(new_child, children, lvl + 1)
-
-                # Load file data information if still missing
-                if file_sha256 not in file_data_map:
-                    file_data_map[file_sha256] = self.file.get(file_sha256, as_obj=False)
+                        process_file(new_child, children, partial, lvl + 1)
 
                 # Add file and it's children to the tree
                 tree_branch[file_sha256] = {
@@ -672,7 +678,7 @@ class AssemblylineDatastore(object):
         tree = {}
         for f in submission['files']:
             tree_cache.add(f['sha256'])
-            process_file(f, tree, 0)
+            process_file(f, tree, partial)
 
         # Cleanup supplementary
         supplementary = list(set(supplementary))
