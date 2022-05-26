@@ -552,6 +552,7 @@ class AssemblylineDatastore(object):
         if cached_tree:
             tree = json.loads(cached_tree['tree'])
             if self._is_valid_tree(tree, num_files, max_score):
+                log.debug(f"File tree for submission '{submission['sid']}' was loaded from cache.")
                 return {
                     "tree": tree,
                     "classification": cached_tree['classification'],
@@ -718,9 +719,12 @@ class AssemblylineDatastore(object):
         files = list(set(files))
 
         if len(files) < num_files:
+            log.warning(f"Invalid cached tree, number of files is not the same: {len(files)} != {num_files}")
             return False
 
         if tree_score != max_score:
+            log.warning(
+                f"Invalid cached tree, the tree score does not match the submission score: {tree_score} != {max_score}")
             return False
 
         return True
