@@ -44,7 +44,7 @@ class NetworkHTTP(odm.Model):
 class Networking(odm.Model):
     oid = odm.Keyword(description="Unique identifier of ontology")
 
-    objectid = odm.Compound(ObjectID, description="The object ID of the network object")
+    objectid = odm.Optional(odm.Compound(ObjectID), description="The object ID of the network object")
     process = odm.Optional(odm.Compound(Process), description="The process that spawned the network connection")
     source_ip = odm.Optional(odm.IP(), description="The source IP of the connection")
     source_port = odm.Optional(odm.Integer(), description="The source port of the connection")
