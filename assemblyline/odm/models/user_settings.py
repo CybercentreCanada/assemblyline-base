@@ -17,7 +17,7 @@ class UserSettings(odm.Model):
     download_encoding = odm.Enum(values=ENCODINGS, default="cart",
                                  description="Default download encoding when downloading files")
     default_protected_password = odm.Text(
-        default="",
+        default="zippy",
         description="Default user-defined password for creating protected ZIPs when downloading files"
     )
     expand_min_score = odm.Integer(default=500, description="Auto-expand section when score bigger then this")
