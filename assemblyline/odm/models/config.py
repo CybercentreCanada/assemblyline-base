@@ -848,6 +848,7 @@ class UI(odm.Model):
     allow_malicious_hinting: bool = odm.Boolean(
         description="Allow user to tell in advance the system that a file is malicious?")
     allow_raw_downloads: bool = odm.Boolean(description="Allow user to download raw files?")
+    allow_zip_downloads: bool = odm.Boolean(description="Allow user to download files as password protected ZIPs?")
     allow_replay: bool = odm.Boolean(description="Allow users to request replay on another server?")
     allow_url_submissions: bool = odm.Boolean(description="Allow file submissions via url?")
     audit: bool = odm.Boolean(description="Should API calls be audited and saved to a separate log file?")
@@ -888,6 +889,7 @@ DEFAULT_UI = {
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
+    "allow_zip_downloads": True,
     "allow_replay": False,
     "allow_url_submissions": True,
     "audit": True,
