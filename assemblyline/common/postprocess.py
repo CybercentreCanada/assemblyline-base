@@ -322,6 +322,10 @@ RANGE_TO_PREFIX = {
 
 
 class ExpressionTransformer(lark.Transformer):
+    """
+    Takes a tree parsed from a lucene expression by lark, and turns it into
+    operation objects that can be actually applied.
+    """
     def __init__(self, visit_tokens: bool = True) -> None:
         super().__init__(visit_tokens)
         self.cache_safe = True
@@ -569,9 +573,9 @@ def should_resubmit(score: float, shift: float = 500) -> bool:
 
 
 class ActionWorker:
-    def __init__(self, cache, config, datastore, redis_persist) -> None:
+    def __init__(self, cache: bool, config, datastore, redis_persist) -> None:
         # Store parameters
-        self.cache = cache
+        self.running_cache_tasks = cache
 
         # Setup dependencies
         self.config = config
@@ -605,15 +609,17 @@ class ActionWorker:
     def _load_actions(self, _path=''):
         # Load the action data
         with CacheStore('system', config=self.config, datastore=self.datastore) as cache:
-            data = cache.get('postprocess_steps')
+            objects = DEFAULT_POSTPROCESS_ACTIONS
+            data = cache.get('postprocess_actions')
             if data:
-                raw = json.loads(data)
-                objects = {
-                    key: PostprocessAction(data)
-                    for key, data in raw.items()
-                }
-            else:
-                objects = DEFAULT_POSTPROCESS_ACTIONS
+                try:
+                    raw = json.loads(data)
+                    objects = {
+                        key: PostprocessAction(data)
+                        for key, data in raw.items()
+                    }
+                except Exception:
+                    logger.exception("Couldn't load stored actions")
 
         # Check which ones can be active
         ready_objects = {}
@@ -627,13 +633,13 @@ class ActionWorker:
                 logger.exception("Failed to load submission filter")
                 continue
 
-            if self.cache and data.run_on_cache:
+            if self.running_cache_tasks and data.run_on_cache:
                 if not fltr.cache_safe:
                     logger.error("Tried to apply non-cache-safe filter to cached submissions.")
                     continue
                 ready_objects[key] = fltr, data
 
-            if not self.cache and data.run_on_completed:
+            if not self.running_cache_tasks and data.run_on_completed:
                 ready_objects[key] = fltr, data
 
         # Swap in the new actions
@@ -650,7 +656,6 @@ class ActionWorker:
 
         Return bool indicating if a resubmission action has happened.
         """
-        submission.params.psid
         create_alert = False
         resubmit: Optional[set[str]] = None
         webhooks = []
@@ -701,9 +706,7 @@ class ActionWorker:
 
             if not selected.issuperset(resubmit_to):
                 submit_to = sorted(selected | resubmit_to)
-
                 extended_scan = 'submitted'
-                submission.params.psid = None
 
                 logger.info(f"[{submission.sid} :: {submission.files[0].sha256}] Resubmitted for extended analysis")
                 submission.params.psid = submission.sid
