@@ -2,13 +2,13 @@ from copy import deepcopy
 import time
 
 import datemath
-from assemblyline.odm.models.actions import Webhook
+from assemblyline.odm.models.actions import PostprocessAction, Webhook
 
 from assemblyline.odm.randomizer import random_minimal_obj
 from assemblyline.odm.models.submission import Submission, File
 from assemblyline.odm.messages.submission import Submission as MessageSubmission
 
-from assemblyline.common.postprocess import SubmissionFilter, ParsingError
+from assemblyline.common.postprocess import ActionWorker, SubmissionFilter, ParsingError
 
 
 def test_simple_filters():
@@ -48,7 +48,7 @@ def test_simple_filters():
     sub.results = ['a-something-service']
     assert fltr.test(sub)
 
-    fltr = SubmissionFilter('files.size: >100')
+    fltr = SubmissionFilter('files.size:>100')
     assert fltr.cache_safe
 
     sub.files = []
@@ -70,7 +70,7 @@ def test_simple_filters():
 
 def test_bad_field_detection():
     try:
-        SubmissionFilter("max_score.pain: found")
+        SubmissionFilter("max_score.pain:found")
         assert False
     except ParsingError as error:
         assert 'max_score' in str(error)

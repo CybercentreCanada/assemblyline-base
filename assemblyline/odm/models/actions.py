@@ -1,4 +1,4 @@
-from assemblyline.odm import keyword, optional
+from assemblyline.odm import description, keyword, optional
 from assemblyline import odm
 
 
@@ -14,6 +14,7 @@ class Webhook(odm.Model):
     ca_cert = optional(keyword(default=""), description="CA cert for source")
     ssl_ignore_errors = odm.boolean(default=False, description="Ignore SSL errors when reaching out to source?")
     proxy = optional(keyword(default=""), description="Proxy server for source")
+    method = keyword(default='POST', description="HTTP method used to access webhook")
     uri = keyword(description="URI to source")
     username = optional(keyword(default=""), description="Username used to authenticate with source")
     headers = odm.sequence(odm.compound(NamedValue), default=[], description="Headers")

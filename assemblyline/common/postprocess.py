@@ -757,6 +757,7 @@ class ActionWorker:
             if hook.username and hook.password:
                 auth = aiohttp.BasicAuth(login=hook.username, password=hook.password)
             headers = {head.name: head.value for head in hook.headers}
+            headers.setdefault('Content-Type', 'application/json')
 
             # Setup ssl details
             sslcontext: Union[None, bool, ssl.SSLContext] = None
@@ -780,7 +781,8 @@ class ActionWorker:
                     # Try posting to the webhook once. If it succeeds return and let
                     # the withs and finallys finish all the cleanup
                     try:
-                        await session.post(hook.uri, data=payload, ssl=sslcontext, proxy=hook.proxy)
+                        resp = await session.request(hook.method, hook.uri, data=payload, ssl=sslcontext, proxy=hook.proxy)
+                        resp.raise_for_status()
                         return
                     except Exception:
                         logger.exception(f"Error pushing to webhook: {hook}")
