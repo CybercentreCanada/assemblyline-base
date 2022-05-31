@@ -69,7 +69,7 @@ def get_values(value: Any, parts: list[str]) -> Any:
             try:
                 value = value[part]
             except KeyError:
-                pass
+                return
     yield value
 
 
