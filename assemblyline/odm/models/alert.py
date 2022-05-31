@@ -22,7 +22,7 @@ class DetailedResults(odm.Model):
     domain = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed domains")
     heuristic = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed heuristics")
     ip = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed IPs")
-    uri = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed URLs")
+    uri = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed URIs")
     yara = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed YARA rule hits")
 
 
@@ -40,9 +40,9 @@ class ALResults(odm.Model):
     ip_static = odm.List(odm.IP(), default=[], description="List of IPs found during Static Analysis")
     request_end_time = odm.Date(index=False, description="Finish time of the Assemblyline submission")
     score = odm.Integer(store=True, description="Maximum score found in the submission")
-    uri = odm.List(odm.URI(), default=[], copyto="__text__", description="List of all URLs")
-    uri_dynamic = odm.List(odm.URI(), default=[], description="List of URLs found during Dynamic Analysis")
-    uri_static = odm.List(odm.URI(), default=[], description="List of URLs found during Static Analysis")
+    uri = odm.List(odm.URI(), default=[], copyto="__text__", description="List of all URIs")
+    uri_dynamic = odm.List(odm.URI(), default=[], description="List of URIs found during Dynamic Analysis")
+    uri_static = odm.List(odm.URI(), default=[], description="List of URIs found during Static Analysis")
     yara = odm.List(odm.Keyword(), default=[], copyto="__text__", description="List of YARA rule hits")
 
 
