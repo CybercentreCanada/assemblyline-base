@@ -43,7 +43,7 @@ DEFAULT_POSTPROCESS_ACTIONS = {
     'default_alerts': PostprocessAction(dict(
         enabled=True,
         run_on_cache=True,
-        run_on_complete=True,
+        run_on_completed=True,
         filter="max_score: >=500",
         webhook=None,
         raise_alert=True,
@@ -54,7 +54,7 @@ DEFAULT_POSTPROCESS_ACTIONS = {
     'default_resubmit': PostprocessAction(dict(
         enabled=True,
         run_on_cache=False,
-        run_on_complete=True,
+        run_on_completed=True,
         filter="max_score: >=0",
         webhook=None,
         raise_alert=False,
