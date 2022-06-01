@@ -12,6 +12,7 @@ import time
 import asyncio
 import ssl
 import tempfile
+import yaml
 
 import aiohttp
 import lark
@@ -326,6 +327,7 @@ class ExpressionTransformer(lark.Transformer):
     Takes a tree parsed from a lucene expression by lark, and turns it into
     operation objects that can be actually applied.
     """
+
     def __init__(self, visit_tokens: bool = True) -> None:
         super().__init__(visit_tokens)
         self.cache_safe = True
@@ -613,7 +615,7 @@ class ActionWorker:
             data = cache.get('postprocess_actions')
             if data:
                 try:
-                    raw = json.loads(data)
+                    raw = yaml.safe_load(data)
                     objects = {
                         key: PostprocessAction(data)
                         for key, data in raw.items()
@@ -781,7 +783,8 @@ class ActionWorker:
                     # Try posting to the webhook once. If it succeeds return and let
                     # the withs and finallys finish all the cleanup
                     try:
-                        resp = await session.request(hook.method, hook.uri, data=payload, ssl=sslcontext, proxy=hook.proxy)
+                        resp = await session.request(hook.method, hook.uri, data=payload,
+                                                     ssl=sslcontext, proxy=hook.proxy)
                         resp.raise_for_status()
                         return
                     except Exception:
