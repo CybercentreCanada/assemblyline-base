@@ -1,4 +1,4 @@
-from assemblyline.odm import description, keyword, optional
+from assemblyline.odm import keyword, optional
 from assemblyline import odm
 
 
