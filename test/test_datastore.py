@@ -169,12 +169,18 @@ def _test_keys(c: ESCollection):
 
 def _test_update(c: ESCollection):
     # Test Update
-    expected = {'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50}, 'list': ['hello', 'world!'], "map": {'b': 99}}
+    expected = {
+        'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50},
+        'list': ['hello', 'world!', 'test_if_missing'],
+        "map": {'b': 99}
+    }
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
         (c.UPDATE_INC, "counters.inc_i", 50),
         (c.UPDATE_DEC, "counters.dec_i", 50),
         (c.UPDATE_APPEND, "list", "world!"),
+        (c.UPDATE_APPEND_IF_MISSING, "list", "test_if_missing"),
+        (c.UPDATE_APPEND_IF_MISSING, "list", "world!"),
         (c.UPDATE_REMOVE, "list", "remove"),
         (c.UPDATE_DELETE, "map", "a"),
         (c.UPDATE_SET, "map.b", 99),
@@ -191,7 +197,7 @@ def _test_update_by_query(c: ESCollection):
             'lvl_i': 666,
             'inc_i': 50,
             'dec_i': 50},
-        'list': ['hello', 'world!'],
+        'list': ['hello', 'world!', 'test_if_missing'],
         "map": {'b': 99}
     }
     operations = [
@@ -199,6 +205,8 @@ def _test_update_by_query(c: ESCollection):
         (c.UPDATE_INC, "counters.inc_i", 50),
         (c.UPDATE_DEC, "counters.dec_i", 50),
         (c.UPDATE_APPEND, "list", "world!"),
+        (c.UPDATE_APPEND_IF_MISSING, "list", "test_if_missing"),
+        (c.UPDATE_APPEND_IF_MISSING, "list", "world!"),
         (c.UPDATE_REMOVE, "list", "remove"),
         (c.UPDATE_DELETE, "map", "a"),
         (c.UPDATE_SET, "map.b", 99),
