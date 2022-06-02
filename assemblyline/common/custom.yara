@@ -648,8 +648,6 @@ rule code_batch {
 
     strings:
         $obf = /%[^:^\n^\r^%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
-        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
-        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $power = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?.+(-c|-command)[ \t]/i
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
@@ -661,7 +659,6 @@ rule code_batch {
         (mime startswith "text" or $bom at 0)
         and (for 1 of ($obf) :( # > 3 )
              or $power
-             or (#rem+#set) > 4
              or for 1 of ($cmd*) :( # > 3 ))
 }
 
@@ -678,12 +675,15 @@ rule code_batch_small {
         $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
         $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/i
         $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
+        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
+        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $bom = {FF FE}
 
     condition:
         (mime startswith "text" or $bom at 0)
-        and 1 of ($batch*)
         and filesize < 512
+        and (1 of ($batch*)
+            or (#rem+#set) > 4)
 }
 
 /*
