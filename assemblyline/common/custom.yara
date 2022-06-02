@@ -654,12 +654,14 @@ rule code_batch {
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
         $bom = {FF FE}
+        $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
     condition:
         (mime startswith "text" or $bom at 0)
         and (for 1 of ($obf) :( # > 3 )
              or $power
-             or for 1 of ($cmd*) :( # > 3 ))
+             or for 1 of ($cmd*) :( # > 3 )
+             or $exp)
 }
 
 rule code_batch_small {
