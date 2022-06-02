@@ -648,6 +648,8 @@ rule code_batch {
 
     strings:
         $obf = /%[^:^\n^\r^%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
+        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
+        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $power = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?.+(-c|-command)[ \t]/i
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
@@ -659,6 +661,7 @@ rule code_batch {
         (mime startswith "text" or $bom at 0)
         and (for 1 of ($obf) :( # > 3 )
              or $power
+             or (#rem+#set) > 4
              or for 1 of ($cmd*) :( # > 3 ))
 }
 
