@@ -1185,7 +1185,7 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_REMOVE]:
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
