@@ -564,8 +564,10 @@ DEFAULT_VACUUM = dict(
     file_directories=[],
     assemblyline_user="vacuum-service-account",
     department_map_url=None,
+    safelist=[],
     stream_map_url=None,
-    worker_threads=50
+    worker_threads=50,
+    minimum_classification='U',
 )
 
 
