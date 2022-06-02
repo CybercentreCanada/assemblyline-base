@@ -41,7 +41,7 @@ class NetworkHTTP(odm.Model):
 
 
 @odm.model(description="Details for a low-level network connection by IP")
-class Networking(odm.Model):
+class NetworkConnection(odm.Model):
     oid = odm.Keyword(description="Unique identifier of ontology")
 
     objectid = odm.Optional(odm.Compound(ObjectID), description="The object ID of the network object")
@@ -50,12 +50,10 @@ class Networking(odm.Model):
     source_port = odm.Optional(odm.Integer(), description="The source port of the connection")
     destination_ip = odm.IP(description="The destination IP of the connection")
     destination_port = odm.Integer(description="The destination port of the connection")
-    transport_layer_protocol = odm.Enum(
-        values=["tcp", "udp"],
-        description="The transport layer protocol of the connection")
-    direction = odm.Enum(
-        values=["outbound", "inbound", "unknown"],
-        description="The direction of the network connection")
+    transport_layer_protocol = odm.Enum(values=["tcp", "udp"],
+                                        description="The transport layer protocol of the connection")
+    direction = odm.Enum(values=["outbound", "inbound", "unknown"],
+                         description="The direction of the network connection")
     http_details = odm.Optional(odm.Compound(NetworkHTTP), description="HTTP-specific details of request")
     dns_details = odm.Optional(odm.Compound(NetworkDNS), description="DNS-specific details of request")
     connection_type = odm.Optional(odm.Enum(values=['http', 'dns'], description="Type of connection being made"))
