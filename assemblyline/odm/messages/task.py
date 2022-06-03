@@ -20,9 +20,10 @@ class FileInfo(odm.Model):
 
 @odm.model(description="Tag Item")
 class TagItem(odm.Model):
-    type = odm.Keyword()
-    value = odm.Keyword()
-    short_type = odm.Keyword()
+    type = odm.Keyword(description="Type of tag item")
+    value = odm.Keyword(description="Value of tag item")
+    short_type = odm.Keyword(description="Short version of tag type")
+    score = odm.Optional(odm.Integer(), description="Score of tag item")
 
 
 @odm.model(description="Data Item")

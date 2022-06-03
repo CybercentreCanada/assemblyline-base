@@ -123,6 +123,8 @@ class Service(odm.Model):
 
     uses_tags: bool = odm.Boolean(
         default=False, description="Does this service use tags from other services for analysis?")
+    uses_tag_scores: bool = odm.Boolean(
+        default=False, description="Does this service use scores of tags from other services for analysis?")
     uses_temp_submission_data: bool = odm.Boolean(
         default=False, description="Does this service use temp data from other services for analysis?")
     uses_metadata: bool = odm.Boolean(
