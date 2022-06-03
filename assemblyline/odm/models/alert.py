@@ -5,10 +5,33 @@ EXTENDED_SCAN_VALUES = {"submitted", "skipped", "incomplete", "completed"}
 
 
 @odm.model(index=True, store=False, description="Assemblyline Results Block")
-class ALResults(odm.Model):                                      #
+class DetailedItem(odm.Model):
+    type = odm.Keyword(description="Type of data that generated this item")
+    value = odm.Keyword(description="Value of the item")
+    verdict = odm.Enum(['safe', 'info', 'suspicious', 'malicious'], description="Verdict of the item")
+    subtype = odm.Optional(odm.Enum(['EXP', 'CFG', 'OB', 'IMP', 'CFG', 'TA'], description="Sub-type of the item"))
+
+
+@odm.model(index=True, store=False, description="Assemblyline Detailed result block")
+class DetailedResults(odm.Model):
+    attack_pattern = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed Att&ck patterns")
+    attack_category = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed Att&ck categories")
+    attrib = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed attribution")
+    av = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed AV hits")
+    behavior = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed behaviors for the alert")
+    domain = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed domains")
+    heuristic = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed heuristics")
+    ip = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed IPs")
+    uri = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed URIs")
+    yara = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed YARA rule hits")
+
+
+@odm.model(index=True, store=False, description="Assemblyline Results Block")
+class ALResults(odm.Model):
     attrib = odm.List(odm.Keyword(), default=[], store=True, copyto="__text__", description="List of attribution")
     av = odm.List(odm.Keyword(), default=[], store=True, copyto="__text__", description="List of AV hits")
     behavior = odm.List(odm.Keyword(), default=[], copyto="__text__", description="List of behaviors for the alert")
+    detailed = odm.Compound(DetailedResults, description="Assemblyline Detailed result block")
     domain = odm.List(odm.Domain(), default=[], copyto="__text__", description="List of all domains")
     domain_dynamic = odm.List(odm.Domain(), default=[], description="List of domains found during Dynamic Analysis")
     domain_static = odm.List(odm.Domain(), default=[], description="List of domains found during Static Analysis")
@@ -17,6 +40,9 @@ class ALResults(odm.Model):                                      #
     ip_static = odm.List(odm.IP(), default=[], description="List of IPs found during Static Analysis")
     request_end_time = odm.Date(index=False, description="Finish time of the Assemblyline submission")
     score = odm.Integer(store=True, description="Maximum score found in the submission")
+    uri = odm.List(odm.URI(), default=[], copyto="__text__", description="List of all URIs")
+    uri_dynamic = odm.List(odm.URI(), default=[], description="List of URIs found during Dynamic Analysis")
+    uri_static = odm.List(odm.URI(), default=[], description="List of URIs found during Static Analysis")
     yara = odm.List(odm.Keyword(), default=[], copyto="__text__", description="List of YARA rule hits")
 
 
@@ -50,7 +76,6 @@ class Attack(odm.Model):
 
 @odm.model(index=True, store=True, description="Model for Alerts")
 class Alert(odm.Model):
-
     alert_id = odm.Keyword(copyto="__text__", description="ID of the alert")
     al = odm.Compound(ALResults, description="Assemblyline Result Block")
     archive_ts = odm.Date(store=False, description="Archiving timestamp")
