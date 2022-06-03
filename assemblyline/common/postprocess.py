@@ -584,15 +584,15 @@ class ActionWorker:
         self.datastore = datastore
 
         # Submissions that should have alerts generated
-        self.alert_queue = NamedQueue(ALERT_QUEUE_NAME, redis_persist)
-        self.unique_queue = PriorityQueue('m-unique', redis_persist)
+        self.alert_queue: NamedQueue[dict] = NamedQueue(ALERT_QUEUE_NAME, redis_persist)
+        self.unique_queue: PriorityQueue[dict] = PriorityQueue('m-unique', redis_persist)
 
         # Load actions
         self.actions: dict[str, tuple[SubmissionFilter, PostprocessAction]] = {}
         self._load_actions()
 
         # Make sure we load any changed actions
-        self.reload_watcher = EventWatcher()
+        self.reload_watcher: EventWatcher[str] = EventWatcher()
         self.reload_watcher.register('system.postprocess', self._load_actions)
         self.reload_watcher.start()
 
