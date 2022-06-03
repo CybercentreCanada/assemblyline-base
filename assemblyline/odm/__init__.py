@@ -2,7 +2,7 @@ from __future__ import annotations
 import typing
 
 from assemblyline.odm.base import *
-
+from assemblyline.odm.base import Keyword, Optional, Boolean, Integer, List, Compound
 
 _InnerType = typing.TypeVar("_InnerType")
 
@@ -29,9 +29,15 @@ def boolean(*args, **kwargs) -> bool:
     return typing.cast(bool, Boolean(*args, **kwargs))
 
 
+def integer(*args, **kwargs) -> int:
+    return typing.cast(int, Integer(*args, **kwargs))
+
+
 def sequence(child_type: _InnerType, **kwargs) -> list[_InnerType]:
     return typing.cast(list[_InnerType], List(child_type, **kwargs))
 
 
 def compound(child_type: typing.Callable[..., _InnerType], **kwargs) -> _InnerType:
     return typing.cast(_InnerType, Compound(child_type, **kwargs))
+
+
