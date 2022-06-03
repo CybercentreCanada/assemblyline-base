@@ -100,6 +100,8 @@ class Result(odm.Model):
     response: ResponseBody = odm.Compound(ResponseBody, description="The body of the response from the service")
     result: ResultBody = odm.Compound(ResultBody, default={}, description="The result body")
     sha256 = odm.SHA256(store=False, description="SHA256 of the file the result object relates to")
+    type = odm.Optional(odm.Keyword())
+    size = odm.Optional(odm.Integer())
     drop_file = odm.Boolean(default=False, description="Use to not pass to other stages after this run")
 
     def build_key(self, service_tool_version=None, task=None):
