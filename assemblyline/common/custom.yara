@@ -654,12 +654,14 @@ rule code_batch {
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
         $bom = {FF FE}
+        $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
     condition:
         (mime startswith "text" or $bom at 0)
         and (for 1 of ($obf) :( # > 3 )
              or $power
-             or for 1 of ($cmd*) :( # > 3 ))
+             or for 1 of ($cmd*) :( # > 3 )
+             or $exp)
 }
 
 rule code_batch_small {
@@ -675,12 +677,15 @@ rule code_batch_small {
         $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
         $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/i
         $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
+        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
+        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $bom = {FF FE}
 
     condition:
         (mime startswith "text" or $bom at 0)
-        and 1 of ($batch*)
         and filesize < 512
+        and (1 of ($batch*)
+            or (#rem+#set) > 4)
 }
 
 /*
