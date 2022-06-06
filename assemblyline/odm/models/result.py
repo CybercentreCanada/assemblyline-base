@@ -130,18 +130,16 @@ class Result(odm.Model):
 
         return '.'.join(key_list)
 
-    def scored_tag_list(self) -> list:
-        tags = []
-        tag_scores = defaultdict(int)
+    def scored_tag_dict(self) -> dict:
+        tags = defaultdict(lambda: {'score': 0})
         # Save the tags and their score
         for section in self.result.sections:
             tag_list = tag_dict_to_list(flatten(section.tags.as_primitives()))
-            score = section.heuristic.score if section.heuristic else 0
-            tag_scores.update({t['value']: int(tag_scores['value'] + score) for t in tag_list})
-            tags.extend(tag_list)
+            for tag in tag_list:
+                key = f"{tag['type']}:{tag['value']}"
+                tags[key].update(tag)
+                tags[key]['score'] += section.heuristic.score if section.heuristic else 0
 
-        # Update accumulated score to tags
-        [tag.update({'score': tag_scores[tag['value']]}) for tag in tags]
         return tags
 
     def is_empty(self):
