@@ -69,7 +69,11 @@ class Set(object):
             return json.loads(ret_val)
 
     def pop(self):
-        return json.loads(retry_call(self.c.spop, self.name))
+        data = retry_call(self.c.spop, self.name)
+        return json.loads(data) if data else None
+
+    def pop_all(self):
+        return [json.loads(s) for s in retry_call(self.c.spop, self.name, self.length())]
 
     def delete(self):
         retry_call(self.c.delete, self.name)
