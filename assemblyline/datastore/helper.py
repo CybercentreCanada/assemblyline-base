@@ -1077,7 +1077,7 @@ class AssemblylineDatastore(object):
                             source, name = rule.split('.', 1)
                             signatures.add((source, name, rule_type))
                         except Exception:
-                            self.log.warning(f'Failed to parse rule name for rule: {rule} [{rule_type}]')
+                            log.warning(f'Failed to parse rule name for rule: {rule} [{rule_type}]')
 
             if new_time is None or res['created'] > new_time:
                 new_time = res['created']
