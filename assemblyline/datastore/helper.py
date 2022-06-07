@@ -990,24 +990,20 @@ class AssemblylineDatastore(object):
         return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
-    def calculate_heuristic_stats(self):
-        heur_list = sorted([(x['heur_id'])
-                            for x in self.ds.heuristic.stream_search("heur_id:*", fl="heur_id",
-                                                                     as_obj=False)])
-        for heur_chunk in chunk(heur_list, 1000):
-            with concurrent.futures.ThreadPoolExecutor(max(min(len(heur_list), THREAD_POOL_SIZE), 1)) as executor:
-                plan = self.ds.heuristic.get_bulk_plan()
-                futures = {executor.submit(self.get_stat_for_heuristic, heur_id): heur_id for heur_id in heur_chunk}
-                for future in concurrent.futures.as_completed(futures):
-                    heur_id = futures[future]
+    def calculate_heuristic_stats(self, heur_list):
+        with concurrent.futures.ThreadPoolExecutor(max(min(len(heur_list), THREAD_POOL_SIZE), 1)) as executor:
+            plan = self.ds.heuristic.get_bulk_plan()
+            futures = {executor.submit(self.get_stat_for_heuristic, heur_id): heur_id for heur_id in heur_list}
+            for future in concurrent.futures.as_completed(futures):
+                heur_id = futures[future]
 
-                    try:
-                        stats = future.result()
-                        plan.add_update_operation(heur_id, {'stats': stats})
-                    except Exception as e:
-                        log.exception(str(e))
+                try:
+                    stats = future.result()
+                    plan.add_update_operation(heur_id, {'stats': stats})
+                except Exception as e:
+                    log.exception(str(e))
 
-                self.ds.heuristic.bulk(plan)
+            self.ds.heuristic.bulk(plan)
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_signature(self, p_id, p_source, p_name, p_type, save=False):
@@ -1038,27 +1034,21 @@ class AssemblylineDatastore(object):
         return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
-    def calculate_signature_stats(self):
-        sig_list = sorted([(x['id'], x['source'], x['name'], x['type'])
-                           for x in self.ds.signature.stream_search("id:*",
-                                                                    fl="id,name,type,source",
-                                                                    as_obj=False)])
+    def calculate_signature_stats(self, sig_list):
+        with concurrent.futures.ThreadPoolExecutor(max(min(len(sig_list), THREAD_POOL_SIZE), 1)) as executor:
+            plan = self.ds.signature.get_bulk_plan()
+            futures = {executor.submit(self.get_stat_for_signature, sid, source, name, sig_type): sid
+                       for sid, source, name, sig_type in sig_list}
+            for future in concurrent.futures.as_completed(futures):
+                sid = futures[future]
 
-        for sig_chunk in chunk(sig_list, 1000):
-            with concurrent.futures.ThreadPoolExecutor(max(min(len(sig_list), THREAD_POOL_SIZE), 1)) as executor:
-                plan = self.ds.signature.get_bulk_plan()
-                futures = {executor.submit(self.get_stat_for_signature, sid, source, name, sig_type): sid
-                           for sid, source, name, sig_type in sig_chunk}
-                for future in concurrent.futures.as_completed(futures):
-                    sid = futures[future]
+                try:
+                    stats = future.result()
+                    plan.add_update_operation(sid, {'stats': stats})
+                except Exception as e:
+                    log.exception(str(e))
 
-                    try:
-                        stats = future.result()
-                        plan.add_update_operation(sid, {'stats': stats})
-                    except Exception as e:
-                        log.exception(str(e))
-
-                self.ds.signature.bulk(plan)
+            self.ds.signature.bulk(plan)
 
     @elasticapm.capture_span(span_type='datastore')
     def list_all_services(self, as_obj=True, full=False) -> Union[List[dict], List[Service]]:
