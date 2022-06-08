@@ -960,13 +960,13 @@ class AssemblylineDatastore(object):
             return svc_version_data
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_stat_for_heuristic(self, p_id, save=False):
+    def get_stat_for_heuristic(self, p_id):
         log.info(f"Generating stats for heuristic: {p_id})")
         query = f"result.sections.heuristic.heur_id:{p_id}"
         stats = self.ds.result.stats("result.score", query=query)
 
         if stats['count'] == 0:
-            up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
+            up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0, 'first_hit': None, 'last_hit': None}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
                                           sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
@@ -982,12 +982,9 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-            if save:
-                self.ds.heuristic.update(p_id, [
-                    (self.ds.heuristic.UPDATE_SET, 'stats', up_stats)
-                ])
-            else:
-                up_stats['id'] = p_id
+            self.ds.heuristic.update(p_id, [
+                (self.ds.heuristic.UPDATE_SET, 'stats', up_stats)
+            ])
 
         return up_stats
 
@@ -1000,20 +997,11 @@ class AssemblylineDatastore(object):
 
         # Update all heuristics found
         with concurrent.futures.ThreadPoolExecutor(max(min(len(heuristics), THREAD_POOL_SIZE), 1)) as executor:
-            plan = self.ds.heuristic.get_bulk_plan()
-            futures = [executor.submit(self.get_stat_for_heuristic, heur_id) for heur_id in heuristics]
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    stats = future.result()
-                    heur_id = stats.pop('id')
-                    plan.add_update_operation(heur_id, {'stats': stats})
-                except Exception as e:
-                    log.exception(str(e))
-
-            self.ds.heuristic.bulk(plan)
+            for heur_id in heuristics:
+                executor.submit(self.get_stat_for_heuristic, heur_id)
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_stat_for_signature(self, p_id, p_source, p_name, p_type, save=False):
+    def get_stat_for_signature(self, p_id, p_source, p_name, p_type):
         if p_id is None:
             log.info(f"Finding ID for {p_type.upper()} signature: \"{p_name}\" [{p_source}]")
             try:
@@ -1033,7 +1021,7 @@ class AssemblylineDatastore(object):
         query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
         stats = self.ds.result.stats("result.score", query=query)
         if stats['count'] == 0:
-            up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0}
+            up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0, 'first_hit': None, 'last_hit': None}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
                                           sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
@@ -1049,12 +1037,9 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-            if save:
-                self.ds.signature.update(p_id, [
-                    (self.ds.signature.UPDATE_SET, 'stats', up_stats)
-                ])
-            else:
-                up_stats['id'] = p_id
+            self.ds.signature.update(p_id, [
+                (self.ds.signature.UPDATE_SET, 'stats', up_stats)
+            ])
 
         return up_stats
 
@@ -1087,19 +1072,8 @@ class AssemblylineDatastore(object):
 
         # Update all signatures found
         with concurrent.futures.ThreadPoolExecutor(max(min(len(signatures), THREAD_POOL_SIZE), 1)) as executor:
-            plan = self.ds.signature.get_bulk_plan()
-            futures = [executor.submit(self.get_stat_for_signature, None, source, name, sig_type)
-                       for source, name, sig_type in signatures]
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    stats = future.result()
-                    if stats:
-                        sid = stats.pop('id')
-                        plan.add_update_operation(sid, {'stats': stats})
-                except Exception as e:
-                    log.exception(str(e))
-
-            self.ds.signature.bulk(plan)
+            for source, name, sig_type in signatures:
+                executor.submit(self.get_stat_for_signature, None, source, name, sig_type)
 
         return new_time
 
