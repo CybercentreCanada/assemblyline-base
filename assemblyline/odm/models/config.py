@@ -537,6 +537,42 @@ DEFAULT_SCALER = {
 }
 
 
+@odm.model(index=False, store=False)
+class VacuumSafelistItem(odm.Model):
+    name = odm.Keyword()
+    conditions = odm.Mapping(odm.Keyword())
+
+
+@odm.model(index=False, store=False)
+class Vacuum(odm.Model):
+    list_cache_directory: str = odm.Keyword()
+    worker_cache_directory: str = odm.Keyword()
+    data_directories: list[str] = odm.List(odm.Keyword())
+    file_directories: list[str] = odm.List(odm.Keyword())
+    assemblyline_user: str = odm.Keyword()
+    department_map_url = odm.Optional(odm.Keyword())
+    stream_map_url = odm.Optional(odm.Keyword())
+    safelist = odm.List(odm.Compound(VacuumSafelistItem))
+    worker_threads: int = odm.Integer()
+    worker_rollover: int = odm.Integer()
+    minimum_classification: str = odm.Keyword()
+
+
+DEFAULT_VACUUM = dict(
+    list_cache_directory="/cache/",
+    worker_cache_directory="/memory/",
+    data_directories=[],
+    file_directories=[],
+    assemblyline_user="vacuum-service-account",
+    department_map_url=None,
+    safelist=[],
+    stream_map_url=None,
+    worker_threads=50,
+    worker_rollover=1000,
+    minimum_classification='U',
+)
+
+
 @odm.model(index=False, store=False, description="Core Component Configuration")
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER, description="Configuration for Alerter")
@@ -548,6 +584,7 @@ class Core(odm.Model):
                                     description="Configuration for Metrics Collection")
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS, description="Configuration for Redis instances")
     scaler: Scaler = odm.Compound(Scaler, default=DEFAULT_SCALER, description="Configuration for Scaler")
+    vacuum: Vacuum = odm.Compound(Vacuum, default=DEFAULT_VACUUM, description="Configuration for Vacuum")
 
 
 DEFAULT_CORE = {
