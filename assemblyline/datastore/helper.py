@@ -961,6 +961,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_heuristic(self, p_id, save=False):
+        log.info(f"Generating stats for heuristic: {p_id})")
         query = f"result.sections.heuristic.heur_id:{p_id}"
         stats = self.ds.result.stats("result.score", query=query)
 
@@ -1005,6 +1006,8 @@ class AssemblylineDatastore(object):
             if new_time is None or res['created'] > new_time:
                 new_time = res['created']
 
+        log.info(f"{len(heuristics)} heuristics where triggered since: {lookback_time}.")
+
         # Bail out if no heuristics
         if not heuristics:
             return lookback_time
@@ -1027,6 +1030,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_signature(self, p_id, p_source, p_name, p_type, save=False):
+        log.info(f"Generating stats for {p_type.upper()} signature: {p_source}.{p_name}")
         if p_id is None:
             res = self.signature.search(f"type:{p_type} AND source:{p_source} AND name:{p_name}",
                                         fl="id", as_obj=False)['items']
@@ -1081,6 +1085,8 @@ class AssemblylineDatastore(object):
 
             if new_time is None or res['created'] > new_time:
                 new_time = res['created']
+
+        log.info(f"{len(signatures)} signatures where triggered since: {lookback_time}.")
 
         # Bail out if no signatures
         if not signatures:
