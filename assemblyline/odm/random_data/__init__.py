@@ -56,6 +56,47 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None):
             a.sid = submission.sid
 
         a.owner = random.choice(['admin', 'user', 'other', None])
+
+        # Clear sub-types
+        for data_type in a.al.detailed.fields():
+            if data_type in ['attrib']:
+                continue
+            for item in a.al.detailed[data_type]:
+                item['subtype'] = None
+
+        # Generate matching detailed IPs
+        ips = []
+        for ip in a.al.ip_static:
+            ips.append(dict(subtype=None, type='network.static.ip', value=ip,
+                            verdict=random.choice(['info', 'suspicious', 'malicious'])))
+        for ip in a.al.ip_dynamic:
+            ips.append(dict(subtype=None, type='network.dynamic.ip', value=ip,
+                            verdict=random.choice(['info', 'suspicious', 'malicious'])))
+        a.al.detailed.ip = ips
+        a.al.ip = [ip['value'] for ip in ips]
+
+        # Generate matching detailed Domains
+        domains = []
+        for dom in a.al.domain_static:
+            domains.append(dict(subtype=None, type='network.static.domain', value=dom,
+                                verdict=random.choice(['info', 'suspicious', 'malicious'])))
+        for dom in a.al.domain_dynamic:
+            domains.append(dict(subtype=None, type='network.dynamic.domain', value=dom,
+                                verdict=random.choice(['info', 'suspicious', 'malicious'])))
+        a.al.detailed.domain = domains
+        a.al.domain = [domain['value'] for domain in domains]
+
+        # Generate matching detailed URIs
+        uris = []
+        for uri in a.al.uri_static:
+            uris.append(dict(subtype=None, type='network.static.uri', value=uri,
+                             verdict=random.choice(['info', 'suspicious', 'malicious'])))
+        for uri in a.al.uri_dynamic:
+            uris.append(dict(subtype=None, type='network.dynamic.uri', value=uri,
+                             verdict=random.choice(['info', 'suspicious', 'malicious'])))
+        a.al.detailed.uri = uris
+        a.al.uri = [uri['value'] for uri in uris]
+
         ds.alert.save(a.alert_id, a)
         if log:
             log.info(f"\t{a.alert_id}")
