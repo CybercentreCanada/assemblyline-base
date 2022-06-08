@@ -1032,10 +1032,15 @@ class AssemblylineDatastore(object):
     def get_stat_for_signature(self, p_id, p_source, p_name, p_type, save=False):
         if p_id is None:
             log.info(f"Finding ID for {p_type.upper()} signature: \"{p_name}\" [{p_source}]")
-            res = self.signature.search(f"type:\"{p_type}\" AND source:\"{p_source}\" AND name:\"{p_name}\"",
-                                        fl="id", as_obj=False)['items']
-            for item in res:
-                p_id = item['id']
+            try:
+                res = self.signature.search(f"type:\"{p_type}\" AND source:\"{p_source}\" AND name:\"{p_name}\"",
+                                            fl="id", as_obj=False)['items']
+                for item in res:
+                    p_id = item['id']
+            except Exception:
+                log.error(f"Failed to find ID for {p_type.upper()} signature: \"{p_name}\" [{p_source}]")
+                return None
+
         log.info(f"Generating stats for {p_type.upper()} signature: {p_id}")
 
         query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
@@ -1101,8 +1106,9 @@ class AssemblylineDatastore(object):
             for future in concurrent.futures.as_completed(futures):
                 try:
                     stats = future.result()
-                    sid = stats.pop('id')
-                    plan.add_update_operation(sid, {'stats': stats})
+                    if stats:
+                        sid = stats.pop('id')
+                        plan.add_update_operation(sid, {'stats': stats})
                 except Exception as e:
                     log.exception(str(e))
 
