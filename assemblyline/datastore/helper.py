@@ -992,25 +992,11 @@ class AssemblylineDatastore(object):
         return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
-    def calculate_heuristic_stats(self, lookback_time="now-1d"):
-        # Compute updated heuristics since lookback time
-        heuristics = set()
-        query = f"result.sections.heuristic.heur_id:* AND created:{{{lookback_time} TO now]"
-        fl = "created,result.sections.heuristic.heur_id"
+    def calculate_heuristic_stats(self):
+        # Calculate stats for all heuristics
+        heuristics = [x['heur_id'] for x in self.ds.heuristic.stream_search("heur_id:*", fl="heur_id", as_obj=False)]
 
-        new_time = None
-        for res in self.ds.result.stream_search(query, fl=fl, as_obj=False):
-            for sec in res['result']['sections']:
-                heuristics.add(sec['heuristic']['heur_id'])
-
-            if new_time is None or res['created'] > new_time:
-                new_time = res['created']
-
-        log.info(f"{len(heuristics)} heuristics where triggered since: {lookback_time}.")
-
-        # Bail out if no heuristics
-        if not heuristics:
-            return lookback_time
+        log.info(f"All {len(heuristics)} heuristics will have their statistics updated.")
 
         # Update all heuristics found
         with concurrent.futures.ThreadPoolExecutor(max(min(len(heuristics), THREAD_POOL_SIZE), 1)) as executor:
@@ -1025,8 +1011,6 @@ class AssemblylineDatastore(object):
                     log.exception(str(e))
 
             self.ds.heuristic.bulk(plan)
-
-        return new_time
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_signature(self, p_id, p_source, p_name, p_type, save=False):
