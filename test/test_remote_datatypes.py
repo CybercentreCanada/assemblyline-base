@@ -137,8 +137,14 @@ def test_sets(redis_connection):
             assert not s.exist('cat')
             assert s.length() == 3
 
+            for pop_val in s.pop_all():
+                assert pop_val in values or pop_val in ['cat', 'dog']
+            assert s.pop() is None
+            assert s.length() == 0
 
 # noinspection PyShadowingNames
+
+
 def test_expiring_sets(redis_connection):
     if redis_connection:
         from assemblyline.remote.datatypes.set import ExpiringSet

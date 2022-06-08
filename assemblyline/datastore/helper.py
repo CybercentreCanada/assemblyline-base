@@ -1,6 +1,7 @@
 
 import concurrent.futures
 import json
+import os
 import time
 
 from typing import Union, List
@@ -37,6 +38,8 @@ from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 
 config = forge.get_config()
+
+THREAD_POOL_SIZE = int(os.environ.get("POOL_SIZE", 20))
 
 
 class AssemblylineDatastore(object):
@@ -957,7 +960,8 @@ class AssemblylineDatastore(object):
             return svc_version_data
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_stat_for_heuristic(self, p_id):
+    def get_stat_for_heuristic(self, p_id, save=False):
+        log.info(f"Generating stats for heuristic: {p_id})")
         query = f"result.sections.heuristic.heur_id:{p_id}"
         stats = self.ds.result.stats("result.score", query=query)
 
@@ -978,24 +982,62 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-        self.ds.heuristic.update(p_id, [
-            (self.ds.heuristic.UPDATE_SET, 'stats', up_stats)
-        ])
+            if save:
+                self.ds.heuristic.update(p_id, [
+                    (self.ds.heuristic.UPDATE_SET, 'stats', up_stats)
+                ])
+            else:
+                up_stats['id'] = p_id
 
         return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
-    def calculate_heuristic_stats(self):
-        heur_list = sorted([(x['heur_id'])
-                            for x in self.ds.heuristic.stream_search("heur_id:*", fl="heur_id,name,classification",
-                                                                     as_obj=False)])
+    def calculate_heuristic_stats(self, lookback_time="now-1d"):
+        # Compute updated heuristics since lookback time
+        heuristics = set()
+        query = f"result.sections.heuristic.heur_id:* AND created:{{{lookback_time} TO now]"
+        fl = "created,result.sections.heuristic.heur_id"
 
-        with concurrent.futures.ThreadPoolExecutor(max(min(len(heur_list), 20), 1)) as executor:
-            for heur_id in heur_list:
-                executor.submit(self.get_stat_for_heuristic, heur_id)
+        new_time = None
+        for res in self.ds.result.stream_search(query, fl=fl, as_obj=False):
+            for sec in res['result']['sections']:
+                heuristics.add(sec['heuristic']['heur_id'])
+
+            if new_time is None or res['created'] > new_time:
+                new_time = res['created']
+
+        log.info(f"{len(heuristics)} heuristics where triggered since: {lookback_time}.")
+
+        # Bail out if no heuristics
+        if not heuristics:
+            return lookback_time
+
+        # Update all heuristics found
+        with concurrent.futures.ThreadPoolExecutor(max(min(len(heuristics), THREAD_POOL_SIZE), 1)) as executor:
+            plan = self.ds.heuristic.get_bulk_plan()
+            futures = [executor.submit(self.get_stat_for_heuristic, heur_id) for heur_id in heuristics]
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    stats = future.result()
+                    heur_id = stats.pop('id')
+                    plan.add_update_operation(heur_id, {'stats': stats})
+                except Exception as e:
+                    log.exception(str(e))
+
+            self.ds.heuristic.bulk(plan)
+
+        return new_time
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_stat_for_signature(self, p_id, p_source, p_name, p_type):
+    def get_stat_for_signature(self, p_id, p_source, p_name, p_type, save=False):
+        if p_id is None:
+            log.info(f"Finding ID for {p_type.upper()} signature: \"{p_name}\" [{p_source}]")
+            res = self.signature.search(f"type:\"{p_type}\" AND source:\"{p_source}\" AND name:\"{p_name}\"",
+                                        fl="id", as_obj=False)['items']
+            for item in res:
+                p_id = item['id']
+        log.info(f"Generating stats for {p_type.upper()} signature: {p_id}")
+
         query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
         stats = self.ds.result.stats("result.score", query=query)
         if stats['count'] == 0:
@@ -1015,22 +1057,58 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-        self.ds.signature.update(p_id, [
-            (self.ds.signature.UPDATE_SET, 'stats', up_stats)
-        ])
+            if save:
+                self.ds.signature.update(p_id, [
+                    (self.ds.signature.UPDATE_SET, 'stats', up_stats)
+                ])
+            else:
+                up_stats['id'] = p_id
 
         return up_stats
 
     @elasticapm.capture_span(span_type='datastore')
-    def calculate_signature_stats(self):
-        sig_list = sorted([(x['id'], x['source'], x['name'], x['type'])
-                           for x in self.ds.signature.stream_search("id:*",
-                                                                    fl="id,name,type,source,classification",
-                                                                    as_obj=False)])
+    def calculate_signature_stats(self, lookback_time="now-1d"):
+        # Compute updated signatures since lookback time
+        signatures = set()
+        query = f"result.sections.tags.file.rule.\\*:* AND created:{{{lookback_time} TO now]"
+        fl = "created,result.sections.tags.file.rule.*"
 
-        with concurrent.futures.ThreadPoolExecutor(max(min(len(sig_list), 20), 1)) as executor:
-            for sid, source, name, sig_type in sig_list:
-                executor.submit(self.get_stat_for_signature, sid, source, name, sig_type)
+        new_time = None
+        for res in self.ds.result.stream_search(query, fl=fl, as_obj=False):
+            for sec in res['result']['sections']:
+                for rule_type, rules in sec['tags']['file']['rule'].items():
+                    for rule in rules:
+                        try:
+                            source, name = rule.split('.', 1)
+                            signatures.add((source, name, rule_type))
+                        except Exception:
+                            log.warning(f'Failed to parse rule name for rule: {rule} [{rule_type}]')
+
+            if new_time is None or res['created'] > new_time:
+                new_time = res['created']
+
+        log.info(f"{len(signatures)} signatures where triggered since: {lookback_time}.")
+
+        # Bail out if no signatures
+        if not signatures:
+            return lookback_time
+
+        # Update all signatures found
+        with concurrent.futures.ThreadPoolExecutor(max(min(len(signatures), THREAD_POOL_SIZE), 1)) as executor:
+            plan = self.ds.signature.get_bulk_plan()
+            futures = [executor.submit(self.get_stat_for_signature, None, source, name, sig_type)
+                       for source, name, sig_type in signatures]
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    stats = future.result()
+                    sid = stats.pop('id')
+                    plan.add_update_operation(sid, {'stats': stats})
+                except Exception as e:
+                    log.exception(str(e))
+
+            self.ds.signature.bulk(plan)
+
+        return new_time
 
     @elasticapm.capture_span(span_type='datastore')
     def list_all_services(self, as_obj=True, full=False) -> Union[List[dict], List[Service]]:

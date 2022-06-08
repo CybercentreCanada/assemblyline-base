@@ -15,8 +15,8 @@ try:
 except Exception:  # pylint:disable=W0702
     pass
 
-AL_SYSLOG_FORMAT = f'{ip} AL %(levelname)8s %(process)5d %(name)20s | %(message)s'
-AL_LOG_FORMAT = f'%(asctime)-16s %(levelname)8s {hostname} %(process)d %(name)30s | %(message)s'
+AL_SYSLOG_FORMAT = f'{ip} AL %(levelname)8s %(process)5d %(name)40s | %(message)s'
+AL_LOG_FORMAT = f'%(asctime)-16s %(levelname)8s {hostname} %(process)d %(name)40s | %(message)s'
 AL_JSON_FORMAT = f'{{' \
     f'"@timestamp": "%(asctime)s", ' \
     f'"event": {{ "module": "assemblyline", "dataset": "%(name)s" }}, ' \
