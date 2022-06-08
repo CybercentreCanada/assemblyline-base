@@ -1038,8 +1038,11 @@ class AssemblylineDatastore(object):
                 for item in res:
                     p_id = item['id']
             except Exception:
-                log.error(f"Failed to find ID for {p_type.upper()} signature: \"{p_name}\" [{p_source}]")
-                return None
+                pass
+
+        if not p_id:
+            log.error(f"Failed to find ID for {p_type.upper()} signature: \"{p_name}\" [{p_source}]")
+            return None
 
         log.info(f"Generating stats for {p_type.upper()} signature: {p_id}")
 
