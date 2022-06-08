@@ -1030,12 +1030,13 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_stat_for_signature(self, p_id, p_source, p_name, p_type, save=False):
-        log.info(f"Generating stats for {p_type.upper()} signature: {p_source}.{p_name}")
         if p_id is None:
-            res = self.signature.search(f"type:{p_type} AND source:{p_source} AND name:{p_name}",
+            log.info(f"Finding ID for {p_type.upper()} signature: \"{p_name}\" [{p_source}]")
+            res = self.signature.search(f"type:\"{p_type}\" AND source:\"{p_source}\" AND name:\"{p_name}\"",
                                         fl="id", as_obj=False)['items']
             for item in res:
                 p_id = item['id']
+        log.info(f"Generating stats for {p_type.upper()} signature: {p_id}")
 
         query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
         stats = self.ds.result.stats("result.score", query=query)
