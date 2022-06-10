@@ -137,10 +137,12 @@ class ESCollection(Generic[ModelType]):
     UPDATE_MAX = "MAX"
     UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
+    UPDATE_APPEND_IF_MISSING = "APPEND_IF_MISSING"
     UPDATE_REMOVE = "REMOVE"
     UPDATE_DELETE = "DELETE"
     UPDATE_OPERATIONS = [
         UPDATE_APPEND,
+        UPDATE_APPEND_IF_MISSING,
         UPDATE_DEC,
         UPDATE_INC,
         UPDATE_MAX,
@@ -1103,6 +1105,11 @@ class ESCollection(Generic[ModelType]):
             elif op == self.UPDATE_APPEND:
                 op_sources.append(f"ctx._source.{doc_key}.add(params.value{val_id})")
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_APPEND_IF_MISSING:
+                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
+                         f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
                 script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
                          f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
@@ -1178,7 +1185,7 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_REMOVE]:
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError, AttributeError):

@@ -310,7 +310,7 @@ def create_users(ds, log=None):
         "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(admin_pass)}},
         "classification": classification.RESTRICTED,
         "name": "Administrator",
-        "email": "admin@assemblyline.local",
+        "email": "admin@assemblyline.cyber.gc.ca",
         "password": get_password_hash(admin_pass),
         "uname": "admin",
         "type": ["admin", "user", "signature_importer"]})
@@ -321,7 +321,7 @@ def create_users(ds, log=None):
 
     user_data = User({
         "name": "User",
-        "email": "user@assemblyline.local",
+        "email": "user@assemblyline.cyber.gc.ca",
         "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(user_pass)}},
         "password": get_password_hash(user_pass),
         "uname": "user"})

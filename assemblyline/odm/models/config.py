@@ -553,6 +553,9 @@ class Vacuum(odm.Model):
     department_map_url = odm.Optional(odm.Keyword())
     stream_map_url = odm.Optional(odm.Keyword())
     safelist = odm.List(odm.Compound(VacuumSafelistItem))
+    worker_threads: int = odm.Integer()
+    worker_rollover: int = odm.Integer()
+    minimum_classification: str = odm.Keyword()
 
 
 DEFAULT_VACUUM = dict(
@@ -562,7 +565,11 @@ DEFAULT_VACUUM = dict(
     file_directories=[],
     assemblyline_user="vacuum-service-account",
     department_map_url=None,
+    safelist=[],
     stream_map_url=None,
+    worker_threads=50,
+    worker_rollover=1000,
+    minimum_classification='U',
 )
 
 
