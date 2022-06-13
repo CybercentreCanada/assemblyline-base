@@ -28,13 +28,13 @@ from assemblyline.odm.models.tagging import Tagging
 from assemblyline.remote.datatypes.events import EventWatcher
 from assemblyline.remote.datatypes.queues.named import NamedQueue
 from assemblyline.remote.datatypes.queues.priority import PriorityQueue
-from assemblyline_core.alerter.run_alerter import ALERT_QUEUE_NAME
 
 
 logger = logging.getLogger(__name__)
 
 SubmissionKind = Union[Submission, SubmissionMessage]
 
+ALERT_QUEUE_NAME = 'm-alert'
 SUBMISSION_FIELDS = Submission.flat_fields()
 TAG_FIELDS = Tagging.flat_fields()
 RESTRICTED_FIELDS = {
