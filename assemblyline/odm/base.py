@@ -18,7 +18,7 @@ import logging
 import re
 import sys
 from datetime import datetime
-from typing import Any as _Any, Dict, Mapping as _Mapping, Tuple, Union
+from typing import Dict, Tuple, Union, Any as _Any
 import arrow
 from assemblyline.common.net import is_valid_domain, is_valid_ip
 from dateutil.tz import tzutc
@@ -821,7 +821,7 @@ class Optional(_Field):
 
 class Model:
     @classmethod
-    def fields(cls, skip_mappings=False) -> _Mapping[str, _Field]:
+    def fields(cls, skip_mappings=False) -> dict[str, _Field]:
         """
         Describe the elements of the model.
 
@@ -875,7 +875,7 @@ class Model:
         return out
 
     @classmethod
-    def flat_fields(cls, show_compound=False, skip_mappings=False) -> _Mapping[str, _Field]:
+    def flat_fields(cls, show_compound=False, skip_mappings=False) -> dict[str, _Field]:
         """
         Describe the elements of the model.
 
