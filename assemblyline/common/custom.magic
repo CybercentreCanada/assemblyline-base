@@ -112,3 +112,6 @@
 0	belong	0xDBE8C501				custom: quarantine/windowsdefender
 # Memory Dump Files
 10   string _BIOPSY:                custom: metadata/memorydump
+# Archive UDF Files
+0 string
+>&0x9000 search/0x10000 UDF\ Image\ Creator  custom: archive/udf
