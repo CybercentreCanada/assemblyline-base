@@ -1,4 +1,8 @@
 from assemblyline import odm
+from assemblyline.common.dict_utils import get_dict_fingerprint_hash, flatten
+from assemblyline.odm.models.ontology.results.process import ObjectID
+
+OID_PARTS = ['sandbox_name', 'sandbox_version', 'analysis_metadata.start_time', 'analysis_metadata.end_time', 'analysis_metadata.task_id']
 
 
 @odm.model(description="Sandbox Ontology Model")
@@ -18,13 +22,19 @@ class Sandbox(odm.Model):
 
         task_id = odm.Optional(odm.Keyword(), description="The ID used for identifying the analysis task")
         start_time = odm.Date(description="The start time of the analysis")
-        end_time = odm.Date(description="The end time of the analysis")
+        end_time = odm.Optional(odm.Date(), description="The end time of the analysis")
         routing = odm.Optional(odm.Keyword(),
                                description="The routing used in the sandbox setup (Spoofed, Internet, Tor, VPN)")
         machine_metadata = odm.Optional(odm.Compound(MachineMetadata), description="The metadata of the analysis")
 
-    oid = odm.Keyword(description="Unique identifier of ontology")
+    objectid = odm.Compound(ObjectID, description="The object ID of the sandbox object")
 
     analysis_metadata = odm.Compound(AnalysisMetadata, description="Metadata for the analysis")
     sandbox_name = odm.Keyword(description="The name of the sandbox")
     sandbox_version = odm.Optional(odm.Keyword(), description="The version of the sandbox")
+
+    def get_oid(data: dict):
+        return f"sandbox_{get_dict_fingerprint_hash({key: flatten(data).get(key) for key in OID_PARTS})}"
+
+    def get_tag(data: dict):
+        return f"{data['sandbox_name']} @ {data['analysis_metadata']['start_time']}"

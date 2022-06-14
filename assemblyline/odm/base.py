@@ -933,8 +933,9 @@ class Model:
             field_type, field_class = get_type(info)
 
             # If the field is in fact a model class, generate markdown and append to list
-            if field_class and issubclass(field_class, Model) and field_class.__module__ == cls.__module__:
-                model_deps.append(field_class.markdown(toc_depth=toc_depth+1, defaults=info.default))
+            if field_class and issubclass(field_class, Model) and field_class.__module__ == cls.__module__ \
+                    and not any(dep[0] == field_class for dep in model_deps):
+                model_deps.append((field_class, field_class.markdown(toc_depth=toc_depth+1, defaults=info.default)))
 
             # Field description
             description = info.description
@@ -975,7 +976,7 @@ class Model:
 
         markdown_content += table + "\n\n"
         # Display model dependencies in order
-        for markdown in sorted(model_deps):
+        for _, markdown in sorted(model_deps, key=lambda x: x[1]):
             markdown_content += markdown
 
         return markdown_content

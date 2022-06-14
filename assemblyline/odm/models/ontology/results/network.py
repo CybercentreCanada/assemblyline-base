@@ -1,4 +1,5 @@
 from assemblyline import odm
+from assemblyline.odm.models.ontology.results.antivirus import TAG_PARTS
 from assemblyline.odm.models.ontology.results.process import Process, ObjectID
 from assemblyline.common.dict_utils import get_dict_fingerprint_hash
 
@@ -42,9 +43,7 @@ class NetworkHTTP(odm.Model):
 
 @odm.model(description="Details for a low-level network connection by IP")
 class NetworkConnection(odm.Model):
-    oid = odm.Keyword(description="Unique identifier of ontology")
-
-    objectid = odm.Optional(odm.Compound(ObjectID), description="The object ID of the network object")
+    objectid = odm.Compound(ObjectID, description="The object ID of the network object")
     process = odm.Optional(odm.Compound(Process), description="The process that spawned the network connection")
     source_ip = odm.Optional(odm.IP(), description="The source IP of the connection")
     source_port = odm.Optional(odm.Integer(), description="The source port of the connection")
@@ -60,3 +59,6 @@ class NetworkConnection(odm.Model):
 
     def get_oid(data: dict):
         return f"network_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"
+
+    def get_tag(data: dict):
+        return f"{dict.get('destination_ip')}:{dict.get('destination_port')}"

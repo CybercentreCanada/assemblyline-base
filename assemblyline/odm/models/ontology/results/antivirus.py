@@ -1,12 +1,14 @@
 from assemblyline import odm
+from assemblyline.odm.models.ontology.results.process import ObjectID
 from assemblyline.common.dict_utils import get_dict_fingerprint_hash
 
-OID_PARTS = ['engine_name', 'engine_version', 'virus_name']
+OID_PARTS = ['engine_name', 'virus_name']
+TAG_PARTS = ['engine_name', 'virus_name']
 
 
 @odm.model(description="Antivirus Ontology Model")
 class Antivirus(odm.Model):
-    oid = odm.Keyword(description="Unique identifier of ontology")
+    objectid = odm.Compound(ObjectID, description="The object ID of the antivirus object")
     engine_name = odm.Keyword(description="Name of antivirus engine")
     engine_version = odm.Optional(odm.Keyword(), description="Version of antivirus engine")
     engine_definition_version = odm.Optional(odm.Keyword(), description="Version of definition set")
@@ -26,3 +28,6 @@ class Antivirus(odm.Model):
 
     def get_oid(data: dict):
         return f"antivirus_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"
+
+    def get_tag(data: dict):
+        return ".".join([data.get(key) for key in TAG_PARTS if data.get(key)])
