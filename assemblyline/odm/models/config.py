@@ -1006,6 +1006,7 @@ class Sha256Source(odm.Model):
 
 
 DEFAULT_SHA256_SOURCES = {
+    # This is an exemple on how this would work with VirusTotal
     "url": r"https://www.virustotal.com/api/v3/files/{SHA256}/download",
     "replace_pattern": r"{SHA256}",
     "headers": {"x-apikey": "YOUR_KEY"},
