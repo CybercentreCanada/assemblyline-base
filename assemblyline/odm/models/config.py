@@ -994,6 +994,26 @@ DEFAULT_TAG_TYPES = {
 }
 
 
+@odm.model(index=False, store=False, description="A source entry for the sha256 downloader")
+class Sha256Source(odm.Model):
+    url: str = odm.Keyword(description="Url to fetch the file via SHA256 from.")
+    replace_pattern: str = odm.Keyword(description="Pattern to replace in the URL with the SHA256")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Headers used to connect to the URL")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxy used to connect to the URL")
+    verify: bool = odm.Boolean(description="Should the download function Verify SSL connections?")
+
+
+DEFAULT_SHA256_SOURCES = {
+    "url": r"https://www.virustotal.com/api/v3/files/{SHA256}/download",
+    "replace_pattern": r"{SHA256}",
+    "headers": {"x-apikey": "YOUR_KEY"},
+    "proxies": {},
+    "verify": True
+}
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -1006,6 +1026,9 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
+    sha256_sources: List[Sha256Source] = odm.List(
+        odm.Compound(Sha256Source),
+        default=DEFAULT_SHA256_SOURCES, description="List of external source to fetch file via their SHA256 hashes")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
 
@@ -1019,6 +1042,7 @@ DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
+    'sha256_sources': [],
     'tag_types': DEFAULT_TAG_TYPES
 }
 
