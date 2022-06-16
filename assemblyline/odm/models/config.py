@@ -997,6 +997,11 @@ DEFAULT_TAG_TYPES = {
 
 @odm.model(index=False, store=False, description="A source entry for the sha256 downloader")
 class Sha256Source(odm.Model):
+    name: str = odm.Keyword(description="Name of the sha256 source")
+    classification = odm.Optional(
+        odm.Classification(),
+        description="Minimum classification applied to the downloaded "
+                    "files and required to know the existance of the source.")
     url: str = odm.Keyword(description="Url to fetch the file via SHA256 from.")
     replace_pattern: str = odm.Keyword(description="Pattern to replace in the URL with the SHA256")
     headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
@@ -1006,8 +1011,10 @@ class Sha256Source(odm.Model):
     verify: bool = odm.Boolean(description="Should the download function Verify SSL connections?")
 
 
-DEFAULT_SHA256_SOURCES = {
+EXAMPLE_SHA256_SOURCE = {
     # This is an exemple on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "classification": "UNRESTRICTED",
     "url": r"https://www.virustotal.com/api/v3/files/{SHA256}/download",
     "replace_pattern": r"{SHA256}",
     "headers": {"x-apikey": "YOUR_KEY"},
@@ -1030,7 +1037,7 @@ class Submission(odm.Model):
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
     sha256_sources: List[Sha256Source] = odm.List(
         odm.Compound(Sha256Source),
-        default=DEFAULT_SHA256_SOURCES, description="List of external source to fetch file via their SHA256 hashes")
+        default=[], description="List of external source to fetch file via their SHA256 hashes")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
 

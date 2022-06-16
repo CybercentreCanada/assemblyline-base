@@ -10,14 +10,14 @@ VIEWS = {"report", "details"}
 
 @odm.model(index=False, store=False, description="Model of User Settings")
 class UserSettings(odm.Model):
-    allow_external_submit = odm.Boolean(default=False,
-                                        description="Allow checking external sha256 source during sha256 submit")
     classification = odm.Classification(default=Classification.UNRESTRICTED,
                                         description="Default submission classification")
     deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
     description = odm.Keyword(default="", description="Default description")
     download_encoding = odm.Enum(values=ENCODINGS, default="cart",
                                  description="Default download encoding when downloading files")
+    default_external_sources = odm.List(odm.Keyword(), default=[],
+                                        description="List of sha256 sources to check by default")
     default_zip_password = odm.Text(
         default="zippy",
         description="Default user-defined password for creating password protected ZIPs when downloading files"
