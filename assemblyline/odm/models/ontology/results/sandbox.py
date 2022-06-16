@@ -4,7 +4,6 @@ from assemblyline.odm.models.ontology.results.process import ObjectID
 
 OID_PARTS = ['sandbox_name', 'sandbox_version', 'analysis_metadata.start_time', 'analysis_metadata.end_time', 'analysis_metadata.task_id']
 
-
 @odm.model(description="Sandbox Ontology Model")
 class Sandbox(odm.Model):
     @odm.model(description="The metadata of the analysis, per analysis")
@@ -37,4 +36,4 @@ class Sandbox(odm.Model):
         return f"sandbox_{get_dict_fingerprint_hash({key: flatten(data).get(key) for key in OID_PARTS})}"
 
     def get_tag(data: dict):
-        return f"{data['sandbox_name']} @ {data['analysis_metadata']['start_time']}"
+        return data['sandbox_name']
