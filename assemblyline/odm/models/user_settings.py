@@ -10,6 +10,8 @@ VIEWS = {"report", "details"}
 
 @odm.model(index=False, store=False, description="Model of User Settings")
 class UserSettings(odm.Model):
+    allow_external_submit = odm.Boolean(default=False,
+                                        description="Allow checking external sha256 source during sha256 submit")
     classification = odm.Classification(default=Classification.UNRESTRICTED,
                                         description="Default submission classification")
     deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
