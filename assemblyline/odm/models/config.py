@@ -998,9 +998,10 @@ DEFAULT_TAG_TYPES = {
 @odm.model(index=False, store=False, description="A source entry for the sha256 downloader")
 class Sha256Source(odm.Model):
     name: str = odm.Keyword(description="Name of the sha256 source")
-    classification = odm.Classification(default="TLP:WHITE",
-                                        description="Minimum classification applied to the downloaded "
-                                        "files and required to know the existance of the source.")
+    classification = odm.Optional(
+        odm.ClassificationString(
+            description="Minimum classification applied to the downloaded "
+                        "files and required to know the existance of the source."))
     data: str = odm.Optional(odm.Keyword(description="Data block sent during the URL call (Uses replace pattern)"))
     failure_pattern: str = odm.Optional(odm.Keyword(
         description="Pattern to find as a failure case when API return 200 OK on failures..."))
