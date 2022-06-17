@@ -998,28 +998,39 @@ DEFAULT_TAG_TYPES = {
 @odm.model(index=False, store=False, description="A source entry for the sha256 downloader")
 class Sha256Source(odm.Model):
     name: str = odm.Keyword(description="Name of the sha256 source")
-    classification = odm.Optional(
-        odm.Classification(),
-        description="Minimum classification applied to the downloaded "
-                    "files and required to know the existance of the source.")
-    url: str = odm.Keyword(description="Url to fetch the file via SHA256 from.")
+    classification = odm.Classification(default="TLP:WHITE",
+                                        description="Minimum classification applied to the downloaded "
+                                        "files and required to know the existance of the source.")
+    data: str = odm.Optional(odm.Keyword(description="Data block sent during the URL call (Uses replace pattern)"))
+    failure_pattern: str = odm.Optional(odm.Keyword(
+        description="Pattern to find as a failure case when API return 200 OK on failures..."))
+    method: str = odm.Enum(values=['GET', 'POST'], default="GET", description="Method used to call the URL")
+    url: str = odm.Keyword(description="Url to fetch the file via SHA256 from (Uses replace pattern)")
     replace_pattern: str = odm.Keyword(description="Pattern to replace in the URL with the SHA256")
-    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                           description="Headers used to connect to the URL")
-    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                           description="Proxy used to connect to the URL")
-    verify: bool = odm.Boolean(description="Should the download function Verify SSL connections?")
+    headers: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Headers used to connect to the URL")
+    proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Proxy used to connect to the URL")
+    verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
 
-EXAMPLE_SHA256_SOURCE = {
-    # This is an exemple on how this would work with VirusTotal
+EXAMPLE_SHA256_SOURCE_VT = {
+    # This is an example on how this would work with VirusTotal
     "name": "VirusTotal",
-    "classification": "UNRESTRICTED",
     "url": r"https://www.virustotal.com/api/v3/files/{SHA256}/download",
     "replace_pattern": r"{SHA256}",
     "headers": {"x-apikey": "YOUR_KEY"},
-    "proxies": {},
-    "verify": True
+}
+
+EXAMPLE_SHA256_SOURCE_MB = {
+    # This is an example on how this would work with Malware Bazaar
+    "name": "Malware Bazaar",
+    "url": r"https://mb-api.abuse.ch/api/v1/",
+    "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+    "data": r"query=get_file&sha256_hash={SHA256}",
+    "method": "POST",
+    "replace_pattern": r"{SHA256}",
+    "failure_pattern": '"query_status": "file_not_found"'
 }
 
 
