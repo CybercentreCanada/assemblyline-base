@@ -11,13 +11,21 @@ TAG_PARTS = ['type', 'name']
 class Attribute(odm.Model):
     source = odm.Compound(ObjectID, description="Object that the rule triggered on")
     target = odm.Optional(odm.Compound(ObjectID), description="Object targetted by source object")
+    action = odm.Optional(odm.Enum(values=  # Process actions
+                                   ['clipboard_capture', 'create_remote_thread', 'create_stream_hash', 'dns_query', 'driver_loaded',
+                                    'file_change', 'file_creation', 'file_delete', 'image_loaded', 'network_connection', 'network_connection_linux',
+                                    'pipe_created', 'process_access', 'process_creation', 'process_creation_linux', 'process_tampering',
+                                    'process_terminated', 'raw_access_thread', 'registry_add', 'registry_delete', 'registry_event', 'registry_rename',
+                                    'registry_set', 'sysmon_error', 'sysmon_status', 'wmi_event'],
+                                   description="The relation between the source and target"))
     meta = odm.Optional(odm.Text(), description="Metadata about the detection")
     event_record_id = odm.Optional(odm.Text(), description="Event Record ID (Event Logs)")
     domain = odm.Optional(odm.Domain(), description="Domain")
     uri = odm.Optional(odm.URI(), description="URI")
     file_hash = odm.Optional(odm.SHA256(), description="SHA256 of file")
 
-@odm.model(index=False, store=False, description="A signature that was raised during the analysis of the task")
+
+@ odm.model(index=False, store=False, description="A signature that was raised during the analysis of the task")
 class Signature(odm.Model):
     objectid = odm.Compound(ObjectID, description="The object ID of the signature object")
 
