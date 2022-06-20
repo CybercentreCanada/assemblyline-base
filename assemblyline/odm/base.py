@@ -1025,7 +1025,7 @@ class Model:
                              f"{', '.join(unused_keys)}")
         if unused_keys and ignore_extra_values and mask is None:
             logger.warning(
-                f"The following parameters where ignored from object "
+                f"The following parameters were ignored from object "
                 f"'{self.__class__.__name__}': {', '.join(unused_keys)}")
 
         # Pass each value through it's respective validator, and store it

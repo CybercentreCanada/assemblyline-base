@@ -746,6 +746,7 @@ SERVICE_STAGES = [
 ]
 
 SAFELIST_HASH_TYPES = ['sha1', 'sha256', 'md5']
+REGISTRY_TYPES = ['docker', 'harbor']
 
 
 @odm.model(index=False, store=False, description="Service's Safelisting Configuration")
@@ -757,6 +758,14 @@ class ServiceSafelist(odm.Model):
                           description="Types of file hashes used for safelist checks")
     enforce_safelist_service = odm.Boolean(default=False,
                                            description="Should the Safelist service always run on extracted files?")
+
+
+@odm.model(index=False, store=False, description="Pre-Configured Registry Details for Services")
+class ServiceRegistry(odm.Model):
+    name: str = odm.Keyword(description="Name of container registry")
+    type: str = odm.Enum(values=REGISTRY_TYPES, default='docker', description="Type of container registry")
+    username: str = odm.Keyword(description="Username for container registry")
+    password: str = odm.Keyword(description="Password for container registry")
 
 
 @odm.model(index=False, store=False, description="Services Configuration")
@@ -774,7 +783,7 @@ class Services(odm.Model):
     preferred_update_channel: str = odm.Keyword(description="Default update channel to be used for new services")
     allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
     preferred_registry_type: str = odm.Enum(
-        values=["docker", "harbor"],
+        values=REGISTRY_TYPES,
         default='docker',
         description="Global registry type to be used for fetching updates for a service (overridable by a service)")
     prefer_service_privileged: bool = odm.Boolean(
@@ -787,6 +796,8 @@ class Services(odm.Model):
         "At `0` (only for very small appliances/dev boxes), the service's CPU will be limited "
         "but no CPU will be reserved allowing for more flexible scheduling of containers.")
     safelist = odm.Compound(ServiceSafelist)
+    registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
+                              description="Global set of registries for services")
 
 
 DEFAULT_SERVICES = {
@@ -803,7 +814,8 @@ DEFAULT_SERVICES = {
         "enabled": True,
         "hash_types": ['sha1', 'sha256'],
         "enforce_safelist_service": False
-    }
+    },
+    "registries": []
 }
 
 
