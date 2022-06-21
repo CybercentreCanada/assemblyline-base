@@ -77,7 +77,7 @@ class Submission(odm.Model):
 class ResultOntology(odm.Model):
     # Record Identification
     odm_type = odm.Text(default="Assemblyline Result Ontology", description="Type of ODM Model")
-    odm_version = odm.Text(default="alpha", description="Version of ODM Model")
+    odm_version = odm.Text(default="1.0", description="Version of ODM Model")
 
     # Record Classification
     classification = odm.ClassificationString(description="Classification of Ontological Record")
