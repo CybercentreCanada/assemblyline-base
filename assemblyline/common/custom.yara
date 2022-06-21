@@ -20,7 +20,7 @@ rule code_javascript {
         $strong_js7  = /unescape\(/
         $strong_js8  = /\.createElement\(/
         $strong_js9  = /submitForm\(['"]/
-        $strong_js10 = /(document|window)(\[['"]|\.)\w+/
+        $strong_js10 = /(document|window)(\[['"a-zA-Z]|\.)\w+/
         $strong_js11 = /setTimeout\(/
         $strong_js12 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
 
