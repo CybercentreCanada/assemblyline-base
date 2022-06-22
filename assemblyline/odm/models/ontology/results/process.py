@@ -17,21 +17,12 @@ class ObjectID(odm.Model):
     service_name = odm.Keyword(default=environ.get('AL_SERVICE_NAME', 'unknown'),
                                description="Component that generated this section")
 
-@odm.model(description="Details about the characteristics used to identify a parent object")
-class ParentObjectID(odm.Model):
-    guid = odm.Optional(odm.Text(), description="The GUID associated with the object")
-    tag = odm.Text(description="The normalized tag of the object")
-    treeid = odm.Optional(odm.Text(), description="The hash of the tree ID")
-    processtree = odm.Optional(odm.Keyword(), description="Human-readable tree ID (concatenation of tags)")
-    time_observed = odm.Optional(odm.Date(), description="The time at which the object was observed")
-
-
 @odm.model(description="Details about a process")
 class Process(odm.Model):
     objectid = odm.Compound(ObjectID, description="The object ID of the process object")
 
     # Parent process details
-    pobjectid = odm.Optional(odm.Compound(ParentObjectID), description="The object ID of the parent process object")
+    pobjectid = odm.Optional(odm.Compound(ObjectID), description="The object ID of the parent process object")
     pimage = odm.Optional(odm.Text(), description="The image of the parent process that spawned this process")
     pcommand_line = odm.Optional(odm.Text(), description="The command line that the parent process ran")
     ppid = odm.Optional(odm.Integer(), description="The process ID of the parent process")
