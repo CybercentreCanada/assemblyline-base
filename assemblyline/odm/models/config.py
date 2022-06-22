@@ -547,8 +547,8 @@ class VacuumSafelistItem(odm.Model):
 class Vacuum(odm.Model):
     list_cache_directory: str = odm.Keyword()
     worker_cache_directory: str = odm.Keyword()
-    data_directories: list[str] = odm.List(odm.Keyword())
-    file_directories: list[str] = odm.List(odm.Keyword())
+    data_directories: List[str] = odm.List(odm.Keyword())
+    file_directories: List[str] = odm.List(odm.Keyword())
     assemblyline_user: str = odm.Keyword()
     department_map_url = odm.Optional(odm.Keyword())
     department_map_init = odm.Optional(odm.Keyword())
