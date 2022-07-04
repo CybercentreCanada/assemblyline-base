@@ -16,6 +16,8 @@ class UserSettings(odm.Model):
     description = odm.Keyword(default="", description="Default description")
     download_encoding = odm.Enum(values=ENCODINGS, default="cart",
                                  description="Default download encoding when downloading files")
+    default_external_sources = odm.List(odm.Keyword(), default=[],
+                                        description="List of sha256 sources to check by default")
     default_zip_password = odm.Text(
         default="zippy",
         description="Default user-defined password for creating password protected ZIPs when downloading files"
