@@ -75,9 +75,9 @@ def get_client(host, port, private):
         port = int(port or config.core.redis.nonpersistent.port)
 
     if private:
-        return redis.StrictRedis(host=host, port=port)
+        return redis.StrictRedis(host=host, port=port, socket_keepalive=True)
     else:
-        return redis.StrictRedis(connection_pool=get_pool(host, port))
+        return redis.StrictRedis(connection_pool=get_pool(host, port), socket_keepalive=True)
 
 
 def get_pool(host, port):
