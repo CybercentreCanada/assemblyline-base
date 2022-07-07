@@ -17,6 +17,7 @@ import json
 import logging
 import re
 import sys
+import unicodedata
 from datetime import datetime
 from typing import Dict, Tuple, Union, Any as _Any
 import arrow
@@ -46,6 +47,7 @@ UTC_TZ = tzutc()
 DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\U0010ffff][A-Za-z0-9\u00a1-\U0010ffff_-]{0,62})?[A-Za-z0-9\u00a1-\U0010ffff]\.)+" \
                r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\U0010ffff]{2,}\.?)"
 DOMAIN_ONLY_REGEX = f"^{DOMAIN_REGEX}$"
+DOMAIN_EXCLUDED_NORM_CHARS = './?@#'
 EMAIL_REGEX = f"^[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+)*@({DOMAIN_REGEX})$"
 IP_REGEX = r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
 IP_ONLY_REGEX = f"^{IP_REGEX}$"
@@ -343,14 +345,27 @@ class Domain(Keyword):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.validation_regex = re.compile(DOMAIN_ONLY_REGEX)
+        self.excluded_chars = set(DOMAIN_EXCLUDED_NORM_CHARS)
 
     def check(self, value, **kwargs):
         if not value:
             return None
 
+        value = value.replace('\u3002', '.')
+
         if not self.validation_regex.match(value):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
                              f"validator: {self.validation_regex.pattern}")
+
+        norm_value = ''
+        for ch in value:
+            ch_norm = unicodedata.normalize('NFKD', ch)
+            if ch != ch_norm and set(ch_norm) & self.excluded_chars:
+                raise ValueError(f"[{self.name or self.parent_name}] '{ch}' in '{value}' "
+                                 f"includes a character that can not be normalized to '{ch_norm}'.")
+            else:
+                norm_value += ch_norm
+        value = norm_value
 
         if not is_valid_domain(value):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' has a non-valid TLD.")
