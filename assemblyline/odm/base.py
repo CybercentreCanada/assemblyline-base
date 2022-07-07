@@ -43,8 +43,8 @@ FLATTENED_OBJECT_SANITIZER = re.compile("^[a-z][a-z0-9_.]*$")
 NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -]*$")
 UTC_TZ = tzutc()
 
-DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\uffff][A-Za-z0-9\u00a1-\uffff_-]{0,62})?[A-Za-z0-9\u00a1-\uffff]\.)+" \
-               r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\uffff]{2,}\.?)"
+DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\u0010ffff][A-Za-z0-9\u00a1-\u0010ffff_-]{0,62})?[A-Za-z0-9\u00a1-\u0010ffff]\.)+" \
+               r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\u0010ffff]{2,}\.?)"
 DOMAIN_ONLY_REGEX = f"^{DOMAIN_REGEX}$"
 EMAIL_REGEX = f"^[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+)*@({DOMAIN_REGEX})$"
 IP_REGEX = r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
