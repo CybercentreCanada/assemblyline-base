@@ -45,7 +45,7 @@ NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -]*$")
 UTC_TZ = tzutc()
 
 DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\U0010ffff][A-Za-z0-9\u00a1-\U0010ffff_-]{0,62})?[A-Za-z0-9\u00a1-\U0010ffff]\.)+" \
-               r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\U0010ffff]{2,}\.?)"
+               r"(?:[Xx][Nn]--)?(?:[A-Za-z0-9\u00a1-\U0010ffff]{2,}\.?)"
 DOMAIN_ONLY_REGEX = f"^{DOMAIN_REGEX}$"
 DOMAIN_EXCLUDED_NORM_CHARS = './?@#'
 EMAIL_REGEX = f"^[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+)*@({DOMAIN_REGEX})$"
@@ -359,9 +359,9 @@ class Domain(Keyword):
         segments = value.split('.')
         for i, segment in enumerate(segments):
             if segment.isascii():
-                if segment.startswith('xn--'):
+                if segment.lower().startswith('xn--'):
                     try:
-                        segments[i] = segment.encode('ascii').decode('idna')
+                        segments[i] = segment.encode('ascii').lower().decode('idna')
                     except ValueError:
                         pass
                 continue
