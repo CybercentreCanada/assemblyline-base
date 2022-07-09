@@ -353,19 +353,31 @@ class Domain(Keyword):
 
         value = value.replace('\u3002', '.')
 
+        if '.' not in value:
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' does not contain a '.' character")
+
+        segments = value.split('.')
+        for i, segment in enumerate(segments):
+            if segment.isascii():
+                if segment.startswith('xn--'):
+                    try:
+                        segments[i] = segment.encode('ascii').decode('idna')
+                    except ValueError:
+                        pass
+                continue
+            else:
+                segment_norm = unicodedata.normalize('NFKC', segment)
+                if segment != segment_norm and set(segment_norm) & self.excluded_chars:
+                    raise ValueError(f"[{self.name or self.parent_name}] '{segment}' in '{value}' "
+                                     f"includes a Unicode character that can not be normalized to '{segment_norm}'.")
+                else:
+                    segments[i] = segment_norm
+        value = '.'.join(segments)
+
         if not self.validation_regex.match(value):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
                              f"validator: {self.validation_regex.pattern}")
-
-        norm_value = ''
-        for ch in value:
-            ch_norm = unicodedata.normalize('NFKD', ch)
-            if ch != ch_norm and set(ch_norm) & self.excluded_chars:
-                raise ValueError(f"[{self.name or self.parent_name}] '{ch}' in '{value}' "
-                                 f"includes a character that can not be normalized to '{ch_norm}'.")
-            else:
-                norm_value += ch_norm
-        value = norm_value
+        value = value.rstrip('.')
 
         if not is_valid_domain(value):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' has a non-valid TLD.")
