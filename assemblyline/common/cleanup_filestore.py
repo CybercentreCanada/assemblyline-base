@@ -10,7 +10,7 @@ FILTER_WORKERS = 8
 DELETE_WORKERS = 8
 
 
-def list_files(transport_url: str, listing_running, listed_queue: multiprocessing.Queue[str], listing_count):
+def list_files(transport_url: str, listing_running, listed_queue, listing_count):
     total_listed = 0
     try:
         transport = create_transport(transport_url)
@@ -78,13 +78,13 @@ def cleanup_filestore(transport_url: str) -> str:
     listing_count.value = 0
     listing_running = multiprocessing.Value(ctypes.c_ulonglong)
     listing_running.value = 1
-    listed_queue: multiprocessing.Queue[str] = multiprocessing.Queue(10000)
+    listed_queue = multiprocessing.Queue(10000)
 
     filtering_count = multiprocessing.Value(ctypes.c_ulonglong)
     filtering_count.value = 0
     filtering_running = multiprocessing.Value(ctypes.c_ulonglong)
     filtering_running.value = FILTER_WORKERS
-    filtered_queue: multiprocessing.Queue[str] = multiprocessing.Queue(50000)
+    filtered_queue = multiprocessing.Queue(50000)
 
     erase_count = multiprocessing.Value(ctypes.c_ulonglong)
     erase_count.value = 0
