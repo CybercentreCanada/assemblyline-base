@@ -74,6 +74,8 @@ def test_azure():
     assert fs.get('test') is not None
     with pytest.raises(TransportException):
         fs.put('bob', 'bob')
+    assert list(fs.transports[0].list()) == ['test']
+    assert list(fs.transports[0].list('abc')) == []
 
 
 def test_http():
@@ -158,6 +160,8 @@ def test_s3():
                    's3.amazonaws.com/?s3_bucket=assemblyline-support&aws_region=us-east-1')
     assert fs.exists('al4_s3_pytest.txt') != []
     assert fs.get('al4_s3_pytest.txt') is not None
+    assert set(fs.transports[0].list()) >= {'al4_s3_pytest.txt'}
+    assert list(fs.transports[0].list('abc')) == []
 
 
 def test_minio():
@@ -172,6 +176,7 @@ def test_minio():
     assert fs.exists('al4_minio_pytest.txt') != []
     assert fs.get('al4_minio_pytest.txt') == content
     assert fs.delete('al4_minio_pytest.txt') is None
+    common_actions(fs)
 
 
 def common_actions(fs):
@@ -204,3 +209,19 @@ def common_actions(fs):
     assert fs.exists('put')
     fs.delete('put')
     assert not fs.exists('put')
+
+    fs.put('0' * 64, 'hello')
+    fs.put('0' + '1' * 63, 'hello')
+    fs.put('01' + '2' * 62, 'hello')
+    fs.put('012' + '3' * 61, 'hello')
+    fs.put('0123' + '4' * 60, 'hello')
+    fs.put('01-file', 'hello')
+    fs.put('012-file', 'hello')
+    fs.put('0123-file', 'hello')
+    fs.put('01234-file', 'hello')
+
+    assert len(set(fs.transports[0].list('0'))) == 9
+    assert len(set(fs.transports[0].list('01'))) == 8
+    assert len(set(fs.transports[0].list('012'))) == 6
+    assert len(set(fs.transports[0].list('0123'))) == 4
+    assert set(fs.transports[0].list('01234')) == {'01234-file', '0123' + '4' * 60}

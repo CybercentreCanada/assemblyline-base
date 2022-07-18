@@ -2,6 +2,7 @@ import boto3
 import logging
 import os
 import tempfile
+from typing import Iterable, Optional
 
 from botocore.exceptions import ClientError, EndpointConnectionError, ConnectionClosedError
 from io import BytesIO
@@ -173,3 +174,15 @@ class TransportS3(Transport):
 
         with BytesIO(content) as file_io:
             self.with_retries(self.client.upload_fileobj, file_io, self.bucket, dst_path)
+
+    def list(self, prefix: Optional[str] = None) -> Iterable[str]:
+        args = {
+            'Bucket': self.bucket,
+            'Prefix': prefix or '',
+            'MaxKeys': 50000,
+        }
+        while args.get('ContinuationToken', None) != '':
+            data = self.client.list_objects_v2(**args)
+            args['ContinuationToken'] = data.get("NextContinuationToken", '')
+            for chunk in data.get('Contents', []):
+                yield chunk['Key']
