@@ -1,10 +1,14 @@
 import logging
 import os
 import shutil
+import re
+from typing import AnyStr, Iterable, Optional
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.uid import get_random_id
 from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+
+NORMALIZED = re.compile('[a-z0-9]/[a-z0-9]/[a-z0-9]/[a-z0-9]/[a-z0-9]{64}')
 
 
 @ChainAll(TransportException)
@@ -36,8 +40,13 @@ class TransportLocal(Transport):
         super(TransportLocal, self).__init__(normalize=normalize)
 
     def delete(self, path):
-        path = self.normalize(path)
-        os.unlink(path)
+        normal_path = self.normalize(path)
+        try:
+            os.unlink(normal_path)
+        except FileNotFoundError:
+            pass
+        except OSError as error:
+            raise ValueError(f"Error erasing {path} as {normal_path}: {error}") from error
 
     def exists(self, path):
         path = self.normalize(path)
@@ -91,7 +100,7 @@ class TransportLocal(Transport):
             if fh:
                 fh.close()
 
-    def put(self, path, content):
+    def put(self, path: str, content: AnyStr):
         path = self.normalize(path)
 
         dirname = os.path.dirname(path)
@@ -107,7 +116,10 @@ class TransportLocal(Transport):
         fh = None
         try:
             fh = open(temppath, "wb")
-            return fh.write(content)
+            if isinstance(content, str):
+                return fh.write(content.encode())
+            else:
+                return fh.write(content)
         finally:
             if fh:
                 fh.close()
@@ -120,6 +132,31 @@ class TransportLocal(Transport):
 
     def __str__(self):
         return 'file://{}'.format(self.base)
+
+    def _denormalize(self, name):
+        if NORMALIZED.fullmatch(name):
+            return name.split('/')[-1]
+        return name
+
+    def list(self, prefix: Optional[str] = None) -> Iterable[str]:
+        for name in self._list(self.base, prefix, prefix):
+            yield self._denormalize(name)
+
+    def _list(self, path: str, dir_prefix: Optional[str], file_prefix: Optional[str]) -> Iterable[str]:
+        for listed in os.listdir(path):
+            listed_path = os.path.join(path, listed)
+            if os.path.isdir(listed_path):
+                if dir_prefix:
+                    if listed.startswith(dir_prefix) or dir_prefix.startswith(listed):
+                        for subfile in self._list(listed_path, dir_prefix[len(listed):], file_prefix):
+                            yield os.path.join(listed, subfile)
+                else:
+                    for subfile in self._list(listed_path, None, file_prefix):
+                        yield os.path.join(listed, subfile)
+            if os.path.isfile(listed_path):
+                if not file_prefix or listed.startswith(file_prefix) or not dir_prefix or listed.startswith(dir_prefix):
+                    yield listed
+
 
 ###############################
 # Helper functions.
