@@ -2,20 +2,24 @@ from __future__ import annotations
 import ftplib
 import logging
 import os
+import os.path
 import posixpath
 import threading
 import socket
 import time
 import errno
 import weakref
+import re
 
 from io import BytesIO
-from typing import Union, AnyStr
+from typing import Optional, Union, AnyStr, Iterable
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.path import splitpath
 from assemblyline.common.uid import get_random_id
 from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+
+NORMALIZED = re.compile('[a-z0-9]/[a-z0-9]/[a-z0-9]/[a-z0-9]/[a-z0-9]{64}')
 
 
 def reconnect_retry_on_fail(func):
@@ -219,12 +223,38 @@ class TransportFTP(Transport):
         self.makedirs(dirname)
 
         if isinstance(content, str):
-            content = content.encode('utf-8')
+            content_data = content.encode('utf-8')
+        else:
+            content_data = content
 
-        with BytesIO(content) as file_io:
+        with BytesIO(content_data) as file_io:
             self.log.debug("Storing: %s", temppath)
             self.ftp.storbinary('STOR ' + temppath, file_io)
 
             self.log.debug("Rename: %s -> %s", temppath, finalpath)
             self.ftp.rename(temppath, finalpath)
             assert (self.exists(dst_path))
+
+    def _denormalize(self, name):
+        if NORMALIZED.fullmatch(name):
+            return name.split('/')[-1]
+        return name
+
+    def list(self, prefix: Optional[str] = None) -> Iterable[str]:
+        for name in self._list(self.base, prefix, prefix):
+            yield self._denormalize(name)
+
+    def _list(self, path: str, dir_prefix: Optional[str], file_prefix: Optional[str]) -> Iterable[str]:
+        for (listed, facts) in self.ftp.mlsd(path, facts=['type']):
+            listed_path = os.path.join(path, listed)
+            if facts['type'] == 'dir':
+                if dir_prefix:
+                    if listed.startswith(dir_prefix) or dir_prefix.startswith(listed):
+                        for subfile in self._list(listed_path, dir_prefix[len(listed):], file_prefix):
+                            yield os.path.join(listed, subfile)
+                else:
+                    for subfile in self._list(listed_path, None, file_prefix):
+                        yield os.path.join(listed, subfile)
+            if facts['type'] == 'file':
+                if not file_prefix or listed.startswith(file_prefix) or not dir_prefix or listed.startswith(dir_prefix):
+                    yield listed

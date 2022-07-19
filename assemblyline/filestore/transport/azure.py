@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Optional
+from typing import Optional, Iterable
 
 # noinspection PyProtectedMember
 from azure.core.exceptions import ServiceRequestError, DecodeError, \
@@ -183,3 +183,7 @@ class TransportAzure(Transport):
             except TransportException as error:
                 if not isinstance(error.cause, ResourceExistsError):
                     raise
+
+    def list(self, prefix: Optional[str] = None) -> Iterable[str]:
+        for blob in self.container_client.list_blobs(name_starts_with=prefix):
+            yield blob['name']

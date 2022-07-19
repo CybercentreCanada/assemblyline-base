@@ -1,4 +1,4 @@
-from typing import AnyStr
+from typing import AnyStr, Iterable, Optional
 
 from assemblyline.common.exceptions import ChainException
 
@@ -84,3 +84,7 @@ class Transport(object):
         Put the content of the file in memory directly to the filestore dst_path
         """
         raise TransportException("Not Implemented")
+
+    def list(self, prefix: Optional[str] = None) -> Iterable[str]:
+        """List all files in the store filtered by name prefix."""
+        raise NotImplementedError()

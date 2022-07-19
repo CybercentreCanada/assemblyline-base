@@ -12,15 +12,17 @@ import signal
 import shutil
 import sys
 import warnings
-import yaml
-
 from tempfile import gettempdir
+
+import yaml
 
 from assemblyline.common import forge, log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
+from assemblyline.common.cleanup_filestore import cleanup_filestore
 from assemblyline.common.security import get_totp_token, generate_random_secret
 from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
+from assemblyline.filestore import create_transport
 from assemblyline.odm.models.signature import RULE_STATUSES
 from assemblyline.remote.datatypes.hash import Hash
 
@@ -1263,6 +1265,39 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 for k, v in flsk_sess.items().items():
                     if v.get('username', None) == username:
                         self.logger.info(f"    {v}")
+
+    def do_filestore(self, args):
+        """
+        Perform filestore related operations
+
+        Usage:
+            filestore gc
+
+        actions:
+            gc      Try to find and erase filestore entries that shouldn't be there
+
+        """
+        valid_func = ['gc']
+        args = self._parse_args(args)
+
+        if len(args) != 1:
+            self._print_error("Wrong number of arguments for filestore command.")
+            return
+
+        func = args[0]
+        if func not in valid_func:
+            self._print_error(f"Invalid action '{func}' for filestore command.")
+            return
+
+        if func == 'gc':
+            transports = []
+            transports += self.config.filestore.storage
+            transports += self.config.filestore.cache
+
+            for transport_url in set(transports):
+                info = cleanup_filestore(transport_url=transport_url)
+                transport = create_transport(transport_url)
+                self.logger.info(str(transport) + ' ' + info)
 
 
 def print_banner():
