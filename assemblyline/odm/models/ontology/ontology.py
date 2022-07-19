@@ -1,4 +1,3 @@
-from pydoc import describe
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.odm.models.tagging import Tagging
@@ -6,6 +5,7 @@ from assemblyline.odm.models.ontology.results import Antivirus, Process, Sandbox
 from assemblyline.odm.models.ontology.filetypes import PE
 
 Classification = forge.get_classification()
+ODM_VERSION = "1.0"
 
 
 @odm.model(description="File Characteristics")
@@ -77,7 +77,7 @@ class Submission(odm.Model):
 class ResultOntology(odm.Model):
     # Record Identification
     odm_type = odm.Text(default="Assemblyline Result Ontology", description="Type of ODM Model")
-    odm_version = odm.Text(default="1.0", description="Version of ODM Model")
+    odm_version = odm.Text(default=ODM_VERSION, description="Version of ODM Model")
 
     # Record Classification
     classification = odm.ClassificationString(description="Classification of Ontological Record")
