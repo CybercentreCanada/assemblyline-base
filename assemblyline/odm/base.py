@@ -920,9 +920,10 @@ class Model:
                 return f"[{name}]({module_path}/#{name.lower()})", field_class.child_type
             elif field_class.__class__ in [Mapping, List]:
                 child_type, child_class = field_class.child_type.__class__.__name__, field_class.child_type.__class__
-                if field_class.child_type.__class__ == Compound:
+                if field_class.child_type.__class__ in [Compound, Mapping, List]:
                     child_type, child_class = get_type(field_class.child_type)
-                return f"{field_class.__class__.__name__} [{child_type}]", child_class
+                prefix_insert = "String, " if field_class.__class__ == Mapping else ''
+                return f"{field_class.__class__.__name__} [{prefix_insert}{child_type}]", child_class
             elif field_class.__class__.__name__ == 'type':
                 return field_class.__name__, None
 

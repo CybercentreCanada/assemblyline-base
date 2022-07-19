@@ -8,6 +8,15 @@ OID_PARTS = ['source_ip', 'source_port',
              'transport_layer_protocol', 'connection_type']
 
 
+REQUEST_METHODS = [
+    # Standard HTTP methods
+    "GET", "POST", "PUT", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE", "PATCH",
+    # WebDAV HTTP methods
+    "BCOPY", "BDELETE", "BMOVE", "BPROPFIND", "BPROPPATCH", "COPY", "DELETE", "LOCK", "MKCOL", "MOVE",
+    "NOTIFY", "POLL", "PROPFIND", "PROPPATCH", "SEARCH", "SUBSCRIBE", "UNLOCK", "UNSUBSCRIBE", "X-MS-ENUMATTS"
+]
+
+
 @odm.model(description="Details for a DNS request")
 class NetworkDNS(odm.Model):
     domain = odm.Domain(description="The domain requested")
@@ -29,13 +38,7 @@ class NetworkHTTP(odm.Model):
     request_uri = odm.URI(description="The URI requested")
     request_headers = odm.Mapping(odm.Json(), description="Headers included in the request")
     request_body = odm.Optional(odm.Text(), description="The body of the request")
-    request_method = odm.Enum(values=[
-        # Standard HTTP methods
-        "GET", "POST", "PUT", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE", "PATCH",
-        # WebDAV HTTP methods
-        "BCOPY", "BDELETE", "BMOVE", "BPROPFIND", "BPROPPATCH", "COPY", "DELETE", "LOCK", "MKCOL", "MOVE",
-        "NOTIFY", "POLL", "PROPFIND", "PROPPATCH", "SEARCH", "SUBSCRIBE", "UNLOCK", "UNSUBSCRIBE", "X-MS-ENUMATTS"
-    ], description="The method of the request")
+    request_method = odm.Enum(values=REQUEST_METHODS, description="The method of the request")
     response_headers = odm.Mapping(odm.Json(), description="Headers included in the response")
     response_status_code = odm.Optional(odm.Integer(), description="The status code of the response")
     response_body = odm.Optional(odm.Text(), description="The body of the response")
