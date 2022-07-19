@@ -147,7 +147,7 @@ def cleanup_filestore(transport_url: str) -> str:
             args=(transport_url, filtering_running, filtered_queue, erase_count),
             daemon=True
         )
-        for _ in range(FILTER_WORKERS)
+        for _ in range(DELETE_WORKERS)
     ]
     for _f in erase_workers:
         _f.start()
