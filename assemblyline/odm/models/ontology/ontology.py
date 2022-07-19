@@ -38,7 +38,8 @@ class Heuristics(odm.Model):
     score = odm.Integer(description="Score associated to heurstic")
     times_raised = odm.Integer(description="The number of times the heuristic was raised")
     name = odm.Text(description="Name of the heuristic raised")
-    tags = odm.Compound(Tagging, description="Tags associated to heuristic")
+    tags = odm.Mapping(odm.List(odm.Any()),
+                       description="Tags associated to heuristic. Refer to [Tagging](../../tagging/)")
 
 
 @odm.model(index=False, store=False, description="Ontological Results")
@@ -48,7 +49,8 @@ class Results(odm.Model):
     process = odm.Optional(odm.List(odm.Compound(Process)), description="List of Process Ontologies")
     sandbox = odm.Optional(odm.List(odm.Compound(Sandbox)), description="List of Sandbox Ontologies")
     signature = odm.Optional(odm.List(odm.Compound(Signature)), description="List of Signature Ontologies")
-    tags = odm.Optional(odm.Compound(Tagging), description="Tags raised during analysis")
+    tags = odm.Optional(odm.Mapping(odm.List(odm.Any())),
+                        description="Tags raised during analysis. Refer to [Tagging](../../tagging/)")
     heuristics = odm.Optional(odm.List(odm.Compound(Heuristics)), description="Heuristics raised during analysis")
 
 
