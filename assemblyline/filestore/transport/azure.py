@@ -114,9 +114,10 @@ class TransportAzure(Transport):
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
         try:
             self.with_retries(blob_client.delete_blob)
-        except ResourceNotFoundError:
+        except TransportException as error:
             # If its already not found, then consider it deleted.
-            pass
+            if not isinstance(error.cause, ResourceNotFoundError):
+                raise
 
     def exists(self, path):
         key = self.normalize(path)
