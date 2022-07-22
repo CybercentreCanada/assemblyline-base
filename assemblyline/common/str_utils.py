@@ -87,7 +87,7 @@ def dotdump(s):
     return ''.join(['.' if x < 32 or x > 126 else chr(x) for x in s])
 
 
-def escape_str(s, reversible=True, force_str=False):
+def escape_str(s, reversible=True, force_str=False) -> str:
     if isinstance(s, bytes):
         return escape_str_strict(s, reversible)
     elif not isinstance(s, str):
