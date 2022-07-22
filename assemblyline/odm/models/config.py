@@ -355,6 +355,8 @@ class Expiry(odm.Model):
     delete_storage = odm.Boolean(description="Should we also cleanup the file storage?")
     sleep_time = odm.Integer(description="Time, in seconds, to sleep in between each expiry run")
     workers = odm.Integer(description="Number of concurrent workers")
+    delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
+    iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
 
 
 DEFAULT_EXPIRY = {
@@ -362,7 +364,9 @@ DEFAULT_EXPIRY = {
     'delay': 0,
     'delete_storage': True,
     'sleep_time': 15,
-    'workers': 20
+    'workers': 20,
+    'delete_workers': 2,
+    'iteration_max_tasks': 20,
 }
 
 
