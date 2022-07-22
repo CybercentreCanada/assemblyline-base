@@ -17,7 +17,7 @@ class File(odm.Model):
     type = odm.Keyword(description="Type of file as identified by Assemblyline")
     size = odm.Integer(description="Size of the file in bytes")
     names = odm.Optional(odm.List(odm.Text()), description="Known filenames associated to file")
-    parent = odm.Optional(odm.SHA256(), description="Immediate parent of file relative to submission")
+    parent = odm.Optional(odm.SHA256(), description="Absolute parent of file relative to submission")
 
     # Specialized information (List from Tagging.File)
     # apk = odm.Optional(odm.Compound(APK), description="APK File Properties")
