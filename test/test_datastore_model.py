@@ -45,7 +45,7 @@ def setup_store(docstore):
 @pytest.fixture(scope='module')
 def es_datastore():
     try:
-        document_store = setup_store(ESStore(['http://127.0.0.1:9200']))
+        document_store = setup_store(ESStore(['http://elastic:devpass@127.0.0.1:9200']))
     except SetupException:
         document_store = None
 
