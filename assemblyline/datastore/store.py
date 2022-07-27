@@ -67,7 +67,7 @@ class ESStore(object):
         self.client = elasticsearch.Elasticsearch(hosts=hosts,
                                                   connection_class=elasticsearch.RequestsHttpConnection,
                                                   max_retries=0,
-                                                  timeout=TRANSPORT_TIMEOUT)
+                                                  request_timeout=TRANSPORT_TIMEOUT)
         self.archive_access = archive_access
         self.url_path = 'elastic'
 
@@ -142,7 +142,7 @@ class ESStore(object):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   connection_class=elasticsearch.RequestsHttpConnection,
                                                   max_retries=0,
-                                                  timeout=TRANSPORT_TIMEOUT)
+                                                  request_timeout=TRANSPORT_TIMEOUT)
 
     def close(self):
         self._closed = True
