@@ -1914,43 +1914,45 @@ class ESCollection(Generic[ModelType]):
         return collection_data
 
     def _ilm_policy_exists(self):
-        conn = self.datastore.client.transport.get_connection()
-        pol_req = conn.session.get(f"{conn.base_url}/_ilm/policy/{self.name}_policy")
-        return pol_req.ok
+        try:
+            self.datastore.client.ilm.get_lifecycle(name=f"{self.name}_policy")
+            return True
+        except elasticsearch.NotFoundError:
+            return False
 
     def _delete_ilm_policy(self):
-        conn = self.datastore.client.transport.get_connection()
-        pol_req = conn.session.delete(f"{conn.base_url}/_ilm/policy/{self.name}_policy")
-        return pol_req.ok
+        try:
+            self.datastore.client.ilm.delete_lifecycle(name=f"{self.name}_policy")
+            return True
+        except elasticsearch.ApiError:
+            return False
 
     def _create_ilm_policy(self):
         data_base = {
-            "policy": {
-                "phases": {
-                    "hot": {
-                        "min_age": "0ms",
-                        "actions": {
-                            "set_priority": {
-                                "priority": 100
-                            },
-                            "rollover": {
-                                "max_age": f"{self.ilm_config['warm']}{self.ilm_config['unit']}"
-                            }
+            "phases": {
+                "hot": {
+                    "min_age": "0ms",
+                    "actions": {
+                        "set_priority": {
+                            "priority": 100
+                        },
+                        "rollover": {
+                            "max_age": f"{self.ilm_config['warm']}{self.ilm_config['unit']}"
                         }
-                    },
-                    "warm": {
-                        "actions": {
-                            "set_priority": {
-                                "priority": 50
-                            }
+                    }
+                },
+                "warm": {
+                    "actions": {
+                        "set_priority": {
+                            "priority": 50
                         }
-                    },
-                    "cold": {
-                        "min_age": f"{self.ilm_config['cold']}{self.ilm_config['unit']}",
-                        "actions": {
-                            "set_priority": {
-                                "priority": 20
-                            }
+                    }
+                },
+                "cold": {
+                    "min_age": f"{self.ilm_config['cold']}{self.ilm_config['unit']}",
+                    "actions": {
+                        "set_priority": {
+                            "priority": 20
                         }
                     }
                 }
@@ -1958,18 +1960,16 @@ class ESCollection(Generic[ModelType]):
         }
 
         if self.ilm_config['delete']:
-            data_base['policy']['phases']['delete'] = {
+            data_base['phases']['delete'] = {
                 "min_age": f"{self.ilm_config['delete']}{self.ilm_config['unit']}",
                 "actions": {
                     "delete": {}
                 }
             }
 
-        conn = self.datastore.client.transport.get_connection()
-        pol_req = conn.session.put(f"{conn.base_url}/_ilm/policy/{self.name}_policy",
-                                   headers={"Content-Type": "application/json"},
-                                   data=json.dumps(data_base))
-        if not pol_req.ok:
+        try:
+            self.datastore.client.ilm.put_lifecycle(name=f"{self.name}_policy", policy=data_base)
+        except elasticsearch.ApiError:
             raise ILMException(f"ERROR: Failed to create ILM policy: {self.name}_policy")
 
     def _get_index_settings(self) -> dict:
