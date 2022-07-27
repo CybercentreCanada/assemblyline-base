@@ -270,7 +270,7 @@ class ESCollection(Generic[ModelType]):
         finally:
             if scroll_id:
                 resp = self.with_retries(self.datastore.client.clear_scroll, scroll_id=[scroll_id],
-                                         ignore=(404,), params={"__elastic_client_meta": (("h", "s"),)})
+                                         ignore=(404,))
                 if not resp.get('succeeded', False):
                     log.warning(f"Could not clear scroll ID {scroll_id}, there is potential "
                                 "memory leak in you Elastic cluster...")
