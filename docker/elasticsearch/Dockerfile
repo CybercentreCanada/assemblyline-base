@@ -7,6 +7,10 @@ RUN sed -i -e "s/-Xms1g/# -Xms1g/g" \
 
 COPY set_vars.sh /usr/share/elasticsearch/set_vars.sh
 
+USER root
+
 RUN chmod +x /usr/share/elasticsearch/set_vars.sh
+
+USER elasticsearch
 
 CMD /usr/share/elasticsearch/set_vars.sh && /usr/local/bin/docker-entrypoint.sh
