@@ -11,7 +11,7 @@ services:
     command: server /data
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.2
     environment:
       - discovery.type=single-node
       - logger.level=WARN
