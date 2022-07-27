@@ -58,6 +58,8 @@ setup(
     ext_modules=extensions,
     install_requires=[
         'arrow',
+        'aiohttp',
+        'lark',
         'urllib3',
         'python-baseconv',
         'boto3',
@@ -111,6 +113,7 @@ setup(
             "*sample_suricata.rules",
             "*.pyx",
             "*.pxd",
+            "*.lark",
             "VERSION",
         ]
     }

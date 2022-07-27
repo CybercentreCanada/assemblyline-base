@@ -1,0 +1,59 @@
+%import common.ESCAPED_STRING
+%import common.CNAME
+%import common.DIGIT
+%import common.LETTER
+%ignore WHITESPACE
+
+WHITESPACE: " "
+
+start: expression
+
+expression: or_expr
+
+or_expr: and_expr ("OR" and_expr)*
+and_expr: not_expr ("AND" not_expr)*
+not_expr: NOT_OPERATOR? atom
+
+NOT_OPERATOR: "NOT"
+
+atom: field
+    | term
+    | "(" expression ")"
+
+term: PREFIX_OPERATOR? (phrase_term | SIMPLE_TERM)
+field_term: PREFIX_OPERATOR? (phrase_term | SIMPLE_TERM)
+
+PREFIX_OPERATOR: "-" | "+" | ">=" | "<=" | ">" | "<"
+
+SIMPLE_TERM: ("\\+" | "\\-" | "\\&" | "\\|" | "\\!" | "\\(" | "\\)" | "\\{"
+           | "\\}" | "\\[" | "\\]" | "\\^" | "\\\"" | "\\~" | "\\*"
+           | "\\?" | "\\:" | "\\\\" | "*" | "?" | DIGIT | "_" | LETTER)+
+
+phrase_term: ESCAPED_STRING
+
+field: FIELD_LABEL ":" field_value
+
+FIELD_LABEL: CNAME ["." CNAME]*
+
+field_value: range
+           | field_term
+           | "(" field_expression ")"
+
+range: RANGE_START first_range_term "TO" second_range_term RANGE_END
+RANGE_START: "[" | "{"
+RANGE_END: "]" | "}"
+
+
+field_expression: field_or_expr
+field_or_expr: field_and_expr ("OR" field_and_expr)*
+field_and_expr: field_not_expr ("AND" field_not_expr)*
+field_not_expr: NOT_OPERATOR? field_atom
+field_atom: field_term
+          | "(" field_expression ")"
+
+first_range_term: RANGE_WILD | QUOTED_RANGE | FIRST_RANGE
+second_range_term: RANGE_WILD | QUOTED_RANGE | SECOND_RANGE
+QUOTED_RANGE: ESCAPED_STRING
+FIRST_RANGE: /[^ ]+/
+SECOND_RANGE: /[^\]\}]+/
+RANGE_WILD: "*"
