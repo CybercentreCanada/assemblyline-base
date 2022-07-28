@@ -1106,6 +1106,14 @@ class AssemblylineDatastore(object):
             return services
 
     @elasticapm.capture_span(span_type='datastore')
+    def list_service_heuristics(self, service_name, as_obj=True) -> Union[List[dict], List[Heuristic]]:
+        """
+        :param as_obj: Return ODM objects rather than dicts
+        """
+        heuristics = list(self.ds.heuristic.stream_search(f"id:{service_name.upper()}.*", as_obj=as_obj))
+        return heuristics
+
+    @elasticapm.capture_span(span_type='datastore')
     def list_all_heuristics(self, as_obj=True) -> Union[List[dict], List[Heuristic]]:
         """
         :param as_obj: Return ODM objects rather than dicts
