@@ -236,6 +236,7 @@ class Tagging(odm.Model):
                 imphash = odm.Optional(odm.List(odm.MD5(copyto="__text__")), description="Imphash")
                 sorted_fuzzy = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")), description="Sorted Fuzzy")
                 sorted_sha1 = odm.Optional(odm.List(odm.SHA1(copyto="__text__")), description="Sorted SHA1")
+                gimphash = odm.Optional(odm.List(odm.SHA256(copyto="__text__")), description="Go Import hash")
                 suspicious = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Suspicious")
 
             @odm.model(index=True, store=False, description="PE Linker Model")
