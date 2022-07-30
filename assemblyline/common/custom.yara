@@ -844,3 +844,25 @@ rule code_lisp {
         mime startswith "text"
         and 2 of them
 }
+
+/*
+archive/xxe
+*/
+
+rule archive_xxe {
+
+    meta:
+        type = "archive/xxe"
+        score = 1
+
+    strings:
+        $header = "XXEncode  0.0 (PowerArchiver 2009: www.powerarchiver.com)"
+
+    condition:
+        mime startswith "text"
+        and
+        (
+            magic startswith "uuencoded or xxencoded"
+            or $header at 0
+        )
+}
