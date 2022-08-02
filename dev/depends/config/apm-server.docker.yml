@@ -13,11 +13,6 @@ logging:
   json: true
 
 output.elasticsearch:
-  hosts: ['http://elasticsearch:9200']
+  hosts: ["http://elasticsearch:9200"]
   username: elastic
   password: devpass
-
-setup.template.settings.index:
-  number_of_shards: 1
-  number_of_replicas: 0
-

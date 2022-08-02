@@ -10,6 +10,11 @@ server.rewriteBasePath: true
 server.name: kibana
 server.host: "0.0.0.0"
 
+xpack.reporting.roles.enabled: false
+xpack.reporting.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
+xpack.reporting.kibanaServer.hostname: localhost
+xpack.security.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
+xpack.encryptedSavedObjects.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
 xpack.fleet.packages:
   - name: apm
     version: latest
