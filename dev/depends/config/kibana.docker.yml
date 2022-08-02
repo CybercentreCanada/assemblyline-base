@@ -1,0 +1,25 @@
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+elasticsearch.password: kibanapass
+elasticsearch.username: kibana_system
+
+logging.root.level: warn
+
+server.basePath: /kibana
+server.publicBaseUrl: https://localhost/kibana
+server.rewriteBasePath: true
+server.name: kibana
+server.host: "0.0.0.0"
+
+xpack.fleet.packages:
+  - name: apm
+    version: latest
+xpack.fleet.agentPolicies:
+  - name: APM Server
+    id: apm
+    is_managed: false
+    namespace: default
+    package_policies:
+      - name: apm_server
+        id: default-apm-server
+        package:
+          name: apm

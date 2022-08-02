@@ -12,15 +12,11 @@ services:
     command: server /data
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.3.2
+    image: docker.elastic.co/kibana/kibana:8.3.3
+    volumes:
+      - ${PATH_REWRITE:-.}/config/kibana.docker.yml:/usr/share/kibana/config/kibana.yml:ro
     environment:
       - ELASTIC_PASSWORD=devpass
-      - ELASTICSEARCH_PASSWORD=kibanapass
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - SERVER_BASEPATH=/kibana
-      - SERVER_PUBLICBASEURL=https://localhost/kibana
-      - SERVER_NAME=kibana
-      - SERVER_REWRITEBASEPATH=true
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -35,7 +31,7 @@ services:
       retries: 5
 
   apm_server:
-    image: docker.elastic.co/apm/apm-server:7.17.4
+    image: docker.elastic.co/apm/apm-server:8.3.3
     volumes:
       - ${PATH_REWRITE:-.}/config/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
     command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e -strict.perms=false"
@@ -46,7 +42,7 @@ services:
         condition: service_healthy
 
   setup:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
     environment:
       - ELASTIC_PASSWORD=devpass
       - KIBANA_PASSWORD=kibanapass
@@ -60,7 +56,7 @@ services:
         condition: service_healthy
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
     environment:
       - xpack.security.enabled=true
       - discovery.type=single-node
@@ -80,7 +76,7 @@ services:
       retries: 3
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:8.3.2
+    image: docker.elastic.co/beats/filebeat:8.3.3
     user: root
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
@@ -95,7 +91,7 @@ services:
         condition: service_healthy
 
   metricbeat:
-    image: docker.elastic.co/beats/metricbeat:8.3.2
+    image: docker.elastic.co/beats/metricbeat:8.3.3
     user: root
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
