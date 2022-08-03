@@ -1,7 +1,6 @@
 version: "2.4"
 
 services:
-  # Dependancies
   minio:
     image: minio/minio
     environment:
@@ -12,26 +11,29 @@ services:
     command: server /data
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.3.3
+    image: docker.elastic.co/kibana/kibana:7.17.4
     volumes:
       - ${PATH_REWRITE:-.}/config/kibana.docker.yml:/usr/share/kibana/config/kibana.yml:ro
     environment:
       - ELASTIC_PASSWORD=devpass
     depends_on:
-      setup:
-        condition: service_completed_successfully
+      elasticsearch:
+        condition: service_healthy
+      # setup:
+      #   condition: service_completed_successfully
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "curl --silent --fail -u elastic:$$ELASTIC_PASSWORD http://localhost:5601/kibana",
+          "curl --silent --fail -u $$ELASTICSEARCH_USERNAME:$$ELASTICSEARCH_PASSWORD http://localhost:5601/",
+         # "curl --silent --fail -u $$ELASTICSEARCH_USERNAME:$$ELASTICSEARCH_PASSWORD http://localhost:5601/kibana",
         ]
       interval: 30s
       timeout: 10s
       retries: 5
 
   apm_server:
-    image: docker.elastic.co/apm/apm-server:8.3.3
+    image: docker.elastic.co/apm/apm-server:7.17.4
     volumes:
       - ${PATH_REWRITE:-.}/config/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
     command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e -strict.perms=false"
@@ -41,22 +43,23 @@ services:
       kibana:
         condition: service_healthy
 
-  setup:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
-    environment:
-      - ELASTIC_PASSWORD=devpass
-      - KIBANA_PASSWORD=kibanapass
-    command: >
-      bash -c '
-        until curl  http://elastic:$$ELASTIC_PASSWORD@elasticsearch:9200 | grep -q "You Know, for Search"; do sleep 2; echo "Elastic not ready"; done;
-        curl -q -X POST -H "Content-Type: application/json" http://elastic:$$ELASTIC_PASSWORD@elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"$$KIBANA_PASSWORD\"}";
-      '
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
+  # Uncomment for 8.x
+  # setup:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.17.4
+  #   environment:
+  #     - ELASTIC_PASSWORD=devpass
+  #     - KIBANA_PASSWORD=kibanapass
+  #   command: >
+  #     bash -c '
+  #       until curl  http://elastic:$$ELASTIC_PASSWORD@elasticsearch:9200 | grep -q "You Know, for Search"; do sleep 2; echo "Elastic not ready"; done;
+  #       curl -q -X POST -H "Content-Type: application/json" http://elastic:$$ELASTIC_PASSWORD@elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"$$KIBANA_PASSWORD\"}";
+  #     '
+  #   depends_on:
+  #     elasticsearch:
+  #       condition: service_healthy
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.4
     environment:
       - xpack.security.enabled=true
       - discovery.type=single-node
@@ -76,7 +79,7 @@ services:
       retries: 3
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:8.3.3
+    image: docker.elastic.co/beats/filebeat:7.17.4
     user: root
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
@@ -91,7 +94,7 @@ services:
         condition: service_healthy
 
   metricbeat:
-    image: docker.elastic.co/beats/metricbeat:8.3.3
+    image: docker.elastic.co/beats/metricbeat:7.17.4
     user: root
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200

@@ -1,30 +1,36 @@
 elasticsearch.hosts: ["http://elasticsearch:9200"]
-elasticsearch.password: kibanapass
-elasticsearch.username: kibana_system
 
-logging.root.level: warn
+# Switch for 8.x
+# elasticsearch.password: kibanapass
+# elasticsearch.username: kibana_system
+elasticsearch.password: devpass
+elasticsearch.username: elastic
+
+# Switch for 8.x
+logging.quiet: true
+# logging.root.level: warn
 
 server.basePath: /kibana
 server.publicBaseUrl: https://localhost/kibana
 server.rewriteBasePath: true
 server.name: kibana
 server.host: "0.0.0.0"
-
-xpack.reporting.roles.enabled: false
-xpack.reporting.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
-xpack.reporting.kibanaServer.hostname: localhost
-xpack.security.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
-xpack.encryptedSavedObjects.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
-xpack.fleet.packages:
-  - name: apm
-    version: latest
-xpack.fleet.agentPolicies:
-  - name: APM Server
-    id: apm
-    is_managed: false
-    namespace: default
-    package_policies:
-      - name: apm_server
-        id: default-apm-server
-        package:
-          name: apm
+# Uncomment for 8.x
+# xpack.reporting.roles.enabled: false
+# xpack.reporting.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
+# xpack.reporting.kibanaServer.hostname: localhost
+# xpack.security.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
+# xpack.encryptedSavedObjects.encryptionKey: ThisIsSomeRandomKeyThatYouShouldDefinitelyChange!
+# xpack.fleet.packages:
+#   - name: apm
+#     version: latest
+# xpack.fleet.agentPolicies:
+#   - name: APM Server
+#     id: apm
+#     is_managed: false
+#     namespace: default
+#     package_policies:
+#       - name: apm_server
+#         id: default-apm-server
+#         package:
+#           name: apm

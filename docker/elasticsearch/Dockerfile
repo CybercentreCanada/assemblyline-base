@@ -1,4 +1,4 @@
-FROM docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+FROM docker.elastic.co/elasticsearch/elasticsearch:7.17.4
 
 ENV ES_JAVA_OPTS "-Xms1g -Xmx1g"
 
@@ -7,10 +7,11 @@ RUN sed -i -e "s/-Xms1g/# -Xms1g/g" \
 
 COPY set_vars.sh /usr/share/elasticsearch/set_vars.sh
 
-USER root
+# uncomment user switch for 8.x
+# USER root
 
 RUN chmod +x /usr/share/elasticsearch/set_vars.sh
 
-USER elasticsearch
+# USER elasticsearch
 
 CMD /usr/share/elasticsearch/set_vars.sh && /usr/local/bin/docker-entrypoint.sh

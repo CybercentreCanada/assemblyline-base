@@ -16,3 +16,8 @@ output.elasticsearch:
   hosts: ["http://elasticsearch:9200"]
   username: elastic
   password: devpass
+
+# Remove the following for 8.x
+setup.template.settings.index:
+  number_of_shards: 1
+  number_of_replicas: 0
