@@ -28,6 +28,8 @@ rule code_javascript {
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
         $weak_js5 = /([^\w]|^)this\.[\w]+/
+        // If this is exactly in the sample, will trigger a second time because of strong_js10
+        $weak_js6 = /(^|\n)window.location.href[ \t]*=/
 
     condition:
         mime startswith "text"
@@ -95,6 +97,7 @@ rule code_vbs {
         $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i ascii wide
         $strong_vbs9 = /CreateObject\([^)]+\)/i ascii wide
         $strong_vbs10 = /GetObject\([^)]+\)/i ascii wide
+        $strong_vbs11 = /(^|\n)Eval\(([^)]+)\)/i ascii wide
 
     condition:
         2 of ($strong_vbs*)
@@ -401,6 +404,7 @@ rule code_ps1 {
         $ = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
         $ = /\$\w+[ \t]*=[ \t]*[^;^\n^|]+[;\n|]/ ascii wide
         $ = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
+        $ = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
 
     condition:
         mime startswith "text"
