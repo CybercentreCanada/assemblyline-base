@@ -40,7 +40,8 @@ services:
     ports:
       - "8200:8200"
     depends_on:
-      kibana:
+      # kibana:
+      elasticsearch:
         condition: service_healthy
 
   # Uncomment for 8.x
