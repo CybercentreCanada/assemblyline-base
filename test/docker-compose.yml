@@ -11,11 +11,13 @@ services:
     command: server /data
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.4
     environment:
+      - xpack.security.enabled=true
       - discovery.type=single-node
       - logger.level=WARN
       - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+      - ELASTIC_PASSWORD=devpass
     ports:
       - "9200:9200"
 

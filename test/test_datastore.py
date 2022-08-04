@@ -91,7 +91,7 @@ def es_connection(request):
     from assemblyline.datastore.store import ESStore
 
     try:
-        collection = setup_store(ESStore(['127.0.0.1']), request)
+        collection = setup_store(ESStore(['http://elastic:devpass@127.0.0.1:9200']), request)
     except SetupException:
         collection = None
 
