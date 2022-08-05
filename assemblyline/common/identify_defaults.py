@@ -131,6 +131,7 @@ magic_patterns = [
     {"al_type": "image/gif", "regex": r"^gif image data"},
     {"al_type": "image/jpg", "regex": r"^jpeg image data"},
     {"al_type": "image/png", "regex": r"^png image data"},
+    {"al_type": "image/tiff", "regex": r"^TIFF image data"},
     {"al_type": "image/webp", "regex": r"Web/P image"},
     {"al_type": "document/installer/windows", "regex": r"(Installation Database|Windows Installer)"},
     {"al_type": "document/office/excel", "regex": r"Microsoft[^\|]+Excel"},
@@ -267,6 +268,8 @@ trusted_mimes = {
     # Image TGA
     "image/x-tga": "image/tga",
     "image/x-icb": "image/tga",
+    # Image TIFF
+    "image/tiff": "image/tiff",
     # Image Cursor
     "image/x-win-bitmap": "image/cursor",
 
