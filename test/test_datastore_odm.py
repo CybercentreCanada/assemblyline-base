@@ -123,7 +123,7 @@ def setup_store(docstore, request):
 @pytest.fixture(scope='module')
 def es_store():
     from assemblyline.datastore.store import ESStore
-    store = ESStore(['127.0.0.1'])
+    store = ESStore(['http://elastic:devpass@127.0.0.1:9200'])
     ret_val = store.ping()
     if ret_val:
         return store

@@ -60,6 +60,8 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
 
     def set_mapping(temp_field, body):
         body['index'] = temp_field.index
+        if body.get('type', 'text') != 'text':
+            body['doc_values'] = temp_field.index
         if temp_field.copyto:
             assert len(temp_field.copyto) == 1
             body['copy_to'] = temp_field.copyto[0]
@@ -153,7 +155,8 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
 
             mappings[name.strip(".")] = {
                 "type": "keyword",
-                "index": False
+                "index": False,
+                "doc_values": False
             }
 
         else:

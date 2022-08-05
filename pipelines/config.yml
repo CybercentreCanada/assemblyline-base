@@ -14,4 +14,4 @@ core:
   metrics:
     export_interval: 1
 datastore:
-  hosts: ["localhost:9200"]
+  hosts: ["http://elastic:devpass@localhost:9200"]
