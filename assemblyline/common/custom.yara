@@ -23,13 +23,13 @@ rule code_javascript {
         $strong_js10 = /(document|window)(\[['"a-zA-Z]|\.)\w+/
         $strong_js11 = /setTimeout\(/
         $strong_js12 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
+        // If this is exactly in the sample, will trigger a second time because of strong_js10
+        $strong_js13 = /(^|\n)window.location.href[ \t]*=/
 
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
         $weak_js5 = /([^\w]|^)this\.[\w]+/
-        // If this is exactly in the sample, will trigger a second time because of strong_js10
-        $weak_js6 = /(^|\n)window.location.href[ \t]*=/
 
     condition:
         mime startswith "text"
