@@ -268,6 +268,8 @@ trusted_mimes = {
     # Image TGA
     "image/x-tga": "image/tga",
     "image/x-icb": "image/tga",
+    # Image TIFF
+    "image/tiff": "image/tiff",
     # Image Cursor
     "image/x-win-bitmap": "image/cursor",
 
