@@ -15,6 +15,7 @@ class Metrics(odm.Model):
     error = odm.Integer(description="Number of alerts with errors")
     received = odm.Integer(description="Number of alerts received")
     updated = odm.Integer(description="Number of alerts updated")
+    wait = odm.Integer(description="Number of alerts waiting for submission to complete")
 
 
 @odm.model(description="Heartbeat Model for Alerter")
