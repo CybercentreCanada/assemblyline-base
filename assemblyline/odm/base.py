@@ -945,7 +945,7 @@ class Model:
     def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
         out = dict()
         for sub_name, sub_field in field.fields().items():
-            sub_field.multivalued = multivalued
+            sub_field.multivalued = multivalued or isinstance(field, List)
 
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
