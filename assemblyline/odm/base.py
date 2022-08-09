@@ -109,6 +109,7 @@ class _Field:
 
         self.default = default
         self.default_set = default is not None
+        self.optional = False
 
     # noinspection PyProtectedMember
     def __get__(self, obj, objtype=None):
@@ -181,6 +182,9 @@ class Date(_Field):
     """A field storing a datetime value."""
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if value is None:
             return None
 
@@ -197,6 +201,9 @@ class Boolean(_Field):
     """A field storing a boolean value."""
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         return bool(value)
 
 
@@ -208,6 +215,9 @@ class Json(_Field):
     """
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not isinstance(value, str):
             return json.dumps(value)
         return value
@@ -221,6 +231,9 @@ class Keyword(_Field):
     """
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         # We have a special case for bytes here due to how often strings and bytes
         # get mixed up in python apis
         if isinstance(value, bytes):
@@ -244,6 +257,9 @@ class EmptyableKeyword(_Field):
     """
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         # We have a special case for bytes here due to how often strings and bytes
         # get mixed up in python apis
         if isinstance(value, bytes):
@@ -264,6 +280,9 @@ class UpperKeyword(Keyword):
     """
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         kw_val = super().check(value, **kwargs)
 
         if kw_val is None:
@@ -307,6 +326,9 @@ class ValidatedKeyword(Keyword):
             return self.__class__(**{k: v for k, v in self.__dict__.items() if k in valid_fields})
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             if self.default_set:
                 value = self.default
@@ -329,6 +351,9 @@ class IP(Keyword):
         self.validation_regex = re.compile(IP_ONLY_REGEX)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             return None
 
@@ -345,6 +370,9 @@ class Domain(Keyword):
         self.validation_regex = re.compile(DOMAIN_ONLY_REGEX)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             return None
 
@@ -364,6 +392,9 @@ class Email(Keyword):
         self.validation_regex = re.compile(EMAIL_REGEX)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             return None
 
@@ -385,6 +416,9 @@ class URI(Keyword):
         self.validation_regex = re.compile(FULL_URI)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             return None
 
@@ -455,6 +489,9 @@ class Enum(Keyword):
         self.values = set(values)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             if self.default_set:
                 value = self.default
@@ -480,6 +517,9 @@ class UUID(Keyword):
         self.default_set = True
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if value is None:
             value = get_random_id()
         return str(value)
@@ -489,6 +529,9 @@ class Text(_Field):
     """A field storing human readable text data."""
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             if self.default_set:
                 value = self.default
@@ -505,6 +548,9 @@ class IndexText(_Field):
     """A special field with special processing rules to simplify searching."""
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         return str(value)
 
 
@@ -512,6 +558,9 @@ class Integer(_Field):
     """A field storing an integer value."""
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if value is None or value == "":
             if self.default_set:
                 return self.default
@@ -522,6 +571,9 @@ class Float(_Field):
     """A field storing a floating point value."""
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             if self.default_set:
                 return self.default
@@ -593,6 +645,9 @@ class Classification(Keyword):
         self.is_uc = is_user_classification
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if isinstance(value, ClassificationObject):
             return ClassificationObject(self.engine, value.value, is_uc=self.is_uc)
         return ClassificationObject(self.engine, value, is_uc=self.is_uc)
@@ -606,6 +661,9 @@ class ClassificationString(Keyword):
         self.engine = forge.get_classification(yml_config=yml_config)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if not value:
             if self.default_set:
                 value = self.default
@@ -650,6 +708,9 @@ class List(_Field):
         self.child_type = child_type
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if isinstance(self.child_type, Compound) and isinstance(value, dict):
             # Search queries of list of compound fields will return dotted paths of list of
             # values. When processed through the flat_fields function, since this function
@@ -728,6 +789,9 @@ class Mapping(_Field):
         super().__init__(**kwargs)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if self.index or self.store:
             sanitizer = FIELD_SANITIZER
         else:
@@ -750,6 +814,9 @@ class FlattenedListObject(Mapping):
         super().__init__(List(Json()), **kwargs)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
 
     def apply_defaults(self, index, store):
@@ -767,6 +834,9 @@ class FlattenedObject(Mapping):
         super().__init__(Json(), **kwargs)
 
     def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
         return TypedMapping(self.child_type, self.index, self.store, FLATTENED_OBJECT_SANITIZER, **value)
 
     def apply_defaults(self, index, store):
@@ -783,6 +853,9 @@ class Compound(_Field):
         self.child_type = field_type
 
     def check(self, value, mask=None, ignore_extra_values=False, extra_fields={}, **kwargs):
+        if self.optional and value is None:
+            return None
+
         if isinstance(value, self.child_type):
             return value
         return self.child_type(value, mask=mask, ignore_extra_values=ignore_extra_values, extra_fields=extra_fields)
@@ -804,6 +877,7 @@ class Optional(_Field):
             kwargs['default'] = child_type.default
         super().__init__(**kwargs)
         self.default_set = True
+        child_type.optional = True
         self.child_type = child_type
 
     def check(self, value, *args, **kwargs):
