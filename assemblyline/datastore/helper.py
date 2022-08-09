@@ -755,6 +755,7 @@ class AssemblylineDatastore(object):
             "tags": set(),
             "sections": set()
         }
+        signatures = {}
 
         if len(keys) == 0:
             return out
@@ -810,13 +811,18 @@ class AssemblylineDatastore(object):
                         h_type = "malicious"
 
                     cache_key = f"{heur_id}_{key}"
+                    signatures.setdefault(cache_key, [])
+
                     if cache_key not in done_map['heuristics']:
                         out['heuristics'][h_type].append({
                             'heur_id': heur_id,
                             'name': heur_name,
-                            'key': key
+                            'key': key,
+                            'signatures': []
                         })
                         done_map['heuristics'].add(cache_key)
+
+                    signatures[cache_key].extend([s['name'] for s in section['heuristic']['signature']])
 
                     if keep_heuristic_sections:
                         # Set defaults
@@ -881,6 +887,11 @@ class AssemblylineDatastore(object):
                                     'safelisted': True
                                 })
                                 done_map['tags'].add(cache_key)
+
+            for htype in out['heuristics']:
+                for heur in out['heuristics'][htype]:
+                    cache_key = f"{heur_id}_{key}"
+                    heur['signatures'].extend(signatures.get(cache_key, []))
 
         return out
 
