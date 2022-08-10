@@ -1,7 +1,7 @@
 from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
     SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword, \
-    Json
+    Json, ValidatedKeyword
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -31,7 +31,8 @@ __type_mapping = {
     FlattenedObject: 'nested',
     Any: 'keyword',
     UpperKeyword: 'keyword',
-    Json: 'keyword'
+    Json: 'keyword',
+    ValidatedKeyword: 'keyword'
 }
 __analyzer_mapping = {
     SSDeepHash: 'text_fuzzy',
@@ -45,7 +46,8 @@ __normalizer_mapping = {
 back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Classification, UUID, IP, Domain, URI,
                                                                      URIPath, MAC, PhoneNumber, SSDeepHash, Email,
                                                                      SHA1, SHA256, MD5, Platform, Processor,
-                                                                     ClassificationString, Any, UpperKeyword, Json]}
+                                                                     ClassificationString, Any, UpperKeyword, Json,
+                                                                     ValidatedKeyword]}
 back_mapping.update({x: Keyword for x in set(__analyzer_mapping.values())})
 
 
