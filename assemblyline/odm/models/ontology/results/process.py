@@ -8,7 +8,9 @@ OID_PARTS = ['pid', 'ppid', 'image', 'command_line']
 @odm.model(description="Details about the characteristics used to identify an object")
 class ObjectID(odm.Model):
     tag = odm.Text(description="The normalized tag of the object")
-    ontology_id = odm.Keyword(description="Unique identifier of ontology")
+    ontology_id = odm.Keyword(description="Deterministic identifier of ontology. This value should be able to be "
+                                          "replicable between services that have access to similar object details, "
+                                          "such that it can be used for relating objects in post-processing.")
     service_name = odm.Keyword(default=environ.get('AL_SERVICE_NAME', 'unknown'),
                                description="Component that generated this section")
     guid = odm.Optional(odm.Text(), description="The GUID associated with the object")
