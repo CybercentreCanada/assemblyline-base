@@ -37,9 +37,9 @@ class NetworkDNS(odm.Model):
 class NetworkHTTP(odm.Model):
     request_uri = odm.URI(description="The URI requested")
     request_headers = odm.Mapping(odm.Json(), description="Headers included in the request")
-    request_body = odm.Optional(odm.Text(), description="The body of the request")
     request_method = odm.Enum(values=REQUEST_METHODS, description="The method of the request")
     response_headers = odm.Mapping(odm.Json(), description="Headers included in the response")
+    request_body = odm.Optional(odm.Text(), description="The body of the request")
     response_status_code = odm.Optional(odm.Integer(), description="The status code of the response")
     response_body = odm.Optional(odm.Text(), description="The body of the response")
 
@@ -47,15 +47,15 @@ class NetworkHTTP(odm.Model):
 @odm.model(description="Details for a low-level network connection by IP")
 class NetworkConnection(odm.Model):
     objectid = odm.Compound(ObjectID, description="The object ID of the network object")
-    process = odm.Optional(odm.Compound(Process), description="The process that spawned the network connection")
-    source_ip = odm.Optional(odm.IP(), description="The source IP of the connection")
-    source_port = odm.Optional(odm.Integer(), description="The source port of the connection")
     destination_ip = odm.IP(description="The destination IP of the connection")
     destination_port = odm.Integer(description="The destination port of the connection")
     transport_layer_protocol = odm.Enum(values=["tcp", "udp"],
                                         description="The transport layer protocol of the connection")
     direction = odm.Enum(values=["outbound", "inbound", "unknown"],
                          description="The direction of the network connection")
+    process = odm.Optional(odm.Compound(Process), description="The process that spawned the network connection")
+    source_ip = odm.Optional(odm.IP(), description="The source IP of the connection")
+    source_port = odm.Optional(odm.Integer(), description="The source port of the connection")
     http_details = odm.Optional(odm.Compound(NetworkHTTP), description="HTTP-specific details of request")
     dns_details = odm.Optional(odm.Compound(NetworkDNS), description="DNS-specific details of request")
     connection_type = odm.Optional(odm.Enum(values=['http', 'dns'], description="Type of connection being made"))
