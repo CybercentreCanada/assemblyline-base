@@ -14,17 +14,14 @@ rule code_javascript {
         // jscript
         $strong_js3  = /new[ \t]+ActiveXObject\(['"]/
         $strong_js4  = /Scripting\.Dictionary['"]/
-        // pdfjs
-        $strong_js5  = /xfa\.((resolve|create)Node|datasets|form)['"]/
-        $strong_js6  = /\.oneOfChild['"]/
-        $strong_js7  = /unescape\(/
-        $strong_js8  = /\.createElement\(/
-        $strong_js9  = /submitForm\(['"]/
-        $strong_js10 = /(document|window)(\[['"a-zA-Z]|\.)\w+/
-        $strong_js11 = /setTimeout\(/
-        $strong_js12 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
+        $strong_js5  = /unescape\(/
+        $strong_js6  = /\.createElement\(/
+        $strong_js7  = /submitForm\(['"]/
+        $strong_js8  = /(document|window)(\[['"a-zA-Z]|\.)\w+/
+        $strong_js9  = /setTimeout\(/
+        $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
         // If this is exactly in the sample, will trigger a second time because of strong_js10
-        $strong_js13 = /(^|\n)window.location.href[ \t]*=/
+        $strong_js11 = /(^|\n)window.location.href[ \t]*=/
 
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
@@ -59,22 +56,23 @@ rule code_jscript {
 }
 
 /*
-code/pdfjs
+code/xfa
 */
 
-rule code_pdfjs {
+rule code_xfa {
 
     meta:
-        type = "code/pdfjs"
+        type = "code/xfa"
         score = 5
 
     strings:
-        $pdfjs1 = /xfa\.((resolve|create)Node|datasets|form)['"]/
-        $pdfjs2 = /\.oneOfChild['"]/
+        $xfa1 = /xfa\.([\w]*[.)=( ]){2,}/
+        $xfa2 = /ui\.oneOfChild\./
+        $xmlns_url = "http://www.xfa.org/schema/xfa-template/"
 
     condition:
-        code_javascript
-        and 1 of ($pdfjs*)
+        1 of ($xfa*)
+        and $xmlns_url in (0..256)
 }
 
 /*
