@@ -65,6 +65,8 @@ class UpdateSourceDelta(odm.Model):
     default_classification = odm.Optional(
         odm.Classification(),
         description="Refer to:<br>[Service - UpdateSource](../service/#updatesource)")
+    git_branch = odm.Optional(odm.Keyword(default=""), description="Refer to:<br>[Service - UpdateSource](../service/#updatesource)")
+
 
 
 @odm.model(index=False, store=False)
