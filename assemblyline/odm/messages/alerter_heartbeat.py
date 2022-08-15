@@ -7,6 +7,7 @@ LOADER_CLASS = "assemblyline.odm.messages.alerter_heartbeat.AlerterMessage"
 @odm.model(description="Alerter Queues")
 class Queues(odm.Model):
     alert = odm.Integer(description="Number of alerts in queue")
+    alert_retry = odm.Integer(description="Number of alerts in retry queue")
 
 
 @odm.model(description="Alerter Metrics")

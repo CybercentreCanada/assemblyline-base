@@ -69,7 +69,7 @@ class CacheStore(object):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
         return self.filestore.download(new_key, path)
 
-    def exists(self, cache_key: str):
+    def exists(self, cache_key: str) -> list:
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
         return self.filestore.exists(new_key)
 
