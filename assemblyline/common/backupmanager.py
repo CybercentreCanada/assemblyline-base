@@ -5,7 +5,7 @@ import random
 import time
 import threading
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from multiprocessing import Process
 
@@ -95,7 +95,7 @@ def restore_worker(worker_id: str, instance_id: str, working_dir: str):
 
 class DistributedBackup(object):
     def __init__(self, working_dir: str, worker_count: int = 50, spawn_workers: bool = True,
-                 use_threading: bool = False, logger: logging.Logger = None):
+                 use_threading: bool = False, logger: Optional[logging.Logger] = None):
         self.working_dir = working_dir
         self.datastore = forge.get_datastore(archive_access=True)
         self.logger = logger
@@ -203,7 +203,7 @@ class DistributedBackup(object):
             self.logger.info(summary)
 
     # noinspection PyBroadException,PyProtectedMember
-    def backup(self, bucket_list: list[str], follow_keys: bool = False, query: str = None):
+    def backup(self, bucket_list: list[str], follow_keys: bool = False, query: Optional[str] = None):
         if query is None:
             query = 'id:*'
 
