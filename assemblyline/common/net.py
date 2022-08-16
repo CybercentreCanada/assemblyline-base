@@ -86,7 +86,7 @@ def get_mac_for_ip(ip: str) -> str:
         except (IndexError, KeyError):
             if_mac = if_ip = None
 
-        if if_ip == ip:
+        if if_mac and if_ip == ip:
             return if_mac.replace(':', '').upper()
 
     # If we couldn't match on IP just use the old uuid based approach.

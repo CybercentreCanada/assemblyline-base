@@ -1,5 +1,6 @@
 from datetime import datetime
 from time import time
+from typing import Optional
 
 EPOCH = datetime.utcfromtimestamp(0)
 ISO_FMT = '%Y-%m-%dT%H:%M:%S'
@@ -97,7 +98,7 @@ def now_as_db(offset: float = 0.0, date_format: str = DB_FMT) -> str:
     return datetime.fromtimestamp(now(offset)).strftime(date_format)
 
 
-def utc_offset_from_local(cur_time: float = None) -> float:
+def utc_offset_from_local(cur_time: Optional[float] = None) -> float:
     if not cur_time:
         cur_time = time()
     return int(cur_time - iso_to_epoch("%sZ" % epoch_to_local(cur_time).replace(" ", "T"))) / 3600

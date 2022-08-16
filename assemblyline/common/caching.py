@@ -2,6 +2,7 @@ import hashlib
 import json
 import threading
 import time
+import typing
 
 from collections import OrderedDict
 from typing import Generic, TypeVar, Hashable, Tuple, Optional
@@ -26,7 +27,7 @@ class TimeExpiredCache(Generic[T]):
     raise an exception if specified. This will not freshen the timeout for the specified item.
     """
 
-    def __init__(self, timeout: float, expiry_rate:float=5, raise_on_error:bool=False):
+    def __init__(self, timeout: float, expiry_rate: float = 5, raise_on_error: bool = False):
         self.lock = threading.Lock()
         self.timeout = timeout
         self.expiry_rate = expiry_rate
@@ -73,7 +74,15 @@ class TimeExpiredCache(Generic[T]):
             self.cache[key] = data
             self.timeout_list.append((time.time() + self.timeout, key))
 
-    def get(self, key:Hashable, default:T=None) -> Optional[T]:
+    @typing.overload
+    def get(self, key: Hashable) -> Optional[T]:
+        ...
+
+    @typing.overload
+    def get(self, key: Hashable, default: T) -> T:
+        ...
+
+    def get(self, key: Hashable, default: Optional[T] = None) -> Optional[T]:
         with self.lock:
             return self.cache.get(key, default)
 
@@ -93,7 +102,7 @@ class SizeExpiredCache(Generic[T]):
     raise an exception if specified. This will not freshen the item position in the cache.
     """
 
-    def __init__(self, max_item_count:int, raise_on_error:bool=False):
+    def __init__(self, max_item_count: int, raise_on_error: bool = False):
         self.lock = threading.Lock()
         self.max_item_count = max_item_count
         self.cache: OrderedDict[Hashable, T] = OrderedDict()
@@ -119,7 +128,15 @@ class SizeExpiredCache(Generic[T]):
             if len(self.cache) > self.max_item_count:
                 self.cache.popitem(False)
 
-    def get(self, key:Hashable, default:T=None) -> Optional[T]:
+    @typing.overload
+    def get(self, key: Hashable) -> Optional[T]:
+        ...
+
+    @typing.overload
+    def get(self, key: Hashable, default: T) -> T:
+        ...
+
+    def get(self, key: Hashable, default: Optional[T] = None) -> Optional[T]:
         with self.lock:
             return self.cache.get(key, default)
 
@@ -128,7 +145,7 @@ class SizeExpiredCache(Generic[T]):
             return self.cache.keys()
 
 
-def generate_conf_key(service_tool_version:str=None, task=None) -> str:
+def generate_conf_key(service_tool_version: Optional[str] = None, task=None) -> str:
     ignore_salt = None
     service_config = None
     submission_params_str = None
