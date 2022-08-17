@@ -18,8 +18,9 @@ import aiohttp
 import lark
 import datemath
 import arrow
-from assemblyline.cachestore import CacheStore
 
+from assemblyline.cachestore import CacheStore
+from assemblyline.common.uid import get_random_id
 from assemblyline.odm import base as odm
 from assemblyline.odm.models.actions import DEFAULT_POSTPROCESS_ACTIONS, PostprocessAction, Webhook
 from assemblyline.odm.models.submission import Submission
@@ -711,17 +712,19 @@ class ActionWorker:
                 extended_scan = 'submitted'
 
                 logger.info(f"[{submission.sid} :: {submission.files[0].sha256}] Resubmitted for extended analysis")
-                submission.params.psid = submission.sid
-                submission.sid = None
-                submission.scan_key = None
-                submission.params.services.resubmit = []
-                submission.params.services.selected = submit_to
+                resubmission = SubmissionMessage(submission_msg.as_primitives())
+                resubmission.params.psid = submission.sid
+                resubmission.sid = get_random_id()
+                resubmission.scan_key = None
+                resubmission.params.services.resubmit = []
+                resubmission.params.services.selected = submit_to
+                resubmission.metadata['ingest_id'] = resubmission.sid
 
                 self.unique_queue.push(submission.params.priority, dict(
                     score=score,
                     extended_scan=extended_scan,
-                    ingest_id=submission_msg.metadata.get('ingest_id', None),
-                    submission=submission_msg.as_primitives(),
+                    ingest_id=resubmission.sid,
+                    submission=resubmission.as_primitives(),
                 ))
                 did_resubmit = True
 
