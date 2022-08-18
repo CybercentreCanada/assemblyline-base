@@ -116,3 +116,19 @@ def format_time(timeobj: datetime) -> str:
 
     # Put it in a timezone missing iso simulation, then add the zulu 'Z'
     return timeobj.isoformat() + 'Z'
+
+
+def get_max_datetime() -> str:
+    return datetime.max
+
+
+def get_min_datetime() -> str:
+    return datetime.min
+
+
+def format_time_by_format(timeobj: datetime, date_format: str = DB_FMT) -> str:
+    """Format a datetime object to the specific iso UTC string the datastore desires."""
+    # Strip out any existing time zone data, because the time zone formatting
+    # isoformat uses by default is offset based, rather than suffex code '+0' vs 'Z'
+    timeobj = timeobj.replace(tzinfo=None)
+    return timeobj.strftime(date_format)
