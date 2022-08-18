@@ -49,6 +49,8 @@ class PersistentVolume(odm.Model):
     mount_path = odm.Keyword(description="Path into the container to mount volume")
     capacity = odm.Keyword(description="The amount of storage allocated for volume")
     storage_class = odm.Keyword(description="Storage class used to create volume")
+    access_mode = odm.Enum(default='ReadWriteOnce', values=['ReadWriteOnce', 'ReadWriteMany'],
+                           description="Access mode for volume")
 
 
 @ odm.model(index=False, store=False, description="Container's Dependency Configuration")
