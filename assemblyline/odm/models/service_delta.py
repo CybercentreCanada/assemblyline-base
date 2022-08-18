@@ -68,7 +68,6 @@ class UpdateSourceDelta(odm.Model):
     git_branch = odm.Optional(odm.Keyword(default=""), description="Refer to:<br>[Service - UpdateSource](../service/#updatesource)")
 
 
-
 @odm.model(index=False, store=False)
 class PersistentVolumeDelta(odm.Model):
     mount_path = odm.Optional(
