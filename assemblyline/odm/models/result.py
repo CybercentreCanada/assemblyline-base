@@ -1,6 +1,10 @@
+from collections import defaultdict
+
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.caching import generate_conf_key
+from assemblyline.common.dict_utils import flatten
+from assemblyline.common.tagging import tag_dict_to_list
 from assemblyline.odm.models.tagging import Tagging
 
 
@@ -127,6 +131,18 @@ class Result(odm.Model):
             key_list.append("e")
 
         return '.'.join(key_list)
+
+    def scored_tag_dict(self) -> dict:
+        tags = defaultdict(lambda: {'score': 0})
+        # Save the tags and their score
+        for section in self.result.sections:
+            tag_list = tag_dict_to_list(flatten(section.tags.as_primitives()))
+            for tag in tag_list:
+                key = f"{tag['type']}:{tag['value']}"
+                tags[key].update(tag)
+                tags[key]['score'] += section.heuristic.score if section.heuristic else 0
+
+        return tags
 
     def is_empty(self):
         if len(self.response.extracted) == 0 and \

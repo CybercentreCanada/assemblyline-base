@@ -160,6 +160,7 @@ class ServiceDelta(odm.Model):
     max_queue_length = odm.Optional(odm.Integer(), description="Refer to:<br>[Service](../service/#service)")
 
     uses_tags: bool = odm.Optional(odm.Boolean(), description="Refer to:<br>[Service](../service/#service)")
+    uses_tag_scores: bool = odm.Optional(odm.Boolean(), description="Refer to:<br>[Service](../service/#service)")
     uses_temp_submission_data: bool = odm.Optional(
         odm.Boolean(), description="Refer to:<br>[Service](../service/#service)")
     uses_metadata: bool = odm.Optional(odm.Boolean(), description="Refer to:<br>[Service](../service/#service)")
