@@ -1,10 +1,14 @@
 from datetime import datetime
 from time import time
+from typing import Optional
 
 EPOCH = datetime.utcfromtimestamp(0)
 ISO_FMT = '%Y-%m-%dT%H:%M:%S'
 LOCAL_FMT = '%Y-%m-%d %H:%M:%S'
 DB_FMT = '%Y%m%d'
+
+MAX_TIME = datetime.max
+MIN_TIME = datetime.min
 
 # DO NOT REMOVE!!! THIS IS MAGIC!
 # strptime Thread safe fix... yeah ...
@@ -108,27 +112,14 @@ def trunc_day(timeobj: datetime) -> datetime:
     return timeobj.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
-def format_time(timeobj: datetime) -> str:
-    """Format a datetime object to the specific iso UTC string the datastore desires."""
+def format_time(timeobj: datetime, date_format: Optional[str] = None) -> str:
+    """Format a datetime object to the specific iso UTC string the datastore desires, or to a specific date format."""
     # Strip out any existing time zone data, because the time zone formatting
     # isoformat uses by default is offset based, rather than suffex code '+0' vs 'Z'
     timeobj = timeobj.replace(tzinfo=None)
 
-    # Put it in a timezone missing iso simulation, then add the zulu 'Z'
-    return timeobj.isoformat() + 'Z'
-
-
-def get_max_datetime() -> str:
-    return datetime.max
-
-
-def get_min_datetime() -> str:
-    return datetime.min
-
-
-def format_time_by_format(timeobj: datetime, date_format: str = DB_FMT) -> str:
-    """Format a datetime object to the specific iso UTC string the datastore desires."""
-    # Strip out any existing time zone data, because the time zone formatting
-    # isoformat uses by default is offset based, rather than suffex code '+0' vs 'Z'
-    timeobj = timeobj.replace(tzinfo=None)
-    return timeobj.strftime(date_format)
+    if not date_format:
+        # Put it in a timezone missing iso simulation, then add the zulu 'Z'
+        return timeobj.isoformat() + 'Z'
+    else:
+        return timeobj.strftime(date_format)
