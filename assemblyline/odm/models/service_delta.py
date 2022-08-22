@@ -65,7 +65,8 @@ class UpdateSourceDelta(odm.Model):
     default_classification = odm.Optional(
         odm.Classification(),
         description="Refer to:<br>[Service - UpdateSource](../service/#updatesource)")
-    git_branch = odm.Optional(odm.Keyword(default=""), description="Refer to:<br>[Service - UpdateSource](../service/#updatesource)")
+    git_branch = odm.Optional(odm.Keyword(default=""),
+                              description="Refer to:<br>[Service - UpdateSource](../service/#updatesource)")
 
 
 @odm.model(index=False, store=False)
@@ -79,6 +80,8 @@ class PersistentVolumeDelta(odm.Model):
     storage_class = odm.Optional(
         odm.Keyword(),
         description="Refer to:<br>[Service - PeristentVolume](../service/#persistentvolume)")
+    access_mode = odm.Optional(odm.Enum(values=['ReadWriteOnce', 'ReadWriteMany']),
+                               description="Refer to:<br>[Service - PeristentVolume](../service/#persistentvolume)")
 
 
 @odm.model(index=False, store=False)
