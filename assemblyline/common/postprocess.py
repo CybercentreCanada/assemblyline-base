@@ -722,7 +722,7 @@ class ActionWorker:
                 self.unique_queue.push(submission.params.priority, dict(
                     score=score,
                     extended_scan=extended_scan,
-                    ingest_id=submission.metadata.get('ingest_id', submission.sid),
+                    ingest_id=submission.metadata.get('ingest_id', None),
                     submission=resubmission.as_primitives(),
                 ))
                 did_resubmit = True
