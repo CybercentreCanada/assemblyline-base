@@ -7,6 +7,9 @@ ISO_FMT = '%Y-%m-%dT%H:%M:%S'
 LOCAL_FMT = '%Y-%m-%d %H:%M:%S'
 DB_FMT = '%Y%m%d'
 
+MAX_TIME = datetime.max
+MIN_TIME = datetime.min
+
 # DO NOT REMOVE!!! THIS IS MAGIC!
 # strptime Thread safe fix... yeah ...
 datetime.strptime("2000", "%Y")
@@ -109,11 +112,14 @@ def trunc_day(timeobj: datetime) -> datetime:
     return timeobj.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
-def format_time(timeobj: datetime) -> str:
-    """Format a datetime object to the specific iso UTC string the datastore desires."""
+def format_time(timeobj: datetime, date_format: Optional[str] = None) -> str:
+    """Format a datetime object to the specific iso UTC string the datastore desires, or to a specific date format."""
     # Strip out any existing time zone data, because the time zone formatting
     # isoformat uses by default is offset based, rather than suffex code '+0' vs 'Z'
     timeobj = timeobj.replace(tzinfo=None)
 
-    # Put it in a timezone missing iso simulation, then add the zulu 'Z'
-    return timeobj.isoformat() + 'Z'
+    if not date_format:
+        # Put it in a timezone missing iso simulation, then add the zulu 'Z'
+        return timeobj.isoformat() + 'Z'
+    else:
+        return timeobj.strftime(date_format)
