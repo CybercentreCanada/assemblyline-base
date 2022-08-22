@@ -17,6 +17,7 @@ import json
 import logging
 import re
 import sys
+import unicodedata
 from datetime import datetime
 from typing import Dict, Tuple, Union, Any as _Any
 import arrow
@@ -43,9 +44,10 @@ FLATTENED_OBJECT_SANITIZER = re.compile("^[a-z][a-z0-9_.]*$")
 NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -]*$")
 UTC_TZ = tzutc()
 
-DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\uffff][A-Za-z0-9\u00a1-\uffff_-]{0,62})?[A-Za-z0-9\u00a1-\uffff]\.)+" \
-               r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\uffff]{2,}\.?)"
+DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\U0010ffff][A-Za-z0-9\u00a1-\U0010ffff_-]{0,62})?[A-Za-z0-9\u00a1-\U0010ffff]\.)+" \
+               r"(?:[Xx][Nn]--)?(?:[A-Za-z0-9\u00a1-\U0010ffff]{2,}\.?)"
 DOMAIN_ONLY_REGEX = f"^{DOMAIN_REGEX}$"
+DOMAIN_EXCLUDED_NORM_CHARS = './?@#'
 EMAIL_REGEX = f"^[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_‘{{|}}~-]+)*@({DOMAIN_REGEX})$"
 IPV4_REGEX = r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
 IPV6_REGEX = r"(?:(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|" \
@@ -386,6 +388,7 @@ class Domain(Keyword):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.validation_regex = re.compile(DOMAIN_ONLY_REGEX)
+        self.excluded_chars = set(DOMAIN_EXCLUDED_NORM_CHARS)
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -394,9 +397,33 @@ class Domain(Keyword):
         if not value:
             return None
 
+        value = value.replace('\u3002', '.')
+
+        if '.' not in value:
+            raise ValueError(f"[{self.name or self.parent_name}] '{value}' does not contain a '.' character")
+
+        segments = value.split('.')
+        for i, segment in enumerate(segments):
+            if segment.isascii():
+                if segment.lower().startswith('xn--'):
+                    try:
+                        segments[i] = segment.encode('ascii').lower().decode('idna')
+                    except ValueError:
+                        pass
+                continue
+            else:
+                segment_norm = unicodedata.normalize('NFKC', segment)
+                if segment != segment_norm and set(segment_norm) & self.excluded_chars:
+                    raise ValueError(f"[{self.name or self.parent_name}] '{segment}' in '{value}' "
+                                     f"includes a Unicode character that can not be normalized to '{segment_norm}'.")
+                else:
+                    segments[i] = segment_norm
+        value = '.'.join(segments)
+
         if not self.validation_regex.match(value):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
                              f"validator: {self.validation_regex.pattern}")
+        value = value.rstrip('.')
 
         if not is_valid_domain(value):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' has a non-valid TLD.")
