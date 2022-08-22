@@ -718,12 +718,11 @@ class ActionWorker:
                 resubmission.scan_key = None
                 resubmission.params.services.resubmit = []
                 resubmission.params.services.selected = submit_to
-                resubmission.metadata['ingest_id'] = resubmission.sid
 
                 self.unique_queue.push(submission.params.priority, dict(
                     score=score,
                     extended_scan=extended_scan,
-                    ingest_id=resubmission.sid,
+                    ingest_id=submission.metadata.get('ingest_id', submission.sid),
                     submission=resubmission.as_primitives(),
                 ))
                 did_resubmit = True
