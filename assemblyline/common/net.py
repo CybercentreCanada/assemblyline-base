@@ -26,6 +26,7 @@ def is_valid_domain(domain: str) -> bool:
         return False
 
     if "." in domain:
+        domain = domain.upper()
         tld = domain.split(".")[-1]
         combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
         if tld in combined_tlds:
