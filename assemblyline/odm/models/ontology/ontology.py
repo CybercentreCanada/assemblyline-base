@@ -1,7 +1,7 @@
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.odm.models.tagging import Tagging
-from assemblyline.odm.models.ontology.results import Antivirus, Process, Sandbox, NetworkConnection, Signature
+from assemblyline.odm.models.ontology.results import Antivirus, Process, Sandbox, NetworkConnection, Signature, MalwareConfig
 from assemblyline.odm.models.ontology.filetypes import PE
 
 Classification = forge.get_classification()
@@ -45,6 +45,7 @@ class Heuristics(odm.Model):
 @odm.model(index=False, store=False, description="Ontological Results")
 class Results(odm.Model):
     antivirus = odm.Optional(odm.List(odm.Compound(Antivirus)), description="List of Antivirus Ontologies")
+    malwareconfig = odm.Optional(odm.List(odm.Compound(MalwareConfig)), description="List of MalwareConfig Ontologies")
     netflow = odm.Optional(odm.List(odm.Compound(NetworkConnection)), description="List of Network Ontologies")
     process = odm.Optional(odm.List(odm.Compound(Process)), description="List of Process Ontologies")
     sandbox = odm.Optional(odm.List(odm.Compound(Sandbox)), description="List of Sandbox Ontologies")
