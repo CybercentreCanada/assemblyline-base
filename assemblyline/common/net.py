@@ -30,7 +30,7 @@ def is_valid_domain(domain: str) -> bool:
         tld = domain.split(".")[-1]
         if not tld.isascii():
             try:
-                tld = tld.encode('idna').decode('ascii')
+                tld = tld.encode('idna').decode('ascii').upper()
             except ValueError:
                 return False
 
