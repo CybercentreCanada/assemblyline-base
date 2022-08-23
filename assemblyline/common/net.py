@@ -8,7 +8,7 @@ from random import randint
 import netifaces as nif
 import pr2modules.iproute as iproute
 
-from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN
+from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN, TLDS_SPECIAL_BY_DOMAIN
 
 
 def is_valid_port(value: int) -> bool:
@@ -26,13 +26,22 @@ def is_valid_domain(domain: str) -> bool:
         return False
 
     if "." in domain:
+        domain = domain.upper()
         tld = domain.split(".")[-1]
         if not tld.isascii():
             try:
-                tld = tld.encode('idna').decode('ascii')
+                tld = tld.encode('idna').decode('ascii').upper()
             except ValueError:
                 return False
-        return tld.upper() in TLDS_ALPHA_BY_DOMAIN
+
+        combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
+        if tld in combined_tlds:
+            # Single term TLD check
+            return True
+
+        elif any(domain.endswith(d) for d in TLDS_SPECIAL_BY_DOMAIN):
+            # Multi-term TLD check
+            return True
 
     return False
 

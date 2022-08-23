@@ -2,7 +2,7 @@
 # DO NOT EDIT! Re-run the script instead...
 
 # Top level domains from: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-# Version 2022040701, Last Updated Thu Apr  7 07:07:01 2022 UTC
+# Version 2022082300, Last Updated Tue Aug 23 07:07:01 2022 UTC
 TLDS_ALPHA_BY_DOMAIN = {
     "AAA",
     "AARP",
@@ -1491,4 +1491,46 @@ TLDS_ALPHA_BY_DOMAIN = {
     "ZONE",
     "ZUERICH",
     "ZW"
+}
+
+# Special-use TLDs from: https://www.iana.org/assignments/special-use-domain-names/special-use-domain.csv
+TLDS_SPECIAL_BY_DOMAIN = {
+    "6TISCH.ARPA",
+    "EAP-NOOB.ARPA",
+    "HOME.ARPA",
+    "10.IN-ADDR.ARPA",
+    "254.169.IN-ADDR.ARPA",
+    "16.172.IN-ADDR.ARPA",
+    "17.172.IN-ADDR.ARPA",
+    "18.172.IN-ADDR.ARPA",
+    "19.172.IN-ADDR.ARPA",
+    "20.172.IN-ADDR.ARPA",
+    "21.172.IN-ADDR.ARPA",
+    "22.172.IN-ADDR.ARPA",
+    "23.172.IN-ADDR.ARPA",
+    "24.172.IN-ADDR.ARPA",
+    "25.172.IN-ADDR.ARPA",
+    "26.172.IN-ADDR.ARPA",
+    "27.172.IN-ADDR.ARPA",
+    "28.172.IN-ADDR.ARPA",
+    "29.172.IN-ADDR.ARPA",
+    "30.172.IN-ADDR.ARPA",
+    "31.172.IN-ADDR.ARPA",
+    "170.0.0.192.IN-ADDR.ARPA",
+    "171.0.0.192.IN-ADDR.ARPA",
+    "168.192.IN-ADDR.ARPA",
+    "8.E.F.IP6.ARPA",
+    "9.E.F.IP6.ARPA",
+    "A.E.F.IP6.ARPA",
+    "B.E.F.IP6.ARPA",
+    "IPV4ONLY.ARPA",
+    "EXAMPLE",
+    "EXAMPLE.COM",
+    "EXAMPLE.NET",
+    "EXAMPLE.ORG",
+    "INVALID",
+    "LOCAL",
+    "LOCALHOST",
+    "ONION",
+    "TEST"
 }
