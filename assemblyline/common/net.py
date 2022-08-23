@@ -28,10 +28,17 @@ def is_valid_domain(domain: str) -> bool:
     if "." in domain:
         domain = domain.upper()
         tld = domain.split(".")[-1]
+        if not tld.isascii():
+            try:
+                tld = tld.encode('idna').decode('ascii').upper()
+            except ValueError:
+                return False
+
         combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
         if tld in combined_tlds:
             # Single term TLD check
             return True
+
         elif any(domain.endswith(d) for d in TLDS_SPECIAL_BY_DOMAIN):
             # Multi-term TLD check
             return True
