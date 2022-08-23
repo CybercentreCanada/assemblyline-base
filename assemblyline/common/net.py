@@ -8,7 +8,7 @@ from random import randint
 import netifaces as nif
 import pr2modules.iproute as iproute
 
-from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN
+from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN, TLDS_SPECIAL_BY_DOMAIN
 
 
 def is_valid_port(value: int) -> bool:
@@ -27,7 +27,13 @@ def is_valid_domain(domain: str) -> bool:
 
     if "." in domain:
         tld = domain.split(".")[-1]
-        return tld.upper() in TLDS_ALPHA_BY_DOMAIN
+        combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
+        if tld in combined_tlds:
+            # Single term TLD check
+            return True
+        elif any(domain.endswith(d) for d in TLDS_SPECIAL_BY_DOMAIN):
+            # Multi-term TLD check
+            return True
 
     return False
 
