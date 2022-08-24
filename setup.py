@@ -67,7 +67,6 @@ setup(
         'netifaces',
         'pyroute2.core',
         'redis',
-        'requests',
         'requests[socks]',
         'elasticsearch>=8.0.0,<9.0.0',
         'python-datemath',
