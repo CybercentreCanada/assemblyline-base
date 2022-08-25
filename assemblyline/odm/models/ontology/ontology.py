@@ -5,7 +5,7 @@ from assemblyline.odm.models.ontology.results import Antivirus, Process, Sandbox
 from assemblyline.odm.models.ontology.filetypes import PE
 
 Classification = forge.get_classification()
-ODM_VERSION = "1.0"
+ODM_VERSION = "1.1"
 
 
 @odm.model(description="File Characteristics")
