@@ -737,6 +737,7 @@ SERVICE_CATEGORIES = [
     'External',
     'Extraction',
     'Filtering',
+    'Internet Connected',
     'Networking',
     'Static Analysis',
 ]
