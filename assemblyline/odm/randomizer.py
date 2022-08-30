@@ -49,7 +49,7 @@ DOM = [
 SERVICES = {
     "Beaver": ("External", "FILTER"),
     "NSRL": ("Filtering", "FILTER"),
-    "PEFile": ("Static Analysis", "CORE"),
+    "PE": ("Static Analysis", "CORE"),
     "Extract": ("Extraction", "EXTRACT"),
     "TagCheck": ("Static Analysis", "POST"),
     "PDFId": ("Static Analysis", "CORE"),

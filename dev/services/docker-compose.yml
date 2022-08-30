@@ -7,15 +7,33 @@ services:
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
+  # APIVector service
+  alsvc_apivector:
+    image: cccs/assemblyline-service-apivector:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
   # APKaye service
   alsvc_apkaye:
     image: cccs/assemblyline-service-apkaye:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
+  # BatchDeobfuscator service
+  alsvc_batchdeobfuscator:
+    image: cccs/assemblyline-service-batchdeobfuscator:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
   # Beaver service
   alsvc_beaver:
     image: cccs/assemblyline-service-beaver:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
+  # CAPA service
+  alsvc_capa:
+    image: cccs/assemblyline-service-capa:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
@@ -28,6 +46,18 @@ services:
   # Cuckoo service
   alsvc_cuckoo:
     image: cccs/assemblyline-service-cuckoo:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
+  # ELF service
+  alsvc_elf:
+    image: cccs/assemblyline-service-elf:latest
+    environment:
+      - SERVICE_API_HOST=http://al_service_server:5003
+
+  # ELFPARSER service
+  alsvc_elfparser:
+    image: cccs/assemblyline-service-elfparser:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
@@ -106,12 +136,6 @@ services:
   # PE service
   alsvc_pe:
     image: cccs/assemblyline-service-pe:latest
-    environment:
-      - SERVICE_API_HOST=http://al_service_server:5003
-
-  # PEFile service
-  alsvc_pefile:
-    image: cccs/assemblyline-service-pefile:latest
     environment:
       - SERVICE_API_HOST=http://al_service_server:5003
 
