@@ -124,6 +124,7 @@ magic_patterns = [
     {"al_type": "archive/rar", "regex": r"^rar archive data"},
     {"al_type": "archive/tar", "regex": r"^(GNU|POSIX) tar archive"},
     {"al_type": "archive/ar", "regex": r"ar archive"},
+    {"al_type": "archive/vhd", "regex": r"^Microsoft Disk Image"},
     {"al_type": "archive/xz", "regex": r"^XZ compressed data"},
     {"al_type": "archive/zip", "regex": r"^zip archive data"},
     {"al_type": "network/tcpdump", "regex": r"^(tcpdump|pcap)"},
@@ -332,6 +333,7 @@ trusted_mimes = {
     "application/x-arc": "archive/arc",
     "application/x-iso9660-image": "archive/iso",
     "application/x-rar": "archive/rar",
+    "application/x-virtualbox-vhd": "archive/vhd",
     "application/x-xz": "archive/xz",
     "application/vnd.ms-cab-compressed": "archive/cabinet",
 
