@@ -520,6 +520,8 @@ class Scaler(odm.Model):
                                                            description="Defaults Scaler will assign to a service.")
     cpu_overallocation: float = odm.Float(description="Percentage of CPU overallocation")
     memory_overallocation: float = odm.Float(description="Percentage of RAM overallocation")
+    overallocation_node_limit = odm.optional(odm.integer(description="If the system has this many nodes or "
+                                                                     "more overallocation is ignored"))
     additional_labels: List[str] = odm.Optional(
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
 
@@ -528,6 +530,7 @@ DEFAULT_SCALER = {
     'additional_labels': None,
     'cpu_overallocation': 1,
     'memory_overallocation': 1,
+    'overallocation_node_limit': None,
     'service_defaults': {
         'growth': 60,
         'shrink': 30,
