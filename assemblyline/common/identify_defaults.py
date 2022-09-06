@@ -37,6 +37,8 @@ OLE_CLSID_GUIDs = {
 type_to_extension = {
     "archive/chm": ".chm",
     'archive/iso': ".iso",
+    'archive/udf': ".udf",
+    'archive/vhd': ".vhd",
     "audiovisual/flash": ".swf",
     "code/batch": ".bat",
     "code/c": ".c",
