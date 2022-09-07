@@ -124,18 +124,39 @@ rule code_xml {
 code/xml
 */
 
+rule code_xml_start_tag {
+
+    strings:
+        $tag_start = /^\s*<[^>^\n]+>/
+
+    condition:
+        $tag_start in (0..256)
+}
+
+/*
+code/xml
+*/
+
+rule code_xml_end_tag {
+
+    strings:
+        $tag_end = /<\/[^>^\n]+>\s*$/
+
+    condition:
+        $tag_end in (filesize-256..filesize)
+}
+
+/*
+code/xml
+*/
+
 rule code_xml_tags {
 
     meta:
         type = "code/xml"
 
-    strings:
-        $tag_start = /^\s*<[^>^\n]+>/
-        $tag_end = /<\/[^>^\n]+>\s*$/
-
     condition:
-        $tag_start in (0..256)
-        and $tag_end in (filesize-256..filesize)
+        code_xml_start_tag and code_xml_end_tag
 }
 
 /*
@@ -175,6 +196,25 @@ rule code_html_2 {
     condition:
         code_xml_tags
         and $html_tag
+}
+
+/*
+code/html
+*/
+
+rule code_html_3 {
+
+    meta:
+        type = "code/html"
+        score = 10
+
+    strings:
+        $bad_html_tag = /(^|\n)\s*<(body)[ \t>]/i
+        $html_void_tag = /(^|\n)\s*<(area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)[ \t>]/i
+
+    condition:
+        code_xml_start_tag
+        and ($html_void_tag or $bad_html_tag)
 }
 
 /*
