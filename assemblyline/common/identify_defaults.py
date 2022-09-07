@@ -36,9 +36,10 @@ OLE_CLSID_GUIDs = {
 # Assemblyline type to file extension mapping
 type_to_extension = {
     "archive/chm": ".chm",
-    'archive/iso': ".iso",
-    'archive/udf': ".udf",
-    'archive/vhd': ".vhd",
+    "archive/iso": ".iso",
+    "archive/udf": ".udf",
+    "archive/vhd": ".vhd",
+    "archive/zip": ".zip",
     "audiovisual/flash": ".swf",
     "code/batch": ".bat",
     "code/c": ".c",
