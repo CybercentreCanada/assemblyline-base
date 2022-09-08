@@ -10,6 +10,7 @@ USER_TYPES = {
     "signature_importer",  # Save signatures in the system
     "user",                # Has all task following specific roles
     # Task specific roles
+    "api_key_access",      # Allow access via API keys
     "file_view",           # View files in the file viewer
     "file_download",       # Download files from the system
     "alert_view",          # View alerts in the system
