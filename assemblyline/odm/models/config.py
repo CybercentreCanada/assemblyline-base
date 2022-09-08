@@ -1056,6 +1056,23 @@ EXAMPLE_SHA256_SOURCE_MB = {
 
 
 @odm.model(index=False, store=False,
+           description="Minimum score value to get the specified verdict, otherwise the file is considered safe.")
+class Verdicts(odm.Model):
+    info: int = odm.Integer(description="Minimum score for the verdict to be Informational.")
+    suspicious: int = odm.Integer(description="Minimum score for the verdict to be Suspicious.")
+    highly_suspicious: int = odm.Integer(description="Minimum score for the verdict to be Highly Suspicious.")
+    malicious: int = odm.Integer(description="Minimum score for the verdict to be Malicious.")
+
+
+DEFAULT_VERDICTS = {
+    'info': 0,
+    'suspicious': 300,
+    'highly_suspicious': 700,
+    'malicious': 1000
+}
+
+
+@odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
     default_max_extracted: int = odm.Integer(description="How many extracted files may be added to a submission?")
@@ -1072,6 +1089,8 @@ class Submission(odm.Model):
         default=[], description="List of external source to fetch file via their SHA256 hashes")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
+    verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
+                            description="Minimum score value to get the specified verdict.")
 
 
 DEFAULT_SUBMISSION = {
@@ -1084,7 +1103,8 @@ DEFAULT_SUBMISSION = {
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
     'sha256_sources': [],
-    'tag_types': DEFAULT_TAG_TYPES
+    'tag_types': DEFAULT_TAG_TYPES,
+    'verdicts': DEFAULT_VERDICTS
 }
 
 

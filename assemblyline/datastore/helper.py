@@ -801,14 +801,14 @@ class AssemblylineDatastore(object):
                     heur_name = section['heuristic']['name']
 
                     # Get the heuristics data
-                    if section['heuristic']['score'] < 0:
-                        h_type = "safe"
-                    elif section['heuristic']['score'] < 300:
-                        h_type = "info"
-                    elif section['heuristic']['score'] < 1000:
-                        h_type = "suspicious"
-                    else:
+                    if section['heuristic']['score'] >= config.submission.verdicts.malicious:
                         h_type = "malicious"
+                    elif section['heuristic']['score'] >= config.submission.verdicts.suspicious:
+                        h_type = "suspicious"
+                    elif section['heuristic']['score'] >= config.submission.verdicts.info:
+                        h_type = "info"
+                    else:
+                        h_type = "safe"
 
                     cache_key = f"{heur_id}_{key}"
                     signatures.setdefault(cache_key, [])
