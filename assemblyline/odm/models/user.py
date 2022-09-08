@@ -4,7 +4,24 @@ Classification = forge.get_classification()
 
 ACL = {"R", "W", "E"}
 SCOPES = {"r", "w", "rw"}
-USER_TYPES = {"admin", "signature_manager", "signature_importer", "user"}
+USER_TYPES = {
+    "admin",               # Perform administrative tasks
+    "signature_manager",   # Manage signatures and sources
+    "signature_importer",  # Save signatures in the system
+    "user",                # Has all task following specific roles
+    # Task specific roles
+    "file_view",           # View files in the file viewer
+    "file_download",       # Download files from the system
+    "alert_view",          # View alerts in the system
+    "alert_manage",        # Modify labels, priority, status, verdict or owner of alerts
+    "submission_delete",   # Delete submission from the system
+    "submission_start",    # Start a submission in the system
+    "submission_view",     # View submission's results
+    "submission_manage",   # Set user verdict on submissions
+    "submission_replay",   # Allow submission to be replayed on another server
+    "workflow_manager",    # Manage (add/delete) workflows
+    "safelist_manager"     # Manade (add/delete) safelist items
+}
 
 
 @odm.model(index=False, store=False, description="Model for API keys")
