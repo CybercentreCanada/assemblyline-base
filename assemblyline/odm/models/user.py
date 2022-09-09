@@ -12,7 +12,8 @@ USER_TYPES = {
     # Task specific roles
     "api_key_access",      # Allow access via API keys
     "obo_access",          # Allow access via On Behalf Off tokens
-    "bundle_download",     # Allow access via On Behalf Off tokens
+    "bundle_download",     # Create bundle of a submission
+    "hash_search",         # Use the hash search API
     "file_view",           # View files in the file viewer
     "file_download",       # Download files from the system
     "alert_view",          # View alerts in the system
@@ -22,13 +23,14 @@ USER_TYPES = {
     "submission_view",     # View submission's results
     "submission_manage",   # Set user verdict on submissions
     "submission_replay",   # Allow submission to be replayed on another server
+    "replay_manager",      # Manage status of file/submission/alerts during the replay process
     "workflow_manager",    # Manage (add/delete) workflows
     "safelist_manager"     # Manade (add/delete) safelist items
 }
 USER_TYPE_SPEC_ROLES = ["api_key_access", "file_view", "file_download", "alert_view", "alert_manage",
                         "submission_delete", "submission_create", "submission_view", "submission_manage",
                         "submission_replay", "workflow_manager", "safelist_manager", "obo_access",
-                        "bundle_download"]
+                        "bundle_download", "hash_search", "replay_manager"]
 
 
 @odm.model(index=False, store=False, description="Model for API keys")
