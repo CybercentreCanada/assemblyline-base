@@ -11,6 +11,7 @@ USER_TYPES = {
     "user",                # Has all task following specific roles
     # Task specific roles
     "api_key_access",      # Allow access via API keys
+    "obo_access",          # Allow access via On Behalf Off tokens
     "file_view",           # View files in the file viewer
     "file_download",       # Download files from the system
     "alert_view",          # View alerts in the system
@@ -25,7 +26,7 @@ USER_TYPES = {
 }
 USER_TYPE_SPEC_ROLES = ["api_key_access", "file_view", "file_download", "alert_view", "alert_manage",
                         "submission_delete", "submission_start", "submission_view", "submission_manage",
-                        "submission_replay", "workflow_manager", "safelist_manager"]
+                        "submission_replay", "workflow_manager", "safelist_manager", "obo_access"]
 
 
 @odm.model(index=False, store=False, description="Model for API keys")
