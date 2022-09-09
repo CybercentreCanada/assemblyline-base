@@ -10,14 +10,15 @@ USER_TYPES = {
     "signature_importer",  # Save signatures in the system
     "user",                # Has all task following specific roles
     # Task specific roles
-    "api_key_access",      # Allow access via API keys
+    "apikey_access",      # Allow access via API keys
     "obo_access",          # Allow access via On Behalf Off tokens
     "bundle_download",     # Create bundle of a submission
-    "hash_search",         # Use the hash search API
+    "search",              # Allowed to use the search API
     "file_view",           # View files in the file viewer
     "file_download",       # Download files from the system
     "alert_view",          # View alerts in the system
     "alert_manage",        # Modify labels, priority, status, verdict or owner of alerts
+    "signature_view",      # View signatures
     "signature_download",  # Download signatures from the system
     "submission_delete",   # Delete submission from the system
     "submission_create",   # Create a submission in the system
@@ -25,13 +26,24 @@ USER_TYPES = {
     "submission_manage",   # Set user verdict on submissions
     "submission_replay",   # Allow submission to be replayed on another server
     "replay_manager",      # Manage status of file/submission/alerts during the replay process
+    "workflow_view",       # View workflows
     "workflow_manager",    # Manage (add/delete) workflows
-    "safelist_manager"     # Manade (add/delete) safelist items
+    "safelist_view",       # View safelist items
+    "safelist_manager",    # Manade (add/delete) safelist items
 }
-USER_TYPE_SPEC_ROLES = ["api_key_access", "file_view", "file_download", "alert_view", "alert_manage",
-                        "submission_delete", "submission_create", "submission_view", "submission_manage",
-                        "submission_replay", "workflow_manager", "safelist_manager", "obo_access",
-                        "bundle_download", "hash_search", "replay_manager"]
+USER_TYPE_DEP = {
+    "admin": ["apikey_access", "file_view", "file_download", "alert_view", "alert_manage",
+              "submission_delete", "submission_create", "submission_view", "submission_manage",
+              "submission_replay", "workflow_manager", "safelist_manager", "obo_access",
+              "bundle_download", "search", "replay_manager", "signature_view", "signature_downlaod",
+              "safelist_view", "workflow_view", "signature_manager", "signature_importer"],
+    "user": ["apikey_access", "file_view", "file_download", "alert_view", "alert_manage",
+             "submission_delete", "submission_create", "submission_view", "submission_manage",
+             "submission_replay", "workflow_manager", "safelist_manager", "obo_access",
+             "bundle_download", "search", "replay_manager", "signature_view", "signature_downlaod",
+             "safelist_view", "workflow_view"],
+    "search": ["alert_view", "submission_view", "signature_view", "safelist_view", "workflow_view"],
+}
 
 
 @odm.model(index=False, store=False, description="Model for API keys")
