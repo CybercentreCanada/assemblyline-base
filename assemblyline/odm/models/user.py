@@ -36,7 +36,7 @@ USER_TYPE_DEP = {
               "submission_delete", "submission_create", "submission_view", "submission_manage",
               "submission_replay", "workflow_manager", "safelist_manager", "obo_access",
               "bundle_download", "search", "replay_manager", "signature_view", "signature_downlaod",
-              "safelist_view", "workflow_view", "signature_manager", "signature_importer"],
+              "safelist_view", "workflow_view", "signature_manager", "signature_importer", "user"],
     "user": ["apikey_access", "file_view", "file_download", "alert_view", "alert_manage",
              "submission_delete", "submission_create", "submission_view", "submission_manage",
              "submission_replay", "workflow_manager", "safelist_manager", "obo_access",
