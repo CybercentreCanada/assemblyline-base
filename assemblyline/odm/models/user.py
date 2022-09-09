@@ -18,6 +18,7 @@ USER_TYPES = {
     "file_download",       # Download files from the system
     "alert_view",          # View alerts in the system
     "alert_manage",        # Modify labels, priority, status, verdict or owner of alerts
+    "signature_download",  # Download signatures from the system
     "submission_delete",   # Delete submission from the system
     "submission_create",   # Create a submission in the system
     "submission_view",     # View submission's results
