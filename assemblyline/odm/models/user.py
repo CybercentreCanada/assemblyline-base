@@ -24,7 +24,7 @@ USER_TYPES = {
     "submission_create",   # Create a submission in the system
     "submission_view",     # View submission's results
     "submission_manage",   # Set user verdict on submissions
-    "submission_replay",   # Allow submission to be replayed on another server
+    "replay",   # Allow submission to be replayed on another server
     "replay_manager",      # Manage status of file/submission/alerts during the replay process
     "workflow_view",       # View workflows
     "workflow_manage",     # Manage (add/delete) workflows
@@ -35,7 +35,7 @@ USER_TYPE_DEP = {
     "admin": {"signature_manager", "signature_importer", "user"},
     "user": {"apikey_access", "file_view", "file_download", "alert_manage",
              "submission_delete", "submission_create", "submission_manage",
-             "submission_replay", "workflow_manage", "safelist_manage", "obo_access",
+             "replay", "workflow_manage", "safelist_manage", "obo_access",
              "bundle_download", "search", "replay_manager", "signature_downlaod"},
     "search": {"alert_view", "submission_view", "signature_view", "safelist_view", "workflow_view"},
 }
