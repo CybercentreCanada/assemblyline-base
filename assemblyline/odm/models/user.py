@@ -23,6 +23,9 @@ USER_TYPES = {
     "workflow_manager",    # Manage (add/delete) workflows
     "safelist_manager"     # Manade (add/delete) safelist items
 }
+USER_TYPE_SPEC_ROLES = ["api_key_access", "file_view", "file_download", "alert_view", "alert_manage",
+                        "submission_delete", "submission_start", "submission_view", "submission_manage",
+                        "submission_replay", "workflow_manager", "safelist_manager"]
 
 
 @odm.model(index=False, store=False, description="Model for API keys")
