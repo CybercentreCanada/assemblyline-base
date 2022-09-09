@@ -5,10 +5,10 @@ Classification = forge.get_classification()
 ACL = {"R", "W", "E"}
 SCOPES = {"r", "w", "rw"}
 USER_TYPES = {
-    "admin",               # Perform administrative tasks
+    "admin",               # Perform administrative tasks and has all following roles
     "signature_manager",   # Manage signatures and sources
     "signature_importer",  # Save signatures in the system
-    "user",                # Has all task following specific roles
+    "user",                # Has all following task specific roles
     # Task specific roles
     "apikey_access",       # Allow access via API keys
     "obo_access",          # Allow access via On Behalf Off tokens
