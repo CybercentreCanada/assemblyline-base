@@ -32,16 +32,11 @@ USER_TYPES = {
     "safelist_manage",     # Manade (add/delete) safelist items
 }
 USER_TYPE_DEP = {
-    "admin": ["apikey_access", "file_view", "file_download", "alert_view", "alert_manage",
-              "submission_delete", "submission_create", "submission_view", "submission_manage",
-              "submission_replay", "workflow_manage", "safelist_manage", "obo_access",
-              "bundle_download", "search", "replay_manager", "signature_view", "signature_downlaod",
-              "safelist_view", "workflow_view", "signature_manager", "signature_importer", "user"],
-    "user": ["apikey_access", "file_view", "file_download", "alert_view", "alert_manage",
-             "submission_delete", "submission_create", "submission_view", "submission_manage",
+    "admin": ["signature_manager", "signature_importer", "user"],
+    "user": ["apikey_access", "file_view", "file_download", "alert_manage",
+             "submission_delete", "submission_create", "submission_manage",
              "submission_replay", "workflow_manage", "safelist_manage", "obo_access",
-             "bundle_download", "search", "replay_manager", "signature_view", "signature_downlaod",
-             "safelist_view", "workflow_view"],
+             "bundle_download", "search", "replay_manager", "signature_downlaod"],
     "search": ["alert_view", "submission_view", "signature_view", "safelist_view", "workflow_view"],
 }
 
