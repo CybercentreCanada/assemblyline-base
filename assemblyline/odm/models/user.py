@@ -24,7 +24,7 @@ USER_TYPES = {
     "submission_create",   # Create a submission in the system
     "submission_view",     # View submission's results
     "submission_manage",   # Set user verdict on submissions
-    "replay",   # Allow submission to be replayed on another server
+    "replay",              # Allow submission to be replayed on another server
     "replay_manager",      # Manage status of file/submission/alerts during the replay process
     "workflow_view",       # View workflows
     "workflow_manage",     # Manage (add/delete) workflows
