@@ -503,6 +503,19 @@ DEFAULT_REDIS = {
 }
 
 
+@odm.model(index=False, store=False, description="A configuration for mounting existing volumes to a container")
+class Mount(odm.Model):
+    name: str = odm.Keyword(description="Name of volume mount")
+    path: str = odm.Text(description="Target mount path")
+    read_only: bool = odm.Boolean(default=True, description="Should this be mounted as read-only?")
+    privileged_only: bool = odm.Boolean(default=False,
+                                        description="Should this mount only be available for privileged services?")
+
+    # ConfigMap-specific
+    config_map: str = odm.Optional(odm.Keyword(description="Name of ConfigMap (Kubernetes only)"))
+    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only)")
+
+
 @odm.model(index=False, store=False,
            description="A set of default values to be used running a service when no other value is set")
 class ScalerServiceDefaults(odm.Model):
@@ -512,6 +525,8 @@ class ScalerServiceDefaults(odm.Model):
     min_instances: int = odm.Integer(description="The minimum number of service instances to be running")
     environment: List[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[],
                                                       description="Environment variables to pass onto services")
+    mounts: List[Mount] = odm.List(odm.Compound(Mount), default=[],
+                                   description="A list of volume mounts for every service")
 
 
 @odm.model(index=False, store=False)
@@ -520,7 +535,7 @@ class Scaler(odm.Model):
                                                            description="Defaults Scaler will assign to a service.")
     cpu_overallocation: float = odm.Float(description="Percentage of CPU overallocation")
     memory_overallocation: float = odm.Float(description="Percentage of RAM overallocation")
-    overallocation_node_limit = odm.optional(odm.integer(description="If the system has this many nodes or "
+    overallocation_node_limit = odm.Optional(odm.Integer(description="If the system has this many nodes or "
                                                                      "more overallocation is ignored"))
     additional_labels: List[str] = odm.Optional(
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
