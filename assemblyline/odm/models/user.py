@@ -57,7 +57,7 @@ USER_TYPE_DEP = {
 
 def load_roles(types, curRoles):
     # Check if we have current roles first
-    if curRoles is not None:
+    if curRoles:
         return curRoles
 
     # Otherwise load the roles from the user type
