@@ -9,6 +9,8 @@ USER_TYPES = [
     "user",                # Normal user of the system
     "signature_manager",   # Super user that also has access to roles for managing signatures in the system
     "signature_importer",  # Has access to roles for importing signatures in the system
+    "viewer",              # User that can only view the data
+    "submitter",           # User that can only start submissions
     "custom",              # Has custom roles selected
 ]
 
@@ -51,7 +53,23 @@ USER_TYPE_DEP = {
     "signature_manager": USER_ROLES_BASIC.union({
         "signature_manage"
     }),
-    "user": USER_ROLES_BASIC
+    "user": USER_ROLES_BASIC,
+    "viewer": {
+        "alert_view",
+        "apikey_access",
+        "file_detail",
+        "obo_access",
+        "safelist_view",
+        "signature_view",
+        "submission_view",
+        "workflow_view",
+    },
+    "submitter": {
+        "apikey_access",
+        "obo_access",
+        "submission_create",
+        "replay_trigger",
+    }
 }
 
 
