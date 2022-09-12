@@ -5,41 +5,54 @@ Classification = forge.get_classification()
 ACL = {"R", "W", "E"}
 SCOPES = {"r", "w", "rw"}
 USER_TYPES = {
-    "admin",               # Perform administrative tasks and has all following roles
-    "signature_manager",   # Manage signatures and sources
-    "signature_importer",  # Save signatures in the system
-    "user",                # Has all following task specific roles
-    # Task specific roles
-    "apikey_access",       # Allow access via API keys
-    "obo_access",          # Allow access via On Behalf Off tokens
-    "bundle_download",     # Create bundle of a submission
-    "search",              # Allowed to use the search API
-    "file_view",           # View files in the file viewer
-    "file_download",       # Download files from the system
-    "alert_view",          # View alerts in the system
+    "admin",               # Perform administartive task and has access to all roles
+    "signature_manager",   # Super user that also has access to roles for managing signatures in the system
+    "signature_importer",  # Has access to roles for importing signatures in the system
+    "user",                # Normal user of the system
+    "custom",              # Has custom roles selected
+}
+
+USER_ROLES_BASIC = {
     "alert_manage",        # Modify labels, priority, status, verdict or owner of alerts
-    "signature_view",      # View signatures
-    "signature_download",  # Download signatures from the system
-    "submission_delete",   # Delete submission from the system
-    "submission_create",   # Create a submission in the system
-    "submission_view",     # View submission's results
-    "submission_manage",   # Set user verdict on submissions
-    "replay",              # Allow submission to be replayed on another server
-    "replay_manage",       # Manage status of file/submission/alerts during the replay process
-    "workflow_view",       # View workflows
-    "workflow_manage",     # Manage (add/delete) workflows
+    "alert_view",          # View alerts in the system
+    "apikey_access",       # Allow access via API keys
+    "bundle_download",     # Create bundle of a submission
+    "file_detail",         # View files in the file viewer
+    "file_download",       # Download files from the system
+    "obo_access",          # Allow access via On Behalf Off tokens
+    "replay_trigger",      # Allow submission to be replayed on another server
     "safelist_view",       # View safelist items
     "safelist_manage",     # Manade (add/delete) safelist items
+    "signature_download",  # Download signatures from the system
+    "signature_view",      # View signatures
+    "submission_create",   # Create a submission in the system
+    "submission_delete",   # Delete submission from the system
+    "submission_manage",   # Set user verdict on submissions
+    "submission_view",     # View submission's results
+    "workflow_manage",     # Manage (add/delete) workflows
+    "workflow_view",       # View workflows
 }
+
+USER_ROLES = USER_ROLES_BASIC.union({
+    "administration",      # Perform administrative tasks
+    "replay_system",       # Manage status of file/submission/alerts during the replay process
+    "signature_import",    # Import signatures in the system
+    "signature_manage",    # Manage signatures sources in the system
+})
+
 USER_TYPE_DEP = {
-    "admin": {"signature_manager", "signature_importer", "user"},
-    "user": {"apikey_access", "file_view", "file_download", "alert_manage",
-             "submission_delete", "submission_create", "submission_manage",
-             "replay", "workflow_manage", "safelist_manage", "obo_access",
-             "bundle_download", "search", "replay_manage", "signature_download"},
-    "search": {"alert_view", "submission_view", "signature_view", "safelist_view", "workflow_view"},
+    "admin": USER_ROLES,
+    "signature_importer": {
+        "safelist_manage",
+        "signature_download",
+        "signature_import",
+        "signature_view"
+    },
+    "signature_manager": USER_ROLES_BASIC.union({
+        "signature_manage"
+    }),
+    "user": USER_ROLES_BASIC
 }
-USER_TYPE_DEP_LOOKUP_ORDER = ["admin", "user", "search"]
 
 
 @odm.model(index=False, store=False, description="Model for API keys")
@@ -82,6 +95,7 @@ class User(odm.Model):
     password = odm.Keyword(index=False, store=False, description="BCrypt hash of the user's password")
     submission_quota = odm.Integer(default=5, store=False, description="Maximum number of concurrent submissions")
     type = odm.List(odm.Enum(values=USER_TYPES), default=['user'], description="Type of user")
+    roles = odm.List(odm.Enum(values=USER_ROLES), default=[], description="Default roles for user")
     security_tokens = odm.Mapping(odm.Keyword(), index=False, store=False, default={},
                                   description="Map of security tokens")
     uname = odm.Keyword(copyto="__text__", description="Username")
