@@ -55,12 +55,18 @@ USER_TYPE_DEP = {
 }
 
 
-def load_roles(types):
+def load_roles(types, curRoles):
+    # Check if we have current roles first
+    if curRoles is not None:
+        return curRoles
+
+    # Otherwise load the roles from the user type
     roles = set({})
     for user_type in USER_TYPE_DEP.keys():
         if user_type in types:
             roles = roles.union(USER_TYPE_DEP[user_type])
 
+    # Return roles as a list
     return list(roles)
 
 
