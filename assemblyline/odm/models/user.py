@@ -55,6 +55,15 @@ USER_TYPE_DEP = {
 }
 
 
+def load_roles(types):
+    roles = set({})
+    for user_type in USER_TYPE_DEP.keys():
+        if user_type in types:
+            roles = roles.union(USER_TYPE_DEP[user_type])
+
+    return list(roles)
+
+
 @odm.model(index=False, store=False, description="Model for API keys")
 class ApiKey(odm.Model):
     acl = odm.List(odm.Enum(values=ACL), description="Access Control List for the API key")
