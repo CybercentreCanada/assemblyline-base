@@ -25,7 +25,7 @@ USER_TYPES = {
     "submission_view",     # View submission's results
     "submission_manage",   # Set user verdict on submissions
     "replay",              # Allow submission to be replayed on another server
-    "replay_manager",      # Manage status of file/submission/alerts during the replay process
+    "replay_manage",       # Manage status of file/submission/alerts during the replay process
     "workflow_view",       # View workflows
     "workflow_manage",     # Manage (add/delete) workflows
     "safelist_view",       # View safelist items
@@ -36,7 +36,7 @@ USER_TYPE_DEP = {
     "user": {"apikey_access", "file_view", "file_download", "alert_manage",
              "submission_delete", "submission_create", "submission_manage",
              "replay", "workflow_manage", "safelist_manage", "obo_access",
-             "bundle_download", "search", "replay_manager", "signature_download"},
+             "bundle_download", "search", "replay_manage", "signature_download"},
     "search": {"alert_view", "submission_view", "signature_view", "safelist_view", "workflow_view"},
 }
 USER_TYPE_DEP_LOOKUP_ORDER = ["admin", "user", "search"]
