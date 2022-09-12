@@ -4,13 +4,13 @@ Classification = forge.get_classification()
 
 ACL = {"R", "W", "E"}
 SCOPES = {"r", "w", "rw"}
-USER_TYPES = {
+USER_TYPES = [
     "admin",               # Perform administartive task and has access to all roles
+    "user",                # Normal user of the system
     "signature_manager",   # Super user that also has access to roles for managing signatures in the system
     "signature_importer",  # Has access to roles for importing signatures in the system
-    "user",                # Normal user of the system
     "custom",              # Has custom roles selected
-}
+]
 
 USER_ROLES_BASIC = {
     "alert_manage",        # Modify labels, priority, status, verdict or owner of alerts
