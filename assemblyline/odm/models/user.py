@@ -21,6 +21,7 @@ USER_ROLES_BASIC = {
     "bundle_download",     # Create bundle of a submission
     "file_detail",         # View files in the file viewer
     "file_download",       # Download files from the system
+    "heuristic_view",      # View heuristics of the system
     "obo_access",          # Allow access via On Behalf Off tokens
     "replay_trigger",      # Allow submission to be replayed on another server
     "safelist_view",       # View safelist items
@@ -59,6 +60,7 @@ USER_TYPE_DEP = {
         "apikey_access",
         "file_detail",
         "obo_access",
+        "heuristic_view",
         "safelist_view",
         "signature_view",
         "submission_view",
