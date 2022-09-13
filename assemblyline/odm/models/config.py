@@ -3,7 +3,7 @@ from typing import Dict, List
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
 
-OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role']
+OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
