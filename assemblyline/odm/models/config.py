@@ -3,7 +3,7 @@ from typing import Dict, List
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
 
-OAUTH_AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
+AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -83,6 +83,14 @@ DEFAULT_SIGNUP = {
 }
 
 
+@odm.model(index=False, store=False)
+class AutoProperty(odm.Model):
+    field: str = odm.Keyword(description="Field to apply `pattern` to")
+    pattern: str = odm.Keyword(description="Regex pattern for auto-prop assignment")
+    type: str = odm.Enum(AUTO_PROPERTY_TYPE, description="Type of property assignment on pattern match")
+    value: str = odm.Keyword(description="Assigned property value")
+
+
 @odm.model(index=False, store=False, description="LDAP Configuration")
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean(description="Should LDAP be enabled or not?")
@@ -91,6 +99,8 @@ class LDAP(odm.Model):
     bind_pass: str = odm.Optional(odm.Keyword(), description="Password used to query the LDAP server")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
     auto_sync: bool = odm.Boolean(description="Should we automatically sync with LDAP server on each login?")
+    auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
+                                                   description="Automatic role and classification assignments")
     base: str = odm.Keyword(description="Base DN for the users")
     classification_mappings: Dict[str, str] = odm.Any(description="Classification mapping")
     email_field: str = odm.Keyword(description="Name of the field containing the email address")
@@ -110,23 +120,25 @@ class LDAP(odm.Model):
 
 DEFAULT_LDAP = {
     "enabled": False,
-    "admin_dn": None,
     "bind_user": None,
     "bind_pass": None,
     "auto_create": True,
     "auto_sync": True,
+    "auto_properties": [],
     "base": "ou=people,dc=assemblyline,dc=local",
-    "classification_mappings": {},
     "email_field": "mail",
     "group_lookup_query": "(&(objectClass=Group)(member=%s))",
     "image_field": "jpegPhoto",
     "image_format": "jpeg",
     "name_field": "cn",
-    "signature_importer_dn": None,
-    "signature_manager_dn": None,
     "uid_field": "uid",
     "uri": "ldap://localhost:389",
 
+    # Deprecated
+    "admin_dn": None,
+    "classification_mappings": {},
+    "signature_importer_dn": None,
+    "signature_manager_dn": None,
 }
 
 
@@ -150,14 +162,6 @@ DEFAULT_INTERNAL = {
 }
 
 
-@odm.model(index=False, store=False)
-class OAuthAutoProperty(odm.Model):
-    field: str = odm.Keyword(description="Field to apply `pattern` to")
-    pattern: str = odm.Keyword(description="Regex pattern for auto-prop assignment")
-    type: str = odm.Enum(OAUTH_AUTO_PROPERTY_TYPE, description="Type of property assignment on pattern match")
-    value: str = odm.Keyword(description="Assigned property value")
-
-
 @odm.model(index=False, store=False, description="App provider")
 class AppProvider(odm.Model):
     access_token_url: str = odm.Keyword(description="URL used to get the access token")
@@ -173,8 +177,8 @@ class AppProvider(odm.Model):
 class OAuthProvider(odm.Model):
     auto_create: str = odm.Boolean(default=True, description="Auto-create users if they are missing")
     auto_sync: str = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
-    auto_properties: List[OAuthAutoProperty] = odm.List(odm.Compound(OAuthAutoProperty), default=[],
-                                                        description="Automatic role and classification assignments")
+    auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
+                                                   description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
     uid_randomize: str = odm.Boolean(default=False,
                                      description="Should we generate a random username for the authenticated user?")
