@@ -4,7 +4,90 @@ Classification = forge.get_classification()
 
 ACL = {"R", "W", "E"}
 SCOPES = {"r", "w", "rw"}
-USER_TYPES = {"admin", "signature_manager", "signature_importer", "user"}
+USER_TYPES = [
+    "admin",               # Perform administartive task and has access to all roles
+    "user",                # Normal user of the system
+    "signature_manager",   # Super user that also has access to roles for managing signatures in the system
+    "signature_importer",  # Has access to roles for importing signatures in the system
+    "viewer",              # User that can only view the data
+    "submitter",           # User that can only start submissions
+    "custom",              # Has custom roles selected
+]
+
+USER_ROLES_BASIC = {
+    "alert_manage",        # Modify labels, priority, status, verdict or owner of alerts
+    "alert_view",          # View alerts in the system
+    "apikey_access",       # Allow access via API keys
+    "bundle_download",     # Create bundle of a submission
+    "file_detail",         # View files in the file viewer
+    "file_download",       # Download files from the system
+    "heuristic_view",      # View heuristics of the system
+    "obo_access",          # Allow access via On Behalf Off tokens
+    "replay_trigger",      # Allow submission to be replayed on another server
+    "safelist_view",       # View safelist items
+    "safelist_manage",     # Manade (add/delete) safelist items
+    "signature_download",  # Download signatures from the system
+    "signature_view",      # View signatures
+    "submission_create",   # Create a submission in the system
+    "submission_delete",   # Delete submission from the system
+    "submission_manage",   # Set user verdict on submissions
+    "submission_view",     # View submission's results
+    "workflow_manage",     # Manage (add/delete) workflows
+    "workflow_view",       # View workflows
+}
+
+USER_ROLES = USER_ROLES_BASIC.union({
+    "administration",      # Perform administrative tasks
+    "replay_system",       # Manage status of file/submission/alerts during the replay process
+    "signature_import",    # Import signatures in the system
+    "signature_manage",    # Manage signatures sources in the system
+})
+
+USER_TYPE_DEP = {
+    "admin": USER_ROLES,
+    "signature_importer": {
+        "safelist_manage",
+        "signature_download",
+        "signature_import",
+        "signature_view"
+    },
+    "signature_manager": USER_ROLES_BASIC.union({
+        "signature_manage"
+    }),
+    "user": USER_ROLES_BASIC,
+    "viewer": {
+        "alert_view",
+        "apikey_access",
+        "file_detail",
+        "obo_access",
+        "heuristic_view",
+        "safelist_view",
+        "signature_view",
+        "submission_view",
+        "workflow_view",
+    },
+    "submitter": {
+        "apikey_access",
+        "obo_access",
+        "submission_create",
+        "replay_trigger",
+    }
+}
+
+
+def load_roles(types, curRoles):
+    # Check if we have current roles first
+    if curRoles:
+        return curRoles
+
+    # Otherwise load the roles from the user type
+    roles = set({})
+    for user_type in USER_TYPE_DEP.keys():
+        if user_type in types:
+            roles = roles.union(USER_TYPE_DEP[user_type])
+
+    # Return roles as a list
+    return list(roles)
 
 
 @odm.model(index=False, store=False, description="Model for API keys")
@@ -47,6 +130,7 @@ class User(odm.Model):
     password = odm.Keyword(index=False, store=False, description="BCrypt hash of the user's password")
     submission_quota = odm.Integer(default=5, store=False, description="Maximum number of concurrent submissions")
     type = odm.List(odm.Enum(values=USER_TYPES), default=['user'], description="Type of user")
+    roles = odm.List(odm.Enum(values=USER_ROLES), default=[], description="Default roles for user")
     security_tokens = odm.Mapping(odm.Keyword(), index=False, store=False, default={},
                                   description="Map of security tokens")
     uname = odm.Keyword(copyto="__text__", description="Username")
