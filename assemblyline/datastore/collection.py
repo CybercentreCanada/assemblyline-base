@@ -842,7 +842,10 @@ class ESCollection(Generic[ModelType]):
                     log.error(f'MGet returned multiple documents for id: {row["_id"]}')
 
             if key_list and self.archive_access:
-                for row in self.scan_with_retry(query={"ids": {"values": key_list}}, index=f"{self.name}-*"):
+                result = self.with_retries(self.datastore.client.search,
+                                           index=f"{self.name}-*", query={"ids": {"values": key_list}},
+                                           size=len(key_list), collapse={"field": "id"})
+                for row in result['hits']['hits']:
                     try:
                         key_list.remove(row['_id'])
                         add_to_output(row['_source'], row['_id'])
