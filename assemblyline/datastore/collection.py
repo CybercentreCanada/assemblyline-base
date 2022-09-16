@@ -241,7 +241,7 @@ class ESCollection(Generic[ModelType]):
 
         # Generate the point in time
         pit = {'id': self.with_retries(self.datastore.client.open_point_in_time,
-                                       index='file', keep_alive=keep_alive)['id'],
+                                       index=index, keep_alive=keep_alive)['id'],
                'keep_alive': keep_alive}
 
         # Add tie_breaker sort using _shard_doc ID
@@ -1352,7 +1352,7 @@ class ESCollection(Generic[ModelType]):
             else:
                 # Create a new deep paging ID
                 pit = {'id': self.with_retries(self.datastore.client.open_point_in_time,
-                                               index='file', keep_alive=self.KEEP_ALIVE)['id'],
+                                               index=index, keep_alive=self.KEEP_ALIVE)['id'],
                        'keep_alive': self.KEEP_ALIVE}
 
             # Completely disable hit tracking to speed things up

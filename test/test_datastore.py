@@ -283,12 +283,10 @@ def _test_group_search(c: ESCollection):
 def _test_deepsearch(c: ESCollection):
     res = []
     deep_paging_id = "*"
-    while True:
+    while deep_paging_id:
         s_data = c.search('*:*', rows=5, deep_paging_id=deep_paging_id)
         res.extend(s_data['items'])
-        if len(res) == s_data['total'] or len(s_data['items']) == 0:
-            break
-        deep_paging_id = s_data['next_deep_paging_id']
+        deep_paging_id = s_data.get('next_deep_paging_id', None)
 
     assert len(res) == c.search('*:*', sort="id asc")['total']
     for item in res:
