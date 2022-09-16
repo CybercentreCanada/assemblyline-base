@@ -394,7 +394,7 @@ def zip_ident(path: str, fallback: str) -> str:
     android_dex = False
 
     for file_name in file_list:
-        if file_name[:8] == "META-INF" and file_name[9:] == "MANIFEST.MF":
+        if file_name.startswith("META-INF/"):
             is_jar = True
         elif file_name == "AndroidManifest.xml":
             android_manifest = True
