@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import re
@@ -17,8 +18,6 @@ from typing import Dict, Any, Union, TypeVar, Generic
 
 import elasticsearch
 import elasticsearch.helpers
-
-from elasticsearch.helpers.errors import ScanError
 
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
@@ -130,7 +129,7 @@ class ESCollection(Generic[ModelType]):
     RETRY_NORMAL = 1
     RETRY_NONE = 0
     RETRY_INFINITY = -1
-    SCROLL_TIMEOUT = "5m"
+    KEEP_ALIVE = "5m"
     UPDATE_SET = "SET"
     UPDATE_INC = "INC"
     UPDATE_DEC = "DEC"
@@ -233,47 +232,36 @@ class ESCollection(Generic[ModelType]):
         else:
             return [self.index_name]
 
-    def scan_with_retry(self, query, sort=None, source=None, index=None, scroll="5m", size=1000, request_timeout=None):
+    def scan_with_search_after(self, query, sort=None, source=None, index=None, keep_alive=KEEP_ALIVE, size=1000,
+                               request_timeout=None):
         if index is None:
             index = self.index_name
+        if not sort:
+            sort = []
+
+        # Generate the point in time
+        pit = {'id': self.with_retries(self.datastore.client.open_point_in_time,
+                                       index=index, keep_alive=keep_alive)['id'],
+               'keep_alive': keep_alive}
+
+        # Add tie_breaker sort using _shard_doc ID
+        sort.append({"_shard_doc": "desc"})
 
         # initial search
-        resp = self.with_retries(self.datastore.client.search, index=index, query=query, scroll=scroll,
+        resp = self.with_retries(self.datastore.client.search, query=query, pit=pit,
                                  size=size, request_timeout=request_timeout, sort=sort, _source=source)
-        scroll_id = resp.get("_scroll_id")
-
         try:
-            while scroll_id and resp["hits"]["hits"]:
+            while resp["hits"]["hits"]:
+                search_after = resp['hits']['hits'][-1]['sort']
                 for hit in resp["hits"]["hits"]:
                     yield hit
 
-                # Default to 0 if the value isn't included in the response
-                shards_successful = resp["_shards"].get("successful", 0)
-                shards_skipped = resp["_shards"].get("skipped", 0)
-                shards_total = resp["_shards"].get("total", 0)
-
-                # check if we have any errors
-                if (shards_successful + shards_skipped) < shards_total:
-                    shards_message = "Scroll request has only succeeded on %d (+%d skipped) shards out of %d."
-                    raise ScanError(
-                        scroll_id,
-                        shards_message
-                        % (
-                            shards_successful,
-                            shards_skipped,
-                            shards_total,
-                        ),
-                    )
-                resp = self.with_retries(self.datastore.client.scroll, scroll_id=scroll_id, scroll=scroll)
-                scroll_id = resp.get("_scroll_id")
+                resp = self.with_retries(self.datastore.client.search, query=query, pit=pit,
+                                         size=size, request_timeout=request_timeout, sort=sort, _source=source,
+                                         search_after=search_after)
 
         finally:
-            if scroll_id:
-                resp = self.with_retries(self.datastore.client.clear_scroll, scroll_id=[scroll_id],
-                                         ignore=(404,))
-                if not resp.get('succeeded', False):
-                    log.warning(f"Could not clear scroll ID {scroll_id}, there is potential "
-                                "memory leak in you Elastic cluster...")
+            self.with_retries(self.datastore.client.close_point_in_time, id=pit['id'], ignore=(404,))
 
     def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
         """
@@ -842,7 +830,10 @@ class ESCollection(Generic[ModelType]):
                     log.error(f'MGet returned multiple documents for id: {row["_id"]}')
 
             if key_list and self.archive_access:
-                for row in self.scan_with_retry(query={"ids": {"values": key_list}}, index=f"{self.name}-*"):
+                result = self.with_retries(self.datastore.client.search,
+                                           index=f"{self.name}-*", query={"ids": {"values": key_list}},
+                                           size=len(key_list), collapse={"field": "id"})
+                for row in result['hits']['hits']:
                     try:
                         key_list.remove(row['_id'])
                         add_to_output(row['_source'], row['_id'])
@@ -1344,10 +1335,30 @@ class ESCollection(Generic[ModelType]):
         if args is None:
             args = []
 
+        # Initialize values
+        pit = None
+        search_after = None
         params = {}
+
+        # If there is deep_paging
         if deep_paging_id is not None:
-            params = {'scroll': self.SCROLL_TIMEOUT}
-        elif track_total_hits:
+            # If we have a properly formatted deep paging ID
+            if "," in deep_paging_id:
+                # Parse deep paging ID for pit_id and search_after
+                pit_id, search_after_b64 = deep_paging_id.split(',')
+                pit = {'id': pit_id, 'keep_alive': self.KEEP_ALIVE}
+                search_after = json.loads(base64.b64decode(search_after_b64))
+
+            else:
+                # Create a new deep paging ID
+                pit = {'id': self.with_retries(self.datastore.client.open_point_in_time,
+                                               index=index, keep_alive=self.KEEP_ALIVE)['id'],
+                       'keep_alive': self.KEEP_ALIVE}
+
+            # Completely disable hit tracking to speed things up
+            params = {'track_total_hits': False}
+
+        if track_total_hits:
             params['track_total_hits'] = track_total_hits
 
         parsed_values = deepcopy(self.DEFAULT_SEARCH_VALUES)
@@ -1470,9 +1481,13 @@ class ESCollection(Generic[ModelType]):
             }
 
         try:
-            if deep_paging_id is not None and not deep_paging_id == "*":
-                # Get the next page
-                result = self.with_retries(self.datastore.client.scroll, scroll_id=deep_paging_id, params=params)
+            # If we are using a Point in Time
+            if pit:
+                # Add a tie breaker sort field
+                query_body['sort'].append({"_shard_doc": "desc"})
+                # Get the next result page for PIT + Search After
+                result = self.with_retries(self.datastore.client.search, params=params, pit=pit,
+                                           search_after=search_after, **query_body)
             else:
                 # Run the query
                 result = self.with_retries(self.datastore.client.search, index=index,
@@ -1571,23 +1586,26 @@ class ESCollection(Generic[ModelType]):
         ret_data = {
             "offset": int(offset),
             "rows": int(rows),
-            "total": int(result['hits']['total']['value']),
+            "total": result['hits'].get('total', {}).get('value', None),
             "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
         }
 
-        new_deep_paging_id = result.get("_scroll_id", None)
+        # If we where tracking total, change it into an INT
+        if ret_data['total'] is not None:
+            ret_data['total'] = int(ret_data['total'])
 
-        # Check if the scroll is finished and close it
-        if deep_paging_id is not None and new_deep_paging_id is None:
-            self.with_retries(self.datastore.client.clear_scroll, scroll_id=[deep_paging_id], ignore=(404,))
+        # Get the currently used Point in Time if it exists
+        pit_id = result.get("pit_id", None)
 
-        # Check if we can tell from inspection that we have finished the scroll
-        if new_deep_paging_id is not None and len(ret_data["items"]) < ret_data["rows"]:
-            self.with_retries(self.datastore.client.clear_scroll, scroll_id=[new_deep_paging_id], ignore=(404,))
-            new_deep_paging_id = None
-
-        if new_deep_paging_id is not None:
-            ret_data['next_deep_paging_id'] = new_deep_paging_id
+        # Check if deep paging is over
+        if pit_id is not None and len(ret_data["items"]) < ret_data["rows"]:
+            # Close the Point in Time
+            self.with_retries(self.datastore.client.close_point_in_time, id=pit_id, ignore=(404,))
+        elif pit_id is not None and len(ret_data["items"]) > 0:
+            # We have a PIT ID and we don't seem to have finished looping throught the data
+            # create the next deep paging id for the user to use.
+            search_after = base64.b64encode(json.dumps(result['hits']['hits'][-1]['sort']).encode()).decode()
+            ret_data['next_deep_paging_id'] = f"{pit_id},{search_after}"
 
         return ret_data
 
@@ -1605,13 +1623,13 @@ class ESCollection(Generic[ModelType]):
         >>>     fl[x]: value
         >>> }
 
-        :param use_archive: Query also the archive
-        :param as_obj: Return objects instead of dictionaries
         :param query: lucene query to search for
         :param fl: list of fields to return from the search
         :param filters: additional queries to run on the original query to reduce the scope
         :param access_control: access control parameters to run the query with
-        :param buffer_size: number of items to buffer with each search call
+        :param item_buffer_size: number of items to buffer with each search call
+        :param as_obj: Return objects instead of dictionaries
+        :param use_archive: Query also the archive
         :return: a generator of dictionary of field list results
         """
         if item_buffer_size > 2000 or item_buffer_size < 50:
@@ -1646,8 +1664,8 @@ class ESCollection(Generic[ModelType]):
         sort = parse_sort(self.datastore.DEFAULT_SORT)
         source = fl or list(self.stored_fields.keys())
 
-        for value in self.scan_with_retry(query=query_expression, sort=sort, source=source,
-                                          index=index, size=item_buffer_size):
+        for value in self.scan_with_search_after(query=query_expression, sort=sort, source=source,
+                                                 index=index, size=item_buffer_size):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl, as_obj=as_obj)
 
