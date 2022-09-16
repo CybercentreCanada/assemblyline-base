@@ -85,7 +85,7 @@ def parse_sort(sort, ret_list=True):
     """
     This function tries to do two things at once:
         - convert AL sort syntax to elastic,
-        - convert any sorts on the key _id to _id_
+        - convert any sorts on the key _id to id
     """
     if sort is None:
         return sort
