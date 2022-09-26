@@ -4,4 +4,4 @@ retrying
 codecov
 pytest-mock
 pyftpdlib
-pyopenssl
+pyopenssl==22.0.0
