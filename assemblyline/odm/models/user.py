@@ -5,111 +5,111 @@ from assemblyline.common.str_utils import StringTable
 Classification = forge.get_classification()
 
 TYPES = StringTable('TYPES', [
-    ('ADMIN', "admin"),
-    ('USER', "user"),
-    ('SIGNATURE_MANAGER', "signature_manager"),
-    ('SIGNATURE_IMPORTER', "signature_importer"),
-    ('VIEWER', "viewer"),
-    ('SUBMITTER', "submitter"),
-    ('CUSTOM', "custom")
+    ("admin", 0),
+    ("user", 1),
+    ("signature_manager", 2),
+    ("signature_importer", 3),
+    ("viewer", 4),
+    ("submitter", 5),
+    ("custom", 6)
 ])
 
 ROLES = StringTable('ROLES', [
-    ("ALERT_MANAGE", "alert_manage"),
-    ("ALERT_VIEW", "alert_view"),
-    ("APIKEY_ACCESS", "apikey_access"),
-    ("BUNDLE_DOWNLOAD", "bundle_download"),
-    ("FILE_DETAIL", "file_detail"),
-    ("FILE_DOWNLOAD", "file_download"),
-    ("HEURISTIC_VIEW", "heuristic_view"),
-    ("OBO_ACCESS", "obo_access"),
-    ("REPLAY_TRIGGER", "replay_trigger"),
-    ("SAFELIST_VIEW", "safelist_view"),
-    ("SAFELIST_MANAGE", "safelist_manage"),
-    ("SIGNATURE_DOWNLOAD", "signature_download"),
-    ("SIGNATURE_VIEW", "signature_view"),
-    ("SUBMISSION_CREATE", "submission_create"),
-    ("SUBMISSION_DELETE", "submission_delete"),
-    ("SUBMISSION_MANAGE", "submission_manage"),
-    ("SUBMISSION_VIEW", "submission_view"),
-    ("WORKFLOW_MANAGE", "workflow_manage"),
-    ("WORKFLOW_VIEW", "workflow_view"),
-    ("ADMINISTRATION", "administration"),
-    ("REPLAY_SYSTEM", "replay_system"),
-    ("SIGNATURE_IMPORT", "signature_import"),
-    ("SIGNATURE_MANAGE", "signature_manage"),
+    ("alert_manage", 0),
+    ("alert_view", 1),
+    ("apikey_access", 2),
+    ("bundle_download", 3),
+    ("file_detail", 4),
+    ("file_download", 5),
+    ("heuristic_view", 6),
+    ("obo_access", 7),
+    ("replay_trigger", 8),
+    ("safelist_view", 9),
+    ("safelist_manage", 10),
+    ("signature_download", 11),
+    ("signature_view", 12),
+    ("submission_create", 13),
+    ("submission_delete", 14),
+    ("submission_manage", 15),
+    ("submission_view", 16),
+    ("workflow_manage", 17),
+    ("workflow_view", 18),
+    ("administration", 19),
+    ("replay_system", 20),
+    ("signature_import", 21),
+    ("signature_manage", 22),
 ])
 
 
 ACL = {"R", "W", "E"}
 SCOPES = {"r", "w", "rw"}
 USER_TYPES = [
-    TYPES.ADMIN,               # Perform administartive task and has access to all roles
-    TYPES.USER,                # Normal user of the system
-    TYPES.SIGNATURE_MANAGER,   # Super user that also has access to roles for managing signatures in the system
-    TYPES.SIGNATURE_IMPORTER,  # Has access to roles for importing signatures in the system
-    TYPES.VIEWER,              # User that can only view the data
-    TYPES.SUBMITTER,           # User that can only start submissions
-    TYPES.CUSTOM,              # Has custom roles selected
+    TYPES.admin,               # Perform administartive task and has access to all roles
+    TYPES.user,                # Normal user of the system
+    TYPES.signature_manager,   # Super user that also has access to roles for managing signatures in the system
+    TYPES.signature_importer,  # Has access to roles for importing signatures in the system
+    TYPES.viewer,              # User that can only view the data
+    TYPES.submitter,           # User that can only start submissions
+    TYPES.custom,              # Has custom roles selected
 ]
 
 USER_ROLES_BASIC = {
-    ROLES.ALERT_MANAGE,        # Modify labels, priority, status, verdict or owner of alerts
-    ROLES.ALERT_VIEW,          # View alerts in the system
-    ROLES.APIKEY_ACCESS,       # Allow access via API keys
-    ROLES.BUNDLE_DOWNLOAD,     # Create bundle of a submission
-    ROLES.FILE_DETAIL,         # View files in the file viewer
-    ROLES.FILE_DOWNLOAD,       # Download files from the system
-    ROLES.HEURISTIC_VIEW,      # View heuristics of the system
-    ROLES.OBO_ACCESS,          # Allow access via On Behalf Off tokens
-    ROLES.REPLAY_TRIGGER,      # Allow submission to be replayed on another server
-    ROLES.SAFELIST_VIEW,       # View safelist items
-    ROLES.SAFELIST_MANAGE,     # Manade (add/delete) safelist items
-    ROLES.SIGNATURE_DOWNLOAD,  # Download signatures from the system
-    ROLES.SIGNATURE_VIEW,      # View signatures
-    ROLES.SUBMISSION_CREATE,   # Create a submission in the system
-    ROLES.SUBMISSION_DELETE,   # Delete submission from the system
-    ROLES.SUBMISSION_MANAGE,   # Set user verdict on submissions
-    ROLES.SUBMISSION_VIEW,     # View submission's results
-    ROLES.WORKFLOW_MANAGE,     # Manage (add/delete) workflows
-    ROLES.WORKFLOW_VIEW,       # View workflows
+    ROLES.alert_manage,        # Modify labels, priority, status, verdict or owner of alerts
+    ROLES.alert_view,          # View alerts in the system
+    ROLES.apikey_access,       # Allow access via API keys
+    ROLES.bundle_download,     # Create bundle of a submission
+    ROLES.file_detail,         # View files in the file viewer
+    ROLES.file_download,       # Download files from the system
+    ROLES.heuristic_view,      # View heuristics of the system
+    ROLES.obo_access,          # Allow access via On Behalf Off tokens
+    ROLES.replay_trigger,      # Allow submission to be replayed on another server
+    ROLES.safelist_view,       # View safelist items
+    ROLES.safelist_manage,     # Manade (add/delete) safelist items
+    ROLES.signature_download,  # Download signatures from the system
+    ROLES.signature_view,      # View signatures
+    ROLES.submission_create,   # Create a submission in the system
+    ROLES.submission_delete,   # Delete submission from the system
+    ROLES.submission_manage,   # Set user verdict on submissions
+    ROLES.submission_view,     # View submission's results
+    ROLES.workflow_manage,     # Manage (add/delete) workflows
+    ROLES.workflow_view,       # View workflows
 }
 
 USER_ROLES = USER_ROLES_BASIC.union({
-    ROLES.ADMINISTRATION,      # Perform administrative tasks
-    ROLES.REPLAY_SYSTEM,       # Manage status of file/submission/alerts during the replay process
-    ROLES.SIGNATURE_IMPORT,    # Import signatures in the system
-    ROLES.SIGNATURE_MANAGE,    # Manage signatures sources in the system
+    ROLES.administration,      # Perform administrative tasks
+    ROLES.replay_system,       # Manage status of file/submission/alerts during the replay process
+    ROLES.signature_import,    # Import signatures in the system
+    ROLES.signature_manage,    # Manage signatures sources in the system
 })
 
 USER_TYPE_DEP = {
-    TYPES.ADMIN: USER_ROLES,
-    TYPES.SIGNATURE_IMPORTER: {
-        ROLES.SAFELIST_MANAGE,
-        ROLES.SIGNATURE_DOWNLOAD,
-        ROLES.SIGNATURE_IMPORT,
-        ROLES.SIGNATURE_VIEW
+    TYPES.admin: USER_ROLES,
+    TYPES.signature_importer: {
+        ROLES.safelist_manage,
+        ROLES.signature_download,
+        ROLES.signature_import,
+        ROLES.signature_view
     },
-    TYPES.SIGNATURE_MANAGER: USER_ROLES_BASIC.union({
-        ROLES.SIGNATURE_MANAGE
+    TYPES.signature_manager: USER_ROLES_BASIC.union({
+        ROLES.signature_manage
     }),
-    TYPES.USER: USER_ROLES_BASIC,
-    TYPES.VIEWER: {
-        ROLES.ALERT_VIEW,
-        ROLES.APIKEY_ACCESS,
-        ROLES.FILE_DETAIL,
-        ROLES.OBO_ACCESS,
-        ROLES.HEURISTIC_VIEW,
-        ROLES.SAFELIST_VIEW,
-        ROLES.SIGNATURE_VIEW,
-        ROLES.SUBMISSION_VIEW,
-        ROLES.WORKFLOW_VIEW,
+    TYPES.user: USER_ROLES_BASIC,
+    TYPES.viewer: {
+        ROLES.alert_view,
+        ROLES.apikey_access,
+        ROLES.file_detail,
+        ROLES.obo_access,
+        ROLES.heuristic_view,
+        ROLES.safelist_view,
+        ROLES.signature_view,
+        ROLES.submission_view,
+        ROLES.workflow_view,
     },
-    TYPES.SUBMITTER: {
-        ROLES.APIKEY_ACCESS,
-        ROLES.OBO_ACCESS,
-        ROLES.SUBMISSION_CREATE,
-        ROLES.REPLAY_TRIGGER,
+    TYPES.submitter: {
+        ROLES.apikey_access,
+        ROLES.obo_access,
+        ROLES.submission_create,
+        ROLES.replay_trigger,
     }
 }
 

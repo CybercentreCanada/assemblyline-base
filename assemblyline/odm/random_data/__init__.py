@@ -356,7 +356,7 @@ def create_users(ds, log=None):
         "email": "admin@assemblyline.cyber.gc.ca",
         "password": get_password_hash(admin_pass),
         "uname": "admin",
-        "type": [TYPES.ADMIN]})
+        "type": [TYPES.admin]})
     ds.user.save('admin', user_data)
     ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True}))
     if log:
@@ -368,7 +368,7 @@ def create_users(ds, log=None):
         "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(user_pass)}},
         "password": get_password_hash(user_pass),
         "uname": "user",
-        "type": [TYPES.USER]})
+        "type": [TYPES.user]})
     ds.user.save('user', user_data)
     ds.user_settings.save('user', UserSettings())
     if log:
