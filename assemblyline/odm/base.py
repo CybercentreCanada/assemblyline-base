@@ -786,7 +786,7 @@ class List(_Field):
 
 
 class TypedMapping(dict):
-    def __init__(self, type_p, index, store, sanitizer, **items):
+    def __init__(self, type_p, index, store, sanitizer, ignore_extra_values=False, **items):
         self.index = index
         self.store = store
         self.sanitizer = sanitizer
@@ -794,7 +794,7 @@ class TypedMapping(dict):
         for key in items.keys():
             if not self.sanitizer.match(key):
                 raise KeyError(f"Illegal key: {key}")
-        super().__init__({key: type_p.check(el) for key, el in items.items()})
+        super().__init__({key: type_p.check(el, ignore_extra_values=ignore_extra_values) for key, el in items.items()})
         self.type = type_p
 
     def __setitem__(self, key, item):
@@ -842,7 +842,9 @@ class Mapping(_Field):
         else:
             sanitizer = NOT_INDEXED_SANITIZER
 
-        return TypedMapping(self.child_type, self.index, self.store, sanitizer, **value)
+        ignore_extra_values = kwargs.get('ignore_extra_values', False)
+
+        return TypedMapping(self.child_type, self.index, self.store, sanitizer, ignore_extra_values, **value)
 
     def apply_defaults(self, index, store):
         """Initialize the default settings for the child field."""
