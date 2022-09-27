@@ -17,7 +17,7 @@ from assemblyline.odm.models.ontology import ResultOntology
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service, UpdateSource
 from assemblyline.odm.models.submission import Submission
-from assemblyline.odm.models.user import User
+from assemblyline.odm.models.user import TYPES, User
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
@@ -365,7 +365,7 @@ def create_users(ds, log=None):
         "email": "admin@assemblyline.cyber.gc.ca",
         "password": get_password_hash(admin_pass),
         "uname": "admin",
-        "type": ["admin", "user", "signature_importer"]})
+        "type": [TYPES.admin]})
     ds.user.save('admin', user_data)
     ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True}))
     if log:
@@ -376,7 +376,8 @@ def create_users(ds, log=None):
         "email": "user@assemblyline.cyber.gc.ca",
         "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(user_pass)}},
         "password": get_password_hash(user_pass),
-        "uname": "user"})
+        "uname": "user",
+        "type": [TYPES.user]})
     ds.user.save('user', user_data)
     ds.user_settings.save('user', UserSettings())
     if log:
