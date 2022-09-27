@@ -842,9 +842,10 @@ class Mapping(_Field):
         else:
             sanitizer = NOT_INDEXED_SANITIZER
 
-        ignore_extra_values = kwargs.get('ignore_extra_values', False)
-
-        return TypedMapping(self.child_type, self.index, self.store, sanitizer, ignore_extra_values, **value)
+        return TypedMapping(
+            self.child_type, self.index, self.store, sanitizer, ignore_extra_values=kwargs.get(
+                'ignore_extra_values', False),
+            **value)
 
     def apply_defaults(self, index, store):
         """Initialize the default settings for the child field."""
