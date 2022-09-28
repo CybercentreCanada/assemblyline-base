@@ -25,6 +25,10 @@ class VersionConflictException(Exception):
     pass
 
 
+class UnsupportedElasticVersion(Exception):
+    pass
+
+
 class MultiKeyError(KeyError):
     def __init__(self, keys: Iterable[str], partial_output):
         super().__init__(str(keys))

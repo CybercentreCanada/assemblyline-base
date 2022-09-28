@@ -4,6 +4,7 @@ import os
 import random
 
 from assemblyline.common import forge
+from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION, BUILD_MINOR
@@ -50,6 +51,7 @@ class NullLogger(object):
 def create_alerts(ds, alert_count=50, submission_list=None, log=None):
     for _ in range(alert_count):
         a = random_model_obj(Alert)
+        a.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
         if isinstance(submission_list, list):
             submission = random.choice(submission_list)
             a.file.sha256 = submission.files[0].sha256
@@ -170,6 +172,7 @@ def _create_errors_for_file(ds, f, services_done, log=None):
     e_list = []
     for _ in range(random.randint(0, 1)):
         e = random_model_obj(Error)
+        e.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
 
         # Only one error per service per file
         while e.response.service_name in services_done:
@@ -196,6 +199,7 @@ def _create_results_for_file(ds, fs, f, possible_childs=None, log=None):
     section_depth = random.choice(section_depth_list)
     for _ in range(random.randint(2, 5)):
         r = random_model_obj(Result)
+        r.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
 
         # Only one result per service per file
         while r.response.service_name in services_done:
@@ -231,7 +235,9 @@ def _create_results_for_file(ds, fs, f, possible_childs=None, log=None):
         if random.randint(1, 10) > 8:
             # Generate and empty result
             r_key = f"{r.build_key()}.e"
-            ds.emptyresult.save(r_key, random_model_obj(EmptyResult))
+            er = random_model_obj(EmptyResult)
+            er.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
+            ds.emptyresult.save(r_key, er)
         else:
             r_key = r.build_key()
             # Set random extracted files that are not top level
@@ -257,6 +263,7 @@ def _create_results_for_file(ds, fs, f, possible_childs=None, log=None):
 
                 # Create it's file record
                 supp_file = random_model_obj(File)
+                supp_file.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
                 byte_str = json.dumps(onto).encode('utf-8')
                 sha256 = hashlib.sha256(byte_str).hexdigest()
                 supp_file.sha256 = sha256
@@ -286,12 +293,14 @@ def create_submission(ds, fs, log=None):
 
     first_level_files = []
     s = random_model_obj(Submission)
+    s.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
 
     if log:
         log.info(f"\t{s.sid}")
         log.info("\tGenerating files for submission...")
     for _ in range(random.randint(3, 6)):
         f = random_model_obj(File)
+        f.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
         byte_str = get_random_phrase(wmin=8, wmax=20).encode()
         sha256 = hashlib.sha256(byte_str).hexdigest()
         f.sha256 = sha256

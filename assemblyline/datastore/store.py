@@ -11,7 +11,9 @@ import elasticsearch.helpers
 
 from assemblyline.common import forge
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import DataStoreException
+from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion
+
+from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
 
@@ -46,6 +48,7 @@ class ESStore(object):
         'DATE_END': 'Z||'
     }
     ID = 'id'
+    MIN_ELASTIC_VERSION = '7.10'
 
     def __init__(self, hosts, collection_class=ESCollection, archive_access=True):
         config = forge.get_config()
@@ -67,8 +70,10 @@ class ESStore(object):
         self.client = elasticsearch.Elasticsearch(hosts=hosts,
                                                   max_retries=0,
                                                   request_timeout=TRANSPORT_TIMEOUT)
+        self.es_version = version.parse(self.client.info()['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
+        self._test_elastic_minimum_version()
 
     def __enter__(self):
         return self
@@ -137,10 +142,20 @@ class ESStore(object):
     def date_separator(self):
         return self.DATE_FORMAT['SEPARATOR']
 
+    def _test_elastic_minimum_version(self):
+        if not self.is_supported_version(self.MIN_ELASTIC_VERSION):
+            raise UnsupportedElasticVersion(f"Elastic version {self.es_version} is not supported by Assemblyline. "
+                                            f"Upgrade to Elastic {self.MIN_ELASTIC_VERSION} at minimum.")
+
+    def is_supported_version(self, min):
+        return self.es_version >= version.parse(min)
+
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   max_retries=0,
                                                   request_timeout=TRANSPORT_TIMEOUT)
+        self.es_version = version.parse(self.client.info()['version']['number'])
+        self._test_elastic_minimum_version()
 
     def close(self):
         self._closed = True

@@ -283,12 +283,10 @@ def _test_group_search(c: ESCollection):
 def _test_deepsearch(c: ESCollection):
     res = []
     deep_paging_id = "*"
-    while True:
+    while deep_paging_id:
         s_data = c.search('*:*', rows=5, deep_paging_id=deep_paging_id)
         res.extend(s_data['items'])
-        if len(res) == s_data['total'] or len(s_data['items']) == 0:
-            break
-        deep_paging_id = s_data['next_deep_paging_id']
+        deep_paging_id = s_data.get('next_deep_paging_id', None)
 
     assert len(res) == c.search('*:*', sort="id asc")['total']
     for item in res:
@@ -367,48 +365,6 @@ TEST_FUNCTIONS = [
 def test_es(es_connection: ESCollection, function):
     if es_connection:
         function(es_connection)
-
-
-@pytest.fixture
-def reduced_scroll_cursors(es_connection: ESCollection):
-    """
-    Doing the following scroll cursor tests on a desktop are reasonably fast, but CI servers
-    can't do them in a reasonable amount of time. So we bring down the limit we were hitting
-    in that error to make it easier to cause, and faster to test that we aren't causing it anymore.
-    """
-    settings = es_connection.datastore.client.cluster.get_settings()
-
-    old_value = 500
-    if 'search' not in settings['transient']:
-        settings['transient']['search'] = {}
-    else:
-        old_value = settings['transient']['search'].get('max_open_scroll_context', old_value)
-    settings['transient']['search']['max_open_scroll_context'] = 5
-
-    try:
-        es_connection.datastore.client.cluster.put_settings(body=settings)
-        yield
-    finally:
-        settings['transient']['search']['max_open_scroll_context'] = old_value
-        es_connection.datastore.client.cluster.put_settings(body=settings)
-
-
-def test_empty_cursor_exhaustion(es_connection: ESCollection, reduced_scroll_cursors):
-    """Test for a bug where short or empty searches with paging active would leak scroll cursors."""
-    for _ in range(20):
-        result = es_connection.search('id: "TEST STRING THAT IS NOT AN ID"', deep_paging_id='*')
-        assert result['total'] == 0
-
-
-def test_short_cursor_exhaustion(es_connection: ESCollection, reduced_scroll_cursors):
-    """Test for a bug where short or empty searches with paging active would leak scroll cursors."""
-    result = es_connection.search("*:*")
-    doc = result['items'][0]['id'][0]
-    query = f'id: {doc}'
-
-    for _ in range(20):
-        result = es_connection.search(query, rows=2, deep_paging_id='*')
-        assert result['total'] == 1
 
 
 def test_atomic_save(es_connection: ESCollection):
