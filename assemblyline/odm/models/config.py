@@ -365,6 +365,8 @@ class Expiry(odm.Model):
     workers = odm.Integer(description="Number of concurrent workers")
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
+    delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
+    archive_batch_size = odm.Integer(description="How large a batch get archived per iteration.")
 
 
 DEFAULT_EXPIRY = {
@@ -375,6 +377,8 @@ DEFAULT_EXPIRY = {
     'workers': 20,
     'delete_workers': 2,
     'iteration_max_tasks': 20,
+    'delete_batch_size': 2000,
+    'archive_batch_size': 5000,
 }
 
 
