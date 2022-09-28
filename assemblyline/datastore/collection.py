@@ -94,6 +94,8 @@ def parse_sort(sort, ret_list=True):
         return [parse_sort(row, ret_list=False) for row in sort]
     elif isinstance(sort, dict):
         return {('id' if key == '_id' else key): value for key, value in sort.items()}
+    elif "," in sort:
+        return [parse_sort(row.strip(), ret_list=False) for row in sort.split(',')]
 
     parts = sort.split(' ')
     if len(parts) == 1:
@@ -1303,8 +1305,9 @@ class ESCollection(Generic[ModelType]):
 
             extra_fields = _strip_lists(self.model_class, extra_fields)
             if as_obj:
-                if '_index' in fields and '_index' in result:
-                    extra_fields['_index'] = result["_index"]
+                for f in fields:
+                    if f.startswith("_") and f in result:
+                        extra_fields[f] = result[f]
                 if '*' in fields:
                     fields = None
                 return self.model_class(source_data, mask=fields, docid=item_id, extra_fields=extra_fields)
@@ -1312,8 +1315,9 @@ class ESCollection(Generic[ModelType]):
                 source_data = recursive_update(source_data, extra_fields)
                 if 'id' in fields:
                     source_data['id'] = item_id
-                if '_index' in fields and '_index' in result:
-                    source_data['_index'] = result["_index"]
+                for f in fields:
+                    if f.startswith("_") and f in result:
+                        source_data[f] = result[f]
                 return source_data
 
         if isinstance(fields, str):
@@ -1371,6 +1375,8 @@ class ESCollection(Generic[ModelType]):
 
             parsed_values[key] = value
 
+        field_list = parsed_values['field_list'] or list(self.stored_fields.keys())
+
         # This is our minimal query, the following sections will fill it out
         # with whatever extra options the search has been given.
         query_body = {
@@ -1387,8 +1393,11 @@ class ESCollection(Generic[ModelType]):
             'from_': parsed_values['start'],
             'size': parsed_values['rows'],
             'sort': parse_sort(parsed_values['sort']),
-            "_source": parsed_values['field_list'] or list(self.stored_fields.keys())
+            "_source": field_list
         }
+
+        if "_seq_no" in field_list or "_primary_term" in field_list:
+            query_body["seq_no_primary_term"] = True
 
         if parsed_values['script_fields']:
             fields = {}
