@@ -215,6 +215,10 @@ class OAuthProvider(odm.Model):
         odm.Keyword(),
         description="Name of the field in the list of groups that contains the name of the group")
     use_new_callback_format: str = odm.Boolean(default=False, description="Should we use the new callback method?")
+    allow_external_tokens: bool = odm.Boolean(
+        default=False, description="Should token provided to the login API directly be use for authentication?")
+    external_token_alternate_audiences: bool = odm.List(
+        odm.Keyword(), default=[], description="List of valid alternate audiences for the external token.")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
