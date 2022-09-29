@@ -10,8 +10,7 @@ class Seen(odm.Model):
 
 @odm.model(index=True, store=True, description="Model of File")
 class File(odm.Model):
-
-    archive_ts = odm.Date(store=False, description="Archiving timestamp")
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp"))
     ascii = odm.Keyword(index=False, store=False,
                         description="Dotted ASCII representation of the first 64 bytes of the file")
     classification = odm.Classification(description="Classification of the file")

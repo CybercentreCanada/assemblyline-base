@@ -52,16 +52,16 @@ class ESStore(object):
 
     def __init__(self, hosts, collection_class=ESCollection, archive_access=True):
         config = forge.get_config()
-        if config.datastore.ilm.enabled:
-            ilm_config = config.datastore.ilm.indexes.as_primitives()
+        if config.datastore.archive.enabled:
+            archive_config = config.datastore.archive.indexes.as_primitives()
         else:
-            ilm_config = {}
+            archive_config = {}
 
         self._hosts = hosts
         self._closed = False
         self._collections = {}
         self._models = {}
-        self.ilm_config = ilm_config
+        self.archive_config = archive_config
         self.validate = True
 
         tracer = logging.getLogger('elasticsearch')

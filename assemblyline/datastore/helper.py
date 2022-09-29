@@ -181,8 +181,8 @@ class AssemblylineDatastore(object):
         svc_version = svc_version[1:]
 
         data = Result({
-            "archive_ts": now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
-            "expiry_ts": now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
+            "archive_ts": now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
+            "expiry_ts": now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
                 "service_name": svc_name,
@@ -690,7 +690,7 @@ class AssemblylineDatastore(object):
         # Create a cache entry for the tree if it's not partial
         if not partial:
             cached_tree = {
-                'expiry_ts': now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
+                'expiry_ts': now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
                 'tree': json.dumps(tree),
                 'classification': max_classification,
                 'filtered': len(forbidden_files) > 0,
@@ -1141,11 +1141,13 @@ class AssemblylineDatastore(object):
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):
             expiry = expiry.strftime(DATEFORMAT)
-        archive_time = now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60)
+        archive_time = None
+        if config.datastore.archive.days_until_archive:
+            archive_time = now_as_iso(config.datastore.archive.days_until_archive * 24 * 60 * 60)
 
         while True:
             current_fileinfo, version = self.ds.file.get_if_exists(
-                sha256, as_obj=False, archive_access=config.datastore.ilm.update_archive, version=True)
+                sha256, as_obj=False, archive_access=config.datastore.archive.update_archive, version=True)
 
             if current_fileinfo is None:
                 current_fileinfo = {}
