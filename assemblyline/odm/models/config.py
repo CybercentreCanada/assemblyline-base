@@ -644,7 +644,7 @@ class ILMParams(odm.Model):
     unit = odm.Enum(['d', 'h', 'm'], description="Unit of time used by `warm`, `cold`, `delete` phases")
 
 
-DEFAULT_ILM_PARAMS = {
+DEFAULT_ARCHIVE_PARAMS = {
     "warm": 5,
     "cold": 15,
     "delete": 30,
@@ -652,36 +652,37 @@ DEFAULT_ILM_PARAMS = {
 }
 
 
-@odm.model(index=False, store=False, description="ILM Policies for Core Indices")
-class ILMIndexes(odm.Model):
-    alert = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'alert' index")
-    error = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'error' index")
-    file = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'file' index")
-    result = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'result' index")
-    submission = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'submission' index")
+@odm.model(index=False, store=False, description="ILM Policies for Archiving Indices")
+class ArchiveILMConfig(odm.Model):
+    alert = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'alert' index")
+    error = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'error' index")
+    file = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'file' index")
+    result = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'result' index")
+    submission = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'submission' index")
 
 
-DEFAULT_ILM_INDEXES = {
-    'alert': DEFAULT_ILM_PARAMS,
-    'error': DEFAULT_ILM_PARAMS,
-    'file': DEFAULT_ILM_PARAMS,
-    'result': DEFAULT_ILM_PARAMS,
-    'submission': DEFAULT_ILM_PARAMS,
+DEFAULT_ARCHIVE_ILM_CONFIG = {
+    'alert': DEFAULT_ARCHIVE_PARAMS,
+    'error': DEFAULT_ARCHIVE_PARAMS,
+    'file': DEFAULT_ARCHIVE_PARAMS,
+    'result': DEFAULT_ARCHIVE_PARAMS,
+    'submission': DEFAULT_ARCHIVE_PARAMS,
 }
 
 
-@odm.model(index=False, store=False, description="Index Lifecycle Management")
-class ILM(odm.Model):
-    enabled = odm.Boolean(description="Are we enabling ILM across indices?")
-    days_until_archive = odm.Integer(description="Days until documents get archived")
-    indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES, description="Index-specific ILM policies")
+@odm.model(index=False, store=False, description="Datastore Archive feature configuration")
+class Archive(odm.Model):
+    enabled = odm.Boolean(description="Are we enabling Achiving features across indices?")
+    days_until_archive = odm.Integer(description="Days until documents get archived (0 = Do not auto-archive)")
+    ilm_config = odm.Compound(ArchiveILMConfig, default=DEFAULT_ARCHIVE_ILM_CONFIG,
+                              description="Index-specific ILM policies")
     update_archive = odm.Boolean(description="Do we want to update documents in the archive?")
 
 
-DEFAULT_ILM = {
-    "days_until_archive": 15,
+DEFAULT_ARCHIVE = {
     "enabled": False,
-    "indexes": DEFAULT_ILM_INDEXES,
+    "days_until_archive": 0,
+    "indexes": DEFAULT_ARCHIVE_ILM_CONFIG,
     "update_archive": False
 }
 
@@ -689,13 +690,16 @@ DEFAULT_ILM = {
 @odm.model(index=False, store=False, description="Datastore Configuration")
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
-    ilm = odm.Compound(ILM, default=DEFAULT_ILM, description="Index Lifecycle Management Policy")
+    archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
+    cache_dtl = odm.Integer(
+        default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
 
 
 DEFAULT_DATASTORE = {
     "hosts": ["http://elastic:devpass@localhost:9200"],
-    "ilm": DEFAULT_ILM,
+    "archive": DEFAULT_ARCHIVE,
+    "cache_dtl": 5,
     "type": "elasticsearch",
 }
 

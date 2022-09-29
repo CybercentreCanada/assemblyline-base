@@ -117,7 +117,7 @@ class Verdict(odm.Model):
 
 @odm.model(index=True, store=True, description="Model of Submission")
 class Submission(odm.Model):
-    archive_ts = odm.Date(store=False, description="Archiving timestamp")
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp"))
     classification = odm.Classification(description="Classification of the submission")
     error_count = odm.Integer(description="Total number of errors in the submission")
     errors: list[str] = odm.List(odm.Keyword(), store=False, description="List of error keys")

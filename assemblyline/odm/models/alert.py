@@ -78,7 +78,7 @@ class Attack(odm.Model):
 class Alert(odm.Model):
     alert_id = odm.Keyword(copyto="__text__", description="ID of the alert")
     al = odm.Compound(ALResults, description="Assemblyline Result Block")
-    archive_ts = odm.Date(store=False, description="Archiving timestamp")
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp"))
     attack = odm.Compound(Attack, description="ATT&CK Block")
     classification = odm.Classification(description="Classification of the alert")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")

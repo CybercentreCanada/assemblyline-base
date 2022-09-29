@@ -186,10 +186,10 @@ class ESCollection(Generic[ModelType]):
         self.shards = environ.get(f"ELASTIC_{name.upper()}_SHARDS", environ.get('ELASTIC_DEFAULT_SHARDS', 1))
         self._index_list: list[str] = []
 
-        if name in datastore.ilm_config:
-            self.ilm_config = datastore.ilm_config[name]
+        if name in datastore.archive_config:
+            self.archive_config = datastore.archive_config[name]
         else:
-            self.ilm_config = None
+            self.archive_config = None
 
         self.datastore = datastore
         self.name = name
@@ -207,7 +207,7 @@ class ESCollection(Generic[ModelType]):
 
     @property
     def archive_access(self):
-        if self.ilm_config and self.datastore.archive_access:
+        if self.archive_config and self.datastore.archive_access:
             return True
         return False
 
@@ -517,7 +517,7 @@ class ESCollection(Generic[ModelType]):
 
         :return: Should return True of the fix was successful on all hosts
         """
-        if self.ilm_config:
+        if self.archive_config:
             # Create ILM policy
             while not self._ilm_policy_exists():
                 try:
@@ -876,7 +876,7 @@ class ESCollection(Generic[ModelType]):
 
         found = self.with_retries(self.datastore.client.exists, index=self.name, id=key, _source=False)
 
-        if not found and self.ilm_config and archive_access:
+        if not found and self.archive_config and archive_access:
             res = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                     query={"ids": {"values": [key]}}, size=0)
             found = res['hits']['total']['value'] > 0
@@ -919,7 +919,7 @@ class ESCollection(Generic[ModelType]):
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
-            if self.ilm_config and archive_access:
+            if self.archive_config and archive_access:
                 hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
                                          query={"ids": {"values": [key]}}, size=1,
                                          sort={'_index': 'desc'})['hits']['hits']
@@ -1964,7 +1964,7 @@ class ESCollection(Generic[ModelType]):
                             "priority": 100
                         },
                         "rollover": {
-                            "max_age": f"{self.ilm_config['warm']}{self.ilm_config['unit']}"
+                            "max_age": f"{self.archive_config['warm']}{self.archive_config['unit']}"
                         }
                     }
                 },
@@ -1976,7 +1976,7 @@ class ESCollection(Generic[ModelType]):
                     }
                 },
                 "cold": {
-                    "min_age": f"{self.ilm_config['cold']}{self.ilm_config['unit']}",
+                    "min_age": f"{self.archive_config['cold']}{self.archive_config['unit']}",
                     "actions": {
                         "set_priority": {
                             "priority": 20
@@ -1986,9 +1986,9 @@ class ESCollection(Generic[ModelType]):
             }
         }
 
-        if self.ilm_config['delete']:
+        if self.archive_config['delete']:
             data_base['phases']['delete'] = {
-                "min_age": f"{self.ilm_config['delete']}{self.ilm_config['unit']}",
+                "min_age": f"{self.archive_config['delete']}{self.archive_config['unit']}",
                 "actions": {
                     "delete": {}
                 }
@@ -2104,7 +2104,7 @@ class ESCollection(Generic[ModelType]):
 
             self.with_retries(self.datastore.client.indices.put_settings, body=write_unblock_settings)
 
-        if self.ilm_config:
+        if self.archive_config:
             # Create ILM policy
             while not self._ilm_policy_exists():
                 try:
