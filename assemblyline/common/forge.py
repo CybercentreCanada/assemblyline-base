@@ -100,10 +100,7 @@ def get_datastore(config=None, archive_access=False):
     if not config:
         config = get_config()
 
-    if archive_access:
-        return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=True))
-    else:
-        return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=False))
+    return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=archive_access))
 
 
 def get_cachestore(component, config=None, datastore=None):
