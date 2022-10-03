@@ -680,7 +680,7 @@ class Archive(odm.Model):
 
 DEFAULT_ARCHIVE = {
     "enabled": False,
-    "indexes": DEFAULT_ARCHIVE_ILM_CONFIG,
+    "ilm_config": DEFAULT_ARCHIVE_ILM_CONFIG,
     "update_archive": False
 }
 

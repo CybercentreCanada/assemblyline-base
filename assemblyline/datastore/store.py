@@ -53,7 +53,7 @@ class ESStore(object):
     def __init__(self, hosts, collection_class=ESCollection, archive_access=True):
         config = forge.get_config()
         if config.datastore.archive.enabled:
-            archive_config = config.datastore.archive.indexes.as_primitives()
+            archive_config = config.datastore.archive.ilm_config.as_primitives()
         else:
             archive_config = {}
 
