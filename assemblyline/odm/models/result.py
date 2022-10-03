@@ -97,7 +97,7 @@ class ResponseBody(odm.Model):
 
 @odm.model(index=True, store=True, description="Result Model")
 class Result(odm.Model):
-    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp"))
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)"))
     classification = odm.Classification(description="Aggregate classification for the result")
     created = odm.Date(default="NOW", description="Date at which the result object got created")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")

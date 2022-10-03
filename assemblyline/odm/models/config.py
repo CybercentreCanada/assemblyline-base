@@ -669,7 +669,6 @@ DEFAULT_ARCHIVE_ILM_CONFIG = {
 @odm.model(index=False, store=False, description="Datastore Archive feature configuration")
 class Archive(odm.Model):
     enabled = odm.Boolean(description="Are we enabling Achiving features across indices?")
-    days_until_archive = odm.Integer(description="Days until documents get archived (0 = Do not auto-archive)")
     ilm_config = odm.Compound(ArchiveILMConfig, default=DEFAULT_ARCHIVE_ILM_CONFIG,
                               description="Index-specific ILM policies")
     update_archive = odm.Boolean(description="Do we want to update documents in the archive?")
@@ -677,7 +676,6 @@ class Archive(odm.Model):
 
 DEFAULT_ARCHIVE = {
     "enabled": False,
-    "days_until_archive": 0,
     "indexes": DEFAULT_ARCHIVE_ILM_CONFIG,
     "update_archive": False
 }
@@ -720,11 +718,13 @@ DEFAULT_DATASOURCES = {
 
 @odm.model(index=False, store=False, description="Filestore Configuration")
 class Filestore(odm.Model):
+    archive: List[str] = odm.List(odm.Keyword(), description="List of filestores used for malware archive")
     cache: List[str] = odm.List(odm.Keyword(), description="List of filestores used for caching")
     storage: List[str] = odm.List(odm.Keyword(), description="List of filestores used for storage")
 
 
 DEFAULT_FILESTORE = {
+    "archive": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-storage&use_ssl=False"],
     "cache": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-cache&use_ssl=False"],
     "storage": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-storage&use_ssl=False"]
 }

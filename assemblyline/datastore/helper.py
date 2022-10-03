@@ -181,7 +181,7 @@ class AssemblylineDatastore(object):
         svc_version = svc_version[1:]
 
         data = Result({
-            "archive_ts": now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
+            "archive_ts": None,
             "expiry_ts": now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
@@ -1141,9 +1141,6 @@ class AssemblylineDatastore(object):
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):
             expiry = expiry.strftime(DATEFORMAT)
-        archive_time = None
-        if config.datastore.archive.days_until_archive:
-            archive_time = now_as_iso(config.datastore.archive.days_until_archive * 24 * 60 * 60)
 
         while True:
             current_fileinfo, version = self.ds.file.get_if_exists(
@@ -1163,7 +1160,6 @@ class AssemblylineDatastore(object):
                         for key, value in fileinfo.items()
                     ]
                     operations.extend([
-                        (self.ds.file.UPDATE_MAX, 'archive_ts', archive_time),
                         (self.ds.file.UPDATE_INC, 'seen.count', 1),
                         (self.ds.file.UPDATE_MAX, 'seen.last', now_as_iso()),
                     ])
@@ -1174,7 +1170,7 @@ class AssemblylineDatastore(object):
 
             # Add new fileinfo to current from database
             current_fileinfo.update(fileinfo)
-            current_fileinfo['archive_ts'] = archive_time
+            current_fileinfo['archive_ts'] = None
 
             # Update expiry time
             current_expiry = current_fileinfo.get('expiry_ts', expiry)
