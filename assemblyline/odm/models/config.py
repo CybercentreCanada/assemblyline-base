@@ -632,37 +632,19 @@ DEFAULT_CORE = {
 }
 
 
-@odm.model(index=False, store=False, description="Parameters associated to ILM Policies")
-class ILMParams(odm.Model):
-    warm = odm.Integer(description="How long, per unit of time, should a document remain in the 'warm' tier?")
-    cold = odm.Integer(description="How long, per unit of time, should a document remain in the 'cold' tier?")
-    delete = odm.Integer(description="How long, per unit of time, should a document remain before being deleted?")
-    unit = odm.Enum(['d', 'h', 'm'], description="Unit of time used by `warm`, `cold`, `delete` phases")
-
-
-DEFAULT_ARCHIVE_PARAMS = {
-    "warm": 5,
-    "cold": 15,
-    "delete": 30,
-    "unit":  "d"
-}
-
-
 @odm.model(index=False, store=False, description="ILM Policies for Archiving Indices")
 class ArchiveILMConfig(odm.Model):
-    alert = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'alert' index")
-    error = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'error' index")
-    file = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'file' index")
-    result = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'result' index")
-    submission = odm.Compound(ILMParams, default=DEFAULT_ARCHIVE_PARAMS, description="ILM for 'submission' index")
+    indices = odm.List(odm.Keyword(), description="List of indices the ILM Applies to")
+    warm = odm.Integer(description="How long, per unit of time, should a document remain in the 'warm' tier?")
+    cold = odm.Integer(description="How long, per unit of time, should a document remain in the 'cold' tier?")
+    unit = odm.Enum(['d', 'h', 'm'], description="Unit of time used by `warm` and `cold` phases")
 
 
 DEFAULT_ARCHIVE_ILM_CONFIG = {
-    'alert': DEFAULT_ARCHIVE_PARAMS,
-    'error': DEFAULT_ARCHIVE_PARAMS,
-    'file': DEFAULT_ARCHIVE_PARAMS,
-    'result': DEFAULT_ARCHIVE_PARAMS,
-    'submission': DEFAULT_ARCHIVE_PARAMS,
+    "indices": ['file', 'submission', 'result'],
+    "warm": 5,
+    "cold": 15,
+    "unit":  "d"
 }
 
 

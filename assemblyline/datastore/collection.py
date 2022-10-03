@@ -186,8 +186,8 @@ class ESCollection(Generic[ModelType]):
         self.shards = environ.get(f"ELASTIC_{name.upper()}_SHARDS", environ.get('ELASTIC_DEFAULT_SHARDS', 1))
         self._index_list: list[str] = []
 
-        if name in datastore.archive_config:
-            self.archive_config = datastore.archive_config[name]
+        if name in datastore.archive_config.get('indices', []):
+            self.archive_config = {k: v for k, v in datastore.archive_config.items() if k in ['warm', 'cold', 'unit']}
         else:
             self.archive_config = None
 
@@ -214,7 +214,8 @@ class ESCollection(Generic[ModelType]):
     @property
     def index_list_full(self):
         if not self._index_list:
-            self._index_list = list(self.with_retries(self.datastore.client.indices.get, index=f"{self.name}-*").keys())
+            self._index_list = list(self.with_retries(
+                self.datastore.client.indices.get, index=f"{self.name}-ma-*").keys())
 
         return [self.index_name] + sorted(self._index_list, reverse=True)
 
@@ -227,7 +228,7 @@ class ESCollection(Generic[ModelType]):
         """
         if self.archive_access:
             if not self._index_list:
-                index_data = self.with_retries(self.datastore.client.indices.get, index=f"{self.name}-*")
+                index_data = self.with_retries(self.datastore.client.indices.get, index=f"{self.name}-ma-*")
                 self._index_list = list(index_data.keys())
 
             return [self.index_name] + sorted(self._index_list, reverse=True)
@@ -454,7 +455,7 @@ class ESCollection(Generic[ModelType]):
                 }
             },
             "dest": {
-                "index": f"{self.name}-archive"
+                "index": f"{self.name}-ma"
             }
         }
         if max_docs:
@@ -506,8 +507,8 @@ class ESCollection(Generic[ModelType]):
         self.with_retries(self.datastore.client.indices.refresh, index=self.index_name)
         self.with_retries(self.datastore.client.indices.clear_cache, index=self.index_name)
         if self.archive_access:
-            self.with_retries(self.datastore.client.indices.refresh, index=f"{self.name}-archive")
-            self.with_retries(self.datastore.client.indices.clear_cache, index=f"{self.name}-archive")
+            self.with_retries(self.datastore.client.indices.refresh, index=f"{self.name}-ma")
+            self.with_retries(self.datastore.client.indices.clear_cache, index=f"{self.name}-ma")
         return True
 
     def fix_ilm(self):
@@ -535,10 +536,10 @@ class ESCollection(Generic[ModelType]):
                     'settings': self._get_index_settings()
                 }
 
-                index["index_patterns"] = [f"{self.name}-*"]
+                index["index_patterns"] = [f"{self.name}-ma-*"]
                 index["order"] = 1
-                index["settings"]["index.lifecycle.name"] = f"{self.name}_policy"
-                index["settings"]["index.lifecycle.rollover_alias"] = f"{self.name}-archive"
+                index["settings"]["index.lifecycle.name"] = f"{self.name}_ma_policy"
+                index["settings"]["index.lifecycle.rollover_alias"] = f"{self.name}-ma"
 
                 try:
                     self.with_retries(self.datastore.client.indices.put_template, name=self.name, body=index)
@@ -547,16 +548,16 @@ class ESCollection(Generic[ModelType]):
                         raise
                     log.warning(f"Tried to create an index template that already exists: {self.name.upper()}")
 
-            if not self.with_retries(self.datastore.client.indices.exists_alias, name=f"{self.name}-archive"):
+            if not self.with_retries(self.datastore.client.indices.exists_alias, name=f"{self.name}-ma"):
                 log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
 
                 try:
-                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-000001",
-                                      aliases={f"{self.name}-archive": {"is_write_index": True}})
+                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-ma-000001",
+                                      aliases={f"{self.name}-ma": {"is_write_index": True}})
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
-                    log.warning(f"Tried to create an index template that already exists: {self.name.upper()}-000001")
+                    log.warning(f"Tried to create an index template that already exists: {self.name}-ma-000001")
         else:
             for idx in self.index_list_full:
                 if idx != self.index_name:
@@ -833,7 +834,7 @@ class ESCollection(Generic[ModelType]):
 
             if key_list and self.archive_access:
                 result = self.with_retries(self.datastore.client.search,
-                                           index=f"{self.name}-*", query={"ids": {"values": key_list}},
+                                           index=f"{self.name}-ma-*", query={"ids": {"values": key_list}},
                                            size=len(key_list), collapse={"field": "id"})
                 for row in result['hits']['hits']:
                     try:
@@ -877,7 +878,7 @@ class ESCollection(Generic[ModelType]):
         found = self.with_retries(self.datastore.client.exists, index=self.name, id=key, _source=False)
 
         if not found and self.archive_config and archive_access:
-            res = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
+            res = self.with_retries(self.datastore.client.search, index=f"{self.name}-ma-*",
                                     query={"ids": {"values": [key]}}, size=0)
             found = res['hits']['total']['value'] > 0
 
@@ -920,7 +921,7 @@ class ESCollection(Generic[ModelType]):
                 pass
 
             if self.archive_config and archive_access:
-                hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-*",
+                hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-ma-*",
                                          query={"ids": {"values": [key]}}, size=1,
                                          sort={'_index': 'desc'})['hits']['hits']
                 if len(hits) > 0:
@@ -1060,7 +1061,7 @@ class ESCollection(Generic[ModelType]):
 
         if self.archive_access:
             query_body = {"query": {"ids": {"values": [key]}}}
-            info = self._delete_async(f"{self.name}-*", query_body)
+            info = self._delete_async(f"{self.name}-ma-*", query_body)
             if not deleted:
                 deleted = info.get('deleted', 0) == info.get('total', 0)
         else:
@@ -1079,7 +1080,7 @@ class ESCollection(Generic[ModelType]):
         """
         index = self.name
         if self.archive_access:
-            index = f"{index},{self.name}-*"
+            index = f"{index},{self.name}-ma-*"
         query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
         info = self._delete_async(index, query_body, sort=sort_str(parse_sort(sort)), max_docs=max_docs)
         return info.get('deleted', 0) != 0
@@ -1232,7 +1233,7 @@ class ESCollection(Generic[ModelType]):
                 "script": script,
                 "query": {"ids": {"values": [key]}}
             }
-            info = self._update_async(f"{self.name}-*", update_body)
+            info = self._update_async(f"{self.name}-ma-*", update_body)
             return info.get('updated', 0) != 0
 
         return False
@@ -1262,7 +1263,7 @@ class ESCollection(Generic[ModelType]):
 
         index = self.name
         if self.archive_access:
-            index = f"{index},{self.name}-*"
+            index = f"{index},{self.name}-ma-*"
 
         script = self._create_scripts_from_operations(operations)
 
@@ -1334,7 +1335,7 @@ class ESCollection(Generic[ModelType]):
     def _search(self, args=None, deep_paging_id=None, use_archive=False, track_total_hits=None):
         index = self.name
         if self.archive_access and use_archive:
-            index = f"{index},{self.name}-*"
+            index = f"{index},{self.name}-ma-*"
 
         if args is None:
             args = []
@@ -1646,7 +1647,7 @@ class ESCollection(Generic[ModelType]):
 
         index = self.name
         if self.archive_access and use_archive:
-            index = f"{index},{self.name}-*"
+            index = f"{index},{self.name}-ma-*"
 
         if filters is None:
             filters = []
@@ -1942,14 +1943,14 @@ class ESCollection(Generic[ModelType]):
 
     def _ilm_policy_exists(self):
         try:
-            self.datastore.client.ilm.get_lifecycle(name=f"{self.name}_policy")
+            self.datastore.client.ilm.get_lifecycle(name=f"{self.name}_ma_policy")
             return True
         except elasticsearch.NotFoundError:
             return False
 
     def _delete_ilm_policy(self):
         try:
-            self.datastore.client.ilm.delete_lifecycle(name=f"{self.name}_policy")
+            self.datastore.client.ilm.delete_lifecycle(name=f"{self.name}_ma_policy")
             return True
         except elasticsearch.ApiError:
             return False
@@ -1986,7 +1987,7 @@ class ESCollection(Generic[ModelType]):
             }
         }
 
-        if self.archive_config['delete']:
+        if self.archive_config.get('delete', None):
             data_base['phases']['delete'] = {
                 "min_age": f"{self.archive_config['delete']}{self.archive_config['unit']}",
                 "actions": {
@@ -1995,9 +1996,9 @@ class ESCollection(Generic[ModelType]):
             }
 
         try:
-            self.datastore.client.ilm.put_lifecycle(name=f"{self.name}_policy", policy=data_base)
+            self.datastore.client.ilm.put_lifecycle(name=f"{self.name}_ma_policy", policy=data_base)
         except elasticsearch.ApiError:
-            raise ILMException(f"ERROR: Failed to create ILM policy: {self.name}_policy")
+            raise ILMException(f"ERROR: Failed to create ILM policy: {self.name}_ma_policy")
 
     def _get_index_settings(self) -> dict:
         default_stub: dict = deepcopy(default_index)
@@ -2122,10 +2123,10 @@ class ESCollection(Generic[ModelType]):
                     'settings': self._get_index_settings()
                 }
 
-                index["index_patterns"] = [f"{self.name}-*"]
+                index["index_patterns"] = [f"{self.name}-ma-*"]
                 index["order"] = 1
-                index["settings"]["index.lifecycle.name"] = f"{self.name}_policy"
-                index["settings"]["index.lifecycle.rollover_alias"] = f"{self.name}-archive"
+                index["settings"]["index.lifecycle.name"] = f"{self.name}_ma_policy"
+                index["settings"]["index.lifecycle.rollover_alias"] = f"{self.name}-ma"
 
                 try:
                     self.with_retries(self.datastore.client.indices.put_template, name=self.name, body=index)
@@ -2134,16 +2135,16 @@ class ESCollection(Generic[ModelType]):
                         raise
                     log.warning(f"Tried to create an index template that already exists: {self.name.upper()}")
 
-            if not self.with_retries(self.datastore.client.indices.exists_alias, name=f"{self.name}-archive"):
+            if not self.with_retries(self.datastore.client.indices.exists_alias, name=f"{self.name}-ma"):
                 log.debug(f"Index alias {self.name.upper()}-archive does not exists. Creating it now...")
 
                 try:
-                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-000001",
-                                      aliases={f"{self.name}-archive": {"is_write_index": True}})
+                    self.with_retries(self.datastore.client.indices.create, index=f"{self.name}-ma-000001",
+                                      aliases={f"{self.name}-ma": {"is_write_index": True}})
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
-                    log.warning(f"Tried to create an index template that already exists: {self.name.upper()}-000001")
+                    log.warning(f"Tried to create an index template that already exists: {self.name}-ma-000001")
 
         self._check_fields()
 
