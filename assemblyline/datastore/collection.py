@@ -23,7 +23,7 @@ from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
 from assemblyline.datastore.exceptions import (DataStoreException, ILMException, MultiKeyError, SearchException,
-                                               SearchRetryException, VersionConflictException)
+                                               SearchRetryException, VersionConflictException, ArchiveDisabled)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
 from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                     default_index, default_mapping)
@@ -355,6 +355,13 @@ class ESCollection(Generic[ModelType]):
                 else:
                     raise
 
+    @staticmethod
+    def _normalize_output(data_output):
+        if "__non_doc_raw__" in data_output:
+            return data_output['__non_doc_raw__']
+        data_output.pop('id', None)
+        return data_output
+
     def _get_task_results(self, task):
         # This function is only used to wait for a asynchronous task to finish in a graceful manner without
         #  timing out the elastic client. You can create an async task for long running operation like:
@@ -431,7 +438,103 @@ class ESCollection(Generic[ModelType]):
             else:
                 updated += res['updated']
 
-    def archive(self, query, max_docs=None, sort=None):
+    def exists_in_archive(self, key):
+        """
+        Check if a document exists in the archive
+
+        :param key: ID of the document to check against the archive
+
+        :return: True/False
+        """
+        if not self.archive_access:
+            raise ArchiveDisabled("This datastore object does not have archive access.")
+
+        return self.with_retries(self.datastore.client.search, index=f"{self.name}-ma-*",
+                                 query={"ids": {"values": [key]}}, size=0,
+                                 sort={'_index': 'desc'})['hits']['total']['value'] > 0
+
+    def get_from_archive(self, key, as_obj=True):
+        """
+        Get a document from the archive only
+
+        :param key: ID of the document to copy or move to the archive
+
+        :return: The document
+        """
+        if not self.archive_access:
+            raise ArchiveDisabled("This datastore object does not have archive access.")
+
+        hits = self.with_retries(self.datastore.client.search, index=f"{self.name}-ma-*",
+                                 query={"ids": {"values": [key]}}, size=1,
+                                 sort={'_index': 'desc'})['hits']['hits']
+        if len(hits) > 0:
+            return self.normalize(self._normalize_output(hits[0]['_source']), as_obj=as_obj)
+        return None
+
+    def save_to_archive(self, key, data, delete_after=False):
+        """
+        Save a document to the archive directly
+
+        :param key: ID of the document to save to the archive
+        :param delete_after: Delete the document from hot storage after archive
+
+        :return: The document
+        """
+        if not self.archive_access:
+            raise ArchiveDisabled("This datastore object does not have archive access.")
+
+        if " " in key:
+            raise DataStoreException("You are not allowed to use spaces in datastore keys.")
+
+        data = self.normalize(data)
+
+        if self.model_class:
+            saved_data = data.as_primitives(hidden_fields=True)
+        else:
+            if not isinstance(data, dict):
+                saved_data = {'__non_doc_raw__': data}
+            else:
+                saved_data = deepcopy(data)
+
+        self.with_retries(
+            self.datastore.client.index,
+            index=f"{self.name}-ma",
+            id=key,
+            document=json.dumps(saved_data),
+            op_type='create',
+            raise_conflicts=True
+        )
+
+        if delete_after:
+            try:
+                self.with_retries(self.datastore.client.delete, id=key, index=self.name)
+            except elasticsearch.NotFoundError:
+                pass
+
+    def archive(self, key, delete_after=False):
+        """
+        Copy/Move a single document into the archive and return the document that was archived.
+
+        :param key: ID of the document to copy or move to the archive
+        :param delete_after: Delete the document from hot storage after archive
+        """
+        # Check if already in archive
+        if self.exists_in_archive(key):
+            return
+
+        # Get the document from hot index
+        doc = self.get_if_exists(key, archive_access=False)
+        if doc:
+            # Reset Expiry if present
+            try:
+                doc.expiry_ts = None
+            except (AttributeError, KeyError, ValueError):
+                pass
+
+            # Save the document to the archive
+            self.save_to_archive(key, doc, delete_after=delete_after)
+
+    def archive_by_query(self, query, max_docs=None, sort=None, delete_after=False):
         """
         This function should archive to document that are matching to query to an time splitted index
 
@@ -439,7 +542,7 @@ class ESCollection(Generic[ModelType]):
         :return: Number of archived documents
         """
         if not self.archive_access:
-            return False
+            raise ArchiveDisabled("This datastore object does not have archive access.")
 
         reindex_body = {
             "source": {
@@ -468,7 +571,7 @@ class ESCollection(Generic[ModelType]):
         res = self._get_task_results(r_task)
         total_archived = res['updated'] + res['created']
         if res['total'] == total_archived or max_docs == total_archived:
-            if total_archived != 0:
+            if total_archived != 0 and delete_after:
                 delete_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
                 info = self._delete_async(self.name, delete_body, max_docs=max_docs, sort=sort_str(parse_sort(sort)))
                 return info.get('deleted', 0) == total_archived
@@ -897,13 +1000,6 @@ class ESCollection(Generic[ModelType]):
         document non-atomic (version=None)" and "I'm saving a new document
         atomically (version=CREATE_TOKEN)".
         """
-
-        def normalize_output(data_output):
-            if "__non_doc_raw__" in data_output:
-                return data_output['__non_doc_raw__']
-            data_output.pop('id', None)
-            return data_output
-
         if archive_access is None:
             archive_access = self.archive_access
 
@@ -915,8 +1011,8 @@ class ESCollection(Generic[ModelType]):
             try:
                 doc = self.with_retries(self.datastore.client.get, index=self.name, id=key)
                 if version:
-                    return normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
-                return normalize_output(doc['_source'])
+                    return self._normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
+                return self._normalize_output(doc['_source'])
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
@@ -926,8 +1022,8 @@ class ESCollection(Generic[ModelType]):
                                          sort={'_index': 'desc'})['hits']['hits']
                 if len(hits) > 0:
                     if version:
-                        return normalize_output(hits[0]['_source']), CREATE_TOKEN
-                    return normalize_output(hits[0]['_source'])
+                        return self._normalize_output(hits[0]['_source']), CREATE_TOKEN
+                    return self._normalize_output(hits[0]['_source'])
 
             if retries > 0:
                 time.sleep(0.05)
