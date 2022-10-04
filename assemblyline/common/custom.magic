@@ -114,3 +114,5 @@
 10   string _BIOPSY:                custom: metadata/memorydump
 # Windows URL Shortcut Files
 0 string [InternetShortcut] custom: shortcut/web
+# NSIS Installer
+4  string  \xef\xbe\xad\xdeNullsoftInst custom: archive/nsis
