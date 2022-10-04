@@ -81,6 +81,13 @@ def _get_config(yml_config=None):
     return Config(config)
 
 
+def get_archivestore(config=None, connection_attempts=None):
+    from assemblyline.filestore import FileStore
+    if config is None:
+        config = get_config()
+    return FileStore(*config.filestore.archive, connection_attempts=connection_attempts)
+
+
 def get_config(yml_config=None) -> Config:
     if yml_config not in config_cache:
         config_cache[yml_config] = _get_config(yml_config=yml_config)
