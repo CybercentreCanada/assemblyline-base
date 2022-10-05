@@ -504,7 +504,7 @@ DEFAULT_METRICS = {
 
 
 @odm.model(index=False, store=False, description="Malware Archive Configuration")
-class MalwareArchive(odm.Model):
+class Archive(odm.Model):
     minimum_required_services: List[str] = odm.List(
         odm.keyword(),
         default=[],
@@ -515,7 +515,7 @@ class MalwareArchive(odm.Model):
             description="Webhook executed right before submission archiving takes place which adds metadata."))
 
 
-DEFAULT_MALWARE_ARCHIVE = {
+DEFAULT_ARCHIVE = {
     'minimum_required_services': [],
     'webhook': None
 }
@@ -634,12 +634,12 @@ DEFAULT_VACUUM = dict(
 @odm.model(index=False, store=False, description="Core Component Configuration")
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER, description="Configuration for Alerter")
+    archive: Archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE,
+                                    description="Configuration for the permanent submission archive")
     dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER,
                                           description="Configuration for Dispatcher")
     expiry: Expiry = odm.Compound(Expiry, default=DEFAULT_EXPIRY, description="Configuration for Expiry")
     ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER, description="Configuration for Ingester")
-    malware_archive: MalwareArchive = odm.Compound(
-        MalwareArchive, default=DEFAULT_MALWARE_ARCHIVE, description="Configuration for the malware archive")
     metrics: Metrics = odm.Compound(Metrics, default=DEFAULT_METRICS,
                                     description="Configuration for Metrics Collection")
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS, description="Configuration for Redis instances")
@@ -649,10 +649,10 @@ class Core(odm.Model):
 
 DEFAULT_CORE = {
     "alerter": DEFAULT_ALERTER,
+    "archive": DEFAULT_ARCHIVE,
     "dispatcher": DEFAULT_DISPATCHER,
     "expiry": DEFAULT_EXPIRY,
     "ingester": DEFAULT_INGESTER,
-    "malware_archive": DEFAULT_MALWARE_ARCHIVE,
     "metrics": DEFAULT_METRICS,
     "redis": DEFAULT_REDIS,
     "scaler": DEFAULT_SCALER,
