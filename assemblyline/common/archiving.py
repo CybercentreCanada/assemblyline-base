@@ -15,7 +15,7 @@ class SubmissionNotFound(Exception):
     pass
 
 
-class FileNotFound(Exception):
+class WebhookFailed(Exception):
     pass
 
 
