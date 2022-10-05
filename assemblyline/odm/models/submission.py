@@ -70,6 +70,8 @@ class SubmissionParams(odm.Model):
     ttl = odm.Integer(default=0, description="Time, in days, to live for this submission")
     type = odm.Keyword(default="USER", description="Type of submission")
     initial_data = odm.Optional(odm.Text(index=False), description="Initialization for temporary submission data")
+    auto_archive = odm.Boolean(default=False,
+                               description="Does the submission automatically goes into the archive when completed")
 
     def get_hashing_keys(self):
         """Get the sections of the submission parameters that should be used in result hashes."""
