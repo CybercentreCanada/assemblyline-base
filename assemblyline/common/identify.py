@@ -296,7 +296,9 @@ class Identify():
             matches = yara_rules.match(path, externals=externals, fast=True)
             matches.sort(key=lambda x: x.meta.get('score', 0), reverse=True)
             for match in matches:
-                return match.meta['type']
+                ftype = match.meta.get("type", None)
+                if ftype:
+                    return ftype
         except Exception as e:
             self.log.warning(f"Yara file identifier failed with error: {str(e)}")
             matches = []
