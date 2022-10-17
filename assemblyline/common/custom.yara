@@ -127,7 +127,7 @@ code/xml
 rule code_xml_start_tag {
 
     strings:
-        $tag_start = /^\s*<[^>^\n]+>/
+        $tag_start = /^\s*<[^\/^>^\n][^>^\n]*>/
 
     condition:
         $tag_start in (0..256)
