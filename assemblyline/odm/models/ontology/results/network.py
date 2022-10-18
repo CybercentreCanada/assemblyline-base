@@ -64,4 +64,4 @@ class NetworkConnection(odm.Model):
         return f"network_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"
 
     def get_tag(data: dict):
-        return f"{dict.get('destination_ip')}:{dict.get('destination_port')}"
+        return f"{data.get('destination_ip')}:{data.get('destination_port')}"
