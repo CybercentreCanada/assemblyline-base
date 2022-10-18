@@ -14,12 +14,12 @@ from assemblyline.odm.base import FULL_URI
     ("http://blah.com:123?blah", True),
     ("http://blah.com:123/blah", True),
     ("http://blah.com:123/blah?blah", True),
-    ("1.1.1.1", True),
+    ("1.1.1.1", False),
     ("http://1.1.1.1", True),
     ("http://1.1.1.1:123", True),
     ("http://1.1.1.1:123/blah", True),
     ("http://1.1.1.1:123/blah?blah", True),
-    ("net.tcp://1.1.1.1:123", False),
+    ("net.tcp://1.1.1.1:123", True),
     ("net.tcp://1.1.1.1:1", False),
 ])
 def test_full_uri_regex(value, ismatch):
