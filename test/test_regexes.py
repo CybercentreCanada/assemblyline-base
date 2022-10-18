@@ -20,7 +20,7 @@ from assemblyline.odm.base import FULL_URI
     ("http://1.1.1.1:123/blah", True),
     ("http://1.1.1.1:123/blah?blah", True),
     ("net.tcp://1.1.1.1:123", True),
-    ("net.tcp://1.1.1.1:1", False),
+    ("net.tcp://1.1.1.1:1", True),
 ])
 def test_full_uri_regex(value, ismatch):
     validation_regex = re.compile(FULL_URI)
