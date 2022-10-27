@@ -74,7 +74,7 @@ def test_azure():
     assert fs.get('test') is not None
     with pytest.raises(TransportException):
         fs.put('bob', 'bob')
-    assert list(fs.transports[0].list()) == ['test']
+    assert "test" in list(fs.transports[0].list())
     assert list(fs.transports[0].list('abc')) == []
 
 
