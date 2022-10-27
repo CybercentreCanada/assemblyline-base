@@ -963,7 +963,7 @@ DEFAULT_UI = {
     "ingest_max_priority": 250,
     "read_only": False,
     "read_only_offset": "",
-    "rss_feeds": [],
+    "rss_feeds": ["https://alpytest.blob.core.windows.net/pytest/feed.json"],
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
     "statistics": DEFAULT_STATISTICS,
