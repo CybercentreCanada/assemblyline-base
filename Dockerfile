@@ -1,9 +1,10 @@
 FROM python:3.9-slim-buster AS base
 
+# Upgrade packages
+RUN apt-get update && apt-get -yy upgrade && rm -rf /var/lib/apt/lists/*
+
 # Get required apt packages
-RUN apt-get update \
-  && apt-get install -yy libffi6 libfuzzy2 libmagic1 \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -yy libffi6 libfuzzy2 libmagic1 && rm -rf /var/lib/apt/lists/*
 
 # Make sure root account is locked so 'su' commands fail all the time
 RUN passwd -l root
@@ -20,7 +21,7 @@ RUN apt-get update \
 # Install assemblyline base (setup.py is just a file we know exists so the command
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
 COPY setup.py dist* dist/
-RUN pip install --no-cache-dir -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
+RUN pip install --no-cache-dir --no-warn-script-location -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
 RUN chmod 750 /root/.local/lib/python3.9/site-packages
 
 FROM base
