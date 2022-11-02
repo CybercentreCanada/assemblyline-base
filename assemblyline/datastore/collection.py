@@ -1515,7 +1515,8 @@ class ESCollection(Generic[ModelType]):
             raise SearchException(err_msg)
 
         except Exception as error:
-            raise SearchException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
+            raise SearchException("collection: %s, query: %s, error: %s" % (
+                self.name, query_body, str(error))).with_traceback(error.__traceback__)
 
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None,
