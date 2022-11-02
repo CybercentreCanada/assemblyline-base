@@ -12,9 +12,11 @@ import signal
 import shutil
 import sys
 import warnings
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from tempfile import gettempdir
 
 import yaml
+import datemath
 
 from assemblyline.common import forge, log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
@@ -22,6 +24,8 @@ from assemblyline.common.cleanup_filestore import cleanup_filestore
 from assemblyline.common.security import get_totp_token, generate_random_secret
 from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
+from assemblyline.common.dict_utils import flatten
+from assemblyline.common.isotime import epoch_to_iso
 from assemblyline.filestore import create_transport
 from assemblyline.odm.models.signature import RULE_STATUSES
 from assemblyline.remote.datatypes.hash import Hash
@@ -1298,6 +1302,110 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 info = cleanup_filestore(transport_url=transport_url)
                 transport = create_transport(transport_url)
                 self.logger.info(str(transport) + ' ' + info)
+
+    def do_expiry(self, args):
+        """
+        Operations related to the data expiry system.
+
+        Usage:
+            expiry fix [index]
+
+        actions:
+            fix      Try to correct corrupted expiry values on the given index or "all".
+
+        """
+        valid_func = ['fix']
+        args = self._parse_args(args)
+
+        if len(args) != 2:
+            self._print_error("Wrong number of arguments for expiry command.")
+            return
+
+        func = args[0]
+        if func not in valid_func:
+            self._print_error(f"Invalid action '{func}' for expiry command.")
+            return
+
+        # Do nothing if expiry isn't as expected for these collections
+        ignore_indices = [
+            'cached_file'
+        ]
+
+        # Delete entries where expiry isn't as expected for these collections
+        cache_indices = [
+            'filescore',
+            'submission_tree',
+            'submission_summary',
+            'emptyresult',
+        ]
+
+        # Fix the expiry key where it isn't as expected for these collections
+        read_date_keys = {
+            'submission': 'times.submitted',
+            'file': 'seen.last',
+            'result': 'created',
+            'alert': 'reporting_ts',
+            'error': 'created',
+        }
+
+        # For future proof reasons, log any tables with expiry not included in lists of index names
+        active_indices = cache_indices + list(read_date_keys.keys())
+        covered_indices = ignore_indices + active_indices
+        for name, definition in self.datastore.ds.get_models().items():
+            if hasattr(definition, 'expiry_ts'):
+                if name not in covered_indices:
+                    self.logger.warning(f"Datastore index {name} not handled by script.")
+
+        # See which bucket they are asking for
+        bucket_name: str = args[1]
+        if bucket_name == 'all':
+            bucket_names = active_indices
+        else:
+            if bucket_name not in active_indices:
+                self._print_error(f"Bucket '{bucket_name}' does nothing with this command.")
+                return
+            bucket_names = [bucket_name]
+
+        if func == 'fix':
+            # Check if there is a max dtl set
+            max_dtl = self.config.submission.max_dtl
+            if not max_dtl:
+                self._print_error("System without a max_dtl configured do nothing with this command.")
+                return
+
+            # Our search query will always be for documents missing expiry, or
+            # documents where expiry is outside of configured bounds
+            query = f"(NOT _exists_:expiry_ts) OR expiry_ts: [now+{max_dtl}d TO *]"
+
+            for name in bucket_names:
+                # For each collection we have a date key to update with, do a stream search
+                # and update each document with a new expiry
+                if name in read_date_keys:
+                    date_key = read_date_keys[name]
+                    collection = self.datastore.get_collection(name)
+                    pool = ThreadPoolExecutor(50)
+
+                    def update(keys):
+                        keys = flatten(keys)
+                        if keys.get(date_key):
+                            base_date = self.datastore.ds.to_pydatemath(keys[date_key])
+                        else:
+                            base_date = 'now'
+                        new_expiry = epoch_to_iso(datemath.dm(f'{base_date}+{max_dtl}d').float_timestamp)
+                        collection.update(keys['id'], [(collection.UPDATE_SET, 'expiry_ts', new_expiry)])
+
+                    futures = []
+                    for keys in collection.stream_search(query, as_obj=False, fl='id,'+date_key):
+                        futures.append(pool.submit(update, keys))
+
+                    for future in as_completed(futures):
+                        future.result()
+
+                # For each collection where we don't, but have a cache storage
+                # character, just delete any suspicious entries
+                if name in cache_indices:
+                    collection = self.datastore.get_collection(name)
+                    collection.delete_by_query(query)
 
 
 def print_banner():
