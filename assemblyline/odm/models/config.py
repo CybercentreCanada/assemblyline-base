@@ -964,7 +964,8 @@ DEFAULT_UI = {
     "read_only": False,
     "read_only_offset": "",
     "rss_feeds": [
-        "https://alpytest.blob.core.windows.net/pytest/stable.json"
+        "https://alpytest.blob.core.windows.net/pytest/stable.json",
+        "https://alpytest.blob.core.windows.net/pytest/services.json"
     ],
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
