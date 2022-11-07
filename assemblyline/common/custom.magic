@@ -116,3 +116,7 @@
 0 string [InternetShortcut] custom: shortcut/web
 # NSIS Installer
 4  string  \xef\xbe\xad\xdeNullsoftInst custom: archive/nsis
+# Characterize batch file
+0 string REM\ Batch\ extracted\ by\ Characterize\n custom: code/batch
+# Characterize powershell file
+0 string \#\!\/usr\/bin\/env\ pwsh\n custom: code/ps1
