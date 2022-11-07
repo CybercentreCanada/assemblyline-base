@@ -956,6 +956,7 @@ class UI(odm.Model):
     read_only: bool = odm.Boolean(description="Turn on read only mode in the UI")
     read_only_offset: str = odm.Keyword(
         default="", description="Offset of the read only mode for all paging and searches")
+    rss_feeds: List[str] = odm.List(odm.Keyword(), default=[], description="List of RSS feeds to display on the UI")
     secret_key: str = odm.Keyword(description="Flask secret key to store cookies, etc.")
     session_duration: int = odm.Integer(description="Duration of the user session before the user has to login again")
     statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS,
@@ -993,6 +994,10 @@ DEFAULT_UI = {
     "ingest_max_priority": 250,
     "read_only": False,
     "read_only_offset": "",
+    "rss_feeds": [
+        "https://alpytest.blob.core.windows.net/pytest/stable.json",
+        "https://alpytest.blob.core.windows.net/pytest/services.json"
+    ],
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
     "statistics": DEFAULT_STATISTICS,
