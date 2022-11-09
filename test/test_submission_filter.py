@@ -132,6 +132,22 @@ def test_message_filter():
     assert fltr.test(sub, score=600)
 
 
+def test_regex_filter():
+    sub: MessageSubmission = random_minimal_obj(MessageSubmission)
+
+    fltr = SubmissionFilter("metadata.other: /ab+c/")
+    print(fltr)
+    assert fltr.cache_safe
+
+    assert not fltr.test(sub)
+
+    sub.metadata['other'] = "ac"
+    assert not fltr.test(sub)
+
+    sub.metadata['other'] = "abbbc"
+    assert fltr.test(sub)
+
+
 def test_webhook_match():
 
     webhook_first = dict(
