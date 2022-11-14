@@ -14,8 +14,8 @@ REF_UPDATE_SOURCE = "Refer to:<br>[Service - UpdateSource](../service/#updatesou
 
 @odm.model(index=False, store=False)
 class EnvironmentVariable(odm.Model):
-    name: str = odm.Keyword(description=REF_ENVVAR)
-    value: str = odm.Keyword(description=REF_ENVVAR)
+    name: str = odm.keyword(description=REF_ENVVAR)
+    value: str = odm.keyword(description=REF_ENVVAR)
 
 
 @odm.model(index=False, store=False, description="Docker Configuration Delta")
@@ -31,6 +31,7 @@ class DockerConfigDelta(odm.Model):
     ports = odm.Optional(odm.List(odm.Keyword()), description=REF_DOCKER_CONFIG)
     ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     ram_mb_min = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
+    service_account = odm.optional(odm.keyword(description=REF_DOCKER_CONFIG))
 
 
 @odm.model(index=False, store=False)
