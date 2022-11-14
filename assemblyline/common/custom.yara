@@ -917,6 +917,7 @@ rule archive_udf {
 
     meta:
         type = "archive/udf"
+        score = 1
 
     strings:
         $ID1 = "CD001"

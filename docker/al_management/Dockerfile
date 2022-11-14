@@ -3,6 +3,9 @@ FROM python:3.9-slim-buster
 # Make sure root account is locked so 'su' commands fail all the time
 RUN passwd -l root
 
+# Upgrade packages
+RUN apt-get update && apt-get -yy upgrade && rm -rf /var/lib/apt/lists/*
+
 # Get required apt packages
 RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 && rm -rf /var/lib/apt/lists/*
 
@@ -36,7 +39,7 @@ USER assemblyline
 RUN python -m venv /var/lib/assemblyline/venv
 
 # Install packages in the venv
-RUN /bin/bash -c "source /var/lib/assemblyline/venv/bin/activate && pip install --no-cache-dir --upgrade pip wheel && pip install --no-cache-dir assemblyline assemblyline_core assemblyline_ui assemblyline-client ipython jupyter"
+RUN /bin/bash -c "source /var/lib/assemblyline/venv/bin/activate && pip install --no-warn-script-location --no-cache-dir --upgrade pip wheel && pip install --no-warn-script-location --no-cache-dir assemblyline assemblyline_core assemblyline_ui assemblyline-client ipython jupyter"
 
 # Setup venv when bash is launched
 RUN echo "source /var/lib/assemblyline/venv/bin/activate" >> /var/lib/assemblyline/.bashrc

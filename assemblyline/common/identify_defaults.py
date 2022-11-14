@@ -223,6 +223,8 @@ trusted_mimes = {
     "text/x-shellscript": "code/shell",
     # RTF
     "text/rtf": "document/office/rtf",
+    # Troff
+    "text/troff": "text/troff",
     # Java
     "text/x-java": "code/java",
     # Batch
