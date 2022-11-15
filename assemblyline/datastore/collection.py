@@ -1140,7 +1140,7 @@ class ESCollection(Generic[ModelType]):
 
         return True
 
-    def delete(self, key):
+    def delete(self, key, archive_access=None):
         """
         This function should delete the underlying document referenced by the key.
         It should return true if the document was in fact properly deleted.
@@ -1148,6 +1148,9 @@ class ESCollection(Generic[ModelType]):
         :param key: id of the document to delete
         :return: True is delete successful
         """
+        if archive_access is None:
+            archive_access = self.archive_access
+
         deleted = False
         try:
             info = self.with_retries(self.datastore.client.delete, id=key, index=self.name)
@@ -1155,7 +1158,7 @@ class ESCollection(Generic[ModelType]):
         except elasticsearch.NotFoundError:
             pass
 
-        if self.archive_access:
+        if archive_access:
             query_body = {"query": {"ids": {"values": [key]}}}
             info = self._delete_async(f"{self.name}-ma-*", query_body)
             if not deleted:
@@ -1165,7 +1168,7 @@ class ESCollection(Generic[ModelType]):
 
         return deleted
 
-    def delete_by_query(self, query, workers=20, sort=None, max_docs=None):
+    def delete_by_query(self, query, workers=20, sort=None, max_docs=None, archive_access=None):
         """
         This function should delete the underlying documents referenced by the query.
         It should return true if the documents were in fact properly deleted.
@@ -1174,9 +1177,13 @@ class ESCollection(Generic[ModelType]):
         :param workers: Number of workers used for deletion if basic currency delete is used
         :return: True is delete successful
         """
+        if archive_access is None:
+            archive_access = self.archive_access
+
         index = self.name
-        if self.archive_access:
+        if archive_access:
             index = f"{index},{self.name}-ma-*"
+
         query_body = {"query": {"bool": {"must": {"query_string": {"query": query}}}}}
         info = self._delete_async(index, query_body, sort=sort_str(parse_sort(sort)), max_docs=max_docs)
         return info.get('deleted', 0) != 0
