@@ -22,8 +22,8 @@ class DockerConfigDelta(odm.Model):
         odm.List(odm.Compound(EnvironmentVariable)),
         description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
     image = odm.Optional(odm.Keyword())  # The docker image and tag, optionally including registry in the normal way
-    registry_username = odm.Optional(odm.Keyword())  # The username to use when pulling the image
-    registry_password = odm.Optional(odm.Keyword())  # The password or token to use when pulling the image
+    registry_username = odm.Optional(odm.Keyword(default=""))  # The username to use when pulling the image
+    registry_password = odm.Optional(odm.Keyword(default=""))  # The password or token to use when pulling the image
     # The type of registry (Docker, Harbor, description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
     registry_type = odm.Optional(odm.Enum(values=["docker", "harbor"]))
     ports = odm.Optional(

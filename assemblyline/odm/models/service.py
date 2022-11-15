@@ -34,8 +34,9 @@ class DockerConfig(odm.Model):
     environment: list[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[],
                                                       description="Additional environemnt variables for the container")
     image: str = odm.Keyword(description="Complete name of the Docker image with tag, may include registry")
-    registry_username: Opt[str] = odm.Optional(odm.Keyword(), description="The username to use when pulling the image")
-    registry_password: Opt[str] = odm.Optional(odm.Keyword(),
+    registry_username: Opt[str] = odm.Optional(odm.Keyword(default=""),
+                                               description="The username to use when pulling the image")
+    registry_password: Opt[str] = odm.Optional(odm.Keyword(default=""),
                                                description="The password or token to use when pulling the image")
     registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker',
                                   description="The type of container registry")
