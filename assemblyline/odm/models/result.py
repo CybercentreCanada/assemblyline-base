@@ -1,3 +1,4 @@
+import typing
 from collections import defaultdict
 
 from assemblyline import odm
@@ -132,7 +133,7 @@ class Result(odm.Model):
 
         return '.'.join(key_list)
 
-    def scored_tag_dict(self) -> dict:
+    def scored_tag_dict(self) -> dict[str, dict[str, typing.Any]]:
         tags = defaultdict(lambda: {'score': 0})
         # Save the tags and their score
         for section in self.result.sections:
@@ -144,7 +145,7 @@ class Result(odm.Model):
 
         return tags
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         if len(self.response.extracted) == 0 and \
                 len(self.response.supplementary) == 0 and \
                 len(self.result.sections) == 0 and \

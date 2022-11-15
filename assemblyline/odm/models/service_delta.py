@@ -1,6 +1,9 @@
 from assemblyline import odm
 from assemblyline.odm.models.service import SIGNATURE_DELIMITERS
 
+REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
+REF_ENVVAR = "Refer to:<br>[Service - Enviroment Variable](../service/#environmentvariable)"
+
 
 REF_DEPENDENCY_CONFIG = "Refer to:<br>[Service - DependencyConfig](../service/#dependencyconfig)"
 REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
@@ -31,6 +34,7 @@ class DockerConfigDelta(odm.Model):
     ports = odm.Optional(odm.List(odm.Keyword()), description=REF_DOCKER_CONFIG)
     ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     ram_mb_min = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
+    service_account = odm.optional(odm.keyword(description=REF_DOCKER_CONFIG))
 
 
 @odm.model(index=False, store=False)
