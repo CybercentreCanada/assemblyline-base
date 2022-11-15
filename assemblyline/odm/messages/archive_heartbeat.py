@@ -6,16 +6,16 @@ LOADER_CLASS = "assemblyline.odm.messages.archive_heartbeat.ArchiveMessage"
 
 @odm.model(description="Archive Metrics")
 class Metrics(odm.Model):
-    alert = odm.Integer(description="Number of alerts archived")
-    cached_file = odm.Integer(description="Number of cached files archived")
-    emptyresult = odm.Integer(description="Number of empty results archived")
-    error = odm.Integer(description="Number of errors archived")
+    # Indices metrics
     file = odm.Integer(description="Number of files archived")
-    filescore = odm.Integer(description="Number of filescores archived")
     result = odm.Integer(description="Number of results archived")
     submission = odm.Integer(description="Number of submissions archived")
-    submission_tree = odm.Integer(description="Number of submission trees archived")
-    submission_summary = odm.Integer(description="Number of submission summaries archived")
+    # Messaging metrics
+    received = odm.Integer(description="Number of received archive messages")
+    exception = odm.Integer(description="Number of exceptions during archiving")
+    invalid = odm.Integer(description="Number of invalid archive type errors during archiving")
+    not_found = odm.Integer(description="Number of submission not found failures during archiving")
+    webhook_failure = odm.Integer(description="Number of webhook failures during archiving")
 
 
 @odm.model(description="Archive Heartbeat Model")
