@@ -1,38 +1,33 @@
 from assemblyline import odm
 from assemblyline.odm.models.service import SIGNATURE_DELIMITERS
 
+REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
+REF_ENVVAR = "Refer to:<br>[Service - Enviroment Variable](../service/#environmentvariable)"
+
 
 @odm.model(index=False, store=False)
 class EnvironmentVariable(odm.Model):
-    name: str = odm.Keyword(description="Refer to:<br>[Service - Enviroment Variable](../service/#environmentvariable)")
-    value: str = odm.Keyword(
-        description="Refer to:<br>[Service - Enviroment Variable](../service/#environmentvariable)")
+    name: str = odm.keyword(description=REF_ENVVAR)
+    value: str = odm.keyword(description=REF_ENVVAR)
 
 
 @odm.model(index=False, store=False, description="Docker Configuration Delta")
 class DockerConfigDelta(odm.Model):
-    allow_internet_access = odm.Optional(
-        odm.Boolean(),
-        description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
-    command = odm.Optional(
-        odm.List(odm.Keyword()),
-        description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
-    cpu_cores = odm.Optional(odm.Float(), description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
+    allow_internet_access = odm.Optional(odm.Boolean(), description=REF_DOCKER_CONFIG)
+    command = odm.Optional(odm.List(odm.Keyword()), description=REF_DOCKER_CONFIG)
+    cpu_cores = odm.Optional(odm.Float(), description=REF_DOCKER_CONFIG)
     environment = odm.Optional(
         odm.List(odm.Compound(EnvironmentVariable)),
-        description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
+        description=REF_DOCKER_CONFIG)
     image = odm.Optional(odm.Keyword())  # The docker image and tag, optionally including registry in the normal way
     registry_username = odm.Optional(odm.Keyword(default=""))  # The username to use when pulling the image
     registry_password = odm.Optional(odm.Keyword(default=""))  # The password or token to use when pulling the image
-    # The type of registry (Docker, Harbor, description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
+    # The type of registry (Docker, Harbor, description=REF_DOCKER_CONFIG)
     registry_type = odm.Optional(odm.Enum(values=["docker", "harbor"]))
-    ports = odm.Optional(
-        odm.List(odm.Keyword()),
-        description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
-    ram_mb = odm.Optional(odm.Integer(), description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
-    ram_mb_min = odm.Optional(
-        odm.Integer(),
-        description="Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)")
+    ports = odm.Optional(odm.List(odm.Keyword()), description=REF_DOCKER_CONFIG)
+    ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
+    ram_mb_min = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
+    service_account = odm.optional(odm.keyword(description=REF_DOCKER_CONFIG))
 
 
 @odm.model(index=False, store=False)
