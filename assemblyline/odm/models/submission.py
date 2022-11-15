@@ -71,7 +71,10 @@ class SubmissionParams(odm.Model):
     type = odm.Keyword(default="USER", description="Type of submission")
     initial_data = odm.Optional(odm.Text(index=False), description="Initialization for temporary submission data")
     auto_archive = odm.Boolean(default=False,
-                               description="Does the submission automatically goes into the archive when completed")
+                               description="Does the submission automatically goes into the archive when completed?")
+    delete_after_archive = odm.Boolean(
+        default=False,
+        description="When the submission is archived, should we delete it from hot storage right away?")
 
     def get_hashing_keys(self):
         """Get the sections of the submission parameters that should be used in result hashes."""
