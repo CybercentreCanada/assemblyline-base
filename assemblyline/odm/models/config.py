@@ -368,7 +368,6 @@ class Expiry(odm.Model):
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
     delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
-    archive_batch_size = odm.Integer(description="How large a batch get archived per iteration.")
 
 
 DEFAULT_EXPIRY = {
@@ -380,7 +379,6 @@ DEFAULT_EXPIRY = {
     'delete_workers': 2,
     'iteration_max_tasks': 20,
     'delete_batch_size': 2000,
-    'archive_batch_size': 5000,
 }
 
 
@@ -504,7 +502,7 @@ DEFAULT_METRICS = {
 
 
 @odm.model(index=False, store=False, description="Malware Archive Configuration")
-class Archive(odm.Model):
+class Archiver(odm.Model):
     minimum_required_services: List[str] = odm.List(
         odm.keyword(),
         default=[],
@@ -515,7 +513,7 @@ class Archive(odm.Model):
             description="Webhook executed right before submission archiving takes place which adds metadata."))
 
 
-DEFAULT_ARCHIVE = {
+DEFAULT_ARCHIVER = {
     'minimum_required_services': [],
     'webhook': None
 }
@@ -634,8 +632,8 @@ DEFAULT_VACUUM = dict(
 @odm.model(index=False, store=False, description="Core Component Configuration")
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER, description="Configuration for Alerter")
-    archive: Archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE,
-                                    description="Configuration for the permanent submission archive")
+    archiver: Archiver = odm.Compound(Archiver, default=DEFAULT_ARCHIVER,
+                                      description="Configuration for the permanent submission archive")
     dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER,
                                           description="Configuration for Dispatcher")
     expiry: Expiry = odm.Compound(Expiry, default=DEFAULT_EXPIRY, description="Configuration for Expiry")
@@ -649,7 +647,7 @@ class Core(odm.Model):
 
 DEFAULT_CORE = {
     "alerter": DEFAULT_ALERTER,
-    "archive": DEFAULT_ARCHIVE,
+    "archiver": DEFAULT_ARCHIVER,
     "dispatcher": DEFAULT_DISPATCHER,
     "expiry": DEFAULT_EXPIRY,
     "ingester": DEFAULT_INGESTER,
