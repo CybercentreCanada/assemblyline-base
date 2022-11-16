@@ -22,6 +22,7 @@ class Metrics(odm.Model):
 class Heartbeat(odm.Model):
     instances = odm.Integer(description="Number of instances")
     metrics = odm.Compound(Metrics, description="Archive metrics")
+    queued = odm.Integer(description="Number of documents to be archived")
 
 
 @odm.model(description="Model for Archive Heartbeat Messages")
