@@ -34,8 +34,9 @@ class PostprocessAction(odm.Model):
     run_on_completed = boolean(default=False, description="Should this action run on newly completed submissions")
     filter = keyword(description="Query string to select submissions")
     webhook = optional(compound(Webhook), description="Webhook action configuration")
-    raise_alert = boolean(default=False, description="")
+    raise_alert = boolean(default=False, description="Raise an alert when this action is triggered")
     resubmit = optional(compound(ResubmitOptions), description="Resubmission configuration")
+    archive_submission = boolean(default=False, description="Archive the submission when this action is triggered")
 
 
 DEFAULT_POSTPROCESS_ACTIONS = {
@@ -47,7 +48,8 @@ DEFAULT_POSTPROCESS_ACTIONS = {
         filter="max_score: >=500",
         webhook=None,
         raise_alert=True,
-        resubmit=None
+        resubmit=None,
+        archive_submission=False
     )),
     # Resubmit submissions on completion. All submissions with score >= 0 are elegable, but sampling
     # is applied to scores below 500
@@ -61,6 +63,7 @@ DEFAULT_POSTPROCESS_ACTIONS = {
         resubmit=ResubmitOptions(dict(
             additional_services=[],
             random_below=500
-        ))
+        )),
+        archive_submission=False
     ))
 }
