@@ -37,6 +37,8 @@ def test_simple_filters():
     assert not fltr.test(sub)
     sub.metadata['stuff'] = 'big dogs'
     assert fltr.test(sub)
+    sub.metadata['stuff'] = 'aig dogs'
+    assert not fltr.test(sub)
 
     fltr = SubmissionFilter('max_score: >100 AND NOT results: *virus*')
     assert not fltr.cache_safe
@@ -65,6 +67,28 @@ def test_simple_filters():
     sub.params.description = "Full of cats."
     assert not fltr.test(sub)
     sub.metadata['stuff'] = "things"
+    assert fltr.test(sub)
+
+    fltr = SubmissionFilter('metadata.stuff: "big-bad"')
+    assert fltr.cache_safe
+    sub.metadata['stuff'] = 'big-bad'
+    assert fltr.test(sub)
+
+    fltr = SubmissionFilter('metadata.stuff: big-bad')
+    assert fltr.cache_safe
+    assert fltr.test(sub)
+
+    fltr = SubmissionFilter('metadata.stuff: big\\-bad')
+    assert fltr.cache_safe
+    assert fltr.test(sub)
+
+    fltr = SubmissionFilter('metadata.stuff: "big bad"')
+    assert fltr.cache_safe
+    sub.metadata['stuff'] = 'big bad'
+    assert fltr.test(sub)
+
+    fltr = SubmissionFilter('metadata.stuff: big\\ bad')
+    assert fltr.cache_safe
     assert fltr.test(sub)
 
 
