@@ -486,33 +486,31 @@ class AssemblylineDatastore(object):
         return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_file_list_from_keys(self, keys):
-        # TODO: needed?
+    def get_file_list_from_keys(self, keys, supplementary=False):
         if len(keys) == 0:
             return {}
         keys = [x for x in list(keys) if not x.endswith(".e")]
-        items = self.result.multiget(keys)
+        items = self.result.multiget(keys, as_obj=False)
 
-        out = {}
+        out = set()
         for key, item in items.items():
-            extracted = item['response']['extracted']
-            if len(extracted) == 0:
-                continue
-            if key[:64] not in out:
-                out[key[:64]] = []
-            out[key[:64]].extend(extracted)
+            out.add(key[:64])
+            for extracted in item['response']['extracted']:
+                out.add(extracted['sha256'])
+            if supplementary:
+                for supplementary in item['response']['supplementary']:
+                    out.add(supplementary['sha256'])
 
-        return out
+        return list(out)
 
     @elasticapm.capture_span(span_type='datastore')
     def get_file_scores_from_keys(self, keys):
-        # TODO: needed?
         if len(keys) == 0:
             return {}
         keys = [x for x in list(keys) if not x.endswith(".e")]
+        scores = {x[:64]: 0 for x in keys}
         items = self.result.multiget(keys)
 
-        scores = {x[:64]: 0 for x in keys}
         for key, item in items.items():
             score = item["result"]["score"]
             scores[key[:64]] += score
