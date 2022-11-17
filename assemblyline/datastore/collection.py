@@ -496,6 +496,8 @@ class ESCollection(Generic[ModelType]):
             else:
                 saved_data = deepcopy(data)
 
+        saved_data['id'] = key
+
         self.with_retries(
             self.datastore.client.index,
             index=f"{self.name}-ma",
@@ -907,7 +909,8 @@ class ESCollection(Generic[ModelType]):
                 self.datastore.client.search, index=index,
                 query={"ids": {"values": key_list}},
                 source=['id'],
-                size=len(key_list))
+                size=len(key_list),
+                collapse={'field': "id"})
             for row in result['hits']['hits']:
                 out[row['_id']] = True
 
