@@ -892,7 +892,57 @@ class ESCollection(Generic[ModelType]):
 
         return True
 
-    def multiget(self, key_list, as_dictionary=True, as_obj=True, error_on_missing=True):
+    def _multiexists(self, index, key_list):
+        """
+        With a list of keys, check if all those keys exists in the specified indices
+
+        :param indices: string describing the list of indices to search in
+        :param key_list: list of keys to check if exists
+        :return: dictionary with the exists result of all original keys
+        """
+        out = {k: False for k in key_list}
+
+        if key_list and index:
+            result = self.with_retries(
+                self.datastore.client.search, index=index,
+                query={"ids": {"values": key_list}},
+                source=['id'],
+                size=len(key_list))
+            for row in result['hits']['hits']:
+                out[row['_id']] = True
+
+        return out
+
+    def multiexists(self, key_list, archive_access=None):
+        """
+        With a list of keys, check if all those keys exists in the collection
+
+        :param archive_access: should we search in the archive as well?
+        :param key_list: list of keys to check if exists
+        :return: dictionary with the exists result of all original keys
+        """
+        if archive_access is None:
+            archive_access = self.archive_access
+
+        index = self.name
+        if archive_access:
+            index = f"{index},{self.name}-ma-*"
+
+        return self._multiexists(index, key_list=key_list)
+
+    def multiexists_in_archive(self, key_list):
+        """
+        With a list of keys, check if all those keys exists in the archive indices
+
+        :param key_list: list of keys to check if exists
+        :return: dictionary with the exists result of all original keys
+        """
+        if not self.archive_access:
+            raise ArchiveDisabled("This datastore object does not have archive access.")
+
+        return self._multiexists(f"{self.name}-ma-*", key_list=key_list)
+
+    def multiget(self, key_list, as_dictionary=True, as_obj=True, error_on_missing=True, archive_access=None):
         """
         Get a list of documents from the datastore and make sure they are normalized using
         the model class
@@ -903,6 +953,8 @@ class ESCollection(Generic[ModelType]):
         :param key_list: list of keys of documents to get
         :return: list of instances of the model class
         """
+        if archive_access is None:
+            archive_access = self.archive_access
 
         def add_to_output(data_output, data_id):
             if "__non_doc_raw__" in data_output:
@@ -935,7 +987,7 @@ class ESCollection(Generic[ModelType]):
                 except ValueError:
                     log.error(f'MGet returned multiple documents for id: {row["_id"]}')
 
-            if key_list and self.archive_access:
+            if key_list and archive_access:
                 result = self.with_retries(self.datastore.client.search,
                                            index=f"{self.name}-ma-*", query={"ids": {"values": key_list}},
                                            size=len(key_list), collapse={"field": "id"})
