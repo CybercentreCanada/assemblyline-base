@@ -750,12 +750,17 @@ class ActionWorker:
         # Archive the submission
         if archive_submission:
             if self.config.datastore.archive.enabled:
-                logger.info(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] Notifying archiver to "
-                            "copy the submission in the malware archive")
+                logger.info(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] Evaluating if the file can"
+                            " be moved to the malware archive")
 
-                self.archive_manager.archive_submission(
-                    submission_msg.as_primitives(),
-                    submission_msg.params.delete_after_archive)
+                if self.archive_manager.archive_submission(
+                        submission_msg.as_primitives(),
+                        submission_msg.params.delete_after_archive)['action'] == "archive":
+                    logger.info(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] Archiver was notified "
+                                "to copy the file in the malware archive")
+                else:
+                    logger.info(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] The file was "
+                                "re-submitted for analysis because it does not meet the minimum service requirement")
 
             else:
                 logger.warning(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] Trying to archive a "
