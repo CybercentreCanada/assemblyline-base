@@ -836,6 +836,9 @@ class ESCollection(Generic[ModelType]):
             out = []
 
         for index in index_list:
+            if not key_list:
+                break
+
             data = self.with_retries(self.datastore.client.mget, body={'ids': key_list}, index=index)
 
             for row in data.get('docs', []):
@@ -981,7 +984,7 @@ class ESCollection(Generic[ModelType]):
             return self.normalize(data, as_obj=as_obj), version
         return self.normalize(data, as_obj=as_obj)
 
-    def save(self, key, data, version=None, index_type=None):
+    def save(self, key, data, version=None, index_type=Index.HOT):
         """
         Save a to document to the datastore using the key as its document id.
 
@@ -1185,7 +1188,7 @@ class ESCollection(Generic[ModelType]):
 
         return ret_ops
 
-    def update(self, key, operations, index_type=None):
+    def update(self, key, operations, index_type=Index.HOT):
         """
         This function performs an atomic update on some fields from the
         underlying documents referenced by the id using a list of operations.
@@ -1215,7 +1218,8 @@ class ESCollection(Generic[ModelType]):
 
         return False
 
-    def update_by_query(self, query, operations, filters=None, access_control=None, max_docs=None, index_type=None):
+    def update_by_query(self, query, operations, filters=None, access_control=None, max_docs=None,
+                        index_type=Index.HOT):
         """
         This function performs an atomic update on some fields from the
         underlying documents matching the query and the filters using a list of operations.
@@ -1306,7 +1310,7 @@ class ESCollection(Generic[ModelType]):
 
         return {key: val for key, val in source_data.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=None):
+    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT):
         index = self.get_joined_index(index_type)
 
         if args is None:
@@ -1493,7 +1497,7 @@ class ESCollection(Generic[ModelType]):
 
     def search(self, query, offset=0, rows=None, sort=None,
                fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, index_type=None, track_total_hits=None, script_fields=[]):
+               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, script_fields=[]):
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -1593,7 +1597,7 @@ class ESCollection(Generic[ModelType]):
         return ret_data
 
     def stream_search(self, query, fl=None, filters=None, access_control=None,
-                      item_buffer_size=200, as_obj=True, index_type=None):
+                      item_buffer_size=200, as_obj=True, index_type=Index.HOT):
         """
         This function should perform a search through the datastore and stream
         all related results as a dictionary of key value pair where each keys
@@ -1650,7 +1654,7 @@ class ESCollection(Generic[ModelType]):
             # Unpack the results, ensure the id is always set
             yield self._format_output(value, fl, as_obj=as_obj)
 
-    def keys(self, access_control=None, index_type=None):
+    def keys(self, access_control=None, index_type=Index.HOT):
         """
         This function streams the keys of all the documents of this collection.
 
@@ -1710,7 +1714,7 @@ class ESCollection(Generic[ModelType]):
             return ret_type
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1,
-                  filters=None, access_control=None, index_type=None):
+                  filters=None, access_control=None, index_type=Index.HOT):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -1746,7 +1750,7 @@ class ESCollection(Generic[ModelType]):
                 for row in result['aggregations']['histogram']['buckets']}
 
     def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None,
-              index_type=None, field_script=None):
+              index_type=Index.HOT, field_script=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1777,7 +1781,7 @@ class ESCollection(Generic[ModelType]):
         return {row.get('key_as_string', row['key']): row['doc_count']
                 for row in result['aggregations'][field]['buckets']}
 
-    def stats(self, field, query="id:*", filters=None, access_control=None, index_type=None, field_script=None):
+    def stats(self, field, query="id:*", filters=None, access_control=None, index_type=Index.HOT, field_script=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1803,7 +1807,7 @@ class ESCollection(Generic[ModelType]):
         return result['aggregations'][f"{field}_stats"]
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
-                       rows=None, filters=None, access_control=None, as_obj=True, index_type=None,
+                       rows=None, filters=None, access_control=None, as_obj=True, index_type=Index.HOT,
                        track_total_hits=False):
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
