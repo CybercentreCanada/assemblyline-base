@@ -17,8 +17,8 @@ REF_UPDATE_SOURCE = "Refer to:<br>[Service - UpdateSource](../service/#updatesou
 
 @odm.model(index=False, store=False)
 class EnvironmentVariable(odm.Model):
-    name: str = odm.Keyword(description=REF_ENVVAR)
-    value: str = odm.Keyword(description=REF_ENVVAR)
+    name: str = odm.keyword(description=REF_ENVVAR)
+    value: str = odm.keyword(description=REF_ENVVAR)
 
 
 @odm.model(index=False, store=False, description="Docker Configuration Delta")
