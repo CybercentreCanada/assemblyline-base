@@ -657,34 +657,15 @@ DEFAULT_CORE = {
 }
 
 
-@odm.model(index=False, store=False, description="ILM Policies for Archiving Indices")
-class ArchiveILMConfig(odm.Model):
-    indices = odm.List(odm.Keyword(), description="List of indices the ILM Applies to")
-    warm = odm.Integer(description="How long, per unit of time, should a document remain in the 'warm' tier?")
-    cold = odm.Integer(description="How long, per unit of time, should a document remain in the 'cold' tier?")
-    unit = odm.Enum(['d', 'h', 'm'], description="Unit of time used by `warm` and `cold` phases")
-
-
-DEFAULT_ARCHIVE_ILM_CONFIG = {
-    "indices": ['file', 'submission', 'result'],
-    "warm": 5,
-    "cold": 15,
-    "unit":  "d"
-}
-
-
 @odm.model(index=False, store=False, description="Datastore Archive feature configuration")
 class Archive(odm.Model):
     enabled = odm.Boolean(description="Are we enabling Achiving features across indices?")
-    ilm_config = odm.Compound(ArchiveILMConfig, default=DEFAULT_ARCHIVE_ILM_CONFIG,
-                              description="Index-specific ILM policies")
-    update_archive = odm.Boolean(description="Do we want to update documents in the archive?")
+    indices = odm.List(odm.Keyword(), description="List of indices the ILM Applies to")
 
 
 DEFAULT_ARCHIVE = {
     "enabled": False,
-    "ilm_config": DEFAULT_ARCHIVE_ILM_CONFIG,
-    "update_archive": False
+    "indices": ['file', 'submission', 'result'],
 }
 
 

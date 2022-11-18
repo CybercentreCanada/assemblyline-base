@@ -15,7 +15,7 @@ from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictExce
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
-from assemblyline.datastore.collection import ESCollection, log
+from assemblyline.datastore.collection import ESCollection, log, Index
 from assemblyline.odm import Model, DATEFORMAT
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
@@ -978,9 +978,11 @@ class AssemblylineDatastore(object):
             up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0, 'first_hit': None, 'last_hit': None}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
-                                          sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
+                                          sort="created asc", as_obj=False,
+                                          index_type=Index.HOT_AND_ARCHIVE)['items'][0]['created']
             last = self.ds.result.search(query=query, fl='created', rows=1,
-                                         sort="created desc", as_obj=False, use_archive=True)['items'][0]['created']
+                                         sort="created desc", as_obj=False,
+                                         index_type=Index.HOT_AND_ARCHIVE)['items'][0]['created']
             up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
@@ -1033,9 +1035,11 @@ class AssemblylineDatastore(object):
             up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0, 'first_hit': None, 'last_hit': None}
         else:
             first = self.ds.result.search(query=query, fl='created', rows=1,
-                                          sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
+                                          sort="created asc", as_obj=False,
+                                          index_type=Index.HOT_AND_ARCHIVE)['items'][0]['created']
             last = self.ds.result.search(query=query, fl='created', rows=1,
-                                         sort="created desc", as_obj=False, use_archive=True)['items'][0]['created']
+                                         sort="created desc", as_obj=False,
+                                         index_type=Index.HOT_AND_ARCHIVE)['items'][0]['created']
             up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
@@ -1141,8 +1145,7 @@ class AssemblylineDatastore(object):
             expiry = expiry.strftime(DATEFORMAT)
 
         while True:
-            current_fileinfo, version = self.ds.file.get_if_exists(
-                sha256, as_obj=False, archive_access=config.datastore.archive.update_archive, version=True)
+            current_fileinfo, version = self.ds.file.get_if_exists(sha256, as_obj=False, version=True)
 
             if current_fileinfo is None:
                 current_fileinfo = {}

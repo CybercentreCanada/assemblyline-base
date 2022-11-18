@@ -50,18 +50,13 @@ class ESStore(object):
     ID = 'id'
     MIN_ELASTIC_VERSION = '7.10'
 
-    def __init__(self, hosts, collection_class=ESCollection, archive_access=True):
+    def __init__(self, hosts, archive_access=True):
         config = forge.get_config()
-        if config.datastore.archive.enabled:
-            archive_config = config.datastore.archive.ilm_config.as_primitives()
-        else:
-            archive_config = {}
-
         self._hosts = hosts
         self._closed = False
         self._collections = {}
         self._models = {}
-        self.archive_config = archive_config
+        self.archive_indices = config.datastore.archive.indices if config.datastore.archive.enabled else []
         self.validate = True
 
         tracer = logging.getLogger('elasticsearch')
