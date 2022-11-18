@@ -27,3 +27,4 @@ class File(odm.Model):
     size = odm.Integer(description="Size of the file in bytes")
     ssdeep = odm.SSDeepHash(store=False, description="SSDEEP hash of the file")
     type = odm.Keyword(copyto="__text__", description="Type of file as identified by Assemblyline")
+    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive")

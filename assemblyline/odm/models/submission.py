@@ -138,6 +138,7 @@ class Submission(odm.Model):
     state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission")
     times = odm.Compound(Times, default={}, description="Submission-specific times")
     verdict = odm.Compound(Verdict, default={}, description="Malicious verdict details")
+    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive")
 
     # the filescore key, used in deduplication. This is a non-unique key, that is
     # shared by submissions that may be processed as duplicates.
