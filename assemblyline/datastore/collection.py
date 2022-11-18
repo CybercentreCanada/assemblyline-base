@@ -215,29 +215,11 @@ class ESCollection(Generic[ModelType]):
                 if field.store:
                     self.stored_fields[name] = field
 
-    @property
-    def archive_access(self):
-        if self.archive_name is not None and self.datastore.archive_access:
-            return True
-        return False
-
-    @property
-    def index_list(self):
-        """
-        This property contains the list of valid indexes for the current collection.
-
-        :return: list of valid indexes for this collection
-        """
-        if self.archive_access:
-            return [self.index_name, self.index_archive_name]
-        else:
-            return [self.index_name]
-
     def get_index_list(self, index_type):
         # Default value
         if index_type is None:
             # If has an archive: hot + archive
-            if self.archive_access:
+            if self.index_archive_name and self.datastore.archive_access:
                 return [self.index_name, self.index_archive_name]
             # Otherwise just hot
             return [self.index_name]
@@ -246,18 +228,30 @@ class ESCollection(Generic[ModelType]):
         elif index_type == Index.HOT:
             return [self.index_name]
 
-        # Otherwise
-        else:
-            # Crash is no archive access
-            if not self.archive_access:
+        # If only archive asked
+        elif index_type == Index.ARCHIVE:
+            # Crash if index has no archive
+            if not self.index_archive_name:
+                raise ArchiveDisabled(f"Index {self.name.upper()} does not have an archive")
+
+            # Crash if no archive access
+            if not self.datastore.archive_access:
                 raise ArchiveDisabled(
                     "Trying to get access to the archive on a datastore where archive_access is disabled")
 
-            # If jsut archive: archive
-            if index_type == Index.ARCHIVE:
-                return [self.index_archive_name]
+            # Return only archive index
+            return [self.index_archive_name]
+        else:
+            # Crash if no archive access
+            if not self.datastore.archive_access:
+                raise ArchiveDisabled(
+                    "Trying to get access to the archive on a datastore where archive_access is disabled")
 
-            # Otherwise: hot and archive
+            # Return HOT if asked for both but only has HOT
+            if not self.index_archive_name:
+                return [self.index_name]
+
+            # Otherwise return hot and archive indices
             return [self.index_name, self.index_archive_name]
 
     def get_joined_index(self, index_type):
@@ -559,7 +553,7 @@ class ESCollection(Generic[ModelType]):
 
         :return: The BulkPlan object
         """
-        return ElasticBulkPlan(self.index_list, model=self.model_class)
+        return ElasticBulkPlan(self.get_index_list(None), model=self.model_class)
 
     def commit(self):
         """
@@ -712,7 +706,7 @@ class ESCollection(Generic[ModelType]):
 
         :return: Should return True of the commit was successful on all hosts
         """
-        for index in self.index_list:
+        for index in self.get_index_list(None):
             new_name = f'{index}__reindex'
             if self.with_retries(self.datastore.client.indices.exists, index=index) and \
                     not self.with_retries(self.datastore.client.indices.exists, index=new_name):
@@ -1995,7 +1989,7 @@ class ESCollection(Generic[ModelType]):
 
         :return:
         """
-        for index in self.index_list:
+        for index in self.get_index_list(None):
             alias = index.replace("_hot", "")
             # Create HOT index
             if not self.with_retries(self.datastore.client.indices.exists, index=alias):
@@ -2052,7 +2046,7 @@ class ESCollection(Generic[ModelType]):
         # If we got this far, the missing fields have been described in properties, upload them to the
         # server, and we should be able to move on.
         mappings = {"properties": properties}
-        for index in self.index_list:
+        for index in self.get_index_list(None):
             self.with_retries(self.datastore.client.indices.put_mapping, index=index, body=mappings)
 
         if self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
@@ -2070,7 +2064,7 @@ class ESCollection(Generic[ModelType]):
         """
         log.debug("Wipe operation started for collection: %s" % self.name.upper())
 
-        for index in self.index_list:
+        for index in self.get_index_list(None):
             if self.with_retries(self.datastore.client.indices.exists, index=index):
                 self.with_retries(self.datastore.client.indices.delete, index=index)
 
