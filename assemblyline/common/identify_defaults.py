@@ -71,6 +71,7 @@ type_to_extension = {
     "document/office/onenote": ".one",
     "document/pdf": ".pdf",
     "document/email": ".eml",
+    "executable/web/wasm": ".wasm",
     "executable/windows/pe32": ".exe",
     "executable/windows/pe64": ".exe",
     "executable/windows/dll32": ".dll",
@@ -90,6 +91,7 @@ type_to_extension = {
 magic_patterns = [
     {"al_type": "network/tnef", "regex": r"Transport Neutral Encapsulation Format"},
     {"al_type": "archive/chm", "regex": r"MS Windows HtmlHelp Data"},
+    {"al_type": "executable/web/wasm", "regex": r"WebAssembly \(wasm\) binary module"},
     {"al_type": "executable/windows/dll64", "regex": r"pe32\+[^\|]+dll[^\|]+x86\-64"},
     {"al_type": "executable/windows/pe64", "regex": r"pe32\+[^\|]+x86\-64[^\|]+windows"},
     {"al_type": "executable/windows/ia/dll64", "regex": r"pe32\+?[^\|]+dll[^\|]+Intel Itanium[^\|]+windows"},
