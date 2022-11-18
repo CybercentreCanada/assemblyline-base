@@ -329,21 +329,35 @@ class ExpressionTransformer(lark.Transformer):
     operation objects that can be actually applied.
     """
 
-    def __init__(self, visit_tokens: bool = True) -> None:
-        super().__init__(visit_tokens)
+    def __init__(self) -> None:
+        super().__init__(visit_tokens=True)
         self.cache_safe = True
 
     def start(self, args):
         assert len(args) == 1
         return args[0]
 
-    def phrase_term(self, args):
-        assert len(args) == 1
-        return args[0]
-
     def term(self, args):
         self.cache_safe = False
         return self.field_term(args)
+
+    def SIMPLE_TERM(self, value):
+        out = []
+        index = 0
+        while index < len(value):
+            if value[index] == '\\':
+                if index + 1 < len(value):
+                    out.append(value[index+1])
+                else:
+                    ValueError("Escape at end of term")
+                index += 1
+            else:
+                out.append(value[index])
+            index += 1
+        return ''.join(out)
+
+    def phrase_term(self, args):
+        return str(args[0])[1:-1]
 
     def field_term(self, args):
         if len(args) == 2:
