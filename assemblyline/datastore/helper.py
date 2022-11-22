@@ -479,7 +479,6 @@ class AssemblylineDatastore(object):
             res = {field: executor.submit(self.submission.facet,
                                           field,
                                           query=query,
-                                          limit=100,
                                           access_control=access_control)
                    for field in fields}
 
