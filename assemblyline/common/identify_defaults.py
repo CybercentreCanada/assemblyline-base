@@ -107,7 +107,7 @@ magic_patterns = [
     {"al_type": "executable/windows/com", "regex": r"^com executable"},
     {"al_type": "executable/windows/dos", "regex": r"^8086 relocatable"},
     {"al_type": "executable/windows/coff", "regex": r"^MS Windows COFF"},
-    {"al_type": "executable/linux/elf32", "regex": r"^elf 32-bit (l|m)sb +executable"},
+    {"al_type": "executable/linux/elf32", "regex": r"^elf 32-bit (l|m)sb +(pie )?executable"},
     {"al_type": "executable/linux/elf64", "regex": r"^elf 64-bit (l|m)sb +(pie )?executable"},
     {"al_type": "executable/linux/so32", "regex": r"^elf 32-bit (l|m)sb +shared object"},
     {"al_type": "executable/linux/so64", "regex": r"^elf 64-bit (l|m)sb +shared object"},
