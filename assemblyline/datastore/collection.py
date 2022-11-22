@@ -132,7 +132,7 @@ class ESCollection(Generic[ModelType]):
     DEFAULT_SORT = [{'_id': 'asc'}]
     FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_\\-.]+$")
     MAX_GROUP_LIMIT = 10
-    MAX_FACET_LIMIT = 100
+    MAX_HISTOGRAM_STEPS = 100
     MAX_RETRY_BACKOFF = 10
     MAX_SEARCH_ROWS = 500
     RETRY_NORMAL = 1
@@ -467,7 +467,7 @@ class ESCollection(Generic[ModelType]):
         :param key: ID of the document to copy or move to the archive
         :param delete_after: Delete the document from hot storage after archive
         """
-        if not self.archive_access:
+        if not self.index_archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
         # Check if already in archive
@@ -496,7 +496,7 @@ class ESCollection(Generic[ModelType]):
         :param query: query to run to archive documents
         :return: Number of archived documents
         """
-        if not self.archive_access:
+        if not self.index_archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
         reindex_body = {
@@ -564,7 +564,7 @@ class ESCollection(Generic[ModelType]):
         """
         self.with_retries(self.datastore.client.indices.refresh, index=self.index_name)
         self.with_retries(self.datastore.client.indices.clear_cache, index=self.index_name)
-        if self.archive_access:
+        if self.index_archive_name:
             self.with_retries(self.datastore.client.indices.refresh, index=self.index_archive_name)
             self.with_retries(self.datastore.client.indices.clear_cache, index=self.index_archive_name)
         return True
@@ -904,6 +904,11 @@ class ESCollection(Generic[ModelType]):
             for index in index_list:
                 try:
                     doc = self.with_retries(self.datastore.client.get, index=index, id=key)
+
+                    # If this index has an archive, check is the document was found in it.
+                    if self.index_archive_name:
+                        doc['_source']['from_archive'] = index == self.index_archive_name
+
                     if version:
                         return self._normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
                     return self._normalize_output(doc['_source'])
@@ -1269,6 +1274,10 @@ class ESCollection(Generic[ModelType]):
             source_data.pop(f, None)
         item_id = result['_id']
 
+        # If this index has an archive, check is the document was found in it.
+        if self.index_archive_name:
+            source_data['from_archive'] = result['_index'] == self.index_archive_name
+
         if self.model_class:
             if not fields:
                 fields = list(self.stored_fields.keys())
@@ -1428,7 +1437,7 @@ class ESCollection(Generic[ModelType]):
                     "terms": facet_body
                 }
 
-        # Add a facet aggregation
+        # Add a stats aggregation
         if parsed_values['stats_active']:
             query_body.setdefault("aggregations", {})
             for field in parsed_values['stats_fields']:
@@ -1702,8 +1711,8 @@ class ESCollection(Generic[ModelType]):
                     "Could not parse histogram ranges. Either you've mix integer and dates values or you "
                     "have invalid date math values. (start='%s', end='%s', gap='%s')" % (start, end, gap))
 
-            if gaps_count > self.MAX_FACET_LIMIT:
-                raise SearchException(f'Histograms are limited to a maximum of {self.MAX_FACET_LIMIT} steps. '
+            if gaps_count > self.MAX_HISTOGRAM_STEPS:
+                raise SearchException(f'Histograms are limited to a maximum of {self.MAX_HISTOGRAM_STEPS} steps. '
                                       f'Current settings would generate {gaps_count} steps')
             return ret_type
 
