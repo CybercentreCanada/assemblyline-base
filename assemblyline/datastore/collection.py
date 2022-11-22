@@ -1050,7 +1050,7 @@ class ESCollection(Generic[ModelType]):
                 info = self.with_retries(self.datastore.client.delete, id=key, index=index)
                 deleted |= info['result'] == 'deleted'
             except elasticsearch.NotFoundError:
-                pass
+                deleted = True
 
         return deleted
 
