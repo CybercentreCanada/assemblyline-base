@@ -1259,7 +1259,6 @@ class ESCollection(Generic[ModelType]):
 
     def _format_output(self, result, fields=None, as_obj=True):
         # Getting search document data
-        # TODO: from_archive field
         extra_fields = result.get('fields', {})
         source_data = result.pop('_source', None)
         for f in BANNED_FIELDS:
@@ -1754,8 +1753,6 @@ class ESCollection(Generic[ModelType]):
             ('facet_mincount', mincount),
             ('rows', 0)
         ]
-
-        # TODO: prefix, contains, ignore_case, sort
 
         if access_control:
             filters.append(access_control)
