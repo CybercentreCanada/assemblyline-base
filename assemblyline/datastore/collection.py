@@ -35,8 +35,6 @@ if typing.TYPE_CHECKING:
     from .store import ESStore
 
 
-TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
-
 log = logging.getLogger('assemblyline.datastore')
 ModelType = TypeVar('ModelType', bound=Model)
 write_block_settings = {"index.blocks.write": True}
@@ -260,7 +258,7 @@ class ESCollection(Generic[ModelType]):
         return ",".join(self.get_index_list(index_type))
 
     def scan_with_search_after(self, query, sort=None, source=None, index=None, keep_alive=KEEP_ALIVE, size=1000,
-                               request_timeout=None):
+                               timeout=None):
         if index is None:
             index = self.index_name
         if not sort:
@@ -276,7 +274,7 @@ class ESCollection(Generic[ModelType]):
 
         # initial search
         resp = self.with_retries(self.datastore.client.search, query=query, pit=pit,
-                                 size=size, request_timeout=request_timeout, sort=sort, _source=source)
+                                 size=size, timeout=timeout, sort=sort, _source=source)
         try:
             while resp["hits"]["hits"]:
                 search_after = resp['hits']['hits'][-1]['sort']
@@ -284,11 +282,14 @@ class ESCollection(Generic[ModelType]):
                     yield hit
 
                 resp = self.with_retries(self.datastore.client.search, query=query, pit=pit,
-                                         size=size, request_timeout=request_timeout, sort=sort, _source=source,
+                                         size=size, timeout=timeout, sort=sort, _source=source,
                                          search_after=search_after)
 
         finally:
-            self.with_retries(self.datastore.client.close_point_in_time, id=pit['id'], ignore=(404,))
+            try:
+                self.with_retries(self.datastore.client.close_point_in_time, id=pit['id'])
+            except elasticsearch.exceptions.NotFoundError:
+                pass
 
     def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
         """
@@ -429,7 +430,7 @@ class ESCollection(Generic[ModelType]):
                     raise
 
     def _safe_index_copy(self, copy_function, src, target, settings=None, min_status='yellow'):
-        ret = copy_function(index=src, target=target, settings=settings, request_timeout=60)
+        ret = copy_function(index=src, target=target, settings=settings, timeout=60)
         if not ret['acknowledged']:
             raise DataStoreException(f"Failed to create index {target} from {src}.")
 
@@ -1586,7 +1587,11 @@ class ESCollection(Generic[ModelType]):
         # Check if deep paging is over
         if pit_id is not None and len(ret_data["items"]) < ret_data["rows"]:
             # Close the Point in Time
-            self.with_retries(self.datastore.client.close_point_in_time, id=pit_id, ignore=(404,))
+            try:
+                self.with_retries(self.datastore.client.close_point_in_time, id=pit_id)
+            except elasticsearch.exceptions.NotFoundError:
+                pass
+
         elif pit_id is not None and len(ret_data["items"]) > 0:
             # We have a PIT ID and we don't seem to have finished looping throught the data
             # create the next deep paging id for the user to use.
