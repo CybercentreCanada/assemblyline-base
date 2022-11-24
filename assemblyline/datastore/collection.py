@@ -191,6 +191,8 @@ class ESCollection(Generic[ModelType]):
     def __init__(self, datastore: ESStore, name, model_class=None, validate=True):
         self.replicas = environ.get(f"ELASTIC_{name.upper()}_REPLICAS", environ.get('ELASTIC_DEFAULT_REPLICAS', 0))
         self.shards = environ.get(f"ELASTIC_{name.upper()}_SHARDS", environ.get('ELASTIC_DEFAULT_SHARDS', 1))
+        self.archive_replicas = environ.get(f"ELASTIC_{name.upper()}_ARCHIVE_REPLICAS", self.replicas)
+        self.archive_shards = environ.get(f"ELASTIC_{name.upper()}_ARCHIVE_SHARDS", self.shards)
 
         self.datastore = datastore
         self.name = name
@@ -546,167 +548,174 @@ class ESCollection(Generic[ModelType]):
 
         return self.with_retries(self.datastore.client.bulk, operations=operations.get_plan_data())
 
-    def get_bulk_plan(self):
+    def get_bulk_plan(self, index_type=None):
         """
         Creates a BulkPlan tailored for the current datastore
 
+        :param index_type: Type of indices to target
         :return: The BulkPlan object
         """
-        return ElasticBulkPlan(self.get_index_list(None), model=self.model_class)
+        return ElasticBulkPlan(self.get_index_list(index_type), model=self.model_class)
 
-    def commit(self):
+    def commit(self, index_type=None):
         """
         This function should be overloaded to perform a commit of the index data of all the different hosts
         specified in self.datastore.hosts.
 
+        :param index_type: Type of indices to target
         :return: Should return True of the commit was successful on all hosts
         """
-        self.with_retries(self.datastore.client.indices.refresh, index=self.index_name)
-        self.with_retries(self.datastore.client.indices.clear_cache, index=self.index_name)
-        if self.index_archive_name:
-            self.with_retries(self.datastore.client.indices.refresh, index=self.index_archive_name)
-            self.with_retries(self.datastore.client.indices.clear_cache, index=self.index_archive_name)
+        for index in self.get_index_list(index_type):
+            self.with_retries(self.datastore.client.indices.refresh, index=index)
+            self.with_retries(self.datastore.client.indices.clear_cache, index=index)
         return True
 
-    def fix_replicas(self):
+    def fix_replicas(self, index_type=None):
         """
         This function should be overloaded to fix the replica configuration of the index of all the different hosts
         specified in self.datastore.hosts.
 
+        :param index_type: Type of indices to target
         :return: Should return True of the fix was successful on all hosts
         """
-        # TODO: archive support
+        results = []
+        for index in self.get_index_list(index_type):
+            replicas = self._get_index_settings(archive=index == self.index_archive_name)['index']['number_of_replicas']
+            settings = {"number_of_replicas": replicas}
+            results.append(self.with_retries(
+                self.datastore.client.indices.put_settings, index=index, settings=settings)['acknowledged'])
+        return all(results)
 
-        replicas = self._get_index_settings()['index']['number_of_replicas']
-        settings = {"number_of_replicas": replicas}
-        return self.with_retries(
-            self.datastore.client.indices.put_settings, index=self.index_name, settings=settings)['acknowledged']
-
-    def fix_shards(self, logger=None):
+    def fix_shards(self, logger=None, index_type=None):
         """
         This function should be overloaded to fix the shard configuration of the index of all the different hosts
         specified in self.datastore.hosts.
 
+        :param index_type: Type of indices to target
         :return: Should return True of the fix was successful on all hosts
         """
-        # TODO: archive support
-
         if logger is None:
             logger = log
-        settings = self._get_index_settings()
-        index_copy_settings = {"index.number_of_replicas": 0}
-        clone_finish_settings = None
-        clone_setup_settings = None
-        method = None
-        target_node = ""
-        temp_name = f'{self.name}__fix_shards'
 
-        indexes_settings = self.with_retries(self.datastore.client.indices.get_settings)
-        current_settings = indexes_settings.get(self._get_current_alias(self.name), None)
-        if not current_settings:
-            raise DataStoreException(
-                'Could not get current index settings. Something is wrong and requires manual intervention...')
+        for index in self.get_index_list(index_type):
+            logger.info(f'Processing index: {index.upper()}')
+            name = index.replace("_hot", "")
+            settings = self._get_index_settings(archive=index == self.index_archive_name)
+            index_copy_settings = {"index.number_of_replicas": 0}
+            clone_finish_settings = None
+            clone_setup_settings = None
+            method = None
+            target_node = ""
+            temp_name = f'{name}__fix_shards'
 
-        cur_replicas = int(current_settings['settings']['index']['number_of_replicas'])
-        cur_shards = int(current_settings['settings']['index']['number_of_shards'])
-        target_shards = int(settings['index']['number_of_shards'])
-        clone_finish_settings = {"index.number_of_replicas": cur_replicas,
-                                 "index.routing.allocation.require._name": None}
+            indexes_settings = self.with_retries(self.datastore.client.indices.get_settings)
+            current_settings = indexes_settings.get(self._get_current_alias(name), None)
+            if not current_settings:
+                raise DataStoreException(
+                    'Could not get current index settings. Something is wrong and requires manual intervention...')
 
-        if cur_shards > target_shards:
-            logger.info(f"Current shards ({cur_shards}) is bigger then target shards ({target_shards}), "
-                        "we will be shrinking the index.")
-            if cur_shards % target_shards != 0:
-                logger.info("The target shards is not a factor of the current shards, aborting...")
-                return
+            cur_replicas = int(current_settings['settings']['index']['number_of_replicas'])
+            cur_shards = int(current_settings['settings']['index']['number_of_shards'])
+            target_shards = int(settings['index']['number_of_shards'])
+            clone_finish_settings = {"index.number_of_replicas": cur_replicas,
+                                     "index.routing.allocation.require._name": None}
+
+            if cur_shards > target_shards:
+                logger.info(f"Current shards ({cur_shards}) is bigger then target shards ({target_shards}), "
+                            "we will be shrinking the index.")
+                if cur_shards % target_shards != 0:
+                    logger.info("The target shards is not a factor of the current shards, aborting...")
+                    return
+                else:
+                    target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
+                    clone_setup_settings = {"index.number_of_replicas": 0,
+                                            "index.routing.allocation.require._name": target_node}
+                    method = self.datastore.client.indices.shrink
+            elif cur_shards < target_shards:
+                logger.info(f"Current shards ({cur_shards}) is smaller then target shards ({target_shards}), "
+                            "we will be splitting the index.")
+                if target_shards % cur_shards != 0:
+                    logger.info("The current shards is not a factor of the target shards, aborting...")
+                    return
+                else:
+                    method = self.datastore.client.indices.split
             else:
-                target_node = self.with_retries(self.datastore.client.cat.nodes, format='json')[0]['name']
-                clone_setup_settings = {"index.number_of_replicas": 0,
-                                        "index.routing.allocation.require._name": target_node}
-                method = self.datastore.client.indices.shrink
-        elif cur_shards < target_shards:
-            logger.info(f"Current shards ({cur_shards}) is smaller then target shards ({target_shards}), "
-                        "we will be splitting the index.")
-            if target_shards % cur_shards != 0:
-                logger.info("The current shards is not a factor of the target shards, aborting...")
-                return
-            else:
-                method = self.datastore.client.indices.split
-        else:
-            logger.info(f"Current shards ({cur_shards}) is equal to the target shards ({target_shards}), "
-                        "only house keeping operations will be performed.")
+                logger.info(f"Current shards ({cur_shards}) is equal to the target shards ({target_shards}), "
+                            "only house keeping operations will be performed.")
 
-        if method:
-            # Before we do anything, we should make sure the source index is in a good state
-            logger.info(f"Waiting for {self.name.upper()} status to be GREEN.")
-            self._wait_for_status(self.name, min_status='green')
+            if method:
+                # Before we do anything, we should make sure the source index is in a good state
+                logger.info(f"Waiting for {name.upper()} status to be GREEN.")
+                self._wait_for_status(name, min_status='green')
 
-            # Block all indexes to be written to
-            logger.info("Set a datastore wide write block on Elastic.")
-            self.with_retries(self.datastore.client.indices.put_settings, settings=write_block_settings)
+                # Block all indexes to be written to
+                logger.info("Set a datastore wide write block on Elastic.")
+                self.with_retries(self.datastore.client.indices.put_settings, settings=write_block_settings)
 
-            # Clone it onto a temporary index
-            if not self.with_retries(self.datastore.client.indices.exists, index=temp_name):
-                # if there are specific settings to be applied to the index, apply them
-                if clone_setup_settings:
-                    logger.info(f"Rellocating index to node {target_node.upper()}.")
-                    self.with_retries(self.datastore.client.indices.put_settings,
-                                      index=self.index_name, settings=clone_setup_settings)
+                # Clone it onto a temporary index
+                if not self.with_retries(self.datastore.client.indices.exists, index=temp_name):
+                    # if there are specific settings to be applied to the index, apply them
+                    if clone_setup_settings:
+                        logger.info(f"Rellocating index to node {target_node.upper()}.")
+                        self.with_retries(self.datastore.client.indices.put_settings,
+                                          index=index, settings=clone_setup_settings)
 
-                    # Make sure no shard are relocating
-                    while self.datastore.client.cluster.health(index=self.index_name)['relocating_shards'] != 0:
-                        time.sleep(1)
+                        # Make sure no shard are relocating
+                        while self.datastore.client.cluster.health(index=index)['relocating_shards'] != 0:
+                            time.sleep(1)
 
-                # Make a clone of the current index
-                logger.info(f"Cloning {self.index_name.upper()} into {temp_name.upper()}.")
-                self._safe_index_copy(self.datastore.client.indices.clone,
-                                      self.index_name, temp_name, settings=index_copy_settings, min_status='green')
+                    # Make a clone of the current index
+                    logger.info(f"Cloning {index.upper()} into {temp_name.upper()}.")
+                    self._safe_index_copy(self.datastore.client.indices.clone,
+                                          index, temp_name, settings=index_copy_settings, min_status='green')
 
-            # Make 100% sure temporary index is ready
-            logger.info(f"Waiting for {temp_name.upper()} status to be GREEN.")
-            self._wait_for_status(temp_name, 'green')
+                # Make 100% sure temporary index is ready
+                logger.info(f"Waiting for {temp_name.upper()} status to be GREEN.")
+                self._wait_for_status(temp_name, 'green')
 
-            # Make sure temporary index is the alias if not already
-            if self._get_current_alias(self.name) != temp_name:
-                logger.info(f"Make {temp_name.upper()} the current alias for {self.name.upper()} "
-                            f"and delete {self.index_name.upper()}.")
-                # Make the hot index the temporary index while deleting the original index
-                actions = [{"add":  {"index": temp_name, "alias": self.name}}, {
-                    "remove_index": {"index": self.index_name}}]
+                # Make sure temporary index is the alias if not already
+                if self._get_current_alias(name) != temp_name:
+                    logger.info(f"Make {temp_name.upper()} the current alias for {name.upper()} "
+                                f"and delete {index.upper()}.")
+                    # Make the hot index the temporary index while deleting the original index
+                    actions = [{"add":  {"index": temp_name, "alias": name}}, {
+                        "remove_index": {"index": index}}]
+                    self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
+
+                # Make sure the original index is deleted
+                if self.with_retries(self.datastore.client.indices.exists, index=index):
+                    logger.info(f"Delete extra {index.upper()} index.")
+                    self.with_retries(self.datastore.client.indices.delete, index=index)
+
+                # Shrink/split the temporary index into the original index
+                logger.info(f"Perform shard fix operation from {temp_name.upper()} to {index.upper()}.")
+                self._safe_index_copy(method, temp_name, index, settings=settings)
+
+                # Make the original index the new alias
+                logger.info(f"Make {index.upper()} the current alias for {name.upper()} "
+                            f"and delete {temp_name.upper()}.")
+                actions = [{"add":  {"index": index, "alias": name}}, {
+                    "remove_index": {"index": temp_name}}]
                 self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
-            # Make sure the original index is deleted
-            if self.with_retries(self.datastore.client.indices.exists, index=self.index_name):
-                logger.info(f"Delete extra {self.index_name.upper()} index.")
-                self.with_retries(self.datastore.client.indices.delete, index=self.index_name)
+            # Restore writes
+            logger.info("Restore datastore wide write operation on Elastic.")
+            self.with_retries(self.datastore.client.indices.put_settings, settings=write_unblock_settings)
 
-            # Shrink/split the temporary index into the original index
-            logger.info(f"Perform shard fix operation from {temp_name.upper()} to {self.index_name.upper()}.")
-            self._safe_index_copy(method, temp_name, self.index_name, settings=settings)
+            # Restore normal routing and replicas
+            logger.info(f"Restore original routing table for {name.upper()}.")
+            self.with_retries(self.datastore.client.indices.put_settings, index=name,
+                              settings=clone_finish_settings)
 
-            # Make the original index the new alias
-            logger.info(f"Make {self.index_name.upper()} the current alias for {self.name.upper()} "
-                        f"and delete {temp_name.upper()}.")
-            actions = [{"add":  {"index": self.index_name, "alias": self.name}}, {
-                "remove_index": {"index": temp_name}}]
-            self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
-
-        # Restore writes
-        logger.info("Restore datastore wide write operation on Elastic.")
-        self.with_retries(self.datastore.client.indices.put_settings, settings=write_unblock_settings)
-
-        # Restore normal routing and replicas
-        logger.info(f"Restore original routing table for {self.name.upper()}.")
-        self.with_retries(self.datastore.client.indices.put_settings, index=self.name, settings=clone_finish_settings)
-
-    def reindex(self):
+    def reindex(self, index_type=None):
         """
         This function should be overloaded to perform a reindex of all the data of the different hosts
         specified in self.datastore.hosts.
 
+        :param index_type: Type of indices to target
         :return: Should return True of the commit was successful on all hosts
         """
-        for index in self.get_index_list(None):
+        for index in self.get_index_list(index_type):
             new_name = f'{index}__reindex'
             if self.with_retries(self.datastore.client.indices.exists, index=index) and \
                     not self.with_retries(self.datastore.client.indices.exists, index=new_name):
@@ -1905,14 +1914,14 @@ class ESCollection(Generic[ModelType]):
 
         return collection_data
 
-    def _get_index_settings(self) -> dict:
+    def _get_index_settings(self, archive=False) -> dict:
         default_stub: dict = deepcopy(default_index)
         settings: dict = default_stub.pop('settings', {})
 
         if 'index' not in settings:
             settings['index'] = {}
-        settings['index']['number_of_shards'] = self.shards
-        settings['index']['number_of_replicas'] = self.replicas
+        settings['index']['number_of_shards'] = self.shards if not archive else self.archive_shards
+        settings['index']['number_of_replicas'] = self.replicas if not archive else self.archive_replicas
         return settings
 
     def _get_index_mappings(self) -> dict:
@@ -1990,7 +1999,8 @@ class ESCollection(Generic[ModelType]):
                 log.debug(f"Index {alias.upper()} does not exists. Creating it now...")
                 try:
                     self.with_retries(self.datastore.client.indices.create, index=index,
-                                      mappings=self._get_index_mappings(), settings=self._get_index_settings())
+                                      mappings=self._get_index_mappings(),
+                                      settings=self._get_index_settings(archive=index == self.index_archive_name))
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
@@ -2047,7 +2057,7 @@ class ESCollection(Generic[ModelType]):
             recursive_update(current_template, {'mappings': {"properties": properties}})
             self.with_retries(self.datastore.client.indices.put_template, name=self.name, **current_template)
 
-    def wipe(self):
+    def wipe(self, index_type=None):
         """
         This function should completely delete the collection
 
@@ -2055,13 +2065,14 @@ class ESCollection(Generic[ModelType]):
 
         :return:
         """
-        log.debug("Wipe operation started for collection: %s" % self.name.upper())
 
-        for index in self.get_index_list(None):
+        for index in self.get_index_list(index_type):
+            name = index.replace("_hot", "")
+            log.debug("Wipe operation started for collection: %s" % name.upper())
             if self.with_retries(self.datastore.client.indices.exists, index=index):
                 self.with_retries(self.datastore.client.indices.delete, index=index)
 
-        if self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
-            self.with_retries(self.datastore.client.indices.delete_template, name=self.name)
+            if self.with_retries(self.datastore.client.indices.exists_template, name=name):
+                self.with_retries(self.datastore.client.indices.delete_template, name=name)
 
         self._ensure_collection()
