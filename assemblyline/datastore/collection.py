@@ -1796,7 +1796,7 @@ class ESCollection(Generic[ModelType]):
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True, index_type=Index.HOT,
-                       track_total_hits=False):
+                       track_total_hits=None):
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
