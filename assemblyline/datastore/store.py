@@ -15,7 +15,7 @@ from assemblyline.datastore.exceptions import DataStoreException, UnsupportedEla
 
 from packaging import version
 
-TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '10'))
+TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
 
 
 class ESStore(object):
