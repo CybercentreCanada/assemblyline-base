@@ -476,7 +476,7 @@ class ESCollection(Generic[ModelType]):
 
         # Check if already in archive
         if self.exists(key, index_type=Index.ARCHIVE):
-            return
+            return True
 
         # Get the document from hot index
         doc = self.get_if_exists(key, index_type=Index.HOT)
@@ -492,6 +492,8 @@ class ESCollection(Generic[ModelType]):
 
             if delete_after:
                 self.delete(key, index_type=Index.HOT)
+
+        return True
 
     def archive_by_query(self, query, max_docs=None, sort=None, delete_after=False):
         """
@@ -1073,7 +1075,7 @@ class ESCollection(Generic[ModelType]):
         index = self.get_joined_index(index_type)
         info = self._delete_async(index, query={"bool": {"must": {"query_string": {"query": query}}}},
                                   sort=sort_str(parse_sort(sort)), max_docs=max_docs)
-        return info.get('deleted', 0) != 0
+        return info.get('deleted', 0)
 
     def _create_scripts_from_operations(self, operations):
         op_sources = []
@@ -2064,7 +2066,7 @@ class ESCollection(Generic[ModelType]):
             recursive_update(current_template, {'mappings': {"properties": properties}})
             self.with_retries(self.datastore.client.indices.put_template, name=self.name, **current_template)
 
-    def wipe(self, index_type=None):
+    def wipe(self, recreate=True, index_type=None):
         """
         This function should completely delete the collection
 
@@ -2082,4 +2084,5 @@ class ESCollection(Generic[ModelType]):
             if self.with_retries(self.datastore.client.indices.exists_template, name=name):
                 self.with_retries(self.datastore.client.indices.delete_template, name=name)
 
-        self._ensure_collection()
+        if recreate:
+            self._ensure_collection()
