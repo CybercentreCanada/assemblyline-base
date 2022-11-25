@@ -611,7 +611,7 @@ class ESCollection(Generic[ModelType]):
             target_node = ""
             temp_name = f'{name}__fix_shards'
 
-            indexes_settings = self.with_retries(self.datastore.client.indices.get_settings)
+            indexes_settings = self.with_retries(self.datastore.client.indices.get_settings, index=name)
             current_settings = indexes_settings.get(self._get_current_alias(name), None)
             if not current_settings:
                 raise DataStoreException(
@@ -2061,11 +2061,6 @@ class ESCollection(Generic[ModelType]):
         for index in self.get_index_list(None):
             self.with_retries(self.datastore.client.indices.put_mapping, index=index, properties=properties)
 
-        if self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
-            current_template = self.with_retries(self.datastore.client.indices.get_template, name=self.name)[self.name]
-            recursive_update(current_template, {'mappings': {"properties": properties}})
-            self.with_retries(self.datastore.client.indices.put_template, name=self.name, **current_template)
-
     def wipe(self, recreate=True, index_type=None):
         """
         This function should completely delete the collection
@@ -2080,9 +2075,6 @@ class ESCollection(Generic[ModelType]):
             log.debug("Wipe operation started for collection: %s" % name.upper())
             if self.with_retries(self.datastore.client.indices.exists, index=index):
                 self.with_retries(self.datastore.client.indices.delete, index=index)
-
-            if self.with_retries(self.datastore.client.indices.exists_template, name=name):
-                self.with_retries(self.datastore.client.indices.delete_template, name=name)
 
         if recreate:
             self._ensure_collection()
