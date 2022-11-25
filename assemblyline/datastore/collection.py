@@ -430,7 +430,7 @@ class ESCollection(Generic[ModelType]):
                     raise
 
     def _safe_index_copy(self, copy_function, src, target, settings=None, min_status='yellow'):
-        ret = copy_function(index=src, target=target, settings=settings, timeout=60)
+        ret = copy_function(index=src, target=target, settings=settings, timeout='60s')
         if not ret['acknowledged']:
             raise DataStoreException(f"Failed to create index {target} from {src}.")
 
@@ -717,6 +717,7 @@ class ESCollection(Generic[ModelType]):
         :return: Should return True of the commit was successful on all hosts
         """
         for index in self.get_index_list(index_type):
+            archive = index == self.index_archive_name
             new_name = f'{index}__reindex'
             if self.with_retries(self.datastore.client.indices.exists, index=index) and \
                     not self.with_retries(self.datastore.client.indices.exists, index=new_name):
@@ -726,7 +727,8 @@ class ESCollection(Generic[ModelType]):
 
                 # Create reindex target
                 self.with_retries(self.datastore.client.indices.create, index=new_name,
-                                  mappings=self._get_index_mappings(), settings=self._get_index_settings())
+                                  mappings=self._get_index_mappings(),
+                                  settings=self._get_index_settings(archive=archive))
 
                 # For all aliases related to the index, add a new alias to the reindex index
                 for alias, alias_data in index_data['aliases'].items():
@@ -758,7 +760,7 @@ class ESCollection(Generic[ModelType]):
                 # Rename reindexed index
                 try:
                     self._safe_index_copy(self.datastore.client.indices.clone, new_name, index,
-                                          settings=self._get_index_settings())
+                                          settings=self._get_index_settings(archive=archive))
 
                     # Restore original aliases for the index
                     for alias, alias_data in index_data['aliases'].items():
