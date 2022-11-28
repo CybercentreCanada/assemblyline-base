@@ -464,34 +464,35 @@ class ESCollection(Generic[ModelType]):
             else:
                 updated += res['updated']
 
-    def archive(self, key, delete_after=False):
+    def archive(self, key, delete_after=False, allow_missing=False):
         """
         Copy/Move a single document into the archive and return the document that was archived.
 
         :param key: ID of the document to copy or move to the archive
+        :param allow_missing: If True, does not crash if the document you are trying to archive is missing
         :param delete_after: Delete the document from hot storage after archive
         """
         if not self.index_archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
         # Check if already in archive
-        if self.exists(key, index_type=Index.ARCHIVE):
-            return True
+        if not self.exists(key, index_type=Index.ARCHIVE):
+            # Get the document from hot index
+            doc = self.get_if_exists(key, index_type=Index.HOT)
+            if doc:
+                # Reset Expiry if present
+                try:
+                    doc.expiry_ts = None
+                except (AttributeError, KeyError, ValueError):
+                    pass
 
-        # Get the document from hot index
-        doc = self.get_if_exists(key, index_type=Index.HOT)
-        if doc:
-            # Reset Expiry if present
-            try:
-                doc.expiry_ts = None
-            except (AttributeError, KeyError, ValueError):
-                pass
+                # Save the document to the archive
+                self.save(key, doc, index_type=Index.ARCHIVE)
+            elif not allow_missing:
+                raise DataStoreException(f"{key} does not exists in {self.name} hot index therefor cannot be archived.")
 
-            # Save the document to the archive
-            self.save(key, doc, index_type=Index.ARCHIVE)
-
-            if delete_after:
-                self.delete(key, index_type=Index.HOT)
+        if delete_after:
+            self.delete(key, index_type=Index.HOT)
 
         return True
 

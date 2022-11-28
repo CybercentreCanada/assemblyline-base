@@ -15,7 +15,6 @@ class Metrics(odm.Model):
     exception = odm.Integer(description="Number of exceptions during archiving")
     invalid = odm.Integer(description="Number of invalid archive type errors during archiving")
     not_found = odm.Integer(description="Number of submission not found failures during archiving")
-    webhook_failure = odm.Integer(description="Number of webhook failures during archiving")
 
 
 @odm.model(description="Archive Heartbeat Model")
