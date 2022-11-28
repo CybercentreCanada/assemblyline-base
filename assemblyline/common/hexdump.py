@@ -10,6 +10,10 @@ def dump(binary: bytes, size: int = 2, sep: bytes = b" ") -> bytes:
     return sep.join(chunk(hexstr, size))
 
 
+def load(hexstr: bytes) -> bytes:
+    return binascii.unhexlify(hexstr)
+
+
 def hexdump(binary: bytes, length: int = 16, indent: str = "", indent_size: int = 0, newline: str = '\n',
             prefix_offset: int = 0) -> str:
     """

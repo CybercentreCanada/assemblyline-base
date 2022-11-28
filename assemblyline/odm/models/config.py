@@ -821,6 +821,8 @@ class Services(odm.Model):
     safelist = odm.Compound(ServiceSafelist)
     registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
                               description="Global set of registries for services")
+    service_account = odm.optional(odm.keyword(description="Service account to use for pods in kubernetes "
+                                                           "where the service does not have one configured."))
 
 
 DEFAULT_SERVICES = {

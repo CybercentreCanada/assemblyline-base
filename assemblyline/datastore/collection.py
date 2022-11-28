@@ -1681,7 +1681,7 @@ class ESCollection(Generic[ModelType]):
                 else:
                     yield value
 
-    def _validate_steps_count(self, start, end, gap):
+    def _validate_steps_count(self, start, end, gap) -> type:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 

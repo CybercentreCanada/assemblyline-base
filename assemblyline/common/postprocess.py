@@ -75,17 +75,17 @@ def get_values(value: Any, parts: list[str]) -> Any:
     yield value
 
 
-def get_values_from_tags(tags: list[dict], path: str) -> Any:
+def get_values_from_tags(tags: list[dict[str, Any]], path: str) -> str:
     if path.startswith("tags."):
         path = path[5:]
 
-    for tag in tags:
-        if tag['type'] == path:
-            yield tag['value']
+    for entry in tags:
+        if entry.get('type', '') == path:
+            yield entry.get('value', '')
 
 
 class NodeInterface:
-    def test(self, sub: Submission, score=None, tags=None):
+    def test(self, sub: Submission, score: Optional[float] = None, tags: Optional[list[dict[str, Any]]] = None):
         raise NotImplementedError()
 
     def test_value(self, field, value):
@@ -99,7 +99,7 @@ class AndOperatorNode(NodeInterface):
     def __repr__(self):
         return f'({" AND ".join(repr(a) for a in self.args)})'
 
-    def test(self, sub: Submission, score=None, tags=None) -> bool:
+    def test(self, sub: Submission, score=None, tags: Optional[list[dict[str, Any]]] = None) -> bool:
         for arg in self.args:
             if not arg.test(sub, score, tags):
                 return False
@@ -119,7 +119,7 @@ class OrOperatorNode(NodeInterface):
     def __repr__(self):
         return f'({" OR ".join(repr(a) for a in self.args)})'
 
-    def test(self, sub: Submission, score=None, tags=None) -> bool:
+    def test(self, sub: Submission, score=None, tags: Optional[list[dict[str, Any]]] = None) -> bool:
         for arg in self.args:
             if arg.test(sub, score, tags):
                 return True
@@ -139,7 +139,7 @@ class NotOperatorNode(NodeInterface):
     def __repr__(self):
         return f'NOT {repr(self.arg)}'
 
-    def test(self, sub: Submission, score=None, tags=None) -> bool:
+    def test(self, sub: Submission, score=None, tags: Optional[list[dict[str, Any]]] = None) -> bool:
         return not self.arg.test(sub, score, tags)
 
     def test_value(self, field, value) -> bool:
@@ -252,18 +252,24 @@ class StringRange(Range):
 class MatchOperation(NodeInterface):
     def __init__(self, value):
         self.search = value
-        pattern = fnmatch.translate(self.search)
-        if pattern.endswith('\\Z'):
-            pattern = pattern[0:-2]
-        # if pattern.startswith('(?s:') and pattern.endswith(")"):
-        #     pattern = pattern[4:-1]
-        pattern = f'(?:^|[^a-z]){pattern}(?:$|[^a-z])'
-        self.pattern = re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
+        self.regex = False
+        if len(self.search) >= 3 and self.search.startswith('/') and self.search.endswith('/'):
+            pattern = self.search[1:-1]
+            self.pattern = re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
+            self.regex = True
+        else:
+            pattern = fnmatch.translate(self.search)
+            if pattern.endswith('\\Z'):
+                pattern = pattern[0:-2]
+            # if pattern.startswith('(?s:') and pattern.endswith(")"):
+            #     pattern = pattern[4:-1]
+            pattern = f'(?:^|[^a-z]){pattern}(?:$|[^a-z])'
+            self.pattern = re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
 
     def __repr__(self) -> str:
         return f'{self.search}'
 
-    def test(self, sub: Submission, score=None, tags=None):
+    def test(self, sub: Submission, score=None, tags: Optional[list[dict[str, Any]]] = None):
         for path, field in SUBMISSION_FIELDS.items():
             if '__text__' in field.copyto:
                 try:
@@ -284,6 +290,8 @@ class MatchOperation(NodeInterface):
         return False
 
     def test_value(self, field, value):
+        if self.regex:
+            return bool(self.pattern.search(str(value)))
         if isinstance(field, odm.Text):
             return bool(self.pattern.search(str(value)))
         return fnmatch.fnmatch(str(value), self.search)
@@ -329,21 +337,35 @@ class ExpressionTransformer(lark.Transformer):
     operation objects that can be actually applied.
     """
 
-    def __init__(self, visit_tokens: bool = True) -> None:
-        super().__init__(visit_tokens)
+    def __init__(self) -> None:
+        super().__init__(visit_tokens=True)
         self.cache_safe = True
 
     def start(self, args):
         assert len(args) == 1
         return args[0]
 
-    def phrase_term(self, args):
-        assert len(args) == 1
-        return args[0]
-
     def term(self, args):
         self.cache_safe = False
         return self.field_term(args)
+
+    def SIMPLE_TERM(self, value):
+        out = []
+        index = 0
+        while index < len(value):
+            if value[index] == '\\':
+                if index + 1 < len(value):
+                    out.append(value[index+1])
+                else:
+                    ValueError("Escape at end of term")
+                index += 1
+            else:
+                out.append(value[index])
+            index += 1
+        return ''.join(out)
+
+    def phrase_term(self, args):
+        return str(args[0])[1:-1]
 
     def field_term(self, args):
         if len(args) == 2:
@@ -374,6 +396,9 @@ class ExpressionTransformer(lark.Transformer):
         if len(args) == 1:
             return MatchOperation(args[0])
         raise ValueError()
+
+    def REGEX_TERM(self, value):
+        return MatchOperation(value)
 
     def field_expression(self, args):
         return self.expression(args)
@@ -548,8 +573,11 @@ class SubmissionFilter:
                 raise
         self.cache_safe = trans.cache_safe
 
-    def test(self, sub: SubmissionKind, score=None, tags: Optional[list[dict]] = None) -> bool:
+    def test(self, sub: SubmissionKind, score=None, tags: Optional[list[dict[str, Any]]] = None) -> bool:
         return self.operation.test(sub, score, tags)
+
+    def __repr__(self) -> str:
+        return '<SubmissionFilter ' + str(self.expression) + '>'
 
 
 def should_resubmit(score: float, shift: float = 500) -> bool:
@@ -652,13 +680,14 @@ class ActionWorker:
         # Swap in the new actions
         self.actions = ready_objects
 
-    def process_submission(self, submission: Submission, tags: list[dict]) -> bool:
+    def process_submission(self, submission: Submission, tags: list[dict[str, Any]]) -> bool:
         return self.process(submission=submission, tags=tags, score=submission.max_score)
 
     def process_cachehit(self, submission: SubmissionMessage, score: float) -> bool:
         return self.process(submission=submission, tags=None, score=score)
 
-    def process(self, submission: Union[Submission, SubmissionMessage], score, tags) -> bool:
+    def process(self, submission: Union[Submission, SubmissionMessage],
+                score: float, tags: Optional[list[dict[str, Any]]]) -> bool:
         """ Handle any postprocessing events for a submission.
 
         Return bool indicating if a resubmission action has happened.

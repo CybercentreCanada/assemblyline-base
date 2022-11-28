@@ -25,9 +25,9 @@ field_term: PREFIX_OPERATOR? (phrase_term | SIMPLE_TERM)
 
 PREFIX_OPERATOR: "-" | "+" | ">=" | "<=" | ">" | "<"
 
-SIMPLE_TERM: ("\\+" | "\\-" | "\\&" | "\\|" | "\\!" | "\\(" | "\\)" | "\\{"
-           | "\\}" | "\\[" | "\\]" | "\\^" | "\\\"" | "\\~" | "\\*"
-           | "\\?" | "\\:" | "\\\\" | "*" | "?" | DIGIT | "_" | LETTER)+
+SIMPLE_TERM: ("\\+" | "\\-" | "\\&" | "\\&&" | "\\|" | "\\||" | "\\!" | "\\(" | "\\)" | "\\{"
+             | "\\}" | "\\[" | "\\]" | "\\^" | "\\\"" | "\\~" | "\\*" | "\\ "
+             | "\\?" | "\\:" | "\\\\" | "*" | "?" | DIGIT | "_" | "-" | LETTER)+
 
 phrase_term: ESCAPED_STRING
 
@@ -37,7 +37,10 @@ FIELD_LABEL: CNAME ["." CNAME]*
 
 field_value: range
            | field_term
+           | REGEX_TERM
            | "(" field_expression ")"
+
+REGEX_TERM: /\/([^\/]|(\\\/))*\//
 
 range: RANGE_START first_range_term "TO" second_range_term RANGE_END
 RANGE_START: "[" | "{"
