@@ -3,7 +3,6 @@ from typing import Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
-from assemblyline.odm.models.actions import Webhook
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
 
@@ -507,15 +506,10 @@ class Archiver(odm.Model):
         odm.keyword(),
         default=[],
         description="List of minimum required service before archiving takes place")
-    webhook: Webhook = odm.Optional(
-        odm.Compound(
-            Webhook,
-            description="Webhook executed right before submission archiving takes place which adds metadata."))
 
 
 DEFAULT_ARCHIVER = {
-    'minimum_required_services': [],
-    'webhook': None
+    'minimum_required_services': []
 }
 
 
