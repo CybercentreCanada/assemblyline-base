@@ -129,17 +129,17 @@ def submission_delete_tree(key, logger):
 
 def action_done(args):
     global t_count, t_last, COUNT_INCREMENT
-    action, bucket, key, success, do_print = args
+    action, index, key, success, do_print = args
     if success:
         t_count += 1
         if t_count % COUNT_INCREMENT == 0:
             new_t = time.time()
             if do_print:
-                print(f"[{bucket}] {t_count} {action} so far ({new_t - t_last}"
+                print(f"[{index}] {t_count} {action} so far ({new_t - t_last}"
                       f" at {int(COUNT_INCREMENT / (new_t - t_last))} keys/sec)")
             t_last = new_t
     elif do_print:
-        print(f"!!ERROR!! [{bucket}] {action} ==> {key}")
+        print(f"!!ERROR!! [{index}] {action} ==> {key}")
 
 
 # noinspection PyMethodMayBeStatic,PyProtectedMember,PyBroadException
@@ -295,14 +295,14 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         Usage:
             backup <destination_folder>
-                   <destination_folder> <bucket_name> [follow] [force] <query>
+                   <destination_folder> <index_name> [follow] [force] <query>
 
         Parameters:
             <destination_folder> Path to the destination folder [required]
 
-            <bucket_name>        Name of the bucket to backup [required in backup by query]
+            <index_name>         Name of the index to backup [required in backup by query]
 
-            follow               Follow IDs to backup more then the specified bucket
+            follow               Follow IDs to backup more then the specified index
                                  [optional, only used in backup by query]
 
             force                Automatically perform backup without asking for confirmation
@@ -312,7 +312,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                                  [optional, only used in backup by query]
 
         Examples:
-            # Create a backup of the system buckets
+            # Create a backup of the system indices
             backup /tmp/backup_folder
 
             # Created a backup of all alerts
@@ -333,11 +333,11 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if len(args) == 1:
             dest = args[0]
             system_backup = True
-            bucket = None
+            index = None
             follow = False
             query = None
         elif len(args) == 3:
-            dest, bucket, query = args
+            dest, index, query = args
             system_backup = False
         else:
             self._print_error("Wrong number of arguments for backup command.")
@@ -356,7 +356,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             return
 
         if system_backup:
-            system_buckets = [
+            system_indices = [
                 'heuristic',
                 'service',
                 'service_delta',
@@ -371,15 +371,15 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             backup_manager = DistributedBackup(dest, worker_count=5, logger=self.logger)
 
             try:
-                backup_manager.backup(system_buckets)
+                backup_manager.backup(system_indices)
             except KeyboardInterrupt:
                 backup_manager.cleanup()
                 raise
         else:
-            data = self.datastore.get_collection(bucket).search(query, offset=0, rows=1)
+            data = self.datastore.get_collection(index).search(query, offset=0, rows=1)
             total = data['total']
             if not total:
-                self.logger.info(f"\nNothing in '{bucket.upper()}' matches the query:\n\n  {query}\n")
+                self.logger.info(f"\nNothing in '{index.upper()}' matches the query:\n\n  {query}\n")
                 try:
                     os.rmdir(dest)
                 except Exception:
@@ -414,7 +414,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             backup_manager = DistributedBackup(dest, worker_count=worker_count, logger=self.logger)
 
             try:
-                backup_manager.backup([bucket], follow_keys=follow, query=query)
+                backup_manager.backup([index], follow_keys=follow, query=query)
             except KeyboardInterrupt:
                 backup_manager.cleanup()
                 raise
@@ -463,13 +463,13 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
     def do_delete(self, args):
         """
-        Delete all data from a bucket that match a given query
+        Delete all data from a index that match a given query
 
         Usage:
-            delete <bucket> [full] [force] <query>
+            delete <index> [full] [force] <query>
 
         Parameters:
-            <bucket>  Name of the bucket to delete from
+            <index>   Name of the index to delete from
             full      Follow IDs and remap classification
                       [Optional: Only work while deleting submissions]
             force     Automatically perform deletion without asking for confirmation [optional]
@@ -479,7 +479,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             # Delete all submission for "user" with all associated results
             delete submission full "params.submitter:user"
         """
-        valid_buckets = list(self.datastore.ds.get_models().keys())
+        valid_indices = list(self.datastore.ds.get_models().keys())
         args = self._parse_args(args)
 
         if 'full' in args:
@@ -498,14 +498,14 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             self._print_error("Wrong number of arguments for delete command.")
             return
 
-        bucket, query = args
+        index, query = args
 
-        if bucket not in valid_buckets:
-            bucket_list = '\n'.join(valid_buckets)
-            self._print_error(f"\nInvalid bucket specified: {bucket}\n\nValid buckets are:\n{bucket_list}")
+        if index not in valid_indices:
+            index_list = '\n'.join(valid_indices)
+            self._print_error(f"\nInvalid index specified: {index}\n\nValid indices are:\n{index_list}")
             return
         else:
-            collection = self.datastore.get_collection(bucket)
+            collection = self.datastore.get_collection(index)
 
         pool = None
         try:
@@ -532,7 +532,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                     return
 
             if cont:
-                if full and bucket == 'submission':
+                if full and index == 'submission':
                     pool = multiprocessing.Pool(processes=PROCESSES_COUNT, initializer=init)
                     for data in collection.stream_search(query, fl="id", item_buffer_size=COUNT_INCREMENT):
                         pool.apply_async(submission_delete_tree, (data.id, self.logger), callback=action_done)
@@ -552,7 +552,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 pool.close()
                 pool.join()
             collection.commit()
-            self.logger.info(f"Data of bucket '{bucket}' matching query '{query}' has been deleted.")
+            self.logger.info(f"Data of index '{index}' matching query '{query}' has been deleted.")
 
     def do_service(self, args):
         """
@@ -917,38 +917,40 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
            something went wrong in the middle of it.
 
         Usage:
-            index commit        [<safe>] [<bucket>]
-                  reindex       [<safe>] [<bucket>]
-                  fix_ilm       [<safe>] [<bucket>]
-                  fix_replicas  [<safe>] [<bucket>]
-                  fix_shards    [<safe>] [<bucket>]
+            index commit               [<safe>] [<index>]
+                  reindex              [<safe>] [<index>]
+                  fix_ilm              [<safe>] [<index>]
+                  fix_replicas         [<safe>] [<index>]
+                  fix_shards           [<safe>] [<index>]
+                  restore_old_archive  [<safe>] [<index>]
 
         Actions:
-            commit        Force datastore to commit the specified index
-            reindex       Force a reindex of the sepcified index
-                             ** This operation is really slow because it re-index all documents
-            fix_ilm       Fix ILM on specified indices
-                             ** This operation can be really slow when going from an ILM setup to a hot
-                                archive only setup because it will copy the archive to hot index
-            fix_replicas  Fix replica count on specified indices
-            fix_shards    Fix sharding on specified indices
-                             ** This operation can be slow and will prevent data from being written
-                                the cluster while it is hapenning.
+            commit               Force datastore to commit the specified index
+            reindex              Force a reindex of the sepcified index
+                                    ** This operation is really slow because it re-index all documents
+            fix_ilm              Fix ILM on specified indices
+                                    ** This operation can be really slow when going from an ILM setup to a hot
+                                       archive only setup because it will copy the archive to hot index
+            fix_replicas         Fix replica count on specified indices
+            fix_shards           Fix sharding on specified indices
+                                    ** This operation can be slow and will prevent data from being written
+                                       the cluster while it is hapenning.
+            restore_old_archive  Restaure all documents from the old archiving method into the hot index
 
         Parameters:
             <safe>       Does not validate the model [optional]
-            <bucket>     Bucket to do the operation on [optional]
+            <index>      index to do the operation on [optional]
 
 
         Examples:
-            # Force commit on file bucket
+            # Force commit on file index
             index commit file
-            # Force commit on all bucket
+            # Force commit on all index
             index commit
         """
 
-        valid_buckets = list(self.datastore.ds.get_models().keys())
-        valid_actions = ['commit', 'reindex', 'fix_shards', 'fix_ilm', 'fix_replicas']
+        valid_indices = list(self.datastore.ds.get_models().keys())
+        valid_actions = ['commit', 'reindex', 'fix_shards', 'fix_ilm', 'fix_replicas', 'restore_old_archive']
 
         args = self._parse_args(args)
 
@@ -959,9 +961,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         if len(args) == 1:
             action_type = args[0]
-            bucket = None
+            index = None
         elif len(args) == 2:
-            action_type, bucket = args
+            action_type, index = args
         else:
             self._print_error("Wrong number of arguments for index command.")
             return
@@ -971,9 +973,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                               "Valid actions are:\n{}".format(action_type, "\n".join(valid_actions)))
             return
 
-        if bucket and bucket not in valid_buckets:
-            self._print_error("\nInvalid bucket specified: {}\n\n"
-                              "Valid buckets are:\n{}".format(bucket, "\n".join(valid_buckets)))
+        if index and index not in valid_indices:
+            self._print_error("\nInvalid index specified: {}\n\n"
+                              "Valid indices are:\n{}".format(index, "\n".join(valid_indices)))
             return
 
         if safe:
@@ -981,71 +983,86 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         try:
             if action_type == 'reindex':
-                if bucket:
-                    collection = self.datastore.get_collection(bucket)
-                    self.logger.info(f"Reindexing {bucket.upper()} ...")
+                if index:
+                    collection = self.datastore.get_collection(index)
+                    self.logger.info(f"Reindexing {index.upper()} ...")
                     collection.reindex()
                     self.logger.info("    Done!")
                 else:
-                    for bucket in valid_buckets:
-                        collection = self.datastore.get_collection(bucket)
-                        self.logger.info(f"Reindexing {bucket} ...")
+                    for index in valid_indices:
+                        collection = self.datastore.get_collection(index)
+                        self.logger.info(f"Reindexing {index} ...")
                         collection.reindex()
                         self.logger.info("    Done!")
             elif action_type == 'commit':
-                if bucket:
-                    collection = self.datastore.get_collection(bucket)
+                if index:
+                    collection = self.datastore.get_collection(index)
                     collection.commit()
-                    self.logger.info(f"Index {bucket.upper()} was committed.")
+                    self.logger.info(f"Index {index.upper()} was committed.")
                 else:
                     self.logger.info("Forcing commit procedure for all indexes...")
-                    for bucket in valid_buckets:
-                        collection = self.datastore.get_collection(bucket)
+                    for index in valid_indices:
+                        collection = self.datastore.get_collection(index)
                         collection.commit()
-                        self.logger.info(f"    Index {bucket.upper()} was commited.")
+                        self.logger.info(f"    Index {index.upper()} was commited.")
                     self.logger.info("All indexes committed.")
             elif action_type == 'fix_shards':
-                buckets = []
-                if bucket:
-                    self.logger.info(f"Fixing shards on index {bucket.upper()}...")
-                    buckets.append(bucket)
+                indices = []
+                if index:
+                    self.logger.info(f"Fixing shards on index {index.upper()}...")
+                    indices.append(index)
                 else:
                     self.logger.info("Fixing shards on all indices...")
-                    buckets = valid_buckets
+                    indices = valid_indices
 
-                for bucket in buckets:
-                    collection = self.datastore.get_collection(bucket)
+                for index in indices:
+                    collection = self.datastore.get_collection(index)
                     collection.fix_shards(logger=IndentedPrintLogger()
                                           if isinstance(self.logger, PrintLogger) else self.logger)
-                    self.logger.info(f"    Index {bucket.upper()} shards configuration updated.")
+                    self.logger.info(f"    Index {index.upper()} shards configuration updated.")
 
                 self.logger.info("Completed!")
             elif action_type == 'fix_ilm':
-                buckets = []
-                if bucket:
-                    self.logger.info(f"Fixing ILM on index {bucket.upper()}...")
-                    buckets.append(bucket)
+                indices = []
+                if index:
+                    self.logger.info(f"Fixing ILM on index {index.upper()}...")
+                    indices.append(index)
                 else:
                     self.logger.info("Fixing ILM on all indices...")
-                    buckets = valid_buckets
+                    indices = valid_indices
 
-                for bucket in buckets:
-                    collection = self.datastore.get_collection(bucket)
+                for index in indices:
+                    collection = self.datastore.get_collection(index)
                     collection.fix_ilm()
-                    self.logger.info(f"    Index {bucket.upper()} ILM configuration updated.")
+                    self.logger.info(f"    Index {index.upper()} ILM configuration updated.")
             elif action_type == 'fix_replicas':
-                buckets = []
-                if bucket:
-                    self.logger.info(f"Fixing replicas on index {bucket.upper()}...")
-                    buckets.append(bucket)
+                indices = []
+                if index:
+                    self.logger.info(f"Fixing replicas on index {index.upper()}...")
+                    indices.append(index)
                 else:
                     self.logger.info("Fixing replicas on all indices...")
-                    buckets = valid_buckets
+                    indices = valid_indices
 
-                for bucket in buckets:
-                    collection = self.datastore.get_collection(bucket)
+                for index in indices:
+                    collection = self.datastore.get_collection(index)
                     collection.fix_replicas()
-                    self.logger.info(f"    Index {bucket.upper()} replicas configuration updated.")
+                    self.logger.info(f"    Index {index.upper()} replicas configuration updated.")
+
+                self.logger.info("Completed!")
+            elif action_type == 'restore_old_archive':
+                indices = []
+                if index:
+                    self.logger.info(f"Restoring old archive documents on index {index.upper()}...")
+                    indices.append(index)
+                else:
+                    self.logger.info("Restoring old archive documents on all indices...")
+                    indices.extend(['alert', 'error', 'file', 'result', 'submission'])
+
+                for index in indices:
+                    collection = self.datastore.get_collection(index)
+                    count = collection.restore_old_archive()
+                    self.logger.info(f"    {count} document(s) were restored into index {index.upper()}.")
 
                 self.logger.info("Completed!")
         finally:
@@ -1053,17 +1070,17 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
     def do_wipe(self, args):
         """
-        Wipe all data from one or many buckets
+        Wipe all data from one or many indices
 
         DO NOT USE ON PRODUCTION SYSTEM
 
         Usage:
-            wipe bucket <bucket_name>
+            wipe index <index_name>
                  non_system
                  submission_data
 
         Actions:
-            bucket           Single bucket wipe mode
+            index           Single index wipe mode
             non_system       Delete all data from:
                                  alert
                                  emptyresult
@@ -1082,21 +1099,21 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                                  submission
 
         Parameters:
-            <bucket_name>  Name of the bucket to wipe
+            <index_name>  Name of the index to wipe
 
         Examples:
             # Wipe all files
-            wipe bucket file
+            wipe index file
         """
         args = self._parse_args(args)
-        valid_actions = ['bucket', 'non_system', 'submission_data']
-        valid_buckets = list(self.datastore.ds.get_models().keys())
+        valid_actions = ['index', 'non_system', 'submission_data']
+        valid_indices = list(self.datastore.ds.get_models().keys())
 
         if len(args) == 1:
             action_type = args[0]
-            bucket = None
+            index = None
         elif len(args) == 2:
-            action_type, bucket = args
+            action_type, index = args
         else:
             self._print_error("Wrong number of arguments for wipe command.")
             return
@@ -1106,34 +1123,34 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                               "Valid actions are:\n{}".format(action_type, "\n".join(valid_actions)))
             return
 
-        if action_type == 'bucket':
-            if bucket not in valid_buckets:
-                self._print_error("\nInvalid bucket: {}\n\n"
-                                  "Valid buckets are:\n{}".format(bucket, "\n".join(valid_buckets)))
+        if action_type == 'index':
+            if index not in valid_indices:
+                self._print_error("\nInvalid index: {}\n\n"
+                                  "Valid indices are:\n{}".format(index, "\n".join(valid_indices)))
                 return
 
-            self.datastore.get_collection(bucket).wipe()
-            self.logger.info(f"Done wiping {bucket.upper()}.")
+            self.datastore.get_collection(index).wipe()
+            self.logger.info(f"Done wiping {index.upper()}.")
         elif action_type == 'non_system':
-            non_system_buckets = [
+            non_system_indices = [
                 'alert', 'cached_file', 'emptyresult', 'error', 'file', 'filescore', 'result',
                 'submission', 'submission_tree', 'submission_summary', 'workflow'
             ]
-            for bucket in non_system_buckets:
-                self.datastore.get_collection(bucket).wipe()
-                self.logger.info(f"Done wipping {bucket.upper()}.")
+            for index in non_system_indices:
+                self.datastore.get_collection(index).wipe()
+                self.logger.info(f"Done wipping {index.upper()}.")
         elif action_type == 'submission_data':
-            submission_data_buckets = ['emptyresult', 'error', 'file', 'filescore', 'result',
+            submission_data_indices = ['emptyresult', 'error', 'file', 'filescore', 'result',
                                        'submission', 'submission_tree', 'submission_summary']
-            for bucket in submission_data_buckets:
-                self.datastore.get_collection(bucket).wipe()
-                self.logger.info(f"Done wipping {bucket.upper()}.")
+            for index in submission_data_indices:
+                self.datastore.get_collection(index).wipe()
+                self.logger.info(f"Done wipping {index.upper()}.")
         else:
             self._print_error("Invalid command parameters")
 
     def do_data_reset(self, args):
         """
-        Completely resets the database. Does a backup of the system data, wipe every buckets then
+        Completely resets the database. Does a backup of the system data, wipe every indices then
         restores the backup.
 
         DO NOT USE ON PRODUCTION SYSTEM
@@ -1142,7 +1159,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             data_reset [full]
 
         Parameters:
-            full   Does not just wipe the system bucket, also wipe all submissions and results
+            full   Does not just wipe the system index, also wipe all submissions and results
 
         Examples:
             # Reset the database
@@ -1158,7 +1175,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         backup_file = f"/tmp/al_backup_{get_random_id()}"
         self.do_backup(backup_file)
 
-        system_buckets = [
+        system_indices = [
             'heuristic',
             'service',
             'service_delta',
@@ -1170,7 +1187,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             'workflow'
         ]
         if full:
-            data_buckets = [
+            data_indices = [
                 'alert',
                 'cached_file',
                 'emptyresult',
@@ -1182,12 +1199,12 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 'submission_tree',
                 'submission_summary'
             ]
-            system_buckets += data_buckets
+            system_indices += data_indices
 
-        self.logger.info("\nWiping all buckets:")
-        for bucket in sorted(system_buckets):
-            self.datastore.get_collection(bucket).wipe()
-            self.logger.info(f"    {bucket.upper()} wiped.")
+        self.logger.info("\nWiping all indices:")
+        for index in sorted(system_indices):
+            self.datastore.get_collection(index).wipe()
+            self.logger.info(f"    {index.upper()} wiped.")
 
         self.do_restore(backup_file)
         self.do_index("commit")
@@ -1356,15 +1373,15 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 if name not in covered_indices:
                     self.logger.warning(f"Datastore index {name} not handled by script.")
 
-        # See which bucket they are asking for
-        bucket_name: str = args[1]
-        if bucket_name == 'all':
-            bucket_names = active_indices
+        # See which index they are asking for
+        index_name: str = args[1]
+        if index_name == 'all':
+            index_names = active_indices
         else:
-            if bucket_name not in active_indices:
-                self._print_error(f"Bucket '{bucket_name}' does nothing with this command.")
+            if index_name not in active_indices:
+                self._print_error(f"index '{index_name}' does nothing with this command.")
                 return
-            bucket_names = [bucket_name]
+            index_names = [index_name]
 
         if func == 'fix':
             # Check if there is a max dtl set
@@ -1377,7 +1394,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             # documents where expiry is outside of configured bounds
             query = f"(NOT _exists_:expiry_ts) OR expiry_ts: [now+{max_dtl}d TO *]"
 
-            for name in bucket_names:
+            for name in index_names:
                 # For each collection we have a date key to update with, do a stream search
                 # and update each document with a new expiry
                 if name in read_date_keys:
