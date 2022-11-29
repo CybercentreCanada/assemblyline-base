@@ -922,7 +922,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                   fix_ilm              [<safe>] [<index>]
                   fix_replicas         [<safe>] [<index>]
                   fix_shards           [<safe>] [<index>]
-                  restore_old_archive  [<safe>] [<index>]
+                  restore_old_archive  [<cleanup>] [<index>]
 
         Actions:
             commit               Force datastore to commit the specified index
@@ -939,6 +939,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
         Parameters:
             <safe>       Does not validate the model [optional]
+            <cleanup>    After restoring the data, remove old indices (restore_old_archive only) [optional]
             <index>      index to do the operation on [optional]
 
 
@@ -958,6 +959,11 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         if 'safe' in args:
             safe = True
             args.remove('safe')
+
+        cleanup = False
+        if 'cleanup' in args:
+            cleanup = True
+            args.remove('cleanup')
 
         if len(args) == 1:
             action_type = args[0]
@@ -1061,7 +1067,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
                 for index in indices:
                     collection = self.datastore.get_collection(index)
-                    count = collection.restore_old_archive()
+                    count = collection.restore_old_archive(delete_after=cleanup)
                     self.logger.info(f"    {count} document(s) were restored into index {index.upper()}.")
 
                 self.logger.info("Completed!")
