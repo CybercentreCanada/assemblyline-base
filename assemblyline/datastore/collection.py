@@ -464,6 +464,59 @@ class ESCollection(Generic[ModelType]):
             else:
                 updated += res['updated']
 
+    def restore_old_archive(self, delete_after=False):
+        """
+        This function moves documents that were previously in the old archiving system back to the hot index
+
+        :param delete_after: Delete everything related to the old archive when the data move is complete
+        :return: Number documents restaured
+        """
+        source = {
+            "index": f"{self.name}-0*",
+            "query": {
+                "bool": {
+                    "must": {
+                        "query_string": {
+                            "query": "id:*"
+                        }
+                    }
+                }
+            },
+        }
+
+        dest = {
+            "index": f"{self.name}"
+        }
+
+        r_task = self.with_retries(self.datastore.client.reindex, source=source, dest=dest, wait_for_completion=False)
+        res = self._get_task_results(r_task)
+        total_restaured = res['updated'] + res['created']
+
+        if delete_after:
+            # Remove ILM Policy
+            ilm_name = f"{self.name}_policy"
+            try:
+                res = self.with_retries(self.datastore.client.ilm.get_lifecycle, name=ilm_name)
+                for index in res.get(ilm_name, {}).get('in_use_by', {}).get('indices', []):
+                    self.with_retries(self.datastore.client.ilm.remove_policy, index=index)
+                self.with_retries(self.datastore.client.ilm.delete_lifecycle, name=ilm_name)
+            except elasticsearch.NotFoundError:
+                pass
+
+            # Delete index templates for old archive
+            if self.with_retries(self.datastore.client.indices.exists_template, name=self.name):
+                self.with_retries(self.datastore.client.indices.delete_template, name=self.name)
+
+            # Delete old archive alias
+            alias = f"{self.name}-archive"
+            if self.with_retries(self.datastore.client.indices.exists_alias, name=alias):
+                self.with_retries(self.datastore.client.indices.delete_alias, index=source['index'], name=alias)
+
+            # Delete old archive indices
+            self.with_retries(self.datastore.client.indices.delete, index=source['index'], allow_no_indices=True)
+
+        return total_restaured
+
     def archive(self, key, delete_after=False, allow_missing=False):
         """
         Copy/Move a single document into the archive and return the document that was archived.
