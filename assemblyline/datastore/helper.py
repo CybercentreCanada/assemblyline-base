@@ -235,8 +235,8 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def multi_index_bulk(self, bulk_plans):
-        plan = "\n".join([p.get_plan_data() for p in bulk_plans])
-        return self.ds.with_retries(self.ds.client.bulk, body=plan)
+        operations = "\n".join([p.get_plan_data() for p in bulk_plans])
+        return self.ds.with_retries(self.ds.client.bulk, operations=operations)
 
     @elasticapm.capture_span(span_type='datastore')
     def delete_submission_tree_bulk(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
