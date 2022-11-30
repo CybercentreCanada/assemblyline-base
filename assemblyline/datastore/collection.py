@@ -831,6 +831,11 @@ class ESCollection(Generic[ModelType]):
 
                 try:
                     key_list.remove(row['_id'])
+
+                    # If this index has an archive, check is the document was found in it.
+                    if self.index_archive_name:
+                        row['_source']['from_archive'] = index == self.index_archive_name
+
                     add_to_output(row['_source'], row['_id'])
                 except ValueError:
                     log.error(f'MGet returned multiple documents for id: {row["_id"]}')
