@@ -14,7 +14,6 @@ from datemath.helpers import DateMathException
 from datetime import datetime
 from enum import Enum
 from os import environ
-from random import random
 from typing import Dict, Any, Union, TypeVar, Generic
 
 import elasticsearch
@@ -24,7 +23,7 @@ from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
 from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException,
-                                               SearchRetryException, VersionConflictException, ArchiveDisabled)
+                                               SearchRetryException, ArchiveDisabled)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
 from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                     default_index, default_mapping)
@@ -291,92 +290,22 @@ class ESCollection(Generic[ModelType]):
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
-    def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
+    def with_retries(self, func, *args, **kwargs):
         """
         This function performs the passed function with the given args and kwargs and reconnect if it fails
 
         :return: return the output of the function passed
         """
         retries = 0
-        updated = 0
-        deleted = 0
         while True:
             try:
-                ret_val = func(*args, **kwargs)
-
-                if retries:
-                    log.info('Reconnected to elasticsearch!')
-
-                if updated:
-                    ret_val['updated'] += updated
-
-                if deleted:
-                    ret_val['deleted'] += deleted
-
-                return ret_val
-
+                return self.datastore.with_retries(func, *args, **kwargs)
             except elasticsearch.exceptions.NotFoundError as e:
                 if "index_not_found_exception" in str(e):
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     log.debug("The index does not exist. Trying to recreate it...")
                     self._ensure_collection()
-                    self.datastore.connection_reset()
                     retries += 1
-                else:
-                    raise
-
-            except elasticsearch.exceptions.ConflictError as ce:
-                if raise_conflicts:
-                    # De-sync potential treads trying to write to the index
-                    time.sleep(random() * 0.1)
-                    raise VersionConflictException(str(ce))
-                updated += ce.info.get('updated', 0)
-                deleted += ce.info.get('deleted', 0)
-
-                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.datastore.connection_reset()
-                retries += 1
-
-            except elasticsearch.exceptions.ConnectionTimeout:
-                log.warning(f"Elasticsearch connection timeout, server(s): "
-                            f"{' | '.join(self.datastore.get_hosts(safe=True))}"
-                            f", retrying {func.__name__}...")
-                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.datastore.connection_reset()
-                retries += 1
-
-            except (SearchRetryException,
-                    elasticsearch.exceptions.ConnectionError,
-                    elasticsearch.exceptions.AuthenticationException) as e:
-                if not isinstance(e, SearchRetryException):
-                    log.warning(f"No connection to Elasticsearch server(s): "
-                                f"{' | '.join(self.datastore.get_hosts(safe=True))}"
-                                f", because [{e}] retrying {func.__name__}...")
-
-                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.datastore.connection_reset()
-                retries += 1
-
-            except elasticsearch.exceptions.TransportError as e:
-                err_code, msg, cause = e.args
-                if err_code == 503 or err_code == '503':
-                    log.warning(f"Looks like index {self.name} is not ready yet, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.datastore.connection_reset()
-                    retries += 1
-                elif err_code == 429 or err_code == '429':
-                    log.warning("Elasticsearch is too busy to perform the requested "
-                                f"task on index {self.name}, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.datastore.connection_reset()
-                    retries += 1
-                elif err_code == 403 or err_code == '403':
-                    log.warning("Elasticsearch cluster is preventing writing operations "
-                                f"on index {self.name}, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.datastore.connection_reset()
-                    retries += 1
-
                 else:
                     raise
 

@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import logging
 import re
-from os import environ
+import time
 import typing
+
+from os import environ
+from random import random
 from urllib.parse import urlparse
 
 import elasticsearch
@@ -11,15 +14,18 @@ import elasticsearch.helpers
 
 from assemblyline.common import forge
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion
+from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion,
+                                               SearchRetryException, VersionConflictException)
 
 from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
+log = logging.getLogger('assemblyline.datastore')
 
 
 class ESStore(object):
     """ Elasticsearch multi-index implementation of the ResultStore interface."""
+    MAX_RETRY_BACKOFF = 10
     DEFAULT_SORT = "id asc"
     DATE_FORMAT = {
         'NOW': 'now',
@@ -202,3 +208,82 @@ class ESStore(object):
             value = value.replace(*x)
 
         return value
+
+    def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
+        """
+        This function performs the passed function with the given args and kwargs and reconnect if it fails
+
+        :return: return the output of the function passed
+        """
+        retries = 0
+        updated = 0
+        deleted = 0
+        while True:
+            try:
+                ret_val = func(*args, **kwargs)
+
+                if retries:
+                    log.info('Reconnected to elasticsearch!')
+
+                if updated:
+                    ret_val['updated'] += updated
+
+                if deleted:
+                    ret_val['deleted'] += deleted
+
+                return ret_val
+
+            except elasticsearch.exceptions.ConflictError as ce:
+                if raise_conflicts:
+                    # De-sync potential treads trying to write to the index
+                    time.sleep(random() * 0.1)
+                    raise VersionConflictException(str(ce))
+                updated += ce.info.get('updated', 0)
+                deleted += ce.info.get('deleted', 0)
+
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
+            except elasticsearch.exceptions.ConnectionTimeout:
+                log.warning(f"Elasticsearch connection timeout, server(s): "
+                            f"{' | '.join(self.get_hosts(safe=True))}"
+                            f", retrying {func.__name__}...")
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
+            except (SearchRetryException,
+                    elasticsearch.exceptions.ConnectionError,
+                    elasticsearch.exceptions.AuthenticationException) as e:
+                if not isinstance(e, SearchRetryException):
+                    log.warning(f"No connection to Elasticsearch server(s): "
+                                f"{' | '.join(self.datastore.get_hosts(safe=True))}"
+                                f", because [{e}] retrying {func.__name__}...")
+
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, _, _ = e.args
+                if err_code == 503 or err_code == '503':
+                    log.warning(f"Looks like index {self.name} is not ready yet, retrying...")
+                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                    self.connection_reset()
+                    retries += 1
+                elif err_code == 429 or err_code == '429':
+                    log.warning("Elasticsearch is too busy to perform the requested "
+                                f"task on index {self.name}, retrying...")
+                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                    self.connection_reset()
+                    retries += 1
+                elif err_code == 403 or err_code == '403':
+                    log.warning("Elasticsearch cluster is preventing writing operations "
+                                f"on index {self.name}, retrying...")
+                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                    self.connection_reset()
+                    retries += 1
+
+                else:
+                    raise
