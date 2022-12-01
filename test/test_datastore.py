@@ -115,9 +115,10 @@ def es_connection(request):
 
 
 def _test_archive(c: ESCollection):
-    # Test GET
+    # Test Archive
     assert c.archive('archive1', delete_after=True)
     assert c.archive('archive2')
+    c.commit()
     assert c.get_if_exists('archive1')['from_archive']
     assert not c.exists('archive1', index_type=Index.HOT)
     assert not c.get_if_exists('archive2')['from_archive']
@@ -125,8 +126,9 @@ def _test_archive(c: ESCollection):
 
 
 def _test_archive_by_query(c: ESCollection):
-    # Test GET
+    # Test Archive by Query
     assert c.archive_by_query("_id:archive3 OR _id:archive4")
+    c.commit()
 
     # Are the docs archived?
     assert c.get_if_exists('archive3', index_type=Index.ARCHIVE)['from_archive']
@@ -144,6 +146,7 @@ def _test_bulk(c: ESCollection):
     delete_plan.add_delete_operation('test3')
     delete_plan.add_delete_operation('test4')
     c.bulk(delete_plan)
+    c.commit()
 
     assert not c.exists('test1')
     assert not c.exists('test2')
@@ -156,6 +159,7 @@ def _test_bulk(c: ESCollection):
     insert_plan.add_insert_operation('test3', test_map.get('test3'))
     insert_plan.add_insert_operation('test4', test_map.get('test4'))
     c.bulk(insert_plan)
+    c.commit()
 
     assert c.exists('test1')
     assert c.exists('test2')
