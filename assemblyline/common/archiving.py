@@ -12,10 +12,11 @@ from assemblyline.odm.models.config import Config
 from assemblyline.remote.datatypes import get_client
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 from assemblyline.remote.datatypes.queues.named import NamedQueue
-from assemblyline_core.archiver.run_archiver import ARCHIVE_QUEUE_NAME
 
 from assemblyline_core.dispatching.schedules import Scheduler
 from assemblyline_core.submission_client import SubmissionClient, SubmissionException
+
+ARCHIVE_QUEUE_NAME = 'm-archive'
 
 
 class ArchiveManager():

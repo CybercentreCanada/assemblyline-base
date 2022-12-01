@@ -14,7 +14,7 @@ from assemblyline.odm.models.config import Config
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
-from assemblyline.odm.randomizer import SERVICES, random_minimal_obj, random_model_obj
+from assemblyline.odm.randomizer import SERVICES, random_minimal_obj
 from assemblyline.odm.random_data import create_signatures, create_submission, create_heuristics, create_services
 
 
