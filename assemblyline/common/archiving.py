@@ -28,7 +28,7 @@ class ArchiveManager():
             identify: Identify = None):
         self.log = logging.getLogger('assemblyline.archive_manager')
         self.config = config or forge.get_config()
-        if self.config.datastore.archive.enabled:
+        if self.config.datastore.archive.enabled and Scheduler:
             self.datastore = datastore or forge.get_datastore(self.config)
             self.filestore = filestore or forge.get_filestore(self.config)
             self.identify = identify or forge.get_identify(config=self.config, datastore=self.datastore, use_cache=True)
@@ -41,7 +41,7 @@ class ArchiveManager():
             self.submission_traffic = CommsQueue('submissions', host=redis)
 
     def archive_submission(self, submission, delete_after: bool = False):
-        if self.config.datastore.archive.enabled:
+        if self.config.datastore.archive.enabled and Scheduler:
             sub_selected = self.scheduler.expand_categories(submission['params']['services']['selected'])
             min_selected = self.scheduler.expand_categories(self.config.core.archiver.minimum_required_services)
 
