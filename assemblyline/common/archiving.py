@@ -13,8 +13,11 @@ from assemblyline.remote.datatypes import get_client
 from assemblyline.remote.datatypes.queues.comms import CommsQueue
 from assemblyline.remote.datatypes.queues.named import NamedQueue
 
-from assemblyline_core.dispatching.schedules import Scheduler
-from assemblyline_core.submission_client import SubmissionClient, SubmissionException
+try:
+    from assemblyline_core.dispatching.schedules import Scheduler
+    from assemblyline_core.submission_client import SubmissionClient, SubmissionException
+except ImportError:
+    Scheduler = SubmissionClient = SubmissionException = None
 
 ARCHIVE_QUEUE_NAME = 'm-archive'
 
