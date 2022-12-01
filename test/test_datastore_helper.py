@@ -149,6 +149,13 @@ def test_delete_submission_tree(ds: AssemblylineDatastore, bulk):
     else:
         ds.delete_submission_tree(submission.sid, transport=fs)
 
+    # Make sure delete operation is reflected in the DB
+    ds.submission.commit()
+    ds.error.commit()
+    ds.emptyresult.commit()
+    ds.result.commit()
+    ds.file.commit()
+
     # Make sure submission is completely gone
     assert not ds.submission.exists(submission.sid)
     for f in files:
