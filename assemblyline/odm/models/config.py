@@ -953,6 +953,7 @@ class UI(odm.Model):
                                                           description="Headers used by the url_download method")
     url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Proxy used by the url_download method")
+    url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
     validate_session_useragent: bool = \

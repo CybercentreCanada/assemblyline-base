@@ -82,6 +82,9 @@ class File(odm.Model):
     classification = odm.Classification(description="Classification of the file")
     is_section_image = odm.Boolean(default=False,
                                    description="Is this an image used in an Image Result Section?")
+    allow_dynamic_recursion = odm.Boolean(
+        default=False,
+        description="Allow file to be analysed during Dynamic Analysis even if Dynamic Recursion Prevention is enabled.")
 
 
 @odm.model(index=True, store=True, description="Response Body of Result")
