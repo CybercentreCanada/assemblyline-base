@@ -11,7 +11,7 @@ from assemblyline.common.uid import get_id_from_data
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
-from assemblyline.datastore.collection import ESCollection, log, Index
+from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
@@ -987,10 +987,10 @@ class AssemblylineDatastore(object):
         else:
             first = self.result.search(query=query, fl='created', rows=1,
                                        sort="created asc", as_obj=False,
-                                       index_type=Index.HOT_AND_ARCHIVE)['items'][0]['created']
+                                       index_type=None)['items'][0]['created']
             last = self.result.search(query=query, fl='created', rows=1,
                                       sort="created desc", as_obj=False,
-                                      index_type=Index.HOT_AND_ARCHIVE)['items'][0]['created']
+                                      index_type=None)['items'][0]['created']
             up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
@@ -1044,10 +1044,10 @@ class AssemblylineDatastore(object):
         else:
             first = self.result.search(query=query, fl='created', rows=1,
                                        sort="created asc", as_obj=False,
-                                       index_type=Index.HOT_AND_ARCHIVE)['items'][0]['created']
+                                       index_type=None)['items'][0]['created']
             last = self.result.search(query=query, fl='created', rows=1,
                                       sort="created desc", as_obj=False,
-                                      index_type=Index.HOT_AND_ARCHIVE)['items'][0]['created']
+                                      index_type=None)['items'][0]['created']
             up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
