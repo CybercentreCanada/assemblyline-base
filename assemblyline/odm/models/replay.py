@@ -85,6 +85,8 @@ class Loader(odm.Model):
     min_classification: str = odm.Optional(odm.Keyword())
     rescan: List[str] = odm.List(odm.Keyword())
     working_directory: str = odm.Keyword()
+    sync_check_interval: int = odm.Integer(default=3600,
+                                           description='How often to check on imported Replay bundles (in seconds)?')
 
 
 DEFAULT_LOADER = {
