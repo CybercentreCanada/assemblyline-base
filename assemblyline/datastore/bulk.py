@@ -20,7 +20,7 @@ class ElasticBulkPlan(object):
                 self.operations.append(json.dumps({"delete": {"_index": cur_index, "_id": doc_id}}))
 
     def add_insert_operation(self, doc_id, doc, index=None):
-        if isinstance(doc, self.model):
+        if self.model and isinstance(doc, self.model):
             saved_doc = doc.as_primitives(hidden_fields=True)
         elif self.model:
             saved_doc = self.model(doc).as_primitives(hidden_fields=True)

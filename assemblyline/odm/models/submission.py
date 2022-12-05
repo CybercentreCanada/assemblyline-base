@@ -70,6 +70,11 @@ class SubmissionParams(odm.Model):
     ttl = odm.Integer(default=0, description="Time, in days, to live for this submission")
     type = odm.Keyword(default="USER", description="Type of submission")
     initial_data = odm.Optional(odm.Text(index=False), description="Initialization for temporary submission data")
+    auto_archive = odm.Boolean(default=False,
+                               description="Does the submission automatically goes into the archive when completed?")
+    delete_after_archive = odm.Boolean(
+        default=False,
+        description="When the submission is archived, should we delete it from hot storage right away?")
 
     def get_hashing_keys(self):
         """Get the sections of the submission parameters that should be used in result hashes."""
@@ -117,7 +122,8 @@ class Verdict(odm.Model):
 
 @odm.model(index=True, store=True, description="Model of Submission")
 class Submission(odm.Model):
-    archive_ts = odm.Date(store=False, description="Archiving timestamp")
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)"))
+    archived = odm.Boolean(default=False, description="Document is present in the malware archive")
     classification = odm.Classification(description="Classification of the submission")
     error_count = odm.Integer(description="Total number of errors in the submission")
     errors: list[str] = odm.List(odm.Keyword(), store=False, description="List of error keys")
@@ -132,6 +138,7 @@ class Submission(odm.Model):
     state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission")
     times = odm.Compound(Times, default={}, description="Submission-specific times")
     verdict = odm.Compound(Verdict, default={}, description="Malicious verdict details")
+    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive")
 
     # the filescore key, used in deduplication. This is a non-unique key, that is
     # shared by submissions that may be processed as duplicates.

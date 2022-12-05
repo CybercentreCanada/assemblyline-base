@@ -336,7 +336,7 @@ def test_user(datastore, cli):
 def test_wipe(datastore, cli):
     # This needs to run last as it deletes important data for other tests
     try:
-        cli.do_wipe('bucket user')
+        cli.do_wipe('index user')
         datastore.user.commit()
         assert datastore.user.search("id:user")['total'] == 0
     finally:
@@ -346,12 +346,12 @@ def test_wipe(datastore, cli):
     non_system = ['alert', 'cached_file', 'emptyresult', 'error', 'file', 'filescore', 'result',
                   'submission', 'submission_tree', 'submission_summary', 'workflow']
     cli.do_wipe('non_system')
-    for (x, bucket) in enumerate(non_system):
-        assert bucket.upper() in LOGS['info'][x]
+    for (x, index) in enumerate(non_system):
+        assert index.upper() in LOGS['info'][x]
 
     reset_logger()
-    submission_data_buckets = ['emptyresult', 'error', 'file', 'filescore', 'result',
+    submission_data_indices = ['emptyresult', 'error', 'file', 'filescore', 'result',
                                'submission', 'submission_tree', 'submission_summary']
     cli.do_wipe('submission_data')
-    for (x, bucket) in enumerate(submission_data_buckets):
-        assert bucket.upper() in LOGS['info'][x]
+    for (x, index) in enumerate(submission_data_indices):
+        assert index.upper() in LOGS['info'][x]

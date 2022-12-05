@@ -29,6 +29,10 @@ class UnsupportedElasticVersion(Exception):
     pass
 
 
+class ArchiveDisabled(Exception):
+    pass
+
+
 class MultiKeyError(KeyError):
     def __init__(self, keys: Iterable[str], partial_output):
         super().__init__(str(keys))

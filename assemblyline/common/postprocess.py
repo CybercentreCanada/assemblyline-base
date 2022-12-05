@@ -616,6 +616,10 @@ class ActionWorker:
         self.alert_queue: NamedQueue[dict] = NamedQueue(ALERT_QUEUE_NAME, redis_persist)
         self.unique_queue: PriorityQueue[dict] = PriorityQueue('m-unique', redis_persist)
 
+        # Archive manager (late import due to circular import)
+        from assemblyline.common.archiving import ArchiveManager
+        self.archive_manager: ArchiveManager = ArchiveManager(self.config, self.datastore)
+
         # Load actions
         self.actions: dict[str, tuple[SubmissionFilter, PostprocessAction]] = {}
         self._load_actions()
@@ -688,6 +692,7 @@ class ActionWorker:
 
         Return bool indicating if a resubmission action has happened.
         """
+        archive_submission = submission.params.auto_archive
         create_alert = False
         resubmit: Optional[set[str]] = None
         webhooks = []
@@ -698,6 +703,9 @@ class ActionWorker:
 
             # Check if we need to launch an alert
             create_alert |= action.raise_alert
+
+            # Check if we need to archive the submission
+            archive_submission |= action.archive_submission
 
             # Accumulate resubmit services
             if action.resubmit is not None:
@@ -715,7 +723,7 @@ class ActionWorker:
                 webhooks.append(action.webhook)
 
         # Bail early if nothing is to be done
-        if resubmit is None and not create_alert and not webhooks:
+        if resubmit is None and not create_alert and not webhooks and not archive_submission:
             return False
 
         # Prepare a message formatted submission
@@ -768,9 +776,29 @@ class ActionWorker:
                 ingest_id=submission_msg.metadata.get('ingest_id', None)
             ))
 
+        # Archive the submission
+        if archive_submission:
+            if self.config.datastore.archive.enabled:
+                logger.info(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] Evaluating if the file can"
+                            " be moved to the malware archive")
+
+                if self.archive_manager.archive_submission(
+                        submission_msg.as_primitives(),
+                        submission_msg.params.delete_after_archive)['action'] == "archive":
+                    logger.info(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] Archiver was notified "
+                                "to copy the file in the malware archive")
+                else:
+                    logger.info(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] The file was "
+                                "re-submitted for analysis because it does not meet the minimum service requirement")
+
+            else:
+                logger.warning(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] Trying to archive a "
+                               "submission on a system where archiving is disabled")
+
         # Trigger webhooks
         for hook in webhooks:
             asyncio.run_coroutine_threadsafe(self._process_hook(hook, submission, score), self.loop)
+
         return did_resubmit
 
     async def _process_hook(self, hook: Webhook, submission: Union[Submission, SubmissionMessage], score: float):

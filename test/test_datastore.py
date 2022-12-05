@@ -1,14 +1,14 @@
 import random
 import string
-import time
 import warnings
 import uuid
 
+from copy import copy
 from datemath import dm
 from retrying import retry
 import pytest
 
-from assemblyline.datastore.collection import ESCollection
+from assemblyline.datastore.collection import ESCollection, Index
 from assemblyline.datastore.exceptions import VersionConflictException
 
 
@@ -16,21 +16,21 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     test_map = {
         'test1': {'expiry_dt': dm('now-2d/m').isoformat().replace('+00:00', '.001Z'),
-                  'lvl_i': 400, 'test1_s': 'hello', 'tags_ss': ['a', 'b', 'c']},
+                  'lvl_i': 400, 'test1_s': 'hello', 'tags_ss': ['a', 'b', 'c'], 'from_archive': False},
         'test2': {'expiry_dt': dm('now-1d/m').isoformat().replace('+00:00', '.001Z'),
-                  'lvl_i': 100, 'test2_s': 'hello', 'tags_ss': ['a', 'b', 'f']},
+                  'lvl_i': 100, 'test2_s': 'hello', 'tags_ss': ['a', 'b', 'f'], 'from_archive': False},
         'test3': {'expiry_dt': dm('now/m').isoformat().replace('+00:00', '.001Z'),
-                  'lvl_i': 200, 'test3_s': 'hello', 'tags_ss': ['a', 'b', 'e']},
+                  'lvl_i': 200, 'test3_s': 'hello', 'tags_ss': ['a', 'b', 'e'], 'from_archive': False},
         'test4': {'expiry_dt': dm('now-2d/m').isoformat().replace('+00:00', '.001Z'),
-                  'lvl_i': 400, 'test4_s': 'hello', 'tags_ss': ['a', 'b', 'd']},
+                  'lvl_i': 400, 'test4_s': 'hello', 'tags_ss': ['a', 'b', 'd'], 'from_archive': False},
         'dict1': {'expiry_dt': dm('now-2d/m').isoformat().replace('+00:00', '.001Z'),
-                  'lvl_i': 400, 'classification_s': 'U', 'test1_s': 'hello', 'tags_ss': []},
+                  'lvl_i': 400, 'classification_s': 'U', 'test1_s': 'hello', 'tags_ss': [], 'from_archive': False},
         'dict2': {'expiry_dt': dm('now/m').isoformat().replace('+00:00', '.001Z'),
-                  'lvl_i': 100, 'classification_s': 'U', 'test2_s': 'hello', 'tags_ss': []},
+                  'lvl_i': 100, 'classification_s': 'U', 'test2_s': 'hello', 'tags_ss': [], 'from_archive': False},
         'dict3': {'expiry_dt': dm('now-3d/m').isoformat().replace('+00:00', '.001Z'),
-                  'lvl_i': 200, 'classification_s': 'C', 'test3_s': 'hello', 'tags_ss': []},
+                  'lvl_i': 200, 'classification_s': 'C', 'test3_s': 'hello', 'tags_ss': [], 'from_archive': False},
         'dict4': {'expiry_dt': dm('now-1d/m').isoformat().replace('+00:00', '.001Z'),
-                  'lvl_i': 400, 'classification_s': 'TS', 'test4_s': 'hello', 'tags_ss': []},
+                  'lvl_i': 400, 'classification_s': 'TS', 'test4_s': 'hello', 'tags_ss': [], 'from_archive': False},
         'string': "A string!",
         'list': ['a', 'list', 'of', 'string', 100],
         'int': 69,
@@ -46,13 +46,17 @@ with warnings.catch_warnings():
             }
         },
         'bulk_update': {'bulk_b': True, "map": {'a': 1}, 'counters': {
-            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False},
         'bulk_update2': {'bulk_b': True, "map": {'a': 1}, 'counters': {
-            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove']},
-        'delete1': {'delete_b': True, 'lvl_i': 100},
-        'delete2': {'delete_b': True, 'lvl_i': 300},
-        'delete3': {'delete_b': True, 'lvl_i': 400},
-        'delete4': {'delete_b': True, 'lvl_i': 200}
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False},
+        'delete1': {'delete_b': True, 'lvl_i': 100, 'from_archive': False},
+        'delete2': {'delete_b': True, 'lvl_i': 300, 'from_archive': False},
+        'delete3': {'delete_b': True, 'lvl_i': 400, 'from_archive': False},
+        'delete4': {'delete_b': True, 'lvl_i': 200, 'from_archive': False},
+        'archive1': {'data': "This is archive 1 data", 'from_archive': False},
+        'archive2': {'data': "This is archive 2 data", 'from_archive': False},
+        'archive3': {'data': "This is archive 3 data", 'from_archive': False},
+        'archive4': {'data': "This is archive 4 data", 'from_archive': False}
     }
 
 
@@ -66,9 +70,18 @@ def setup_store(docstore, request):
         ret_val = docstore.ping()
         if ret_val:
             collection_name = ''.join(random.choices(string.ascii_lowercase, k=10))
+
+            # Give achive access
+            docstore.archive_indices.append(collection_name)
+
             docstore.register(collection_name)
             collection = docstore.__getattr__(collection_name)
-            request.addfinalizer(collection.wipe)
+
+            # create special finalizer
+            def cleanup():
+                collection.wipe(recreate=False)
+
+            request.addfinalizer(cleanup)
 
             # cleanup
             for k in test_map.keys():
@@ -99,6 +112,59 @@ def es_connection(request):
         return collection
 
     return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
+
+
+def _test_archive(c: ESCollection):
+    # Test Archive
+    assert c.archive('archive1', delete_after=True)
+    assert c.archive('archive2')
+    c.commit()
+    assert c.get_if_exists('archive1')['from_archive']
+    assert not c.exists('archive1', index_type=Index.HOT)
+    assert not c.get_if_exists('archive2')['from_archive']
+    assert c.get_if_exists('archive2', index_type=Index.ARCHIVE)['from_archive']
+
+
+def _test_archive_by_query(c: ESCollection):
+    # Test Archive by Query
+    assert c.archive_by_query("_id:archive3 OR _id:archive4")
+    c.commit()
+
+    # Are the docs archived?
+    assert c.get_if_exists('archive3', index_type=Index.ARCHIVE)['from_archive']
+    assert c.exists('archive4', index_type=Index.ARCHIVE)
+
+    # Are they still in hot?
+    assert not c.get_if_exists('archive3', index_type=Index.HOT)['from_archive']
+    assert c.exists('archive4', index_type=Index.HOT)
+
+
+def _test_bulk(c: ESCollection):
+    delete_plan = c.get_bulk_plan()
+    delete_plan.add_delete_operation('test1')
+    delete_plan.add_delete_operation('test2')
+    delete_plan.add_delete_operation('test3')
+    delete_plan.add_delete_operation('test4')
+    c.bulk(delete_plan)
+    c.commit()
+
+    assert not c.exists('test1')
+    assert not c.exists('test2')
+    assert not c.exists('test3')
+    assert not c.exists('test4')
+
+    insert_plan = c.get_bulk_plan(index_type=Index.HOT)
+    insert_plan.add_insert_operation('test1', test_map.get('test1'))
+    insert_plan.add_insert_operation('test2', test_map.get('test2'))
+    insert_plan.add_insert_operation('test3', test_map.get('test3'))
+    insert_plan.add_insert_operation('test4', test_map.get('test4'))
+    c.bulk(insert_plan)
+    c.commit()
+
+    assert c.exists('test1')
+    assert c.exists('test2')
+    assert c.exists('test3')
+    assert c.exists('test4')
 
 
 def _test_exists(c: ESCollection):
@@ -159,11 +225,17 @@ def _test_multiget(c: ESCollection):
     assert c.multiget([]) == {}
 
 
+def _test_multiexists(c: ESCollection):
+    # Test GET
+    assert all(c.multiexists(['test1', 'test2', 'test3', 'test4', 'string', 'list', 'int']).values())
+
+
 def _test_keys(c: ESCollection):
     # Test KEYS
     test_keys = list(test_map.keys())
-    for k in c.keys():
-        test_keys.remove(k)
+    for k in c.keys(index_type=Index.HOT_AND_ARCHIVE):
+        if k in test_keys:
+            test_keys.remove(k)
     assert len(test_keys) == 0
 
 
@@ -172,7 +244,8 @@ def _test_update(c: ESCollection):
     expected = {
         'counters': {'lvl_i': 666, 'inc_i': 50, 'dec_i': 50},
         'list': ['hello', 'world!', 'test_if_missing'],
-        "map": {'b': 99}
+        "map": {'b': 99},
+        'from_archive': False
     }
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
@@ -198,7 +271,8 @@ def _test_update_by_query(c: ESCollection):
             'inc_i': 50,
             'dec_i': 50},
         'list': ['hello', 'world!', 'test_if_missing'],
-        "map": {'b': 99}
+        "map": {'b': 99},
+        'from_archive': False
     }
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
@@ -218,19 +292,17 @@ def _test_update_by_query(c: ESCollection):
 
 
 def _test_delete_by_query(c: ESCollection):
-    # Test Delete Matching
-    key_len = len(list(c.keys()))
-    c.delete_by_query("delete_b:true")
+    # Make sure other tests don't interfere
     c.commit()
-    retry_count = 0
-    # Leave time for eventually consistent DBs to be in sync
-    while key_len - 4 != len(list(c.keys())):
-        if retry_count == 5:
-            break
-        retry_count += 1
-        time.sleep(0.5*retry_count)
-        c.commit()
-    assert key_len - 4 == len(list(c.keys()))
+    key_len = len(list(c.keys()))
+    deleted = c.delete_by_query("delete_b:true")
+
+    # Make sure deletes are permanent
+    c.commit()
+
+    # Test
+    assert deleted > 0
+    assert key_len - deleted == len(list(c.keys()))
 
 
 def _test_fields(c: ESCollection):
@@ -339,11 +411,129 @@ def _test_stats(c: ESCollection):
         assert v > 0
 
 
+def _test_fix_shards(c: ESCollection):
+    def get_current_shard_values(alias):
+        current_settings = c.with_retries(c.datastore.client.indices.get_settings, index=alias)
+        index_settings = current_settings.get(c._get_current_alias(alias))
+        return int(index_settings['settings']['index']['number_of_shards'])
+
+    # Test hot index
+    c.shards = 2
+    c.fix_shards(index_type=Index.HOT)
+    assert get_current_shard_values(c.name) == 2
+
+    # Test archive index
+    c.archive_shards = 2
+    c.fix_shards(index_type=Index.ARCHIVE)
+    assert get_current_shard_values(c.archive_name) == 2
+
+    # Reset shards
+    c.shards = 1
+    c.archive_shards = 1
+    c.fix_shards(index_type=Index.HOT_AND_ARCHIVE)
+    assert get_current_shard_values(c.name) == 1
+    assert get_current_shard_values(c.archive_name) == 1
+
+
+def _test_fix_replicas(c: ESCollection):
+    def get_current_replicas_values(alias):
+        current_settings = c.with_retries(c.datastore.client.indices.get_settings, index=alias)
+        index_settings = current_settings.get(c._get_current_alias(alias))
+        return int(index_settings['settings']['index']['number_of_replicas'])
+
+    # Test hot index
+    c.replicas = 1
+    c.fix_replicas(index_type=Index.HOT)
+    assert get_current_replicas_values(c.name) == 1
+
+    # Test archive index
+    c.archive_replicas = 1
+    c.fix_replicas(index_type=Index.ARCHIVE)
+    assert get_current_replicas_values(c.archive_name) == 1
+
+    # Reset shards
+    c.replicas = 0
+    c.archive_replicas = 0
+    c.fix_replicas(index_type=Index.HOT_AND_ARCHIVE)
+    assert get_current_replicas_values(c.name) == 0
+    assert get_current_replicas_values(c.archive_name) == 0
+
+
+def _test_reindex(c: ESCollection):
+    previous_keys = list(c.keys(index_type=Index.HOT_AND_ARCHIVE))
+    c.reindex()
+    c.commit()
+    new_keys = list(c.keys(index_type=Index.HOT_AND_ARCHIVE))
+
+    assert sorted(previous_keys) == sorted(new_keys)
+
+
+def _test_save(c: ESCollection):
+    key = "save_test"
+    doc = {"data": "saved_doc"}
+
+    def expected_doc(doc, archive):
+        new_doc = copy(doc)
+        new_doc['from_archive'] = archive
+        return new_doc
+
+    # Test save hot
+    assert c.save(key, doc)
+    assert c.exists(key)
+    assert c.get_if_exists(key) == expected_doc(doc, False)
+    assert not c.exists(key, index_type=Index.ARCHIVE)
+
+    # Test searchability
+    c.commit()
+    assert c.search('data:saved_doc', fl='data,from_archive')['items'][0] == expected_doc(doc, False)
+
+    # Cleanup
+    c.delete(key)
+    c.commit()
+
+    # Test save archive
+    assert c.save(key, doc, index_type=Index.ARCHIVE)
+    assert c.exists(key, index_type=Index.ARCHIVE)
+    assert c.get_if_exists(key, index_type=Index.ARCHIVE) == expected_doc(doc, True)
+    assert not c.exists(key, index_type=Index.HOT)
+
+    # Test searchability
+    c.commit()
+    assert c.search('data:saved_doc', fl='data,from_archive',
+                    index_type=Index.ARCHIVE)['items'][0] == expected_doc(doc, True)
+
+    # Cleanup
+    c.delete(key)
+    c.commit()
+
+    # Test save both
+    assert c.save(key, doc, index_type=Index.HOT_AND_ARCHIVE)
+    assert c.exists(key, index_type=Index.ARCHIVE)
+    assert c.exists(key, index_type=Index.HOT)
+    assert c.get_if_exists(key, index_type=Index.ARCHIVE) == expected_doc(doc, True)
+    assert c.get_if_exists(key, index_type=Index.HOT) == expected_doc(doc, False)
+
+    # Test searchability
+    c.commit()
+    assert c.search('data:saved_doc', fl='data,from_archive',
+                    index_type=Index.ARCHIVE)['items'][0] == expected_doc(doc, True)
+    assert c.search('data:saved_doc', fl='data,from_archive',
+                    index_type=Index.HOT)['items'][0] == expected_doc(doc, False)
+
+    # Cleanup
+    c.delete(key)
+    c.commit()
+
+
 TEST_FUNCTIONS = [
+    (_test_archive, "archive"),
+    (_test_archive_by_query, "archive_by_query"),
+    (_test_bulk, "bulk"),
     (_test_exists, "exists"),
     (_test_get, "get"),
     (_test_require, "require"),
     (_test_get_if_exists, "get_if_exists"),
+    (_test_multiexists, "multiexists"),
     (_test_multiget, "multiget"),
     (_test_keys, "keys"),
     (_test_update, "update"),
@@ -357,6 +547,10 @@ TEST_FUNCTIONS = [
     (_test_histogram, "histogram"),
     (_test_facet, "facet"),
     (_test_stats, "stats"),
+    (_test_save, "save"),
+    (_test_reindex, "reindex"),
+    (_test_fix_replicas, "fix_replicas"),
+    (_test_fix_shards, "fix_shards"),
 ]
 
 
