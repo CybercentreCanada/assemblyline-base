@@ -85,7 +85,10 @@ def get_archivestore(config=None, connection_attempts=None):
     from assemblyline.filestore import FileStore
     if config is None:
         config = get_config()
-    return FileStore(*config.filestore.archive, connection_attempts=connection_attempts)
+    if config.datastore.archive.enabled:
+        return FileStore(*config.filestore.archive, connection_attempts=connection_attempts)
+    else:
+        raise ValueError("Trying to access the archive filestore but archive is disabled.")
 
 
 def get_config(yml_config=None) -> Config:
