@@ -365,7 +365,7 @@ class ESCollection(Generic[ModelType]):
             try:
                 res = self.with_retries(self.datastore.client.tasks.get, task_id=task['task'],
                                         wait_for_completion=True, timeout='5s')
-            except elasticsearch.exceptions.TransportError as e:
+            except (elasticsearch.exceptions.TransportError, elasticsearch.ApiError) as e:
                 err_code, msg, _ = e.args
                 if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
                     pass
