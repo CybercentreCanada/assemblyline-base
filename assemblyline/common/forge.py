@@ -86,7 +86,8 @@ def get_archivestore(config=None, connection_attempts=None):
     if config is None:
         config = get_config()
     if config.datastore.archive.enabled:
-        return FileStore(*config.filestore.archive, connection_attempts=connection_attempts)
+        archive_storage_url = config.filestore.archive or config.filestore.storage
+        return FileStore(*archive_storage_url, connection_attempts=connection_attempts)
     else:
         raise ValueError("Trying to access the archive filestore but archive is disabled.")
 
