@@ -592,6 +592,7 @@ class Vacuum(odm.Model):
     worker_threads: int = odm.Integer()
     worker_rollover: int = odm.Integer()
     minimum_classification: str = odm.Keyword()
+    ingest_type = odm.keyword()
 
 
 DEFAULT_VACUUM = dict(
@@ -608,6 +609,7 @@ DEFAULT_VACUUM = dict(
     worker_threads=50,
     worker_rollover=1000,
     minimum_classification='U',
+    ingest_type='VACUUM',
 )
 
 
