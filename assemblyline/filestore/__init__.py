@@ -149,10 +149,14 @@ def create_transport(url, connection_attempts=None):
 class FileStore(object):
     def __init__(self, *transport_urls, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport')
+        self.transport_urls = transport_urls
         self.transports = [create_transport(url, connection_attempts) for url in transport_urls]
         self.local_transports = [
             t for t in self.transports if isinstance(t, TransportLocal)
         ]
+
+    def __eq__(self, obj: FileStore) -> bool:
+        return self.transport_urls == obj.transport_urls
 
     def __enter__(self):
         return self

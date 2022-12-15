@@ -1,21 +1,20 @@
 
 import concurrent.futures
+import elasticapm
 import json
 import os
-import time
 
 from typing import Union, List
 from datetime import datetime
+
 from assemblyline.common.uid import get_id_from_data
-
-import elasticapm
-import elasticsearch
-from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
-
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update, flatten
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore.collection import ESCollection, log
+from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
+from assemblyline.datastore.store import ESStore
+from assemblyline.filestore import FileStore
 from assemblyline.odm import Model, DATEFORMAT
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
@@ -43,7 +42,7 @@ THREAD_POOL_SIZE = int(os.environ.get("POOL_SIZE", 20))
 
 
 class AssemblylineDatastore(object):
-    def __init__(self, datastore_object):
+    def __init__(self, datastore_object: ESStore):
 
         self.ds = datastore_object
         self.ds.register('alert', Alert)
@@ -169,6 +168,45 @@ class AssemblylineDatastore(object):
     def workflow(self) -> ESCollection[Workflow]:
         return self.ds.workflow
 
+    def get_stats(self):
+        node_stats = self.ds.with_retries(self.ds.client.nodes.stats, metric="fs")
+        indices_stats = self.ds.with_retries(self.ds.client.indices.stats, index="*_hot",
+                                             metric=["store", "docs"], level="shards")
+        cluster_health = self.ds.with_retries(self.ds.client.cluster.health, level='indices')
+
+        output = {
+            "cluster": {
+                "status": cluster_health['status']
+            },
+            "nodes": {
+                k: {
+                    "free_bytes": v['fs']['total']['available_in_bytes'],
+                    "free_pct": round(v['fs']['total']['available_in_bytes']/v['fs']['total']['total_in_bytes'], 2),
+                }
+                for k, v in node_stats['nodes'].items()
+            },
+            "indices": {
+                k: {
+                    "status": cluster_health['indices'][k]['status'],
+                    "number_of_shards": cluster_health['indices'][k]['number_of_shards'],
+                    "number_of_replicas": cluster_health['indices'][k]['number_of_replicas'],
+                    "docs":  v['total']['docs']['count'],
+                    "size_bytes": v['total']['store']['size_in_bytes'],
+                    "shards": {
+                        s: {
+                            "docs":  sv[0]['docs']['count'],
+                            'size_bytes': sv[0]['store']['size_in_bytes']
+                        }
+                        for s, sv in v['shards'].items()
+                    }
+                }
+                for k, v in indices_stats['indices'].items()
+            }
+
+
+        }
+        return output
+
     def get_collection(self, collection_name: str) -> ESCollection:
         if collection_name in self.ds.get_models():
             return getattr(self, collection_name)
@@ -181,8 +219,8 @@ class AssemblylineDatastore(object):
         svc_version = svc_version[1:]
 
         data = Result({
-            "archive_ts": now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
-            "expiry_ts": now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
+            "archive_ts": None,
+            "expiry_ts": now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
                 "service_name": svc_name,
@@ -197,39 +235,8 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def multi_index_bulk(self, bulk_plans):
-        max_retry_backoff = 10
-        retries = 0
-        while True:
-            try:
-                plan = "\n".join([p.get_plan_data() for p in bulk_plans])
-                ret_val = self.ds.client.bulk(body=plan)
-                return ret_val
-            except (elasticsearch.exceptions.ConnectionError,
-                    elasticsearch.exceptions.ConnectionTimeout,
-                    elasticsearch.exceptions.AuthenticationException):
-                log.warning(f"No connection to Elasticsearch server(s): "
-                            f"{' | '.join(self.ds.get_hosts(safe=True))}"
-                            f", retrying...")
-                time.sleep(min(retries, max_retry_backoff))
-                self.ds.connection_reset()
-                retries += 1
-
-            except elasticsearch.exceptions.TransportError as e:
-                err_code, msg, cause = e.args
-                if err_code == 503 or err_code == '503':
-                    log.warning("Looks like index is not ready yet, retrying...")
-                    time.sleep(min(retries, max_retry_backoff))
-                    self.ds.connection_reset()
-                    retries += 1
-                elif err_code == 429 or err_code == '429':
-                    log.warning("Elasticsearch is too busy to perform the requested task, "
-                                "we will wait a bit and retry...")
-                    time.sleep(min(retries, max_retry_backoff))
-                    self.ds.connection_reset()
-                    retries += 1
-
-                else:
-                    raise
+        operations = "\n".join([p.get_plan_data() for p in bulk_plans])
+        return self.ds.with_retries(self.ds.client.bulk, operations=operations)
 
     @elasticapm.capture_span(span_type='datastore')
     def delete_submission_tree_bulk(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
@@ -344,7 +351,9 @@ class AssemblylineDatastore(object):
         self.multi_index_bulk([s_plan, st_plan, ss_plan, e_plan, er_plan, r_plan, f_plan])
 
     @elasticapm.capture_span(span_type='datastore')
-    def delete_submission_tree(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
+    def delete_submission_tree(
+            self, sid, cl_engine=forge.get_classification(),
+            cleanup=True, transport: FileStore = None):
         submission = self.submission.get(sid, as_obj=False)
         if not submission:
             return
@@ -449,7 +458,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_all_heuristics(self):
-        return {h['id']: h for h in self.ds.heuristic.stream_search("id:*", as_obj=False)}
+        return {h['id']: h for h in self.heuristic.stream_search("id:*", as_obj=False)}
 
     @elasticapm.capture_span(span_type='datastore')
     def get_multiple_results(self, keys, cl_engine=forge.get_classification(), as_obj=False):
@@ -479,40 +488,37 @@ class AssemblylineDatastore(object):
             res = {field: executor.submit(self.submission.facet,
                                           field,
                                           query=query,
-                                          limit=100,
                                           access_control=access_control)
                    for field in fields}
 
         return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_file_list_from_keys(self, keys):
-        # TODO: needed?
+    def get_file_list_from_keys(self, keys, supplementary=False):
         if len(keys) == 0:
             return {}
         keys = [x for x in list(keys) if not x.endswith(".e")]
-        items = self.result.multiget(keys)
+        items = self.result.multiget(keys, as_obj=False)
 
-        out = {}
+        out = set()
         for key, item in items.items():
-            extracted = item['response']['extracted']
-            if len(extracted) == 0:
-                continue
-            if key[:64] not in out:
-                out[key[:64]] = []
-            out[key[:64]].extend(extracted)
+            out.add(key[:64])
+            for extracted in item['response']['extracted']:
+                out.add(extracted['sha256'])
+            if supplementary:
+                for supplementary in item['response']['supplementary']:
+                    out.add(supplementary['sha256'])
 
-        return out
+        return list(out)
 
     @elasticapm.capture_span(span_type='datastore')
     def get_file_scores_from_keys(self, keys):
-        # TODO: needed?
         if len(keys) == 0:
             return {}
         keys = [x for x in list(keys) if not x.endswith(".e")]
+        scores = {x[:64]: 0 for x in keys}
         items = self.result.multiget(keys)
 
-        scores = {x[:64]: 0 for x in keys}
         for key, item in items.items():
             score = item["result"]["score"]
             scores[key[:64]] += score
@@ -690,7 +696,7 @@ class AssemblylineDatastore(object):
         # Create a cache entry for the tree if it's not partial
         if not partial:
             cached_tree = {
-                'expiry_ts': now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60),
+                'expiry_ts': now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
                 'tree': json.dumps(tree),
                 'classification': max_classification,
                 'filtered': len(forbidden_files) > 0,
@@ -951,14 +957,14 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_service_with_delta(self, service_name, version=None, as_obj=True) -> Union[Service, dict, None]:
-        svc = self.ds.service_delta.get(service_name)
+        svc = self.service_delta.get(service_name)
         if svc is None:
             return None
 
         if version is not None:
             svc.version = version
 
-        svc_version_data = self.ds.service.get(f"{service_name}_{svc.version}")
+        svc_version_data = self.service.get(f"{service_name}_{svc.version}")
         if svc_version_data is None:
             return None
 
@@ -974,15 +980,17 @@ class AssemblylineDatastore(object):
     def get_stat_for_heuristic(self, p_id):
         log.info(f"Generating stats for heuristic: {p_id})")
         query = f"result.sections.heuristic.heur_id:{p_id}"
-        stats = self.ds.result.stats("result.score", query=query)
+        stats = self.result.stats("result.score", query=query)
 
         if stats['count'] == 0:
             up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0, 'first_hit': None, 'last_hit': None}
         else:
-            first = self.ds.result.search(query=query, fl='created', rows=1,
-                                          sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
-            last = self.ds.result.search(query=query, fl='created', rows=1,
-                                         sort="created desc", as_obj=False, use_archive=True)['items'][0]['created']
+            first = self.result.search(query=query, fl='created', rows=1,
+                                       sort="created asc", as_obj=False,
+                                       index_type=None)['items'][0]['created']
+            last = self.result.search(query=query, fl='created', rows=1,
+                                      sort="created desc", as_obj=False,
+                                      index_type=None)['items'][0]['created']
             up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
@@ -993,8 +1001,8 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-            self.ds.heuristic.update(p_id, [
-                (self.ds.heuristic.UPDATE_SET, 'stats', up_stats)
+            self.heuristic.update(p_id, [
+                (self.heuristic.UPDATE_SET, 'stats', up_stats)
             ])
 
         return up_stats
@@ -1002,7 +1010,7 @@ class AssemblylineDatastore(object):
     @elasticapm.capture_span(span_type='datastore')
     def calculate_heuristic_stats(self):
         # Calculate stats for all heuristics
-        heuristics = [x['heur_id'] for x in self.ds.heuristic.stream_search("heur_id:*", fl="heur_id", as_obj=False)]
+        heuristics = [x['heur_id'] for x in self.heuristic.stream_search("heur_id:*", fl="heur_id", as_obj=False)]
 
         log.info(f"All {len(heuristics)} heuristics will have their statistics updated.")
 
@@ -1030,14 +1038,16 @@ class AssemblylineDatastore(object):
         log.info(f"Generating stats for {p_type.upper()} signature: {p_id}")
 
         query = f'result.sections.tags.file.rule.{p_type}:"{p_source}.{p_name}"'
-        stats = self.ds.result.stats("result.score", query=query)
+        stats = self.result.stats("result.score", query=query)
         if stats['count'] == 0:
             up_stats = {'count': 0, 'min': 0, 'max': 0, 'avg': 0, 'sum': 0, 'first_hit': None, 'last_hit': None}
         else:
-            first = self.ds.result.search(query=query, fl='created', rows=1,
-                                          sort="created asc", as_obj=False, use_archive=True)['items'][0]['created']
-            last = self.ds.result.search(query=query, fl='created', rows=1,
-                                         sort="created desc", as_obj=False, use_archive=True)['items'][0]['created']
+            first = self.result.search(query=query, fl='created', rows=1,
+                                       sort="created asc", as_obj=False,
+                                       index_type=None)['items'][0]['created']
+            last = self.result.search(query=query, fl='created', rows=1,
+                                      sort="created desc", as_obj=False,
+                                      index_type=None)['items'][0]['created']
             up_stats = {
                 'count': stats['count'],
                 'min': int(stats['min']),
@@ -1048,8 +1058,8 @@ class AssemblylineDatastore(object):
                 'last_hit': last
             }
 
-            self.ds.signature.update(p_id, [
-                (self.ds.signature.UPDATE_SET, 'stats', up_stats)
+            self.signature.update(p_id, [
+                (self.signature.UPDATE_SET, 'stats', up_stats)
             ])
 
         return up_stats
@@ -1062,7 +1072,7 @@ class AssemblylineDatastore(object):
         fl = "created,result.sections.tags.file.rule.*"
 
         new_time = None
-        for res in self.ds.result.stream_search(query, fl=fl, as_obj=False):
+        for res in self.result.stream_search(query, fl=fl, as_obj=False):
             for sec in res['result']['sections']:
                 for rule_type, rules in sec['tags']['file']['rule'].items():
                     for rule in rules:
@@ -1095,15 +1105,15 @@ class AssemblylineDatastore(object):
         :param full: If true retrieve all the fields of the service object, otherwise only
                      fields returned by search are given.
         """
-        mask = None if full else list(self.ds.service.stored_fields.keys())
+        mask = None if full else list(self.service.stored_fields.keys())
 
         # List all services from service delta (Return all fields if full is true)
-        service_delta = list(self.ds.service_delta.stream_search("id:*", fl="*" if full else None))
+        service_delta = list(self.service_delta.stream_search("id:*", fl="*" if full else None))
 
         # Gather all matching services and apply a mask if we don't want the full source object
         service_data = [Service(s, mask=mask)
-                        for s in self.ds.service.multiget([f"{item.id}_{item.version}" for item in service_delta],
-                                                          as_obj=False, as_dictionary=False)]
+                        for s in self.service.multiget([f"{item.id}_{item.version}" for item in service_delta],
+                                                       as_obj=False, as_dictionary=False)]
 
         # Recursively update the service data with the service delta while stripping nulls
         services = [recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True),
@@ -1121,7 +1131,7 @@ class AssemblylineDatastore(object):
         """
         :param as_obj: Return ODM objects rather than dicts
         """
-        heuristics = list(self.ds.heuristic.stream_search(f"id:{service_name.upper()}.*", as_obj=as_obj))
+        heuristics = list(self.heuristic.stream_search(f"id:{service_name.upper()}.*", as_obj=as_obj))
         return heuristics
 
     @elasticapm.capture_span(span_type='datastore')
@@ -1129,7 +1139,7 @@ class AssemblylineDatastore(object):
         """
         :param as_obj: Return ODM objects rather than dicts
         """
-        heuristics = list(self.ds.heuristic.stream_search("id:*", as_obj=as_obj))
+        heuristics = list(self.heuristic.stream_search("id:*", as_obj=as_obj))
         return heuristics
 
     @elasticapm.capture_span(span_type='datastore')
@@ -1141,11 +1151,9 @@ class AssemblylineDatastore(object):
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):
             expiry = expiry.strftime(DATEFORMAT)
-        archive_time = now_as_iso(config.datastore.ilm.days_until_archive * 24 * 60 * 60)
 
         while True:
-            current_fileinfo, version = self.ds.file.get_if_exists(
-                sha256, as_obj=False, archive_access=config.datastore.ilm.update_archive, version=True)
+            current_fileinfo, version = self.file.get_if_exists(sha256, as_obj=False, version=True)
 
             if current_fileinfo is None:
                 current_fileinfo = {}
@@ -1157,22 +1165,21 @@ class AssemblylineDatastore(object):
                 )
                 if classification == current_fileinfo.get('classification', None):
                     operations = [
-                        (self.ds.file.UPDATE_SET, key, value)
+                        (self.file.UPDATE_SET, key, value)
                         for key, value in fileinfo.items()
                     ]
                     operations.extend([
-                        (self.ds.file.UPDATE_MAX, 'archive_ts', archive_time),
-                        (self.ds.file.UPDATE_INC, 'seen.count', 1),
-                        (self.ds.file.UPDATE_MAX, 'seen.last', now_as_iso()),
+                        (self.file.UPDATE_INC, 'seen.count', 1),
+                        (self.file.UPDATE_MAX, 'seen.last', now_as_iso()),
                     ])
                     if expiry:
-                        operations.append((self.ds.file.UPDATE_MAX, 'expiry_ts', expiry))
-                    if self.ds.file.update(sha256, operations):
+                        operations.append((self.file.UPDATE_MAX, 'expiry_ts', expiry))
+                    if self.file.update(sha256, operations):
                         return
 
             # Add new fileinfo to current from database
             current_fileinfo.update(fileinfo)
-            current_fileinfo['archive_ts'] = archive_time
+            current_fileinfo['archive_ts'] = None
 
             # Update expiry time
             current_expiry = current_fileinfo.get('expiry_ts', expiry)
@@ -1195,7 +1202,7 @@ class AssemblylineDatastore(object):
             current_fileinfo['is_section_image'] = current_fileinfo.get('is_section_image', False) or is_section_image
 
             try:
-                self.ds.file.save(sha256, current_fileinfo, version=version)
+                self.file.save(sha256, current_fileinfo, version=version)
                 return
             except VersionConflictException as vce:
                 log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")

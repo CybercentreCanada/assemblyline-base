@@ -1,3 +1,4 @@
+
 from typing import Dict, List
 
 from assemblyline import odm
@@ -366,7 +367,6 @@ class Expiry(odm.Model):
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
     delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
-    archive_batch_size = odm.Integer(description="How large a batch get archived per iteration.")
 
 
 DEFAULT_EXPIRY = {
@@ -378,7 +378,6 @@ DEFAULT_EXPIRY = {
     'delete_workers': 2,
     'iteration_max_tasks': 20,
     'delete_batch_size': 2000,
-    'archive_batch_size': 5000,
 }
 
 
@@ -501,6 +500,19 @@ DEFAULT_METRICS = {
 }
 
 
+@odm.model(index=False, store=False, description="Malware Archive Configuration")
+class Archiver(odm.Model):
+    minimum_required_services: List[str] = odm.List(
+        odm.keyword(),
+        default=[],
+        description="List of minimum required service before archiving takes place")
+
+
+DEFAULT_ARCHIVER = {
+    'minimum_required_services': []
+}
+
+
 @odm.model(index=False, store=False, description="Redis Configuration")
 class Redis(odm.Model):
     nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP,
@@ -616,6 +628,8 @@ DEFAULT_VACUUM = dict(
 @odm.model(index=False, store=False, description="Core Component Configuration")
 class Core(odm.Model):
     alerter: Alerter = odm.Compound(Alerter, default=DEFAULT_ALERTER, description="Configuration for Alerter")
+    archiver: Archiver = odm.Compound(Archiver, default=DEFAULT_ARCHIVER,
+                                      description="Configuration for the permanent submission archive")
     dispatcher: Dispatcher = odm.Compound(Dispatcher, default=DEFAULT_DISPATCHER,
                                           description="Configuration for Dispatcher")
     expiry: Expiry = odm.Compound(Expiry, default=DEFAULT_EXPIRY, description="Configuration for Expiry")
@@ -629,6 +643,7 @@ class Core(odm.Model):
 
 DEFAULT_CORE = {
     "alerter": DEFAULT_ALERTER,
+    "archiver": DEFAULT_ARCHIVER,
     "dispatcher": DEFAULT_DISPATCHER,
     "expiry": DEFAULT_EXPIRY,
     "ingester": DEFAULT_INGESTER,
@@ -638,66 +653,31 @@ DEFAULT_CORE = {
 }
 
 
-@odm.model(index=False, store=False, description="Parameters associated to ILM Policies")
-class ILMParams(odm.Model):
-    warm = odm.Integer(description="How long, per unit of time, should a document remain in the 'warm' tier?")
-    cold = odm.Integer(description="How long, per unit of time, should a document remain in the 'cold' tier?")
-    delete = odm.Integer(description="How long, per unit of time, should a document remain before being deleted?")
-    unit = odm.Enum(['d', 'h', 'm'], description="Unit of time used by `warm`, `cold`, `delete` phases")
+@odm.model(index=False, store=False, description="Datastore Archive feature configuration")
+class Archive(odm.Model):
+    enabled = odm.Boolean(description="Are we enabling Achiving features across indices?")
+    indices = odm.List(odm.Keyword(), description="List of indices the ILM Applies to")
 
 
-DEFAULT_ILM_PARAMS = {
-    "warm": 5,
-    "cold": 15,
-    "delete": 30,
-    "unit":  "d"
-}
-
-
-@odm.model(index=False, store=False, description="ILM Policies for Core Indices")
-class ILMIndexes(odm.Model):
-    alert = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'alert' index")
-    error = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'error' index")
-    file = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'file' index")
-    result = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'result' index")
-    submission = odm.Compound(ILMParams, default=DEFAULT_ILM_PARAMS, description="ILM for 'submission' index")
-
-
-DEFAULT_ILM_INDEXES = {
-    'alert': DEFAULT_ILM_PARAMS,
-    'error': DEFAULT_ILM_PARAMS,
-    'file': DEFAULT_ILM_PARAMS,
-    'result': DEFAULT_ILM_PARAMS,
-    'submission': DEFAULT_ILM_PARAMS,
-}
-
-
-@odm.model(index=False, store=False, description="Index Lifecycle Management")
-class ILM(odm.Model):
-    enabled = odm.Boolean(description="Are we enabling ILM across indices?")
-    days_until_archive = odm.Integer(description="Days until documents get archived")
-    indexes = odm.Compound(ILMIndexes, default=DEFAULT_ILM_INDEXES, description="Index-specific ILM policies")
-    update_archive = odm.Boolean(description="Do we want to update documents in the archive?")
-
-
-DEFAULT_ILM = {
-    "days_until_archive": 15,
+DEFAULT_ARCHIVE = {
     "enabled": False,
-    "indexes": DEFAULT_ILM_INDEXES,
-    "update_archive": False
+    "indices": ['file', 'submission', 'result'],
 }
 
 
 @odm.model(index=False, store=False, description="Datastore Configuration")
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
-    ilm = odm.Compound(ILM, default=DEFAULT_ILM, description="Index Lifecycle Management Policy")
+    archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
+    cache_dtl = odm.Integer(
+        default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
 
 
 DEFAULT_DATASTORE = {
     "hosts": ["http://elastic:devpass@localhost:9200"],
-    "ilm": DEFAULT_ILM,
+    "archive": DEFAULT_ARCHIVE,
+    "cache_dtl": 5,
     "type": "elasticsearch",
 }
 
@@ -722,11 +702,13 @@ DEFAULT_DATASOURCES = {
 
 @odm.model(index=False, store=False, description="Filestore Configuration")
 class Filestore(odm.Model):
+    archive: List[str] = odm.List(odm.Keyword(), description="List of filestores used for malware archive")
     cache: List[str] = odm.List(odm.Keyword(), description="List of filestores used for caching")
     storage: List[str] = odm.List(odm.Keyword(), description="List of filestores used for storage")
 
 
 DEFAULT_FILESTORE = {
+    "archive": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-archive&use_ssl=False"],
     "cache": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-cache&use_ssl=False"],
     "storage": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-storage&use_ssl=False"]
 }

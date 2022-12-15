@@ -27,7 +27,7 @@ class Response(odm.Model):
 
 @odm.model(index=True, store=True, description="Error Model used by Error Viewer")
 class Error(odm.Model):
-    archive_ts = odm.Date(store=False, description="Archiving timestamp")
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)"))
     created = odm.Date(default="NOW", description="Error creation timestamp")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
     response: Response = odm.Compound(Response, description="Response from the service")

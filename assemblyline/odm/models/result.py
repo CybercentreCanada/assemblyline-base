@@ -101,7 +101,7 @@ class ResponseBody(odm.Model):
 
 @odm.model(index=True, store=True, description="Result Model")
 class Result(odm.Model):
-    archive_ts = odm.Date(store=False, description="Archiving timestamp")
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)"))
     classification = odm.Classification(description="Aggregate classification for the result")
     created = odm.Date(default="NOW", description="Date at which the result object got created")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
@@ -111,6 +111,7 @@ class Result(odm.Model):
     type = odm.Optional(odm.Keyword())
     size = odm.Optional(odm.Integer())
     drop_file = odm.Boolean(default=False, description="Use to not pass to other stages after this run")
+    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive")
 
     def build_key(self, service_tool_version=None, task=None):
         return self.help_build_key(

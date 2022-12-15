@@ -38,6 +38,10 @@ ROLES = StringTable('ROLES', [
     ("replay_system", 20),
     ("signature_import", 21),
     ("signature_manage", 22),
+    ("archive_view", 23),
+    ("archive_manage", 24),
+    ("archive_trigger", 25),
+    ("archive_download", 26),
 ])
 
 
@@ -56,6 +60,10 @@ USER_TYPES = [
 USER_ROLES_BASIC = {
     ROLES.alert_manage,        # Modify labels, priority, status, verdict or owner of alerts
     ROLES.alert_view,          # View alerts in the system
+    ROLES.archive_trigger,     # Send Submission, files and results to the archive
+    ROLES.archive_view,        # View archived data in the system
+    ROLES.archive_manage,      # Modify attributes of archived Submissions/Files/Results
+    ROLES.archive_download,    # Download file from the archive
     ROLES.apikey_access,       # Allow access via API keys
     ROLES.bundle_download,     # Create bundle of a submission
     ROLES.file_detail,         # View files in the file viewer

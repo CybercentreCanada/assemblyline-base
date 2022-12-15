@@ -15,3 +15,5 @@ core:
     export_interval: 1
 datastore:
   hosts: ["http://elastic:devpass@localhost:9200"]
+  archive:
+    enabled: true

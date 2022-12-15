@@ -54,6 +54,23 @@ class BaseTestModel(odm.Model):
     things = odm.List(odm.Compound(ThingsModel), default=[])
 
 
+@odm.model(index=True, store=True)
+class ExtendedTestModel(odm.Model):
+    classification = odm.Classification(default="UNRESTRICTED", yml_config=yml_config)
+    flavour = odm.Text(copyto='features', default="EMPTY")
+    height = odm.Integer()
+    no_store = odm.Optional(odm.Keyword(store=False))
+    no_index = odm.Optional(odm.Keyword(index=False, store=False))
+    dots = odm.Mapping(odm.Compound(Position), default={})
+    birthday = odm.Date()
+    tags = odm.List(odm.Enum({'silly', 'cats', '10'}), default=[], copyto='features')
+    size = odm.Compound(MeasurementModel, default={'depth': 100, 'width': 100})
+    features = odm.List(odm.Text(), default=[])
+    metadata = odm.Mapping(odm.Text(), default={})
+    things = odm.List(odm.Compound(ThingsModel), default=[])
+    new_field = odm.Boolean(default=True)
+
+
 def safe_date(pattern):
     return dm(f'{pattern}/m').isoformat().replace('+00:00', '.001Z')
 
@@ -356,6 +373,17 @@ def _test_fields(col, _):
             assert isinstance(v, f_type)
 
 
+def _test_add_field(col, _):
+    col.model_class = ExtendedTestModel
+    col._ensure_collection()
+
+    data = col.with_retries(col.datastore.client.indices.get, index=col.name)
+    index_name = list(data.keys())[0]
+    properties = data[index_name]['mappings'].get('properties', {})
+
+    assert "new_field" in properties
+
+
 TEST_FUNCTIONS = [
     (_test_exists, None, "exists - object"),
     (_test_get, True, "get - object"),
@@ -375,6 +403,7 @@ TEST_FUNCTIONS = [
     (_test_facet, None, "facet"),
     (_test_stats, None, "stats"),
     (_test_fields, None, "fields"),
+    (_test_add_field, None, "add_field"),
 ]
 
 

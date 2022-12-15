@@ -2,13 +2,13 @@ from copy import deepcopy
 import time
 
 import datemath
-from assemblyline.odm.models.actions import PostprocessAction, Webhook
+from assemblyline.odm.models.actions import Webhook
 
 from assemblyline.odm.randomizer import random_minimal_obj
 from assemblyline.odm.models.submission import Submission, File
 from assemblyline.odm.messages.submission import Submission as MessageSubmission
 
-from assemblyline.common.postprocess import ActionWorker, SubmissionFilter, ParsingError
+from assemblyline.common.postprocess import SubmissionFilter, ParsingError
 
 
 def test_simple_filters():

@@ -81,6 +81,17 @@ def _get_config(yml_config=None):
     return Config(config)
 
 
+def get_archivestore(config=None, connection_attempts=None):
+    from assemblyline.filestore import FileStore
+    if config is None:
+        config = get_config()
+    if config.datastore.archive.enabled:
+        archive_storage_url = config.filestore.archive or config.filestore.storage
+        return FileStore(*archive_storage_url, connection_attempts=connection_attempts)
+    else:
+        raise ValueError("Trying to access the archive filestore but archive is disabled.")
+
+
 def get_config(yml_config=None) -> Config:
     if yml_config not in config_cache:
         config_cache[yml_config] = _get_config(yml_config=yml_config)
@@ -100,10 +111,7 @@ def get_datastore(config=None, archive_access=False):
     if not config:
         config = get_config()
 
-    if archive_access:
-        return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=True))
-    else:
-        return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=False))
+    return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=archive_access))
 
 
 def get_cachestore(component, config=None, datastore=None):
