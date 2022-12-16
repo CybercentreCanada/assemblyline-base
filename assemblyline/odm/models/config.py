@@ -845,6 +845,7 @@ class System(odm.Model):
     constants: str = odm.Keyword(description="Module path to the assemblyline constants")
     organisation: str = odm.Text(description="Organisation acronym used for signatures")
     type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
+    internal_encryption: bool = odm.Boolean(default=True, description="Encrypt internal communtications")
 
 
 DEFAULT_SYSTEM = {

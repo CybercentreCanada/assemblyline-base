@@ -3,6 +3,7 @@
 import json
 import logging
 import redis
+import os
 import time
 
 from datetime import datetime
@@ -63,25 +64,50 @@ def retry_call(func, *args, **kw):
             exponent = exponent + 1 if exponent < maximum else exponent
 
 
+def _redis_ssl_kwargs(host: str) -> dict:
+    redis_certs_path = os.environ.get('REDIS_CERTS_DIR', '/etc/assemblyline/ssl/')
+    return dict(ssl_certfile=os.path.join(redis_certs_path, f'{host}.crt'),
+                ssl_keyfile=os.path.join(redis_certs_path, f'{host}.key'),
+                ssl_ca_certs=os.path.join(redis_certs_path, 'root-ca.crt'),
+                )
+
+
 def get_client(host, port, private):
     # In case a structure is passed a client as host
+    config = forge.get_config()
     if isinstance(host, (redis.Redis, redis.StrictRedis)):
-        return host
+        if config.system.internal_encryption and not \
+                any(['ssl' in kw for kw in host.connection_pool.connection_kwargs.keys()]):
+            # If not configured to use internal encryption and it's enabled, then create a new client instance
+            port = host.connection_pool.connection_kwargs['port']
+            host = host.connection_pool.connection_kwargs['host']
+        else:
+            return host
 
     if not host or not port:
-        config = forge.get_config()
-
         host = host or config.core.redis.nonpersistent.host
         port = int(port or config.core.redis.nonpersistent.port)
 
+    ssl_kwargs = {}
+    if config.system.internal_encryption:
+        ssl_kwargs = _redis_ssl_kwargs(host)
+        ssl_kwargs['ssl'] = True
+
     if private:
-        return redis.StrictRedis(host=host, port=port, socket_keepalive=True)
+        return redis.StrictRedis(host=host, port=port, socket_keepalive=True,
+                                 **ssl_kwargs)
     else:
-        return redis.StrictRedis(connection_pool=get_pool(host, port), socket_keepalive=True)
+        return redis.StrictRedis(connection_pool=get_pool(host, port, ssl=ssl_kwargs.get('ssl', False)),
+                                 socket_keepalive=True)
 
 
-def get_pool(host, port):
+def get_pool(host, port, ssl=False):
     key = (host, port)
+    connection_class = redis.connection.Connection
+    connection_kwargs = {}
+    if ssl:
+        connection_class = redis.connection.SSLConnection
+        connection_kwargs = _redis_ssl_kwargs(host)
 
     connection_pool = pool.get(key, None)
     if not connection_pool:
@@ -89,7 +115,9 @@ def get_pool(host, port):
             redis.BlockingConnectionPool(
                 host=host,
                 port=port,
-                max_connections=200
+                max_connections=200,
+                connection_class=connection_class,
+                **connection_kwargs
             )
         pool[key] = connection_pool
 

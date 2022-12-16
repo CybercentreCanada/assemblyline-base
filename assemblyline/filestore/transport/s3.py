@@ -4,6 +4,7 @@ import os
 import tempfile
 from typing import Iterable, Optional
 
+from botocore.config import Config
 from botocore.exceptions import ClientError, EndpointConnectionError, ConnectionClosedError
 from io import BytesIO
 
@@ -55,6 +56,13 @@ class TransportS3(Transport):
 
         self.endpoint_url = "{scheme}://{host}:{port}".format(scheme=self.scheme, host=self.host, port=self.port)
 
+        config = None
+        if self.use_ssl:
+            verify = os.environ.get('FILESTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/root-ca.crt')
+            client_cert = os.environ.get('FILESTORE_CLIENT_CERT_PATH', f'/etc/assemblyline/ssl/{self.host}.crt')
+            client_key = os.environ.get('FILESTORE_CLIENT_KEY_PATH', f'/etc/assemblyline/ssl/{self.host}.key')
+            config = Config(client_cert=(client_cert, client_key))
+
         session = boto3.session.Session()
         self.client = session.client(
             "s3",
@@ -63,7 +71,8 @@ class TransportS3(Transport):
             endpoint_url=self.endpoint_url,
             region_name=aws_region,
             use_ssl=self.use_ssl,
-            verify=verify
+            verify=verify,
+            config=config
         )
 
         bucket_exist = False

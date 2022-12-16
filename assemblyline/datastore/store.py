@@ -68,9 +68,15 @@ class ESStore(object):
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
 
-        self.client = elasticsearch.Elasticsearch(hosts=hosts,
-                                                  max_retries=0,
-                                                  request_timeout=TRANSPORT_TIMEOUT)
+        ca_certs = client_cert = client_key = None
+        if config.system.internal_encryption:
+            hostname = urlparse(hosts[0]).hostname
+            ca_certs = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/root-ca.crt')
+            client_cert = environ.get('DATASTORE_CLIENT_CERT_PATH', f'/etc/assemblyline/ssl/{hostname}.crt')
+            client_key = environ.get('DATASTORE_CLIENT_KEY_PATH', f'/etc/assemblyline/ssl/{hostname}.key')
+
+        self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
+                                                  ca_certs=ca_certs, client_cert=client_cert, client_key=client_key)
         self.es_version = version.parse(self.client.info()['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
