@@ -840,24 +840,39 @@ DEFAULT_SERVICES = {
 }
 
 
+@odm.model(index=False, store=False, description="Encryption")
+class Encryption(odm.Model):
+    enabled: bool = odm.Boolean(default=False, description='Enable encrypted communications')
+    validity_period: int = odm.Integer(default=30, description="How many days should certificates be valid for?")
+    validity_notice: int = odm.Integer(
+        default=10,
+        description="How many days in advance would you like to be notified about expiring certificates?")
+
+
 @odm.model(index=False, store=False, description="System Configuration")
 class System(odm.Model):
     constants: str = odm.Keyword(description="Module path to the assemblyline constants")
     organisation: str = odm.Text(description="Organisation acronym used for signatures")
     type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
-    internal_encryption: bool = odm.Boolean(default=True, description="Encrypt internal communtications")
+    internal_encryption: Encryption = odm.Compound(Encryption, description="Internal encryption configuration")
 
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
-    "type": 'production'
+    "type": 'production',
+    "internal_encryption": {
+        "enabled": False,
+        "validity_period": 30,
+        "validity_notice": 10
+    }
 }
 
 
 @odm.model(index=False, store=False, description="Statistics")
 class Statistics(odm.Model):
-    alert: List[str] = odm.List(odm.Keyword(), description="Fields used to generate statistics in the Alerts page")
+    alert: List[str] = odm.List(odm.Keyword(),
+                                description="Fields used to generate statistics in the Alerts page")
     submission: List[str] = odm.List(odm.Keyword(),
                                      description="Fields used to generate statistics in the Submissions page")
 
