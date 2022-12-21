@@ -69,7 +69,7 @@ class ESStore(object):
         tracer.setLevel(logging.CRITICAL)
 
         ca_certs = client_cert = client_key = None
-        if config.system.internal_encryption:
+        if config.system.internal_encryption.enabled:
             hostname = urlparse(hosts[0]).hostname
             ca_certs = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/root-ca.crt')
             client_cert = environ.get('DATASTORE_CLIENT_CERT_PATH', f'/etc/assemblyline/ssl/{hostname}.crt')

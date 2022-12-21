@@ -76,7 +76,7 @@ def get_client(host, port, private):
     # In case a structure is passed a client as host
     config = forge.get_config()
     if isinstance(host, (redis.Redis, redis.StrictRedis)):
-        if config.system.internal_encryption and not \
+        if config.system.internal_encryption.enabled and not \
                 any(['ssl' in kw for kw in host.connection_pool.connection_kwargs.keys()]):
             # If not configured to use internal encryption and it's enabled, then create a new client instance
             port = host.connection_pool.connection_kwargs['port']
@@ -89,7 +89,7 @@ def get_client(host, port, private):
         port = int(port or config.core.redis.nonpersistent.port)
 
     ssl_kwargs = {}
-    if config.system.internal_encryption:
+    if config.system.internal_encryption.enabled:
         ssl_kwargs = _redis_ssl_kwargs(host)
         ssl_kwargs['ssl'] = True
 
