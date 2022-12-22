@@ -53,6 +53,7 @@ class Results(odm.Model):
     tags = odm.Optional(odm.Mapping(odm.List(odm.Any())),
                         description="Tags raised during analysis. Refer to [Tagging](../../tagging/)")
     heuristics = odm.Optional(odm.List(odm.Compound(Heuristics)), description="Heuristics raised during analysis")
+    score = odm.Optional(odm.Integer(description="The score assigned to the file"))
 
 
 @odm.model(index=False, store=False, description="Service Details")
@@ -73,6 +74,7 @@ class Submission(odm.Model):
                                               description="Submitted classification")
     submitter = odm.Optional(odm.Keyword(), description="Submitter")
     retention_id = odm.Optional(odm.Keyword(), description="Reference to knowledge base for long-term data retention.")
+    max_score = odm.Optional(odm.Integer(description="The highest file score of the submission"))
 
 
 # ResultOntology
