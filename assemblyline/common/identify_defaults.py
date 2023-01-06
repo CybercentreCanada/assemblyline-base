@@ -233,7 +233,8 @@ trusted_mimes = {
     "text/x-java": "code/java",
     # Batch
     "text/x-msdos-batch": "code/batch",
-
+    # Registry file
+    "text/x-ms-regedit": "text/windows/registry",
     # JSON file
     "application/json": "text/json",
 
