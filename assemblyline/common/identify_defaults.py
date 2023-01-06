@@ -87,6 +87,7 @@ type_to_extension = {
     "java/jar": ".jar",
     "silverlight/xap": ".xap",
     "shortcut/windows": ".lnk",
+    "text/windows/registry": ".reg",
 }
 
 # Regex patterns used to find Assemblyline type in the reported magic labels
