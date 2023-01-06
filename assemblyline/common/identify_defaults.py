@@ -57,6 +57,7 @@ type_to_extension = {
     "code/python": ".py",
     "code/ruby": ".rb",
     "code/shell": ".sh",
+    "code/vbe": ".vbe",
     "code/vbs": ".vbs",
     "code/wsf": ".wsf",
     "document/installer/windows": ".msi",
@@ -88,7 +89,6 @@ type_to_extension = {
     "silverlight/xap": ".xap",
     "shortcut/windows": ".lnk",
     "text/windows/registry": ".reg",
-    "code/vbe": ".vbe",
 }
 
 # Regex patterns used to find Assemblyline type in the reported magic labels
