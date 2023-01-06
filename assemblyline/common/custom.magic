@@ -93,8 +93,9 @@
 # sqlite
 0   string  SQLite\040format\040    custom: db/sqlite
 # WSF code files
-0      string         \<job
->&0    search/0x30    \<script\ language   custom: code/wsf
+0      string
+>0     search/0x30    \<job
+>>&0   search/0x30    \<script\ language   custom: code/wsf
 # TCPDump capture
 0   short   0x3C4D
 >&0 short   0xA1B2        custom: network/tcpdump
