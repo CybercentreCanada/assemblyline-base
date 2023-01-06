@@ -57,6 +57,7 @@ type_to_extension = {
     "code/python": ".py",
     "code/ruby": ".rb",
     "code/shell": ".sh",
+    "code/vbe": ".vbe",
     "code/vbs": ".vbs",
     "code/wsf": ".wsf",
     "document/installer/windows": ".msi",
