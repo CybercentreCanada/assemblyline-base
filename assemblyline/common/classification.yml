@@ -62,6 +62,9 @@ required:
     # The minimum classification level an item must have
     #   for this token to be valid. (optional)
     # require_lvl: 100
+    # This is a token that is required but will display in the groups part
+    #   of the classification string. (optional)
+    # is_required_group: true
 
 # List of groups:
 #   A user requesting access to an item must be part of a least
