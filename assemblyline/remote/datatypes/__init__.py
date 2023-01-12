@@ -68,7 +68,7 @@ def _redis_ssl_kwargs(host: str) -> dict:
     redis_certs_path = os.environ.get('REDIS_CERTS_DIR', '/etc/assemblyline/ssl/')
     return dict(ssl_certfile=os.path.join(redis_certs_path, f'{host}.crt'),
                 ssl_keyfile=os.path.join(redis_certs_path, f'{host}.key'),
-                ssl_ca_certs=os.path.join(redis_certs_path, 'root-ca.crt'),
+                ssl_ca_certs=os.environ.get('REDIS_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
                 )
 
 
