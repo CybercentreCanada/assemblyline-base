@@ -71,7 +71,7 @@ class ESStore(object):
         ca_certs = client_cert = client_key = None
         if config.system.internal_encryption.enabled:
             hostname = urlparse(hosts[0]).hostname
-            ca_certs = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/root-ca.crt')
+            ca_certs = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
             client_cert = environ.get('DATASTORE_CLIENT_CERT_PATH', f'/etc/assemblyline/ssl/{hostname}.crt')
             client_key = environ.get('DATASTORE_CLIENT_KEY_PATH', f'/etc/assemblyline/ssl/{hostname}.key')
 

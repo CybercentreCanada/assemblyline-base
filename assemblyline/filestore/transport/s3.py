@@ -58,7 +58,7 @@ class TransportS3(Transport):
 
         config = None
         if self.use_ssl:
-            verify = os.environ.get('FILESTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/root-ca.crt')
+            verify = os.environ.get('FILESTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
             client_cert = os.environ.get('FILESTORE_CLIENT_CERT_PATH', f'/etc/assemblyline/ssl/{self.host}.crt')
             client_key = os.environ.get('FILESTORE_CLIENT_KEY_PATH', f'/etc/assemblyline/ssl/{self.host}.key')
             config = Config(client_cert=(client_cert, client_key))
