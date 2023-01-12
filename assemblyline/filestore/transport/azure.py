@@ -24,10 +24,11 @@ This class assumes a flat file structure in the Azure storage blob.
 class TransportAzure(Transport):
 
     def __init__(self, base=None, access_key=None, tenant_id=None, client_id=None, client_secret=None,
-                 host=None, connection_attempts=None):
+                 host=None, connection_attempts=None, allow_directory_access=False):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
         self.connection_attempts: Optional[int] = connection_attempts
+        self.allow_directory_access = allow_directory_access
 
         # Get URL
         self.host = host
@@ -71,10 +72,13 @@ class TransportAzure(Transport):
 
         def azure_normalize(path):
             # flatten path to just the basename
+            if not allow_directory_access:
+                path = os.path.basename(path)
+
             if self.base_path:
-                return os.path.join(self.base_path, os.path.basename(path))
+                return os.path.join(self.base_path, path)
             else:
-                return os.path.basename(path)
+                return path
 
         super(TransportAzure, self).__init__(normalize=azure_normalize)
 
