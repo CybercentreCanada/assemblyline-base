@@ -25,7 +25,7 @@ from assemblyline.common.heuristics import InvalidHeuristicException, HeuristicH
 from assemblyline.common.hexdump import hexdump
 from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
     now_as_local
-from assemblyline.common.iprange import is_ip_reserved, is_ip_private
+from assemblyline.common.iprange import is_ip_public, is_ip_reserved, is_ip_private
 from assemblyline.common.memory_zip import InMemoryZip
 from assemblyline.common.security import get_random_password, get_password_hash, verify_password
 from assemblyline.common.str_utils import safe_str, translate_str, truncate
@@ -331,7 +331,7 @@ def test_iprange():
         assert is_ip_reserved(ip)
 
     for ip in public:
-        assert not is_ip_reserved(ip) and not is_ip_private(ip)
+        assert is_ip_public(ip)
 
 
 def test_isotime_iso():

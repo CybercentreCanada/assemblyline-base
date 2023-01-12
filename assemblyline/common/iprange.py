@@ -164,4 +164,8 @@ def is_ip_private(ip):
 
 
 def is_ip_reserved(ip):
-    return _private_ips[ip] or _reserved_ips[ip] or False
+    return _reserved_ips[ip] or False
+
+
+def is_ip_public(ip):
+    return not is_ip_private(ip) and not is_ip_reserved(ip)
