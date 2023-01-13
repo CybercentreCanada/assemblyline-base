@@ -28,12 +28,12 @@ def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tupl
 
     # Also calculate full file entropy using buffered calculator.
     p_entropies = []
-    full_entropy_clac = BufferedCalculator()
+    full_entropy_calculator = BufferedCalculator()
     for _ in range(num_partitions):
         partition = fin.read(partition_size)
         p_entropies.append(calculate_entropy(partition))
-        full_entropy_clac.update(partition)
-    return full_entropy_clac.entropy(), p_entropies
+        full_entropy_calculator.update(partition)
+    return full_entropy_calculator.entropy(), p_entropies
 
 
 class BufferedCalculator(object):
