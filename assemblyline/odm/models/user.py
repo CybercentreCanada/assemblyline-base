@@ -42,6 +42,7 @@ ROLES = StringTable('ROLES', [
     ("archive_manage", 24),
     ("archive_trigger", 25),
     ("archive_download", 26),
+    ("self_manage", 27),
 ])
 
 
@@ -72,7 +73,8 @@ USER_ROLES_BASIC = {
     ROLES.obo_access,          # Allow access via On Behalf Off tokens
     ROLES.replay_trigger,      # Allow submission to be replayed on another server
     ROLES.safelist_view,       # View safelist items
-    ROLES.safelist_manage,     # Manade (add/delete) safelist items
+    ROLES.safelist_manage,     # Manage (add/delete) safelist items,
+    ROLES.self_manage,         # Manage currently logged in user settings
     ROLES.signature_download,  # Download signatures from the system
     ROLES.signature_view,      # View signatures
     ROLES.submission_create,   # Create a submission in the system
@@ -144,16 +146,17 @@ ACL_MAP = {
         ROLES.safelist_manage,
         ROLES.submission_create,
         ROLES.submission_delete,
-        ROLES.submission_manage,
-        ROLES.workflow_manage,
+        ROLES.submission_manage
     ],
     "E": [
         ROLES.administration,
         ROLES.apikey_access,
         ROLES.obo_access,
         ROLES.replay_system,
+        ROLES.self_manage,
         ROLES.signature_import,
         ROLES.signature_manage,
+        ROLES.workflow_manage
     ]
 }
 
