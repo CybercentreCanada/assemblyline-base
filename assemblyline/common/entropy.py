@@ -1,4 +1,3 @@
-import array
 import io
 
 from math import ceil, log
@@ -12,27 +11,9 @@ def calculate_entropy(contents: bytes) -> float:
         It is given by the formula:
             E = -SUM[v in 0..255](p(v) * ln(p(v)))
     """
-
-    data_length = len(contents)
-
-    if data_length == 0:
-        return 0
-
-    count = array.array('L', [0] * 256)
-
-    # keep a count of all the bytes
-    for byte in contents:
-        count[byte] += 1
-
-    entropy = float(0)
-
-    for value in count:
-        if value:
-            prob = (float(value) / data_length)
-            entropy += (prob * log(prob, 2))
-    entropy *= -1
-
-    return entropy
+    calculator = BufferedCalculator()
+    calculator.update(contents)
+    return calculator.entropy()
 
 
 def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tuple[float, List[float]]:
@@ -47,12 +28,12 @@ def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tupl
 
     # Also calculate full file entropy using buffered calculator.
     p_entropies = []
-    fullentropy = BufferedCalculator()
+    full_entropy_calculator = BufferedCalculator()
     for _ in range(num_partitions):
         partition = fin.read(partition_size)
         p_entropies.append(calculate_entropy(partition))
-        fullentropy.update(partition)
-    return fullentropy.entropy(), p_entropies
+        full_entropy_calculator.update(partition)
+    return full_entropy_calculator.entropy(), p_entropies
 
 
 class BufferedCalculator(object):
