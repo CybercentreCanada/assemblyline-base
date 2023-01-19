@@ -46,7 +46,6 @@ ROLES = StringTable('ROLES', [
 ])
 
 
-ACL = {"R", "W", "E"}
 SCOPES = {"r", "w", "rw", "c"}
 USER_TYPES = [
     TYPES.admin,               # Perform administartive task and has access to all roles
@@ -157,7 +156,8 @@ ACL_MAP = {
         ROLES.signature_import,
         ROLES.signature_manage,
         ROLES.workflow_manage
-    ]
+    ],
+    "C": []
 }
 
 
@@ -193,7 +193,7 @@ def load_roles(types, curRoles):
 
 @odm.model(index=False, store=False, description="Model for API keys")
 class ApiKey(odm.Model):
-    acl = odm.List(odm.Enum(values=ACL), description="Access Control List for the API key")
+    acl = odm.List(odm.Enum(values=ACL_MAP.keys()), description="Access Control List for the API key")
     password = odm.Keyword(description="BCrypt hash of the password for the apikey")
     roles = odm.List(odm.Enum(values=USER_ROLES), default=[], description="List of roles tied to the API key")
 
