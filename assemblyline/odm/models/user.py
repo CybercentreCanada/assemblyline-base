@@ -95,6 +95,7 @@ USER_TYPE_DEP = {
     TYPES.admin: USER_ROLES,
     TYPES.signature_importer: {
         ROLES.safelist_manage,
+        ROLES.self_manage,
         ROLES.signature_download,
         ROLES.signature_import,
         ROLES.signature_view
@@ -110,6 +111,7 @@ USER_TYPE_DEP = {
         ROLES.obo_access,
         ROLES.heuristic_view,
         ROLES.safelist_view,
+        ROLES.self_manage,
         ROLES.signature_view,
         ROLES.submission_view,
         ROLES.workflow_view,
@@ -117,6 +119,7 @@ USER_TYPE_DEP = {
     TYPES.submitter: {
         ROLES.apikey_access,
         ROLES.obo_access,
+        ROLES.self_manage,
         ROLES.submission_create,
         ROLES.replay_trigger,
     }
