@@ -9,7 +9,7 @@ rule code_javascript {
     strings:
         $not_html = /^\s*<\w/
 
-        $strong_js1  = /(^|;|\s|\()function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
+        $strong_js1  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
         $strong_js2  = /\beval[ \t]*\(['"]/
         // jscript
         $strong_js3  = /new[ \t]+ActiveXObject\(['"]/
