@@ -65,32 +65,25 @@ def retry_call(func, *args, **kw):
 
 
 def _redis_ssl_kwargs(host: str) -> dict:
-    redis_certs_path = os.environ.get('REDIS_CERTS_DIR', '/etc/assemblyline/ssl/')
-    return dict(ssl_certfile=os.path.join(redis_certs_path, f'{host}.crt'),
-                ssl_keyfile=os.path.join(redis_certs_path, f'{host}.key'),
-                ssl_ca_certs=os.environ.get('REDIS_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
-                )
+    return dict(ssl_ca_certs=os.environ.get(f'{host.upper()}_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt'))
 
 
 def get_client(host, port, private):
     # In case a structure is passed a client as host
     config = forge.get_config()
     if isinstance(host, (redis.Redis, redis.StrictRedis)):
-        if config.system.internal_encryption.enabled and not \
-                any(['ssl' in kw for kw in host.connection_pool.connection_kwargs.keys()]):
-            # If not configured to use internal encryption and it's enabled, then create a new client instance
-            port = host.connection_pool.connection_kwargs['port']
-            host = host.connection_pool.connection_kwargs['host']
-        else:
-            return host
+        return host
 
     if not host or not port:
         host = host or config.core.redis.nonpersistent.host
         port = int(port or config.core.redis.nonpersistent.port)
 
     ssl_kwargs = {}
-    if config.system.internal_encryption.enabled:
-        ssl_kwargs = _redis_ssl_kwargs(host)
+
+    # Automatically detect if encryption was enabled
+    tmp_ssl_kwargs = _redis_ssl_kwargs(host)
+    if os.path.exists(tmp_ssl_kwargs['ssl_ca_certs']):
+        ssl_kwargs = tmp_ssl_kwargs
         ssl_kwargs['ssl'] = True
 
     if private:
