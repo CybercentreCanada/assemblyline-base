@@ -538,7 +538,7 @@ class Mount(odm.Model):
     # Kubernetes-specific
     resource_type: str = odm.Enum(default='volume', values=['secret', 'configmap', 'volume'],
                                   description="Type of mountable Kubernetes resource")
-    resource_name: str = odm.Keyword(description="Name of resource (Kubernetes only)")
+    resource_name: str = odm.Optional(odm.Keyword(), description="Name of resource (Kubernetes only)")
     resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
 
     # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
