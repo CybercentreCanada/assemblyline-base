@@ -541,6 +541,10 @@ class Mount(odm.Model):
     resource_name: str = odm.Keyword(description="Name of resource (Kubernetes only)")
     resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
 
+    # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
+    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only, deprecated)")
+    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only, deprecated)")
+
 
 @odm.model(index=False, store=False,
            description="A set of default values to be used running a service when no other value is set")
