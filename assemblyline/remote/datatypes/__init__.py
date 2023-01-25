@@ -3,6 +3,7 @@
 import json
 import logging
 import redis
+import os
 import time
 
 from datetime import datetime
@@ -63,25 +64,43 @@ def retry_call(func, *args, **kw):
             exponent = exponent + 1 if exponent < maximum else exponent
 
 
+def _redis_ssl_kwargs(host: str) -> dict:
+    return dict(ssl_ca_certs=os.environ.get(f'{host.upper()}_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt'))
+
+
 def get_client(host, port, private):
     # In case a structure is passed a client as host
+    config = forge.get_config()
     if isinstance(host, (redis.Redis, redis.StrictRedis)):
         return host
 
     if not host or not port:
-        config = forge.get_config()
-
         host = host or config.core.redis.nonpersistent.host
         port = int(port or config.core.redis.nonpersistent.port)
 
+    ssl_kwargs = {}
+
+    # Automatically detect if encryption was enabled
+    tmp_ssl_kwargs = _redis_ssl_kwargs(host)
+    if os.path.exists(tmp_ssl_kwargs['ssl_ca_certs']):
+        ssl_kwargs = tmp_ssl_kwargs
+        ssl_kwargs['ssl'] = True
+
     if private:
-        return redis.StrictRedis(host=host, port=port, socket_keepalive=True)
+        return redis.StrictRedis(host=host, port=port, socket_keepalive=True,
+                                 **ssl_kwargs)
     else:
-        return redis.StrictRedis(connection_pool=get_pool(host, port), socket_keepalive=True)
+        return redis.StrictRedis(connection_pool=get_pool(host, port, ssl=ssl_kwargs.get('ssl', False)),
+                                 socket_keepalive=True)
 
 
-def get_pool(host, port):
+def get_pool(host, port, ssl=False):
     key = (host, port)
+    connection_class = redis.connection.Connection
+    connection_kwargs = {}
+    if ssl:
+        connection_class = redis.connection.SSLConnection
+        connection_kwargs = _redis_ssl_kwargs(host)
 
     connection_pool = pool.get(key, None)
     if not connection_pool:
@@ -89,7 +108,9 @@ def get_pool(host, port):
             redis.BlockingConnectionPool(
                 host=host,
                 port=port,
-                max_connections=200
+                max_connections=200,
+                connection_class=connection_class,
+                **connection_kwargs
             )
         pool[key] = connection_pool
 
