@@ -1,4 +1,4 @@
-
+from os import environ
 from typing import Dict, List
 
 from assemblyline import odm
@@ -578,7 +578,7 @@ DEFAULT_SCALER = {
         'backlog': 100,
         'min_instances': 0,
         'environment': [
-            {'name': 'SERVICE_API_HOST', 'value': 'http://service-server:5003'},
+            {'name': 'SERVICE_API_HOST', 'value': environ.get('SERVICE_API_HOST', 'http://service-server:5003')},
             {'name': 'AL_SERVICE_TASK_LIMIT', 'value': 'inf'},
         ],
     }
