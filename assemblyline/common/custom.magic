@@ -1,6 +1,9 @@
 # Assemblyline Cart files
 0	string	CART
 >0x6	quad	0	custom: archive/cart
+# Internet Explorer RecoveryStore files
+0	string
+>&0	search/0x2000	\005\000K\000j\000j\000a\000q\000f\000a\000j\000N\0002\000c\0000\000u\000z\000g\000v\0001\000l\0004\000q\000y\0005\000n\000f\000W\000e\000	custom: document/office/recoverystore
 # IDA Analysis files
 0	string	IDA1\000\000	custom: code/ida
 # JFIF (JPEG) files

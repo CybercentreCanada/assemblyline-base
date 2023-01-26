@@ -1,12 +1,17 @@
 import logging
 import os
 import posixpath
-import pysftp
 import tempfile
 import warnings
 
-from io import BytesIO
 
+# Stop Blowfish deprecation warning
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+
+    import pysftp
+
+from io import BytesIO
 from paramiko import SSHException
 
 from assemblyline.common.exceptions import ChainAll
