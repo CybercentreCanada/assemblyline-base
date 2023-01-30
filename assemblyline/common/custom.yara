@@ -11,8 +11,10 @@ rule code_javascript {
 
         $strong_js1  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
         $strong_js2  = /\beval[ \t]*\(['"]/
+
         // jscript
         $strong_js3  = /new[ \t]+ActiveXObject\(['"]/
+
         $strong_js4  = /Scripting\.Dictionary['"]/
         $strong_js5  = /unescape\(/
         $strong_js6  = /\.createElement\(/
@@ -29,7 +31,8 @@ rule code_javascript {
         $weak_js5 = /([^\w]|^)this\.[\w]+/
 
     condition:
-        mime startswith "text"
+        // Note that application/javascript is obsolete
+        (mime startswith "text" or mime == "application/javascript")
         and not $not_html
         and (2 of ($strong_js*)
              or (1 of ($strong_js*)
@@ -48,7 +51,12 @@ rule code_jscript {
 
     strings:
         $jscript1 = /new[ \t]+ActiveXObject\(/
-        $jscript2 = /Scripting\.Dictionary['"]/
+
+        // Conditional comments
+        $jscript2 = /\/\*@cc_on/
+        $jscript3 = /@\*\//
+        $jscript4 = /\/\*@if \(@_jscript_version >= \d\)/
+        $jscript5 = /\/\*@end/
 
     condition:
         code_javascript
