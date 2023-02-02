@@ -160,6 +160,7 @@ magic_patterns = [
     {"al_type": "java/jar", "regex": r"[ (]Jar[) ]"},
     {"al_type": "java/class", "regex": r"java class data"},
     {"al_type": "resource/pyc", "regex": r"python [^\|]+byte"},
+    {"al_type": "android/apk", "regex": r"Android package \(APK\)"},
     {"al_type": "code/xml", "regex": r"OpenGIS KML"},
     {"al_type": "code/xml", "regex": r"xml"},
     {"al_type": "image/tim", "regex": r"TIM image"},
@@ -368,5 +369,8 @@ trusted_mimes = {
     # Firefox modules
     "application/x-xpinstall": "application/mozilla/extension",
     # Chrome extensions
-    "application/x-chrome-extension": "application/chrome/extension"
+    "application/x-chrome-extension": "application/chrome/extension",
+
+    # Android
+    "application/vnd.android.package-archive": "android/apk",
 }
