@@ -43,7 +43,7 @@ services:
       retries: 3
 
   nginx:
-    image: cccs/nginx-ssl-frontend
+    image: cccs/nginx-ssl-frontend:mui5
     ports:
       - "80:80"
       - "443:443"

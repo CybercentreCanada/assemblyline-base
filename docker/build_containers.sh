@@ -3,6 +3,7 @@
 # Build core containers
 (cd elasticsearch && docker build -t cccs/elasticsearch:7.17.4 .)
 (cd nginx-ssl-frontend && docker build -t cccs/nginx-ssl-frontend .)
+(cd nginx-ssl-frontend:mui5 && docker build -t cccs/nginx-ssl-frontend:mui5 .)
 (cd minio && docker build -t cccs/minio .)
 
 # Build default dev containers
