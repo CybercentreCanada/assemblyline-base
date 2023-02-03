@@ -913,6 +913,7 @@ rule archive_xxe {
         and
         (
             magic startswith "uuencoded or xxencoded"
+            or magic startswith "xxencoded text"
             or $header at 0
         )
 }
