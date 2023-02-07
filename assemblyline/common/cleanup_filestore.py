@@ -8,6 +8,7 @@ from queue import Empty
 
 from assemblyline.common.forge import get_datastore
 from assemblyline.filestore import create_transport
+from assemblyline.datastore.collection import Index
 
 
 FILTER_WORKERS = 8
@@ -54,12 +55,12 @@ def filter_files(listing_running, listed_queue, filtering_running, filtered_queu
                 continue
 
             # Check if the file exists in the file index
-            if datastore.file.get_if_exists(filename, archive_access=True):
+            if datastore.file.get_if_exists(filename, index_type=Index.HOT_AND_ARCHIVE):
                 total_filtered += 1
                 continue
 
             # Check if the file exists in the cached file index
-            if datastore.cached_file.get_if_exists(filename, archive_access=True):
+            if datastore.cached_file.get_if_exists(filename, index_type=Index.HOT_AND_ARCHIVE):
                 total_filtered += 1
                 continue
 
