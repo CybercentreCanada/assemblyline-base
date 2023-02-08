@@ -451,8 +451,7 @@ rule code_ps1 {
         $ = /\$\w+[ \t]*=[ \t]*[^;^\n^|]+[;\n|]/ ascii wide
         $ = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
         $ = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
-        // This powershell regex is the same as the one in code/batch except it does not need -c or -command
-        $power = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?(\.(\^|%.+%)?e(\^|%.+%)?x(\^|%.+%)?e(\^|%.+%)?)?.+(-c|-command)?(\^|%.+%)?[ \t]/i
+        $power = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?[ \t-.]/i
 
     condition:
         mime startswith "text"
