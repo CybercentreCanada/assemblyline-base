@@ -5,7 +5,7 @@ import re
 import time
 import typing
 
-from os import environ
+from os import environ, path
 from random import random
 from urllib.parse import urlparse
 
@@ -20,6 +20,7 @@ from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedEl
 from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
+DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
 log = logging.getLogger('assemblyline.datastore')
 
 
@@ -68,9 +69,10 @@ class ESStore(object):
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
 
-        self.client = elasticsearch.Elasticsearch(hosts=hosts,
-                                                  max_retries=0,
-                                                  request_timeout=TRANSPORT_TIMEOUT)
+        ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
+
+        self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
+                                                  ca_certs=ca_certs)
         self.es_version = version.parse(self.client.info()['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
@@ -258,7 +260,7 @@ class ESStore(object):
                     elasticsearch.exceptions.AuthenticationException) as e:
                 if not isinstance(e, SearchRetryException):
                     log.warning(f"No connection to Elasticsearch server(s): "
-                                f"{' | '.join(self.datastore.get_hosts(safe=True))}"
+                                f"{' | '.join(self.get_hosts(safe=True))}"
                                 f", because [{e}] retrying {func.__name__}...")
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))

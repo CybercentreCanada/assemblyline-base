@@ -1,4 +1,4 @@
-
+from os import environ
 from typing import Dict, List
 
 from assemblyline import odm
@@ -535,9 +535,15 @@ class Mount(odm.Model):
     privileged_only: bool = odm.Boolean(default=False,
                                         description="Should this mount only be available for privileged services?")
 
-    # ConfigMap-specific
-    config_map: str = odm.Optional(odm.Keyword(description="Name of ConfigMap (Kubernetes only)"))
-    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only)")
+    # Kubernetes-specific
+    resource_type: str = odm.Enum(default='volume', values=['secret', 'configmap', 'volume'],
+                                  description="Type of mountable Kubernetes resource")
+    resource_name: str = odm.Optional(odm.Keyword(), description="Name of resource (Kubernetes only)")
+    resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
+
+    # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
+    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only, deprecated)")
+    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only, deprecated)")
 
 
 @odm.model(index=False, store=False,
@@ -791,7 +797,6 @@ class ServiceRegistry(odm.Model):
 class Services(odm.Model):
     categories: List[str] = odm.List(odm.Keyword(), description="List of categories a service can be assigned to")
     default_timeout: int = odm.Integer(description="Default service timeout time in seconds")
-    min_service_workers: int = odm.Integer(description="The minimum number of service instances to always be running.")
     stages: List[str] = odm.List(odm.Keyword(), description="List of execution stages a service can be assigned to")
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''),
                                                   description="Substitution variables for image paths "
@@ -824,7 +829,6 @@ class Services(odm.Model):
 DEFAULT_SERVICES = {
     "categories": SERVICE_CATEGORIES,
     "default_timeout": 60,
-    "min_service_workers": 0,
     "stages": SERVICE_STAGES,
     "image_variables": {},
     "update_image_variables": {},
@@ -850,13 +854,14 @@ class System(odm.Model):
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
-    "type": 'production'
+    "type": 'production',
 }
 
 
 @odm.model(index=False, store=False, description="Statistics")
 class Statistics(odm.Model):
-    alert: List[str] = odm.List(odm.Keyword(), description="Fields used to generate statistics in the Alerts page")
+    alert: List[str] = odm.List(odm.Keyword(),
+                                description="Fields used to generate statistics in the Alerts page")
     submission: List[str] = odm.List(odm.Keyword(),
                                      description="Fields used to generate statistics in the Submissions page")
 
