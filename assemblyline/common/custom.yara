@@ -451,11 +451,23 @@ rule code_ps1 {
         $ = /\$\w+[ \t]*=[ \t]*[^;^\n^|]+[;\n|]/ ascii wide
         $ = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
         $ = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
-        $power = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?[ \t-.]/i
 
     condition:
         mime startswith "text"
-        and not $power and 2 of them
+        and 2 of them
+}
+
+rule code_ps1_in_ps1 {
+
+    meta:
+        type = "code/ps1"
+        score = -1
+
+    strings:
+        $power = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?[ \t-.]/i
+
+    condition:
+        code_ps1 and $power
 }
 
 /*
@@ -704,6 +716,9 @@ rule code_batch {
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
+        $cmd5 = /(^|\n)exit\s*$/i
+        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
+        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $bom = {FF FE}
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
@@ -712,7 +727,9 @@ rule code_batch {
         and (for 1 of ($obf) :( # > 3 )
              or $power
              or for 1 of ($cmd*) :( # > 3 )
-             or $exp)
+             or $exp
+             or (2 of ($cmd*)
+                and (#rem+#set) > 4))
 }
 
 rule code_batch_small {
