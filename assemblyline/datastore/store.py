@@ -69,10 +69,10 @@ class ESStore(object):
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
 
-        ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
+        self.ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
 
         self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=ca_certs)
+                                                  ca_certs=self.ca_certs)
         self.es_version = version.parse(self.client.info()['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
@@ -156,7 +156,8 @@ class ESStore(object):
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   max_retries=0,
-                                                  request_timeout=TRANSPORT_TIMEOUT)
+                                                  request_timeout=TRANSPORT_TIMEOUT,
+                                                  ca_certs=self.ca_certs)
         self.es_version = version.parse(self.client.info()['version']['number'])
         self._test_elastic_minimum_version()
 
