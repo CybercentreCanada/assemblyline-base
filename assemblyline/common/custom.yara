@@ -135,7 +135,7 @@ code/xml
 rule code_xml_start_tag {
 
     strings:
-        $tag_start = /^\s*<[^\/^<^>^\n][^<^>^\n]*>/
+        $tag_start = /^\s*<[^\/<>\n][^<>\n]*>/
 
     condition:
         $tag_start in (0..256)
@@ -148,7 +148,7 @@ code/xml
 rule code_xml_end_tag {
 
     strings:
-        $tag_end = /<\/[^>^\n]+>\s*$/
+        $tag_end = /<\/[^<>\n]+>\s*$/
 
     condition:
         $tag_end in (filesize-256..filesize)
@@ -448,7 +448,7 @@ rule code_ps1 {
         $ = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
         $ = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
         $ = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
-        $ = /\$\w+[ \t]*=[ \t]*[^;^\n^|]+[;\n|]/ ascii wide
+        $ = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
         $ = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
         $ = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
 
@@ -612,7 +612,7 @@ rule code_protobuf {
     strings:
         $ = /(^|\n)[ \t]*syntax[ \t]+=[ \t]+"proto\d"[ \t]*;/
         $ = /(^|\n)[ \t]*package[ \t]+google\.protobuf[ \t]*;/
-        $ = /(^|\n)[ \t]*option[ \t]+\w+[ \t]+=[ \t]+[^;^\n]+[ \t]*;/
+        $ = /(^|\n)[ \t]*option[ \t]+\w+[ \t]+=[ \t]+[^;\n]+[ \t]*;/
 
     condition:
         mime startswith "text"
@@ -710,7 +710,7 @@ rule code_batch {
         score = 1
 
     strings:
-        $obf = /%[^:^\n^\r^%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
+        $obf = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
         $power = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?(\.(\^|%.+%)?e(\^|%.+%)?x(\^|%.+%)?e(\^|%.+%)?)?.+(-c|-command)(\^|%.+%)?[ \t]/i
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
@@ -740,10 +740,10 @@ rule code_batch_small {
 
     strings:
         $batch1 = /(^|\n|@|&| )\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
-        $batch2 = /%[^:^\n^\r^%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
+        $batch2 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
         $batch3 = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/i
-        $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
-        $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/i
+        $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\\n]+|\.?\/[^\/\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
+        $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ \n]+"?)+ *($|\n)/i
         $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
