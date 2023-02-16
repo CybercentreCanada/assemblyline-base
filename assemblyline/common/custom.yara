@@ -914,6 +914,24 @@ rule code_lisp {
 }
 
 /*
+code/wsf
+*/
+
+rule code_wsf {
+
+    meta:
+        type = "code/wsf"
+
+    strings:
+        $ = /<job.*?>/
+        $ = /<script\s+?language=.*?>/
+
+    condition:
+        mime startswith "text"
+        and all of them
+}
+
+/*
 archive/xxe
 */
 
