@@ -20,6 +20,16 @@ if TYPE_CHECKING:
 config_cache = {}
 
 
+def get_apm_client(service_name):
+    # Because of https://github.com/elastic/apm-agent-python/blob/208e241fbf28b4bb09ba5aca3dbd5f7b95602229/elasticapm/transport/http.py#L250
+    config = get_config()
+    apm_config = dict(server_url=config.core.metrics.apm_server.server_url, service_name=service_name)
+    if config.core.metrics.apm_server.server_url.startswith('https'):
+        apm_config['verify_server_cert'] = False
+
+    return elasticapm.Client(**apm_config)
+
+
 def get_classification(yml_config=None):
     from assemblyline.common.classification import Classification, InvalidDefinition
 
