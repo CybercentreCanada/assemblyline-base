@@ -101,12 +101,17 @@ rule code_vbs {
         $strong_vbs6 = /(^|\n)(Attribute|Set|const)[ \t]+\w+[ \t]+=[ \t]+[^\n]+/i ascii wide
         $strong_vbs7 = /(^|\n)[ \t]*Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
         $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i ascii wide
+        // CreateObject("blah")
         $strong_vbs9 = /CreateObject\([^)]+\)/i ascii wide
         $strong_vbs10 = /GetObject\([^)]+\)/i ascii wide
         $strong_vbs11 = /(^|\n)Eval\(([^)]+)\)/i ascii wide
+        // Dim blah
+        $weak_vbs1 = /\bDim\b\s+\w+/i ascii wide
 
     condition:
         2 of ($strong_vbs*)
+        or (1 of ($strong_vbs*)
+            and (#weak_vbs1) > 3)
 }
 
 /*
@@ -710,7 +715,9 @@ rule code_batch {
         score = 1
 
     strings:
-        $obf = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
+        $obf1 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
+        // Example: %blah1%%blah2%%blah3%%blah4%%blah5%%blah6%%blah7%%blah8%%blah9%%blah10%
+        $obf2 = /\%([^:\n\r\%]+(\%\%)?)+\%/
         $power = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?(\.(\^|%.+%)?e(\^|%.+%)?x(\^|%.+%)?e(\^|%.+%)?)?.+(-c|-command)(\^|%.+%)?[ \t]/i
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
@@ -724,12 +731,15 @@ rule code_batch {
 
     condition:
         (mime startswith "text" or $bom at 0)
-        and (for 1 of ($obf) :( # > 3 )
+        and (for 1 of ($obf1) :( # > 3 )
              or $power
              or for 1 of ($cmd*) :( # > 3 )
              or $exp
              or (2 of ($cmd*)
                 and (#rem+#set) > 4))
+             or (for 1 of ($obf2) :( # > 3 )
+                and 1 of ($cmd*)
+                and (#rem+#set) > 4)
 }
 
 rule code_batch_small {
