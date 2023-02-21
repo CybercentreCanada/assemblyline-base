@@ -27,6 +27,7 @@ class ListOutstanding(odm.Model):
 MESSAGE_CLASSES = {
     CREATE_WATCH: CreateWatch,
     LIST_OUTSTANDING: ListOutstanding,
+    UPDATE_BAD_SID: str
 }
 
 
