@@ -7,6 +7,7 @@ class Tagging(odm.Model):
     class Attribution(odm.Model):
         actor = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Actor")
         campaign = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Campaign")
+        category = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Category")
         exploit = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Exploit")
         implant = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Implant")
         family = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Family")
