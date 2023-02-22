@@ -9,6 +9,7 @@ class WatchQueueMessage(odm.Model):
 
 CREATE_WATCH = 'CREATE_WATCH'
 LIST_OUTSTANDING = 'LIST_OUTSTANDING'
+UPDATE_BAD_SID = 'UPDATE_BAD_SID'
 
 
 @odm.model(description="Create Watch Message")
@@ -26,6 +27,7 @@ class ListOutstanding(odm.Model):
 MESSAGE_CLASSES = {
     CREATE_WATCH: CreateWatch,
     LIST_OUTSTANDING: ListOutstanding,
+    UPDATE_BAD_SID: str
 }
 
 
