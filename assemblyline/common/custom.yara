@@ -5,6 +5,7 @@ code/javascript
 rule code_javascript {
     meta:
         type = "code/javascript"
+        score = 1
 
     strings:
         $not_html = /^\s*<\w/
@@ -439,10 +440,11 @@ rule code_ps1 {
 
     meta:
         type = "code/ps1"
+        score = 1
 
     strings:
-        $ = /(Add-MpPreference|IWR|Start-BitsTransfer|Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
-        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass|-uri)/i ascii wide
+        $ = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
+        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)/i ascii wide
         $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
         $ = /(System\.Net\.WebClient)/i ascii wide
         $ = /(Net\.ServicePointManager)/ ascii wide
@@ -712,7 +714,7 @@ rule code_batch {
 
     meta:
         type = "code/batch"
-        score = 1
+        score = 2
 
     strings:
         $obf1 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
@@ -724,7 +726,7 @@ rule code_batch {
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
-        $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
+        $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
         $cmd5 = /(^|\n)exit\s*$/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
@@ -952,7 +954,7 @@ rule archive_xxe {
 
     meta:
         type = "archive/xxe"
-        score = 1
+        score = 2
 
     strings:
         $header = "XXEncode  0.0 (PowerArchiver 2009: www.powerarchiver.com)"
