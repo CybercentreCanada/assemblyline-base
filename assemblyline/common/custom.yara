@@ -441,8 +441,8 @@ rule code_ps1 {
         type = "code/ps1"
 
     strings:
-        $ = /(Add-MpPreference|IWR|Start-BitsTransfer|Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
-        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass|-uri)/i ascii wide
+        $ = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
+        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)/i ascii wide
         $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
         $ = /(System\.Net\.WebClient)/i ascii wide
         $ = /(Net\.ServicePointManager)/ ascii wide
