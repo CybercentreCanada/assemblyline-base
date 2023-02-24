@@ -5,6 +5,7 @@ code/javascript
 rule code_javascript {
     meta:
         type = "code/javascript"
+        score = 1
 
     strings:
         $not_html = /^\s*<\w/
@@ -953,7 +954,7 @@ rule archive_xxe {
 
     meta:
         type = "archive/xxe"
-        score = 1
+        score = 2
 
     strings:
         $header = "XXEncode  0.0 (PowerArchiver 2009: www.powerarchiver.com)"
