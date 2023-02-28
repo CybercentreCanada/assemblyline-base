@@ -936,6 +936,7 @@ rule code_wsf {
 
     meta:
         type = "code/wsf"
+        score = 2
 
     strings:
         $ = /<job.*?>/
