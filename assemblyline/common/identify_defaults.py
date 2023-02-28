@@ -162,7 +162,6 @@ magic_patterns = [
     {"al_type": "resource/pyc", "regex": r"python [^\|]+byte"},
     {"al_type": "android/apk", "regex": r"Android package \(APK\)"},
     {"al_type": "code/xml", "regex": r"OpenGIS KML"},
-    {"al_type": "code/xml", "regex": r"xml"},
     {"al_type": "image/tim", "regex": r"TIM image"},
     {"al_type": "network/sff", "regex": r"Frame Format"},
     {"al_type": "shortcut/windows", "regex": r"^MS Windows shortcut"},
@@ -221,8 +220,6 @@ trusted_mimes = {
     "text/x-python": "code/python",
     # PHP
     "text/x-php": "code/php",
-    # XML file
-    "text/xml": "code/xml",
     # SGML file
     "text/sgml": "code/sgml",
     # HTML file

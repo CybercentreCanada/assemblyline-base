@@ -936,10 +936,29 @@ rule code_wsf {
 
     meta:
         type = "code/wsf"
-        score = 2
+        score = 20
 
     strings:
         $ = /<job.*?>/
+        $ = /<script\s+?language=.*?>/
+
+    condition:
+        mime startswith "text"
+        and all of them
+}
+
+/*
+code/wsc
+*/
+
+rule code_wsc {
+
+    meta:
+        type = "code/wsc"
+        score = 20
+
+    strings:
+        $ = /<component.*?>/
         $ = /<script\s+?language=.*?>/
 
     condition:
