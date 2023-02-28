@@ -119,6 +119,22 @@ rule code_vbs {
 code/xml
 */
 
+rule code_xml_magic_mime {
+
+    meta:
+        type = "code/xml"
+        // Higher than html, but lower than wsc
+        score = 15
+
+    condition:
+        magic startswith "XML"
+        or mime == "text/xml"
+}
+
+/*
+code/xml
+*/
+
 rule code_xml {
 
     meta:
