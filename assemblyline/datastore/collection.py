@@ -196,12 +196,11 @@ class ESCollection(Generic[ModelType]):
         self.index_name = f"{name}_hot"
 
         # Initialize archive
+        self.archive_name = None
+        self.index_archive_name = None
         if name in datastore.archive_indices:
             self.archive_name = f"{name}-ma"
             self.index_archive_name = f"{name}-ma_hot"
-        else:
-            self.archive_name = None
-            self.index_archive_name = None
 
         self.model_class = model_class
         self.validate = validate
@@ -929,6 +928,16 @@ class ESCollection(Generic[ModelType]):
         if version:
             return None, CREATE_TOKEN
         return None
+
+    @typing.overload
+    def get(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
+            version=False) -> typing.Optional[ModelType]:
+        ...
+
+    @typing.overload
+    def get(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
+            version=False) -> typing.Optional[dict]:
+        ...
 
     def get(self, key, as_obj=True, index_type=None, version=False):
         """

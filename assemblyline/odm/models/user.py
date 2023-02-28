@@ -85,6 +85,7 @@ USER_ROLES_BASIC = {
     ROLES.workflow_manage,     # Manage (add/delete) workflows
     ROLES.workflow_view,       # View workflows
     ROLES.retrohunt_view,      # View yara searches
+    ROLES.retrohunt_run,       # Run yara searches
 }
 
 USER_ROLES = USER_ROLES_BASIC.union({
