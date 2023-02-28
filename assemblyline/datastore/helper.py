@@ -54,6 +54,7 @@ class AssemblylineDatastore(object):
         self.ds.register('filescore', FileScore)
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
+        self.ds.register('retrohunt', Retrohunt)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
         self.ds.register('signature', Signature)
