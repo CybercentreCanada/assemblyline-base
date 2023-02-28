@@ -1165,6 +1165,13 @@ DEFAULT_SUBMISSION = {
 }
 
 
+@odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
+class Retrohunt(odm.Model):
+    url = odm.keyword(description="Base URL for service API")
+    api_key = odm.keyword(description="Service API Key")
+    tls_verify = odm.boolean(description="Should tls certificates be verified", default=True)
+
+
 @odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
 class Config(odm.Model):
     auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH, description="Authentication module configuration")
@@ -1179,6 +1186,7 @@ class Config(odm.Model):
     ui: UI = odm.Compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
+    retrohunt = odm.optional(odm.compound(Retrohunt, description="Options for including a retrohunt server."))
 
 
 DEFAULT_CONFIG = {

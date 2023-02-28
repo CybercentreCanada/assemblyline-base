@@ -44,7 +44,7 @@ ROLES = StringTable('ROLES', [
     ("archive_download", 26),
     ("self_manage", 27),
     ("retrohunt_view", 28),
-    ("retrohunt_search", 29),
+    ("retrohunt_run", 29),
 ])
 
 
@@ -125,7 +125,7 @@ USER_TYPE_DEP = {
         ROLES.self_manage,
         ROLES.submission_create,
         ROLES.replay_trigger,
-        ROLES.retrohunt_search,
+        ROLES.retrohunt_run,
     }
 }
 
@@ -154,7 +154,7 @@ ACL_MAP = {
         ROLES.submission_create,
         ROLES.submission_delete,
         ROLES.submission_manage,
-        ROLES.retrohunt_search,
+        ROLES.retrohunt_run,
     ],
     "E": [
         ROLES.administration,
