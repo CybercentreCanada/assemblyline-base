@@ -446,9 +446,9 @@ rule code_ps1 {
         $ = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
         $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)/i ascii wide
         $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
-        $ = /(System\.Net\.WebClient)/i ascii wide
-        $ = /(Net\.ServicePointManager)/ ascii wide
-        $ = /(Net\.SecurityProtocolType)/i ascii wide
+        $ = "System.Net.WebClient" nocase ascii wide
+        $ = "Net.ServicePointManager" nocase ascii wide
+        $ = "Net.SecurityProtocolType" nocase ascii wide
         $ = /\[(System\.)?Text\.Encoding\]::UTF8/i ascii wide
         $ = /\[(System\.)?Convert\]::ToInt32/i ascii wide
         $ = /\[(System\.)?String]::Join\(/i ascii wide
@@ -460,7 +460,7 @@ rule code_ps1 {
         $ = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
 
     condition:
-        mime startswith "text"
+        (mime startswith "text" or mime == "application/octet-stream")
         and 2 of them
 }
 
