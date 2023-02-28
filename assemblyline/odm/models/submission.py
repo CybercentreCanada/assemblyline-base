@@ -136,6 +136,8 @@ class Submission(odm.Model):
     results: list[str] = odm.List(odm.Keyword(), store=False, description="List of result keys")
     sid = odm.UUID(copyto="__text__", description="Submission ID")
     state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission")
+    to_be_deleted = odm.Boolean(
+        default=False, description="This document is going to be deleted as soon as it finishes")
     times = odm.Compound(Times, default={}, description="Submission-specific times")
     verdict = odm.Compound(Verdict, default={}, description="Malicious verdict details")
     from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive")
