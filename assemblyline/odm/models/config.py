@@ -594,9 +594,8 @@ DEFAULT_SCALER = {
 class Updater(odm.Model):
     job_dockerconfig: DockerConfigDelta = odm.Compound(
         DockerConfigDelta, description="Container configuration used for service registration/updates")
-    registry_proxies: Dict = odm.Mapping(odm.Mapping(odm.Text()),
-                                         default={},
-                                         description="Proxy configuration to use with container registries.")
+    registry_proxies: Dict = odm.Json(default={},
+                                      description="Proxy configuration to use with container registries.")
 
 
 DEFAULT_UPDATER = {
