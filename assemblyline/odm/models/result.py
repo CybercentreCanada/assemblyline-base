@@ -1,5 +1,5 @@
-import typing
 from collections import defaultdict
+from typing import Any, Dict
 
 from assemblyline import odm
 from assemblyline.common import forge
@@ -137,7 +137,7 @@ class Result(odm.Model):
 
         return '.'.join(key_list)
 
-    def scored_tag_dict(self) -> dict[str, dict[str, typing.Any]]:
+    def scored_tag_dict(self) -> Dict[str, Dict[str, Any]]:
         tags = defaultdict(lambda: {'score': 0})
         # Save the tags and their score
         for section in self.result.sections:
