@@ -591,11 +591,18 @@ DEFAULT_SCALER = {
 
 
 @odm.model(index=False, store=False)
+class RegistryConfiguration(odm.Model):
+    name: str = odm.Text(description="Name of container registry")
+    proxies: Dict = odm.Optional(odm.Mapping(odm.Text()),
+                                 description="Proxy configuration that is passed to Python Requests")
+
+
+@odm.model(index=False, store=False)
 class Updater(odm.Model):
     job_dockerconfig: DockerConfigDelta = odm.Compound(
         DockerConfigDelta, description="Container configuration used for service registration/updates")
-    registry_proxies: Dict = odm.Json(default={},
-                                      description="Proxy configuration to use with container registries.")
+    registry_configs: List = odm.List(odm.Compound(RegistryConfiguration),
+                                      description="Configurations to be used with container registries")
 
 
 DEFAULT_UPDATER = {
@@ -604,7 +611,10 @@ DEFAULT_UPDATER = {
         'ram_mb': 1024,
         'ram_mb_min': 128,
     },
-    'registry_proxies': {}
+    'registry_configs': [{
+        'name': 'registry.hub.docker.com',
+        'proxies': {}
+    }]
 }
 
 
