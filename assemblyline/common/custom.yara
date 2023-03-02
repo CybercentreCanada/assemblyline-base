@@ -948,6 +948,25 @@ rule code_wsf {
 }
 
 /*
+code/wsc
+*/
+
+rule code_wsc {
+
+    meta:
+        type = "code/wsc"
+        score = 2
+
+    strings:
+        $ = /<component.*?>/
+        $ = /<script\s+?language=.*?>/
+
+    condition:
+        mime startswith "text"
+        and all of them
+}
+
+/*
 archive/xxe
 */
 
