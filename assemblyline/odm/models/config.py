@@ -1,8 +1,9 @@
-from os import environ
 from typing import Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
+from assemblyline.odm.models.service_delta import DockerConfigDelta
+
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
 
@@ -590,6 +591,34 @@ DEFAULT_SCALER = {
 
 
 @odm.model(index=False, store=False)
+class RegistryConfiguration(odm.Model):
+    name: str = odm.Text(description="Name of container registry")
+    proxies: Dict = odm.Optional(odm.Mapping(odm.Text()),
+                                 description="Proxy configuration that is passed to Python Requests")
+
+
+@odm.model(index=False, store=False)
+class Updater(odm.Model):
+    job_dockerconfig: DockerConfigDelta = odm.Compound(
+        DockerConfigDelta, description="Container configuration used for service registration/updates")
+    registry_configs: List = odm.List(odm.Compound(RegistryConfiguration),
+                                      description="Configurations to be used with container registries")
+
+
+DEFAULT_UPDATER = {
+    'job_dockerconfig': {
+        'cpu_cores': 1,
+        'ram_mb': 1024,
+        'ram_mb_min': 128,
+    },
+    'registry_configs': [{
+        'name': 'registry.hub.docker.com',
+        'proxies': {}
+    }]
+}
+
+
+@odm.model(index=False, store=False)
 class VacuumSafelistItem(odm.Model):
     name = odm.Keyword()
     conditions = odm.Mapping(odm.Keyword())
@@ -644,6 +673,7 @@ class Core(odm.Model):
                                     description="Configuration for Metrics Collection")
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS, description="Configuration for Redis instances")
     scaler: Scaler = odm.Compound(Scaler, default=DEFAULT_SCALER, description="Configuration for Scaler")
+    updater: Updater = odm.Compound(Updater, default=DEFAULT_UPDATER, description="Configuration for Updater")
     vacuum: Vacuum = odm.Compound(Vacuum, default=DEFAULT_VACUUM, description="Configuration for Vacuum")
 
 
@@ -656,6 +686,7 @@ DEFAULT_CORE = {
     "metrics": DEFAULT_METRICS,
     "redis": DEFAULT_REDIS,
     "scaler": DEFAULT_SCALER,
+    "updater": DEFAULT_UPDATER,
 }
 
 

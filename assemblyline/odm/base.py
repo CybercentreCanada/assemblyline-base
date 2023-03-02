@@ -1093,7 +1093,7 @@ class Model:
             elif isinstance(defaults, dict):
                 val = defaults.get(field, {})
                 default = f"`{val if not isinstance(val, dict) else info.default}`"
-            elif isinstance(defaults, list):
+            elif isinstance(defaults, list) and field_type == 'List':
                 default = f'`{defaults}`'
             row = f"| {field} | {field_type} | {description} | {required} | {default} |\n"
             table += row
