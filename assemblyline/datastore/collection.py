@@ -958,6 +958,16 @@ class ESCollection(Generic[ModelType]):
             return self.normalize(data, as_obj=as_obj), version
         return self.normalize(data, as_obj=as_obj)
 
+    @typing.overload
+    def get_if_exists(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
+                      version=False) -> typing.Optional[ModelType]:
+        ...
+
+    @typing.overload
+    def get_if_exists(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
+                      version=False) -> typing.Optional[dict]:
+        ...
+
     def get_if_exists(self, key, as_obj=True, index_type=None, version=False):
         """
         Get a document from the datastore but do not retry if not found.
