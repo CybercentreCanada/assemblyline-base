@@ -443,25 +443,27 @@ rule code_ps1 {
         score = 1
 
     strings:
-        $ = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
-        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)/i ascii wide
-        $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
-        $ = "System.Net.WebClient" nocase ascii wide
-        $ = "Net.ServicePointManager" nocase ascii wide
-        $ = "Net.SecurityProtocolType" nocase ascii wide
-        $ = /\[(System\.)?Text\.Encoding\]::UTF8/i ascii wide
-        $ = /\[(System\.)?Convert\]::ToInt32/i ascii wide
-        $ = /\[(System\.)?String]::Join\(/i ascii wide
-        $ = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
-        $ = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
-        $ = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
-        $ = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
-        $ = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
-        $ = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
+        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
+        $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)/i ascii wide
+        $strong_pwsh3 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
+        $strong_pwsh4 = "System.Net.WebClient" nocase ascii wide
+        $strong_pwsh5 = "Net.ServicePointManager" nocase ascii wide
+        $strong_pwsh6 = "Net.SecurityProtocolType" nocase ascii wide
+        $strong_pwsh7 = /\[(System\.)?Text\.Encoding\]::UTF8/i ascii wide
+        $strong_pwsh8 = /\[(System\.)?Convert\]::ToInt32/i ascii wide
+        $strong_pwsh9 = /\[(System\.)?String]::Join\(/i ascii wide
+        $strong_pwsh10 = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
+        $strong_pwsh11 = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
+        $strong_pwsh12 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
+        $strong_pwsh13 = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
+        $strong_pwsh14 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
+        $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
     condition:
-        (mime startswith "text" or mime == "application/octet-stream")
-        and 2 of them
+        (mime startswith "text"
+        and 2 of them) or
+            (mime == "application/octet-stream"
+            and 2 of ($strong_pwsh*))
 }
 
 rule code_ps1_in_ps1 {
