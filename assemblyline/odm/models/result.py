@@ -21,6 +21,7 @@ BODY_FORMAT = {
     "IMAGE",
     "MULTI",
     "ORDERED_KEY_VALUE",
+    "TIMELINE"
 }
 constants = forge.get_constants()
 
