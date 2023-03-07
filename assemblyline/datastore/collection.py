@@ -868,7 +868,7 @@ class ESCollection(Generic[ModelType]):
 
         return data
 
-    def exists(self, key, index_type=None):
+    def exists(self, key: str, index_type: typing.Optional[Index] = None) -> bool:
         """
         Check if a document exists in the datastore.
 
@@ -877,6 +877,7 @@ class ESCollection(Generic[ModelType]):
         :return: true/false depending if the document exists or not
         """
         index_list = self.get_index_list(index_type)
+        found = False
 
         for index in index_list:
             found = self.with_retries(self.datastore.client.exists, index=index, id=key, _source=False)
