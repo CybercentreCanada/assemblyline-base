@@ -128,3 +128,9 @@
 0 string REM\ Batch\ extracted\ by\ Assemblyline\n custom: code/batch
 # Assemblyline powershell file
 0 string \#\!\/usr\/bin\/env\ pwsh\n custom: code/ps1
+# xxencoded and uuencoded files
+0 string XXEncode\ \ 0\.0\ \(PowerArchiver\ 2009:\ www\.powerarchiver\.com\) custom: archive/xxe
+0 string UUEncode\ \ 0\.0\ \(PowerArchiver\ 2009:\ www\.powerarchiver\.com\) custom: archive/uue
+0 string begin
+>&0 search/50 \nh custom: archive/xxe
+>&0 search/50 \nM custom: archive/uue

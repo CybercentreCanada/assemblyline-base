@@ -969,29 +969,6 @@ rule code_wsc {
 }
 
 /*
-archive/xxe
-*/
-
-rule archive_xxe {
-
-    meta:
-        type = "archive/xxe"
-        score = 2
-
-    strings:
-        $header = "XXEncode  0.0 (PowerArchiver 2009: www.powerarchiver.com)"
-
-    condition:
-        mime startswith "text"
-        and
-        (
-            magic startswith "uuencoded or xxencoded"
-            or magic startswith "xxencoded text"
-            or $header at 0
-        )
-}
-
-/*
 archive/udf
 */
 
