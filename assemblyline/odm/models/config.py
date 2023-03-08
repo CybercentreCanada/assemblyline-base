@@ -1029,7 +1029,9 @@ DEFAULT_UI = {
     "tos": None,
     "tos_lockout": False,
     "tos_lockout_notify": None,
-    "url_submission_headers": {},
+    "url_submission_headers": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+    },
     "url_submission_proxies": {},
     "validate_session_ip": True,
     "validate_session_useragent": True,
