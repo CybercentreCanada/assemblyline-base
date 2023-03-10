@@ -389,6 +389,7 @@ class Tagging(odm.Model):
             header = odm.Optional(odm.Compound(FileSWFHeader), description="Header Information")
             tags_ssdeep = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")), description="Tags SSDeep")
 
+        ancestry = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Genealogy")
         behavior = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Behaviour")
         compiler = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Compiler of File")
         config = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Configuration")
