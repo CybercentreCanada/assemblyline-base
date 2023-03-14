@@ -35,7 +35,6 @@ rule code_javascript {
         // Note that application/javascript is obsolete
         not $not_html
         and (((mime startswith "text" or mime == "application/javascript")
-            and not $not_html
             and (2 of ($strong_js*)
                 or (1 of ($strong_js*)
                     and 2 of ($weak_js*))))
