@@ -33,11 +33,13 @@ rule code_javascript {
 
     condition:
         // Note that application/javascript is obsolete
-        (mime startswith "text" or mime == "application/javascript")
-        and not $not_html
-        and (2 of ($strong_js*)
-             or (1 of ($strong_js*)
-                 and 2 of ($weak_js*)))
+        not $not_html
+        and (((mime startswith "text" or mime == "application/javascript")
+            and (2 of ($strong_js*)
+                or (1 of ($strong_js*)
+                    and 2 of ($weak_js*))))
+            or (mime == "application/octet-stream"
+            and 4 of ($strong_js*)))
 }
 
 /*
@@ -443,8 +445,8 @@ rule code_ps1 {
         score = 1
 
     strings:
-        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
-        $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)/i ascii wide
+        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))\b/i ascii wide
+        $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)\b/i ascii wide
         $strong_pwsh3 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
         $strong_pwsh4 = "System.Net.WebClient" nocase ascii wide
         $strong_pwsh5 = "Net.ServicePointManager" nocase ascii wide
