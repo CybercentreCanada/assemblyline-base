@@ -416,6 +416,7 @@ class Tagging(odm.Model):
         class NetworkIOCs(odm.Model):
             domain = odm.Optional(odm.List(odm.Domain(copyto="__text__")), description="Domain")
             ip = odm.Optional(odm.List(odm.IP(copyto="__text__")), description="IP")
+            unc_path = odm.Optional(odm.List(odm.URI(copyto="__text__")), description="UNC Path")
             uri = odm.Optional(odm.List(odm.URI(copyto="__text__")), description="URI")
             uri_path = odm.Optional(odm.List(odm.URIPath(copyto="__text__")), description="URI Path")
 
