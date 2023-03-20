@@ -798,7 +798,8 @@ SERVICE_STAGES = [
     'EXTRACT',
     'CORE',
     'SECONDARY',
-    'POST'
+    'POST',
+    'REVIEW'
 ]
 
 SAFELIST_HASH_TYPES = ['sha1', 'sha256', 'md5']
