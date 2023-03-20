@@ -465,7 +465,7 @@ rule code_ps1 {
         (mime startswith "text"
         and 2 of them) or
             (mime == "application/octet-stream"
-            and 2 of ($strong_pwsh*))
+            and 3 of ($strong_pwsh*))
 }
 
 rule code_ps1_in_ps1 {
