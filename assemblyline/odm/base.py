@@ -75,7 +75,7 @@ URI_PATH = r"(?:[/?#]\S*)"
 FULL_URI = f"^((?:(?:[A-Za-z0-9+-.]{{1,}}:)?//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?)" \
            f"{URI_PATH}?$"
 UNC_PATH_REGEX = r"^(?:\\\\(?:[a-zA-Z0-9-_\s]{2,15}){1}(?:\.[a-zA-Z0-9-_\s]{1,64}){0,3}){1}" \
-                 r'(?:\\[^\\\/\:\*\?\\"\<\>\|\r\n]{1, 64}){1, }\\{0, }$'
+                 r'(?:\\[^\\\/\:\*\?\\"\<\>\|\r\n]{1,64}){1,}\\{0,}$'
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
 
