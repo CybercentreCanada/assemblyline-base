@@ -160,7 +160,8 @@ def generate_conf_key(service_tool_version: Optional[str] = None, task: Optional
         submission_params = {
             "deep_scan": task.deep_scan,
             "max_files": task.max_files,
-            "min_classification": task.min_classification.value
+            "min_classification": task.min_classification.value,
+            "ignore_filtering": task.ignore_filtering,
         }
         submission_params_str = json.dumps(sorted(submission_params.items()))
 
