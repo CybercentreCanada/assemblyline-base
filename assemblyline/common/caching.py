@@ -1,3 +1,4 @@
+from __future__ import annotations
 import hashlib
 import json
 import threading
@@ -10,6 +11,10 @@ from typing import Generic, TypeVar, Hashable, Tuple, Optional
 import baseconv
 
 from assemblyline.common.uid import get_random_id
+
+
+if typing.TYPE_CHECKING:
+    from assemblyline.odm.messages.task import Task
 
 
 T = TypeVar('T')
@@ -145,7 +150,7 @@ class SizeExpiredCache(Generic[T]):
             return self.cache.keys()
 
 
-def generate_conf_key(service_tool_version: Optional[str] = None, task=None) -> str:
+def generate_conf_key(service_tool_version: Optional[str] = None, task: Optional[Task] = None) -> str:
     ignore_salt = None
     service_config = None
     submission_params_str = None
