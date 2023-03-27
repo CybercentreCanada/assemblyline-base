@@ -26,6 +26,12 @@ rule code_javascript {
         // If this is exactly in the sample, will trigger a second time because of strong_js10
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
 
+        // Used in a lot of malware samples to fail silently
+        $strong_js12 = /catch\s+\(\w*\)\s+\{.*\}/
+
+        // Firefox browser specific method
+        $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
+
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
