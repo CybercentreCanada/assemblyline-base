@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import string
 import sys
 from typing import Optional
 
@@ -15,6 +16,33 @@ def modulepath(modulename: str) -> str:
 def splitpath(path: str, sep: Optional[str] = None) -> list:
     """ Split the path into a list of items """
     return list(filter(len, path.split(sep or os.path.sep)))
+
+
+def strip_leading_inclusion_linux(path: str) -> str:
+    """ Removes /, ./ and ../ prefixes from paths to protect against local file inclusion"""
+    p = path.lstrip("./")
+    # If the first element of the path is hidden, we need to recover the dot as it will have been stripped
+    if p != path and path[len(path) - len(p) - 1] == ".":
+        p = f".{p}"
+    return p
+
+
+def strip_leading_inclusion_windows(path: str) -> str:
+    """ Removes C:\\, .\\ and ..\\ prefixes from paths to protect against local file inclusion"""
+    if len(path) >= 3 and path[0] in string.ascii_letters and path[1] == ":" and path[2] == "\\":
+        p = path[3:].lstrip(".\\")
+    else:
+        p = path.lstrip(".\\")
+    # If the first element of the path is hidden, we need to recover the dot as it will have been stripped
+    if p != path and path[len(path) - len(p) - 1] == ".":
+        p = f".{p}"
+    return p
+
+
+if os.name == "nt":
+    strip_leading_inclusion = strip_leading_inclusion_windows
+else:
+    strip_leading_inclusion = strip_leading_inclusion_linux
 
 
 ASCII_NUMBERS = list(range(48, 58))
