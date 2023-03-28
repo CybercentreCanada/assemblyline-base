@@ -72,3 +72,9 @@ def test_strip_path_injection_windows():
 
     test_str = 'realfolder\\..\\..\\..\\..\\..\\..\\foldername\\filename'
     assert path.strip_path_inclusion_windows(test_str) == 'realfolder\\foldername\\filename'
+
+    test_str = 'realfolder\\..\\..\\realfolder2\\..\\..\\..\\foldername\\filename'
+    assert path.strip_path_inclusion_windows(test_str) == 'realfolder\\realfolder2\\foldername\\filename'
+
+    test_str = 'C:\\foldername\\filename'
+    assert path.strip_path_inclusion_windows(test_str) == 'foldername\\filename'
