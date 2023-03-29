@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import string
 import sys
 from typing import Optional
 
@@ -15,6 +16,49 @@ def modulepath(modulename: str) -> str:
 def splitpath(path: str, sep: Optional[str] = None) -> list:
     """ Split the path into a list of items """
     return list(filter(len, path.split(sep or os.path.sep)))
+
+def strip_path_inclusion_linux(path: str) -> str:
+    """ Removes /, ./ and ../ from paths to protect against local file inclusion"""
+    if path == "":
+        return path
+    p = ""
+    while p != path:
+        p = path
+        path = p.replace("/../", "/")
+        path = path.replace("/./", "/")
+        path = path.replace("//", "/")
+    while path.startswith("../"):
+        path = path[3:]
+    while path.startswith("./"):
+        path = path[2:]
+    while path[0] == "/":
+        path = path[1:]
+    return path
+
+
+def strip_path_inclusion_windows(path: str) -> str:
+    """ Removes C:\\, .\\ and ..\\ from paths to protect against local file inclusion"""
+    if path == "":
+        return path
+    p = ""
+    while p != path:
+        p = path
+        path = p.replace("\\..\\", "\\")
+        path = path.replace("\\.\\", "\\")
+        path = path.replace("\\\\", "\\")
+    while path.startswith("..\\"):
+        path = path[3:]
+    while path.startswith(".\\"):
+        path = path[2:]
+    if len(path) >= 3 and path[0] in string.ascii_letters and path[1] == ":" and path[2] == "\\":
+        path = path[3:]
+    return path
+
+
+if os.name == "nt":
+    strip_path_inclusion = strip_path_inclusion_windows
+else:
+    strip_path_inclusion = strip_path_inclusion_linux
 
 
 ASCII_NUMBERS = list(range(48, 58))
