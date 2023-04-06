@@ -42,7 +42,7 @@ class DockerConfig(odm.Model):
                                   description="The type of container registry")
     ports: list[str] = odm.List(odm.Keyword(), default=[], description="What ports of container to expose?")
     ram_mb: int = odm.Integer(default=512, description="Container RAM limit")
-    ram_mb_min: int = odm.Integer(default=128, description="Container RAM request")
+    ram_mb_min: int = odm.Integer(default=256, description="Container RAM request")
     service_account = odm.optional(odm.keyword(description="Service account to use for pods in kubernetes"))
 
 

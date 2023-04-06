@@ -26,6 +26,12 @@ rule code_javascript {
         // If this is exactly in the sample, will trigger a second time because of strong_js10
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
 
+        // Used in a lot of malware samples to fail silently
+        $strong_js12 = /catch\s+\(\w*\)\s+\{.*\}/
+
+        // Firefox browser specific method
+        $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
+
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
@@ -33,11 +39,13 @@ rule code_javascript {
 
     condition:
         // Note that application/javascript is obsolete
-        (mime startswith "text" or mime == "application/javascript")
-        and not $not_html
-        and (2 of ($strong_js*)
-             or (1 of ($strong_js*)
-                 and 2 of ($weak_js*)))
+        not $not_html
+        and (((mime startswith "text" or mime == "application/javascript")
+            and (2 of ($strong_js*)
+                or (1 of ($strong_js*)
+                    and 2 of ($weak_js*))))
+            or (mime == "application/octet-stream"
+            and 4 of ($strong_js*)))
 }
 
 /*
@@ -443,8 +451,8 @@ rule code_ps1 {
         score = 1
 
     strings:
-        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
-        $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)/i ascii wide
+        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))\b/i ascii wide
+        $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)\b/i ascii wide
         $strong_pwsh3 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
         $strong_pwsh4 = "System.Net.WebClient" nocase ascii wide
         $strong_pwsh5 = "Net.ServicePointManager" nocase ascii wide
@@ -463,7 +471,7 @@ rule code_ps1 {
         (mime startswith "text"
         and 2 of them) or
             (mime == "application/octet-stream"
-            and 2 of ($strong_pwsh*))
+            and 3 of ($strong_pwsh*))
 }
 
 rule code_ps1_in_ps1 {

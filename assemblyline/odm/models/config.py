@@ -609,7 +609,7 @@ DEFAULT_UPDATER = {
     'job_dockerconfig': {
         'cpu_cores': 1,
         'ram_mb': 1024,
-        'ram_mb_min': 128,
+        'ram_mb_min': 256,
     },
     'registry_configs': [{
         'name': 'registry.hub.docker.com',
@@ -798,7 +798,8 @@ SERVICE_STAGES = [
     'EXTRACT',
     'CORE',
     'SECONDARY',
-    'POST'
+    'POST',
+    'REVIEW'
 ]
 
 SAFELIST_HASH_TYPES = ['sha1', 'sha256', 'md5']
