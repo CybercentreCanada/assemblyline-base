@@ -952,6 +952,29 @@ DEFAULT_ALERTING_META = {
 }
 
 
+@odm.model(index=False, store=False, description="Connection details for external systems/data sources.")
+class ExternalSource(odm.Model):
+    name: str = odm.Keyword(description="Name of the source.")
+    classification = odm.Optional(
+        odm.ClassificationString(
+            description="Minimum classification applied to information from the source"
+                        " and required to know the existance of the source."))
+    url: str = odm.Keyword(description="URL of the upstream source's lookup service.")
+
+
+EXAMPLE_EXTERNAL_SOURCE_VT = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "url": "vt-lookup.namespace.svc.cluster.local",
+}
+
+EXAMPLE_EXTERNAL_SOURCE_MB = {
+    # This is an example on how this would work with Malware Bazaar
+    "name": "Malware Bazaar",
+    "url": "mb-lookup.namespace.scv.cluster.local",
+}
+
+
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
@@ -973,6 +996,9 @@ class UI(odm.Model):
     download_encoding = odm.Enum(values=["raw", "cart"], description="Which encoding will be used for downloads?")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
+    external_sources: List[ExternalSource] = odm.List(
+        odm.Compound(ExternalSource),
+        default=[], description="List of external sources to query")
     fqdn: str = odm.Text(description="Fully qualified domain name to use for the 2-factor authentication validation")
     ingest_max_priority: int = odm.Integer(description="Maximum priority for ingest API")
     read_only: bool = odm.Boolean(description="Turn on read only mode in the UI")
@@ -1014,6 +1040,7 @@ DEFAULT_UI = {
     "download_encoding": "cart",
     "email": None,
     "enforce_quota": True,
+    "external_sources": [],
     "fqdn": "localhost",
     "ingest_max_priority": 250,
     "read_only": False,
