@@ -1,6 +1,9 @@
 # Assemblyline Cart files
 0	string	CART
 >0x6	quad	0	custom: archive/cart
+# Internet Explorer RecoveryStore files
+0	string
+>&0	search/0x2000	\005\000K\000j\000j\000a\000q\000f\000a\000j\000N\0002\000c\0000\000u\000z\000g\000v\0001\000l\0004\000q\000y\0005\000n\000f\000W\000e\000	custom: document/office/recoverystore
 # IDA Analysis files
 0	string	IDA1\000\000	custom: code/ida
 # JFIF (JPEG) files
@@ -93,8 +96,13 @@
 # sqlite
 0   string  SQLite\040format\040    custom: db/sqlite
 # WSF code files
-0      string         \<job
->&0    search/0x30    \<script\ language   custom: code/wsf
+0      string
+>0     search/0x40    \<job
+>>&0   search/0x40    \<script\ language   custom: code/wsf
+# WSC code files
+0      string
+>0     search/0x40    \<component
+>>&0   search/0x40    \<script\ language   custom: code/wsc
 # TCPDump capture
 0   short   0x3C4D
 >&0 short   0xA1B2        custom: network/tcpdump
@@ -116,7 +124,13 @@
 0 string [InternetShortcut] custom: shortcut/web
 # NSIS Installer
 4  string  \xef\xbe\xad\xdeNullsoftInst custom: archive/nsis
-# Characterize batch file
-0 string REM\ Batch\ extracted\ by\ Characterize\n custom: code/batch
-# Characterize powershell file
+# Assemblyline batch file
+0 string REM\ Batch\ extracted\ by\ Assemblyline\n custom: code/batch
+# Assemblyline powershell file
 0 string \#\!\/usr\/bin\/env\ pwsh\n custom: code/ps1
+# xxencoded and uuencoded files
+0 string XXEncode\ \ 0\.0\ \(PowerArchiver\ 2009:\ www\.powerarchiver\.com\) custom: archive/xxe
+0 string UUEncode\ \ 0\.0\ \(PowerArchiver\ 2009:\ www\.powerarchiver\.com\) custom: archive/uue
+0 string begin
+>&0 search/50 \nh custom: archive/xxe
+>&0 search/50 \nM custom: archive/uue

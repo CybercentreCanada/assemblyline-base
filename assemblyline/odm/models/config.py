@@ -1,8 +1,9 @@
-
 from typing import Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
+from assemblyline.odm.models.service_delta import DockerConfigDelta
+
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
 
@@ -535,9 +536,15 @@ class Mount(odm.Model):
     privileged_only: bool = odm.Boolean(default=False,
                                         description="Should this mount only be available for privileged services?")
 
-    # ConfigMap-specific
-    config_map: str = odm.Optional(odm.Keyword(description="Name of ConfigMap (Kubernetes only)"))
-    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only)")
+    # Kubernetes-specific
+    resource_type: str = odm.Enum(default='volume', values=['secret', 'configmap', 'volume'],
+                                  description="Type of mountable Kubernetes resource")
+    resource_name: str = odm.Optional(odm.Keyword(), description="Name of resource (Kubernetes only)")
+    resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
+
+    # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
+    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only, deprecated)")
+    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only, deprecated)")
 
 
 @odm.model(index=False, store=False,
@@ -584,6 +591,34 @@ DEFAULT_SCALER = {
 
 
 @odm.model(index=False, store=False)
+class RegistryConfiguration(odm.Model):
+    name: str = odm.Text(description="Name of container registry")
+    proxies: Dict = odm.Optional(odm.Mapping(odm.Text()),
+                                 description="Proxy configuration that is passed to Python Requests")
+
+
+@odm.model(index=False, store=False)
+class Updater(odm.Model):
+    job_dockerconfig: DockerConfigDelta = odm.Compound(
+        DockerConfigDelta, description="Container configuration used for service registration/updates")
+    registry_configs: List = odm.List(odm.Compound(RegistryConfiguration),
+                                      description="Configurations to be used with container registries")
+
+
+DEFAULT_UPDATER = {
+    'job_dockerconfig': {
+        'cpu_cores': 1,
+        'ram_mb': 1024,
+        'ram_mb_min': 256,
+    },
+    'registry_configs': [{
+        'name': 'registry.hub.docker.com',
+        'proxies': {}
+    }]
+}
+
+
+@odm.model(index=False, store=False)
 class VacuumSafelistItem(odm.Model):
     name = odm.Keyword()
     conditions = odm.Mapping(odm.Keyword())
@@ -604,6 +639,7 @@ class Vacuum(odm.Model):
     worker_threads: int = odm.Integer()
     worker_rollover: int = odm.Integer()
     minimum_classification: str = odm.Keyword()
+    ingest_type = odm.keyword()
 
 
 DEFAULT_VACUUM = dict(
@@ -620,6 +656,7 @@ DEFAULT_VACUUM = dict(
     worker_threads=50,
     worker_rollover=1000,
     minimum_classification='U',
+    ingest_type='VACUUM',
 )
 
 
@@ -636,6 +673,7 @@ class Core(odm.Model):
                                     description="Configuration for Metrics Collection")
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS, description="Configuration for Redis instances")
     scaler: Scaler = odm.Compound(Scaler, default=DEFAULT_SCALER, description="Configuration for Scaler")
+    updater: Updater = odm.Compound(Updater, default=DEFAULT_UPDATER, description="Configuration for Updater")
     vacuum: Vacuum = odm.Compound(Vacuum, default=DEFAULT_VACUUM, description="Configuration for Vacuum")
 
 
@@ -648,6 +686,7 @@ DEFAULT_CORE = {
     "metrics": DEFAULT_METRICS,
     "redis": DEFAULT_REDIS,
     "scaler": DEFAULT_SCALER,
+    "updater": DEFAULT_UPDATER,
 }
 
 
@@ -759,7 +798,8 @@ SERVICE_STAGES = [
     'EXTRACT',
     'CORE',
     'SECONDARY',
-    'POST'
+    'POST',
+    'REVIEW'
 ]
 
 SAFELIST_HASH_TYPES = ['sha1', 'sha256', 'md5']
@@ -789,7 +829,6 @@ class ServiceRegistry(odm.Model):
 class Services(odm.Model):
     categories: List[str] = odm.List(odm.Keyword(), description="List of categories a service can be assigned to")
     default_timeout: int = odm.Integer(description="Default service timeout time in seconds")
-    min_service_workers: int = odm.Integer(description="The minimum number of service instances to always be running.")
     stages: List[str] = odm.List(odm.Keyword(), description="List of execution stages a service can be assigned to")
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''),
                                                   description="Substitution variables for image paths "
@@ -822,7 +861,6 @@ class Services(odm.Model):
 DEFAULT_SERVICES = {
     "categories": SERVICE_CATEGORIES,
     "default_timeout": 60,
-    "min_service_workers": 0,
     "stages": SERVICE_STAGES,
     "image_variables": {},
     "update_image_variables": {},
@@ -848,13 +886,14 @@ class System(odm.Model):
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
-    "type": 'production'
+    "type": 'production',
 }
 
 
 @odm.model(index=False, store=False, description="Statistics")
 class Statistics(odm.Model):
-    alert: List[str] = odm.List(odm.Keyword(), description="Fields used to generate statistics in the Alerts page")
+    alert: List[str] = odm.List(odm.Keyword(),
+                                description="Fields used to generate statistics in the Alerts page")
     submission: List[str] = odm.List(odm.Keyword(),
                                      description="Fields used to generate statistics in the Submissions page")
 
@@ -941,6 +980,7 @@ class UI(odm.Model):
     read_only_offset: str = odm.Keyword(
         default="", description="Offset of the read only mode for all paging and searches")
     rss_feeds: List[str] = odm.List(odm.Keyword(), default=[], description="List of RSS feeds to display on the UI")
+    services_feed: str = odm.Keyword(description="Feed of all the services available on AL")
     secret_key: str = odm.Keyword(description="Flask secret key to store cookies, etc.")
     session_duration: int = odm.Integer(description="Duration of the user session before the user has to login again")
     statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS,
@@ -983,13 +1023,16 @@ DEFAULT_UI = {
         "https://alpytest.blob.core.windows.net/pytest/stable.json",
         "https://alpytest.blob.core.windows.net/pytest/services.json"
     ],
+    "services_feed": "https://alpytest.blob.core.windows.net/pytest/services.json",
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
     "statistics": DEFAULT_STATISTICS,
     "tos": None,
     "tos_lockout": False,
     "tos_lockout_notify": None,
-    "url_submission_headers": {},
+    "url_submission_headers": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+    },
     "url_submission_proxies": {},
     "validate_session_ip": True,
     "validate_session_useragent": True,

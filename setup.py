@@ -96,11 +96,10 @@ setup(
     extras_require={
         'test': [
             'pytest',
-            'pytest-cov',
             'retrying',
             'pytest-mock',
             'pyftpdlib',
-            'pyopenssl==22.0.0',
+            'pyopenssl',
         ]
     },
     package_data={

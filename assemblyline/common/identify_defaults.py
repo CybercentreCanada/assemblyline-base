@@ -37,6 +37,7 @@ OLE_CLSID_GUIDs = {
 type_to_extension = {
     "archive/chm": ".chm",
     "archive/iso": ".iso",
+    "archive/rar": ".rar",
     "archive/udf": ".udf",
     "archive/vhd": ".vhd",
     "archive/zip": ".zip",
@@ -55,6 +56,8 @@ type_to_extension = {
     "code/ps1": ".ps1",
     "code/python": ".py",
     "code/ruby": ".rb",
+    "code/shell": ".sh",
+    "code/vbe": ".vbe",
     "code/vbs": ".vbs",
     "code/wsf": ".wsf",
     "document/installer/windows": ".msi",
@@ -85,6 +88,7 @@ type_to_extension = {
     "java/jar": ".jar",
     "silverlight/xap": ".xap",
     "shortcut/windows": ".lnk",
+    "text/windows/registry": ".reg",
 }
 
 # Regex patterns used to find Assemblyline type in the reported magic labels
@@ -156,12 +160,14 @@ magic_patterns = [
     {"al_type": "java/jar", "regex": r"[ (]Jar[) ]"},
     {"al_type": "java/class", "regex": r"java class data"},
     {"al_type": "resource/pyc", "regex": r"python [^\|]+byte"},
+    {"al_type": "android/apk", "regex": r"Android package \(APK\)"},
     {"al_type": "code/xml", "regex": r"OpenGIS KML"},
     {"al_type": "code/xml", "regex": r"xml"},
     {"al_type": "image/tim", "regex": r"TIM image"},
     {"al_type": "network/sff", "regex": r"Frame Format"},
     {"al_type": "shortcut/windows", "regex": r"^MS Windows shortcut"},
     {"al_type": "document/email", "regex": r"Mime entity text"},
+    {"al_type": "document/email", "regex": r"MIME entity, ASCII text"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
     {"al_type": "image/emf", "regex": r"Windows Enhanced Metafile"},
     {"al_type": "resource/msvc", "regex": r"MSVC \.res"},
@@ -231,7 +237,8 @@ trusted_mimes = {
     "text/x-java": "code/java",
     # Batch
     "text/x-msdos-batch": "code/batch",
-
+    # Registry file
+    "text/x-ms-regedit": "text/windows/registry",
     # JSON file
     "application/json": "text/json",
 
@@ -362,5 +369,8 @@ trusted_mimes = {
     # Firefox modules
     "application/x-xpinstall": "application/mozilla/extension",
     # Chrome extensions
-    "application/x-chrome-extension": "application/chrome/extension"
+    "application/x-chrome-extension": "application/chrome/extension",
+
+    # Android
+    "application/vnd.android.package-archive": "android/apk",
 }

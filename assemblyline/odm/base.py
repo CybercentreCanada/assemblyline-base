@@ -74,6 +74,8 @@ MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})
 URI_PATH = r"(?:[/?#]\S*)"
 FULL_URI = f"^((?:(?:[A-Za-z0-9+-.]{{1,}}:)?//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?)" \
            f"{URI_PATH}?$"
+UNC_PATH_REGEX = r"^(?:\\\\(?:[a-zA-Z0-9-_\s]{1,15}){1}(?:\.[a-zA-Z0-9-_\s]{1,64}){0,3}){1}" \
+                 r'(?:\\[^\\\/\:\*\?\\"\<\>\|\r\n]{1,64}){1,}\\{0,}$'
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
 
@@ -478,6 +480,11 @@ class URI(Keyword):
                              " is not a valid Domain or IP.")
 
         return match.group(0).replace(match.group(1), match.group(1).lower())
+
+
+class UNCPath(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(UNC_PATH_REGEX, *args, **kwargs)
 
 
 class URIPath(ValidatedKeyword):
@@ -1093,7 +1100,7 @@ class Model:
             elif isinstance(defaults, dict):
                 val = defaults.get(field, {})
                 default = f"`{val if not isinstance(val, dict) else info.default}`"
-            elif isinstance(defaults, list):
+            elif isinstance(defaults, list) and field_type == 'List':
                 default = f'`{defaults}`'
             row = f"| {field} | {field_type} | {description} | {required} | {default} |\n"
             table += row

@@ -5,14 +5,17 @@ code/javascript
 rule code_javascript {
     meta:
         type = "code/javascript"
+        score = 1
 
     strings:
         $not_html = /^\s*<\w/
 
-        $strong_js1  = /(^|;|\s|\()function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
+        $strong_js1  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
         $strong_js2  = /\beval[ \t]*\(['"]/
+
         // jscript
         $strong_js3  = /new[ \t]+ActiveXObject\(['"]/
+
         $strong_js4  = /Scripting\.Dictionary['"]/
         $strong_js5  = /unescape\(/
         $strong_js6  = /\.createElement\(/
@@ -23,17 +26,26 @@ rule code_javascript {
         // If this is exactly in the sample, will trigger a second time because of strong_js10
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
 
+        // Used in a lot of malware samples to fail silently
+        $strong_js12 = /catch\s+\(\w*\)\s+\{.*\}/
+
+        // Firefox browser specific method
+        $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
+
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
         $weak_js5 = /([^\w]|^)this\.[\w]+/
 
     condition:
-        mime startswith "text"
-        and not $not_html
-        and (2 of ($strong_js*)
-             or (1 of ($strong_js*)
-                 and 2 of ($weak_js*)))
+        // Note that application/javascript is obsolete
+        not $not_html
+        and (((mime startswith "text" or mime == "application/javascript")
+            and (2 of ($strong_js*)
+                or (1 of ($strong_js*)
+                    and 2 of ($weak_js*))))
+            or (mime == "application/octet-stream"
+            and 4 of ($strong_js*)))
 }
 
 /*
@@ -48,7 +60,12 @@ rule code_jscript {
 
     strings:
         $jscript1 = /new[ \t]+ActiveXObject\(/
-        $jscript2 = /Scripting\.Dictionary['"]/
+
+        // Conditional comments
+        $jscript2 = /\/\*@cc_on/
+        $jscript3 = /@\*\//
+        $jscript4 = /\/\*@if \(@_jscript_version >= \d\)/
+        $jscript5 = /\/\*@end/
 
     condition:
         code_javascript
@@ -93,12 +110,17 @@ rule code_vbs {
         $strong_vbs6 = /(^|\n)(Attribute|Set|const)[ \t]+\w+[ \t]+=[ \t]+[^\n]+/i ascii wide
         $strong_vbs7 = /(^|\n)[ \t]*Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
         $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i ascii wide
+        // CreateObject("blah")
         $strong_vbs9 = /CreateObject\([^)]+\)/i ascii wide
         $strong_vbs10 = /GetObject\([^)]+\)/i ascii wide
         $strong_vbs11 = /(^|\n)Eval\(([^)]+)\)/i ascii wide
+        // Dim blah
+        $weak_vbs1 = /\bDim\b\s+\w+/i ascii wide
 
     condition:
         2 of ($strong_vbs*)
+        or (1 of ($strong_vbs*)
+            and (#weak_vbs1) > 3)
 }
 
 /*
@@ -127,7 +149,7 @@ code/xml
 rule code_xml_start_tag {
 
     strings:
-        $tag_start = /^\s*<[^\/^>^\n][^>^\n]*>/
+        $tag_start = /\s*<[^\/<>\n][^<>]*>/
 
     condition:
         $tag_start in (0..256)
@@ -140,7 +162,7 @@ code/xml
 rule code_xml_end_tag {
 
     strings:
-        $tag_end = /<\/[^>^\n]+>\s*$/
+        $tag_end = /<\/[^<>\n]+>\s*$/
 
     condition:
         $tag_end in (filesize-256..filesize)
@@ -426,27 +448,43 @@ rule code_ps1 {
 
     meta:
         type = "code/ps1"
+        score = 1
 
     strings:
-        $ = /(Add-MpPreference|IWR|Start-BitsTransfer|Get-ExecutionPolicy|Get-Service|Where-Object|ConvertTo-HTML|Select-Object|Get-Process|Clear-History|ForEach-Object|Clear-Content|Compare-Object|New-ItemProperty|New-Object|New-WebServiceProxy|Set-Alias|Wait-Job|Get-Counter|Test-Path|Get-WinEvent|Start-Sleep|Set-Location|Get-ChildItem|Rename-Item|Stop-Process|Add-Type|Out-String|Write-Error|Invoke-(Expression|WebRequest))/i ascii wide
-        $ = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutFile|-ExecutionPolicy Bypass)/i ascii wide
-        $ = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
-        $ = /(System\.Net\.WebClient)/i ascii wide
-        $ = /(Net\.ServicePointManager)/ ascii wide
-        $ = /(Net\.SecurityProtocolType)/i ascii wide
-        $ = /\[(System\.)?Text\.Encoding\]::UTF8/i ascii wide
-        $ = /\[(System\.)?Convert\]::ToInt32/i ascii wide
-        $ = /\[(System\.)?String]::Join\(/i ascii wide
-        $ = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
-        $ = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
-        $ = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
-        $ = /\$\w+[ \t]*=[ \t]*[^;^\n^|]+[;\n|]/ ascii wide
-        $ = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
-        $ = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
+        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))\b/i ascii wide
+        $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)\b/i ascii wide
+        $strong_pwsh3 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
+        $strong_pwsh4 = "System.Net.WebClient" nocase ascii wide
+        $strong_pwsh5 = "Net.ServicePointManager" nocase ascii wide
+        $strong_pwsh6 = "Net.SecurityProtocolType" nocase ascii wide
+        $strong_pwsh7 = /\[(System\.)?Text\.Encoding\]::UTF8/i ascii wide
+        $strong_pwsh8 = /\[(System\.)?Convert\]::ToInt32/i ascii wide
+        $strong_pwsh9 = /\[(System\.)?String]::Join\(/i ascii wide
+        $strong_pwsh10 = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
+        $strong_pwsh11 = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
+        $strong_pwsh12 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
+        $strong_pwsh13 = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
+        $strong_pwsh14 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
+        $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
     condition:
-        mime startswith "text"
-        and 2 of them
+        (mime startswith "text"
+        and 2 of them) or
+            (mime == "application/octet-stream"
+            and 3 of ($strong_pwsh*))
+}
+
+rule code_ps1_in_ps1 {
+
+    meta:
+        type = "code/ps1"
+        score = -1
+
+    strings:
+        $power = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?[ \t-.]/i
+
+    condition:
+        code_ps1 and $power
 }
 
 /*
@@ -545,14 +583,16 @@ rule code_python {
         type = "code/python"
 
     strings:
-        $ = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*['"]__main__['"][ \t]*:/
-        $ = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?/
-        $ = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
-        $ = /(try:|except:|else:)/
+        $strong_py1 = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*['"]__main__['"][ \t]*:/
+        $strong_py2 = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?/
+        $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
+        $strong_py4 = /(try:|except:|else:)/
+        // High confidence one-liner used to execute base64 blobs
+        $strong_py5 = /exec\(__import__\(['"]base64['"]\)\.b64decode\(__import__\(['"]codecs['"]\)\.getencoder\(/
 
     condition:
         mime startswith "text"
-        and 2 of them
+        and (2 of ($strong_py*) or $strong_py5)
 }
 
 /*
@@ -591,7 +631,7 @@ rule code_protobuf {
     strings:
         $ = /(^|\n)[ \t]*syntax[ \t]+=[ \t]+"proto\d"[ \t]*;/
         $ = /(^|\n)[ \t]*package[ \t]+google\.protobuf[ \t]*;/
-        $ = /(^|\n)[ \t]*option[ \t]+\w+[ \t]+=[ \t]+[^;^\n]+[ \t]*;/
+        $ = /(^|\n)[ \t]*option[ \t]+\w+[ \t]+=[ \t]+[^;\n]+[ \t]*;/
 
     condition:
         mime startswith "text"
@@ -686,24 +726,37 @@ rule code_batch {
 
     meta:
         type = "code/batch"
-        score = 1
+        score = 2
 
     strings:
-        $obf = /%[^:^\n^\r^%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
-        $power = /(^|\n|@|&)\^?p\^?o\^?w\^?e\^?r\^?s\^?h\^?e\^?l\^?l\^?\.\^?e\^?x\^?e\^?.+(-c|-command)[ \t]/i
+        $obf1 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
+        // Example: %blah1%%blah2%%blah3%%blah4%%blah5%%blah6%%blah7%%blah8%%blah9%%blah10%
+        $obf2 = /\%([^:\n\r\%]+(\%\%)?)+\%/
+        $power1 = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?(\.(\^|%.+%)?e(\^|%.+%)?x(\^|%.+%)?e(\^|%.+%)?)?.+(-c|-command)(\^|%.+%)?[ \t]/i
+        // powershell does not need to be followed with -c or -command for it to be considered batch
+        $power2 = /(^|\n|@|&|\b)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?(\.(\^|%.+%)?e(\^|%.+%)?x(\^|%.+%)?e(\^|%.+%)?)?.+(-c|-command)?(\^|%.+%)?[ \t]/i
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
-        $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
+        $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
+        $cmd5 = /(^|\n)exit\s*$/i
+        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
+        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $bom = {FF FE}
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
     condition:
         (mime startswith "text" or $bom at 0)
-        and (for 1 of ($obf) :( # > 3 )
-             or $power
+        and (for 1 of ($obf1) :( # > 3 )
+             or $power1
+             or ($power2 and 1 of ($cmd*))
              or for 1 of ($cmd*) :( # > 3 )
-             or $exp)
+             or $exp
+             or (2 of ($cmd*)
+                and (#rem+#set) > 4))
+             or (for 1 of ($obf2) :( # > 3 )
+                and 1 of ($cmd*)
+                and (#rem+#set) > 4)
 }
 
 rule code_batch_small {
@@ -714,10 +767,10 @@ rule code_batch_small {
 
     strings:
         $batch1 = /(^|\n|@|&| )\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
-        $batch2 = /%[^:^\n^\r^%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
+        $batch2 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
         $batch3 = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/i
-        $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\^\n]+|\.?\/[^\/^\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
-        $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ ^\n]+"?)+ *($|\n)/i
+        $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\\n]+|\.?\/[^\/\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
+        $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ \n]+"?)+ *($|\n)/i
         $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
@@ -888,25 +941,41 @@ rule code_lisp {
 }
 
 /*
-archive/xxe
+code/wsf
 */
 
-rule archive_xxe {
+rule code_wsf {
 
     meta:
-        type = "archive/xxe"
-        score = 1
+        type = "code/wsf"
+        score = 2
 
     strings:
-        $header = "XXEncode  0.0 (PowerArchiver 2009: www.powerarchiver.com)"
+        $ = /<job.*?>/
+        $ = /<script\s+?language=.*?>/
 
     condition:
         mime startswith "text"
-        and
-        (
-            magic startswith "uuencoded or xxencoded"
-            or $header at 0
-        )
+        and all of them
+}
+
+/*
+code/wsc
+*/
+
+rule code_wsc {
+
+    meta:
+        type = "code/wsc"
+        score = 2
+
+    strings:
+        $ = /<component.*?>/
+        $ = /<script\s+?language=.*?>/
+
+    condition:
+        mime startswith "text"
+        and all of them
 }
 
 /*

@@ -42,11 +42,11 @@ ROLES = StringTable('ROLES', [
     ("archive_manage", 24),
     ("archive_trigger", 25),
     ("archive_download", 26),
+    ("self_manage", 27),
 ])
 
 
-ACL = {"R", "W", "E"}
-SCOPES = {"r", "w", "rw"}
+SCOPES = {"r", "w", "rw", "c"}
 USER_TYPES = [
     TYPES.admin,               # Perform administartive task and has access to all roles
     TYPES.user,                # Normal user of the system
@@ -72,7 +72,8 @@ USER_ROLES_BASIC = {
     ROLES.obo_access,          # Allow access via On Behalf Off tokens
     ROLES.replay_trigger,      # Allow submission to be replayed on another server
     ROLES.safelist_view,       # View safelist items
-    ROLES.safelist_manage,     # Manade (add/delete) safelist items
+    ROLES.safelist_manage,     # Manage (add/delete) safelist items,
+    ROLES.self_manage,         # Manage currently logged in user settings
     ROLES.signature_download,  # Download signatures from the system
     ROLES.signature_view,      # View signatures
     ROLES.submission_create,   # Create a submission in the system
@@ -94,6 +95,7 @@ USER_TYPE_DEP = {
     TYPES.admin: USER_ROLES,
     TYPES.signature_importer: {
         ROLES.safelist_manage,
+        ROLES.self_manage,
         ROLES.signature_download,
         ROLES.signature_import,
         ROLES.signature_view
@@ -109,6 +111,7 @@ USER_TYPE_DEP = {
         ROLES.obo_access,
         ROLES.heuristic_view,
         ROLES.safelist_view,
+        ROLES.self_manage,
         ROLES.signature_view,
         ROLES.submission_view,
         ROLES.workflow_view,
@@ -116,10 +119,64 @@ USER_TYPE_DEP = {
     TYPES.submitter: {
         ROLES.apikey_access,
         ROLES.obo_access,
+        ROLES.self_manage,
         ROLES.submission_create,
         ROLES.replay_trigger,
     }
 }
+
+ACL_MAP = {
+    "R": [
+        ROLES.alert_view,
+        ROLES.archive_view,
+        ROLES.archive_download,
+        ROLES.bundle_download,
+        ROLES.file_detail,
+        ROLES.file_download,
+        ROLES.heuristic_view,
+        ROLES.safelist_view,
+        ROLES.signature_download,
+        ROLES.signature_view,
+        ROLES.submission_view,
+        ROLES.workflow_view,
+    ],
+    "W": [
+        ROLES.alert_manage,
+        ROLES.archive_trigger,
+        ROLES.archive_manage,
+        ROLES.replay_trigger,
+        ROLES.safelist_manage,
+        ROLES.submission_create,
+        ROLES.submission_delete,
+        ROLES.submission_manage
+    ],
+    "E": [
+        ROLES.administration,
+        ROLES.apikey_access,
+        ROLES.obo_access,
+        ROLES.replay_system,
+        ROLES.self_manage,
+        ROLES.signature_import,
+        ROLES.signature_manage,
+        ROLES.workflow_manage
+    ],
+    "C": []
+}
+
+
+def load_roles_form_acls(acls, curRoles):
+    # Check if we have current roles first
+    if curRoles:
+        return curRoles
+
+    # Otherwise load the roles from the api_key ACLs
+    roles = set({})
+    for acl in ACL_MAP.keys():
+        if acl in acls:
+            roles = roles.union(ACL_MAP[acl])
+
+    # Return roles as a list
+    return list(roles)
 
 
 def load_roles(types, curRoles):
@@ -139,16 +196,18 @@ def load_roles(types, curRoles):
 
 @odm.model(index=False, store=False, description="Model for API keys")
 class ApiKey(odm.Model):
-    acl = odm.List(odm.Enum(values=ACL), description="Access Control List for the API key")
+    acl = odm.List(odm.Enum(values=ACL_MAP.keys()), description="Access Control List for the API key")
     password = odm.Keyword(description="BCrypt hash of the password for the apikey")
+    roles = odm.List(odm.Enum(values=USER_ROLES), default=[], description="List of roles tied to the API key")
 
 
 @odm.model(index=False, store=False, description="Model of Apps used of OBO (On Behalf Of)")
 class Apps(odm.Model):
     client_id = odm.Keyword(description="Username allowed to impersonate the current user")
     netloc = odm.Keyword(description="DNS hostname for the server")
-    scope = odm.Enum(values=SCOPES, description="Scope of access for the API key")
+    scope = odm.Enum(values=SCOPES, description="Scope of access for the App token")
     server = odm.Keyword(description="Name of the server that has access")
+    roles = odm.List(odm.Enum(values=USER_ROLES), default=[], description="List of roles tied to the App token")
 
 
 @odm.model(index=True, store=True, description="Model of User")

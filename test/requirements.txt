@@ -1,7 +1,5 @@
 pytest
-pytest-cov
 retrying
-codecov
 pytest-mock
 pyftpdlib
-pyopenssl==22.0.0
+pyopenssl

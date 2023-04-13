@@ -7,6 +7,7 @@ class Tagging(odm.Model):
     class Attribution(odm.Model):
         actor = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Actor")
         campaign = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Campaign")
+        category = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Category")
         exploit = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Exploit")
         implant = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Implant")
         family = odm.Optional(odm.List(odm.UpperKeyword(copyto="__text__")), description="Attribution Family")
@@ -388,6 +389,7 @@ class Tagging(odm.Model):
             header = odm.Optional(odm.Compound(FileSWFHeader), description="Header Information")
             tags_ssdeep = odm.Optional(odm.List(odm.SSDeepHash(copyto="__text__")), description="Tags SSDeep")
 
+        ancestry = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Genealogy")
         behavior = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Behaviour")
         compiler = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Compiler of File")
         config = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Configuration")
@@ -415,6 +417,7 @@ class Tagging(odm.Model):
         class NetworkIOCs(odm.Model):
             domain = odm.Optional(odm.List(odm.Domain(copyto="__text__")), description="Domain")
             ip = odm.Optional(odm.List(odm.IP(copyto="__text__")), description="IP")
+            unc_path = odm.Optional(odm.List(odm.UNCPath(copyto="__text__")), description="UNC Path")
             uri = odm.Optional(odm.List(odm.URI(copyto="__text__")), description="URI")
             uri_path = odm.Optional(odm.List(odm.URIPath(copyto="__text__")), description="URI Path")
 
