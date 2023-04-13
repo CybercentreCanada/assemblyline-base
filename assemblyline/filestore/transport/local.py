@@ -168,4 +168,4 @@ def _join(base, path):
     path = path.replace("\\", "/").replace("//", "/")
     if base is None:
         return path
-    return os.path.join(base, strip_path_inclusion(path)).replace("\\", "/")
+    return os.path.join(base, strip_path_inclusion(path, base)).replace("\\", "/")
