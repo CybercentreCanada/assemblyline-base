@@ -583,14 +583,16 @@ rule code_python {
         type = "code/python"
 
     strings:
-        $ = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*['"]__main__['"][ \t]*:/
-        $ = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?/
-        $ = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
-        $ = /(try:|except:|else:)/
+        $strong_py1 = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*['"]__main__['"][ \t]*:/
+        $strong_py2 = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?/
+        $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
+        $strong_py4 = /(try:|except:|else:)/
+        // High confidence one-liner used to execute base64 blobs
+        $strong_py5 = /exec\(__import__\(['"]base64['"]\)\.b64decode\(__import__\(['"]codecs['"]\)\.getencoder\(/
 
     condition:
         mime startswith "text"
-        and 2 of them
+        and (2 of ($strong_py*) or $strong_py5)
 }
 
 /*
