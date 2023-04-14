@@ -364,6 +364,12 @@ class ESCollection(Generic[ModelType]):
                     pass
                 else:
                     raise
+            except elasticsearch.ApiError as err:
+                if err.meta.status == 408:
+                    log.warning(f"Waiting for index {index} to get to status {min_status}...")
+                    pass
+                else:
+                    raise
 
     def _safe_index_copy(self, copy_function, src, target, settings=None, min_status='yellow'):
         ret = copy_function(index=src, target=target, settings=settings, timeout='60s')
