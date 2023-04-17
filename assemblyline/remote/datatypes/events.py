@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 MessageType = TypeVar('MessageType')
 
 
+def _exception_logger(exception, pubsub, thread):
+    logger.error(f"Exception in pubsub watcher: {exception}")
+
+
 class EventSender(Generic[MessageType]):
     def __init__(self, prefix: str, host=None, port=None, private=None,
                  serializer: Callable[[MessageType],
@@ -46,7 +50,7 @@ class EventWatcher(Generic[MessageType]):
         self.pubsub.psubscribe(**{path.lower(): _callback})
 
     def start(self):
-        self.worker = self.pubsub.run_in_thread(0.01, daemon=True)
+        self.worker = self.pubsub.run_in_thread(0.01, daemon=True, exception_handler=_exception_logger)
 
     def stop(self):
         if self.worker is not None:
