@@ -686,6 +686,7 @@ rule metadata_sysmon_evtx {
         $ = /<Events[^>]*>/
         $ = /<Event[^s][^>]*(\/)?>/
         $ = /<\/Event(s)?>/
+        $ = /<\/EventID?>/
 
     condition:
         mime startswith "text"
