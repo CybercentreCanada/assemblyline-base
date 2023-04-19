@@ -1583,7 +1583,7 @@ class ESCollection(Generic[ModelType]):
 
         # If this index has an archive, check is the document was found in it.
         if self.archive_name:
-            source_data["from_archive"] = result["_index"] == self.archive_name
+            source_data["from_archive"] = result["_index"] == self.index_archive_name
 
         if self.model_class:
             if not fields:
