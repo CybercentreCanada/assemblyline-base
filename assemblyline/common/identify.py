@@ -327,7 +327,7 @@ class Identify():
             data["type"] = dos_ident(path)
 
         # If we're so far failed to identified the file, lets run the yara rules
-        elif "unknown" in data["type"] or data["type"] in ["text/plain", "code/xml"]:
+        elif "unknown" in data["type"] or data["type"] == "text/plain":
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
         # Extra checks for office documents
