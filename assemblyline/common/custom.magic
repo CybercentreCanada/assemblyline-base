@@ -118,6 +118,11 @@
 0	string	AntiVir\040\Qua			custom: quarantine/avira
 0	beshort	0x0BAD					custom: quarantine/windowsdefender
 0	belong	0xDBE8C501				custom: quarantine/windowsdefender
+# Sysmon Files
+0		string
+>0		search/0x70		\<Event\ xmlns=
+>>&0	string			"http://schemas.microsoft.com/win/2004/08/events/event">	custom: metadata/sysmon/xml
+>>&0	string			'http://schemas.microsoft.com/win/2004/08/events/event'>	custom: metadata/sysmon/xml
 # Memory Dump Files
 10   string _BIOPSY:                custom: metadata/memorydump
 # Windows URL Shortcut Files
