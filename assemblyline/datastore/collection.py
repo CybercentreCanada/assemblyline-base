@@ -194,11 +194,12 @@ class ESCollection(Generic[ModelType]):
         self.datastore = datastore
         self.name = name
         self.index_name = f"{name}_hot"
+        self.archive_suffix = "-ma"
 
         # Initialize archive
         if name in datastore.archive_indices:
-            self.archive_name = f"{name}-ma"
-            self.index_archive_name = f"{name}-ma_hot"
+            self.archive_name = f"{name}{self.archive_suffix}"
+            self.index_archive_name = f"{name}{self.archive_suffix}_hot"
         else:
             self.archive_name = None
             self.index_archive_name = None
@@ -213,6 +214,9 @@ class ESCollection(Generic[ModelType]):
             for name, field in model_class.flat_fields().items():
                 if field.store:
                     self.stored_fields[name] = field
+
+    def is_archive_index(self, index):
+        return self.archive_name and index.startswith(self.archive_name)
 
     def get_index_list(self, index_type):
         # Default value
@@ -580,7 +584,7 @@ class ESCollection(Generic[ModelType]):
         """
         results = []
         for index in self.get_index_list(index_type):
-            replicas = self._get_index_settings(archive=index == self.archive_name)['index']['number_of_replicas']
+            replicas = self._get_index_settings(archive=self.is_archive_index(index))['index']['number_of_replicas']
             settings = {"number_of_replicas": replicas}
             results.append(self.with_retries(
                 self.datastore.client.indices.put_settings, index=index, settings=settings)['acknowledged'])
@@ -600,7 +604,7 @@ class ESCollection(Generic[ModelType]):
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
             logger.info(f'Processing index: {index.upper()}')
-            settings = self._get_index_settings(archive=name == self.archive_name)
+            settings = self._get_index_settings(archive=self.is_archive_index(name))
             index_copy_settings = {"index.number_of_replicas": 0}
             clone_finish_settings = None
             clone_setup_settings = None
@@ -717,7 +721,7 @@ class ESCollection(Generic[ModelType]):
         """
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
-            archive = index == self.archive_name
+            archive = self.is_archive_index(index)
             new_name = f'{index}__reindex'
             if self.with_retries(self.datastore.client.indices.exists, index=index) and \
                     not self.with_retries(self.datastore.client.indices.exists, index=new_name):
@@ -849,7 +853,7 @@ class ESCollection(Generic[ModelType]):
 
                     # If this index has an archive, check is the document was found in it.
                     if self.archive_name:
-                        row['_source']['from_archive'] = index == self.archive_name
+                        row['_source']['from_archive'] = self.is_archive_index(index)
 
                     add_to_output(row['_source'], row['_id'])
                 except ValueError:
@@ -917,7 +921,7 @@ class ESCollection(Generic[ModelType]):
 
                     # If this index has an archive, check is the document was found in it.
                     if self.archive_name:
-                        doc['_source']['from_archive'] = index == self.archive_name
+                        doc['_source']['from_archive'] = self.is_archive_index(index)
 
                     if version:
                         return self._normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
@@ -1284,7 +1288,7 @@ class ESCollection(Generic[ModelType]):
 
         # If this index has an archive, check is the document was found in it.
         if self.archive_name:
-            source_data['from_archive'] = result['_index'] == self.index_archive_name
+            source_data['from_archive'] = self.is_archive_index(result['_index'])
 
         if self.model_class:
             if not fields:
@@ -2012,7 +2016,7 @@ class ESCollection(Generic[ModelType]):
                 try:
                     self.with_retries(self.datastore.client.indices.create, index=index,
                                       mappings=self._get_index_mappings(),
-                                      settings=self._get_index_settings(archive=index == self.archive_name))
+                                      settings=self._get_index_settings(archive=self.is_archive_index(index)))
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
