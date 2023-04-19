@@ -677,26 +677,26 @@ rule code_css {
         and for all of ($css) : ( # > 2 )
 }
 
-/*
-metadata/sysmon/xml
-*/
+// /*
+// metadata/sysmon/xml
+// */
 
-rule metadata_sysmon_xml {
+// rule metadata_sysmon_xml {
 
-    meta:
-        type = "metadata/sysmon/xml"
-        score = 2
+//     meta:
+//         type = "metadata/sysmon/xml"
+//         score = 2
 
-    strings:
-        $ = /<Event[^s][^>]*(\/)?>/
-        $ = /<\/Event(s)?>/
-        $ = /<\/EventID>/
-        $ = /<\/EventData>/
+//     strings:
+//         $ = /<Event[^s][^>]*(\/)?>/
+//         $ = /<\/Event(s)?>/
+//         $ = "</EventID>"
+//         $ = "</EventData>"
 
-    condition:
-        mime startswith "text"
-        and all of them
-}
+//     condition:
+//         mime startswith "text"
+//         and all of them
+// }
 
 /*
 code/batch
