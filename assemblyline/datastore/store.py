@@ -275,20 +275,21 @@ class ESStore(object):
 
             except elasticsearch.exceptions.TransportError as e:
                 err_code, _, _ = e.args
+                index_name = kwargs.get('index', '').upper()
                 if err_code == 503 or err_code == '503':
-                    log.warning(f"Looks like index {self.name} is not ready yet, retrying...")
+                    log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.connection_reset()
                     retries += 1
                 elif err_code == 429 or err_code == '429':
                     log.warning("Elasticsearch is too busy to perform the requested "
-                                f"task on index {self.name}, retrying...")
+                                f"task on index {index_name}, retrying...")
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.connection_reset()
                     retries += 1
                 elif err_code == 403 or err_code == '403':
                     log.warning("Elasticsearch cluster is preventing writing operations "
-                                f"on index {self.name}, retrying...")
+                                f"on index {index_name}, retrying...")
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                     self.connection_reset()
                     retries += 1
@@ -298,7 +299,7 @@ class ESStore(object):
 
             except elasticsearch.AuthorizationException:
                 log.warning("Elasticsearch cluster is preventing writing operations "
-                            f"on index {self.name}, retrying...")
+                            f"on index {kwargs.get('index', '').upper()}, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.connection_reset()
                 retries += 1
