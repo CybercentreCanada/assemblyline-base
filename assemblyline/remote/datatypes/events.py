@@ -67,8 +67,10 @@ class EventWatcher(Generic[MessageType]):
         self.deserializer = deserializer
 
     def register(self, path: str, callback: Callable[[MessageType | None], None]):
-        def _callback(message: dict[str, Any]):
-            if message['type'] == 'pmessage':
+        def _callback(message: Optional[dict[str, Any]]):
+            if message is None:
+                callable(None)
+            elif message['type'] == 'pmessage':
                 data = self.deserializer(message.get('data', ''))
                 callback(data)
         self.pubsub.psubscribe(**{path.lower(): _callback})
