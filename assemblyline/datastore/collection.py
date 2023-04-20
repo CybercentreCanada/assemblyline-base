@@ -213,23 +213,26 @@ class ESCollection(Generic[ModelType]):
                 if field.store:
                     self.stored_fields[name] = field
 
+    def is_archive_index(self, index):
+        return self.archive_name and index.startswith(self.archive_name)
+
     def get_index_list(self, index_type):
         # Default value
         if index_type is None:
             # If has an archive: hot + archive
-            if self.index_archive_name and self.datastore.archive_access:
-                return [self.index_name, self.index_archive_name]
+            if self.archive_name and self.datastore.archive_access:
+                return [self.name, self.archive_name]
             # Otherwise just hot
-            return [self.index_name]
+            return [self.name]
 
         # If specified index is HOT
         elif index_type == Index.HOT:
-            return [self.index_name]
+            return [self.name]
 
         # If only archive asked
         elif index_type == Index.ARCHIVE:
             # Crash if index has no archive
-            if not self.index_archive_name:
+            if not self.archive_name:
                 raise ArchiveDisabled(f"Index {self.name.upper()} does not have an archive")
 
             # Crash if no archive access
@@ -238,7 +241,7 @@ class ESCollection(Generic[ModelType]):
                     "Trying to get access to the archive on a datastore where archive_access is disabled")
 
             # Return only archive index
-            return [self.index_archive_name]
+            return [self.archive_name]
         else:
             # Crash if no archive access
             if not self.datastore.archive_access:
@@ -246,11 +249,11 @@ class ESCollection(Generic[ModelType]):
                     "Trying to get access to the archive on a datastore where archive_access is disabled")
 
             # Return HOT if asked for both but only has HOT
-            if not self.index_archive_name:
-                return [self.index_name]
+            if not self.archive_name:
+                return [self.name]
 
             # Otherwise return hot and archive indices
-            return [self.index_name, self.index_archive_name]
+            return [self.name, self.archive_name]
 
     def get_joined_index(self, index_type):
         return ",".join(self.get_index_list(index_type))
@@ -258,7 +261,7 @@ class ESCollection(Generic[ModelType]):
     def scan_with_search_after(self, query, sort=None, source=None, index=None, keep_alive=KEEP_ALIVE, size=1000,
                                timeout=None):
         if index is None:
-            index = self.index_name
+            index = self.name
         if not sort:
             sort = []
 
@@ -467,7 +470,7 @@ class ESCollection(Generic[ModelType]):
         :param allow_missing: If True, does not crash if the document you are trying to archive is missing
         :param delete_after: Delete the document from hot storage after archive
         """
-        if not self.index_archive_name:
+        if not self.archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
         # Check if already in archive
@@ -498,11 +501,11 @@ class ESCollection(Generic[ModelType]):
         :param query: query to run to archive documents
         :return: Number of archived documents
         """
-        if not self.index_archive_name:
+        if not self.archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
         source = {
-            "index": self.index_name,
+            "index": self.name,
             "query": {
                 "bool": {
                     "must": {
@@ -514,7 +517,7 @@ class ESCollection(Generic[ModelType]):
             }
         }
         dest = {
-            "index": self.index_archive_name
+            "index": self.archive_name
         }
         if max_docs:
             source['size'] = max_docs
@@ -579,7 +582,7 @@ class ESCollection(Generic[ModelType]):
         """
         results = []
         for index in self.get_index_list(index_type):
-            replicas = self._get_index_settings(archive=index == self.index_archive_name)['index']['number_of_replicas']
+            replicas = self._get_index_settings(archive=self.is_archive_index(index))['index']['number_of_replicas']
             settings = {"number_of_replicas": replicas}
             results.append(self.with_retries(
                 self.datastore.client.indices.put_settings, index=index, settings=settings)['acknowledged'])
@@ -596,10 +599,10 @@ class ESCollection(Generic[ModelType]):
         if logger is None:
             logger = log
 
-        for index in self.get_index_list(index_type):
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
             logger.info(f'Processing index: {index.upper()}')
-            name = index.replace("_hot", "")
-            settings = self._get_index_settings(archive=index == self.index_archive_name)
+            settings = self._get_index_settings(archive=self.is_archive_index(name))
             index_copy_settings = {"index.number_of_replicas": 0}
             clone_finish_settings = None
             clone_setup_settings = None
@@ -714,8 +717,9 @@ class ESCollection(Generic[ModelType]):
         :param index_type: Type of indices to target
         :return: Should return True of the commit was successful on all hosts
         """
-        for index in self.get_index_list(index_type):
-            archive = index == self.index_archive_name
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
+            archive = self.is_archive_index(index)
             new_name = f'{index}__reindex'
             if self.with_retries(self.datastore.client.indices.exists, index=index) and \
                     not self.with_retries(self.datastore.client.indices.exists, index=new_name):
@@ -846,8 +850,8 @@ class ESCollection(Generic[ModelType]):
                     key_list.remove(row['_id'])
 
                     # If this index has an archive, check is the document was found in it.
-                    if self.index_archive_name:
-                        row['_source']['from_archive'] = index == self.index_archive_name
+                    if self.archive_name:
+                        row['_source']['from_archive'] = self.is_archive_index(index)
 
                     add_to_output(row['_source'], row['_id'])
                 except ValueError:
@@ -915,8 +919,8 @@ class ESCollection(Generic[ModelType]):
                     doc = self.with_retries(self.datastore.client.get, index=index, id=key)
 
                     # If this index has an archive, check is the document was found in it.
-                    if self.index_archive_name:
-                        doc['_source']['from_archive'] = index == self.index_archive_name
+                    if self.archive_name:
+                        doc['_source']['from_archive'] = self.is_archive_index(index)
 
                     if version:
                         return self._normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
@@ -1302,8 +1306,8 @@ class ESCollection(Generic[ModelType]):
         item_id = result['_id']
 
         # If this index has an archive, check is the document was found in it.
-        if self.index_archive_name:
-            source_data['from_archive'] = result['_index'] == self.index_archive_name
+        if self.archive_name:
+            source_data['from_archive'] = self.is_archive_index(result['_index'])
 
         if self.model_class:
             if not fields:
@@ -1917,8 +1921,8 @@ class ESCollection(Generic[ModelType]):
             return out
 
         data = self.with_retries(self.datastore.client.indices.get, index=self.name)
-        index_name = list(data.keys())[0]
-        properties = flatten_fields(data[index_name]['mappings'].get('properties', {}))
+        idx_name = list(data.keys())[0]
+        properties = flatten_fields(data[idx_name]['mappings'].get('properties', {}))
 
         if self.model_class:
             model_fields = self.model_class.flat_fields()
@@ -2023,15 +2027,15 @@ class ESCollection(Generic[ModelType]):
 
         :return:
         """
-        for index in self.get_index_list(None):
-            alias = index.replace("_hot", "")
+        for alias in self.get_index_list(None):
+            index = f"{alias}_hot"
             # Create HOT index
             if not self.with_retries(self.datastore.client.indices.exists, index=alias):
                 log.debug(f"Index {alias.upper()} does not exists. Creating it now...")
                 try:
                     self.with_retries(self.datastore.client.indices.create, index=index,
                                       mappings=self._get_index_mappings(),
-                                      settings=self._get_index_settings(archive=index == self.index_archive_name))
+                                      settings=self._get_index_settings(archive=self.is_archive_index(index)))
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
@@ -2092,8 +2096,8 @@ class ESCollection(Generic[ModelType]):
         :return:
         """
 
-        for index in self.get_index_list(index_type):
-            name = index.replace("_hot", "")
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
             log.debug("Wipe operation started for collection: %s" % name.upper())
             if self.with_retries(self.datastore.client.indices.exists, index=index):
                 self.with_retries(self.datastore.client.indices.delete, index=index)
