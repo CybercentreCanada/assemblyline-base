@@ -236,6 +236,13 @@ class ESStore(object):
 
                 return ret_val
 
+            except SearchRetryException:
+                # Only used during search context trapping the following exceptions:
+                #   elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
             except elasticsearch.exceptions.ConflictError as ce:
                 if raise_conflicts:
                     # De-sync potential treads trying to write to the index
@@ -256,13 +263,11 @@ class ESStore(object):
                 self.connection_reset()
                 retries += 1
 
-            except (SearchRetryException,
-                    elasticsearch.exceptions.ConnectionError,
+            except (elasticsearch.exceptions.ConnectionError,
                     elasticsearch.exceptions.AuthenticationException) as e:
-                if not isinstance(e, SearchRetryException):
-                    log.warning(f"No connection to Elasticsearch server(s): "
-                                f"{' | '.join(self.get_hosts(safe=True))}"
-                                f", because [{e}] retrying {func.__name__}...")
+                log.warning(f"No connection to Elasticsearch server(s): "
+                            f"{' | '.join(self.get_hosts(safe=True))}"
+                            f", because [{e}] retrying {func.__name__}...")
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.connection_reset()
@@ -290,3 +295,10 @@ class ESStore(object):
 
                 else:
                     raise
+
+            except elasticsearch.AuthorizationException:
+                log.warning("Elasticsearch cluster is preventing writing operations "
+                            f"on index {self.name}, retrying...")
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
