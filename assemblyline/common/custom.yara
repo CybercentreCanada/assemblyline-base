@@ -131,7 +131,6 @@ rule code_xml {
 
     meta:
         type = "code/xml"
-        score = 2
 
     strings:
         $header = /^\s*<\?xml[^>]+\?>/
@@ -139,7 +138,6 @@ rule code_xml {
         $ns2 = /<\/xml>/
 
     condition:
-        mime == "text/xml" and
         $header
         or all of ($ns*)
 }
@@ -199,7 +197,6 @@ rule code_html_1 {
         $html_end = /(^|\n|\>)[ \t]*<\/html/i
 
     condition:
-        mime != "text/xml" and
         $html_doctype in (0..256)
         or $html_start in (0..256)
         or $html_end in (filesize-256..filesize)
@@ -219,7 +216,6 @@ rule code_html_2 {
         $html_tag = /(^|\n)\s*<(div|script|body|head|img|iframe|pre|span|style|table|title|strong|link|input|form)[ \t>]/i
 
     condition:
-        mime != "text/xml" and
         code_xml_tags
         and $html_tag
 }
@@ -239,7 +235,6 @@ rule code_html_3 {
         $html_void_tag = /(^|\n)\s*<(area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)[ \t>]/i
 
     condition:
-        mime != "text/xml" and
         code_xml_start_tag
         and ($html_void_tag or $bad_html_tag)
 }
