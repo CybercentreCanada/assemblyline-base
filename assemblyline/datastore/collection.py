@@ -194,15 +194,13 @@ class ESCollection(Generic[ModelType]):
         self.datastore = datastore
         self.name = name
         self.index_name = f"{name}_hot"
-        self.archive_suffix = "-ma"
 
         # Initialize archive
+        self.archive_name = None
+        self.index_archive_name = None
         if name in datastore.archive_indices:
-            self.archive_name = f"{name}{self.archive_suffix}"
-            self.index_archive_name = f"{name}{self.archive_suffix}_hot"
-        else:
-            self.archive_name = None
-            self.index_archive_name = None
+            self.archive_name = f"{name}-ma"
+            self.index_archive_name = f"{name}-ma_hot"
 
         self.model_class = model_class
         self.validate = validate
