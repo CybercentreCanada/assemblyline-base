@@ -134,7 +134,7 @@ class Submission(odm.Model):
     metadata = odm.FlattenedObject(store=False, description="Metadata associated to the submission")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details")
     results: list[str] = odm.List(odm.Keyword(), store=False, description="List of result keys")
-    sid = odm.UUID(copyto="__text__", description="Submission ID")
+    sid: str = odm.UUID(copyto="__text__", description="Submission ID")
     state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission")
     to_be_deleted = odm.Boolean(
         default=False, description="This document is going to be deleted as soon as it finishes")

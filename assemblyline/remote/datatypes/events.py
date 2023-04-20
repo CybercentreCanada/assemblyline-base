@@ -3,12 +3,12 @@ from typing import Any, Callable, Optional, TYPE_CHECKING, TypeVar, Generic
 import json
 import logging
 import threading
-import time
 
 from assemblyline.remote.datatypes import retry_call, get_client
 
 if TYPE_CHECKING:
     from redis import Redis
+    from redis.client import PubSub
 
 
 logger = logging.getLogger(__name__)
@@ -16,23 +16,30 @@ logger = logging.getLogger(__name__)
 MessageType = TypeVar('MessageType')
 
 
-def _make_logger(error_event: Optional[threading.Event]):
+def _make_logger(watcher: EventWatcher):
 
-    error_count: list[float] = []
-
-    def _exception_logger(exception, pubsub, thread):
-        # Track previous error count, throwing out counts older a minute
-        nonlocal error_count
-        error_count = [e for e in error_count if e > time.time() - 60]
-        error_count.append(time.time())
-        if error_count:
-            error_event.set()
-
+    def _exception_logger(exception, pubsub: PubSub, thread):
         # Present the error
         logger.error(f"Exception in pubsub watcher: {exception}")
 
-        # sleep if needed
-        time.sleep(min(len(error_count) - 1, 5))
+        # Wait until we can reach the server
+        while True:
+            if retry_call(watcher.client.ping):
+                break
+
+        # Call the handlers so they know to start trying to recover from pubsub desync
+        for channel, handler in pubsub.channels.items():
+            if handler is not None:
+                try:
+                    handler(None)
+                except Exception:
+                    logger.exception(f"Error calling handler for reconnect on {channel}")
+        for pattern, handler in pubsub.patterns.items():
+            if handler is not None:
+                try:
+                    handler(None)
+                except Exception:
+                    logger.exception(f"Error calling handler for reconnect on {pattern}")
 
     return _exception_logger
 
@@ -53,15 +60,13 @@ class EventSender(Generic[MessageType]):
 
 
 class EventWatcher(Generic[MessageType]):
-    def __init__(self, host=None, port=None, private=None, deserializer: Callable[[str], MessageType] = json.loads,
-                 error_event: Optional[threading.Event] = None):
-        client: Redis[Any] = get_client(host, port, private)
-        self.pubsub = retry_call(client.pubsub)
+    def __init__(self, host=None, port=None, deserializer: Callable[[str], MessageType] = json.loads):
+        self.client: Redis[Any] = get_client(host, port, False)
+        self.pubsub = retry_call(self.client.pubsub)
         self.worker: Optional[threading.Thread] = None
         self.deserializer = deserializer
-        self.error_event = error_event
 
-    def register(self, path: str, callback: Callable[[MessageType], None]):
+    def register(self, path: str, callback: Callable[[MessageType | None], None]):
         def _callback(message: dict[str, Any]):
             if message['type'] == 'pmessage':
                 data = self.deserializer(message.get('data', ''))
@@ -69,7 +74,7 @@ class EventWatcher(Generic[MessageType]):
         self.pubsub.psubscribe(**{path.lower(): _callback})
 
     def start(self):
-        self.worker = self.pubsub.run_in_thread(0.01, daemon=True, exception_handler=_make_logger(self.error_event))
+        self.worker = self.pubsub.run_in_thread(0.01, daemon=True, exception_handler=_make_logger(self))
 
     def stop(self):
         if self.worker is not None:
