@@ -673,26 +673,6 @@ rule code_css {
 }
 
 /*
-metadata/sysmon/evtx
-*/
-
-rule metadata_sysmon_evtx {
-
-    meta:
-        type = "metadata/sysmon/evtx"
-        score = 1
-
-    strings:
-        $ = /<Events[^>]*>/
-        $ = /<Event[^s][^>]*(\/)?>/
-        $ = /<\/Event(s)?>/
-
-    condition:
-        mime startswith "text"
-        and all of them
-}
-
-/*
 code/batch
 */
 
