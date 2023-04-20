@@ -14,7 +14,7 @@ import zipfile
 
 from binascii import hexlify
 from cart import get_metadata_only
-from typing import Tuple, Union, Dict
+from typing import Tuple, Union, Dict, Optional
 
 from assemblyline.common.digests import get_digests_for_file
 from assemblyline.common.forge import get_constants, get_cachestore, get_config, get_datastore
@@ -28,7 +28,7 @@ constants = get_constants()
 
 
 class Identify():
-    def __init__(self, use_cache=True, config=None, datastore=None, log=None) -> None:
+    def __init__(self, use_cache: bool = True, config=None, datastore=None, log=None) -> None:
         self.log = log or logging.getLogger('assemblyline.identify')
         self.config = None
         self.datastore = None
@@ -57,19 +57,25 @@ class Identify():
                 'patterns': self._load_magic_patterns,
                 'yara': self._load_yara_file
             }
-            self.reload_watcher = EventWatcher()
+            self.reload_watcher: Optional[EventWatcher[str]] = EventWatcher()
             self.reload_watcher.register('system.identify', self._handle_reload_event)
             self.reload_watcher.start()
         else:
             self.reload_watcher = None
             self.reload_map = {}
 
-    def _handle_reload_event(self, data):
-        func = self.reload_map.get(data, None)
-        if func:
-            func()
+    def _handle_reload_event(self, data: Optional[str]):
+        if data is None:
+            # handle disconnect event, we may be out of sync
+            for reload_func in self.reload_map.values():
+                reload_func()
         else:
-            self.log.error(f"Invalid system.identify message received: {data}")
+            # update information
+            func = self.reload_map.get(data, None)
+            if func is not None:
+                func()
+            else:
+                self.log.error(f"Invalid system.identify message received: {data}")
 
     def _load_magic_patterns(self):
         self.magic_patterns = default_magic_patterns
