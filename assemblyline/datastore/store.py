@@ -14,8 +14,7 @@ import elasticsearch.helpers
 
 from assemblyline.common import forge
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion,
-                                               SearchRetryException, VersionConflictException)
+from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion, VersionConflictException)
 
 from packaging import version
 
@@ -235,13 +234,6 @@ class ESStore(object):
                     ret_val['deleted'] += deleted
 
                 return ret_val
-
-            except SearchRetryException:
-                # Only used during search context trapping the following exceptions:
-                #   elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout
-                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
-                retries += 1
 
             except elasticsearch.exceptions.ConflictError as ce:
                 if raise_conflicts:

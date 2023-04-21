@@ -22,8 +22,7 @@ import elasticsearch.helpers
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
-from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException,
-                                               SearchRetryException, ArchiveDisabled)
+from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException, ArchiveDisabled)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
 from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                     default_index, default_mapping)
@@ -1477,9 +1476,6 @@ class ESCollection(Generic[ModelType]):
                                            track_total_hits=track_total_hits, **query_body)
 
             return result
-
-        except (elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
-            raise SearchRetryException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
 
         except (elasticsearch.TransportError, elasticsearch.RequestError) as e:
             try:
