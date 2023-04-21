@@ -14,8 +14,7 @@ import elasticsearch.helpers
 
 from assemblyline.common import forge
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion,
-                                               SearchRetryException, VersionConflictException)
+from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion, VersionConflictException)
 
 from packaging import version
 
@@ -236,9 +235,15 @@ class ESStore(object):
 
                 return ret_val
 
-            except SearchRetryException:
-                # Only used during search context trapping the following exceptions:
-                #   elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout
+            except elasticsearch.NotFoundError as error:
+                index_name = kwargs.get('index', '').upper()
+                err_message = str(error)
+
+                # Validate exception type
+                if not index_name or "No search context found" not in err_message:
+                    raise
+
+                log.warning(f"Index {index_name} was removed while a query was running, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.connection_reset()
                 retries += 1
@@ -259,6 +264,7 @@ class ESStore(object):
                 log.warning(f"Elasticsearch connection timeout, server(s): "
                             f"{' | '.join(self.get_hosts(safe=True))}"
                             f", retrying {func.__name__}...")
+
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.connection_reset()
                 retries += 1
@@ -273,32 +279,60 @@ class ESStore(object):
                 self.connection_reset()
                 retries += 1
 
+            # Legacy retries, only for elastic 7.x client...
             except elasticsearch.exceptions.TransportError as e:
                 err_code, _, _ = e.args
-                if err_code == 503 or err_code == '503':
-                    log.warning(f"Looks like index {self.name} is not ready yet, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.connection_reset()
-                    retries += 1
-                elif err_code == 429 or err_code == '429':
-                    log.warning("Elasticsearch is too busy to perform the requested "
-                                f"task on index {self.name}, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.connection_reset()
-                    retries += 1
-                elif err_code == 403 or err_code == '403':
-                    log.warning("Elasticsearch cluster is preventing writing operations "
-                                f"on index {self.name}, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.connection_reset()
-                    retries += 1
+                err_code = int(err_code)
+                index_name = kwargs.get('index', '').upper()
 
-                else:
+                # Validate exception type
+                if not index_name or err_code not in [503, 429, 403]:
                     raise
 
+                # Display proper error message
+                if err_code == 503:
+                    log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
+                elif err_code == 429:
+                    log.warning("Elasticsearch is too busy to perform the requested "
+                                f"task on index {index_name}, retrying...")
+                elif err_code == 403:
+                    log.warning("Elasticsearch cluster is preventing writing operations "
+                                f"on index {index_name}, retrying...")
+
+                # Loop and retry
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
+            # Elastic client 8.x retries
             except elasticsearch.AuthorizationException:
+                index_name = kwargs.get('index', '').upper()
+                if not index_name:
+                    raise
+
                 log.warning("Elasticsearch cluster is preventing writing operations "
-                            f"on index {self.name}, retrying...")
+                            f"on index {index_name}, retrying...")
+
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
+            except elasticsearch.ApiError as err:
+                index_name = kwargs.get('index', '').upper()
+                err_code = err.meta.status
+
+                # Validate exception type
+                if not index_name or err_code not in [503, 429, 403]:
+                    raise
+
+                # Display proper error message
+                if err_code == 503:
+                    log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
+                elif err_code == 429:
+                    log.warning("Elasticsearch is too busy to perform the requested "
+                                f"task on index {index_name}, retrying...")
+
+                # Loop and retry
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.connection_reset()
                 retries += 1
