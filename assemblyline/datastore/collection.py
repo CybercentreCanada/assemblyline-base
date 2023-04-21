@@ -652,7 +652,7 @@ class ESCollection(Generic[ModelType]):
 
                 # Block all indexes to be written to
                 logger.info("Set a datastore wide write block on Elastic.")
-                self.with_retries(self.datastore.client.indices.put_settings, settings=write_block_settings)
+                self.with_retries(self.datastore.client.indices.put_settings, index=name, settings=write_block_settings)
 
                 # Clone it onto a temporary index
                 if not self.with_retries(self.datastore.client.indices.exists, index=temp_name):
@@ -702,7 +702,7 @@ class ESCollection(Generic[ModelType]):
 
             # Restore writes
             logger.info("Restore datastore wide write operation on Elastic.")
-            self.with_retries(self.datastore.client.indices.put_settings, settings=write_unblock_settings)
+            self.with_retries(self.datastore.client.indices.put_settings, index=name, settings=write_unblock_settings)
 
             # Restore normal routing and replicas
             logger.info(f"Restore original routing table for {name.upper()}.")
@@ -2012,7 +2012,8 @@ class ESCollection(Generic[ModelType]):
             elif not self.with_retries(self.datastore.client.indices.exists, index=index) and \
                     not self.with_retries(self.datastore.client.indices.exists_alias, name=alias):
                 # Turn on write block
-                self.with_retries(self.datastore.client.indices.put_settings, settings=write_block_settings)
+                self.with_retries(self.datastore.client.indices.put_settings,
+                                  index=alias, settings=write_block_settings)
 
                 # Create a copy on the result index
                 self._safe_index_copy(self.datastore.client.indices.clone, alias, index)
@@ -2022,7 +2023,8 @@ class ESCollection(Generic[ModelType]):
                     "remove_index": {"index": alias}}]
                 self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
-                self.with_retries(self.datastore.client.indices.put_settings, settings=write_unblock_settings)
+                self.with_retries(self.datastore.client.indices.put_settings,
+                                  index=alias, settings=write_unblock_settings)
 
         self._check_fields()
 
