@@ -3,12 +3,12 @@ from typing import Any, Callable, Optional, TYPE_CHECKING, TypeVar, Generic
 import json
 import logging
 import threading
-from redis.client import PubSub
 
 from assemblyline.remote.datatypes import retry_call, get_client
 
 if TYPE_CHECKING:
     from redis import Redis
+    from redis.client import PubSub
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,20 @@ def _make_logger(watcher: EventWatcher):
 
         # Wait until we can reach the server
         retry_call(watcher.client.ping)
+
+        # Call the handlers so they know to start trying to recover from pubsub desync
+        for channel, handler in pubsub.channels.items():
+            if handler is not None:
+                try:
+                    handler(None)
+                except Exception:
+                    logger.exception(f"Error calling handler for reconnect on {channel}")
+        for pattern, handler in pubsub.patterns.items():
+            if handler is not None:
+                try:
+                    handler(None)
+                except Exception:
+                    logger.exception(f"Error calling handler for reconnect on {pattern}")
 
     return _exception_logger
 
@@ -43,37 +57,37 @@ class EventSender(Generic[MessageType]):
         retry_call(self.client.publish, path, self.serializer(data))
 
 
-class ReconnectNotifyPubsub(PubSub):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._first_connect = True
+# class ReconnectNotifyPubsub(PubSub):
+#     def __init__(self, *args, **kwargs) -> None:
+#         super().__init__(*args, **kwargs)
+#         self._first_connect = True
 
-    def on_connect(self, connection):
-        super().on_connect(connection)
+#     def on_connect(self, connection):
+#         super().on_connect(connection)
 
-        if self._first_connect:
-            self._first_connect = False
-            return
+#         if self._first_connect:
+#             self._first_connect = False
+#             return
 
-        # Call the handlers so they know to start trying to recover from pubsub desync
-        for channel, handler in self.channels.items():
-            if handler is not None:
-                try:
-                    handler(None)
-                except Exception:
-                    logger.exception(f"Error calling handler for reconnect on {channel}")
-        for pattern, handler in self.patterns.items():
-            if handler is not None:
-                try:
-                    handler(None)
-                except Exception:
-                    logger.exception(f"Error calling handler for reconnect on {pattern}")
+#         # Call the handlers so they know to start trying to recover from pubsub desync
+#         for channel, handler in self.channels.items():
+#             if handler is not None:
+#                 try:
+#                     handler(None)
+#                 except Exception:
+#                     logger.exception(f"Error calling handler for reconnect on {channel}")
+#         for pattern, handler in self.patterns.items():
+#             if handler is not None:
+#                 try:
+#                     handler(None)
+#                 except Exception:
+#                     logger.exception(f"Error calling handler for reconnect on {pattern}")
 
 
 class EventWatcher(Generic[MessageType]):
     def __init__(self, host=None, port=None, deserializer: Callable[[str], MessageType] = json.loads):
         self.client: Redis[Any] = get_client(host, port, False)
-        self.pubsub = ReconnectNotifyPubsub(self.client.connection_pool)
+        self.pubsub = retry_call(self.client.pubsub)
         self.worker: Optional[threading.Thread] = None
         self.deserializer = deserializer
 
