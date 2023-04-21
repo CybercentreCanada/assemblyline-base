@@ -235,6 +235,19 @@ class ESStore(object):
 
                 return ret_val
 
+            except elasticsearch.NotFoundError as error:
+                index_name = kwargs.get('index', '').upper()
+                err_message = str(error)
+
+                # Validate exception type
+                if not index_name or "No search context found" not in err_message:
+                    raise
+
+                log.warning(f"Index {index_name} was removed while a query was running, retrying...")
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
             except elasticsearch.exceptions.ConflictError as ce:
                 if raise_conflicts:
                     # De-sync potential treads trying to write to the index
