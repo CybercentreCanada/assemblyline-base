@@ -137,7 +137,3 @@ services:
 networks:
   default:
     name: external
-    ipam:
-      config:
-        - subnet: "172.17.0.0/24"
-          gateway: "172.17.0.1"
