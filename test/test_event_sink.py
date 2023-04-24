@@ -41,6 +41,8 @@ def test_exact_event(redis_connection: Redis[Any]):
 
 
 def test_serialized_event(redis_connection: Redis[Any]):
+    import threading
+    started = threading.Event()
 
     class Event(enum.IntEnum):
         ADD = 0
@@ -62,11 +64,15 @@ def test_serialized_event(redis_connection: Redis[Any]):
     def _track_call(data: Optional[Message]):
         if data is not None:
             calls.append(data)
+        else:
+            started.set()
 
     watcher = EventWatcher[Message](redis_connection, deserializer=_deserialize)
     try:
         watcher.register('changes.test', _track_call)
+        watcher.skip_first_refresh = False
         watcher.start()
+        assert started.wait(timeout=5)
         sender = EventSender[Message]('changes.', redis_connection, serializer=_serialize)
         start = time.time()
 
