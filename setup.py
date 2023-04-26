@@ -7,12 +7,11 @@ try:
     from Cython.Build import cythonize
     USE_CYTHON = True
     extension = '.pyx'
-except ImportError as e:
+except ImportError:
     # If we don't have cython, its fine as long as we are installing from an sdist that already
     # has the pyx files cythonized into c files
     USE_CYTHON = False
     extension = '.c'
-    print(f"Not relying on Cython, import error: {e}")
 
 # Try to load the version from a datafile in the package
 package_version = "4.0.0.dev0"
@@ -26,8 +25,6 @@ if os.path.exists(package_version_path):
 extensions = [
     Extension('assemblyline.common.frequency', [os.path.join('assemblyline', 'common', 'frequency' + extension)])
 ]
-
-print(f"Assemblyline installation will {'' if USE_CYTHON else 'not '}use Cython.")
 
 if USE_CYTHON:
     extensions = cythonize(extensions)
