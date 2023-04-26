@@ -139,3 +139,6 @@
 0 string begin
 >&0 search/50 \nh custom: archive/xxe
 >&0 search/50 \nM custom: archive/uue
+# Android OAT
+0 string \x7fELF
+>1000 string oat custom: executable/android/oat

@@ -229,7 +229,9 @@ class Identify():
                 label = dotdump(label)
 
                 if self.custom.match(label):
-                    data["type"] = label.split("custom: ")[1].strip()
+                    # Some things, like executable have additional data appended to their identification, like
+                    # ", dynamically linked, stripped" that we do not want to use as part of the type.
+                    data["type"] = label.split("custom: ")[1].split(",", 1)[0].strip()
                     break
 
             # Second priority is mime times marked as trusted
