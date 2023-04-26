@@ -7,11 +7,12 @@ try:
     from Cython.Build import cythonize
     USE_CYTHON = True
     extension = '.pyx'
-except ImportError:
+except ImportError as e:
     # If we don't have cython, its fine as long as we are installing from an sdist that already
     # has the pyx files cythonized into c files
     USE_CYTHON = False
     extension = '.c'
+    print(f"Not relying on Cython, import error: {e}")
 
 # Try to load the version from a datafile in the package
 package_version = "4.0.0.dev0"
