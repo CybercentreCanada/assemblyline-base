@@ -960,6 +960,8 @@ class ExternalSource(odm.Model):
         odm.ClassificationString(
             description="Minimum classification applied to information from the source"
                         " and required to know the existance of the source."))
+    max_classification = odm.Optional(
+        odm.ClassificationString(description="Maximum classification of data that may be handled by the source"))
     url: str = odm.Keyword(description="URL of the upstream source's lookup service.")
 
 
@@ -967,12 +969,16 @@ EXAMPLE_EXTERNAL_SOURCE_VT = {
     # This is an example on how this would work with VirusTotal
     "name": "VirusTotal",
     "url": "vt-lookup.namespace.svc.cluster.local",
+    "classification": "TLP:CLEAR",
+    "max_classification": "TLP:CLEAR",
 }
 
 EXAMPLE_EXTERNAL_SOURCE_MB = {
     # This is an example on how this would work with Malware Bazaar
     "name": "Malware Bazaar",
     "url": "mb-lookup.namespace.scv.cluster.local",
+    "classification": "TLP:CLEAR",
+    "max_classification": "TLP:CLEAR",
 }
 
 
