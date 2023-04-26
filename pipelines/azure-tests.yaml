@@ -74,8 +74,7 @@ jobs:
           sudo chmod a+rw /var/cache/assemblyline/
           sudo apt-get update -y
           sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
-          whoami
-          env "PATH=$PATH" python -m pip install --no-cache-dir --user -U pip Cython==0.29.33 setuptools
+          env "PATH=$PATH" python -m pip install --no-cache-dir --user -U pip Cython setuptools wheel
           env "PATH=$PATH" python -m pip install --no-cache-dir --user -e .
           env "PATH=$PATH" python -m pip install --no-cache-dir --user -r test/requirements.txt
         displayName: Setup environment
