@@ -26,6 +26,8 @@ extensions = [
     Extension('assemblyline.common.frequency', [os.path.join('assemblyline', 'common', 'frequency' + extension)])
 ]
 
+print(f"Assemblyline installation will {'' if USE_CYTHON else 'not '}use Cython.")
+
 if USE_CYTHON:
     extensions = cythonize(extensions)
 
