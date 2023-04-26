@@ -75,6 +75,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip Cython==0.29.33 setuptools
+          sleep 5
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
         displayName: Setup environment
