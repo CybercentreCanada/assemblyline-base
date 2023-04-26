@@ -72,9 +72,10 @@ jobs:
           sudo mkdir -p /var/cache/assemblyline/
           sudo cp pipelines/config.yml /etc/assemblyline
           sudo chmod a+rw /var/cache/assemblyline/
-          sudo apt-get update
+          sudo apt-get update -y
           sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
-          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools
+          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip
+          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U cython setuptools
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
         displayName: Setup environment
