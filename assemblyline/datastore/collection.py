@@ -22,8 +22,7 @@ import elasticsearch.helpers
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
-from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException,
-                                               SearchRetryException, ArchiveDisabled)
+from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException, ArchiveDisabled)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
 from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                     default_index, default_mapping)
@@ -196,12 +195,11 @@ class ESCollection(Generic[ModelType]):
         self.index_name = f"{name}_hot"
 
         # Initialize archive
+        self.archive_name = None
+        self.index_archive_name = None
         if name in datastore.archive_indices:
             self.archive_name = f"{name}-ma"
             self.index_archive_name = f"{name}-ma_hot"
-        else:
-            self.archive_name = None
-            self.index_archive_name = None
 
         self.model_class = model_class
         self.validate = validate
@@ -214,23 +212,26 @@ class ESCollection(Generic[ModelType]):
                 if field.store:
                     self.stored_fields[name] = field
 
+    def is_archive_index(self, index):
+        return self.archive_name and index.startswith(self.archive_name)
+
     def get_index_list(self, index_type):
         # Default value
         if index_type is None:
             # If has an archive: hot + archive
-            if self.index_archive_name and self.datastore.archive_access:
-                return [self.index_name, self.index_archive_name]
+            if self.archive_name and self.datastore.archive_access:
+                return [self.name, self.archive_name]
             # Otherwise just hot
-            return [self.index_name]
+            return [self.name]
 
         # If specified index is HOT
         elif index_type == Index.HOT:
-            return [self.index_name]
+            return [self.name]
 
         # If only archive asked
         elif index_type == Index.ARCHIVE:
             # Crash if index has no archive
-            if not self.index_archive_name:
+            if not self.archive_name:
                 raise ArchiveDisabled(f"Index {self.name.upper()} does not have an archive")
 
             # Crash if no archive access
@@ -239,7 +240,7 @@ class ESCollection(Generic[ModelType]):
                     "Trying to get access to the archive on a datastore where archive_access is disabled")
 
             # Return only archive index
-            return [self.index_archive_name]
+            return [self.archive_name]
         else:
             # Crash if no archive access
             if not self.datastore.archive_access:
@@ -247,11 +248,11 @@ class ESCollection(Generic[ModelType]):
                     "Trying to get access to the archive on a datastore where archive_access is disabled")
 
             # Return HOT if asked for both but only has HOT
-            if not self.index_archive_name:
-                return [self.index_name]
+            if not self.archive_name:
+                return [self.name]
 
             # Otherwise return hot and archive indices
-            return [self.index_name, self.index_archive_name]
+            return [self.name, self.archive_name]
 
     def get_joined_index(self, index_type):
         return ",".join(self.get_index_list(index_type))
@@ -259,7 +260,7 @@ class ESCollection(Generic[ModelType]):
     def scan_with_search_after(self, query, sort=None, source=None, index=None, keep_alive=KEEP_ALIVE, size=1000,
                                timeout=None):
         if index is None:
-            index = self.index_name
+            index = self.name
         if not sort:
             sort = []
 
@@ -468,7 +469,7 @@ class ESCollection(Generic[ModelType]):
         :param allow_missing: If True, does not crash if the document you are trying to archive is missing
         :param delete_after: Delete the document from hot storage after archive
         """
-        if not self.index_archive_name:
+        if not self.archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
         # Check if already in archive
@@ -499,11 +500,11 @@ class ESCollection(Generic[ModelType]):
         :param query: query to run to archive documents
         :return: Number of archived documents
         """
-        if not self.index_archive_name:
+        if not self.archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
         source = {
-            "index": self.index_name,
+            "index": self.name,
             "query": {
                 "bool": {
                     "must": {
@@ -515,7 +516,7 @@ class ESCollection(Generic[ModelType]):
             }
         }
         dest = {
-            "index": self.index_archive_name
+            "index": self.archive_name
         }
         if max_docs:
             source['size'] = max_docs
@@ -580,7 +581,7 @@ class ESCollection(Generic[ModelType]):
         """
         results = []
         for index in self.get_index_list(index_type):
-            replicas = self._get_index_settings(archive=index == self.index_archive_name)['index']['number_of_replicas']
+            replicas = self._get_index_settings(archive=self.is_archive_index(index))['index']['number_of_replicas']
             settings = {"number_of_replicas": replicas}
             results.append(self.with_retries(
                 self.datastore.client.indices.put_settings, index=index, settings=settings)['acknowledged'])
@@ -597,10 +598,10 @@ class ESCollection(Generic[ModelType]):
         if logger is None:
             logger = log
 
-        for index in self.get_index_list(index_type):
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
             logger.info(f'Processing index: {index.upper()}')
-            name = index.replace("_hot", "")
-            settings = self._get_index_settings(archive=index == self.index_archive_name)
+            settings = self._get_index_settings(archive=self.is_archive_index(name))
             index_copy_settings = {"index.number_of_replicas": 0}
             clone_finish_settings = None
             clone_setup_settings = None
@@ -650,7 +651,7 @@ class ESCollection(Generic[ModelType]):
 
                 # Block all indexes to be written to
                 logger.info("Set a datastore wide write block on Elastic.")
-                self.with_retries(self.datastore.client.indices.put_settings, settings=write_block_settings)
+                self.with_retries(self.datastore.client.indices.put_settings, index=name, settings=write_block_settings)
 
                 # Clone it onto a temporary index
                 if not self.with_retries(self.datastore.client.indices.exists, index=temp_name):
@@ -700,7 +701,7 @@ class ESCollection(Generic[ModelType]):
 
             # Restore writes
             logger.info("Restore datastore wide write operation on Elastic.")
-            self.with_retries(self.datastore.client.indices.put_settings, settings=write_unblock_settings)
+            self.with_retries(self.datastore.client.indices.put_settings, index=name, settings=write_unblock_settings)
 
             # Restore normal routing and replicas
             logger.info(f"Restore original routing table for {name.upper()}.")
@@ -709,37 +710,29 @@ class ESCollection(Generic[ModelType]):
 
     def reindex(self, index_type=None):
         """
-        This function should be overloaded to perform a reindex of all the data of the different hosts
-        specified in self.datastore.hosts.
+        This function triggers a reindex of the current index, this should almost never be used because:
+            1. There is no crash recovery
+            2. Even if the system is still accessible during that time the data is partially accessible
 
         :param index_type: Type of indices to target
         :return: Should return True of the commit was successful on all hosts
         """
-        for index in self.get_index_list(index_type):
-            archive = index == self.index_archive_name
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
+            archive = self.is_archive_index(index)
             new_name = f'{index}__reindex'
             if self.with_retries(self.datastore.client.indices.exists, index=index) and \
                     not self.with_retries(self.datastore.client.indices.exists, index=new_name):
-
-                # Get information about the index to reindex
-                index_data = self.with_retries(self.datastore.client.indices.get, index=index)[index]
 
                 # Create reindex target
                 self.with_retries(self.datastore.client.indices.create, index=new_name,
                                   mappings=self._get_index_mappings(),
                                   settings=self._get_index_settings(archive=archive))
 
-                # For all aliases related to the index, add a new alias to the reindex index
-                for alias, alias_data in index_data['aliases'].items():
-                    # Make the reindex index the new write index if the original index was
-                    if alias_data.get('is_write_index', True):
-                        actions = [
-                            {"add": {"index": new_name, "alias": alias, "is_write_index": True}},
-                            {"add": {"index": index, "alias": alias, "is_write_index": False}}, ]
-                    else:
-                        actions = [
-                            {"add": {"index": new_name, "alias": alias}}]
-                    self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
+                # Swap indices
+                actions = [{"add": {"index": new_name, "alias": name}},
+                           {"remove": {"index": index, "alias": name}}, ]
+                self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
                 # Reindex data into target
                 r_task = self.with_retries(self.datastore.client.reindex, source={"index": index},
@@ -754,7 +747,7 @@ class ESCollection(Generic[ModelType]):
                 self.with_retries(self.datastore.client.indices.delete, index=index)
 
                 # Block write to the index
-                self.with_retries(self.datastore.client.indices.put_settings, settings=write_block_settings)
+                self.with_retries(self.datastore.client.indices.put_settings, index=name, settings=write_block_settings)
 
                 # Rename reindexed index
                 try:
@@ -762,20 +755,17 @@ class ESCollection(Generic[ModelType]):
                                           settings=self._get_index_settings(archive=archive))
 
                     # Restore original aliases for the index
-                    for alias, alias_data in index_data['aliases'].items():
-                        # Make the reindex index the new write index if the original index was
-                        if alias_data.get('is_write_index', True):
-                            actions = [
-                                {"add": {"index": index, "alias": alias, "is_write_index": True}},
-                                {"remove_index": {"index": new_name}}]
-                            self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
+                    actions = [{"add": {"index": index, "alias": name}},
+                               {"remove": {"index": new_name, "alias": name}}, ]
+                    self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
                     # Delete the reindex target if it still exists
                     if self.with_retries(self.datastore.client.indices.exists, index=new_name):
                         self.with_retries(self.datastore.client.indices.delete, index=new_name)
                 finally:
                     # Unblock write to the index
-                    self.with_retries(self.datastore.client.indices.put_settings, settings=write_unblock_settings)
+                    self.with_retries(self.datastore.client.indices.put_settings,
+                                      index=name, settings=write_unblock_settings)
 
         return True
 
@@ -847,8 +837,8 @@ class ESCollection(Generic[ModelType]):
                     key_list.remove(row['_id'])
 
                     # If this index has an archive, check is the document was found in it.
-                    if self.index_archive_name:
-                        row['_source']['from_archive'] = index == self.index_archive_name
+                    if self.archive_name:
+                        row['_source']['from_archive'] = self.is_archive_index(index)
 
                     add_to_output(row['_source'], row['_id'])
                 except ValueError:
@@ -915,8 +905,8 @@ class ESCollection(Generic[ModelType]):
                     doc = self.with_retries(self.datastore.client.get, index=index, id=key)
 
                     # If this index has an archive, check is the document was found in it.
-                    if self.index_archive_name:
-                        doc['_source']['from_archive'] = index == self.index_archive_name
+                    if self.archive_name:
+                        doc['_source']['from_archive'] = self.is_archive_index(index)
 
                     if version:
                         return self._normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
@@ -1282,8 +1272,8 @@ class ESCollection(Generic[ModelType]):
         item_id = result['_id']
 
         # If this index has an archive, check is the document was found in it.
-        if self.index_archive_name:
-            source_data['from_archive'] = result['_index'] == self.index_archive_name
+        if self.archive_name:
+            source_data['from_archive'] = self.is_archive_index(result['_index'])
 
         if self.model_class:
             if not fields:
@@ -1486,9 +1476,6 @@ class ESCollection(Generic[ModelType]):
                                            track_total_hits=track_total_hits, **query_body)
 
             return result
-
-        except (elasticsearch.ConnectionError, elasticsearch.ConnectionTimeout) as error:
-            raise SearchRetryException("collection: %s, query: %s, error: %s" % (self.name, query_body, str(error)))
 
         except (elasticsearch.TransportError, elasticsearch.RequestError) as e:
             try:
@@ -1897,8 +1884,8 @@ class ESCollection(Generic[ModelType]):
             return out
 
         data = self.with_retries(self.datastore.client.indices.get, index=self.name)
-        index_name = list(data.keys())[0]
-        properties = flatten_fields(data[index_name]['mappings'].get('properties', {}))
+        idx_name = list(data.keys())[0]
+        properties = flatten_fields(data[idx_name]['mappings'].get('properties', {}))
 
         if self.model_class:
             model_fields = self.model_class.flat_fields()
@@ -2003,15 +1990,15 @@ class ESCollection(Generic[ModelType]):
 
         :return:
         """
-        for index in self.get_index_list(None):
-            alias = index.replace("_hot", "")
+        for alias in self.get_index_list(None):
+            index = f"{alias}_hot"
             # Create HOT index
             if not self.with_retries(self.datastore.client.indices.exists, index=alias):
                 log.debug(f"Index {alias.upper()} does not exists. Creating it now...")
                 try:
                     self.with_retries(self.datastore.client.indices.create, index=index,
                                       mappings=self._get_index_mappings(),
-                                      settings=self._get_index_settings(archive=index == self.index_archive_name))
+                                      settings=self._get_index_settings(archive=self.is_archive_index(index)))
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
@@ -2021,7 +2008,8 @@ class ESCollection(Generic[ModelType]):
             elif not self.with_retries(self.datastore.client.indices.exists, index=index) and \
                     not self.with_retries(self.datastore.client.indices.exists_alias, name=alias):
                 # Turn on write block
-                self.with_retries(self.datastore.client.indices.put_settings, settings=write_block_settings)
+                self.with_retries(self.datastore.client.indices.put_settings,
+                                  index=alias, settings=write_block_settings)
 
                 # Create a copy on the result index
                 self._safe_index_copy(self.datastore.client.indices.clone, alias, index)
@@ -2031,7 +2019,8 @@ class ESCollection(Generic[ModelType]):
                     "remove_index": {"index": alias}}]
                 self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
-                self.with_retries(self.datastore.client.indices.put_settings, settings=write_unblock_settings)
+                self.with_retries(self.datastore.client.indices.put_settings,
+                                  index=alias, settings=write_unblock_settings)
 
         self._check_fields()
 
@@ -2072,8 +2061,8 @@ class ESCollection(Generic[ModelType]):
         :return:
         """
 
-        for index in self.get_index_list(index_type):
-            name = index.replace("_hot", "")
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
             log.debug("Wipe operation started for collection: %s" % name.upper())
             if self.with_retries(self.datastore.client.indices.exists, index=index):
                 self.with_retries(self.datastore.client.indices.delete, index=index)
