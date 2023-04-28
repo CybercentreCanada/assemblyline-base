@@ -6,7 +6,16 @@
 #  completely disables the classification engine, any documents added while
 #  the classification engine is off gets the default unrestricted value
 enforce: false
+
+# Turn on/off dynamic group creation. This feature allow you to dynamically create classification groups based on
+#  features from the user.
 dynamic_groups: false
+
+# Set the type of dynamic groups to be used
+#  email: groups will be based of the user's email domain
+#  group: groups will be created out the the user's group values
+#  all: groups will be created out of both the email domain and the group values
+dynamic_groups_type: email
 
 # List of Classification level:
 #   Graded list were a smaller number is less restricted then an higher number.
