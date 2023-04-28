@@ -96,7 +96,6 @@ setup(
     extras_require={
         'test': [
             'pytest',
-            'pytest-cov',
             'retrying',
             'pytest-mock',
             'pyftpdlib',

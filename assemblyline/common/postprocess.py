@@ -641,14 +641,14 @@ class ActionWorker:
             time.sleep(0.1)
         self.loop.call_soon_threadsafe(self.loop.stop)
 
-    def _load_actions(self, _path=''):
+    def _load_actions(self, _path: Optional[str] = None):
         # Load the action data
         with CacheStore('system', config=self.config, datastore=self.datastore) as cache:
             objects = DEFAULT_POSTPROCESS_ACTIONS
             data = cache.get('postprocess_actions')
             if data:
                 try:
-                    raw = yaml.safe_load(data)
+                    raw: dict[str, Any] = yaml.safe_load(data)
                     objects = {
                         key: PostprocessAction(data)
                         for key, data in raw.items()
@@ -657,25 +657,25 @@ class ActionWorker:
                     logger.exception("Couldn't load stored actions")
 
         # Check which ones can be active
-        ready_objects = {}
-        for key, data in objects.items():
-            if not data.enabled:
+        ready_objects: dict[str, tuple[SubmissionFilter, PostprocessAction]] = {}
+        for key, action in objects.items():
+            if not action.enabled:
                 continue
 
             try:
-                fltr = SubmissionFilter(data.filter)
+                fltr = SubmissionFilter(action.filter)
             except Exception:
                 logger.exception("Failed to load submission filter")
                 continue
 
-            if self.running_cache_tasks and data.run_on_cache:
+            if self.running_cache_tasks and action.run_on_cache:
                 if not fltr.cache_safe:
                     logger.error("Tried to apply non-cache-safe filter to cached submissions.")
                     continue
-                ready_objects[key] = fltr, data
+                ready_objects[key] = fltr, action
 
-            if not self.running_cache_tasks and data.run_on_completed:
-                ready_objects[key] = fltr, data
+            if not self.running_cache_tasks and action.run_on_completed:
+                ready_objects[key] = fltr, action
 
         # Swap in the new actions
         self.actions = ready_objects
