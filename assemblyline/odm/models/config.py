@@ -5,7 +5,7 @@ from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 
-AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
+AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -1031,7 +1031,8 @@ DEFAULT_UI = {
     "tos_lockout": False,
     "tos_lockout_notify": None,
     "url_submission_headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko)"
+                      " Chrome/110.0.0.0 Safari/537.36"
     },
     "url_submission_proxies": {},
     "validate_session_ip": True,

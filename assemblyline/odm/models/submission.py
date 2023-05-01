@@ -49,7 +49,7 @@ class SubmissionParams(odm.Model):
     deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
     description = odm.Text(store=True, copyto="__text__", description="Description of the submission")
     generate_alert = odm.Boolean(default=False, description="Should this submission generate an alert?")
-    groups = odm.List(odm.Keyword(), default=["USERS"], description="List of groups related to this scan")
+    groups = odm.List(odm.Keyword(), default=[], description="List of groups related to this scan")
     ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
     ignore_dynamic_recursion_prevention = odm.Boolean(
         default=False, description="Should we ignore dynamic recursion prevention?")
