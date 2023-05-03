@@ -32,6 +32,10 @@ services:
     image: cccs/assemblyline-ui-frontend
     ports:
       - "3000:3000"
+    volumes:
+      - ${PATH_REWRITE:-.}/config/certs/:/etc/certs/
+    command: ["serve", "-s", "-l", "3000", '--ssl-key', '/etc/certs/tls.key', '--ssl-cert', '/etc/certs/tls.crt']
+
 
   # UI
   al_ui:
