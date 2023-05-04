@@ -398,6 +398,8 @@ class Tagging(odm.Model):
         lib = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Libraries")
         name = odm.Optional(odm.Compound(FileName), description="File Name")
         path = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Path")
+        tlsh = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File TLSH")
+        lsh = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File LSH")
         rule = odm.Optional(odm.Mapping(odm.List(odm.Keyword(copyto="__text__"))), description="Rule/Signature File")
         string = odm.Optional(odm.Compound(FileStrings), description="File Strings Properties")
         apk = odm.Optional(odm.Compound(FileAPK), description="APK File Properties")
