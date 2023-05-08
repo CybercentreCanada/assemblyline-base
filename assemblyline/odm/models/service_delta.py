@@ -1,6 +1,9 @@
 from assemblyline import odm
 from assemblyline.odm.models.service import SIGNATURE_DELIMITERS
 
+REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
+REF_ENVVAR = "Refer to:<br>[Service - Enviroment Variable](../service/#environmentvariable)"
+
 
 REF_DEPENDENCY_CONFIG = "Refer to:<br>[Service - DependencyConfig](../service/#dependencyconfig)"
 REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
