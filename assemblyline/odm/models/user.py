@@ -43,7 +43,7 @@ ROLES = StringTable('ROLES', [
     ("archive_trigger", 25),
     ("archive_download", 26),
     ("self_manage", 27),
-    ("external_query", 28),
+    ("external_query", 30),
 ])
 
 
