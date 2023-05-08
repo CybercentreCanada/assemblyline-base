@@ -43,6 +43,7 @@ ROLES = StringTable('ROLES', [
     ("archive_trigger", 25),
     ("archive_download", 26),
     ("self_manage", 27),
+    ("external_query", 28),
 ])
 
 
@@ -66,6 +67,7 @@ USER_ROLES_BASIC = {
     ROLES.archive_download,    # Download file from the archive
     ROLES.apikey_access,       # Allow access via API keys
     ROLES.bundle_download,     # Create bundle of a submission
+    ROLES.external_query,      # Allow federated searches against external systems
     ROLES.file_detail,         # View files in the file viewer
     ROLES.file_download,       # Download files from the system
     ROLES.heuristic_view,      # View heuristics of the system
@@ -131,6 +133,7 @@ ACL_MAP = {
         ROLES.archive_view,
         ROLES.archive_download,
         ROLES.bundle_download,
+        ROLES.external_query,
         ROLES.file_detail,
         ROLES.file_download,
         ROLES.heuristic_view,
