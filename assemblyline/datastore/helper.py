@@ -879,7 +879,8 @@ class AssemblylineDatastore(object):
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key,
-                                    'safelisted': False
+                                    'safelisted': False,
+                                    'classification': section['classification'],
                                 })
                                 done_map['tags'].add(cache_key)
 
@@ -896,7 +897,8 @@ class AssemblylineDatastore(object):
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key,
-                                    'safelisted': True
+                                    'safelisted': True,
+                                    'classification': section['classification'],
                                 })
                                 done_map['tags'].add(cache_key)
 
