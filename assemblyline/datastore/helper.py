@@ -795,16 +795,11 @@ class AssemblylineDatastore(object):
                                      reverse=True)
             for section in sorted_sections:
                 file_classification = files.get(key[:64], {}).get('classification', section['classification'])
-                if user_classification:
-                    if not cl_engine.is_accessible(user_classification, section['classification']):
-                        out["filtered"] = True
-                        continue
-                    if not cl_engine.is_accessible(user_classification, file_classification):
-                        out["filtered"] = True
-                        continue
-
-                out["classification"] = cl_engine.max_classification(out["classification"], section['classification'])
-                out["classification"] = cl_engine.max_classification(out["classification"], file_classification)
+                combined_classification = cl_engine.max_classification(file_classification, section['classification'])
+                if user_classification and not cl_engine.is_accessible(user_classification, combined_classification):
+                    out["filtered"] = True
+                    continue
+                out["classification"] = cl_engine.max_classification(out["classification"], combined_classification)
 
                 h_type = "info"
 
@@ -880,7 +875,7 @@ class AssemblylineDatastore(object):
                                     'value': tag,
                                     'key': key,
                                     'safelisted': False,
-                                    'classification': section['classification'],
+                                    'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
 
@@ -898,7 +893,7 @@ class AssemblylineDatastore(object):
                                     'value': tag,
                                     'key': key,
                                     'safelisted': True,
-                                    'classification': section['classification'],
+                                    'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
 
