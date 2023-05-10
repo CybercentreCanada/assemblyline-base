@@ -10,10 +10,10 @@ class Seen(odm.Model):
 
 @odm.model(index=True, store=True, description="Label Categories Model")
 class LabelCategories(odm.Model):
-    info = odm.Optional(odm.List(odm.Keyword()), description="List of labels of type info")
-    safe = odm.Optional(odm.List(odm.Keyword()), description="List of labels of type safe")
-    suspicious = odm.Optional(odm.List(odm.Keyword()), description="List of labels of type suspicious")
-    malicious = odm.Optional(odm.List(odm.Keyword()), description="List of labels of type malicious")
+    info = odm.List(odm.Keyword(), description="List of labels of type info", default=[])
+    safe = odm.List(odm.Keyword(), description="List of labels of type safe", default=[])
+    suspicious = odm.List(odm.Keyword(), description="List of labels of type suspicious", default=[])
+    malicious = odm.List(odm.Keyword(), description="List of labels of type malicious", default=[])
 
 
 @odm.model(index=True, store=True, description="Model of File")
@@ -26,7 +26,7 @@ class File(odm.Model):
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
     is_section_image = odm.Boolean(default=False, description="Is this an image from an Image Result Section?")
     hex = odm.Keyword(index=False, store=False, description="Hex dump of the first 64 bytes of the file")
-    labels = odm.Optional(odm.List(odm.Keyword()), description="List of labels of the file")
+    labels = odm.List(odm.Keyword(), description="List of labels of the file", default=[])
     label_categories = odm.Compound(LabelCategories, default={}, description="Categories of label")
     md5 = odm.MD5(copyto="__text__", description="MD5 of the file")
     magic = odm.Keyword(store=False, description="Output from libmagic related to the file")
