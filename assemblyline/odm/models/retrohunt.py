@@ -21,4 +21,4 @@ class Retrohunt(odm.Model):
     truncated = odm.boolean(default=False)
     hits = odm.sequence(odm.keyword(store=False), store=False)
     total_hits = odm.optional(odm.integer())
-    error = odm.sequence(odm.keyword())
+    errors = odm.sequence(odm.keyword())
