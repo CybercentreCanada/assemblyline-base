@@ -10,10 +10,13 @@ class Seen(odm.Model):
 
 @odm.model(index=True, store=True, description="Label Categories Model")
 class LabelCategories(odm.Model):
-    info = odm.List(odm.Keyword(), description="List of labels of type info", default=[])
-    safe = odm.List(odm.Keyword(), description="List of labels of type safe", default=[])
-    suspicious = odm.List(odm.Keyword(), description="List of labels of type suspicious", default=[])
-    malicious = odm.List(odm.Keyword(), description="List of labels of type malicious", default=[])
+    info = odm.List(
+        odm.Keyword(),
+        description="List of labels related to the description of the malware file", default=[])
+    type = odm.List(odm.Keyword(), description="List of labels related to the type of malware", default=[])
+    attribution = odm.List(
+        odm.Keyword(),
+        description="List of labels related to the implant family and actor", default=[])
 
 
 @odm.model(index=True, store=True, description="Model of File")
