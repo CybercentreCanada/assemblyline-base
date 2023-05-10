@@ -17,7 +17,8 @@ class Retrohunt(odm.Model):
     code = odm.keyword()
 
     # Completion data
-    # finished = odm.boolean(default=False)
-    # truncated = odm.boolean(default=False)
-    # hits = odm.sequence(odm.keyword())
-    # error = odm.sequence(odm.keyword())
+    finished = odm.boolean(default=False)
+    truncated = odm.boolean(default=False)
+    hits = odm.sequence(odm.keyword(store=False), store=False)
+    total_hits = odm.optional(odm.integer())
+    error = odm.sequence(odm.keyword())
