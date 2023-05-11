@@ -435,7 +435,12 @@ rule code_jsp {
         $xml_end = "</jsp:"
         $non_xml_begin = "<%"
         $non_xml_end = "%>"
-        $java = /(FileOutputStream|System\.getProperty|public void|public Class|ClassLoad|java\.util\.\*)/
+        $java1 = "FileOutputStream"
+        $java2 = "System.getProperty"
+        $java3 = "public void"
+        $java4 = "public Class"
+        $java5 = "ClassLoad"
+        $java6 = "java.util.*"
         $jsp1 = "<%@ page"
         $jsp2 = "<%@ include"
         $jsp3 = "<%@ taglib"
@@ -448,7 +453,7 @@ rule code_jsp {
             or (
                 #non_xml_begin >= 2
                 and #non_xml_end >= 2
-                and #java >= 2
+                and (#java1 + #java2 + #java3 + #java4 + #java5 + #java6) >= 2
             )
         )
 }
