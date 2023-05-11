@@ -1185,14 +1185,26 @@ class ESCollection(Generic[ModelType]):
                     field = fields[doc_key]
 
                 if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                    if not field.multivalued:
+                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
+
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in [self.UPDATE_SET, self.UPDATE_DEC, self.UPDATE_INC]:
+                elif op in [self.UPDATE_DEC, self.UPDATE_INC]:
                     try:
                         value = field.check(value)
+                    except (ValueError, TypeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in self.UPDATE_SET:
+                    try:
+                        if field.multivalued and isinstance(value, list):
+                            value = [field.check(v) for v in value]
+                        else:
+                            value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
