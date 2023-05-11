@@ -702,10 +702,22 @@ DEFAULT_ARCHIVE = {
 }
 
 
+@odm.model(index=False, store=False, description="Datastore Retrohunt feature configuration")
+class Retrohunt(odm.Model):
+    enabled = odm.Boolean(description="Are we enabling Retrohunt features across indices?")
+
+
+DEFAULT_RETROHUNT = {
+    "enabled": False
+}
+
+
 @odm.model(index=False, store=False, description="Datastore Configuration")
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
     archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
+    retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
+                             description="Datastore Retrohunt feature configuration")
     cache_dtl = odm.Integer(
         default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
@@ -714,6 +726,7 @@ class Datastore(odm.Model):
 DEFAULT_DATASTORE = {
     "hosts": ["http://elastic:devpass@localhost:9200"],
     "archive": DEFAULT_ARCHIVE,
+    "retrohunt": DEFAULT_RETROHUNT,
     "cache_dtl": 5,
     "type": "elasticsearch",
 }
