@@ -356,11 +356,11 @@ rule text_json {
 
     meta:
         type = "text/json"
-        score = 1
+        score = 2
 
     strings:
         $start = "{"
-        $invalid_keys1 = /\w+:[\s]*[\{\["\d]/
+        $invalid_keys1 = /^\s*\w+:[\s]*[\{\["\d]/
         $valid_keys1 = /"\w+":[\s]*[\{\["\d]/
         $end = "}"
 
