@@ -431,13 +431,26 @@ rule code_jsp {
         score = 3
 
     strings:
-        $ = /(^|\n)<%@page[ \t]+import=['"][\w\.]+['"][ \t]*%>/
-        $ = /(^|\n)<%![^%]*%>/
-        $ = /<%=\w+%>/
+        $xml_begin = "<jsp:"
+        $xml_end = "</jsp:"
+        $non_xml_begin = "<%"
+        $non_xml_end = "%>"
+        $java = /(FileOutputStream|System\.getProperty|public void|public Class|ClassLoad|java\.util\.\*)/
+        $jsp1 = "<%@ page"
+        $jsp2 = "<%@ include"
+        $jsp3 = "<%@ taglib"
 
     condition:
         mime startswith "text"
-        and 2 of them
+        and (
+            all of ($xml*)
+            or 2 of ($jsp*)
+            or (
+                #non_xml_begin >= 2
+                and #non_xml_end >= 2
+                and #java >= 2
+            )
+        )
 }
 
 /*
