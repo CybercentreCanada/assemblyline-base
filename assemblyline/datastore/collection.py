@@ -1750,7 +1750,8 @@ class ESCollection(Generic[ModelType]):
             ('histogram_gap', gap.strip('+').strip('-') if isinstance(gap, str) else gap),
             ('histogram_mincount', mincount),
             ('histogram_start', start),
-            ('histogram_end', end)
+            ('histogram_end', end),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1777,7 +1778,8 @@ class ESCollection(Generic[ModelType]):
             ('facet_active', True),
             ('facet_fields', [field]),
             ('facet_mincount', mincount),
-            ('rows', 0)
+            ('rows', 0),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1805,7 +1807,8 @@ class ESCollection(Generic[ModelType]):
             ('query', query),
             ('stats_active', True),
             ('stats_fields', [field]),
-            ('rows', 0)
+            ('rows', 0),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1845,7 +1848,8 @@ class ESCollection(Generic[ModelType]):
             ('group_sort', group_sort),
             ('start', offset),
             ('rows', rows),
-            ('sort', sort)
+            ('sort', sort),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         filters.append("%s:*" % group_field)
