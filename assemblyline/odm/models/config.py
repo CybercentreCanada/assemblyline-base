@@ -704,7 +704,7 @@ DEFAULT_ARCHIVE = {
 
 @odm.model(index=False, store=False, description="Datastore Retrohunt feature configuration")
 class Retrohunt(odm.Model):
-    enabled = odm.Boolean(description="Are we enabling Retrohunt features across indices?")
+    enabled = odm.Boolean(description="Are we enabling Retrohunt features?")
 
 
 DEFAULT_RETROHUNT = {
