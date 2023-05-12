@@ -13,13 +13,13 @@ class LabelCategories(odm.Model):
     info = odm.List(
         odm.Keyword(),
         description="List of extra informational labels about the file", default=[])
-    type = odm.List(
+    technique = odm.List(
         odm.Keyword(),
         description="List of labels related to the technique used by the file and the signatures that hits on it.",
         default=[])
     attribution = odm.List(
         odm.Keyword(),
-        description="List of labels related to the implant name and family as well as the actor that uses this file",
+        description="List of labels related to attribution of this file (implant name, actor, campain...)",
         default=[])
 
 
