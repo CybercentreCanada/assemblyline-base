@@ -36,6 +36,7 @@ rule code_javascript {
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
         $weak_js5 = /([^\w]|^)this\.[\w]+/
+        $weak_js6 = /([^\w]|^)[\w]+\.length/
 
     condition:
         // Note that application/javascript is obsolete
@@ -43,7 +44,8 @@ rule code_javascript {
         and (((mime startswith "text" or mime == "application/javascript")
             and (2 of ($strong_js*)
                 or (1 of ($strong_js*)
-                    and 2 of ($weak_js*))))
+                    and 2 of ($weak_js*)))
+                or (#strong_js1) > 5)
             or (mime == "application/octet-stream"
             and 4 of ($strong_js*)))
 }
