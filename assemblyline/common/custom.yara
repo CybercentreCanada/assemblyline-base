@@ -691,6 +691,23 @@ rule code_css {
 }
 
 /*
+code/ducky
+*/
+
+rule code_ducky {
+    meta:
+        type = "code/ducky"
+
+    strings:
+        $commands = /(^|\n)(REM|REM_BLOCK|END_REM|STRING|END_STRING|STRINGLN|END_STRINGLN|DELAY|ENTER|GUI)/
+
+    condition:
+        mime startswith "text"
+        and #commands >= 10
+
+}
+
+/*
 code/batch
 */
 
@@ -738,6 +755,7 @@ rule code_batch {
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
         $cmd5 = /(^|\n)exit\s*$/i
+        $cmd6 = /(^|\n|@|&)%comspec%/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $bom = {FF FE}
