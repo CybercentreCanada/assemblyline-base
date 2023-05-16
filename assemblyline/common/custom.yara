@@ -41,13 +41,25 @@ rule code_javascript {
     condition:
         // Note that application/javascript is obsolete
         not $not_html
-        and (((mime startswith "text" or mime == "application/javascript")
-            and (2 of ($strong_js*)
-                or (1 of ($strong_js*)
-                    and 2 of ($weak_js*)))
-                or (#strong_js1) > 5)
-            or (mime == "application/octet-stream"
-            and 4 of ($strong_js*)))
+        and (
+                (
+                    (
+                        mime startswith "text" or mime == "application/javascript"
+                    )
+                    and (
+                        2 of ($strong_js*)
+                        or (
+                            1 of ($strong_js*)
+                            and 2 of ($weak_js*)
+                        )
+                        or (#strong_js1) > 5
+                    )
+                )
+                or (
+                    mime == "application/octet-stream"
+                    and 4 of ($strong_js*)
+                )
+            )
 }
 
 /*
