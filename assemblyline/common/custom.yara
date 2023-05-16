@@ -505,7 +505,7 @@ rule code_ps1 {
             and
                 (
                     2 of ($strong_pwsh*)
-                ) or (
+                    or
                     3 of them
                 )
         ) or (
