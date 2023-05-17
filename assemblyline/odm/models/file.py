@@ -38,6 +38,7 @@ class Content(odm.Model):
 
 @odm.model(description="Extended Comment Model")
 class ExtendedComment(odm.Model):
+    cid = odm.UUID(description="Comment ID")
     author = odm.Compound(Author, default={}, description="Author of the comment")
     content = odm.Compound(Content, default={}, description="Content of the comment")
 
