@@ -5,7 +5,7 @@ from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 
-AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
+AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -702,10 +702,22 @@ DEFAULT_ARCHIVE = {
 }
 
 
+@odm.model(index=False, store=False, description="Datastore Retrohunt feature configuration")
+class Retrohunt(odm.Model):
+    enabled = odm.Boolean(description="Are we enabling Retrohunt features?")
+
+
+DEFAULT_RETROHUNT = {
+    "enabled": False
+}
+
+
 @odm.model(index=False, store=False, description="Datastore Configuration")
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
     archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
+    retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
+                             description="Datastore Retrohunt feature configuration")
     cache_dtl = odm.Integer(
         default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
@@ -714,6 +726,7 @@ class Datastore(odm.Model):
 DEFAULT_DATASTORE = {
     "hosts": ["http://elastic:devpass@localhost:9200"],
     "archive": DEFAULT_ARCHIVE,
+    "retrohunt": DEFAULT_RETROHUNT,
     "cache_dtl": 5,
     "type": "elasticsearch",
 }
@@ -953,6 +966,35 @@ DEFAULT_ALERTING_META = {
 }
 
 
+@odm.model(index=False, store=False, description="Connection details for external systems/data sources.")
+class ExternalSource(odm.Model):
+    name: str = odm.Keyword(description="Name of the source.")
+    classification = odm.Optional(
+        odm.ClassificationString(
+            description="Minimum classification applied to information from the source"
+                        " and required to know the existance of the source."))
+    max_classification = odm.Optional(
+        odm.ClassificationString(description="Maximum classification of data that may be handled by the source"))
+    url: str = odm.Keyword(description="URL of the upstream source's lookup service.")
+
+
+EXAMPLE_EXTERNAL_SOURCE_VT = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "url": "vt-lookup.namespace.svc.cluster.local",
+    "classification": "TLP:CLEAR",
+    "max_classification": "TLP:CLEAR",
+}
+
+EXAMPLE_EXTERNAL_SOURCE_MB = {
+    # This is an example on how this would work with Malware Bazaar
+    "name": "Malware Bazaar",
+    "url": "mb-lookup.namespace.scv.cluster.local",
+    "classification": "TLP:CLEAR",
+    "max_classification": "TLP:CLEAR",
+}
+
+
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
@@ -974,6 +1016,9 @@ class UI(odm.Model):
     download_encoding = odm.Enum(values=["raw", "cart"], description="Which encoding will be used for downloads?")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
+    external_sources: List[ExternalSource] = odm.List(
+        odm.Compound(ExternalSource),
+        default=[], description="List of external sources to query")
     fqdn: str = odm.Text(description="Fully qualified domain name to use for the 2-factor authentication validation")
     ingest_max_priority: int = odm.Integer(description="Maximum priority for ingest API")
     read_only: bool = odm.Boolean(description="Turn on read only mode in the UI")
@@ -1015,6 +1060,7 @@ DEFAULT_UI = {
     "download_encoding": "cart",
     "email": None,
     "enforce_quota": True,
+    "external_sources": [],
     "fqdn": "localhost",
     "ingest_max_priority": 250,
     "read_only": False,
@@ -1031,7 +1077,8 @@ DEFAULT_UI = {
     "tos_lockout": False,
     "tos_lockout_notify": None,
     "url_submission_headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko)"
+                      " Chrome/110.0.0.0 Safari/537.36"
     },
     "url_submission_proxies": {},
     "validate_session_ip": True,
@@ -1168,6 +1215,13 @@ DEFAULT_SUBMISSION = {
 }
 
 
+@odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
+class Retrohunt(odm.Model):
+    url = odm.keyword(description="Base URL for service API")
+    api_key = odm.keyword(description="Service API Key")
+    tls_verify = odm.boolean(description="Should tls certificates be verified", default=True)
+
+
 @odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
 class Config(odm.Model):
     auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH, description="Authentication module configuration")
@@ -1182,6 +1236,7 @@ class Config(odm.Model):
     ui: UI = odm.Compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
+    retrohunt = odm.optional(odm.compound(Retrohunt, description="Options for including a retrohunt server."))
 
 
 DEFAULT_CONFIG = {

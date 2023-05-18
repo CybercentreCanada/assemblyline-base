@@ -24,6 +24,7 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
+from assemblyline.odm.models.retrohunt import Retrohunt
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
@@ -53,6 +54,7 @@ class AssemblylineDatastore(object):
         self.ds.register('filescore', FileScore)
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
+        self.ds.register('retrohunt', Retrohunt)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
         self.ds.register('signature', Signature)
@@ -167,6 +169,10 @@ class AssemblylineDatastore(object):
     @property
     def workflow(self) -> ESCollection[Workflow]:
         return self.ds.workflow
+
+    @property
+    def retrohunt(self) -> ESCollection[Retrohunt]:
+        return self.ds.retrohunt
 
     def get_stats(self):
         node_stats = self.ds.with_retries(self.ds.client.nodes.stats, metric="fs")
@@ -789,16 +795,11 @@ class AssemblylineDatastore(object):
                                      reverse=True)
             for section in sorted_sections:
                 file_classification = files.get(key[:64], {}).get('classification', section['classification'])
-                if user_classification:
-                    if not cl_engine.is_accessible(user_classification, section['classification']):
-                        out["filtered"] = True
-                        continue
-                    if not cl_engine.is_accessible(user_classification, file_classification):
-                        out["filtered"] = True
-                        continue
-
-                out["classification"] = cl_engine.max_classification(out["classification"], section['classification'])
-                out["classification"] = cl_engine.max_classification(out["classification"], file_classification)
+                combined_classification = cl_engine.max_classification(file_classification, section['classification'])
+                if user_classification and not cl_engine.is_accessible(user_classification, combined_classification):
+                    out["filtered"] = True
+                    continue
+                out["classification"] = cl_engine.max_classification(out["classification"], combined_classification)
 
                 h_type = "info"
 
@@ -873,7 +874,8 @@ class AssemblylineDatastore(object):
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key,
-                                    'safelisted': False
+                                    'safelisted': False,
+                                    'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
 
@@ -890,7 +892,8 @@ class AssemblylineDatastore(object):
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key,
-                                    'safelisted': True
+                                    'safelisted': True,
+                                    'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
 
