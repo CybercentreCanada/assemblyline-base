@@ -396,6 +396,7 @@ class Tagging(odm.Model):
         date = odm.Optional(odm.Compound(FileDate), description="File's Date Information")
         elf = odm.Optional(odm.Compound(FileELF), description="ELF File Properties")
         lib = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Libraries")
+        lsh = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File LSH hashes")
         name = odm.Optional(odm.Compound(FileName), description="File Name")
         path = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="File Path")
         rule = odm.Optional(odm.Mapping(odm.List(odm.Keyword(copyto="__text__"))), description="Rule/Signature File")
