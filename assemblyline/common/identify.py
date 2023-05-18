@@ -1,30 +1,36 @@
 import logging
-import magic
-import msoffcrypto
 import re
-import ssdeep
 import struct
 import subprocess
 import sys
 import threading
 import uuid
+import zipfile
+from binascii import hexlify
+from typing import Dict, Optional, Tuple, Union
+
+import magic
+import msoffcrypto
+import ssdeep
 import yaml
 import yara
-import zipfile
-
-from binascii import hexlify
-from cart import get_metadata_only
-from typing import Tuple, Union, Dict, Optional
-
 from assemblyline.common.digests import get_digests_for_file
-from assemblyline.common.forge import get_constants, get_cachestore, get_config, get_datastore
-from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs, magic_patterns as default_magic_patterns, \
-    trusted_mimes as default_trusted_mimes
+from assemblyline.common.forge import get_cachestore, get_config, get_constants, get_datastore
+from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs
+from assemblyline.common.identify_defaults import magic_patterns as default_magic_patterns
+from assemblyline.common.identify_defaults import trusted_mimes as default_trusted_mimes
 from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
 from assemblyline.remote.datatypes.events import EventWatcher
+from cart import get_metadata_only
 
 constants = get_constants()
+
+
+# These headers are found in the custom.magic file to assist with identification, and are imported by services
+# that can create files with a high-confidence type
+CUSTOM_PS1_ID = b"#!/usr/bin/env pwsh\n"
+CUSTOM_BATCH_ID = b"REM Batch extracted by Assemblyline\n"
 
 
 class Identify():
