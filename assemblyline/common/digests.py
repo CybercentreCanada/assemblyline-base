@@ -1,4 +1,5 @@
 import hashlib
+import tlsh
 from typing import Dict
 
 from assemblyline.common import entropy
@@ -22,6 +23,7 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
     md5 = hashlib.md5()
     sha1 = hashlib.sha1()
     sha256 = hashlib.sha256()
+    th = tlsh.Tlsh()
     size = 0
 
     with open(path, 'rb') as f:
@@ -37,6 +39,7 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
             md5.update(data)
             sha1.update(data)
             sha256.update(data)
+            th.update(data)
             size += length
 
             data = f.read(blocksize)
@@ -50,6 +53,13 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
     result['sha1'] = sha1.hexdigest()
     result['sha256'] = sha256.hexdigest()
     result['size'] = size
+
+    # Try to finalise the TLSH Hash and add it to the results
+    try:
+        th.final()
+        result['tlsh'] = th.hexdigest()
+    except Exception:
+        pass
 
     return result
 
