@@ -23,24 +23,14 @@ class LabelCategories(odm.Model):
         default=[])
 
 
-@odm.model(description="Comment's Author Model")
-class Author(odm.Model):
-    name = odm.Keyword(description="Full name of the user who made the comment")
-    avatar = odm.Any(description="Avatar of the user who made the comment")
-    email = odm.Optional(odm.Email(), description="User's email address who made the comment")
-
-
-@odm.model(description="Comment's Content Model")
-class Content(odm.Model):
-    date = odm.Date(store=True, default="NOW", description="Datetime the comment was made on")
-    text = odm.Text(description="Text of the comment written by the author")
-
-
 @odm.model(description="Extended Comment Model")
 class ExtendedComment(odm.Model):
     cid = odm.UUID(description="Comment ID")
-    author = odm.Compound(Author, default={}, description="Author of the comment")
-    content = odm.Compound(Content, default={}, description="Content of the comment")
+    name = odm.Keyword(description="Full name of the user who made the comment")
+    avatar = odm.Any(description="Avatar of the user who made the comment")
+    email = odm.Optional(odm.Email(), description="User's email address who made the comment")
+    date = odm.Date(store=True, default="NOW", description="Datetime the comment was made on")
+    text = odm.Text(description="Text of the comment written by the author")
 
 
 @odm.model(description="Minimal Comment Model")
@@ -57,7 +47,7 @@ class File(odm.Model):
     ascii = odm.Keyword(index=False, store=False,
                         description="Dotted ASCII representation of the first 64 bytes of the file")
     classification = odm.Classification(description="Classification of the file")
-    comments = odm.List(odm.Compound(Comment), default=[], description="List of comments made on a file")
+    comments = odm.List(odm.Compound(Comment), default={}, description="List of comments made on a file")
     entropy = odm.Float(description="Entropy of the file")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
     is_section_image = odm.Boolean(default=False, description="Is this an image from an Image Result Section?")
