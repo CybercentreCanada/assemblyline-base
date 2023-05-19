@@ -33,7 +33,7 @@ services:
 
   # frontend
   al_frontend:
-    image: cccs/assemblyline-ui-frontend
+    image: cccs/assemblyline-ui-frontend:stable
     env_file:
       - .env
     ports:
