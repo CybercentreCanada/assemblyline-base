@@ -3,6 +3,8 @@ version: "2.4"
 services:
   al_scaler:
     image: cccs/assemblyline_dev:4.3.1
+    env_file:
+      - .env
     environment:
       DOCKER_CONFIGURATION_PATH: /mount/service_config/
       DOCKER_CONFIGURATION_VOLUME: service_config
@@ -28,11 +30,13 @@ services:
 
   al_updater:
     image: cccs/assemblyline_dev:4.3.1
+    env_file:
+      - .env
     environment:
       UI_SERVER: "https://nginx"
       AL_CORE_NETWORK: external
-      CONTAINER_CHECK_INTERVAL: 30
-      UPDATE_CHECK_INTERVAL: 30
+      CONTAINER_CHECK_INTERVAL: 5
+      UPDATE_CHECK_INTERVAL: 5
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
