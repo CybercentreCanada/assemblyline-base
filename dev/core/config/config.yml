@@ -35,6 +35,9 @@ logging:
 
 services:
   preferred_update_channel: dev
+  allow_insecure_registry: true
+  image_variables:
+    PRIVATE_REGISTRY: $PRIVATE_REGISTRY
 
 ui:
   enforce_quota: false
