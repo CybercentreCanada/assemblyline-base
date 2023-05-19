@@ -56,6 +56,7 @@ class Section(odm.Model):
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
     classification = odm.Classification(description="Classification of the section")
     body_format = odm.Enum(values=BODY_FORMAT, index=False, description="Type of body in this section")
+    body_config = odm.Optional(odm.Mapping(odm.Any(), index=False, description="Configurations for the body of this section"))
     depth = odm.Integer(index=False, description="Depth of the section")
     heuristic = odm.Optional(odm.Compound(Heuristic), description="Heuristic used to score result section")
     tags = odm.Compound(Tagging, default={}, description="List of tags associated to this section")
