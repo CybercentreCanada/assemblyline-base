@@ -23,16 +23,6 @@ class LabelCategories(odm.Model):
         default=[])
 
 
-@odm.model(description="Extended Comment Model")
-class ExtendedComment(odm.Model):
-    cid = odm.UUID(description="Comment ID")
-    name = odm.Keyword(description="Full name of the user who made the comment")
-    avatar = odm.Any(description="Avatar of the user who made the comment")
-    email = odm.Optional(odm.Email(), description="User's email address who made the comment")
-    date = odm.Date(store=True, default="NOW", description="Datetime the comment was made on")
-    text = odm.Text(description="Text of the comment written by the author")
-
-
 @odm.model(description="Minimal Comment Model")
 class Comment(odm.Model):
     cid = odm.UUID(description="Comment ID")
