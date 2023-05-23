@@ -1146,7 +1146,7 @@ class AssemblylineDatastore(object):
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None, is_section_image=False):
         # Remove control fields from new file info
-        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
+        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']:
             fileinfo.pop(x, None)
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):
