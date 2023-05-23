@@ -23,7 +23,7 @@ class LabelCategories(odm.Model):
         default=[])
 
 
-@odm.model(index=True, store=False, description="Minimal Comment Model")
+@odm.model(index=True, store=False, description="Comment Model")
 class Comment(odm.Model):
     cid = odm.UUID(description="Comment ID")
     uname = odm.Keyword(description="Username of the user who made the comment")
