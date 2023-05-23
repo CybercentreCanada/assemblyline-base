@@ -37,7 +37,7 @@ class File(odm.Model):
     ascii = odm.Keyword(index=False, store=False,
                         description="Dotted ASCII representation of the first 64 bytes of the file")
     classification = odm.Classification(description="Classification of the file")
-    comments = odm.List(odm.Compound(Comment), default={}, description="List of comments made on a file")
+    comments = odm.List(odm.Compound(Comment), default=[], description="List of comments made on a file")
     entropy = odm.Float(description="Entropy of the file")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
     is_section_image = odm.Boolean(default=False, description="Is this an image from an Image Result Section?")
