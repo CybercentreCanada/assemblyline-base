@@ -986,7 +986,7 @@ rule code_wsf {
 
     meta:
         type = "code/wsf"
-        score = 2
+        score = 10
 
     strings:
         $ = /<job.*?>/
@@ -1005,7 +1005,7 @@ rule code_wsc {
 
     meta:
         type = "code/wsc"
-        score = 2
+        score = 10
 
     strings:
         $ = /<component.*?>/
