@@ -114,6 +114,9 @@ class Service(odm.Model):
 
     category = odm.Keyword(store=True, default="Static Analysis", copyto="__text__",
                            description="Which category does this service belong to?")
+    classification = odm.ClassificationString(
+        default=Classification.UNRESTRICTED, description="Classification of the service"
+    )
     config = odm.Mapping(odm.Any(), default={}, index=False, store=False, description="Service Configuration")
     description = odm.Text(store=True, default="NA", copyto="__text__", description="Description of service")
     default_result_classification = odm.ClassificationString(

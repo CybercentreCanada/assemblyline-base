@@ -93,6 +93,7 @@ class ServiceDelta(odm.Model):
     accepts = odm.Optional(odm.Keyword(), store=True, description=REF_SERVICE)
     rejects = odm.Optional(odm.Keyword(), store=True, description=REF_SERVICE)
     category = odm.Optional(odm.Keyword(), store=True, copyto="__text__", description=REF_SERVICE)
+    classification = odm.Optional(odm.ClassificationString(), description=REF_SERVICE)
     config = odm.Optional(odm.Mapping(odm.Any()), index=False, description=REF_SERVICE)
     description = odm.Optional(odm.Text(), store=True, copyto="__text__", description=REF_SERVICE)
     default_result_classification = odm.Optional(odm.ClassificationString(), description=REF_SERVICE)
