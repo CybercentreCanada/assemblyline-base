@@ -14,7 +14,7 @@ rule code_javascript {
         $strong_js2  = /\beval[ \t]*\(['"]/
 
         // jscript
-        $strong_js3  = /new[ \t]+ActiveXObject\(['"]/
+        $strong_js3  = /new[ \t]+ActiveXObject\(/
 
         $strong_js4  = /Scripting\.Dictionary['"]/
         $strong_js5  = /unescape\(/
