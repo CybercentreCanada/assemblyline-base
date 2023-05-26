@@ -137,13 +137,18 @@ class ESCollection(Generic[ModelType]):
     RETRY_INFINITY = -1
     KEEP_ALIVE = "5m"
     UPDATE_SET = "SET"
+    UPDATE_SET_IF_MISSING = "SET_IF_MISSING"
     UPDATE_INC = "INC"
     UPDATE_DEC = "DEC"
     UPDATE_MAX = "MAX"
     UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
     UPDATE_APPEND_IF_MISSING = "APPEND_IF_MISSING"
+    UPDATE_MODIFY_BY_INDEX = "MODIFY_BY_INDEX"
+    UPDATE_PREPEND = "PREPEND"
+    UPDATE_PREPEND_IF_MISSING = "PREPEND_IF_MISSING"
     UPDATE_REMOVE = "REMOVE"
+    UPDATE_REMOVE_BY_INDEX = "REMOVE_BY_INDEX"
     UPDATE_DELETE = "DELETE"
     UPDATE_OPERATIONS = [
         UPDATE_APPEND,
@@ -152,8 +157,13 @@ class ESCollection(Generic[ModelType]):
         UPDATE_INC,
         UPDATE_MAX,
         UPDATE_MIN,
+        UPDATE_PREPEND,
+        UPDATE_PREPEND_IF_MISSING,
         UPDATE_REMOVE,
+        UPDATE_REMOVE_BY_INDEX,
         UPDATE_SET,
+        UPDATE_MODIFY_BY_INDEX,
+        UPDATE_SET_IF_MISSING,
         UPDATE_DELETE,
     ]
     DEFAULT_SEARCH_VALUES: dict[str, typing.Any] = {
@@ -1081,6 +1091,11 @@ class ESCollection(Generic[ModelType]):
             if op == self.UPDATE_SET:
                 op_sources.append(f"ctx._source.{doc_key} = params.value{val_id}")
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_SET_IF_MISSING:
+                script = f"if (ctx._source.{doc_key} == null) " \
+                         f"{{ctx._source.{doc_key} = params.value{val_id}}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_DELETE:
                 op_sources.append(f"ctx._source.{doc_key}.remove(params.value{val_id})")
                 op_params[f'value{val_id}'] = value
@@ -1092,9 +1107,28 @@ class ESCollection(Generic[ModelType]):
                          f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_MODIFY_BY_INDEX:
+                script = f"if (0 <= params.index{val_id} && params.index{val_id} < ctx._source.{doc_key}.length)" \
+                         f"{{ctx._source.{doc_key}[params.index{val_id}] = params.value{val_id}}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value['value']
+                op_params[f'index{val_id}'] = value['index']
+            elif op == self.UPDATE_PREPEND:
+                op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_PREPEND_IF_MISSING:
+                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
+                         f"{{ctx._source.{doc_key}.add(0, params.value{val_id})}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
                 script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
                          f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_REMOVE_BY_INDEX:
+                script = f"if (0 <= params.value{val_id} && params.value{val_id} < ctx._source.{doc_key}.length) " \
+                         f"{{ctx._source.{doc_key}.remove(params.value{val_id})}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1127,7 +1161,7 @@ class ESCollection(Generic[ModelType]):
         }
         return script
 
-    def _validate_operations(self, operations):
+    def _validate_operations(self, operations, **kwargs):
         """
         Validate the different operations received for a partial update
 
@@ -1167,13 +1201,27 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND, self.
+                          UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
                     if not field.multivalued:
                         raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
 
                     try:
-                        value = field.check(value)
+                        value = field.check(value, **kwargs)
                     except (ValueError, TypeError, AttributeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in [self.UPDATE_MODIFY_BY_INDEX]:
+                    try:
+                        value['value'] = field.check(value.get('value', None), **kwargs)
+                        isinstance(value.get('index', None), int)
+                    except (ValueError, TypeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in [self.UPDATE_REMOVE_BY_INDEX]:
+                    try:
+                        isinstance(value, int)
+                    except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
                 elif op in [self.UPDATE_DEC, self.UPDATE_INC]:
@@ -1182,10 +1230,10 @@ class ESCollection(Generic[ModelType]):
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in self.UPDATE_SET:
+                elif op in [self.UPDATE_SET, self.UPDATE_SET_IF_MISSING]:
                     try:
                         if field.multivalued and isinstance(value, list):
-                            value = [field.check(v) for v in value]
+                            value = [field.check(v, **kwargs) for v in value]
                         else:
                             value = field.check(value)
                     except (ValueError, TypeError):
@@ -1217,7 +1265,7 @@ class ESCollection(Generic[ModelType]):
         :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
         :return: True is update successful
         """
-        operations = self._validate_operations(operations)
+        operations = self._validate_operations(operations, is_updating=True)
         script = self._create_scripts_from_operations(operations)
         index_list = self.get_index_list(index_type)
 
