@@ -70,6 +70,7 @@ def get_results(keys, file_infos_p, storage_p):
     out = {}
     res = {}
     missing = []
+    supplementary = set()
     retry = 0
     while keys and retry < MAX_RETRY:
         if retry:
@@ -90,11 +91,13 @@ def get_results(keys, file_infos_p, storage_p):
             v = format_result(v)
             if v:
                 results[k] = v
+                # Include supplementary files associated to result
+                [supplementary.add(s['sha256']) for s in v['response']['supplementary']]
 
     out["results"] = results
     out["missing_result_keys"] = keys + missing
 
-    return out
+    return out, list(supplementary)
 
 
 def get_errors(keys, storage_p):
@@ -195,16 +198,20 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                     if Classification.enforce and 'bundle.classification' not in submission['metadata']:
                         submission['metadata']['bundle.classification'] = submission['classification']
 
+                    results, supplementary = get_results(submission.get("results", []), file_infos, datastore)
+                    supp_info, _ = get_file_infos(copy(supplementary), datastore)
+                    file_infos.update(supp_info)
+
                     data.update({
                         'submission': submission,
                         'files': {"list": flatten_tree, "tree": file_tree, "infos": file_infos},
-                        'results': get_results(submission.get("results", []), file_infos, datastore),
+                        'results': results,
                         'errors': get_errors(submission.get("errors", []), datastore)
                     })
 
                     # Download all related files
                     with forge.get_filestore() as filestore:
-                        for sha256 in flatten_tree:
+                        for sha256 in flatten_tree + supplementary:
                             try:
                                 filestore.download(sha256, os.path.join(current_working_dir, sha256))
                             except FileStoreException:
