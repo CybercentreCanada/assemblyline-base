@@ -56,12 +56,6 @@ class TransportS3(Transport):
 
         self.endpoint_url = "{scheme}://{host}:{port}".format(scheme=self.scheme, host=self.host, port=self.port)
 
-        config = None
-        host_root_ca = os.environ.get(f'{host.upper()}_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
-        if self.use_ssl and os.path.exists(host_root_ca):
-            # Verify against the Root CA associated to the filestore host
-            verify = host_root_ca
-
         session = boto3.session.Session()
         self.client = session.client(
             "s3",
@@ -71,7 +65,6 @@ class TransportS3(Transport):
             region_name=aws_region,
             use_ssl=self.use_ssl,
             verify=verify,
-            config=config
         )
 
         bucket_exist = False

@@ -36,16 +36,30 @@ rule code_javascript {
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
         $weak_js5 = /([^\w]|^)this\.[\w]+/
+        $weak_js6 = /([^\w]|^)[\w]+\.length/
 
     condition:
         // Note that application/javascript is obsolete
         not $not_html
-        and (((mime startswith "text" or mime == "application/javascript")
-            and (2 of ($strong_js*)
-                or (1 of ($strong_js*)
-                    and 2 of ($weak_js*))))
-            or (mime == "application/octet-stream"
-            and 4 of ($strong_js*)))
+        and (
+                (
+                    (
+                        mime startswith "text" or mime == "application/javascript"
+                    )
+                    and (
+                        2 of ($strong_js*)
+                        or (
+                            1 of ($strong_js*)
+                            and 2 of ($weak_js*)
+                        )
+                        or (#strong_js1) > 5
+                    )
+                )
+                or (
+                    mime == "application/octet-stream"
+                    and 4 of ($strong_js*)
+                )
+            )
 }
 
 /*
@@ -356,11 +370,11 @@ rule text_json {
 
     meta:
         type = "text/json"
-        score = 1
+        score = 2
 
     strings:
         $start = "{"
-        $invalid_keys1 = /\w+:[\s]*[\{\["\d]/
+        $invalid_keys1 = /^\s*\w+:[\s]*[\{\["\d]/
         $valid_keys1 = /"\w+":[\s]*[\{\["\d]/
         $end = "}"
 
@@ -431,13 +445,31 @@ rule code_jsp {
         score = 3
 
     strings:
-        $ = /(^|\n)<%@page[ \t]+import=['"][\w\.]+['"][ \t]*%>/
-        $ = /(^|\n)<%![^%]*%>/
-        $ = /<%=\w+%>/
+        $xml_begin = "<jsp:"
+        $xml_end = "</jsp:"
+        $non_xml_begin = "<%"
+        $non_xml_end = "%>"
+        $java1 = "FileOutputStream"
+        $java2 = "System.getProperty"
+        $java3 = "public void"
+        $java4 = "public Class"
+        $java5 = "ClassLoad"
+        $java6 = "java.util.*"
+        $jsp1 = "<%@ page"
+        $jsp2 = "<%@ include"
+        $jsp3 = "<%@ taglib"
 
     condition:
         mime startswith "text"
-        and 2 of them
+        and (
+            all of ($xml*)
+            or 2 of ($jsp*)
+            or (
+                #non_xml_begin >= 2
+                and #non_xml_end >= 2
+                and (#java1 + #java2 + #java3 + #java4 + #java5 + #java6) >= 2
+            )
+        )
 }
 
 /*
@@ -468,10 +500,18 @@ rule code_ps1 {
         $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
     condition:
-        (mime startswith "text"
-        and 2 of them) or
-            (mime == "application/octet-stream"
-            and 3 of ($strong_pwsh*))
+        (
+            mime startswith "text"
+            and
+                (
+                    2 of ($strong_pwsh*)
+                    or
+                    3 of them
+                )
+        ) or (
+            mime == "application/octet-stream"
+            and 3 of ($strong_pwsh*)
+        )
 }
 
 rule code_ps1_in_ps1 {
@@ -673,6 +713,23 @@ rule code_css {
 }
 
 /*
+code/ducky
+*/
+
+rule code_ducky {
+    meta:
+        type = "code/ducky"
+
+    strings:
+        $commands = /(^|\n)(REM|REM_BLOCK|END_REM|STRING|END_STRING|STRINGLN|END_STRINGLN|DELAY|ENTER|GUI)/
+
+    condition:
+        mime startswith "text"
+        and #commands >= 10
+
+}
+
+/*
 code/batch
 */
 
@@ -718,8 +775,9 @@ rule code_batch {
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
-        $cmd4 = /(^|\n|@|&)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
+        $cmd4 = /(^|\n|@|&|^\s)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
         $cmd5 = /(^|\n)exit\s*$/i
+        $cmd6 = /(^|\n|@|&)%comspec%/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $bom = {FF FE}
@@ -928,7 +986,7 @@ rule code_wsf {
 
     meta:
         type = "code/wsf"
-        score = 2
+        score = 10
 
     strings:
         $ = /<job.*?>/
@@ -947,7 +1005,7 @@ rule code_wsc {
 
     meta:
         type = "code/wsc"
-        score = 2
+        score = 10
 
     strings:
         $ = /<component.*?>/

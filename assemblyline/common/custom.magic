@@ -129,9 +129,9 @@
 0 string [InternetShortcut] custom: shortcut/web
 # NSIS Installer
 4  string  \xef\xbe\xad\xdeNullsoftInst custom: archive/nsis
-# Assemblyline batch file
+# Assemblyline batch file, declared in Python code in identify.py
 0 string REM\ Batch\ extracted\ by\ Assemblyline\n custom: code/batch
-# Assemblyline powershell file
+# Assemblyline powershell file, declared in Python code in identify.py
 0 string \#\!\/usr\/bin\/env\ pwsh\n custom: code/ps1
 # xxencoded and uuencoded files
 0 string XXEncode\ \ 0\.0\ \(PowerArchiver\ 2009:\ www\.powerarchiver\.com\) custom: archive/xxe
