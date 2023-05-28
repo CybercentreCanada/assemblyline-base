@@ -40,6 +40,7 @@ class DockerConfig(odm.Model):
                                                description="The password or token to use when pulling the image")
     registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker',
                                   description="The type of container registry")
+    operating_system: str = odm.Enum(values=['windows', 'linux'], default="linux", description="What operating system does this container run under?")
     ports: list[str] = odm.List(odm.Keyword(), default=[], description="What ports of container to expose?")
     ram_mb: int = odm.Integer(default=512, description="Container RAM limit")
     ram_mb_min: int = odm.Integer(default=256, description="Container RAM request")
