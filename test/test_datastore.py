@@ -45,6 +45,30 @@ with warnings.catch_warnings():
                 'a': 1
             }
         },
+        'to_update_list_of_objects': {
+            'list_of_objects': [
+                {
+                    "cid": "4tbZU5x5Fh6Oq7lbs4XR6D",
+                    "uname": "admin",
+                    "text": "UPDATE_PREPEND"
+                },
+                {
+                    "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                    "uname": "admin",
+                    "text": "UPDATE_SET"
+                },
+                {
+                    "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                    "uname": "admin",
+                    "text": "UPDATE_MODIFY"
+                },
+                {
+                    "cid": "2qTELdsSNSSBHfUf3phtOM",
+                    "uname": "admin",
+                    "text": "UPDATE_APPEND"
+                }
+            ]
+        },
         'bulk_update': {'bulk_b': True, "map": {'a': 1}, 'counters': {
             'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False},
         'bulk_update2': {'bulk_b': True, "map": {'a': 1}, 'counters': {
@@ -260,6 +284,98 @@ def _test_update(c: ESCollection):
     ]
     assert c.update('to_update', operations)
     assert c.get('to_update') == expected
+
+
+def _test_update_list_of_objects(c: ESCollection):
+    # Test Update a list of object
+    expected = {
+        'list_of_objects': [
+            {
+                "cid": "4tbZU5x5Fh6Oq7lbs4XR6D",
+                "uname": "admin",
+                "text": "UPDATE_PREPEND"
+            },
+            {
+                "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                "uname": "admin",
+                "text": "UPDATE_SET"
+            },
+            {
+                "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                "uname": "admin",
+                "text": "UPDATE_MODIFY"
+            },
+            {
+                "cid": "2qTELdsSNSSBHfUf3phtOM",
+                "uname": "admin",
+                "text": "UPDATE_APPEND"
+            }
+        ]
+    }
+    operations = [
+        (c.UPDATE_SET, "list_of_objects", [
+            {
+                "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                "uname": "admin",
+                "text": "UPDATE_SET"
+            },
+            {
+                "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                "uname": "user",
+                "text": "UPDATE_SET"
+            }
+        ]),
+        (c.UPDATE_PREPEND, "list_of_objects", {
+            "cid": "4tbZU5x5Fh6Oq7lbs4XR6D",
+            "uname": "admin",
+            "text": "UPDATE_PREPEND"
+        }),
+        (c.UPDATE_PREPEND_IF_MISSING, "list_of_objects", {
+            "cid": "3e9PRISOoJynvGUmzrDqhv",
+            "uname": "admin",
+            "text": "UPDATE_PREPEND_IF_MISSING"
+        }),
+        (c.UPDATE_PREPEND_IF_MISSING, "list_of_objects", {
+            "cid": "3e9PRISOoJynvGUmzrDqhv",
+            "uname": "admin",
+            "text": "UPDATE_PREPEND_IF_MISSING"
+        }),
+        (c.UPDATE_APPEND, "list_of_objects", {
+            "cid": "2qTELdsSNSSBHfUf3phtOM",
+            "uname": "admin",
+            "text": "UPDATE_APPEND"
+        }),
+        (c.UPDATE_APPEND_IF_MISSING, "list_of_objects", {
+            "cid": "7jXHLwMkwNVFTg1Ad3JRyR",
+            "uname": "admin",
+            "text": "UPDATE_APPEND_IF_MISSING"
+        }),
+        (c.UPDATE_APPEND_IF_MISSING, "list_of_objects", {
+            "cid": "7jXHLwMkwNVFTg1Ad3JRyR",
+            "uname": "admin",
+            "text": "UPDATE_APPEND_IF_MISSING"
+        }),
+        (c.UPDATE_REMOVE, "list_of_objects", {
+            "cid": "7jXHLwMkwNVFTg1Ad3JRyR",
+            "uname": "admin",
+            "text": "UPDATE_APPEND_IF_MISSING"
+        }),
+        (c.UPDATE_DELETE, "list_of_objects", 0),
+        (c.UPDATE_MODIFY, "list_of_objects", {
+            "prev":  {
+                "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                "uname": "user",
+                "text": "UPDATE_SET"
+            },
+            "next": {
+                "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                "uname": "admin",
+                "text": "UPDATE_MODIFY"
+            }
+        })
+    ]
+    assert c.update('to_update_list_of_objects', operations)
+    assert c.get('to_update_list_of_objects') == expected
 
 
 def _test_update_by_query(c: ESCollection):
@@ -537,6 +653,7 @@ TEST_FUNCTIONS = [
     (_test_multiget, "multiget"),
     (_test_keys, "keys"),
     (_test_update, "update"),
+    (_test_update_list_of_objects, "update_list_of_objects"),
     (_test_update_by_query, "update_by_query"),
     (_test_delete_by_query, "delete_by_query"),
     (_test_fields, "fields"),
