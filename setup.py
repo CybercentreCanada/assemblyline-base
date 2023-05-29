@@ -91,7 +91,8 @@ setup(
         'azure-identity',
         'msoffcrypto-tool',
         'chardet',
-        'yara-python'
+        'yara-python',
+        'python-tlsh'
     ],
     extras_require={
         'test': [
