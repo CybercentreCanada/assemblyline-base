@@ -58,6 +58,9 @@ class Classification(object):
 
         self.enforce = False
         self.dynamic_groups = False
+        # dynamic group type is one of: email | group | all
+        # defaults to email for original behavior
+        self.dynamic_groups_type = "email"
 
         # Add Invalid classification
         self.levels_map["INV"] = self.INVALID_LVL
@@ -74,6 +77,12 @@ class Classification(object):
         try:
             self.enforce = classification_definition['enforce']
             self.dynamic_groups = classification_definition['dynamic_groups']
+            self.dynamic_groups_type = classification_definition['dynamic_groups_type']
+
+            if self.dynamic_groups_type not in ['email', 'group', 'all']:
+                raise InvalidDefinition(f"Invalid dynamic group type \"{self.dynamic_groups_type}\". "
+                                        "Valid types are: email | group | all")
+
             if self.enforce:
                 self._classification_cache = self.list_all_classification_combinations()
                 self._classification_cache_short = self.list_all_classification_combinations(long_format=False)
@@ -250,7 +259,8 @@ class Classification(object):
             return sorted([self.access_req_map_stl[r] for r in return_set])
         return sorted(list(return_set))
 
-    def _get_c12n_groups(self, c12n: str, long_format: bool = True) -> Tuple[List, List]:
+    def _get_c12n_groups(self, c12n: str, long_format: bool = True,
+                         get_dynamic_groups: bool = True) -> Tuple[List, List]:
         # Parse classifications in uppercase mode only
         c12n = c12n.upper()
 
@@ -285,7 +295,7 @@ class Classification(object):
             else:
                 others.add(g)
 
-        if self.dynamic_groups:
+        if self.dynamic_groups and get_dynamic_groups:
             for o in others:
                 if o not in self.access_req_map_lts \
                         and o not in self.access_req_map_stl \
@@ -402,11 +412,11 @@ class Classification(object):
 
         return out
 
-    def _get_classification_parts(self, c12n: str, long_format: bool = True) \
+    def _get_classification_parts(self, c12n: str, long_format: bool = True, get_dynamic_groups: bool = True) \
             -> Tuple[Union[Union[int, str], Any], List, List, List]:
         lvl_idx = self._get_c12n_level_index(c12n)
         req = self._get_c12n_required(c12n, long_format=long_format)
-        groups, subgroups = self._get_c12n_groups(c12n, long_format=long_format)
+        groups, subgroups = self._get_c12n_groups(c12n, long_format=long_format, get_dynamic_groups=get_dynamic_groups)
 
         return lvl_idx, req, groups, subgroups
 
@@ -851,7 +861,8 @@ class Classification(object):
                                                         subgroups,
                                                         long_format=long_format)
 
-    def normalize_classification(self, c12n: str, long_format: bool = True, skip_auto_select: bool = False) -> str:
+    def normalize_classification(self, c12n: str, long_format: bool = True, skip_auto_select: bool = False,
+                                 get_dynamic_groups: bool = True) -> str:
         """
         Normalize a given classification by applying the rules defined in the classification definition.
         This function will remove any invalid parts and add missing parts to the classification.
@@ -869,12 +880,13 @@ class Classification(object):
             return self.UNRESTRICTED
 
         # Has the classification has already been normalized before?
-        if long_format and c12n in self._classification_cache:
+        if long_format and c12n in self._classification_cache and get_dynamic_groups:
             return c12n
-        if not long_format and c12n in self._classification_cache_short:
+        if not long_format and c12n in self._classification_cache_short and get_dynamic_groups:
             return c12n
 
-        lvl_idx, req, groups, subgroups = self._get_classification_parts(c12n, long_format=long_format)
+        lvl_idx, req, groups, subgroups = self._get_classification_parts(c12n, long_format=long_format,
+                                                                         get_dynamic_groups=get_dynamic_groups)
         new_c12n = self._get_normalized_classification_text(lvl_idx, req, groups, subgroups,
                                                             long_format=long_format,
                                                             skip_auto_select=skip_auto_select)
