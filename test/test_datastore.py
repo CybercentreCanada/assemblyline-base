@@ -309,7 +309,8 @@ def _test_update_list_of_objects(c: ESCollection):
                 "uname": "admin",
                 "text": "UPDATE_APPEND_IF_MISSING"
             }
-        ]
+        ],
+        'from_archive': False
     }
     operations = [
         (c.UPDATE_SET, "list_of_objects", [
