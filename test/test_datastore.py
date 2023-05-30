@@ -292,11 +292,11 @@ def _test_update_list_of_objects(c: ESCollection):
         'list_of_objects': [
             {
                 "uname": "admin",
-                "text": "UPDATE_PREPEND"
+                "text": "UPDATE_PREPEND_IF_MISSING"
             },
             {
                 "uname": "admin",
-                "text": "UPDATE_PREPEND_IF_MISSING"
+                "text": "UPDATE_PREPEND"
             },
             {
                 "uname": "admin",
@@ -354,7 +354,7 @@ def _test_update_list_of_objects(c: ESCollection):
             "uname": "admin",
             "text": "UPDATE_REMOVE"
         }),
-        (c.UPDATE_DELETE, "list_of_objects", 3),
+        (c.UPDATE_DELETE, "list_of_objects", 2),
         (c.UPDATE_MODIFY, "list_of_objects", {
             "prev":  {
                 "uname": "admin",
