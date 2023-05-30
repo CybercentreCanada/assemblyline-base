@@ -1101,10 +1101,10 @@ class ESCollection(Generic[ModelType]):
             elif op == self.UPDATE_MODIFY:
                 script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
                          f"if(ctx._source.{doc_key}[i].equals(params.prev{val_id})) " \
-                         f"ctx._source.{doc_key}[i] = params.next{val_id};"
+                         f"ctx._source.{doc_key}[i] = params.next{val_id}"
                 op_sources.append(script)
-                op_params[f'prev{val_id}'] = value['prev']
-                op_params[f'next{val_id}'] = value['next']
+                op_params[f'prev{val_id}'] = value.get('prev', None)
+                op_params[f'next{val_id}'] = value.get('next', None)
             elif op == self.UPDATE_PREPEND:
                 op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
                 op_params[f'value{val_id}'] = value
@@ -1116,7 +1116,7 @@ class ESCollection(Generic[ModelType]):
             elif op == self.UPDATE_REMOVE:
                 script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
                          f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
-                         f"ctx._source.{doc_key}.remove(i);"
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1206,21 +1206,6 @@ class ESCollection(Generic[ModelType]):
                     try:
                         value['prev'] = field.check(value.get('prev', None), **kwargs)
                         value['next'] = field.check(value.get('next', None), **kwargs)
-
-                        if isinstance(value['prev'], Model):
-                            value['prev'] = value['prev'].as_primitives()
-                        elif isinstance(value['prev'], datetime):
-                            value['prev'] = value['prev'].isoformat()
-                        elif isinstance(value['prev'], ClassificationObject):
-                            value['prev'] = str(value['prev'])
-
-                        if isinstance(value['next'], Model):
-                            value['next'] = value['next'].as_primitives()
-                        elif isinstance(value['next'], datetime):
-                            value['next'] = value['next'].isoformat()
-                        elif isinstance(value['next'], ClassificationObject):
-                            value['next'] = str(value['next'])
-
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
@@ -1239,12 +1224,26 @@ class ESCollection(Generic[ModelType]):
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                if isinstance(value, Model):
-                    value = value.as_primitives()
-                elif isinstance(value, datetime):
-                    value = value.isoformat()
-                elif isinstance(value, ClassificationObject):
-                    value = str(value)
+                def parse_value(v):
+                    if isinstance(v, Model):
+                        return v.as_primitives()
+                    elif isinstance(v, datetime):
+                        return v.isoformat()
+                    elif isinstance(v, ClassificationObject):
+                        return str(v)
+                    else:
+                        return v
+
+                try:
+                    if isinstance(value, dict) and ('prev' in value or 'next' in value):
+                        value['prev'] = parse_value(value.get('prev', None))
+                        value['next'] = parse_value(value.get('next', None))
+                    elif isinstance(value, list):
+                        value = [parse_value(v) for v in value]
+                    else:
+                        value = parse_value(value)
+                except (ValueError, TypeError):
+                    raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
             ret_ops.append((op, doc_key, value))
 
