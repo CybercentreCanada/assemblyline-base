@@ -142,6 +142,9 @@ class ESCollection(Generic[ModelType]):
     UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
     UPDATE_APPEND_IF_MISSING = "APPEND_IF_MISSING"
+    UPDATE_MODIFY = "MODIFY"
+    UPDATE_PREPEND = "PREPEND"
+    UPDATE_PREPEND_IF_MISSING = "PREPEND_IF_MISSING"
     UPDATE_REMOVE = "REMOVE"
     UPDATE_DELETE = "DELETE"
     UPDATE_OPERATIONS = [
@@ -151,6 +154,9 @@ class ESCollection(Generic[ModelType]):
         UPDATE_INC,
         UPDATE_MAX,
         UPDATE_MIN,
+        UPDATE_MODIFY,
+        UPDATE_PREPEND,
+        UPDATE_PREPEND_IF_MISSING,
         UPDATE_REMOVE,
         UPDATE_SET,
         UPDATE_DELETE,
@@ -1109,9 +1115,25 @@ class ESCollection(Generic[ModelType]):
                          f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_MODIFY:
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.prev{val_id})) " \
+                         f"ctx._source.{doc_key}[i] = params.next{val_id}"
+                op_sources.append(script)
+                op_params[f'prev{val_id}'] = value.get('prev', None)
+                op_params[f'next{val_id}'] = value.get('next', None)
+            elif op == self.UPDATE_PREPEND:
+                op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_PREPEND_IF_MISSING:
+                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
+                         f"{{ctx._source.{doc_key}.add(0, params.value{val_id})}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
-                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1144,7 +1166,7 @@ class ESCollection(Generic[ModelType]):
         }
         return script
 
-    def _validate_operations(self, operations):
+    def _validate_operations(self, operations, **kwargs):
         """
         Validate the different operations received for a partial update
 
@@ -1184,13 +1206,24 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND, self.
+                          UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
                     if not field.multivalued:
                         raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
 
                     try:
-                        value = field.check(value)
+                        value = field.check(value, **kwargs)
                     except (ValueError, TypeError, AttributeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in [self.UPDATE_MODIFY]:
+                    if not field.multivalued:
+                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
+
+                    try:
+                        value['prev'] = field.check(value.get('prev', None), **kwargs)
+                        value['next'] = field.check(value.get('next', None), **kwargs)
+                    except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
                 elif op in [self.UPDATE_DEC, self.UPDATE_INC]:
@@ -1199,21 +1232,35 @@ class ESCollection(Generic[ModelType]):
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in self.UPDATE_SET:
+                elif op in [self.UPDATE_SET]:
                     try:
                         if field.multivalued and isinstance(value, list):
-                            value = [field.check(v) for v in value]
+                            value = [field.check(v, **kwargs) for v in value]
                         else:
                             value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                if isinstance(value, Model):
-                    value = value.as_primitives()
-                elif isinstance(value, datetime):
-                    value = value.isoformat()
-                elif isinstance(value, ClassificationObject):
-                    value = str(value)
+                def parse_value(v):
+                    if isinstance(v, Model):
+                        return v.as_primitives()
+                    elif isinstance(v, datetime):
+                        return v.isoformat()
+                    elif isinstance(v, ClassificationObject):
+                        return str(v)
+                    else:
+                        return v
+
+                try:
+                    if isinstance(value, dict) and ('prev' in value or 'next' in value):
+                        value['prev'] = parse_value(value.get('prev', None))
+                        value['next'] = parse_value(value.get('next', None))
+                    elif isinstance(value, list):
+                        value = [parse_value(v) for v in value]
+                    else:
+                        value = parse_value(value)
+                except (ValueError, TypeError):
+                    raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
             ret_ops.append((op, doc_key, value))
 
@@ -1234,7 +1281,7 @@ class ESCollection(Generic[ModelType]):
         :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
         :return: True is update successful
         """
-        operations = self._validate_operations(operations)
+        operations = self._validate_operations(operations, is_updating=True)
         script = self._create_scripts_from_operations(operations)
         index_list = self.get_index_list(index_type)
 
