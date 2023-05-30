@@ -291,84 +291,76 @@ def _test_update_list_of_objects(c: ESCollection):
     expected = {
         'list_of_objects': [
             {
-                "cid": "4tbZU5x5Fh6Oq7lbs4XR6D",
                 "uname": "admin",
                 "text": "UPDATE_PREPEND"
             },
             {
-                "cid": "5D13pJW8kU2JUSVjlgkRk5",
                 "uname": "admin",
-                "text": "UPDATE_SET"
+                "text": "UPDATE_PREPEND_IF_MISSING"
             },
             {
-                "cid": "5D13pJW8kU2JUSVjlgkRk5",
                 "uname": "admin",
                 "text": "UPDATE_MODIFY"
             },
             {
-                "cid": "2qTELdsSNSSBHfUf3phtOM",
                 "uname": "admin",
                 "text": "UPDATE_APPEND"
+            }, {
+                "uname": "admin",
+                "text": "UPDATE_APPEND_IF_MISSING"
             }
         ]
     }
     operations = [
         (c.UPDATE_SET, "list_of_objects", [
             {
-                "cid": "5D13pJW8kU2JUSVjlgkRk5",
                 "uname": "admin",
-                "text": "UPDATE_SET"
+                "text": "UPDATE_DELETE"
             },
             {
-                "cid": "5D13pJW8kU2JUSVjlgkRk5",
-                "uname": "user",
+                "uname": "admin",
+                "text": "UPDATE_REMOVE"
+            },
+            {
+                "uname": "admin",
                 "text": "UPDATE_SET"
             }
         ]),
         (c.UPDATE_PREPEND, "list_of_objects", {
-            "cid": "4tbZU5x5Fh6Oq7lbs4XR6D",
             "uname": "admin",
             "text": "UPDATE_PREPEND"
         }),
         (c.UPDATE_PREPEND_IF_MISSING, "list_of_objects", {
-            "cid": "3e9PRISOoJynvGUmzrDqhv",
             "uname": "admin",
             "text": "UPDATE_PREPEND_IF_MISSING"
         }),
         (c.UPDATE_PREPEND_IF_MISSING, "list_of_objects", {
-            "cid": "3e9PRISOoJynvGUmzrDqhv",
             "uname": "admin",
             "text": "UPDATE_PREPEND_IF_MISSING"
         }),
         (c.UPDATE_APPEND, "list_of_objects", {
-            "cid": "2qTELdsSNSSBHfUf3phtOM",
             "uname": "admin",
             "text": "UPDATE_APPEND"
         }),
         (c.UPDATE_APPEND_IF_MISSING, "list_of_objects", {
-            "cid": "7jXHLwMkwNVFTg1Ad3JRyR",
             "uname": "admin",
             "text": "UPDATE_APPEND_IF_MISSING"
         }),
         (c.UPDATE_APPEND_IF_MISSING, "list_of_objects", {
-            "cid": "7jXHLwMkwNVFTg1Ad3JRyR",
             "uname": "admin",
             "text": "UPDATE_APPEND_IF_MISSING"
         }),
         (c.UPDATE_REMOVE, "list_of_objects", {
-            "cid": "7jXHLwMkwNVFTg1Ad3JRyR",
             "uname": "admin",
-            "text": "UPDATE_APPEND_IF_MISSING"
+            "text": "UPDATE_REMOVE"
         }),
-        (c.UPDATE_DELETE, "list_of_objects", 0),
+        (c.UPDATE_DELETE, "list_of_objects", 3),
         (c.UPDATE_MODIFY, "list_of_objects", {
             "prev":  {
-                "cid": "5D13pJW8kU2JUSVjlgkRk5",
-                "uname": "user",
+                "uname": "admin",
                 "text": "UPDATE_SET"
             },
             "next": {
-                "cid": "5D13pJW8kU2JUSVjlgkRk5",
                 "uname": "admin",
                 "text": "UPDATE_MODIFY"
             }
