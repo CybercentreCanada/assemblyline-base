@@ -993,7 +993,8 @@ class AssemblylineDatastore(object):
                 'min': int(stats['min']),
                 'max': int(stats['max']),
                 'avg': int(stats['avg']),
-                'sum': int(stats['sum']),
+                # It's possible for the accumulated score to exceed what we can store as a signed-integer in Elastic
+                'sum': min(int(stats['sum']), 2**31-1),
                 'first_hit': first,
                 'last_hit': last
             }
