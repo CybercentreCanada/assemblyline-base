@@ -775,7 +775,10 @@ class List(_Field):
 
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
-            return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
+            if kwargs.get('is_updating', None):
+                return TypedList(self.child_type, dict(value), **kwargs)[0]
+            else:
+                return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
 
         return TypedList(self.child_type, *value, **kwargs)
 
@@ -984,8 +987,19 @@ class Model:
     @staticmethod
     def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
         out = dict()
+
+        if show_compound and isinstance(field, Compound):
+            out[name] = field
+
+        if isinstance(field, List) and isinstance(field.child_type, Compound):
+            multivalued = False
+            if show_compound:
+                field.multivalued = True
+                out[name] = field
+
         for sub_name, sub_field in field.fields().items():
-            sub_field.multivalued = multivalued or isinstance(field, List)
+            sub_field.multivalued = multivalued or (isinstance(
+                field, List) and not isinstance(field.child_type, Compound))
 
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
@@ -1000,9 +1014,6 @@ class Model:
 
             else:
                 out[name] = sub_field
-
-        if isinstance(field, Compound) and show_compound:
-            out[name] = field
 
         return out
 
