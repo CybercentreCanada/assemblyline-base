@@ -23,6 +23,7 @@ class UserSettings(odm.Model):
         description="Default user-defined password for creating password protected ZIPs when downloading files"
     )
     expand_min_score = odm.Integer(default=500, description="Auto-expand section when score bigger then this")
+    generate_alert = odm.Boolean(default=False, description="Generate an alert?")
     ignore_cache = odm.Boolean(default=False, description="Ignore service caching?")
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False, description="Ignore dynamic recursion prevention?")
     ignore_filtering = odm.Boolean(default=False, description="Ignore filtering services?")
