@@ -9,7 +9,7 @@ ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4
 RUN apt-get update && apt-get -yy upgrade && rm -rf /var/lib/apt/lists/*
 
 # SSDEEP pkg requirments
-RUN apt-get update && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 zip && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -yy build-essential libssl-dev libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 zip && rm -rf /var/lib/apt/lists/*
 
 # Python packages requirements
 RUN pip install --no-warn-script-location --no-cache-dir \
