@@ -55,6 +55,10 @@ def epoch_to_local(t: float) -> str:
 
 
 def epoch_to_local_with_ms(t: float, trunc: int = 0) -> str:
+    """
+    trunc is the number of last digits of subsecond to truncate from the timestamp
+    Example: If you want 3 millisecond digits, set trunc=3. If you want the last 2 millisecond digits, set trunc=4.
+    """
     s = format_time(datetime.fromtimestamp(t), LOCAL_FMT_WITH_MS)
     if trunc:
         # We don't need precision to the nano second. Milliseconds work just fine. Set trunc=3.
