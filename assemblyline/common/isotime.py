@@ -102,7 +102,7 @@ def local_to_iso(ts: str) -> str:
 
 def local_to_local_with_ms(ts: str) -> str:
     # We don't need precision to the nano second. Milliseconds work just fine.
-    return epoch_to_local_with_ms(local_to_epoch(ts))[:-3]
+    return epoch_to_local_with_ms(local_to_epoch(ts), trunc=3)
 
 
 def now(offset: float = 0.0, hp: bool = False) -> float:
