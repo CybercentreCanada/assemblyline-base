@@ -48,7 +48,7 @@ class NullLogger(object):
         pass
 
 
-def create_alerts(ds, alert_count=50, submission_list=None, log=None):
+def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflow_ids=[]):
     for _ in range(alert_count):
         a = random_model_obj(Alert)
         a.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
@@ -58,6 +58,8 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None):
             a.sid = submission.sid
 
         a.owner = random.choice(['admin', 'user', 'other', None])
+        if workflow_ids:
+            a.workflow_ids = [random.choice(workflow_ids) for _ in range(random.randint(0, 5))]
 
         # Clear sub-types
         for data_type in a.al.detailed.fields():
@@ -402,13 +404,18 @@ def create_safelists(ds, log=None):
 
 
 def create_workflows(ds, log=None):
+    ids = []
     for _ in range(20):
         w_id = get_random_id()
-        ds.workflow.save(w_id, random_model_obj(Workflow))
+        workflow = random_model_obj(Workflow)
+        workflow.workflow_id = w_id
+        ds.workflow.save(w_id, workflow)
         if log:
             log.info(f'\t{w_id}')
+        ids.append(w_id)
 
     ds.workflow.commit()
+    return ids
 
 
 def get_suricata_sig_path():
@@ -472,3 +479,12 @@ def wipe_safelist(ds):
 
 def wipe_workflows(ds):
     ds.workflow.wipe()
+
+def wipe_all_except_users(ds, fs):
+    wipe_alerts(ds)
+    wipe_heuristics(ds)
+    wipe_services(ds)
+    wipe_signatures(ds)
+    wipe_submissions(ds, fs)
+    wipe_safelist(ds)
+    wipe_workflows(ds)
