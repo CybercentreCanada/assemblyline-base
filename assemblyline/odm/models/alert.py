@@ -96,4 +96,5 @@ class Alert(odm.Model):
     ts = odm.Date(description="File submission timestamp")
     type = odm.Keyword(description="Type of alert")
     verdict = odm.Compound(Verdict, default={}, description="Verdict Block")
+    workflow_ids = odm.List(odm.UUID(), default=[], description="List of workflow IDs associated with the alert")
     workflows_completed = odm.Boolean(default=False, description="Have all workflows ran on this alert?")
