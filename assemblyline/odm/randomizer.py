@@ -283,10 +283,10 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
             possible_classifications.extend([field.engine.UNRESTRICTED, field.engine.RESTRICTED])
         else:
             possible_classifications = [field.engine.UNRESTRICTED]
-        return field.engine.normalize_classification(random.choice(possible_classifications), get_dynamic_groups=False)
+        return random.choice(possible_classifications)
     elif isinstance(field, ClassificationString):
         possible_classifications = [field.engine.UNRESTRICTED]
-        return field.engine.normalize_classification(random.choice(possible_classifications), get_dynamic_groups=False)
+        return random.choice(possible_classifications)
     elif isinstance(field, Enum):
         return random.choice([x for x in field.values if x is not None])
     elif isinstance(field, List):
