@@ -45,7 +45,8 @@ class Tagging(odm.Model):
     class Dynamic(odm.Model):
         @odm.model(index=True, store=False, description="Dynamic Process")
         class DynamicProcess(odm.Model):
-            command_line = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Commandline")
+            command_line = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Command Line")
+            normalized_cmd = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Normalized Command Line")
             file_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Filename")
             shortcut = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Shortcut")
 
@@ -360,6 +361,7 @@ class Tagging(odm.Model):
         @odm.model(index=True, store=False, description="Shortcut File Tag Model")
         class FileShortcut(odm.Model):
             command_line = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Command Line")
+            normalized_cmd = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Normalized Command Line")
             icon_location = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Icon Location")
             machine_id = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Machine ID")
             tracker_mac = odm.Optional(
