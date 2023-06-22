@@ -1,5 +1,6 @@
 from assemblyline import odm
 from assemblyline.odm.models.workflow import PRIORITIES, STATUSES
+from typing import List
 
 EXTENDED_SCAN_VALUES = {"submitted", "skipped", "incomplete", "completed"}
 
@@ -74,6 +75,16 @@ class Attack(odm.Model):
     category = odm.List(odm.Keyword(), default=[], description="List of related ATT&CK categories")
 
 
+@odm.model(index=True, store=False, description="Model of Workflow Event")
+class Event(odm.Model):
+    entity_type: str = odm.Enum(values=['user', 'workflow'], description="Type of entity associated to event")
+    entity_id: str = odm.Keyword(description="ID of entity associated to event")
+    ts: str = odm.Date(default="NOW", description="Timestamp of event")
+    labels: List[str] = odm.Optional(odm.List(odm.Keyword()), description="Labels added during event")
+    status: str = odm.Optional(odm.Enum(values=STATUSES), description="Status applied during event")
+    priority: str = odm.Optional(odm.Enum(values=PRIORITIES), description="Priority applied during event")
+
+
 @odm.model(index=True, store=True, description="Model for Alerts")
 class Alert(odm.Model):
     alert_id = odm.Keyword(copyto="__text__", description="ID of the alert")
@@ -96,5 +107,5 @@ class Alert(odm.Model):
     ts = odm.Date(description="File submission timestamp")
     type = odm.Keyword(description="Type of alert")
     verdict = odm.Compound(Verdict, default={}, description="Verdict Block")
-    workflow_ids = odm.List(odm.UUID(), default=[], description="List of workflow IDs associated with the alert")
+    events = odm.List(odm.Compound(Event), default=[], description="An audit of events applied to alert")
     workflows_completed = odm.Boolean(default=False, description="Have all workflows ran on this alert?")

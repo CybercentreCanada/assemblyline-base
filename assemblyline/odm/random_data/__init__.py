@@ -8,7 +8,7 @@ from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION, BUILD_MINOR
-from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.alert import Alert, Event, STATUSES, PRIORITIES
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -50,7 +50,7 @@ class NullLogger(object):
 
 def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflow_ids=[]):
     for _ in range(alert_count):
-        a = random_model_obj(Alert)
+        a: Alert = random_model_obj(Alert)
         a.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
         if isinstance(submission_list, list):
             submission = random.choice(submission_list)
@@ -59,7 +59,21 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflow_i
 
         a.owner = random.choice(['admin', 'user', 'other', None])
         if workflow_ids:
-            a.workflow_ids = [random.choice(workflow_ids) for _ in range(random.randint(0, 5))]
+            def generate_workflow_event(workflow_id) -> Event:
+                event: Event = random_minimal_obj(Event)
+                if random.randint(0, 1) == 0:
+                    # Overwrite with workflow information
+                    event.entity_type = 'workflow'
+                    event.entity_id = workflow_id
+                else:
+                    # Overwrite with user information
+                    event.entity_type = 'user'
+                    event.entity_id = get_random_word()
+                event.labels = [get_random_word() for _ in range(random.randint(0, 3))]
+                event.status = random.choice(list(STATUSES) + [None])
+                event.priority = random.choice(list(PRIORITIES) + [None])
+                return event
+            a.events = [generate_workflow_event(random.choice(workflow_ids)) for _ in range(random.randint(0, 5))]
 
         # Clear sub-types
         for data_type in a.al.detailed.fields():
