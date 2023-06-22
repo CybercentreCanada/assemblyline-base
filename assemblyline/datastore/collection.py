@@ -1134,7 +1134,7 @@ class ESCollection(Generic[ModelType]):
         :raises: DatastoreException if operation not valid
         """
         if self.model_class:
-            fields = self.model_class.flat_fields(show_compound=True)
+            fields = self.model_class.flat_fields(show_compound=True, show_list=True)
             if 'classification in fields':
                 fields.update({"__access_lvl__": Integer(),
                                "__access_req__": List(Keyword()),
@@ -1162,6 +1162,10 @@ class ESCollection(Generic[ModelType]):
                     field = fields[prev_key].child_type
                 else:
                     field = fields[doc_key]
+
+                # If we're dealing with a list of Compounds, we need to validate against the Compound object
+                if isinstance(field, odm.List) and isinstance(field.child_type, odm.Compound):
+                    field = field.child_type
 
                 if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
                     try:
