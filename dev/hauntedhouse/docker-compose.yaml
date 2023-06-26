@@ -1,0 +1,26 @@
+version: "2.4"
+
+services:
+  hauntedhouse:
+    image: cccs/hauntedhouse:0.0.14
+    volumes:
+      - ${PATH_REWRITE:-.}/config/core.json:/config/core.json:ro
+      - haunted-house-data:/data/
+    command: haunted-house server --config /config/core.json
+    environment:
+      RUST_LOG: "haunted_house=info"
+
+  hauntedhouse-worker:
+    image: cccs/hauntedhouse:0.0.14
+    volumes:
+      - ${PATH_REWRITE:-.}/config/worker.json:/config/worker.json:ro
+    command: haunted-house worker --config /config/worker.json
+    environment:
+      RUST_LOG: "haunted_house=info"
+
+  hauntedhouse-ingest:
+    image: cccs/hauntedhouse:ingest-0.0.9
+    volumes:
+      - ${PATH_REWRITE:-.}/config/ingest.json:/config/ingest.json:ro
+    command: python -m hauntedhouse.ingest /config/ingest.json
+

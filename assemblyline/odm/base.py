@@ -67,6 +67,7 @@ PRIVATE_IP = r"(?:(?:127|10)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]
              r"(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|" \
              r"(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))"
 PHONE_REGEX = r"^(\+?\d{1,2})?[ .-]?(\(\d{3}\)|\d{3})[ .-](\d{3})[ .-](\d{4})$"
+TLSH_REGEX = r"^((?:T1)?[0-9a-fA-F]{70})$"
 SSDEEP_REGEX = r"^[0-9]{1,18}:[a-zA-Z0-9/+]{0,64}:[a-zA-Z0-9/+]{0,64}$"
 MD5_REGEX = r"^[a-f0-9]{32}$"
 SHA1_REGEX = r"^[a-f0-9]{40}$"
@@ -775,7 +776,10 @@ class List(_Field):
 
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
-            return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
+            if kwargs.get('is_updating', None):
+                return TypedList(self.child_type, dict(value), **kwargs)[0]
+            else:
+                return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
 
         return TypedList(self.child_type, *value, **kwargs)
 
@@ -984,8 +988,19 @@ class Model:
     @staticmethod
     def _recurse_fields(name, field, show_compound, show_list, skip_mappings, multivalued=False):
         out = dict()
+
+        if show_compound and isinstance(field, Compound):
+            out[name] = field
+
+        if isinstance(field, List) and isinstance(field.child_type, Compound):
+            multivalued = False
+            if show_compound:
+                field.multivalued = True
+                out[name] = field
+
         for sub_name, sub_field in field.fields().items():
-            sub_field.multivalued = multivalued or isinstance(field, List)
+            sub_field.multivalued = multivalued or (isinstance(
+                field, List) and not isinstance(field.child_type, Compound))
 
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue

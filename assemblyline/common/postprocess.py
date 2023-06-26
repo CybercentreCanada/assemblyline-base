@@ -12,8 +12,8 @@ import time
 import asyncio
 import ssl
 import tempfile
-import yaml
 
+import yaml
 import aiohttp
 import lark
 import datemath
@@ -21,6 +21,7 @@ import arrow
 
 from assemblyline.cachestore import CacheStore
 from assemblyline.common.uid import get_random_id
+from assemblyline.common.constants import CONFIG_HASH, POST_PROCESS_CONFIG_KEY
 from assemblyline.odm import base as odm
 from assemblyline.odm.models.actions import DEFAULT_POSTPROCESS_ACTIONS, PostprocessAction, Webhook
 from assemblyline.odm.models.submission import Submission
@@ -29,6 +30,7 @@ from assemblyline.odm.models.tagging import Tagging
 from assemblyline.remote.datatypes.events import EventWatcher
 from assemblyline.remote.datatypes.queues.named import NamedQueue
 from assemblyline.remote.datatypes.queues.priority import PriorityQueue
+from assemblyline.remote.datatypes.hash import Hash
 
 
 logger = logging.getLogger(__name__)
@@ -615,6 +617,7 @@ class ActionWorker:
         # Submissions that should have alerts generated
         self.alert_queue: NamedQueue[dict] = NamedQueue(ALERT_QUEUE_NAME, redis_persist)
         self.unique_queue: PriorityQueue[dict] = PriorityQueue('m-unique', redis_persist)
+        self.config_hash: Hash[str] = Hash(CONFIG_HASH, redis_persist)
 
         # Archive manager (late import due to circular import)
         from assemblyline.common.archiving import ArchiveManager
@@ -642,19 +645,30 @@ class ActionWorker:
         self.loop.call_soon_threadsafe(self.loop.stop)
 
     def _load_actions(self, _path: Optional[str] = None):
-        # Load the action data
-        with CacheStore('system', config=self.config, datastore=self.datastore) as cache:
-            objects = DEFAULT_POSTPROCESS_ACTIONS
-            data = cache.get('postprocess_actions')
-            if data:
-                try:
-                    raw: dict[str, Any] = yaml.safe_load(data)
-                    objects = {
-                        key: PostprocessAction(data)
-                        for key, data in raw.items()
-                    }
-                except Exception:
-                    logger.exception("Couldn't load stored actions")
+        # Load the action data from redis
+        data = self.config_hash.get(POST_PROCESS_CONFIG_KEY)
+
+        # If nothing is in redis, fall back to legacy storage
+        if data is None:
+            try:
+                with CacheStore('system', config=self.config, datastore=self.datastore) as cache:
+                    byte_data = cache.get('postprocess_actions')
+                    if byte_data:
+                        data = byte_data.decode()
+            except Exception:
+                logger.warn("Couldn't access system files")
+
+        # Decode data
+        objects = DEFAULT_POSTPROCESS_ACTIONS
+        if data:
+            try:
+                raw: dict[str, Any] = yaml.safe_load(data)
+                objects = {
+                    key: PostprocessAction(data)
+                    for key, data in raw.items()
+                }
+            except Exception:
+                logger.exception("Couldn't load stored actions")
 
         # Check which ones can be active
         ready_objects: dict[str, tuple[SubmissionFilter, PostprocessAction]] = {}
