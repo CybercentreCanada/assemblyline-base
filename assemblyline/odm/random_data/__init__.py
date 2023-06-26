@@ -48,7 +48,7 @@ class NullLogger(object):
         pass
 
 
-def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflow_ids=[]):
+def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflows=[]):
     for _ in range(alert_count):
         a: Alert = random_model_obj(Alert)
         a.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
@@ -58,22 +58,23 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflow_i
             a.sid = submission.sid
 
         a.owner = random.choice(['admin', 'user', 'other', None])
-        if workflow_ids:
-            def generate_workflow_event(workflow_id) -> Event:
+        if workflows:
+            def generate_workflow_event(wf) -> Event:
                 event: Event = random_minimal_obj(Event)
                 if random.randint(0, 1) == 0:
                     # Overwrite with workflow information
                     event.entity_type = 'workflow'
-                    event.entity_id = workflow_id
+                    event.entity_name = wf.name
+                    event.entity_id = wf.workflow_id
                 else:
                     # Overwrite with user information
                     event.entity_type = 'user'
                     event.entity_id = get_random_word()
-                event.labels = [get_random_word() for _ in range(random.randint(0, 3))]
+                event.labels = [get_random_word() for _ in range(random.randint(0, 20))]
                 event.status = random.choice(list(STATUSES) + [None])
                 event.priority = random.choice(list(PRIORITIES) + [None])
                 return event
-            a.events = [generate_workflow_event(random.choice(workflow_ids)) for _ in range(random.randint(0, 5))]
+            a.events = [generate_workflow_event(random.choice(workflows)) for _ in range(random.randint(0, 5))]
 
         # Clear sub-types
         for data_type in a.al.detailed.fields():
@@ -418,7 +419,7 @@ def create_safelists(ds, log=None):
 
 
 def create_workflows(ds, log=None):
-    ids = []
+    workflows = []
     for _ in range(20):
         w_id = get_random_id()
         workflow = random_model_obj(Workflow)
@@ -426,10 +427,10 @@ def create_workflows(ds, log=None):
         ds.workflow.save(w_id, workflow)
         if log:
             log.info(f'\t{w_id}')
-        ids.append(w_id)
+        workflows.append(workflow)
 
     ds.workflow.commit()
-    return ids
+    return workflows
 
 
 def get_suricata_sig_path():

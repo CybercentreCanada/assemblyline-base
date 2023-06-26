@@ -79,6 +79,7 @@ class Attack(odm.Model):
 class Event(odm.Model):
     entity_type: str = odm.Enum(values=['user', 'workflow'], description="Type of entity associated to event")
     entity_id: str = odm.Keyword(description="ID of entity associated to event")
+    entity_name: str = odm.Keyword(description="Name of entity")
     ts: str = odm.Date(default="NOW", description="Timestamp of event")
     labels: List[str] = odm.Optional(odm.List(odm.Keyword()), description="Labels added during event")
     status: str = odm.Optional(odm.Enum(values=STATUSES), description="Status applied during event")

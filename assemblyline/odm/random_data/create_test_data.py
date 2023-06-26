@@ -62,10 +62,10 @@ def create_extra_data(log=None, ds=None, fs=None):
         submissions.append(s)
 
     log.info("\n Creating 20 Workflows...")
-    w_ids = create_workflows(ds, log)
+    workflows = create_workflows(ds, log)
 
     log.info("\nCreating 50 Alerts...")
-    create_alerts(ds, submission_list=submissions, log=log, workflow_ids=w_ids)
+    create_alerts(ds, submission_list=submissions, log=log, workflows=workflows)
 
     log.info("\nGenerating statistics for signatures and heuristics...")
     ds.calculate_signature_stats()
