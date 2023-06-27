@@ -1204,9 +1204,6 @@ class ESCollection(Generic[ModelType]):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
                 elif op in [self.UPDATE_MODIFY]:
-                    if not field.multivalued:
-                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
-
                     try:
                         value['prev'] = field.check(value.get('prev', None))
                         value['next'] = field.check(value.get('next', None))
