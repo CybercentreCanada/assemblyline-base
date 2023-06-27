@@ -21,7 +21,7 @@ class Workflow(odm.Model):
     last_edit = odm.Date(default="NOW", description="Date of last edit on workflow")
     last_seen = odm.Optional(odm.Date(), description="Date of last hit on workflow")
     name = odm.Keyword(copyto="__text__", description="Name of the workflow")
-    origin = odm.Keyword(description="Which did this originate from?")
+    origin = odm.Optional(odm.Keyword(), description="Which did this originate from?")
     priority = odm.Optional(odm.Enum(copyto="__text__", values=PRIORITIES),
                             description="Priority applied by the workflow")
     query = odm.Keyword(description="Query that the workflow runs")
