@@ -1081,13 +1081,16 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(f"ctx._source.{doc_key}.remove(params.value{val_id})")
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_APPEND:
-                op_sources.append(f"ctx._source.{doc_key}.add(params.value{val_id})")
-                op_params[f'value{val_id}'] = value
-            elif op == self.UPDATE_APPEND_IF_MISSING:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
-                         f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
+                script = f"if (ctx._source.{doc_key} == null) " \
+                         f"{{ctx._source.{doc_key} = new ArrayList()}} " \
+                         f"ctx._source.{doc_key}.add(params.value{val_id})"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_APPEND_IF_MISSING:
+                script = f"if (ctx._source.{doc_key} == null) " \
+                         f"{{ctx._source.{doc_key} = new ArrayList()}} " \
+                         f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
+                         f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
             elif op == self.UPDATE_REMOVE:
                 script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
                          f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
