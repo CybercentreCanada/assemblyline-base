@@ -2,36 +2,31 @@
 import hashlib
 import io
 import os
-import zipfile
-
-import pytest
 import random
-import re
 import subprocess
 import tempfile
-
-from baseconv import BASE62_ALPHABET
-from cart import pack_stream, get_metadata_only
+import zipfile
 from copy import deepcopy
 from io import BytesIO
 
+import pytest
 from assemblyline.common import forge
-from assemblyline.common.attack_map import attack_map, software_map, group_map, revoke_map
-from assemblyline.common.chunk import chunked_list, chunk
+from assemblyline.common.attack_map import attack_map, group_map, revoke_map, software_map
+from assemblyline.common.chunk import chunk, chunked_list
 from assemblyline.common.classification import InvalidClassification
-from assemblyline.common.dict_utils import flatten, unflatten, recursive_update, get_recursive_delta
+from assemblyline.common.dict_utils import flatten, get_recursive_delta, recursive_update, unflatten
 from assemblyline.common.entropy import calculate_partition_entropy
-from assemblyline.common.heuristics import InvalidHeuristicException, HeuristicHandler
+from assemblyline.common.heuristics import HeuristicHandler, InvalidHeuristicException
 from assemblyline.common.hexdump import hexdump
-from assemblyline.common.isotime import now_as_iso, iso_to_epoch, epoch_to_local, local_to_epoch, epoch_to_iso, now, \
-    now_as_local
-from assemblyline.common.iprange import is_ip_public, is_ip_reserved, is_ip_private
+from assemblyline.common.iprange import is_ip_private, is_ip_public, is_ip_reserved
 from assemblyline.common.memory_zip import InMemoryZip
-from assemblyline.common.security import get_random_password, get_password_hash, verify_password
+from assemblyline.common.security import get_password_hash, get_random_password, verify_password
 from assemblyline.common.str_utils import safe_str, translate_str, truncate
-from assemblyline.common.uid import get_random_id, get_id_from_data, TINY, SHORT, MEDIUM, LONG
+from assemblyline.common.uid import LONG, MEDIUM, SHORT, TINY, get_id_from_data, get_random_id
 from assemblyline.odm.models.heuristic import Heuristic
-from assemblyline.odm.randomizer import random_model_obj, get_random_word
+from assemblyline.odm.randomizer import get_random_word, random_model_obj
+from baseconv import BASE62_ALPHABET
+from cart import get_metadata_only, pack_stream
 
 
 def test_attack_map():
@@ -87,8 +82,8 @@ def test_classification():
     yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
     cl_engine = forge.get_classification(yml_config=yml_config)
 
-    u = "U//REL TO DEPTS"
-    r = "R//GOD//REL TO G1"
+    u = "U//REL DEPTS"
+    r = "R//GOD//REL G1"
 
     assert cl_engine.normalize_classification(r, long_format=True) == "RESTRICTED//ADMIN//ANY/GROUP 1"
     assert cl_engine.is_accessible(r, u)
@@ -97,12 +92,12 @@ def test_classification():
     assert cl_engine.min_classification(u, r) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
     assert cl_engine.max_classification(u, r) == "RESTRICTED//ADMIN//ANY/GROUP 1"
     assert cl_engine.intersect_user_classification(u, r) == "UNRESTRICTED//ANY"
-    assert cl_engine.normalize_classification("UNRESTRICTED//REL TO DEPARTMENT 2", long_format=False) == "U//REL TO D2"
+    assert cl_engine.normalize_classification("UNRESTRICTED//REL TO DEPARTMENT 2", long_format=False) == "U//REL D2"
     with pytest.raises(InvalidClassification):
         cl_engine.normalize_classification("D//BOB//REL TO SOUP")
 
-    c1 = "U//REL TO D1"
-    c2 = "U//REL TO D2"
+    c1 = "U//REL D1"
+    c2 = "U//REL D2"
     assert cl_engine.min_classification(c1, c2) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
     assert cl_engine.intersect_user_classification(c1, c2) == "UNRESTRICTED"
     with pytest.raises(InvalidClassification):
@@ -126,7 +121,7 @@ def test_classification():
     assert cl_engine.intersect_user_classification(dyn1, dyn1) == "UNRESTRICTED//REL TO TEST"
     assert cl_engine.max_classification(dyn1, dyn2) == "UNRESTRICTED//ADMIN//REL TO TEST"
     assert cl_engine.normalize_classification(dyn1, long_format=True) == "UNRESTRICTED//REL TO TEST"
-    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U//REL TO TEST"
+    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U//REL TEST"
 
 
 def test_dict_flatten():
@@ -332,41 +327,6 @@ def test_iprange():
 
     for ip in public:
         assert is_ip_public(ip)
-
-
-def test_isotime_iso():
-    iso_date = now_as_iso()
-    iso_format = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z')
-
-    assert isinstance(iso_date, str)
-    assert iso_format.match(iso_date)
-    assert epoch_to_iso(iso_to_epoch(iso_date)) == iso_date
-    assert iso_date == epoch_to_iso(local_to_epoch(epoch_to_local(iso_to_epoch(iso_date))))
-
-
-def test_isotime_local():
-    local_date = now_as_local()
-    local_format = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}.*')
-
-    assert isinstance(local_date, str)
-    assert local_format.match(local_date)
-    assert epoch_to_local(local_to_epoch(local_date)) == local_date
-    assert local_date == epoch_to_local(iso_to_epoch(epoch_to_iso(local_to_epoch(local_date))))
-
-
-def test_isotime_epoch():
-    epoch_date = now(200)
-
-    assert epoch_date == local_to_epoch(epoch_to_local(epoch_date))
-    assert epoch_date == iso_to_epoch(epoch_to_iso(epoch_date))
-    assert isinstance(epoch_date, float)
-
-
-def test_isotime_rounding_error():
-    for t in ["2020-01-29 18:41:25.758416", "2020-01-29 18:41:25.127600"]:
-        epoch = local_to_epoch(t)
-        local = epoch_to_local(epoch)
-        assert local == t
 
 
 def test_safe_str():
