@@ -871,7 +871,7 @@ class ESCollection(Generic[ModelType]):
 
         return data
 
-    def exists(self, key: str, index_type: typing.Optional[Index] = None) -> bool:
+    def exists(self, key, index_type=None):
         """
         Check if a document exists in the datastore.
 
@@ -880,7 +880,6 @@ class ESCollection(Generic[ModelType]):
         :return: true/false depending if the document exists or not
         """
         index_list = self.get_index_list(index_type)
-        found = False
 
         for index in index_list:
             found = self.with_retries(self.datastore.client.exists, index=index, id=key, _source=False)
@@ -933,16 +932,6 @@ class ESCollection(Generic[ModelType]):
             return None, CREATE_TOKEN
         return None
 
-    @typing.overload
-    def get(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
-            version=False) -> typing.Optional[ModelType]:
-        ...
-
-    @typing.overload
-    def get(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
-            version=False) -> typing.Optional[dict]:
-        ...
-
     def get(self, key, as_obj=True, index_type=None, version=False):
         """
         Get a document from the datastore, retry a few times if not found and normalize the
@@ -961,16 +950,6 @@ class ESCollection(Generic[ModelType]):
             data, version = data
             return self.normalize(data, as_obj=as_obj), version
         return self.normalize(data, as_obj=as_obj)
-
-    @typing.overload
-    def get_if_exists(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
-                      version=False) -> typing.Optional[ModelType]:
-        ...
-
-    @typing.overload
-    def get_if_exists(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
-                      version=False) -> typing.Optional[dict]:
-        ...
 
     def get_if_exists(self, key, as_obj=True, index_type=None, version=False):
         """
@@ -1120,8 +1099,8 @@ class ESCollection(Generic[ModelType]):
                          f"if(ctx._source.{doc_key}[i].equals(params.prev{val_id})) " \
                          f"ctx._source.{doc_key}[i] = params.next{val_id}"
                 op_sources.append(script)
-                op_params[f'prev{val_id}'] = value.get('prev', None)
-                op_params[f'next{val_id}'] = value.get('next', None)
+                op_params[f'prev{val_id}'] = value[0]
+                op_params[f'next{val_id}'] = value[1]
             elif op == self.UPDATE_PREPEND:
                 op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
                 op_params[f'value{val_id}'] = value
@@ -1166,7 +1145,7 @@ class ESCollection(Generic[ModelType]):
         }
         return script
 
-    def _validate_operations(self, operations, **kwargs):
+    def _validate_operations(self, operations):
         """
         Validate the different operations received for a partial update
 
@@ -1207,41 +1186,29 @@ class ESCollection(Generic[ModelType]):
                     field = fields[doc_key]
 
                 # If we're dealing with a list of Compounds, we need to validate against the Compound object
+                is_field_list = False
                 if isinstance(field, odm.List) and isinstance(field.child_type, odm.Compound):
                     field = field.child_type
+                    is_field_list = True
 
                 if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND, self.
                           UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
-                    if not field.multivalued:
-                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
-                  
                     try:
-                        value = field.check(value, **kwargs)
+                        value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
                 elif op in [self.UPDATE_MODIFY]:
-                    if not field.multivalued:
-                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
-
+                    if not is_field_list and not isinstance(value, list) and not len(value) == 2:
+                        raise DataStoreException(f"Invalid value for field {doc_key} for '{self.UPDATE_MODIFY}' operation: {value}")
                     try:
-                        value['prev'] = field.check(value.get('prev', None), **kwargs)
-                        value['next'] = field.check(value.get('next', None), **kwargs)
+                        value = [field.check(value[0]), field.check(value[1])]
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in [self.UPDATE_DEC, self.UPDATE_INC]:
+                elif op in [self.UPDATE_DEC, self.UPDATE_INC, self.UPDATE_SET]:
                     try:
                         value = field.check(value)
-                    except (ValueError, TypeError):
-                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
-
-                elif op in [self.UPDATE_SET]:
-                    try:
-                        if field.multivalued and isinstance(value, list):
-                            value = [field.check(v, **kwargs) for v in value]
-                        else:
-                            value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
@@ -1252,19 +1219,12 @@ class ESCollection(Generic[ModelType]):
                         return v.isoformat()
                     elif isinstance(v, ClassificationObject):
                         return str(v)
-                    else:
-                        return v
 
-                try:
-                    if isinstance(value, dict) and ('prev' in value or 'next' in value):
-                        value['prev'] = parse_value(value.get('prev', None))
-                        value['next'] = parse_value(value.get('next', None))
-                    elif isinstance(value, list):
-                        value = [parse_value(v) for v in value]
-                    else:
-                        value = parse_value(value)
-                except (ValueError, TypeError):
-                    raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+                if isinstance(value, list):
+                    # For each item in list, parse to primitive
+                    value = [parse_value(v) for v in value]
+                else:
+                    value = parse_value(value)
 
             ret_ops.append((op, doc_key, value))
 
@@ -1285,7 +1245,7 @@ class ESCollection(Generic[ModelType]):
         :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
         :return: True is update successful
         """
-        operations = self._validate_operations(operations, is_updating=True)
+        operations = self._validate_operations(operations)
         script = self._create_scripts_from_operations(operations)
         index_list = self.get_index_list(index_type)
 
@@ -1815,8 +1775,7 @@ class ESCollection(Generic[ModelType]):
             ('histogram_gap', gap.strip('+').strip('-') if isinstance(gap, str) else gap),
             ('histogram_mincount', mincount),
             ('histogram_start', start),
-            ('histogram_end', end),
-            ('df', self.DEFAULT_SEARCH_FIELD)
+            ('histogram_end', end)
         ]
 
         if access_control:
@@ -1843,8 +1802,7 @@ class ESCollection(Generic[ModelType]):
             ('facet_active', True),
             ('facet_fields', [field]),
             ('facet_mincount', mincount),
-            ('rows', 0),
-            ('df', self.DEFAULT_SEARCH_FIELD)
+            ('rows', 0)
         ]
 
         if access_control:
@@ -1872,8 +1830,7 @@ class ESCollection(Generic[ModelType]):
             ('query', query),
             ('stats_active', True),
             ('stats_fields', [field]),
-            ('rows', 0),
-            ('df', self.DEFAULT_SEARCH_FIELD)
+            ('rows', 0)
         ]
 
         if access_control:
@@ -1913,8 +1870,7 @@ class ESCollection(Generic[ModelType]):
             ('group_sort', group_sort),
             ('start', offset),
             ('rows', rows),
-            ('sort', sort),
-            ('df', self.DEFAULT_SEARCH_FIELD)
+            ('sort', sort)
         ]
 
         filters.append("%s:*" % group_field)
