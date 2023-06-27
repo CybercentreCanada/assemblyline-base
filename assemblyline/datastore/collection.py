@@ -1099,8 +1099,8 @@ class ESCollection(Generic[ModelType]):
                          f"if(ctx._source.{doc_key}[i].equals(params.prev{val_id})) " \
                          f"ctx._source.{doc_key}[i] = params.next{val_id}"
                 op_sources.append(script)
-                op_params[f'prev{val_id}'] = value[0]
-                op_params[f'next{val_id}'] = value[1]
+                op_params[f'prev{val_id}'] = value.get('prev', None)
+                op_params[f'next{val_id}'] = value.get('next', None)
             elif op == self.UPDATE_PREPEND:
                 op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
                 op_params[f'value{val_id}'] = value
@@ -1199,10 +1199,12 @@ class ESCollection(Generic[ModelType]):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
                 elif op in [self.UPDATE_MODIFY]:
-                    if not is_field_list and not isinstance(value, list) and not len(value) == 2:
-                        raise DataStoreException(f"Invalid value for field {doc_key} for '{self.UPDATE_MODIFY}' operation: {value}")
+                    if not field.multivalued:
+                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
+
                     try:
-                        value = [field.check(value[0]), field.check(value[1])]
+                        value['prev'] = field.check(value.get('prev', None))
+                        value['next'] = field.check(value.get('next', None))
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
@@ -1219,12 +1221,19 @@ class ESCollection(Generic[ModelType]):
                         return v.isoformat()
                     elif isinstance(v, ClassificationObject):
                         return str(v)
+                    else:
+                        return v
 
-                if isinstance(value, list):
-                    # For each item in list, parse to primitive
-                    value = [parse_value(v) for v in value]
-                else:
-                    value = parse_value(value)
+                try:
+                    if isinstance(value, dict) and ('prev' in value or 'next' in value):
+                        value['prev'] = parse_value(value.get('prev', None))
+                        value['next'] = parse_value(value.get('next', None))
+                    elif isinstance(value, list):
+                        value = [parse_value(v) for v in value]
+                    else:
+                        value = parse_value(value)
+                except (ValueError, TypeError):
+                    raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
             ret_ops.append((op, doc_key, value))
 
