@@ -1091,6 +1091,8 @@ class ESCollection(Generic[ModelType]):
                          f"{{ctx._source.{doc_key} = new ArrayList()}} " \
                          f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
                          f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value              
             elif op == self.UPDATE_REMOVE:
                 script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
                          f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
