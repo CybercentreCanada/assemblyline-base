@@ -778,7 +778,8 @@ rule code_batch {
         $cmd4 = /(^|\n|@|&|^\s)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
         $cmd5 = /(^|\n)exit\s*$/i
         $cmd6 = /(^|\n|@|&)%comspec%/i
-        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
+        $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
+        $rem2 = /(^|\n)::/
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
         $bom = {FF FE}
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
@@ -791,10 +792,10 @@ rule code_batch {
              or for 1 of ($cmd*) :( # > 3 )
              or $exp
              or (2 of ($cmd*)
-                and (#rem+#set) > 4))
+                and (#rem1+#rem2+#set) > 4))
              or (for 1 of ($obf2) :( # > 3 )
                 and 1 of ($cmd*)
-                and (#rem+#set) > 4)
+                and (#rem1+#rem2+#set) > 4)
 }
 
 rule code_batch_small {

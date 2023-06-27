@@ -1,0 +1,10 @@
+{
+  "hauntedhouse_api_key": "insecure-ingest-key",
+  "hauntedhouse_url": "https://hauntedhouse:4443",
+  "assemblyline_url": "http://al_ui:5000",
+  "assemblyline_user": "admin",
+  "assemblyline_api_key": "AL_KEY",
+  "allow_disabled_access": true,
+  "write_path": "/data/",
+  "trust_all": true
+}

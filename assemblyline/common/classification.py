@@ -83,10 +83,6 @@ class Classification(object):
                 raise InvalidDefinition(f"Invalid dynamic group type \"{self.dynamic_groups_type}\". "
                                         "Valid types are: email | group | all")
 
-            if self.enforce:
-                self._classification_cache = self.list_all_classification_combinations()
-                self._classification_cache_short = self.list_all_classification_combinations(long_format=False)
-
             for x in classification_definition['levels']:
                 short_name = x['short_name'].upper()
                 name = x['name'].upper()
@@ -174,6 +170,10 @@ class Classification(object):
 
             self.UNRESTRICTED = classification_definition['unrestricted']
             self.RESTRICTED = classification_definition['restricted']
+
+            if self.enforce:
+                self._classification_cache = self.list_all_classification_combinations()
+                self._classification_cache_short = self.list_all_classification_combinations(long_format=False)
 
             self.UNRESTRICTED = self.normalize_classification(classification_definition['unrestricted'])
             self.RESTRICTED = self.normalize_classification(classification_definition['restricted'])
@@ -329,6 +329,9 @@ class Classification(object):
     # noinspection PyTypeChecker
     def _get_normalized_classification_text(self, lvl_idx: int, req: List, groups: List, subgroups: List,
                                             long_format: bool = True, skip_auto_select: bool = False) -> str:
+
+        group_delim = "REL TO " if long_format else "REL "
+
         # 1. Check for all required items if they need a specific classification lvl
         required_lvl_idx = 0
         for r in req:
@@ -393,7 +396,7 @@ class Classification(object):
                 if display_name != grp:
                     out += display_name
                 else:
-                    out += "REL TO " + grp
+                    out += group_delim + grp
             else:
                 if not long_format:
                     # 7. In short format mode, check if there is an alias that can replace multiple groups
@@ -401,7 +404,7 @@ class Classification(object):
                         if len(values) > 1:
                             if sorted(values) == groups:
                                 groups = [alias]
-                out += "REL TO " + ", ".join(sorted(groups))
+                out += group_delim + ", ".join(sorted(groups))
 
         if subgroups:
             if len(groups) > 0 or len(req_grp) > 0:
@@ -506,7 +509,7 @@ class Classification(object):
                 else:
                     combinations.add(cl)
 
-        return combinations
+        return {self.normalize_classification(x, long_format=long_format) for x in combinations}
 
     # noinspection PyUnusedLocal
     def default_user_classification(self, user: Optional[str] = None, long_format: bool = True) -> str:
@@ -932,3 +935,11 @@ class Classification(object):
 
         return self._get_normalized_classification_text(max(lvl_idx_1, lvl_idx_2), req, groups, subgroups,
                                                         long_format=long_format, skip_auto_select=True)
+
+
+if __name__ == "__main__":
+    from pprint import pprint
+    from assemblyline.common import forge
+    classification = forge.get_classification()
+    pprint(classification._classification_cache)
+    pprint(classification._classification_cache_short)

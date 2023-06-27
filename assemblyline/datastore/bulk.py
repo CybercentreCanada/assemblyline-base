@@ -1,12 +1,13 @@
 import json
+import typing
 from copy import deepcopy
 
 
 class ElasticBulkPlan(object):
-    def __init__(self, indexes, model=None):
+    def __init__(self, indexes: typing.List[str], model: typing.Optional[type] = None):
         self.indexes = indexes
         self.model = model
-        self.operations = []
+        self.operations: typing.List[str] = []
 
     @property
     def empty(self):
@@ -35,7 +36,7 @@ class ElasticBulkPlan(object):
         self.operations.append(json.dumps(saved_doc))
 
     def add_upsert_operation(self, doc_id, doc, index=None):
-        if isinstance(doc, self.model):
+        if self.model and isinstance(doc, self.model):
             saved_doc = doc.as_primitives(hidden_fields=True)
         elif self.model:
             saved_doc = self.model(doc).as_primitives(hidden_fields=True)
@@ -51,7 +52,7 @@ class ElasticBulkPlan(object):
 
     def add_update_operation(self, doc_id, doc, index=None):
 
-        if isinstance(doc, self.model):
+        if self.model and isinstance(doc, self.model):
             saved_doc = doc.as_primitives(hidden_fields=True)
         elif self.model:
             saved_doc = self.model(doc, mask=list(doc.keys())).as_primitives(hidden_fields=True)
