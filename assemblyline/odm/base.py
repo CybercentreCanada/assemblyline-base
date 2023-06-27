@@ -982,7 +982,7 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
+    def _recurse_fields(name, field, show_compound, show_list, skip_mappings, multivalued=False):
         out = dict()
         for sub_name, sub_field in field.fields().items():
             sub_field.multivalued = multivalued or isinstance(field, List)
@@ -992,7 +992,7 @@ class Model:
 
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
-                                                 show_compound, skip_mappings,
+                                                 show_compound, show_list, skip_mappings,
                                                  multivalued=multivalued or isinstance(sub_field, List)))
 
             elif sub_name:
@@ -1001,13 +1001,13 @@ class Model:
             else:
                 out[name] = sub_field
 
-        if isinstance(field, Compound) and show_compound:
+        if (isinstance(field, Compound) and show_compound) or (isinstance(field, List) and show_list):
             out[name] = field
 
         return out
 
     @classmethod
-    def flat_fields(cls, show_compound=False, skip_mappings=False) -> dict[str, _Field]:
+    def flat_fields(cls, show_compound=False, show_list=False, skip_mappings=False) -> dict[str, _Field]:
         """
         Describe the elements of the model.
 
@@ -1022,7 +1022,7 @@ class Model:
             if isinstance(field, _Field):
                 if skip_mappings and isinstance(field, Mapping):
                     continue
-                out.update(Model._recurse_fields(name, field, show_compound, skip_mappings,
+                out.update(Model._recurse_fields(name, field, show_compound, show_list, skip_mappings,
                                                  multivalued=isinstance(field, List)))
         return out
 
