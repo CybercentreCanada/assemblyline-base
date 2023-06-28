@@ -46,9 +46,9 @@ with warnings.catch_warnings():
             }
         },
         'bulk_update': {'bulk_b': True, "map": {'a': 1}, 'counters': {
-            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False},
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False, 'list_compounds': [{'a': 'b'}]},
         'bulk_update2': {'bulk_b': True, "map": {'a': 1}, 'counters': {
-            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False},
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False, 'list_compounds': [{'a': 'b'}]},
         'delete1': {'delete_b': True, 'lvl_i': 100, 'from_archive': False},
         'delete2': {'delete_b': True, 'lvl_i': 300, 'from_archive': False},
         'delete3': {'delete_b': True, 'lvl_i': 400, 'from_archive': False},
@@ -272,7 +272,8 @@ def _test_update_by_query(c: ESCollection):
             'dec_i': 50},
         'list': ['hello', 'world!', 'test_if_missing'],
         "map": {'b': 99},
-        'from_archive': False
+        'from_archive': False,
+        'list_compounds': [{'a': 'b'}, {'a': 'c'}]
     }
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
@@ -284,6 +285,7 @@ def _test_update_by_query(c: ESCollection):
         (c.UPDATE_REMOVE, "list", "remove"),
         (c.UPDATE_DELETE, "map", "a"),
         (c.UPDATE_SET, "map.b", 99),
+        (c.UPDATE_APPEND, "list_compounds", {'a': 'c'}),
     ]
     assert c.update_by_query("bulk_b:true", operations)
     expected.update({})
