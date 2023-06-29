@@ -82,8 +82,8 @@ def test_classification():
     yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
     cl_engine = forge.get_classification(yml_config=yml_config)
 
-    u = "U//REL TO DEPTS"
-    r = "R//GOD//REL TO G1"
+    u = "U//REL DEPTS"
+    r = "R//GOD//REL G1"
 
     assert cl_engine.normalize_classification(r, long_format=True) == "RESTRICTED//ADMIN//ANY/GROUP 1"
     assert cl_engine.is_accessible(r, u)
@@ -92,12 +92,12 @@ def test_classification():
     assert cl_engine.min_classification(u, r) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
     assert cl_engine.max_classification(u, r) == "RESTRICTED//ADMIN//ANY/GROUP 1"
     assert cl_engine.intersect_user_classification(u, r) == "UNRESTRICTED//ANY"
-    assert cl_engine.normalize_classification("UNRESTRICTED//REL TO DEPARTMENT 2", long_format=False) == "U//REL TO D2"
+    assert cl_engine.normalize_classification("UNRESTRICTED//REL TO DEPARTMENT 2", long_format=False) == "U//REL D2"
     with pytest.raises(InvalidClassification):
         cl_engine.normalize_classification("D//BOB//REL TO SOUP")
 
-    c1 = "U//REL TO D1"
-    c2 = "U//REL TO D2"
+    c1 = "U//REL D1"
+    c2 = "U//REL D2"
     assert cl_engine.min_classification(c1, c2) == "UNRESTRICTED//REL TO DEPARTMENT 1, DEPARTMENT 2"
     assert cl_engine.intersect_user_classification(c1, c2) == "UNRESTRICTED"
     with pytest.raises(InvalidClassification):
@@ -121,7 +121,7 @@ def test_classification():
     assert cl_engine.intersect_user_classification(dyn1, dyn1) == "UNRESTRICTED//REL TO TEST"
     assert cl_engine.max_classification(dyn1, dyn2) == "UNRESTRICTED//ADMIN//REL TO TEST"
     assert cl_engine.normalize_classification(dyn1, long_format=True) == "UNRESTRICTED//REL TO TEST"
-    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U//REL TO TEST"
+    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U//REL TEST"
 
 
 def test_dict_flatten():

@@ -67,6 +67,7 @@ PRIVATE_IP = r"(?:(?:127|10)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]
              r"(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|" \
              r"(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))"
 PHONE_REGEX = r"^(\+?\d{1,2})?[ .-]?(\(\d{3}\)|\d{3})[ .-](\d{3})[ .-](\d{4})$"
+TLSH_REGEX = r"^((?:T1)?[0-9a-fA-F]{70})$"
 SSDEEP_REGEX = r"^[0-9]{1,18}:[a-zA-Z0-9/+]{0,64}:[a-zA-Z0-9/+]{0,64}$"
 MD5_REGEX = r"^[a-f0-9]{32}$"
 SHA1_REGEX = r"^[a-f0-9]{40}$"
@@ -982,7 +983,7 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
+    def _recurse_fields(name, field, show_compound, show_list, skip_mappings, multivalued=False):
         out = dict()
         for sub_name, sub_field in field.fields().items():
             sub_field.multivalued = multivalued or isinstance(field, List)
@@ -992,7 +993,7 @@ class Model:
 
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
-                                                 show_compound, skip_mappings,
+                                                 show_compound, show_list, skip_mappings,
                                                  multivalued=multivalued or isinstance(sub_field, List)))
 
             elif sub_name:
@@ -1011,7 +1012,7 @@ class Model:
         return out
 
     @classmethod
-    def flat_fields(cls, show_compound=False, skip_mappings=False) -> dict[str, _Field]:
+    def flat_fields(cls, show_compound=False, show_list=False, skip_mappings=False) -> dict[str, _Field]:
         """
         Describe the elements of the model.
 
@@ -1026,7 +1027,7 @@ class Model:
             if isinstance(field, _Field):
                 if skip_mappings and isinstance(field, Mapping):
                     continue
-                out.update(Model._recurse_fields(name, field, show_compound, skip_mappings,
+                out.update(Model._recurse_fields(name, field, show_compound, show_list, skip_mappings,
                                                  multivalued=isinstance(field, List)))
         return out
 
