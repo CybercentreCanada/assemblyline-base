@@ -1002,8 +1002,12 @@ class Model:
             else:
                 out[name] = sub_field
 
-        if (isinstance(field, Compound) and show_compound) or (isinstance(field, List) and show_list):
+        if (isinstance(field, Compound) and show_compound):
             out[name] = field
+
+        # If we're dealing with a list of Compounds, we need to validate against the Compound object
+        if isinstance(field, List) and isinstance(field.child_type, Compound) and show_compound:
+            out[name] = field.child_type
 
         return out
 

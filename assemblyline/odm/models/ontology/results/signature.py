@@ -36,6 +36,7 @@ class Signature(odm.Model):
                            description="A list of ATT&CK patterns and categories of the signature")
     actors = odm.Optional(odm.List(odm.Text()), description="List of actors of the signature")
     malware_families = odm.Optional(odm.List(odm.Text()), description="List of malware families of the signature")
+    signature_id = odm.Optional(odm.Text(), description="ID of signature")
 
     def get_oid(data: dict):
         return f"signature_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"
