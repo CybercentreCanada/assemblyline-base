@@ -41,6 +41,7 @@ type_to_extension = {
     "archive/udf": ".udf",
     "archive/vhd": ".vhd",
     "archive/zip": ".zip",
+    "archive/7-zip": ".7z",
     "audiovisual/flash": ".swf",
     "code/batch": ".bat",
     "code/c": ".c",
