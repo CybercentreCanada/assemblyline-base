@@ -178,13 +178,13 @@ class AppProvider(odm.Model):
 
 @odm.model(index=False, store=False, description="OAuth Provider Configuration")
 class OAuthProvider(odm.Model):
-    auto_create: str = odm.Boolean(default=True, description="Auto-create users if they are missing")
-    auto_sync: str = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
+    auto_create: bool = odm.Boolean(default=True, description="Auto-create users if they are missing")
+    auto_sync: bool = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
-    uid_randomize: str = odm.Boolean(default=False,
-                                     description="Should we generate a random username for the authenticated user?")
+    uid_randomize: bool = odm.Boolean(default=False,
+                                      description="Should we generate a random username for the authenticated user?")
     uid_randomize_digits: int = odm.Integer(default=0,
                                             description="How many digits should we add at the end of the username?")
     uid_randomize_delimiter: str = odm.Keyword(default="-",
@@ -220,7 +220,7 @@ class OAuthProvider(odm.Model):
     use_new_callback_format: bool = odm.Boolean(default=False, description="Should we use the new callback method?")
     allow_external_tokens: bool = odm.Boolean(
         default=False, description="Should token provided to the login API directly be use for authentication?")
-    external_token_alternate_audiences: bool = odm.List(
+    external_token_alternate_audiences: List[str] = odm.List(
         odm.Keyword(), default=[], description="List of valid alternate audiences for the external token.")
     email_fields: List[str] = odm.List(odm.Keyword(), default=DEFAULT_EMAIL_FIELDS,
                                        description="List of fields in the claim to get the email from")
