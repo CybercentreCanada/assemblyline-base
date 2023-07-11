@@ -91,7 +91,7 @@ class AutoProperty(odm.Model):
     field: str = odm.Keyword(description="Field to apply `pattern` to")
     pattern: str = odm.Keyword(description="Regex pattern for auto-prop assignment")
     type: str = odm.Enum(AUTO_PROPERTY_TYPE, description="Type of property assignment on pattern match")
-    value: str = odm.Keyword(description="Assigned property value")
+    value: List[str] = odm.List(odm.Keyword(), auto=True, default=[], description="Assigned property value")
 
 
 @odm.model(index=False, store=False, description="LDAP Configuration")

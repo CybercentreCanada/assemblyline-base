@@ -759,9 +759,10 @@ class TypedList(list):
 class List(_Field):
     """A field storing a sequence of typed elements."""
 
-    def __init__(self, child_type, **kwargs):
+    def __init__(self, child_type, auto=False, **kwargs):
         super().__init__(**kwargs)
         self.child_type = child_type
+        self.auto = auto
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -777,6 +778,9 @@ class List(_Field):
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
             return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
+
+        if self.auto and not isinstance(value, list):
+            value = [value]
 
         return TypedList(self.child_type, *value, **kwargs)
 
