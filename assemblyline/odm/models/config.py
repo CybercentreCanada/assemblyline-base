@@ -560,10 +560,34 @@ class ScalerServiceDefaults(odm.Model):
                                    description="A list of volume mounts for every service")
 
 
+# The operations we support for label and field selectors are based on the common subset of
+# what kubernetes supports on the list_node API endpoint and the nodeAffinity field
+# on pod specifications. The selector needs to work in both cases because we use these
+# selectors both for probing what nodes are available (list_node) and making sure
+# the pods only run on the pods that are returned there (using nodeAffinity)
+
+@odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a field query.")
+class FieldSelector(odm.Model):
+    key = odm.keyword(description="Name of a field to select on.")
+    equal = odm.boolean(default=True, description="When true key must equal value, when false it must not")
+    value = odm.keyword(description="Value to compare field to.")
+
+
+# Excluded from this list is Gt and Lt for above reason
+KUBERNETES_LABEL_OPS = ['In', 'NotIn', 'Exists', 'DoesNotExist']
+
+
+@odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a label query.")
+class LabelSelector(odm.Model):
+    key = odm.keyword(description="Name of label to select on.")
+    operator = odm.Enum(KUBERNETES_LABEL_OPS, description="Operation to select label with.")
+    values = odm.sequence(odm.keyword(), description="Value list to compare label to.")
+
+
 @odm.model(index=False, store=False)
 class Selector(odm.Model):
-    field = odm.optional(odm.keyword(), description="Field selector for resource under kubernetes")
-    label = odm.optional(odm.keyword(), description="Label selector for resource under kubernetes")
+    field = odm.sequence(odm.compound(FieldSelector), description="Field selector for resource under kubernetes")
+    label = odm.sequence(odm.compound(LabelSelector), description="Label selector for resource under kubernetes")
 
 
 @odm.model(index=False, store=False)
