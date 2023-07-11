@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional as Op
+from typing import Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
