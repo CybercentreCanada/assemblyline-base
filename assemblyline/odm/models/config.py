@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional as Op
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
@@ -561,6 +561,12 @@ class ScalerServiceDefaults(odm.Model):
 
 
 @odm.model(index=False, store=False)
+class Selector(odm.Model):
+    field = odm.optional(odm.keyword(), description="Field selector for resource under kubernetes")
+    label = odm.optional(odm.keyword(), description="Label selector for resource under kubernetes")
+
+
+@odm.model(index=False, store=False)
 class Scaler(odm.Model):
     service_defaults: ScalerServiceDefaults = odm.Compound(ScalerServiceDefaults,
                                                            description="Defaults Scaler will assign to a service.")
@@ -570,6 +576,8 @@ class Scaler(odm.Model):
                                                                      "more overallocation is ignored"))
     additional_labels: List[str] = odm.Optional(
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
+    linux_node_selector = odm.compound(Selector, description="Selector for linux nodes under kubernetes")
+    # windows_node_selector = odm.compound(Selector, description="Selector for windows nodes under kubernetes")
 
 
 DEFAULT_SCALER = {
@@ -586,7 +594,15 @@ DEFAULT_SCALER = {
             {'name': 'SERVICE_API_HOST', 'value': 'http://service-server:5003'},
             {'name': 'AL_SERVICE_TASK_LIMIT', 'value': 'inf'},
         ],
-    }
+    },
+    'linux_node_selector': {
+        'field': None,
+        'label': None,
+    },
+    # 'windows_node_selector': {
+    #     'field': None,
+    #     'label': None,
+    # },
 }
 
 
