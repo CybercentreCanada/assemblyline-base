@@ -253,13 +253,17 @@ def _test_multiget(c: ESCollection):
 
 def _test_multiget_search(c: ESCollection):
     # TEST Multiget via search
-    raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
-    ds_raw = c.multiget_search(['test1', 'int', 'test2'], fl="*")['items']
+    ids = ['test1', 'int', 'test2']
+    ds_raw = c.multiget_search(ids, fl="*")['items']
     for item in ds_raw:
-        if isinstance(item, dict):
-            item.pop('id')
-        raw.remove(item)
-    assert len(raw) == 0
+        cur_id = item.pop('id')
+        ids.remove(cur_id)
+
+        if "__non_doc_raw__" in item:
+            item = item['__non_doc_raw__']
+
+        assert test_map[cur_id] == item
+    assert len(ids) == 0
 
     res = c.multiget_search([])
     assert res['items'] == []

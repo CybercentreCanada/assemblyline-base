@@ -1368,10 +1368,6 @@ class ESCollection(Generic[ModelType]):
         extra_fields = result.get('fields', {})
         source_data = result.pop('_source', None)
 
-        # If it's a non-document object, just return its content
-        if "__non_doc_raw__" in source_data:
-            return source_data['__non_doc_raw__']
-
         for f in BANNED_FIELDS:
             source_data.pop(f, None)
         item_id = result['_id']
