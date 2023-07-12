@@ -624,12 +624,12 @@ DEFAULT_SCALER = {
         ],
     },
     'linux_node_selector': {
-        'field': None,
-        'label': None,
+        'field': [],
+        'label': [],
     },
     # 'windows_node_selector': {
-    #     'field': None,
-    #     'label': None,
+    #     'field': [],
+    #     'label': [],
     # },
 }
 
