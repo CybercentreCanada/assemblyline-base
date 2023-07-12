@@ -586,8 +586,10 @@ class LabelSelector(odm.Model):
 
 @odm.model(index=False, store=False)
 class Selector(odm.Model):
-    field = odm.sequence(odm.compound(FieldSelector), description="Field selector for resource under kubernetes")
-    label = odm.sequence(odm.compound(LabelSelector), description="Label selector for resource under kubernetes")
+    field = odm.sequence(odm.compound(FieldSelector), default=[],
+                         description="Field selector for resource under kubernetes")
+    label = odm.sequence(odm.compound(LabelSelector), default=[],
+                         description="Label selector for resource under kubernetes")
 
 
 @odm.model(index=False, store=False)
