@@ -46,9 +46,11 @@ with warnings.catch_warnings():
             }
         },
         'bulk_update': {'bulk_b': True, "map": {'a': 1}, 'counters': {
-            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False, 'list_compounds': [{'a': 'b'}]},
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'],
+            'from_archive': False, 'list_compounds': [{'a': 'b'}]},
         'bulk_update2': {'bulk_b': True, "map": {'a': 1}, 'counters': {
-            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False, 'list_compounds': [{'a': 'b'}]},
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'],
+            'from_archive': False, 'list_compounds': [{'a': 'b'}]},
         'delete1': {'delete_b': True, 'lvl_i': 100, 'from_archive': False},
         'delete2': {'delete_b': True, 'lvl_i': 300, 'from_archive': False},
         'delete3': {'delete_b': True, 'lvl_i': 400, 'from_archive': False},
@@ -225,6 +227,21 @@ def _test_multiget(c: ESCollection):
     assert c.multiget([]) == {}
 
 
+def _test_multiget_search(c: ESCollection):
+    # TEST Multiget via search
+    raw = [test_map.get('test1'), test_map.get('int'), test_map.get('test2')]
+    ds_raw = c.multiget_search(['test1', 'int', 'test2'], fl="*")['items']
+    for item in ds_raw:
+        if isinstance(item, dict):
+            item.pop('id')
+        raw.remove(item)
+    assert len(raw) == 0
+
+    res = c.multiget_search([])
+    assert res['items'] == []
+    assert res['total'] == 0
+
+
 def _test_multiexists(c: ESCollection):
     # Test GET
     assert all(c.multiexists(['test1', 'test2', 'test3', 'test4', 'string', 'list', 'int']).values())
@@ -313,10 +330,10 @@ def _test_fields(c: ESCollection):
 
 def _test_search(c: ESCollection):
     for item in c.search('*:*', sort="id asc")['items']:
-        assert item['id'][0] in test_map
+        assert item['id'] in test_map
     for item in c.search('*:*', offset=1, rows=1,
                          filters="lvl_i:400", sort="id asc", fl='id,classification_s')['items']:
-        assert item['id'][0] in test_map
+        assert item['id'] in test_map
         assert item.get('classification_s', None) is not None
 
 
@@ -364,14 +381,14 @@ def _test_deepsearch(c: ESCollection):
 
     assert len(res) == c.search('*:*', sort="id asc")['total']
     for item in res:
-        assert item['id'][0] in test_map
+        assert item['id'] in test_map
 
 
 def _test_streamsearch(c: ESCollection):
     items = list(c.stream_search('classification_s:*', filters="lvl_i:400", fl='id,classification_s'))
     assert len(items) > 0
     for item in items:
-        assert item['id'][0] in test_map
+        assert item['id'] in test_map
         assert item.get('classification_s', None) is not None
 
 
@@ -537,6 +554,7 @@ TEST_FUNCTIONS = [
     (_test_get_if_exists, "get_if_exists"),
     (_test_multiexists, "multiexists"),
     (_test_multiget, "multiget"),
+    (_test_multiget_search, "multiget_search"),
     (_test_keys, "keys"),
     (_test_update, "update"),
     (_test_update_by_query, "update_by_query"),

@@ -849,6 +849,51 @@ class ESCollection(Generic[ModelType]):
 
         return out
 
+    def multiget_search(self, key_list, offset=0, rows=10, sort=None, fl=None, track_total_hits=None,
+                        as_obj=True, index_type=None):
+        """
+        Get a list of documents from the datastore and make sure they are normalized using
+        the model class
+
+        :param index_type: Type of indices to target
+        :param as_dictionary: Return a disctionary of items or a list
+        :param track_total_hits: Should elastic track the total number of files found
+        :param fl: List of fields to return
+        :param sort: Fields to sort the data with
+        :param rows: Number of items to return
+        :param offset: Offset at which items should be returned
+        :param key_list: list of keys of documents to get
+        :return: list of instances of the model class
+        """
+        index = self.get_joined_index(index_type)
+
+        if fl:
+            field_list = fl.split(',')
+        else:
+            field_list = list(self.stored_fields.keys())
+
+        query_body = {
+            "query": {
+                "ids": {
+                    "values": key_list
+                }
+            },
+            'from_': offset,
+            'size': rows,
+            'sort': parse_sort(sort),
+            "_source": field_list
+        }
+
+        result = self.with_retries(self.datastore.client.search, index=index,
+                                   track_total_hits=track_total_hits, **query_body)
+
+        return {
+            "offset": int(offset),
+            "rows": int(rows),
+            "total": result['hits'].get('total', {}).get('value', None),
+            "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
+        }
+
     def normalize(self, data, as_obj=True) -> Union[ModelType, Dict[str, Any], None]:
         """
         Normalize the data using the model class
@@ -1272,6 +1317,11 @@ class ESCollection(Generic[ModelType]):
         # Getting search document data
         extra_fields = result.get('fields', {})
         source_data = result.pop('_source', None)
+
+        # If it's a non-document object, just return its content
+        if "__non_doc_raw__" in source_data:
+            return source_data['__non_doc_raw__']
+
         for f in BANNED_FIELDS:
             source_data.pop(f, None)
         item_id = result['_id']
@@ -1308,7 +1358,7 @@ class ESCollection(Generic[ModelType]):
             fields = fields
 
         if fields is None or '*' in fields or 'id' in fields:
-            source_data['id'] = [item_id]
+            source_data['id'] = item_id
 
         if fields is None or '*' in fields:
             return source_data
