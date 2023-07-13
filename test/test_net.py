@@ -1,4 +1,7 @@
-from assemblyline.common.net import is_valid_port, is_valid_domain, is_valid_ip, is_valid_email, is_ip_in_network
+import os
+
+import assemblyline.common.net
+from assemblyline.common.net import is_valid_port, is_valid_domain, is_valid_ip, is_valid_email, is_ip_in_network, find_top_level_domains
 from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN
 
 import requests
@@ -66,3 +69,23 @@ def test_is_ip_in_network():
     assert not is_ip_in_network("1...1", ip_network("2.0.0.0/24"))
     assert not is_ip_in_network("1.1.1.1", ip_network("2.0.0.0/24"))
     assert is_ip_in_network("2.2.2.2", ip_network("2.0.0.0/8"))
+
+
+def test_custom_domains():
+    # Get the basic list and make sure no empty strings got in
+    assemblyline.common.net.SYSTEM_LOCAL_TLD = ''
+    domains = find_top_level_domains()
+    assert '' not in domains
+    assert None not in domains
+
+    # inject a fake domain a few different ways
+    cd = 'not-real-test-domain'.upper()
+    assert cd not in domains
+
+    for envar in [f'{cd}', f'{cd};', f'{cd};{cd}', f'.{cd};;', f';.{cd}.;']:
+        assemblyline.common.net.SYSTEM_LOCAL_TLD = envar
+        find_top_level_domains.cache_clear()
+        domains = find_top_level_domains()
+        assert cd in domains, envar
+        assert '' not in domains
+        assert None not in domains
