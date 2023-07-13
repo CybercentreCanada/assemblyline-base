@@ -6,6 +6,7 @@ from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
+DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -90,7 +91,7 @@ class AutoProperty(odm.Model):
     field: str = odm.Keyword(description="Field to apply `pattern` to")
     pattern: str = odm.Keyword(description="Regex pattern for auto-prop assignment")
     type: str = odm.Enum(AUTO_PROPERTY_TYPE, description="Type of property assignment on pattern match")
-    value: str = odm.Keyword(description="Assigned property value")
+    value: List[str] = odm.List(odm.Keyword(), auto=True, default=[], description="Assigned property value")
 
 
 @odm.model(index=False, store=False, description="LDAP Configuration")
@@ -177,14 +178,14 @@ class AppProvider(odm.Model):
 
 @odm.model(index=False, store=False, description="OAuth Provider Configuration")
 class OAuthProvider(odm.Model):
-    auto_create: str = odm.Boolean(default=True, description="Auto-create users if they are missing")
-    auto_sync: str = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
+    auto_create: bool = odm.Boolean(default=True, description="Auto-create users if they are missing")
+    auto_sync: bool = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
-    uid_randomize: str = odm.Boolean(default=False,
-                                     description="Should we generate a random username for the authenticated user?")
-    uid_randomize_digits: str = odm.Integer(default=0,
+    uid_randomize: bool = odm.Boolean(default=False,
+                                      description="Should we generate a random username for the authenticated user?")
+    uid_randomize_digits: int = odm.Integer(default=0,
                                             description="How many digits should we add at the end of the username?")
     uid_randomize_delimiter: str = odm.Keyword(default="-",
                                                description="What is the delimiter used by the random name generator?")
@@ -216,11 +217,14 @@ class OAuthProvider(odm.Model):
     user_groups_name_field: str = odm.Optional(
         odm.Keyword(),
         description="Name of the field in the list of groups that contains the name of the group")
-    use_new_callback_format: str = odm.Boolean(default=False, description="Should we use the new callback method?")
+    use_new_callback_format: bool = odm.Boolean(default=False, description="Should we use the new callback method?")
     allow_external_tokens: bool = odm.Boolean(
         default=False, description="Should token provided to the login API directly be use for authentication?")
-    external_token_alternate_audiences: bool = odm.List(
+    external_token_alternate_audiences: List[str] = odm.List(
         odm.Keyword(), default=[], description="List of valid alternate audiences for the external token.")
+    email_fields: List[str] = odm.List(odm.Keyword(), default=DEFAULT_EMAIL_FIELDS,
+                                       description="List of fields in the claim to get the email from")
+    username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -744,10 +748,22 @@ DEFAULT_ARCHIVE = {
 }
 
 
+@odm.model(index=False, store=False, description="Datastore Retrohunt feature configuration")
+class Retrohunt(odm.Model):
+    enabled = odm.Boolean(description="Are we enabling Retrohunt features?")
+
+
+DEFAULT_RETROHUNT = {
+    "enabled": False
+}
+
+
 @odm.model(index=False, store=False, description="Datastore Configuration")
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
     archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
+    retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
+                             description="Datastore Retrohunt feature configuration")
     cache_dtl = odm.Integer(
         default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
@@ -756,6 +772,7 @@ class Datastore(odm.Model):
 DEFAULT_DATASTORE = {
     "hosts": ["http://elastic:devpass@localhost:9200"],
     "archive": DEFAULT_ARCHIVE,
+    "retrohunt": DEFAULT_RETROHUNT,
     "cache_dtl": 5,
     "type": "elasticsearch",
 }
@@ -1069,7 +1086,9 @@ class UI(odm.Model):
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
     url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+                                                          description="Proxy used by the url_download method by default")
+    url_egress_proxies: Dict[str, Dict[str, str]] = odm.Optional(odm.Mapping(odm.Mapping(odm.Keyword())),
+                                                                 description="A map of custom proxies to egress from when performing URL downloads")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1247,6 +1266,13 @@ DEFAULT_SUBMISSION = {
 }
 
 
+@odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
+class Retrohunt(odm.Model):
+    url = odm.keyword(description="Base URL for service API")
+    api_key = odm.keyword(description="Service API Key")
+    tls_verify = odm.boolean(description="Should tls certificates be verified", default=True)
+
+
 @odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
 class Config(odm.Model):
     auth: Auth = odm.compound(Auth, default=DEFAULT_AUTH, description="Authentication module configuration")
@@ -1261,6 +1287,7 @@ class Config(odm.Model):
     ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
+    retrohunt = odm.optional(odm.compound(Retrohunt, description="Options for including a retrohunt server."))
 
 
 DEFAULT_CONFIG = {
