@@ -923,12 +923,15 @@ class System(odm.Model):
     constants: str = odm.Keyword(description="Module path to the assemblyline constants")
     organisation: str = odm.Text(description="Organisation acronym used for signatures")
     type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
+    extra_domains = odm.sequence(odm.keyword(), default=[],
+                                 description="Non-standard top level domains the system should recognize")
 
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
     "type": 'production',
+    "extra_domains": [],
 }
 
 
@@ -1246,17 +1249,17 @@ DEFAULT_SUBMISSION = {
 
 @odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
 class Config(odm.Model):
-    auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH, description="Authentication module configuration")
-    core: Core = odm.Compound(Core, default=DEFAULT_CORE, description="Core component configuration")
-    datastore: Datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE, description="Datastore configuration")
-    datasources: Dict[str, Datasource] = odm.Mapping(odm.Compound(Datasource), default=DEFAULT_DATASOURCES,
+    auth: Auth = odm.compound(Auth, default=DEFAULT_AUTH, description="Authentication module configuration")
+    core: Core = odm.compound(Core, default=DEFAULT_CORE, description="Core component configuration")
+    datastore: Datastore = odm.compound(Datastore, default=DEFAULT_DATASTORE, description="Datastore configuration")
+    datasources: Dict[str, Datasource] = odm.mapping(odm.compound(Datasource), default=DEFAULT_DATASOURCES,
                                                      description="Datasources configuration")
-    filestore: Filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE, description="Filestore configuration")
-    logging: Logging = odm.Compound(Logging, default=DEFAULT_LOGGING, description="Logging configuration")
-    services: Services = odm.Compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
-    system: System = odm.Compound(System, default=DEFAULT_SYSTEM, description="System configuration")
-    ui: UI = odm.Compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
-    submission: Submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION,
+    filestore: Filestore = odm.compound(Filestore, default=DEFAULT_FILESTORE, description="Filestore configuration")
+    logging: Logging = odm.compound(Logging, default=DEFAULT_LOGGING, description="Logging configuration")
+    services: Services = odm.compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
+    system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
+    ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
+    submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
 
 

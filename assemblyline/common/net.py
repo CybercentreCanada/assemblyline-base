@@ -3,11 +3,13 @@ import socket
 import subprocess
 import sys
 import uuid
+import functools
 from random import randint
 
 import netifaces as nif
 import pr2modules.iproute as iproute
 
+from assemblyline.common.forge import get_config
 from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN, TLDS_SPECIAL_BY_DOMAIN
 
 
@@ -19,6 +21,15 @@ def is_valid_port(value: int) -> bool:
         pass
 
     return False
+
+
+@functools.cache
+def find_top_level_domains():
+    """Combine (once and memoize) the three different sources of TLD."""
+    config = get_config()
+    combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
+    combined_tlds |= set(config.system.extra_domains)
+    return combined_tlds
 
 
 def is_valid_domain(domain: str) -> bool:
@@ -34,7 +45,7 @@ def is_valid_domain(domain: str) -> bool:
             except ValueError:
                 return False
 
-        combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
+        combined_tlds = find_top_level_domains()
         if tld in combined_tlds:
             # Single term TLD check
             return True
