@@ -940,15 +940,12 @@ class System(odm.Model):
     constants: str = odm.Keyword(description="Module path to the assemblyline constants")
     organisation: str = odm.Text(description="Organisation acronym used for signatures")
     type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
-    extra_domains = odm.sequence(odm.keyword(), default=[],
-                                 description="Non-standard top level domains the system should recognize")
 
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
     "type": 'production',
-    "extra_domains": [],
 }
 
 
