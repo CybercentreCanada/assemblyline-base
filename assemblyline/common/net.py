@@ -2,6 +2,7 @@ from ipaddress import ip_address, IPv4Network
 import socket
 import subprocess
 import sys
+import os
 import uuid
 import functools
 from random import randint
@@ -9,8 +10,8 @@ from random import randint
 import netifaces as nif
 import pr2modules.iproute as iproute
 
-from assemblyline.common.forge import get_config
 from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN, TLDS_SPECIAL_BY_DOMAIN
+SYSTEM_LOCAL_TLD = os.getenv('SYSTEM_LOCAL_TLD', '')
 
 
 def is_valid_port(value: int) -> bool:
@@ -26,9 +27,8 @@ def is_valid_port(value: int) -> bool:
 @functools.cache
 def find_top_level_domains():
     """Combine (once and memoize) the three different sources of TLD."""
-    config = get_config()
     combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
-    combined_tlds |= set(config.system.extra_domains)
+    combined_tlds |= {tld.strip().upper() for tld in SYSTEM_LOCAL_TLD.split(";")}
     return combined_tlds
 
 
