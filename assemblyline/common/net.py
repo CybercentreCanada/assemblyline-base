@@ -28,7 +28,7 @@ def is_valid_port(value: int) -> bool:
 def find_top_level_domains():
     """Combine (once and memoize) the three different sources of TLD."""
     combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
-    local_tld = [tld.strip().upper() for tld in SYSTEM_LOCAL_TLD.split(";")]
+    local_tld = [tld.strip().strip('.').upper() for tld in SYSTEM_LOCAL_TLD.split(";")]
     combined_tlds |= {tld for tld in local_tld if tld}
     return combined_tlds
 
