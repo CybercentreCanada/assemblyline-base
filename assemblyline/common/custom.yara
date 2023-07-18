@@ -499,6 +499,22 @@ rule code_ps1 {
         $strong_pwsh14 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
         $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
+        // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comparison_operators?view=powershell-7.3
+        // Equality
+        $weak_pwsh2 = /\s\-[ic]?(eq|ne|gt|ge|lt|le)\s/ ascii wide
+        // Matching
+        $weak_pwsh3 = /\s\-[ic]?(like|notlike|match|notmatch)\s/ ascii wide
+        // Replacement
+        $weak_pwsh4 = /\s\-[ic]?(replace)\s/ ascii wide
+        // Containment
+        $weak_pwsh5 = /\s\-[ic]?(contains|notcontains|in|notin)\s/ ascii wide
+        // Type
+        $weak_pwsh6 = /\s\-[ic]?(is|isnot)\s/ ascii wide
+
+        // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logical_operators?view=powershell-7.3
+        $weak_pwsh7 = /[\s\(]\-(not)\s/ ascii wide
+        $weak_pwsh8 = /\s\-(and|or|xor)\s/ ascii wide
+
     condition:
         (
             mime startswith "text"
