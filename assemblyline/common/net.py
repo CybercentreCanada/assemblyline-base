@@ -2,13 +2,16 @@ from ipaddress import ip_address, IPv4Network
 import socket
 import subprocess
 import sys
+import os
 import uuid
+import functools
 from random import randint
 
 import netifaces as nif
 import pr2modules.iproute as iproute
 
 from assemblyline.common.net_static import TLDS_ALPHA_BY_DOMAIN, TLDS_SPECIAL_BY_DOMAIN
+SYSTEM_LOCAL_TLD = os.getenv('SYSTEM_LOCAL_TLD', '')
 
 
 def is_valid_port(value: int) -> bool:
@@ -19,6 +22,15 @@ def is_valid_port(value: int) -> bool:
         pass
 
     return False
+
+
+@functools.cache
+def find_top_level_domains():
+    """Combine (once and memoize) the three different sources of TLD."""
+    combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
+    local_tld = [tld.strip().strip('.').upper() for tld in SYSTEM_LOCAL_TLD.split(";")]
+    combined_tlds |= {tld for tld in local_tld if tld}
+    return combined_tlds
 
 
 def is_valid_domain(domain: str) -> bool:
@@ -34,7 +46,7 @@ def is_valid_domain(domain: str) -> bool:
             except ValueError:
                 return False
 
-        combined_tlds = TLDS_ALPHA_BY_DOMAIN.union({d for d in TLDS_SPECIAL_BY_DOMAIN if '.' not in d})
+        combined_tlds = find_top_level_domains()
         if tld in combined_tlds:
             # Single term TLD check
             return True
