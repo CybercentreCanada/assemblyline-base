@@ -181,7 +181,10 @@ class ESStore(object):
         return self._closed
 
     def ping(self):
-        return self.client.ping()
+        try:
+            return self.client.ping()
+        except Exception:
+            return False
 
     def register(self, name: str, model_class=None):
         name_match = re.match(r'[a-z0-9_]*', name)
