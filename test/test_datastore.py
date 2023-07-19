@@ -230,7 +230,7 @@ def _test_multiget(c: ESCollection):
 def _test_multiget_search(c: ESCollection):
     # TEST Multiget via search
     ids = ['test1', 'int', 'test2']
-    ds_raw = c.multiget_search(ids, fl="*")['items']
+    ds_raw = c.multiget_search(ids, query='*', fl="*")['items']
     for item in ds_raw:
         cur_id = item.pop('id')
         ids.remove(cur_id)
@@ -241,7 +241,7 @@ def _test_multiget_search(c: ESCollection):
         assert test_map[cur_id] == item
     assert len(ids) == 0
 
-    res = c.multiget_search([])
+    res = c.multiget_search([], query='*')
     assert res['items'] == []
     assert res['total'] == 0
 
