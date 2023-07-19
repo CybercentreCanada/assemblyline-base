@@ -922,7 +922,6 @@ class ESCollection(Generic[ModelType]):
             "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
         }
 
-
     def normalize(self, data, as_obj=True) -> Union[ModelType, Dict[str, Any], None]:
         """
         Normalize the data using the model class
