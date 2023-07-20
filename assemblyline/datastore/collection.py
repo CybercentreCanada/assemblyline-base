@@ -855,10 +855,10 @@ class ESCollection(Generic[ModelType]):
 
         return out
 
-    def multiget_search(self, key_list, offset=0, rows=10, sort=None, fl=None, track_total_hits=None,
-                        as_obj=True, index_type=None):
+    def multiget_search(self, key_list, query=None, offset=0, rows=None, sort=None, fl=None, filters=None,
+                        access_control=None, track_total_hits=None, as_obj=True, index_type=None):
         """
-        Get a list of documents from the datastore and make sure they are normalized using
+        Get a list of documents from the datastore from a list of keys and make sure they are normalized using
         the model class
 
         :param index_type: Type of indices to target
@@ -869,20 +869,48 @@ class ESCollection(Generic[ModelType]):
         :param rows: Number of items to return
         :param offset: Offset at which items should be returned
         :param key_list: list of keys of documents to get
+        :param access_control: Access Control parameters to limit the scope of the query
+        :param filters: Additional queries to run on the original query to reduce the scope
+        :param query: Lucene query to search for
         :return: list of instances of the model class
         """
         index = self.get_joined_index(index_type)
+
+        if rows is None:
+            rows = self.DEFAULT_ROW_SIZE
+
+        if query is None:
+            query = ""
 
         if fl:
             field_list = fl.split(',')
         else:
             field_list = list(self.stored_fields.keys())
 
+        parsed_filters = []
+        if isinstance(filters, str):
+            parsed_filters = [{'query_string': {'query': filters}}]
+        if isinstance(filters, list):
+            parsed_filters = [{'query_string': {'query': f}} for f in filters]
+
+        if access_control:
+            parsed_filters.append({'query_string': {'query': access_control}})
+
+        if isinstance(key_list, list):
+            parsed_filters.append({'ids': {'values': key_list}})
+
         query_body = {
             "query": {
-                "ids": {
-                    "values": key_list
-                }
+                "bool": {
+                    "must": [
+                        {
+                            "query_string": {
+                                "query": query
+                            }
+                        }
+                    ],
+                    "filter": parsed_filters
+                },
             },
             'from_': offset,
             'size': rows,
