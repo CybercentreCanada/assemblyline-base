@@ -171,10 +171,6 @@ class Classification(object):
             self.UNRESTRICTED = classification_definition['unrestricted']
             self.RESTRICTED = classification_definition['restricted']
 
-            if self.enforce:
-                self._classification_cache = self.list_all_classification_combinations()
-                self._classification_cache_short = self.list_all_classification_combinations(long_format=False)
-
             self.UNRESTRICTED = self.normalize_classification(classification_definition['unrestricted'])
             self.RESTRICTED = self.normalize_classification(classification_definition['restricted'])
 
@@ -441,7 +437,13 @@ class Classification(object):
     # Public functions
     # ++++++++++++++++++++++++
     # noinspection PyUnusedLocal
-    def list_all_classification_combinations(self, long_format: bool = True) -> Set:
+    def list_all_classification_combinations(self, long_format: bool = True, normalized: bool = False) -> Set:
+        """
+        NOTE:   Listing all classifcation permutations can take a really long time the more the classification
+                definition is complexe. Normalizing each entry makes it even worst. Use only this function if
+                absolutely necessary.
+        """
+
         combinations = set()
 
         levels = self._list_items_and_aliases(self.original_definition['levels'], long_format=long_format)
@@ -509,7 +511,9 @@ class Classification(object):
                 else:
                     combinations.add(cl)
 
-        return {self.normalize_classification(x, long_format=long_format) for x in combinations}
+        if normalized:
+            return {self.normalize_classification(x, long_format=long_format) for x in combinations}
+        return combinations
 
     # noinspection PyUnusedLocal
     def default_user_classification(self, user: Optional[str] = None, long_format: bool = True) -> str:

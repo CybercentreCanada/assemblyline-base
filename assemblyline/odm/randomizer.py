@@ -279,7 +279,7 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         return random.choice([True, False])
     elif isinstance(field, Classification):
         if field.engine.enforce:
-            possible_classifications = list(field.engine._classification_cache)
+            possible_classifications = list(field.engine.list_all_classification_combinations(normalized=True))
             possible_classifications.extend([field.engine.UNRESTRICTED, field.engine.RESTRICTED])
         else:
             possible_classifications = [field.engine.UNRESTRICTED]

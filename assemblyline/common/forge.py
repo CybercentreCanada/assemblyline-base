@@ -18,13 +18,15 @@ if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
 
 config_cache = {}
+classification_engines = {}
 
 
 def get_apm_client(service_name):
     config = get_config()
     apm_config = dict(server_url=config.core.metrics.apm_server.server_url, service_name=service_name)
     if config.core.metrics.apm_server.server_url.startswith('https'):
-        # Due to https://github.com/elastic/apm-agent-python/blob/208e241fbf28b4bb09ba5aca3dbd5f7b95602229/elasticapm/transport/http.py#L250
+        # Due to https://github.com/elastic/apm-agent-python/blob/
+        #        208e241fbf28b4bb09ba5aca3dbd5f7b95602229/elasticapm/transport/http.py#L250
         # We'll disable certificate verification from the APM server
         apm_config['verify_server_cert'] = False
 
@@ -36,6 +38,9 @@ def get_classification(yml_config=None):
 
     if yml_config is None:
         yml_config = "/etc/assemblyline/classification.yml"
+
+    if yml_config in classification_engines:
+        return classification_engines[yml_config]
 
     classification_definition = {}
     default_file = os.path.join(os.path.dirname(__file__), "classification.yml")
@@ -55,7 +60,9 @@ def get_classification(yml_config=None):
     if not classification_definition:
         raise InvalidDefinition('Could not find any classification definition to load.')
 
-    return Classification(classification_definition)
+    classification_engine = Classification(classification_definition)
+    classification_engines[yml_config] = classification_engine
+    return classification_engine
 
 
 def env_substitute(buffer):
