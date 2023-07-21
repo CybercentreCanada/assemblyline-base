@@ -114,6 +114,7 @@ rule code_vbs {
 
     meta:
         type = "code/vbs"
+        score = 2
 
     strings:
         $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
