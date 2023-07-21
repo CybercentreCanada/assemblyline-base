@@ -1357,8 +1357,9 @@ class ESCollection(Generic[ModelType]):
         field_list = parsed_values['field_list'] or list(self.stored_fields.keys())
 
         filter_queries = [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
-        if key_space:
-            filter_queries.append({'ids': key_space})
+
+        if key_space is not None:
+            filter_queries.append({'ids': {'values': key_space}})
 
         # This is our minimal query, the following sections will fill it out
         # with whatever extra options the search has been given.
