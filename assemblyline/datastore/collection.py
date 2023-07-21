@@ -32,7 +32,6 @@ from assemblyline.odm.base import BANNED_FIELDS, Keyword, Integer, List, Mapping
 if typing.TYPE_CHECKING:
     from .store import ESStore
 
-
 log = logging.getLogger('assemblyline.datastore')
 ModelType = TypeVar('ModelType', bound=Model)
 write_block_settings = {"index.blocks.write": True}
@@ -1389,7 +1388,7 @@ class ESCollection(Generic[ModelType]):
 
         return {key: val for key, val in source_data.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT):
+    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT, key_space=None):
         index = self.get_joined_index(index_type)
 
         if args is None:
@@ -1429,6 +1428,10 @@ class ESCollection(Generic[ModelType]):
 
         field_list = parsed_values['field_list'] or list(self.stored_fields.keys())
 
+        filter_queries = [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
+        if key_space:
+            filter_queries.append({'ids': key_space})
+
         # This is our minimal query, the following sections will fill it out
         # with whatever extra options the search has been given.
         query_body = {
@@ -1439,7 +1442,7 @@ class ESCollection(Generic[ModelType]):
                             "query": parsed_values['query']
                         }
                     },
-                    'filter': [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
+                    'filter': filter_queries
                 }
             },
             'from_': parsed_values['start'],
@@ -1567,9 +1570,9 @@ class ESCollection(Generic[ModelType]):
             raise SearchException("collection: %s, query: %s, error: %s" % (
                 self.name, query_body, str(error))).with_traceback(error.__traceback__)
 
-    def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, script_fields=[]):
+    def search(self, query, offset=0, rows=None, sort=None, fl=None, timeout=None, filters=None, access_control=None,
+               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, key_space=None,
+               script_fields=[]):
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -1598,7 +1601,8 @@ class ESCollection(Generic[ModelType]):
         :param fl: list of fields to return from the search
         :param timeout: maximum time of execution
         :param filters: additional queries to run on the original query to reduce the scope
-        :param access_control: access control parameters to limiti the scope of the query
+        :param key_space: IDs of documents for the query to limit the scope to these documents
+        :param access_control: access control parameters to limit the scope of the query
         :return: a search result object
         """
 
@@ -1640,7 +1644,7 @@ class ESCollection(Generic[ModelType]):
             args.append(('script_fields', script_fields))
 
         result = self._search(args, deep_paging_id=deep_paging_id, index_type=index_type,
-                              track_total_hits=track_total_hits)
+                              track_total_hits=track_total_hits, key_space=key_space)
 
         ret_data = {
             "offset": int(offset),
@@ -1789,8 +1793,8 @@ class ESCollection(Generic[ModelType]):
                                       f'Current settings would generate {gaps_count} steps')
             return ret_type
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1,
-                  filters=None, access_control=None, index_type=Index.HOT):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None,
+                  index_type=Index.HOT, key_space=None):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -1819,14 +1823,14 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args, index_type=index_type)
+        result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None,
-              index_type=Index.HOT, field_script=None):
+    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
+              field_script=None, key_space=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1849,7 +1853,7 @@ class ESCollection(Generic[ModelType]):
         if field_script:
             args.append(('field_script', field_script))
 
-        result = self._search(args, index_type=index_type)
+        result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
         return {row.get('key_as_string', row['key']): row['doc_count']
