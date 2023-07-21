@@ -1,5 +1,6 @@
-import pytest
 import re
+
+import pytest
 
 from assemblyline.odm.base import FULL_URI, TLSH_REGEX
 
@@ -20,6 +21,8 @@ from assemblyline.odm.base import FULL_URI, TLSH_REGEX
     ("http://1.1.1.1:123/blah?blah", True),
     ("net.tcp://1.1.1.1:123", True),
     ("net.tcp://1.1.1.1:1", True),
+    # URI requires a scheme: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier#scheme
+    ("//1.1.1.1:1", False),
 ])
 def test_full_uri_regex(value, ismatch):
     validation_regex = re.compile(FULL_URI)
