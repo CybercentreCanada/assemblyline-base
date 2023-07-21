@@ -32,6 +32,7 @@ from assemblyline.odm.base import BANNED_FIELDS, Keyword, Integer, List, Mapping
 if typing.TYPE_CHECKING:
     from .store import ESStore
 
+
 log = logging.getLogger('assemblyline.datastore')
 ModelType = TypeVar('ModelType', bound=Model)
 write_block_settings = {"index.blocks.write": True}
@@ -847,79 +848,6 @@ class ESCollection(Generic[ModelType]):
             raise MultiKeyError(key_list, out)
 
         return out
-
-    def multiget_search(self, key_list, query=None, offset=0, rows=None, sort=None, fl=None, filters=None,
-                        access_control=None, track_total_hits=None, as_obj=True, index_type=None):
-        """
-        Get a list of documents from the datastore from a list of keys and make sure they are normalized using
-        the model class
-
-        :param index_type: Type of indices to target
-        :param as_dictionary: Return a disctionary of items or a list
-        :param track_total_hits: Should elastic track the total number of files found
-        :param fl: List of fields to return
-        :param sort: Fields to sort the data with
-        :param rows: Number of items to return
-        :param offset: Offset at which items should be returned
-        :param key_list: list of keys of documents to get
-        :param access_control: Access Control parameters to limit the scope of the query
-        :param filters: Additional queries to run on the original query to reduce the scope
-        :param query: Lucene query to search for
-        :return: list of instances of the model class
-        """
-        index = self.get_joined_index(index_type)
-
-        if rows is None:
-            rows = self.DEFAULT_ROW_SIZE
-
-        if query is None:
-            query = ""
-
-        if fl:
-            field_list = fl.split(',')
-        else:
-            field_list = list(self.stored_fields.keys())
-
-        parsed_filters = []
-        if isinstance(filters, str):
-            parsed_filters = [{'query_string': {'query': filters}}]
-        if isinstance(filters, list):
-            parsed_filters = [{'query_string': {'query': f}} for f in filters]
-
-        if access_control:
-            parsed_filters.append({'query_string': {'query': access_control}})
-
-        if isinstance(key_list, list):
-            parsed_filters.append({'ids': {'values': key_list}})
-
-        query_body = {
-            "query": {
-                "bool": {
-                    "must": [
-                        {
-                            "query_string": {
-                                "query": query
-                            }
-                        }
-                    ],
-                    "filter": parsed_filters
-                },
-            },
-            'from_': offset,
-            'size': rows,
-            'sort': parse_sort(sort),
-            "_source": field_list
-        }
-
-        result = self.with_retries(self.datastore.client.search, index=index,
-                                   track_total_hits=track_total_hits, **query_body)
-
-        return {
-            "offset": int(offset),
-            "rows": int(rows),
-            "total": result['hits'].get('total', {}).get('value', None),
-            "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
-        }
 
     def normalize(self, data, as_obj=True) -> Union[ModelType, Dict[str, Any], None]:
         """
