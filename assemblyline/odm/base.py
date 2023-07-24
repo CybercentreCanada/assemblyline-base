@@ -19,14 +19,16 @@ import re
 import sys
 import unicodedata
 from datetime import datetime
-from typing import Dict, Tuple, Union, Any as _Any
+from typing import Any as _Any
+from typing import Dict, Tuple, Union
+
 import arrow
-from assemblyline.common.net import is_valid_domain, is_valid_ip
 from dateutil.tz import tzutc
 
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.net import is_valid_domain, is_valid_ip
 from assemblyline.common.uid import get_random_id
 
 # Python 3.6 deepcopy patch
@@ -74,7 +76,7 @@ SHA1_REGEX = r"^[a-f0-9]{40}$"
 SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"(?:[/?#]\S*)"
-FULL_URI = f"^((?:(?:[A-Za-z0-9+-.]{{1,}}:)?//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?)" \
+FULL_URI = f"^((?:(?:[A-Za-z0-9+-.]{{1,}}:)//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?)" \
            f"{URI_PATH}?$"
 UNC_PATH_REGEX = r"^(?:\\\\(?:[a-zA-Z0-9-_\s]{1,15}){1}(?:\.[a-zA-Z0-9-_\s]{1,64}){0,3}){1}" \
                  f"(?:@{PORT_REGEX})?" \
