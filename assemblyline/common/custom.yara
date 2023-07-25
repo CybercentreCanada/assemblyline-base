@@ -17,11 +17,11 @@ rule code_javascript {
         $strong_js3  = /new[ \t]+ActiveXObject\(/
 
         $strong_js4  = /Scripting\.Dictionary['"]/
-        $strong_js5  = /unescape\(/
-        $strong_js6  = /\.createElement\(/
+        $strong_js5  = "unescape("
+        $strong_js6  = ".createElement("
         $strong_js7  = /submitForm\(['"]/
         $strong_js8  = /(document|window)(\[['"a-zA-Z]|\.)\w+/
-        $strong_js9  = /setTimeout\(/
+        $strong_js9  = "setTimeout("
         $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
         // If this is exactly in the sample, will trigger a second time because of strong_js10
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
@@ -76,10 +76,10 @@ rule code_jscript {
         $jscript1 = /new[ \t]+ActiveXObject\(/
 
         // Conditional comments
-        $jscript2 = /\/\*@cc_on/
-        $jscript3 = /@\*\//
+        $jscript2 = "/*@cc_on"
+        $jscript3 = "@*/"
         $jscript4 = /\/\*@if \(@_jscript_version >= \d\)/
-        $jscript5 = /\/\*@end/
+        $jscript5 = "/*@end"
 
     condition:
         code_javascript
@@ -98,7 +98,7 @@ rule code_xfa {
 
     strings:
         $xfa1 = /xfa\.([\w]*[.)=( ]){2,}/
-        $xfa2 = /ui\.oneOfChild\./
+        $xfa2 = "ui.oneOfChild."
         $xmlns_url = "http://www.xfa.org/schema/xfa-template/"
 
     condition:
@@ -149,7 +149,7 @@ rule code_xml {
     strings:
         $header = /^\s*<\?xml[^>]+\?>/
         $ns1 = /<xml[^>]+xmlns[:=][^>]+>/
-        $ns2 = /<\/xml>/
+        $ns2 = "</xml>"
 
     condition:
         $header
@@ -424,7 +424,7 @@ rule code_php {
         $rec1 = /namespace[ \t]+[\w.]+/
         $rec2 = /function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{/
         $rec3 = /\beval[ \t]*\(/
-        $rec4 = /\$this\->/
+        $rec4 = "$this->"
         $rec5 = /require[ \t]+([\w\.]+)?('[^']+\.php'|"[^"]+\.php")[ \t]*;/
         $rec6 = /require\(([\w\.]+)?('[^']+\.php'|"[^"]+\.php")\);/
 
@@ -664,7 +664,7 @@ rule code_java {
         $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+((abstract|final)[ \t]+)?class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{/
         $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+(static[ \t]+)?((abstract|final)[ \t]+)?(\w+[ \t]+){2}=/
         $ = /(^|\n)[\w \t]+\([^)]*\)[ \t]+throws[ \t]+\w+[ \t]*(,[ \t]*\w+[ \t]*)*{/
-        $ = /\.hasNext\(/
+        $ = ".hasNext("
         $ = /[ \t\n]*final[ \t]+\w/
         $ = /(ArrayList|Class|Stack|Map|Set|HashSet|PrivilegedAction|Vector)<(\w|\?)/
         $ = /(^|\n)[ \t]*package[ \t]+[\w\.]+;/
@@ -705,7 +705,7 @@ rule code_clickonce {
 
     strings:
         $ns1 = /^\s*<assembly[^>]+xmlns=[^>]+>/
-        $ns2 = /<\/assembly>/
+        $ns2 = "</assembly>"
 
     condition:
        all of ($ns*)
