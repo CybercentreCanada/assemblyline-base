@@ -78,10 +78,10 @@ rule code_jscript {
         $jscript3 = "WScript.CreateObject("
 
         // Conditional comments
-        $jscript2 = /\/\*@cc_on/
-        $jscript3 = /@\*\//
-        $jscript4 = /\/\*@if \(@_jscript_version >= \d\)/
-        $jscript5 = /\/\*@end/
+        $jscript4 = /\/\*@cc_on/
+        $jscript5 = /@\*\//
+        $jscript6 = /\/\*@if \(@_jscript_version >= \d\)/
+        $jscript7 = /\/\*@end/
 
     condition:
         code_javascript
