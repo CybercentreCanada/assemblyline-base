@@ -73,7 +73,9 @@ rule code_jscript {
         score = 5
 
     strings:
-        $jscript1 = /new[ \t]+ActiveXObject\(/
+        $jscript1 = "ActiveXObject" fullword
+        $jscript2 = "= GetObject("
+        $jscript3 = "WScript.CreateObject("
 
         // Conditional comments
         $jscript2 = /\/\*@cc_on/
