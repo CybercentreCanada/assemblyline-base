@@ -126,9 +126,9 @@ rule code_vbs {
         $strong_vbs7 = /(^|\n)[ \t]*Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
         $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i ascii wide
         // CreateObject("blah")
-        $strong_vbs9 = /CreateObject\([^)]+\)/i ascii wide
-        $strong_vbs10 = /GetObject\([^)]+\)/i ascii wide
-        $strong_vbs11 = /(^|\n)Eval\(([^)]+)\)/i ascii wide
+        $strong_vbs9 = "CreateObject(" nocase ascii wide
+        $strong_vbs10 = "GetObject(" nocase ascii wide
+        $strong_vbs11 = /(^|\n)Eval\(/i ascii wide
         // Dim blah
         $weak_vbs1 = /\bDim\b\s+\w+/i ascii wide
 
