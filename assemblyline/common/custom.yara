@@ -73,13 +73,15 @@ rule code_jscript {
         score = 5
 
     strings:
-        $jscript1 = /new[ \t]+ActiveXObject\(/
+        $jscript1 = "ActiveXObject" fullword
+        $jscript2 = "= GetObject("
+        $jscript3 = "WScript.CreateObject("
 
         // Conditional comments
-        $jscript2 = "/*@cc_on"
-        $jscript3 = "@*/"
-        $jscript4 = /\/\*@if \(@_jscript_version >= \d\)/
-        $jscript5 = "/*@end"
+        $jscript4 = "/*@cc_on"
+        $jscript5 = "@*/"
+        $jscript6 = /\/\*@if \(@_jscript_version >= \d\)/
+        $jscript7 = "/*@end"
 
     condition:
         code_javascript
@@ -114,27 +116,31 @@ rule code_vbs {
 
     meta:
         type = "code/vbs"
+        score = 2
 
     strings:
+        $multiline = " = @'\r\n" //powershell multiline string
+
         $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
-        $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\n]/i ascii wide
+        $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\r]/i ascii wide
         $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)/i ascii wide
         $strong_vbs4 = /(^|\n)ExecuteGlobal/ ascii wide
-        $strong_vbs5 = /(^|\n)[ \t]*Rem[ \t]+[^\n]+/i ascii wide
-        $strong_vbs6 = /(^|\n)(Attribute|Set|const)[ \t]+\w+[ \t]+=[ \t]+[^\n]+/i ascii wide
+        $strong_vbs6 = /(^|\n|:)(Attribute|Set|const)[ \t]+\w+[ \t]+=/i ascii wide
         $strong_vbs7 = /(^|\n)[ \t]*Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
-        $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i ascii wide
+        $strong_vbs8 = /[ \t(=]replace\(/i ascii wide
         // CreateObject("blah")
-        $strong_vbs9 = /CreateObject\([^)]+\)/i ascii wide
-        $strong_vbs10 = /GetObject\([^)]+\)/i ascii wide
-        $strong_vbs11 = /(^|\n)Eval\(([^)]+)\)/i ascii wide
+        $strong_vbs9 = "CreateObject(" nocase ascii wide
+        $strong_vbs10 = "GetObject(" nocase ascii wide
+        $strong_vbs11 = /(^|\n)Eval\(/i ascii wide
+        $strong_vbs12 = "Execute(" nocase ascii wide
         // Dim blah
-        $weak_vbs1 = /\bDim\b\s+\w+/i ascii wide
+        $weak_vbs1 = /\bDim\b\s+\w+[\r:]/i ascii wide
 
     condition:
-        2 of ($strong_vbs*)
-        or (1 of ($strong_vbs*)
-            and (#weak_vbs1) > 3)
+        not code_javascript and not $multiline
+        and (2 of ($strong_vbs*)
+            or (1 of ($strong_vbs*)
+            and (#weak_vbs1) > 3))
 }
 
 /*
