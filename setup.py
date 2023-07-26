@@ -81,7 +81,7 @@ setup(
         'pytz',
         'apscheduler',
         'websocket_client<1.0.0',
-        'elastic-apm[flask]!=6.3.0,!=6.3.1,!=6.3.2,<6.13.0',  # Exclude broken elastic APM version
+        'elastic-apm[flask]!=6.3.0,!=6.3.1,!=6.3.2,<6.19.0',  # Exclude broken elastic APM version
         'cython',
         'docker',
         'kubernetes>18',
