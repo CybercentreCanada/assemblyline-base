@@ -27,7 +27,7 @@ rule code_javascript {
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
 
         // Used in a lot of malware samples to fail silently
-        $strong_js12 = /catch\s+\(\w*\)\s+\{.*\}/
+        $strong_js12 = /catch\s+\(\w*\)\s+\{/
 
         // Firefox browser specific method
         $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
@@ -1012,8 +1012,8 @@ rule code_wsf {
         score = 10
 
     strings:
-        $ = /<job.*?>/
-        $ = /<script\s+?language=.*?>/
+        $ = "<job"
+        $ = /<script\s+?language=/
 
     condition:
         mime startswith "text"
@@ -1031,8 +1031,8 @@ rule code_wsc {
         score = 10
 
     strings:
-        $ = /<component.*?>/
-        $ = /<script\s+?language=.*?>/
+        $ = "<component"
+        $ = /<script\s+?language=/
 
     condition:
         mime startswith "text"
