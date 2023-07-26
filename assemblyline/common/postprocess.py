@@ -746,14 +746,12 @@ class ActionWorker:
         else:
             submission_msg = submission
 
-        # Trigger resubmit
-        if submission.params.psid is None:
-            extended_scan = 'skipped'
-        else:
-            # We are the extended scan
-            extended_scan = 'submitted'
+        # Default values
+        extended_scan = 'skipped'
         did_resubmit = False
+        submit_to = []
 
+        # Check if we resubmit
         if resubmit is not None:
             selected = set(submission.params.services.selected)
             resubmit_to = set(submission.params.services.resubmit) | resubmit
@@ -761,22 +759,6 @@ class ActionWorker:
             if not selected.issuperset(resubmit_to):
                 submit_to = sorted(selected | resubmit_to)
                 extended_scan = 'submitted'
-
-                logger.info(f"[{submission.sid} :: {submission.files[0].sha256}] Resubmitted for extended analysis")
-                resubmission = SubmissionMessage(submission_msg.as_primitives())
-                resubmission.params.psid = submission.sid
-                resubmission.sid = get_random_id()
-                resubmission.scan_key = None
-                resubmission.params.services.resubmit = []
-                resubmission.params.services.selected = submit_to
-
-                self.unique_queue.push(submission.params.priority, dict(
-                    score=score,
-                    extended_scan=extended_scan,
-                    ingest_id=submission.metadata.get('ingest_id', None),
-                    submission=resubmission.as_primitives(),
-                ))
-                did_resubmit = True
 
         # Raise alert
         if submission.params.generate_alert and create_alert:
@@ -789,6 +771,23 @@ class ActionWorker:
                 extended_scan=extended_scan,
                 ingest_id=submission_msg.metadata.get('ingest_id', None)
             ))
+
+        if submit_to:
+            logger.info(f"[{submission.sid} :: {submission.files[0].sha256}] Resubmitted for extended analysis")
+            resubmission = SubmissionMessage(submission_msg.as_primitives())
+            resubmission.params.psid = submission.sid
+            resubmission.sid = get_random_id()
+            resubmission.scan_key = None
+            resubmission.params.services.resubmit = []
+            resubmission.params.services.selected = submit_to
+
+            self.unique_queue.push(submission.params.priority, dict(
+                score=score,
+                extended_scan=extended_scan,
+                ingest_id=submission.metadata.get('ingest_id', None),
+                submission=resubmission.as_primitives(),
+            ))
+            did_resubmit = True
 
         # Archive the submission
         if archive_submission:
