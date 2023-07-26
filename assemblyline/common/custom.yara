@@ -135,7 +135,7 @@ rule code_vbs {
         $strong_vbs9 = "CreateObject(" nocase ascii wide
         $strong_vbs10 = "GetObject(" nocase ascii wide
         $strong_vbs11 = /(^|\n)Eval\(/i ascii wide
-        $string_vbs12 = "Execute(" nocase ascii wide
+        $strong_vbs12 = "Execute(" nocase ascii wide
         // Dim blah
         $weak_vbs1 = /\bDim\b\s+\w+[\r:]/i ascii wide
 
