@@ -379,16 +379,16 @@ rule text_json {
         score = 2
 
     strings:
-        $start = "{"
         $invalid_keys1 = /^\s*\w+:[\s]*[\{\["\d]/
         $valid_keys1 = /"\w+":[\s]*[\{\["\d]/
-        $end = "}"
 
     condition:
-        $start at 0
+        // "{" at 0
+        uint8(0) == 0x7B
+        // "}" at filesize-1
+        and uint8(filesize-1) == 0x7D
         and 0 of ($invalid_keys*)
         and $valid_keys1
-        and $end at filesize-1
 }
 
 /*
@@ -805,11 +805,10 @@ rule code_batch {
         $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $rem2 = /(^|\n)::/
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
-        $bom = {FF FE}
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
     condition:
-        (mime startswith "text" or $bom at 0)
+        (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
         and (for 1 of ($obf1) :( # > 3 )
              or ($power1 and $command)
              or ($power1 and 1 of ($cmd*))
@@ -837,10 +836,9 @@ rule code_batch_small {
         $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
-        $bom = {FF FE}
 
     condition:
-        (mime startswith "text" or $bom at 0)
+        (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
         and filesize < 512
         and (1 of ($batch*)
             or (#rem+#set) > 4)
