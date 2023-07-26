@@ -121,6 +121,7 @@ rule code_vbs {
     strings:
         // Avoid false positives like function createObject(param) {, function replace(param) {, etc.
         $javascript = /function[\w\s(,]+\){/
+        $multiline = " = @'\n" //powershell multiline string
 
         $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
         $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\n]/i ascii wide
@@ -138,7 +139,7 @@ rule code_vbs {
         $weak_vbs1 = /\bDim\b\s+\w+[\n:]/i ascii wide
 
     condition:
-        not $javascript
+        not $javascript and not $multiline
         and (2 of ($strong_vbs*)
             or (1 of ($strong_vbs*)
             and (#weak_vbs1) > 3))
