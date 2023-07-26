@@ -792,9 +792,9 @@ rule code_batch {
         // Example: %blah1%%blah2%%blah3%%blah4%%blah5%%blah6%%blah7%%blah8%%blah9%%blah10%
         $obf2 = /\%([^:\n\r\%]+(\%\%)?)+\%/
         // powershell does not need to be followed with -c or -command for it to be considered batch
-        $power1 = /(^|\n|@|&|\b)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?(\.(\^|%.+%)?e(\^|%.+%)?x(\^|%.+%)?e(\^|%.+%)?)?\b/i
+        $power1 = /(^|\n|@|&|\b)\^?p(\^|%[^%\n]{0,100}%)?o(\^|%[^%\n]{0,100}%)?w(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?r(\^|%[^%\n]{0,100}%)?s(\^|%[^%\n]{0,100}%)?h(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?l(\^|%[^%\n]{0,100}%)?l(\^|%[^%\n]{0,100}%)?(\.(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?x(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?)?\b/i
         // check for it seperately
-        $command = /(-c|-command)(\^|%.+%)?[ \t]/i
+        $command = /(-c|-command)(\^|%[^%\n]{0,100}%)?[ \t]/i
 
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
