@@ -17,12 +17,12 @@ rule code_javascript {
         $strong_js3  = /new[ \t]+ActiveXObject\(/
 
         $strong_js4  = /Scripting\.Dictionary['"]/
-        $strong_js5  = /unescape\(/
-        $strong_js6  = /\.createElement\(/
+        $strong_js5  = "unescape("
+        $strong_js6  = ".createElement("
         $strong_js7  = /submitForm\(['"]/
         $strong_js8  = /(document|window)(\[['"a-zA-Z]|\.)\w+/
-        $strong_js9  = /setTimeout\(/
-        $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=[ \t]*/
+        $strong_js9  = "setTimeout("
+        $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=/
         // If this is exactly in the sample, will trigger a second time because of strong_js10
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
 
@@ -73,13 +73,15 @@ rule code_jscript {
         score = 5
 
     strings:
-        $jscript1 = /new[ \t]+ActiveXObject\(/
+        $jscript1 = "ActiveXObject" fullword
+        $jscript2 = "= GetObject("
+        $jscript3 = "WScript.CreateObject("
 
         // Conditional comments
-        $jscript2 = /\/\*@cc_on/
-        $jscript3 = /@\*\//
-        $jscript4 = /\/\*@if \(@_jscript_version >= \d\)/
-        $jscript5 = /\/\*@end/
+        $jscript4 = "/*@cc_on"
+        $jscript5 = "@*/"
+        $jscript6 = /\/\*@if \(@_jscript_version >= \d\)/
+        $jscript7 = "/*@end"
 
     condition:
         code_javascript
@@ -98,7 +100,7 @@ rule code_xfa {
 
     strings:
         $xfa1 = /xfa\.([\w]*[.)=( ]){2,}/
-        $xfa2 = /ui\.oneOfChild\./
+        $xfa2 = "ui.oneOfChild."
         $xmlns_url = "http://www.xfa.org/schema/xfa-template/"
 
     condition:
@@ -114,27 +116,31 @@ rule code_vbs {
 
     meta:
         type = "code/vbs"
+        score = 2
 
     strings:
+        $multiline = " = @'\r\n" //powershell multiline string
+
         $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
-        $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\n]/i ascii wide
+        $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\r]/i ascii wide
         $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)/i ascii wide
         $strong_vbs4 = /(^|\n)ExecuteGlobal/ ascii wide
-        $strong_vbs5 = /(^|\n)[ \t]*Rem[ \t]+[^\n]+/i ascii wide
-        $strong_vbs6 = /(^|\n)(Attribute|Set|const)[ \t]+\w+[ \t]+=[ \t]+[^\n]+/i ascii wide
+        $strong_vbs6 = /(^|\n|:)(Attribute|Set|const)[ \t]+\w+[ \t]+=/i ascii wide
         $strong_vbs7 = /(^|\n)[ \t]*Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
-        $strong_vbs8 = /replace\(([^,]+,){2}([^)]+)\)/i ascii wide
+        $strong_vbs8 = /[ \t(=]replace\(/i ascii wide
         // CreateObject("blah")
-        $strong_vbs9 = /CreateObject\([^)]+\)/i ascii wide
-        $strong_vbs10 = /GetObject\([^)]+\)/i ascii wide
-        $strong_vbs11 = /(^|\n)Eval\(([^)]+)\)/i ascii wide
+        $strong_vbs9 = "CreateObject(" nocase ascii wide
+        $strong_vbs10 = "GetObject(" nocase ascii wide
+        $strong_vbs11 = /(^|\n)Eval\(/i ascii wide
+        $strong_vbs12 = "Execute(" nocase ascii wide
         // Dim blah
-        $weak_vbs1 = /\bDim\b\s+\w+/i ascii wide
+        $weak_vbs1 = /\bDim\b\s+\w+[\r:]/i ascii wide
 
     condition:
-        2 of ($strong_vbs*)
-        or (1 of ($strong_vbs*)
-            and (#weak_vbs1) > 3)
+        not code_javascript and not $multiline
+        and (2 of ($strong_vbs*)
+            or (1 of ($strong_vbs*)
+            and (#weak_vbs1) > 3))
 }
 
 /*
@@ -149,7 +155,7 @@ rule code_xml {
     strings:
         $header = /^\s*<\?xml[^>]+\?>/
         $ns1 = /<xml[^>]+xmlns[:=][^>]+>/
-        $ns2 = /<\/xml>/
+        $ns2 = "</xml>"
 
     condition:
         $header
@@ -424,7 +430,7 @@ rule code_php {
         $rec1 = /namespace[ \t]+[\w.]+/
         $rec2 = /function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{/
         $rec3 = /\beval[ \t]*\(/
-        $rec4 = /\$this\->/
+        $rec4 = "$this->"
         $rec5 = /require[ \t]+([\w\.]+)?('[^']+\.php'|"[^"]+\.php")[ \t]*;/
         $rec6 = /require\(([\w\.]+)?('[^']+\.php'|"[^"]+\.php")\);/
 
@@ -558,8 +564,8 @@ rule code_c {
         $ = /(^|\n)#include[ \t]*([<"])[\w.\/]+([>"])/
         $ = /(^|\n)#(if !defined|ifndef|define|endif|pragma)[ \t]+/
         $ = /(^|\n)public[ \t]*:/
-        $ = /ULONG|HRESULT|STDMETHOD(_)?/
-        $ = /THIS(_)?/
+        $ = /ULONG|HRESULT|STDMETHOD/
+        $ = "THIS"
         $ = /(^|\n)(const[ \t]+char[ \t]+\w+;|extern[ \t]+|uint(8|16|32)_t[ \t]+)/
 
     condition:
@@ -620,7 +626,7 @@ rule code_glsl {
         score = 2
 
     strings:
-        $ = /(^|\n)#version\s+\d{1,4}\s*(es)?/
+        $ = /(^|\n)#version\s+\d{1,4}/
         $ = /(^|\n)precision(\s+\w+){2};/
         $ = /(^|\n)uniform(\s+\w+){2};/
 
@@ -640,7 +646,7 @@ rule code_python {
 
     strings:
         $strong_py1 = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*['"]__main__['"][ \t]*:/
-        $strong_py2 = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+([ \t]+as \w+)?/
+        $strong_py2 = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+/
         $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
         $strong_py4 = /(try:|except:|else:)/
         // High confidence one-liner used to execute base64 blobs
@@ -664,7 +670,7 @@ rule code_java {
         $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+((abstract|final)[ \t]+)?class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{/
         $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+(static[ \t]+)?((abstract|final)[ \t]+)?(\w+[ \t]+){2}=/
         $ = /(^|\n)[\w \t]+\([^)]*\)[ \t]+throws[ \t]+\w+[ \t]*(,[ \t]*\w+[ \t]*)*{/
-        $ = /\.hasNext\(/
+        $ = ".hasNext("
         $ = /[ \t\n]*final[ \t]+\w/
         $ = /(ArrayList|Class|Stack|Map|Set|HashSet|PrivilegedAction|Vector)<(\w|\?)/
         $ = /(^|\n)[ \t]*package[ \t]+[\w\.]+;/
@@ -705,7 +711,7 @@ rule code_clickonce {
 
     strings:
         $ns1 = /^\s*<assembly[^>]+xmlns=[^>]+>/
-        $ns2 = /<\/assembly>/
+        $ns2 = "</assembly>"
 
     condition:
        all of ($ns*)
@@ -767,7 +773,7 @@ code/batch
 
 //         $ = /(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+/i
 //         $ = /(^|\n)pause/
-//         $ = /(^|\n)shutdown[ \t]*(\/s)?/
+//         $ = /(^|\n)shutdown/
 //         $ = /Set[ \t]+\w+[ \t]*=/
 
 //     condition:
@@ -791,7 +797,7 @@ rule code_batch {
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
-        $cmd4 = /(^|\n|@|&|^\s)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
+        $cmd4 = /(^|\n|@|&|^\s)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+/i
         $cmd5 = /(^|\n)exit\s*$/i
         $cmd6 = /(^|\n|@|&)%comspec%/i
         $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
@@ -821,7 +827,7 @@ rule code_batch_small {
         score = -1
 
     strings:
-        $batch1 = /(^|\n|@|&| )\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+['"]?/i
+        $batch1 = /(^|\n|@|&| )\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+/i
         $batch2 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
         $batch3 = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/i
         $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\\n]+|\.?\/[^\/\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
@@ -849,10 +855,10 @@ rule document_ps {
 
     strings:
         $header = /(^|\n)%!PS[ \t]*\n/
-        $opt1 = /(^|\n)[ \t]+\d+[ \t]+(selectfont|scalefont|setlinejoin|setlinewidth)[ \t]*[^\n]*/
-        $opt2 = /(^|\n)[ \t]+\d+[ \t]+\d+[ \t]+(moveto|lineto|scale|translate)[ \t]*[^\n]*/
-        $opt3 = /(^|\n)[ \t]+(showpage|newpath|stroke|setfont)[ \t]*[^\n]*/
-        $opt4 = /(^|\n)[ \t]+\([^\)]+\)[ \t]+show[ \t]*[^\n]*/
+        $opt1 = /(^|\n)[ \t]+\d+[ \t]+(selectfont|scalefont|setlinejoin|setlinewidth)/
+        $opt2 = /(^|\n)[ \t]+\d+[ \t]+\d+[ \t]+(moveto|lineto|scale|translate)/
+        $opt3 = /(^|\n)[ \t]+(showpage|newpath|stroke|setfont)/
+        $opt4 = /(^|\n)[ \t]+\([^\)]+\)[ \t]+show/
 
     condition:
         mime startswith "text"
