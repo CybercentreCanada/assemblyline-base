@@ -119,6 +119,9 @@ rule code_vbs {
         score = 2
 
     strings:
+        // Avoid false positives like function createObject(param) {, function replace(param) {, etc.
+        $javascript = /function[\w\s(,]+\({/
+
         $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
         $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\n]/i ascii wide
         $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)/i ascii wide
@@ -132,12 +135,13 @@ rule code_vbs {
         $strong_vbs10 = "GetObject(" nocase ascii wide
         $strong_vbs11 = /(^|\n)Eval\(/i ascii wide
         // Dim blah
-        $weak_vbs1 = /\bDim\b\s+\w+/i ascii wide
+        $weak_vbs1 = /\bDim\b\s+\w+[\n:]/i ascii wide
 
     condition:
-        2 of ($strong_vbs*)
-        or (1 of ($strong_vbs*)
-            and (#weak_vbs1) > 3)
+        not $javascript
+        and (2 of ($strong_vbs*)
+            or (1 of ($strong_vbs*)
+            and (#weak_vbs1) > 3))
 }
 
 /*
