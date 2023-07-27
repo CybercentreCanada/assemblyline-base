@@ -80,7 +80,7 @@ rule code_jscript {
         // Conditional comments
         $jscript4 = "/*@cc_on"
         $jscript5 = "@*/"
-        $jscript6 = /\/\*@if \(@_jscript_version >= \d\)/
+        $jscript6 = "/*@if (@_jscript_version >= "
         $jscript7 = "/*@end"
 
     condition:
