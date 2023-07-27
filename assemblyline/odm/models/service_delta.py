@@ -52,6 +52,7 @@ class UpdateSourceDelta(odm.Model):
     headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)), description=REF_UPDATE_SOURCE)
     default_classification = odm.Optional(odm.Classification(), description=REF_UPDATE_SOURCE)
     git_branch = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
+    sync = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
 
 
 @ odm.model(index=False, store=False)
