@@ -989,12 +989,12 @@ rule code_lisp {
         type = "code/lisp"
 
     strings:
-        $ = /(^|\n)[ \t]*\(defvar[ \t]+/
-        $ = /(^|\n)[ \t]*\(defmacro[ \t]+/
-        $ = /(^|\n)[ \t]*\(eval-when[ \t]+/
-        $ = /(^|\n)[ \t]*\(in-package[ \t]+/
-        $ = /(^|\n)[ \t]*\(list[ \t]+/
-        $ = /(^|\n)[ \t]*\(export[ \t]+/
+        $ = "(defvar" fullword
+        $ = "(defmacro" fullword
+        $ = "(eval-when" fullword
+        $ = "(in-package" fullword
+        $ = "(list" fullword
+        $ = "(export" fullword
 
     condition:
         mime startswith "text"
