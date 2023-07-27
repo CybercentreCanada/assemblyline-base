@@ -315,14 +315,14 @@ rule document_email_1 {
         score = 15
 
     strings:
-        $rec = /(^|\n)From: /
-        $rec2 = /(^|\n)Date: /
-        $subrec1 = /(^|\n)Bcc: /
-        $subrec2 = /(^|\n)To: /
-        $opt1 = /(^|\n)Subject: /
-        $opt2 = /(^|\n)Received: from/
-        $opt3 = /(^|\n)MIME-Version: /
-        $opt4 = /(^|\n)Content-Type: /
+        $rec = "From: "
+        $rec2 = "Date: "
+        $subrec1 = "Bcc: "
+        $subrec2 = "To: "
+        $opt1 = "Subject: "
+        $opt2 = "Received: from"
+        $opt3 = "MIME-Version: "
+        $opt4 = "Content-Type: "
 
     condition:
         all of ($rec*)
