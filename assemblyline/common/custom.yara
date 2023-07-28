@@ -989,15 +989,16 @@ rule code_lisp {
         type = "code/lisp"
 
     strings:
-        $ = "(defvar" fullword
-        $ = "(defmacro" fullword
-        $ = "(eval-when" fullword
-        $ = "(in-package" fullword
-        $ = "(list" fullword
-        $ = "(export" fullword
+        $strong1 = "(defvar" fullword
+        $strong2 = "(defmacro" fullword
+        $strong3 = "(eval-when" fullword
+        $strong4 = "(in-package" fullword
+        $weak1 = "(list" fullword
+        $weak2 = "(export" fullword
 
     condition:
         mime startswith "text"
+        and 1 of ($strong*)
         and 2 of them
 }
 
