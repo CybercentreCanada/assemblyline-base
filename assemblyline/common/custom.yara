@@ -27,7 +27,7 @@ rule code_javascript {
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
 
         // Used in a lot of malware samples to fail silently
-        $strong_js12 = /catch\s+\(\w*\)\s+\{.*\}/
+        $strong_js12 = /catch\s+\(\w*\)\s+\{/
 
         // Firefox browser specific method
         $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
@@ -80,7 +80,7 @@ rule code_jscript {
         // Conditional comments
         $jscript4 = "/*@cc_on"
         $jscript5 = "@*/"
-        $jscript6 = /\/\*@if \(@_jscript_version >= \d\)/
+        $jscript6 = "/*@if (@_jscript_version >= "
         $jscript7 = "/*@end"
 
     condition:
@@ -315,14 +315,14 @@ rule document_email_1 {
         score = 15
 
     strings:
-        $rec = /(^|\n)From: /
-        $rec2 = /(^|\n)Date: /
-        $subrec1 = /(^|\n)Bcc: /
-        $subrec2 = /(^|\n)To: /
-        $opt1 = /(^|\n)Subject: /
-        $opt2 = /(^|\n)Received: from/
-        $opt3 = /(^|\n)MIME-Version: /
-        $opt4 = /(^|\n)Content-Type: /
+        $rec = "From: "
+        $rec2 = "Date: "
+        $subrec1 = "Bcc: "
+        $subrec2 = "To: "
+        $opt1 = "Subject: "
+        $opt2 = "Received: from"
+        $opt3 = "MIME-Version: "
+        $opt4 = "Content-Type: "
 
     condition:
         all of ($rec*)
@@ -379,16 +379,16 @@ rule text_json {
         score = 2
 
     strings:
-        $start = "{"
         $invalid_keys1 = /^\s*\w+:[\s]*[\{\["\d]/
         $valid_keys1 = /"\w+":[\s]*[\{\["\d]/
-        $end = "}"
 
     condition:
-        $start at 0
+        // "{" at 0
+        uint8(0) == 0x7B
+        // "}" at filesize-1
+        and uint8(filesize-1) == 0x7D
         and 0 of ($invalid_keys*)
         and $valid_keys1
-        and $end at filesize-1
 }
 
 /*
@@ -791,9 +791,11 @@ rule code_batch {
         $obf1 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
         // Example: %blah1%%blah2%%blah3%%blah4%%blah5%%blah6%%blah7%%blah8%%blah9%%blah10%
         $obf2 = /\%([^:\n\r\%]+(\%\%)?)+\%/
-        $power1 = /(^|\n|@|&)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?(\.(\^|%.+%)?e(\^|%.+%)?x(\^|%.+%)?e(\^|%.+%)?)?.+(-c|-command)(\^|%.+%)?[ \t]/i
         // powershell does not need to be followed with -c or -command for it to be considered batch
-        $power2 = /(^|\n|@|&|\b)\^?p(\^|%.+%)?o(\^|%.+%)?w(\^|%.+%)?e(\^|%.+%)?r(\^|%.+%)?s(\^|%.+%)?h(\^|%.+%)?e(\^|%.+%)?l(\^|%.+%)?l(\^|%.+%)?(\.(\^|%.+%)?e(\^|%.+%)?x(\^|%.+%)?e(\^|%.+%)?)?.+(-c|-command)?(\^|%.+%)?[ \t]/i
+        $power1 = /(^|\n|@|&|\b)\^?p(\^|%[^%\n]{0,100}%)?o(\^|%[^%\n]{0,100}%)?w(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?r(\^|%[^%\n]{0,100}%)?s(\^|%[^%\n]{0,100}%)?h(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?l(\^|%[^%\n]{0,100}%)?l(\^|%[^%\n]{0,100}%)?(\.(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?x(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?)?\b/i
+        // check for it seperately
+        $command = /(-c|-command)(\^|%[^%\n]{0,100}%)?[ \t]/i
+
         $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
@@ -803,14 +805,13 @@ rule code_batch {
         $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $rem2 = /(^|\n)::/
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
-        $bom = {FF FE}
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
     condition:
-        (mime startswith "text" or $bom at 0)
+        (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
         and (for 1 of ($obf1) :( # > 3 )
-             or $power1
-             or ($power2 and 1 of ($cmd*))
+             or ($power1 and $command)
+             or ($power1 and 1 of ($cmd*))
              or for 1 of ($cmd*) :( # > 3 )
              or $exp
              or (2 of ($cmd*)
@@ -835,10 +836,9 @@ rule code_batch_small {
         $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
-        $bom = {FF FE}
 
     condition:
-        (mime startswith "text" or $bom at 0)
+        (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
         and filesize < 512
         and (1 of ($batch*)
             or (#rem+#set) > 4)
@@ -989,15 +989,16 @@ rule code_lisp {
         type = "code/lisp"
 
     strings:
-        $ = /(^|\n)[ \t]*\(defvar[ \t]+/
-        $ = /(^|\n)[ \t]*\(defmacro[ \t]+/
-        $ = /(^|\n)[ \t]*\(eval-when[ \t]+/
-        $ = /(^|\n)[ \t]*\(in-package[ \t]+/
-        $ = /(^|\n)[ \t]*\(list[ \t]+/
-        $ = /(^|\n)[ \t]*\(export[ \t]+/
+        $strong1 = "(defvar" fullword
+        $strong2 = "(defmacro" fullword
+        $strong3 = "(eval-when" fullword
+        $strong4 = "(in-package" fullword
+        $weak1 = "(list" fullword
+        $weak2 = "(export" fullword
 
     condition:
         mime startswith "text"
+        and 1 of ($strong*)
         and 2 of them
 }
 
@@ -1012,8 +1013,8 @@ rule code_wsf {
         score = 10
 
     strings:
-        $ = /<job.*?>/
-        $ = /<script\s+?language=.*?>/
+        $ = "<job"
+        $ = /<script\s+?language=/
 
     condition:
         mime startswith "text"
@@ -1031,8 +1032,8 @@ rule code_wsc {
         score = 10
 
     strings:
-        $ = /<component.*?>/
-        $ = /<script\s+?language=.*?>/
+        $ = "<component"
+        $ = /<script\s+?language=/
 
     condition:
         mime startswith "text"
