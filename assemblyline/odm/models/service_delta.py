@@ -98,6 +98,7 @@ class ServiceDelta(odm.Model):
     is_external = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     licence_count = odm.Optional(odm.Integer(), description=REF_SERVICE)
     max_queue_length = odm.Optional(odm.Integer(), description=REF_SERVICE)
+    min_instances = odm.Optional(odm.Integer(), description=REF_SERVICE)
 
     uses_tags: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     uses_tag_scores: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
