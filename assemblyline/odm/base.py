@@ -75,7 +75,7 @@ MD5_REGEX = r"^[a-f0-9]{32}$"
 SHA1_REGEX = r"^[a-f0-9]{40}$"
 SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
-URI_PATH = r"(?:[/?#]\S*)"
+URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
 URI_REGEX = f"((?:(?:[A-Za-z0-9+-.]{{1,}}:)//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
             f"{URI_PATH}?)"
