@@ -1003,6 +1003,10 @@ class ExternalLinksTargets(odm.Model):
 
 @odm.model(index=False, store=False, description="External links that specific metadata and tags can pivot to")
 class ExternalLinks(odm.Model):
+    allow_bypass: bool = odm.boolean(
+        default=False,
+        description="If the classification of the item is higher then the max_classificaiton, can we let the user "
+                    "bypass the check and still query the external link?")
     name: str = odm.Keyword(description="Name of the link")
     double_encode: bool = odm.boolean(default=False, description="Should the replaced value be double encoded?")
     classification = odm.Optional(
