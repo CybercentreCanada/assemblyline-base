@@ -72,7 +72,7 @@ class ESStore(object):
 
         self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
                                                   ca_certs=self.ca_certs)
-        self.es_version = version.parse(self.client.info()['version']['number'])
+        self.es_version = version.parse(self.with_retries(self.client.info)['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
         self._test_elastic_minimum_version()
@@ -157,8 +157,6 @@ class ESStore(object):
                                                   max_retries=0,
                                                   request_timeout=TRANSPORT_TIMEOUT,
                                                   ca_certs=self.ca_certs)
-        self.es_version = version.parse(self.client.info()['version']['number'])
-        self._test_elastic_minimum_version()
 
     def close(self):
         self._closed = True
@@ -183,7 +181,10 @@ class ESStore(object):
         return self._closed
 
     def ping(self):
-        return self.client.ping()
+        try:
+            return self.client.ping()
+        except Exception:
+            return False
 
     def register(self, name: str, model_class=None):
         name_match = re.match(r'[a-z0-9_]*', name)

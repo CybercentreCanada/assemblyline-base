@@ -6,6 +6,7 @@ from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
+DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -90,7 +91,7 @@ class AutoProperty(odm.Model):
     field: str = odm.Keyword(description="Field to apply `pattern` to")
     pattern: str = odm.Keyword(description="Regex pattern for auto-prop assignment")
     type: str = odm.Enum(AUTO_PROPERTY_TYPE, description="Type of property assignment on pattern match")
-    value: str = odm.Keyword(description="Assigned property value")
+    value: List[str] = odm.List(odm.Keyword(), auto=True, default=[], description="Assigned property value")
 
 
 @odm.model(index=False, store=False, description="LDAP Configuration")
@@ -177,14 +178,14 @@ class AppProvider(odm.Model):
 
 @odm.model(index=False, store=False, description="OAuth Provider Configuration")
 class OAuthProvider(odm.Model):
-    auto_create: str = odm.Boolean(default=True, description="Auto-create users if they are missing")
-    auto_sync: str = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
+    auto_create: bool = odm.Boolean(default=True, description="Auto-create users if they are missing")
+    auto_sync: bool = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
-    uid_randomize: str = odm.Boolean(default=False,
-                                     description="Should we generate a random username for the authenticated user?")
-    uid_randomize_digits: str = odm.Integer(default=0,
+    uid_randomize: bool = odm.Boolean(default=False,
+                                      description="Should we generate a random username for the authenticated user?")
+    uid_randomize_digits: int = odm.Integer(default=0,
                                             description="How many digits should we add at the end of the username?")
     uid_randomize_delimiter: str = odm.Keyword(default="-",
                                                description="What is the delimiter used by the random name generator?")
@@ -216,11 +217,14 @@ class OAuthProvider(odm.Model):
     user_groups_name_field: str = odm.Optional(
         odm.Keyword(),
         description="Name of the field in the list of groups that contains the name of the group")
-    use_new_callback_format: str = odm.Boolean(default=False, description="Should we use the new callback method?")
+    use_new_callback_format: bool = odm.Boolean(default=False, description="Should we use the new callback method?")
     allow_external_tokens: bool = odm.Boolean(
         default=False, description="Should token provided to the login API directly be use for authentication?")
-    external_token_alternate_audiences: bool = odm.List(
+    external_token_alternate_audiences: List[str] = odm.List(
         odm.Keyword(), default=[], description="List of valid alternate audiences for the external token.")
+    email_fields: List[str] = odm.List(odm.Keyword(), default=DEFAULT_EMAIL_FIELDS,
+                                       description="List of fields in the claim to get the email from")
+    username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -1307,17 +1311,17 @@ DEFAULT_SUBMISSION = {
 
 @odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
 class Config(odm.Model):
-    auth: Auth = odm.Compound(Auth, default=DEFAULT_AUTH, description="Authentication module configuration")
-    core: Core = odm.Compound(Core, default=DEFAULT_CORE, description="Core component configuration")
-    datastore: Datastore = odm.Compound(Datastore, default=DEFAULT_DATASTORE, description="Datastore configuration")
-    datasources: Dict[str, Datasource] = odm.Mapping(odm.Compound(Datasource), default=DEFAULT_DATASOURCES,
+    auth: Auth = odm.compound(Auth, default=DEFAULT_AUTH, description="Authentication module configuration")
+    core: Core = odm.compound(Core, default=DEFAULT_CORE, description="Core component configuration")
+    datastore: Datastore = odm.compound(Datastore, default=DEFAULT_DATASTORE, description="Datastore configuration")
+    datasources: Dict[str, Datasource] = odm.mapping(odm.compound(Datasource), default=DEFAULT_DATASOURCES,
                                                      description="Datasources configuration")
-    filestore: Filestore = odm.Compound(Filestore, default=DEFAULT_FILESTORE, description="Filestore configuration")
-    logging: Logging = odm.Compound(Logging, default=DEFAULT_LOGGING, description="Logging configuration")
-    services: Services = odm.Compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
-    system: System = odm.Compound(System, default=DEFAULT_SYSTEM, description="System configuration")
-    ui: UI = odm.Compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
-    submission: Submission = odm.Compound(Submission, default=DEFAULT_SUBMISSION,
+    filestore: Filestore = odm.compound(Filestore, default=DEFAULT_FILESTORE, description="Filestore configuration")
+    logging: Logging = odm.compound(Logging, default=DEFAULT_LOGGING, description="Logging configuration")
+    services: Services = odm.compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
+    system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
+    ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
+    submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
 
 
