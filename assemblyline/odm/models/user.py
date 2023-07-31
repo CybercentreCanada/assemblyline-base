@@ -44,6 +44,8 @@ ROLES = StringTable('ROLES', [
     ("archive_download", 26),
     ("self_manage", 27),
     ("external_query", 30),
+    ("retrohunt_view", 28),
+    ("retrohunt_run", 29),
 ])
 
 
@@ -84,6 +86,8 @@ USER_ROLES_BASIC = {
     ROLES.submission_view,     # View submission's results
     ROLES.workflow_manage,     # Manage (add/delete) workflows
     ROLES.workflow_view,       # View workflows
+    ROLES.retrohunt_view,      # View yara searches
+    ROLES.retrohunt_run,       # Run yara searches
 }
 
 USER_ROLES = USER_ROLES_BASIC.union({
@@ -124,6 +128,7 @@ USER_TYPE_DEP = {
         ROLES.self_manage,
         ROLES.submission_create,
         ROLES.replay_trigger,
+        ROLES.retrohunt_run,
     }
 }
 
@@ -142,6 +147,7 @@ ACL_MAP = {
         ROLES.signature_view,
         ROLES.submission_view,
         ROLES.workflow_view,
+        ROLES.retrohunt_view,
     ],
     "W": [
         ROLES.alert_manage,
@@ -151,7 +157,8 @@ ACL_MAP = {
         ROLES.safelist_manage,
         ROLES.submission_create,
         ROLES.submission_delete,
-        ROLES.submission_manage
+        ROLES.submission_manage,
+        ROLES.retrohunt_run,
     ],
     "E": [
         ROLES.administration,
