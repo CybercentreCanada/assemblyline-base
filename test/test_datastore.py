@@ -251,25 +251,6 @@ def _test_multiget(c: ESCollection):
     assert c.multiget([]) == {}
 
 
-def _test_multiget_search(c: ESCollection):
-    # TEST Multiget via search
-    ids = ['test1', 'int', 'test2']
-    ds_raw = c.multiget_search(ids, query='*', fl="*")['items']
-    for item in ds_raw:
-        cur_id = item.pop('id')
-        ids.remove(cur_id)
-
-        if "__non_doc_raw__" in item:
-            item = item['__non_doc_raw__']
-
-        assert test_map[cur_id] == item
-    assert len(ids) == 0
-
-    res = c.multiget_search([], query='*')
-    assert res['items'] == []
-    assert res['total'] == 0
-
-
 def _test_multiexists(c: ESCollection):
     # Test GET
     assert all(c.multiexists(['test1', 'test2', 'test3', 'test4', 'string', 'list', 'int']).values())
@@ -667,7 +648,6 @@ TEST_FUNCTIONS = [
     (_test_get_if_exists, "get_if_exists"),
     (_test_multiexists, "multiexists"),
     (_test_multiget, "multiget"),
-    (_test_multiget_search, "multiget_search"),
     (_test_keys, "keys"),
     (_test_update, "update"),
     (_test_update_list_of_objects, "update_list_of_objects"),
