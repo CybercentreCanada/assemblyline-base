@@ -1012,6 +1012,64 @@ DEFAULT_ALERTING_META = {
 }
 
 
+@odm.model(index=False, store=False, description="Target definition of an external link")
+class ExternalLinksTargets(odm.Model):
+    type: str = odm.Enum(values=['metadata', 'tag', 'hash'], description="Type of external link target")
+    key: str = odm.Keyword(description="Key that it can be used againts")
+
+
+@odm.model(index=False, store=False, description="External links that specific metadata and tags can pivot to")
+class ExternalLinks(odm.Model):
+    allow_bypass: bool = odm.boolean(
+        default=False,
+        description="If the classification of the item is higher then the max_classificaiton, can we let the user "
+                    "bypass the check and still query the external link?")
+    name: str = odm.Keyword(description="Name of the link")
+    double_encode: bool = odm.boolean(default=False, description="Should the replaced value be double encoded?")
+    classification = odm.Optional(
+        odm.ClassificationString(description="Minimum classification the user must have to see this link"))
+    max_classification = odm.Optional(
+        odm.ClassificationString(description="Maximum classification of data that may be handled by the link"))
+    replace_pattern: str = odm.Keyword(
+        description="Pattern that will be replaced in the URL with the metadata or tag value")
+    targets: List[ExternalLinksTargets] = odm.List(
+        odm.Compound(ExternalLinksTargets),
+        default=[],
+        description="List of external sources to query")
+    url: str = odm.Keyword(description="URL to redirect to")
+
+
+EXAMPLE_EXTERNAL_LINK_VT = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "replace_pattern": "{REPLACE}",
+    "targets": [
+        {"type": "tag", "key": "network.static.uri"},
+        {"type": "tag", "key": "network.dynamic.uri"},
+        {"type": "metadata", "key": "submitted_url"},
+        {"type": "hash", "key": "md5"},
+        {"type": "hash", "key": "sha1"},
+        {"type": "hash", "key": "sha256"},
+    ],
+    "url": "https://www.virustotal.com/gui/search/{REPLACE}",
+    "double_encode": True,
+    # "classification": "TLP:CLEAR",
+    # "max_classification": "TLP:CLEAR",
+}
+
+EXAMPLE_EXTERNAL_LINK_MB_SHA256 = {
+    # This is an example on how this would work with VirusTotal
+    "name": "MalwareBazaar",
+    "replace_pattern": "{REPLACE}",
+    "targets": [
+        {"type": "hash", "key": "sha256"},
+    ],
+    "url": "https://bazaar.abuse.ch/sample/{REPLACE}/",
+    # "classification": "TLP:CLEAR",
+    # "max_classification": "TLP:CLEAR",
+}
+
+
 @odm.model(index=False, store=False, description="Connection details for external systems/data sources.")
 class ExternalSource(odm.Model):
     name: str = odm.Keyword(description="Name of the source.")
@@ -1062,9 +1120,11 @@ class UI(odm.Model):
     download_encoding = odm.Enum(values=["raw", "cart"], description="Which encoding will be used for downloads?")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
+    external_links: List[ExternalLinks] = odm.List(
+        odm.Compound(ExternalLinks),
+        description="List of external pivots links")
     external_sources: List[ExternalSource] = odm.List(
-        odm.Compound(ExternalSource),
-        default=[], description="List of external sources to query")
+        odm.Compound(ExternalSource), description="List of external sources to query")
     fqdn: str = odm.Text(description="Fully qualified domain name to use for the 2-factor authentication validation")
     ingest_max_priority: int = odm.Integer(description="Maximum priority for ingest API")
     read_only: bool = odm.Boolean(description="Turn on read only mode in the UI")
@@ -1108,6 +1168,7 @@ DEFAULT_UI = {
     "download_encoding": "cart",
     "email": None,
     "enforce_quota": True,
+    "external_links": [],
     "external_sources": [],
     "fqdn": "localhost",
     "ingest_max_priority": 250,
