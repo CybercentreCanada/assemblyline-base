@@ -126,6 +126,7 @@ class Service(odm.Model):
     is_external: bool = odm.Boolean(
         default=False, description="Does this service perform analysis outside of Assemblyline?")
     licence_count: int = odm.Integer(default=0, description="How many licences is the service allowed to use?")
+    min_instances: int = odm.Optional(odm.Integer(), description="The minimum number of service instances. Overrides Scaler's min_instances configuration.")
     max_queue_length: int = odm.Integer(
         default=0,
         description="If more than this many jobs are queued for this service drop those over this limit. 0 is unlimited.")
