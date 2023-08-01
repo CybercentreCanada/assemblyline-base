@@ -9,8 +9,7 @@ class Retrohunt(odm.Model):
     created = odm.date(default='NOW', description="Start time for the search.")
     creator = odm.keyword(copyto="__text__", description="User who created this retrohunt job")
     description = odm.Text(copyto="__text__", description="Human readable description of this retrohunt job")
-    tags = odm.Optional(odm.mapping(odm.sequence(odm.keyword(copyto="__text__"))),
-                        description="Tags describing this retrohunt job")
+    tags = odm.mapping(odm.sequence(odm.keyword(copyto="__text__")), description="Tags describing this retrohunt job")
     # expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
 
     # Search data
