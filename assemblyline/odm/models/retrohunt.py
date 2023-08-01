@@ -22,6 +22,9 @@ class Retrohunt(odm.Model):
     finished = odm.boolean(default=False, description="Boolean that indicates if this retrohunt job is finished")
     hits = odm.sequence(odm.keyword(store=False), store=False,
                         description="List of sha256 of the files that were hit during the search")
+    phase = odm.optional(odm.Enum(['filtering', 'yara', 'finished'], description="Phase the job is at"))
+    pourcentage = odm.optional(odm.integer(), description="Pourcentage of completion the phase is at")
+    progress = odm.optional(odm.sequence(odm.integer()), description="Progress values when the job is running")
     total_errors = odm.optional(odm.integer(), description="Total number of errors encountered during the job")
     total_hits = odm.optional(odm.integer(), description="Total number of hits when the job first ran")
     truncated = odm.boolean(default=False, description="Indicates if the list of hits been truncated at some limit")
