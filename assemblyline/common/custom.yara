@@ -337,9 +337,9 @@ rule document_email_2 {
         score = 10
 
     strings:
+        $ = /(^|\n)From: /
         $ = /(^|\n)MIME-Version: /
-        $ = /(^|\n)Content-Type: /
-        $ = "This is a multipart message in MIME format."
+        $ = /(^|\n)Content-Type: multipart\/mixed;\s*boundary=/
 
     condition:
         all of them
