@@ -1002,14 +1002,14 @@ DEFAULT_ALERTING_META = {
 @odm.model(index=False, store=False, description="Target definition of an external link")
 class ExternalLinksTargets(odm.Model):
     type: str = odm.Enum(values=['metadata', 'tag', 'hash'], description="Type of external link target")
-    key: str = odm.Keyword(description="Key that it can be used againts")
+    key: str = odm.Keyword(description="Key that it can be used against")
 
 
 @odm.model(index=False, store=False, description="External links that specific metadata and tags can pivot to")
 class ExternalLinks(odm.Model):
     allow_bypass: bool = odm.boolean(
         default=False,
-        description="If the classification of the item is higher then the max_classificaiton, can we let the user "
+        description="If the classification of the item is higher than the max_classificaiton, can we let the user "
                     "bypass the check and still query the external link?")
     name: str = odm.Keyword(description="Name of the link")
     double_encode: bool = odm.boolean(default=False, description="Should the replaced value be double encoded?")
@@ -1045,7 +1045,7 @@ EXAMPLE_EXTERNAL_LINK_VT = {
 }
 
 EXAMPLE_EXTERNAL_LINK_MB_SHA256 = {
-    # This is an example on how this would work with VirusTotal
+    # This is an example on how this would work with Malware Bazaar
     "name": "MalwareBazaar",
     "replace_pattern": "{REPLACE}",
     "targets": [
@@ -1109,7 +1109,7 @@ class UI(odm.Model):
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
     external_links: List[ExternalLinks] = odm.List(
         odm.Compound(ExternalLinks),
-        description="List of external pivots links")
+        description="List of external pivot links")
     external_sources: List[ExternalSource] = odm.List(
         odm.Compound(ExternalSource), description="List of external sources to query")
     fqdn: str = odm.Text(description="Fully qualified domain name to use for the 2-factor authentication validation")
