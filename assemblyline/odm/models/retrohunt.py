@@ -9,12 +9,15 @@ class Retrohunt(odm.Model):
     created = odm.date(default='NOW', description="Start time for the search.")
     creator = odm.keyword(copyto="__text__", description="User who created this retrohunt job")
     description = odm.Text(copyto="__text__", description="Human readable description of this retrohunt job")
-    tags = odm.mapping(odm.sequence(odm.keyword(copyto="__text__")), description="Tags describing this retrohunt job")
+    tags = odm.Optional(
+        odm.mapping(
+            odm.sequence(odm.keyword(copyto="__text__")),
+            description="Tags describing this retrohunt job"))
     # expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
 
     # Search data
     code = odm.keyword(description="Unique code identifying this retrohunt job")
-    raw_query = odm.keyword(description="Text of filter query derived from yara signature")
+    raw_query = odm.Optional(odm.keyword(description="Text of filter query derived from yara signature"))
     yara_signature = odm.keyword(copyto="__text__", description="Text of original yara signature run")
 
     # Completion data
@@ -23,7 +26,7 @@ class Retrohunt(odm.Model):
     hits = odm.sequence(odm.keyword(store=False), store=False,
                         description="List of sha256 of the files that were hit during the search")
     percentage = odm.Optional(odm.integer(), description="Percentage of completion the phase is at")
-    phase = odm.Optional(odm.Enum(['filtering', 'yara', 'finished'], description="Phase the job is at"))
+    phase = odm.Optional(odm.Enum(['unknown', 'filtering', 'yara', 'finished'], description="Phase the job is at"))
     progress = odm.Optional(odm.sequence(odm.integer()), description="Progress values when the job is running")
     total_errors = odm.Optional(odm.integer(), description="Total number of errors encountered during the job")
     total_hits = odm.Optional(odm.integer(), description="Total number of hits when the job first ran")
