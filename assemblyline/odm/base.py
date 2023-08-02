@@ -487,7 +487,7 @@ class URI(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{match.group(2)}' in URI '{value}'"
                              " is not a valid Domain or IP.")
 
-        return match.group(0).replace(match.group(1), match.group(1).lower())
+        return match.group(0).replace(match.group(2), match.group(2).lower())
 
 
 class UNCPath(ValidatedKeyword):
