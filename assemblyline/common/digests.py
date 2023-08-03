@@ -1,4 +1,5 @@
 import hashlib
+import ssdeep
 import tlsh
 from typing import Dict
 
@@ -9,7 +10,7 @@ DEFAULT_BLOCKSIZE = 65536
 
 # noinspection PyBroadException
 def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculate_entropy: bool = True,
-                         on_first_block=lambda _b, _l, _p: {}) -> Dict:
+                         on_first_block=lambda _b, _l, _p: {}, skip_fuzzy_hashes: bool = False) -> Dict:
     """ Generate digests for file reading only 'blocksize bytes at a time."""
     bc = None
     if calculate_entropy:
@@ -23,7 +24,8 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
     md5 = hashlib.md5()
     sha1 = hashlib.sha1()
     sha256 = hashlib.sha256()
-    th = tlsh.Tlsh()
+    if not skip_fuzzy_hashes:
+        th = tlsh.Tlsh()
     size = 0
 
     with open(path, 'rb') as f:
@@ -39,7 +41,8 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
             md5.update(data)
             sha1.update(data)
             sha256.update(data)
-            th.update(data)
+            if not skip_fuzzy_hashes:
+                th.update(data)
             size += length
 
             data = f.read(blocksize)
@@ -54,12 +57,14 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
     result['sha256'] = sha256.hexdigest()
     result['size'] = size
 
-    # Try to finalise the TLSH Hash and add it to the results
-    try:
-        th.final()
-        result['tlsh'] = th.hexdigest()
-    except Exception:
-        pass
+    if not skip_fuzzy_hashes:
+        result["ssdeep"] = ssdeep.hash_from_file(path)
+        # Try to finalise the TLSH Hash and add it to the results
+        try:
+            th.final()
+            result['tlsh'] = th.hexdigest()
+        except Exception:
+            pass
 
     return result
 
