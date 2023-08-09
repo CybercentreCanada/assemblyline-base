@@ -13,7 +13,7 @@ class Retrohunt(odm.Model):
         odm.mapping(
             odm.sequence(odm.keyword(copyto="__text__")),
             description="Tags describing this retrohunt job"))
-    # expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
+    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp of this retrohunt job")
 
     # Search data
     code = odm.keyword(description="Unique code identifying this retrohunt job")
