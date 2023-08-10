@@ -4,6 +4,7 @@ from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
+
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role']
 
 
