@@ -748,22 +748,10 @@ DEFAULT_ARCHIVE = {
 }
 
 
-@odm.model(index=False, store=False, description="Datastore Retrohunt feature configuration")
-class Retrohunt(odm.Model):
-    enabled = odm.Boolean(description="Are we enabling Retrohunt features?")
-
-
-DEFAULT_RETROHUNT = {
-    "enabled": False
-}
-
-
 @odm.model(index=False, store=False, description="Datastore Configuration")
 class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
     archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
-    retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
-                             description="Datastore Retrohunt feature configuration")
     cache_dtl = odm.Integer(
         default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
@@ -772,7 +760,6 @@ class Datastore(odm.Model):
 DEFAULT_DATASTORE = {
     "hosts": ["http://elastic:devpass@localhost:9200"],
     "archive": DEFAULT_ARCHIVE,
-    "retrohunt": DEFAULT_RETROHUNT,
     "cache_dtl": 5,
     "type": "elasticsearch",
 }
@@ -1327,9 +1314,13 @@ DEFAULT_SUBMISSION = {
 
 @odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
 class Retrohunt(odm.Model):
-    url = odm.keyword(description="Base URL for service API")
-    api_key = odm.keyword(description="Service API Key")
-    tls_verify = odm.boolean(description="Should tls certificates be verified", default=True)
+    enabled = odm.Boolean(default=False, description="Is the Retrohunt functionnality enabled on the frontend")
+    dtl: int = odm.Integer(default=30, description="Number of days retrohunt jobs will remain in the system by default")
+    max_dtl: int = odm.Integer(
+        default=0, description="Maximum number of days retrohunt jobs will remain in the system")
+    url = odm.Keyword(description="Base URL for service API")
+    api_key = odm.Keyword(description="Service API Key")
+    tls_verify = odm.Boolean(description="Should tls certificates be verified", default=True)
 
 
 @odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
@@ -1346,7 +1337,8 @@ class Config(odm.Model):
     ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
-    retrohunt = odm.optional(odm.compound(Retrohunt, description="Options for including a retrohunt server."))
+    retrohunt = odm.Optional(odm.Compound(
+        Retrohunt, description="Retrohunt configuration for the frontend and server."))
 
 
 DEFAULT_CONFIG = {

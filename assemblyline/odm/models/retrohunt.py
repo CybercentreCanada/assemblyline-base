@@ -13,15 +13,17 @@ class Retrohunt(odm.Model):
         odm.mapping(
             odm.sequence(odm.keyword(copyto="__text__")),
             description="Tags describing this retrohunt job"))
-    # expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
+    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp of this retrohunt job")
 
     # Search data
     code = odm.keyword(description="Unique code identifying this retrohunt job")
-    raw_query = odm.Optional(odm.keyword(description="Text of filter query derived from yara signature"))
+    raw_query = odm.Optional(odm.keyword(store=False,
+                             description="Text of filter query derived from yara signature"))
     yara_signature = odm.keyword(copyto="__text__", description="Text of original yara signature run")
 
     # Completion data
-    errors = odm.sequence(odm.keyword(), description="List of error messages that occured during the search")
+    errors = odm.sequence(odm.keyword(store=False), store=False,
+                          description="List of error messages that occured during the search")
     finished = odm.boolean(default=False, description="Boolean that indicates if this retrohunt job is finished")
     hits = odm.sequence(odm.keyword(store=False), store=False,
                         description="List of sha256 of the files that were hit during the search")
