@@ -19,7 +19,7 @@ class Retrohunt(odm.Model):
     code = odm.keyword(description="Unique code identifying this retrohunt job")
     raw_query = odm.Optional(odm.keyword(store=False,
                              description="Text of filter query derived from yara signature"))
-    yara_signature = odm.keyword(copyto="__text__", description="Text of original yara signature run")
+    yara_signature = odm.keyword(copyto="__text__", store=False, description="Text of original yara signature run")
 
     # Completion data
     errors = odm.sequence(odm.keyword(store=False), store=False,
