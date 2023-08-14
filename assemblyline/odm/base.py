@@ -392,8 +392,14 @@ class IP(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
                              f"validator: {self.validation_regex.pattern}")
 
-        return ".".join([str(int(x)) for x in value.split(".")])
+        # An additional check for type validation
 
+        # IPv4
+        if "." in value:
+            return ".".join([str(int(x)) for x in value.split(".")])
+        # IPv6
+        else:
+            return ":".join([str(x) for x in value.split(":")])
 
 class Domain(Keyword):
     def __init__(self, *args, **kwargs):
