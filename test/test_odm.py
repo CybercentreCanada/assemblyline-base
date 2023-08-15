@@ -1,12 +1,26 @@
-from assemblyline.common.classification import InvalidClassification
-
-from assemblyline.odm import model, Model, KeyMaskException, Compound, List, \
-    Keyword, Integer, Mapping, Classification, Enum, UUID, construct_safe, FlattenedObject, \
-    flat_to_nested
-
 import json
-import pytest
 import os
+
+import pytest
+
+from assemblyline.common.classification import InvalidClassification
+from assemblyline.odm import (
+    UUID,
+    Classification,
+    Compound,
+    Enum,
+    FlattenedObject,
+    Integer,
+    KeyMaskException,
+    Keyword,
+    List,
+    Mapping,
+    Model,
+    construct_safe,
+    flat_to_nested,
+    model,
+)
+from assemblyline.odm.base import IP
 
 
 class CatError(Exception):
@@ -615,6 +629,23 @@ def test_named_item_access():
         test['x'] = 100
 
     assert test['a'] == {'a': -1, 'b': 100}
+
+
+def test_ip():
+    @model()
+    class Test(Model):
+        ip = IP()
+
+    with pytest.raises(ValueError):
+        a = Test()
+
+    # IPv4
+    a = Test({"ip": "127.0.0.1"})
+    assert a.ip == "127.0.0.1"
+
+    # IPv6
+    b = Test({"ip": "1234:5678:9ABC:0000:0000:1234:5678:9ABC"})
+    assert b.ip == "1234:5678:9ABC:0000:0000:1234:5678:9ABC"
 
 
 def test_uuid():
