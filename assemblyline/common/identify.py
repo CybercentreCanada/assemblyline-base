@@ -9,12 +9,12 @@ import zipfile
 from binascii import hexlify
 from typing import Dict, Optional, Tuple, Union
 
+import os
 import magic
 import msoffcrypto
-import ssdeep
 import yaml
 import yara
-from assemblyline.common.digests import get_digests_for_file
+from assemblyline.common.digests import get_digests_for_file, DEFAULT_BLOCKSIZE
 from assemblyline.common.forge import get_cachestore, get_config, get_constants, get_datastore
 from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs
 from assemblyline.common.identify_defaults import magic_patterns as default_magic_patterns
@@ -319,10 +319,15 @@ class Identify():
 
         return fallback
 
-    def fileinfo(self, path: str) -> Dict:
+    def fileinfo(self, path: str, generate_hashes: bool = True, skip_fuzzy_hashes: bool = False) -> Dict:
         path = safe_str(path)
-        data = get_digests_for_file(path, on_first_block=self.ident)
-        data["ssdeep"] = ssdeep.hash_from_file(path)
+        if generate_hashes:
+            data = get_digests_for_file(path, on_first_block=self.ident, skip_fuzzy_hashes=skip_fuzzy_hashes)
+        else:
+            with open(path, 'rb') as f:
+                first_block = f.read(DEFAULT_BLOCKSIZE)
+            data = self.ident(first_block, len(first_block), path)
+            data["size"] = os.path.getsize(path)
 
         # Check if file empty
         if not int(data.get("size", -1)):
@@ -516,7 +521,7 @@ if __name__ == "__main__":
     else:
         name = sys.stdin.readline().strip()
         while name:
-            a = identify.fileinfo(name)
+            a = identify.fileinfo(name, skip_fuzzy_hashes=True)
             print(
                 "\t".join(
                     dotdump(str(a[k]))
