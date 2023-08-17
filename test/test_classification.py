@@ -399,10 +399,10 @@ def test_unexpected_subcompartment(ce):
     # Typo trailing separator
     with pytest.raises(InvalidClassification):
         # A permissive parser could interpret this the same as the one above but we don't parse for subcompartments
-        ce.normalize_classification("L1//LE-").is_err()
+        ce.normalize_classification("L1//LE-")
     # Unconfigured subcompartment
     with pytest.raises(InvalidClassification):
-        ce.normalize_classification("L1//LE-O").is_err()
+        ce.normalize_classification("L1//LE-O")
 
 
 def test_group_outside_rel(ce):
