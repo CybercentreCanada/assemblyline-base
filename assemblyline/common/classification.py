@@ -211,17 +211,17 @@ class Classification(object):
 
         return items
 
-    def _get_c12n_level_index(self, c12n: str) -> str:
+    def _get_c12n_level_index(self, c12n: str) -> tuple[str, str]:
         # Parse classifications in uppercase mode only
         c12n = c12n.upper()
 
-        lvl = c12n.split("//")[0]
+        lvl, _, remain = c12n.partition("//")
         if lvl in self.levels_map:
-            return self.levels_map[lvl]
+            return self.levels_map[lvl], remain
         elif lvl in self.levels_map_lts:
-            return self.levels_map[self.levels_map_lts[lvl]]
+            return self.levels_map[self.levels_map_lts[lvl]], remain
         elif lvl in self.levels_aliases:
-            return self.levels_map[self.levels_aliases[lvl]]
+            return self.levels_map[self.levels_aliases[lvl]], remain
         else:
             raise InvalidClassification("Classification level '%s' was not found in "
                                         "your classification definition." % lvl)
@@ -235,14 +235,17 @@ class Classification(object):
             return self.levels_map_stl[text]
         return text
 
-    def _get_c12n_required(self, c12n: str, long_format: bool = True) -> List:
+    def _get_c12n_required(self, c12n: str, long_format: bool = True) -> tuple[List, list[str]]:
         # Parse classifications in uppercase mode only
         c12n = c12n.upper()
 
         return_set = set()
         part_set = set(c12n.split("/"))
+        unused = []
 
         for p in part_set:
+            if not p:
+                continue
             if p in self.access_req_map_lts:
                 return_set.add(self.access_req_map_lts[p])
             elif p in self.access_req_map_stl:
@@ -250,28 +253,33 @@ class Classification(object):
             elif p in self.access_req_aliases:
                 for a in self.access_req_aliases[p]:
                     return_set.add(a)
+            else:
+                unused.append(p)
 
         if long_format:
-            return sorted([self.access_req_map_stl[r] for r in return_set])
-        return sorted(list(return_set))
+            return sorted([self.access_req_map_stl[r] for r in return_set]), unused
+        return sorted(list(return_set)), unused
 
-    def _get_c12n_groups(self, c12n: str, long_format: bool = True,
-                         get_dynamic_groups: bool = True) -> Tuple[List, List]:
+    def _get_c12n_groups(self, c12n: list[str], long_format: bool = True,
+                         get_dynamic_groups: bool = True) -> Tuple[List, List, list[str]]:
         # Parse classifications in uppercase mode only
-        c12n = c12n.upper()
 
         g1_set = set()
         g2_set = set()
         others = set()
 
-        grp_part = c12n.split("//")
         groups = []
-        for gp in grp_part:
-            gp = gp.replace("REL TO ", "")
-            gp = gp.replace("REL ", "")
-            temp_group = set([x.strip() for x in gp.split(",")])
-            for t in temp_group:
-                groups.extend(t.split("/"))
+        subgroups = []
+        for gp in c12n:
+            gp = gp.upper()
+            if gp.startswith("REL "):
+                gp = gp.replace("REL TO ", "")
+                gp = gp.replace("REL ", "")
+                temp_group = set([x.strip() for x in gp.split(",")])
+                for t in temp_group:
+                    groups.extend(t.split("/"))
+            else:
+                subgroups.append(gp)
 
         for g in groups:
             if g in self.groups_map_lts:
@@ -281,17 +289,25 @@ class Classification(object):
             elif g in self.groups_aliases:
                 for a in self.groups_aliases[g]:
                     g1_set.add(a)
-            elif g in self.subgroups_map_lts:
+            else:
+                others.add(g)
+
+        for g in subgroups:
+            if g in self.subgroups_map_lts:
                 g2_set.add(self.subgroups_map_lts[g])
             elif g in self.subgroups_map_stl:
                 g2_set.add(g)
+            elif g in self.groups_aliases:
+                for a in self.groups_aliases[g]:
+                    g1_set.add(a)
             elif g in self.subgroups_aliases:
                 for a in self.subgroups_aliases[g]:
                     g2_set.add(a)
             else:
-                others.add(g)
+                raise InvalidClassification(f"Unknown component: {g}")
 
         if self.dynamic_groups and get_dynamic_groups:
+            unselected = set()
             for o in others:
                 if o not in self.access_req_map_lts \
                         and o not in self.access_req_map_stl \
@@ -300,12 +316,15 @@ class Classification(object):
                         and o not in self.levels_map_lts \
                         and o not in self.levels_aliases:
                     g1_set.add(o)
+                else:
+                    unselected.add(o)
+            others = unselected
 
         if long_format:
             return sorted(
                 [self.groups_map_stl.get(r, r) for r in g1_set]), sorted(
-                [self.subgroups_map_stl[r] for r in g2_set])
-        return sorted(list(g1_set)), sorted(list(g2_set))
+                [self.subgroups_map_stl[r] for r in g2_set]), list(others)
+        return sorted(list(g1_set)), sorted(list(g2_set)), list(others)
 
     @staticmethod
     def _can_see_required(user_req: List, req: List) -> bool:
@@ -384,6 +403,7 @@ class Classification(object):
                 groups = sorted(list(set(groups).union(set(self.groups_auto_select_short))))
 
         if groups:
+            groups = sorted(groups)
             out += {True: "/", False: "//"}[len(req_grp) > 0]
             if len(groups) == 1:
                 # 6. If only one group, check if it has a solitary display name.
@@ -413,9 +433,12 @@ class Classification(object):
 
     def _get_classification_parts(self, c12n: str, long_format: bool = True, get_dynamic_groups: bool = True) \
             -> Tuple[Union[Union[int, str], Any], List, List, List]:
-        lvl_idx = self._get_c12n_level_index(c12n)
-        req = self._get_c12n_required(c12n, long_format=long_format)
-        groups, subgroups = self._get_c12n_groups(c12n, long_format=long_format, get_dynamic_groups=get_dynamic_groups)
+        lvl_idx, unused = self._get_c12n_level_index(c12n)
+        req, unused_parts = self._get_c12n_required(unused, long_format=long_format)
+        groups, subgroups, unused_parts = self._get_c12n_groups(unused_parts, long_format=long_format, get_dynamic_groups=get_dynamic_groups)
+
+        if unused_parts:
+            raise InvalidClassification(f"Unparsable classification parts: {''.join(unused_parts)}")
 
         return lvl_idx, req, groups, subgroups
 
@@ -564,9 +587,10 @@ class Classification(object):
             # Normalize the classification before gathering the parts
             c12n = self.normalize_classification(c12n, skip_auto_select=user_classification)
 
-            access_lvl = self._get_c12n_level_index(c12n)
-            access_req = self._get_c12n_required(c12n, long_format=False)
-            access_grp1, access_grp2 = self._get_c12n_groups(c12n, long_format=False)
+            access_lvl, access_req, access_grp1, access_grp2 = self._get_classification_parts(c12n, long_format=False)
+            # access_lvl = self._get_c12n_level_index(c12n)
+            # access_req = self._get_c12n_required(c12n, long_format=False)
+            # access_grp1, access_grp2 = self._get_c12n_groups(c12n, long_format=False)
 
             return {
                 '__access_lvl__': access_lvl,
@@ -678,12 +702,10 @@ class Classification(object):
             user_c12n = self.normalize_classification(user_c12n, skip_auto_select=True)
             c12n = self.normalize_classification(c12n, skip_auto_select=True)
 
-            user_req = self._get_c12n_required(user_c12n)
-            user_groups, user_subgroups = self._get_c12n_groups(user_c12n)
-            req = self._get_c12n_required(c12n)
-            groups, subgroups = self._get_c12n_groups(c12n)
+            user_lvl, user_req, user_groups, user_subgroups = self._get_classification_parts(user_c12n)
+            lvl, req, groups, subgroups = self._get_classification_parts(c12n)
 
-            if self._get_c12n_level_index(user_c12n) >= self._get_c12n_level_index(c12n):
+            if int(user_lvl) >= int(lvl):
                 if not self._can_see_required(user_req, req):
                     return False
                 if not self._can_see_groups(user_groups, groups):
