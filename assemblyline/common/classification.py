@@ -320,6 +320,15 @@ class Classification(object):
                     unselected.add(o)
             others = unselected
 
+        # TODO do we want to validate group assignment?
+        # # Check if there are any forbidden group assignments
+        # for subgroup in g2_set:
+        #     limited_to_group = self.params_map.get(subgroup, {}).get("limited_to_group", None)
+        #     if limited_to_group is not None:
+        #         if len(g1_set) > 1 or (len(g1_set) == 1 and g1_set != set([limited_to_group])):
+        #             raise InvalidClassification(f"Subgroup {subgroup} is limited to group "
+        #                                         f"{limited_to_group} (found: {', '.join(g1_set)})")
+
         if long_format:
             return sorted(
                 [self.groups_map_stl.get(r, r) for r in g1_set]), sorted(
