@@ -77,6 +77,11 @@ TEST_SCHEME_A = {
             "short_name": "R2",
             "require_group": "X"
         },
+        {
+            "name": "Reserve Three",
+            "short_name": "R3",
+            "limited_to_group": "X"
+        },
     ],
     "unrestricted": "L0",
     "restricted": "L2",
@@ -435,3 +440,37 @@ def test_dynamic_group_error():
         ce.normalize_classification("L1//REL A/G")
     with pytest.raises(InvalidClassification):
         ce.normalize_classification("L1//REL A/B")
+
+
+def test_require_group(ce):
+    assert ce.normalize_classification("L1//R1") == "LEVEL 1//RESERVE ONE"
+    assert ce.normalize_classification("L1//R2") == "LEVEL 1//XX/RESERVE TWO"
+
+
+def test_limited_to_group(ce):
+    assert ce.normalize_classification("L1//R3") == "LEVEL 1//RESERVE THREE"
+    assert ce.normalize_classification("L1//R3/REL X") == "LEVEL 1//XX/RESERVE THREE"
+    with pytest.raises(InvalidClassification):
+        ce.normalize_classification("L1//R3/REL A")
+    with pytest.raises(InvalidClassification):
+        ce.normalize_classification("L1//R3/REL A, X")
+
+
+def test_build_user_classification(ce):
+    item = ce.build_user_classification("L1", "L0//LE", False)
+    assert item == "L1//LE"
+
+    item = ce.build_user_classification(item, "L0//REL A", False)
+    assert item == "L1//LE//REL A"
+
+    item = ce.build_user_classification(item, "L0//XX", False)
+    assert item == "L1//LE//REL A, X"
+
+    item = ce.build_user_classification(item, "L0//AC", False)
+    assert item == "L1//AC/LE//REL A, X"
+
+    item = ce.build_user_classification(item, "L2//R1", False)
+    assert item == "L2//AC/LE//REL A, X/R1"
+
+    item = ce.build_user_classification(item, "L0//R2", False)
+    assert item == "L2//AC/LE//REL A, X/R1/R2"
