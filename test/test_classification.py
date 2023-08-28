@@ -299,6 +299,8 @@ def test_auto_select_group():
     assert ce.normalize_classification("L0//REL A", long_format=True) == "LEVEL 0//REL TO GROUP A"
     assert ce.normalize_classification("L0//REL B", long_format=True) == "LEVEL 0//REL TO GROUP A, GROUP B"
     assert ce.normalize_classification("L0//REL A, B", long_format=True) == "LEVEL 0//REL TO GROUP A, GROUP B"
+    assert ce.min_classification("L1", "L0//REL B", long_format=False) == "L0"
+    assert ce.max_classification("L1", "L0//REL B", long_format=False) == "L1//REL A, B"
 
 
 def test_auto_select_subgroup():
@@ -314,6 +316,8 @@ def test_auto_select_subgroup():
     assert ce.normalize_classification("L0//R1", long_format=True) == "LEVEL 0//RESERVE ONE"
     assert ce.normalize_classification("L0//R2", long_format=True) == "LEVEL 0//XX/RESERVE ONE/RESERVE TWO"
     assert ce.normalize_classification("L0//R1/R2", long_format=True) == "LEVEL 0//XX/RESERVE ONE/RESERVE TWO"
+    assert ce.min_classification("L1", "L0//R2", long_format=False) == "L0"
+    assert ce.max_classification("L1", "L0//R2", long_format=False) == "L1//XX/R1/R2"
 
 
 def test_parts(ce):

@@ -43,13 +43,13 @@ class Classification(object):
         self.groups_map_lts = {}
         self.groups_map_stl = {}
         self.groups_aliases = {}
-        self.groups_auto_select = []
-        self.groups_auto_select_short = []
+        self.groups_auto_select: list[str] = []
+        self.groups_auto_select_short: list[str] = []
         self.subgroups_map_lts = {}
         self.subgroups_map_stl = {}
         self.subgroups_aliases = {}
-        self.subgroups_auto_select = []
-        self.subgroups_auto_select_short = []
+        self.subgroups_auto_select: list[str] = []
+        self.subgroups_auto_select_short: list[str] = []
         self.params_map = {}
         self.description = {}
         self.invalid_mode = False
@@ -260,8 +260,8 @@ class Classification(object):
             return sorted([self.access_req_map_stl[r] for r in return_set]), unused
         return sorted(list(return_set)), unused
 
-    def _get_c12n_groups(self, c12n: list[str], long_format: bool = True,
-                         get_dynamic_groups: bool = True) -> Tuple[List, List, list[str]]:
+    def _get_c12n_groups(self, c12n: list[str], long_format: bool = True, get_dynamic_groups: bool = True,
+                         auto_select: bool = False) -> Tuple[List, List, list[str]]:
         # Parse classifications in uppercase mode only
 
         g1_set = set()
@@ -270,6 +270,7 @@ class Classification(object):
 
         groups = []
         subgroups = []
+
         for gp in c12n:
             # If there is a rel marking we know we have groups
             if gp.startswith("REL "):
@@ -319,6 +320,12 @@ class Classification(object):
             g1_set.update(others)
             others = set()
 
+        # Check if there are any required group assignments
+        for subgroup in g2_set:
+            required = self.params_map.get(subgroup, {}).get("require_group", None)
+            if required:
+                g1_set.add(required)
+
         # Check if there are any forbidden group assignments
         for subgroup in g2_set:
             limited_to_group = self.params_map.get(subgroup, {}).get("limited_to_group", None)
@@ -327,6 +334,13 @@ class Classification(object):
                     raise InvalidClassification(f"Subgroup {subgroup} is limited to group "
                                                 f"{limited_to_group} (found: {', '.join(g1_set)})")
 
+        # Do auto select
+        if auto_select and g1_set:
+            g1_set.update(self.groups_auto_select_short)
+        if auto_select and g2_set:
+            g2_set.update(self.subgroups_auto_select_short)
+
+        # Swap to long format if required
         if long_format:
             return sorted(
                 [self.groups_map_stl.get(r, r) for r in g1_set]), sorted(
@@ -438,12 +452,18 @@ class Classification(object):
 
         return out
 
-    def _get_classification_parts(self, c12n: str, long_format: bool = True, get_dynamic_groups: bool = True) \
-            -> Tuple[int, list[str], list[str], list[str]]:
+    def _get_classification_parts(
+            self,
+            c12n: str,
+            long_format: bool = True,
+            get_dynamic_groups: bool = True,
+            auto_select: bool = False,
+    ) -> Tuple[int, list[str], list[str], list[str]]:
         lvl_idx, unused = self._get_c12n_level_index(c12n)
         req, unused_parts = self._get_c12n_required(unused, long_format=long_format)
         groups, subgroups, unused_parts = self._get_c12n_groups(unused_parts, long_format=long_format,
-                                                                get_dynamic_groups=get_dynamic_groups)
+                                                                get_dynamic_groups=get_dynamic_groups,
+                                                                auto_select=auto_select)
 
         if unused_parts:
             raise InvalidClassification(f"Unparsable classification parts: {''.join(unused_parts)}")
@@ -592,13 +612,8 @@ class Classification(object):
             c12n = self.UNRESTRICTED
 
         try:
-            # Normalize the classification before gathering the parts
-            c12n = self.normalize_classification(c12n, skip_auto_select=user_classification)
-
-            access_lvl, access_req, access_grp1, access_grp2 = self._get_classification_parts(c12n, long_format=False)
-            # access_lvl = self._get_c12n_level_index(c12n)
-            # access_req = self._get_c12n_required(c12n, long_format=False)
-            # access_grp1, access_grp2 = self._get_c12n_groups(c12n, long_format=False)
+            parts = self._get_classification_parts(c12n, long_format=False, auto_select=not user_classification)
+            access_lvl, access_req, access_grp1, access_grp2 = parts
 
             return {
                 '__access_lvl__': access_lvl,
@@ -660,12 +675,6 @@ class Classification(object):
         if not self.enforce or self.invalid_mode:
             return self.UNRESTRICTED
 
-        # Normalize classifications before comparing them
-        if user_c12n_1 is not None:
-            user_c12n_1 = self.normalize_classification(user_c12n_1, skip_auto_select=True)
-        if user_c12n_2 is not None:
-            user_c12n_2 = self.normalize_classification(user_c12n_2, skip_auto_select=True)
-
         if user_c12n_1 is None:
             return user_c12n_2
         if user_c12n_2 is None:
@@ -706,10 +715,6 @@ class Classification(object):
             return True
 
         try:
-            # Normalize classifications before comparing them
-            user_c12n = self.normalize_classification(user_c12n, skip_auto_select=True)
-            c12n = self.normalize_classification(c12n, skip_auto_select=True)
-
             user_lvl, user_req, user_groups, user_subgroups = self._get_classification_parts(user_c12n)
             lvl, req, groups, subgroups = self._get_classification_parts(c12n)
 
@@ -828,19 +833,15 @@ class Classification(object):
         if not self.enforce or self.invalid_mode:
             return self.UNRESTRICTED
 
-        # Normalize classifications before comparing them
-        if c12n_1 is not None:
-            c12n_1 = self.normalize_classification(c12n_1)
-        if c12n_2 is not None:
-            c12n_2 = self.normalize_classification(c12n_2)
-
         if c12n_1 is None:
             return c12n_2
         if c12n_2 is None:
             return c12n_1
 
-        lvl_idx_1, req_1, groups_1, subgroups_1 = self._get_classification_parts(c12n_1, long_format=long_format)
-        lvl_idx_2, req_2, groups_2, subgroups_2 = self._get_classification_parts(c12n_2, long_format=long_format)
+        lvl_idx_1, req_1, groups_1, subgroups_1 = self._get_classification_parts(c12n_1, long_format=long_format,
+                                                                                 auto_select=True)
+        lvl_idx_2, req_2, groups_2, subgroups_2 = self._get_classification_parts(c12n_2, long_format=long_format,
+                                                                                 auto_select=True)
 
         req = list(set(req_1) | set(req_2))
         groups = self._max_groups(groups_1, groups_2)
@@ -867,19 +868,15 @@ class Classification(object):
         if not self.enforce or self.invalid_mode:
             return self.UNRESTRICTED
 
-        # Normalize classifications before comparing them
-        if c12n_1 is not None:
-            c12n_1 = self.normalize_classification(c12n_1)
-        if c12n_2 is not None:
-            c12n_2 = self.normalize_classification(c12n_2)
-
         if c12n_1 is None:
             return c12n_2
         if c12n_2 is None:
             return c12n_1
 
-        lvl_idx_1, req_1, groups_1, subgroups_1 = self._get_classification_parts(c12n_1, long_format=long_format)
-        lvl_idx_2, req_2, groups_2, subgroups_2 = self._get_classification_parts(c12n_2, long_format=long_format)
+        lvl_idx_1, req_1, groups_1, subgroups_1 = self._get_classification_parts(c12n_1, long_format=long_format,
+                                                                                 auto_select=True)
+        lvl_idx_2, req_2, groups_2, subgroups_2 = self._get_classification_parts(c12n_2, long_format=long_format,
+                                                                                 auto_select=True)
 
         req = list(set(req_1) & set(req_2))
         if len(groups_1) > 0 and len(groups_2) > 0:
@@ -948,12 +945,6 @@ class Classification(object):
         """
         if not self.enforce or self.invalid_mode:
             return self.UNRESTRICTED
-
-        # Normalize classifications before comparing them
-        if c12n_1 is not None:
-            c12n_1 = self.normalize_classification(c12n_1, skip_auto_select=True)
-        if c12n_2 is not None:
-            c12n_2 = self.normalize_classification(c12n_2, skip_auto_select=True)
 
         if c12n_1 is None:
             return c12n_2
