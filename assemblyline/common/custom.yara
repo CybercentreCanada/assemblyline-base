@@ -751,36 +751,6 @@ rule code_ducky {
 
 }
 
-/*
-code/batch
-*/
-
-// rule code_batch {
-
-//     meta:
-//         type = "code/batch"
-
-//     strings:
-//         $ = /(^|\n| |\t|@)(chcp|set \/p)[ \t]+/i
-//         $ = /(^|\n| |\t|&)start[ \t]*\/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?"/i
-//         $ = /(^|\n| |\t|&)start[ \t]*\/wait[ \t]+.*/i
-//         $ = /(^|\n|@)cd[ \t]+(\/d )?["']%~dp0["']/i
-//         $ = /(^|\n)taskkill[ \t]+(\/F|\/im)/i
-//         $ = /(^|\n)reg[ \t]+delete[ \t]+/i
-//         $ = /(^|\n)%comspec%[ \t]+\/c[ \t]+/i
-//         $ = /(^|\n)dir&echo[ \t]+/i
-//         $ = /(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
-
-//         $ = /(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+/i
-//         $ = /(^|\n)pause/
-//         $ = /(^|\n)shutdown/
-//         $ = /Set[ \t]+\w+[ \t]*=/
-
-//     condition:
-//         mime startswith "text"
-//         and 2 of them
-// }
-
 rule code_batch {
 
     meta:
