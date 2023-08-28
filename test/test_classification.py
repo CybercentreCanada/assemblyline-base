@@ -282,6 +282,8 @@ def test_multi_group_alias():
 
     assert ce.normalize_classification("L0//REL A", long_format=False) == "L0//REL A"
     assert ce.normalize_classification("L0//REL A, B", long_format=False) == "L0//REL ALPHABET GANG"
+    with pytest.raises(InvalidClassification):
+        assert ce.normalize_classification("L0//ALPHABET GANG")
 
 
 def test_auto_select_group():

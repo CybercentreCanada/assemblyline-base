@@ -83,7 +83,7 @@ def test_classification():
     cl_engine = forge.get_classification(yml_config=yml_config)
 
     u = "U//REL DEPTS"
-    r = "R//GOD//REL G1"
+    r = "R//GOD//G1"
 
     assert cl_engine.normalize_classification(r, long_format=True) == "RESTRICTED//ADMIN//ANY/GROUP 1"
     assert cl_engine.is_accessible(r, u)
@@ -108,8 +108,47 @@ def test_classification():
     dyn3 = "U//TEST2"
     assert not cl_engine.is_valid(dyn1)
     assert not cl_engine.is_valid(dyn2)
-    assert cl_engine.normalize_classification(dyn1, long_format=False) == "U"
-    assert cl_engine.normalize_classification(dyn2, long_format=False) == "U//ADM"
+    assert not cl_engine.is_valid(dyn3)
+    with pytest.raises(InvalidClassification):
+        cl_engine.normalize_classification(dyn1, long_format=False)
+    with pytest.raises(InvalidClassification):
+        cl_engine.normalize_classification(dyn2, long_format=False)
+    with pytest.raises(InvalidClassification):
+        cl_engine.normalize_classification(dyn3, long_format=False)
+
+    cl_engine.dynamic_groups = True
+    assert not cl_engine.is_valid(dyn1)
+    assert not cl_engine.is_valid(dyn2)
+    assert not cl_engine.is_valid(dyn3)
+    with pytest.raises(InvalidClassification):
+        cl_engine.normalize_classification(dyn1, long_format=False)
+    with pytest.raises(InvalidClassification):
+        cl_engine.normalize_classification(dyn2, long_format=False)
+    with pytest.raises(InvalidClassification):
+        cl_engine.normalize_classification(dyn3, long_format=False)
+    with pytest.raises(InvalidClassification):
+        cl_engine.is_accessible(dyn2, dyn1)
+    with pytest.raises(InvalidClassification):
+        cl_engine.is_accessible(dyn1, dyn2)
+    with pytest.raises(InvalidClassification):
+        cl_engine.is_accessible(dyn3, dyn1)
+    with pytest.raises(InvalidClassification):
+        cl_engine.is_accessible(dyn1, dyn3)
+    with pytest.raises(InvalidClassification):
+        cl_engine.intersect_user_classification(dyn1, dyn1)
+    with pytest.raises(InvalidClassification):
+        cl_engine.max_classification(dyn1, dyn2)
+
+    cl_engine.dynamic_groups = False
+    dyn1 = "U//REL TEST"
+    dyn2 = "U//GOD//REL TEST"
+    dyn3 = "U//REL TEST2"
+    assert not cl_engine.is_valid(dyn1)
+    assert not cl_engine.is_valid(dyn2)
+    with pytest.raises(InvalidClassification):
+        assert cl_engine.normalize_classification(dyn1, long_format=False)
+    with pytest.raises(InvalidClassification):
+        assert cl_engine.normalize_classification(dyn2, long_format=False)
     cl_engine.dynamic_groups = True
     assert cl_engine.is_valid(dyn1)
     assert cl_engine.is_valid(dyn2)

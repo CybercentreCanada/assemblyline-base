@@ -32,9 +32,9 @@ class Classification(object):
         """
         banned_params_keys = ['name', 'short_name', 'lvl', 'aliases', 'auto_select', 'css', 'description']
         self.original_definition = classification_definition
-        self.levels_map = {}
-        self.levels_map_stl = {}
-        self.levels_map_lts = {}
+        self.levels_map: dict[str, int] = {}
+        self.levels_map_stl: dict[str, str] = {}
+        self.levels_map_lts: dict[str, str] = {}
         self.levels_styles_map = {}
         self.levels_aliases = {}
         self.access_req_map_lts = {}
@@ -211,7 +211,7 @@ class Classification(object):
 
         return items
 
-    def _get_c12n_level_index(self, c12n: str) -> tuple[str, str]:
+    def _get_c12n_level_index(self, c12n: str) -> tuple[int, str]:
         # Parse classifications in uppercase mode only
         c12n = c12n.upper()
 
@@ -271,7 +271,7 @@ class Classification(object):
         groups = []
         subgroups = []
         for gp in c12n:
-            gp = gp.upper()
+            # If there is a rel marking we know we have groups
             if gp.startswith("REL "):
                 gp = gp.replace("REL TO ", "")
                 gp = gp.replace("REL ", "")
@@ -279,6 +279,8 @@ class Classification(object):
                 for t in temp_group:
                     groups.extend(t.split("/"))
             else:
+                # if there is not a rel marking we either have a subgroup or a solitary_display_name
+                # alias for a group, which we will filter out later
                 subgroups.append(gp)
 
         for g in groups:
@@ -297,28 +299,25 @@ class Classification(object):
                 g2_set.add(self.subgroups_map_lts[g])
             elif g in self.subgroups_map_stl:
                 g2_set.add(g)
-            elif g in self.groups_aliases:
-                for a in self.groups_aliases[g]:
-                    g1_set.add(a)
             elif g in self.subgroups_aliases:
                 for a in self.subgroups_aliases[g]:
                     g2_set.add(a)
+            # Here is where we catch any solitary_display_name aliases for groups within the subgroup sections
+            elif g in self.groups_aliases:
+                # Check that this alias is actually a solitary name, don't
+                # let other aliases leak outside the REL marking
+                groups = self.groups_aliases[g]
+                if len(groups) > 1:
+                    raise InvalidClassification(f"Unclear use of alias: {g}")
+                g1_set.add(groups[0])
             else:
                 raise InvalidClassification(f"Unknown component: {g}")
 
+        # If dynamic groups are active all remaining parts should be groups found under a
+        # REL TO marking that we can merge in with the other groups
         if self.dynamic_groups and get_dynamic_groups:
-            unselected = set()
-            for o in others:
-                if o not in self.access_req_map_lts \
-                        and o not in self.access_req_map_stl \
-                        and o not in self.access_req_aliases \
-                        and o not in self.levels_map \
-                        and o not in self.levels_map_lts \
-                        and o not in self.levels_aliases:
-                    g1_set.add(o)
-                else:
-                    unselected.add(o)
-            others = unselected
+            g1_set.update(others)
+            others = set()
 
         # Check if there are any forbidden group assignments
         for subgroup in g2_set:
@@ -369,7 +368,7 @@ class Classification(object):
         req = list(set(req).difference(set(req_grp)))
 
         if req:
-            out += "//" + "/".join(req)
+            out += "//" + "/".join(sorted(req))
         if req_grp:
             out += "//" + "/".join(sorted(req_grp))
 
@@ -440,10 +439,11 @@ class Classification(object):
         return out
 
     def _get_classification_parts(self, c12n: str, long_format: bool = True, get_dynamic_groups: bool = True) \
-            -> Tuple[Union[Union[int, str], Any], List, List, List]:
+            -> Tuple[int, list[str], list[str], list[str]]:
         lvl_idx, unused = self._get_c12n_level_index(c12n)
         req, unused_parts = self._get_c12n_required(unused, long_format=long_format)
-        groups, subgroups, unused_parts = self._get_c12n_groups(unused_parts, long_format=long_format, get_dynamic_groups=get_dynamic_groups)
+        groups, subgroups, unused_parts = self._get_c12n_groups(unused_parts, long_format=long_format,
+                                                                get_dynamic_groups=get_dynamic_groups)
 
         if unused_parts:
             raise InvalidClassification(f"Unparsable classification parts: {''.join(unused_parts)}")
