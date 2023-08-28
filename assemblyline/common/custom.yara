@@ -827,7 +827,7 @@ rule code_batch {
         and (for 1 of ($obf1) :( # > 3 )
              // powershell can have a command in it that looks like this: "powershell -command blah"
              // so we need something else
-             or ($power1 and $command and 1 of ($cmd*))
+             or ($power1 and $command and (1 of ($cmd*) or 1 of ($rem*)))
              or ($power1 and 1 of ($cmd*))
              or for 1 of ($cmd*) :( # > 3 )
              or $exp
