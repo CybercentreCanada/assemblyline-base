@@ -521,7 +521,7 @@ if __name__ == "__main__":
     else:
         name = sys.stdin.readline().strip()
         while name:
-            a = identify.fileinfo(name)
+            a = identify.fileinfo(name, skip_fuzzy_hashes=True)
             print(
                 "\t".join(
                     dotdump(str(a[k]))
