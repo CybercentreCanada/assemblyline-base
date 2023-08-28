@@ -811,12 +811,13 @@ rule code_batch {
 
         // del is not a batch-specific command, and is an alias for Remove-Item in PowerShell.
         // Therefore do not include it in the command set for batch.
-        $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
+        $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|netstat|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&|^\s)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+/i
         $cmd5 = /(^|\n)exit\s*$/i
         $cmd6 = /(^|\n|@|&)%comspec%/i
+        $cmd7 = /(^|\n|@|&)timeout[ \t](\/\w+|[-]?\d{1,5})/i
         $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $rem2 = /(^|\n)::/
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
