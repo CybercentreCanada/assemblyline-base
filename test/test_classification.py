@@ -331,7 +331,7 @@ def test_parts(ce):
     assert ce._get_classification_parts("L1", long_format=False) == (5, [], [], [])
     assert ce._get_classification_parts("LEVEL 1", long_format=False) == (5, [], [], [])
 
-#     # Group operations
+    # Group operations
     assert ce._get_classification_parts("L0//REL A") == (1, [], ["GROUP A"], [])
     assert ce._get_classification_parts("LEVEL 0//REL Group A") == (1, [], ["GROUP A"], [])
     assert ce._get_classification_parts("L0//REL A", long_format=False) == (1, [], ["A"], [])
