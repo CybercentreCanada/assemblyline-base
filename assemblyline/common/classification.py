@@ -495,7 +495,7 @@ class Classification(object):
                 absolutely necessary.
         """
 
-        combinations = set()
+        combinations: set[str] = set()
 
         levels = self._list_items_and_aliases(self.original_definition['levels'], long_format=long_format)
         reqs = self._list_items_and_aliases(self.original_definition['required'], long_format=long_format)
@@ -563,7 +563,13 @@ class Classification(object):
                     combinations.add(cl)
 
         if normalized:
-            return {self.normalize_classification(x, long_format=long_format) for x in combinations}
+            good = []
+            for x in combinations:
+                try:
+                    good.append(self.normalize_classification(x, long_format=long_format))
+                except InvalidClassification:
+                    pass
+            return set(good)
         return combinations
 
     # noinspection PyUnusedLocal
