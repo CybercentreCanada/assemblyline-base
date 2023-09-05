@@ -356,6 +356,31 @@ rule document_email_2 {
 }
 
 /*
+document/html/email
+*/
+
+rule document_html_email_1 {
+
+    meta:
+        type = "document/html/email"
+        score = 15
+    strings:
+        $rec = "From:"
+        $subrec1 = "Bcc:"
+        $subrec2 = "To:"
+        $opt1 = "Subject:"
+        $opt2 = "Received:"
+        $opt3 = "MIME-Version:"
+        $opt4 = "Content-Type:"
+
+    condition:
+        (code_html_1 or code_html_2 or code_html_3)
+        and all of ($rec*)
+        and 1 of ($subrec*)
+        and 1 of ($opt*)
+}
+
+/*
 log/vipermonkey
 */
 
