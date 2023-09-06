@@ -150,7 +150,7 @@ class SizeExpiredCache(Generic[T]):
             return self.cache.keys()
 
 
-def generate_conf_key(service_tool_version: Optional[str] = None, task: Optional[Task] = None) -> str:
+def generate_conf_key(service_tool_version: Optional[str] = None, task: Optional[Task] = None, partial_result: bool = False) -> str:
     ignore_salt = None
     service_config = None
     submission_params_str = None
@@ -165,7 +165,7 @@ def generate_conf_key(service_tool_version: Optional[str] = None, task: Optional
         }
         submission_params_str = json.dumps(sorted(submission_params.items()))
 
-        if task.ignore_cache:
+        if task.ignore_cache or partial_result:
             ignore_salt = get_random_id()
 
     if service_tool_version is None and \
