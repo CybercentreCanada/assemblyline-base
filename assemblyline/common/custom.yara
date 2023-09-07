@@ -325,14 +325,14 @@ rule document_email_1 {
         score = 15
 
     strings:
-        $rec = "From: "
-        $rec2 = "Date: "
-        $subrec1 = "Bcc: "
-        $subrec2 = "To: "
-        $opt1 = "Subject: "
+        $rec = "From:"
+        $subrec1 = "Bcc:"
+        $subrec2 = "To:"
+        $subrec3 = "Date:"
+        $opt1 = "Subject:"
         $opt2 = "Received: from"
-        $opt3 = "MIME-Version: "
-        $opt4 = "Content-Type: "
+        $opt3 = "MIME-Version:"
+        $opt4 = "Content-Type:"
 
     condition:
         all of ($rec*)
@@ -354,6 +354,7 @@ rule document_email_2 {
     condition:
         all of them
 }
+
 
 /*
 log/vipermonkey
