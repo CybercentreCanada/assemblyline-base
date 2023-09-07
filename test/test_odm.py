@@ -762,6 +762,7 @@ def test_model_equal():
     assert a != []
     assert a != 99
 
+
 def test_flat_to_nested():
     assert flat_to_nested({}) == {}
     assert flat_to_nested({'a.b.c': None}) == {'a': {'b': {'c': None}}}

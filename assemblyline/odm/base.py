@@ -238,9 +238,17 @@ class Json(_Field):
     Examples: metadata
     """
 
+    def forced_str(self, value):
+        if not isinstance(value, str):
+            return json.dumps(value)
+        return value
+
     def check(self, value, **kwargs):
         if self.optional and value is None:
             return None
+
+        if isinstance(value, list):
+            return [self.forced_str(x) for x in value]
 
         if not isinstance(value, str):
             return json.dumps(value)
@@ -400,6 +408,7 @@ class IP(Keyword):
         # IPv6
         else:
             return ":".join([str(x) for x in value.split(":")])
+
 
 class Domain(Keyword):
     def __init__(self, *args, **kwargs):
