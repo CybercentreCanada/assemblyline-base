@@ -893,7 +893,7 @@ class AssemblylineDatastore(object):
 
             for htype in out['heuristics']:
                 for heur in out['heuristics'][htype]:
-                    cache_key = f"{heur_id}_{key}"
+                    cache_key = f"{heur['heur_id']}_{key}"
                     heur['signatures'].extend(signatures.get(cache_key, []))
 
         return out
