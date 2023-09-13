@@ -134,15 +134,16 @@ rule code_vbs {
         $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
         $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\r]/i ascii wide
         $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)/i ascii wide
-        $strong_vbs4 = /(^|\n)ExecuteGlobal/ ascii wide
+        $strong_vbs4 = "\nExecuteGlobal" ascii wide
         $strong_vbs6 = /(^|\n|:)(Attribute|Set|const)[ \t]+\w+[ \t]+=/i ascii wide
         $strong_vbs7 = /(^|\n)[ \t]*Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
         $strong_vbs8 = /[ \t(=]replace\(/i ascii wide
         // CreateObject("blah")
         $strong_vbs9 = "CreateObject(" nocase ascii wide
         $strong_vbs10 = "GetObject(" nocase ascii wide
-        $strong_vbs11 = /(^|\n)Eval\(/i ascii wide
+        $strong_vbs11 = "\nEval(" nocase ascii wide
         $strong_vbs12 = "Execute(" nocase ascii wide
+        $strong_vbs13 = "\nMsgBox \"" nocase ascii wide
         // Dim blah
         $weak_vbs1 = /\bDim\b\s+\w+[\r:]/i ascii wide
 
