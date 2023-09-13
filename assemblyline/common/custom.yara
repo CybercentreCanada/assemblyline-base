@@ -10,7 +10,6 @@ rule code_javascript {
     strings:
         $not_html = /^\s*<\w/
 
-        $strong_js1  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
         $strong_js2  = /\beval[ \t]*\(['"]/
 
         // jscript
@@ -20,7 +19,7 @@ rule code_javascript {
         $strong_js5  = "unescape("
         $strong_js6  = ".createElement("
         $strong_js7  = /submitForm\(['"]/
-        $strong_js8  = /(document|window)(\[['"a-zA-Z]|\.)\w+/
+        $strong_js8  = /\b(document|window)(\[['"a-zA-Z]|\.)\w+\b/
         $strong_js9  = "setTimeout("
         $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=/
         // If this is exactly in the sample, will trigger a second time because of strong_js10
@@ -31,6 +30,9 @@ rule code_javascript {
 
         // Firefox browser specific method
         $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
+
+        // This method of function declaration is shared with PowerShell, so it should be considered weak-ish
+        $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
 
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
@@ -52,7 +54,15 @@ rule code_javascript {
                             1 of ($strong_js*)
                             and 2 of ($weak_js*)
                         )
-                        or (#strong_js1) > 5
+                        or (
+                            // A bunch of function declarations is not enough since the function declaration syntax is
+                            // shared between JavaScript and PowerShell. Therefore, look for an additional indicator.
+                            $function_declaration
+                            and (
+                                1 of ($strong_js*)
+                                or 1 of ($weak_js*)
+                            )
+                        )
                     )
                 )
                 or (
@@ -316,14 +326,14 @@ rule document_email_1 {
         score = 15
 
     strings:
-        $rec = "From: "
-        $rec2 = "Date: "
-        $subrec1 = "Bcc: "
-        $subrec2 = "To: "
-        $opt1 = "Subject: "
+        $rec = "From:"
+        $subrec1 = "Bcc:"
+        $subrec2 = "To:"
+        $subrec3 = "Date:"
+        $opt1 = "Subject:"
         $opt2 = "Received: from"
-        $opt3 = "MIME-Version: "
-        $opt4 = "Content-Type: "
+        $opt3 = "MIME-Version:"
+        $opt4 = "Content-Type:"
 
     condition:
         all of ($rec*)
@@ -345,6 +355,7 @@ rule document_email_2 {
     condition:
         all of them
 }
+
 
 /*
 log/vipermonkey
@@ -521,6 +532,9 @@ rule code_ps1 {
         // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logical_operators?view=powershell-7.3
         $weak_pwsh7 = /[\s\(]\-(not)\s/ ascii wide
         $weak_pwsh8 = /\s\-(and|or|xor)\s/ ascii wide
+
+        // This method of function declaration is shared with JavaScript, so it should be considered weak
+        $weak_pwsh9  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
 
     condition:
         (
@@ -752,36 +766,6 @@ rule code_ducky {
 
 }
 
-/*
-code/batch
-*/
-
-// rule code_batch {
-
-//     meta:
-//         type = "code/batch"
-
-//     strings:
-//         $ = /(^|\n| |\t|@)(chcp|set \/p)[ \t]+/i
-//         $ = /(^|\n| |\t|&)start[ \t]*\/(min|b)[ \t]+.*([ \t]+(-win[ \t]+1[ \t]+)?-enc[ \t]+)?"/i
-//         $ = /(^|\n| |\t|&)start[ \t]*\/wait[ \t]+.*/i
-//         $ = /(^|\n|@)cd[ \t]+(\/d )?["']%~dp0["']/i
-//         $ = /(^|\n)taskkill[ \t]+(\/F|\/im)/i
-//         $ = /(^|\n)reg[ \t]+delete[ \t]+/i
-//         $ = /(^|\n)%comspec%[ \t]+\/c[ \t]+/i
-//         $ = /(^|\n)dir&echo[ \t]+/i
-//         $ = /(^|\n)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
-
-//         $ = /(^|\n| |\t|@|&)(echo|netsh|sc|pkgmgr|netstat|rem|::|move)[ \t]+/i
-//         $ = /(^|\n)pause/
-//         $ = /(^|\n)shutdown/
-//         $ = /Set[ \t]+\w+[ \t]*=/
-
-//     condition:
-//         mime startswith "text"
-//         and 2 of them
-// }
-
 rule code_batch {
 
     meta:
@@ -797,12 +781,15 @@ rule code_batch {
         // check for it seperately
         $command = /(-c|-command)(\^|%[^%\n]{0,100}%)?[ \t]/i
 
-        $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|del|netstat|timeout|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
+        // del is not a batch-specific command, and is an alias for Remove-Item in PowerShell.
+        // Therefore do not include it in the command set for batch.
+        $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|netstat|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&|^\s)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+/i
         $cmd5 = /(^|\n)exit\s*$/i
         $cmd6 = /(^|\n|@|&)%comspec%/i
+        $cmd7 = /(^|\n|@|&)timeout[ \t](\/\w+|[-]?\d{1,5})/i
         $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $rem2 = /(^|\n)::/
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
@@ -811,7 +798,9 @@ rule code_batch {
     condition:
         (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
         and (for 1 of ($obf1) :( # > 3 )
-             or ($power1 and $command)
+             // powershell can have a command in it that looks like this: "powershell -command blah"
+             // so we need something else
+             or ($power1 and $command and (1 of ($cmd*) or 1 of ($rem*)))
              or ($power1 and 1 of ($cmd*))
              or for 1 of ($cmd*) :( # > 3 )
              or $exp
