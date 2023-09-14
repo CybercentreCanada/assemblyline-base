@@ -45,6 +45,7 @@ ROLES = StringTable('ROLES', [
     ("self_manage", 27),
     ("retrohunt_view", 28),
     ("retrohunt_run", 29),
+    ("external_query", 30),
 ])
 
 
