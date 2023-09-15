@@ -13,6 +13,14 @@ class DetailedItem(odm.Model):
     subtype = odm.Optional(odm.Enum(['EXP', 'CFG', 'OB', 'IMP', 'CFG', 'TA'], description="Sub-type of the item"))
 
 
+@odm.model(index=True, store=False, description="Assemblyline Screenshot Block")
+class Screenshot(odm.Model):
+    name = odm.Keyword(description="Name of the screenshot")
+    description = odm.Keyword(description="Description of the screenshot")
+    img = odm.SHA256(description="SHA256 hash of the image")
+    thumb = odm.SHA256(description="SHA256 hash of the thumbnail")
+
+
 @odm.model(index=True, store=False, description="Assemblyline Detailed result block")
 class DetailedResults(odm.Model):
     attack_pattern = odm.List(odm.Compound(DetailedItem), default=[], description="List of detailed Att&ck patterns")
@@ -55,6 +63,7 @@ class File(odm.Model):
     sha256 = odm.SHA256(copyto="__text__", description="SHA256 hash of the file")
     size = odm.Integer(store=False, description="Size of the file in bytes")
     type = odm.Keyword(copyto="__text__", description="Type of file as identified by Assemblyline")
+    screenshots = odm.List(odm.Compound(Screenshot), description="Screenshots of the file")
 
 
 @odm.model(index=True, store=False, description="Verdict Block of Submission")

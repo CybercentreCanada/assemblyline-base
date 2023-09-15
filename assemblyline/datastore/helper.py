@@ -740,7 +740,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_summary_from_keys(self, keys, cl_engine=forge.get_classification(),
-                              user_classification=None, keep_heuristic_sections=False):
+                              user_classification=None, keep_heuristic_sections=False, screenshot_sha256=None):
         out = {
             "tags": [],
             "attack_matrix": [],
@@ -753,7 +753,8 @@ class AssemblylineDatastore(object):
             "classification": cl_engine.UNRESTRICTED,
             "filtered": False,
             "heuristic_sections": {},
-            "heuristic_name_map": {}
+            "heuristic_name_map": {},
+            "screenshots": []
         }
         done_map = {
             "heuristics": set(),
@@ -890,6 +891,11 @@ class AssemblylineDatastore(object):
                                     'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
+
+                if screenshot_sha256 and section.get(
+                        'promote_to', None) == "SCREENSHOT" and key.startswith(screenshot_sha256):
+                    screenshot_data = json.loads(section['body'])
+                    out['screenshots'].extend(screenshot_data)
 
             for htype in out['heuristics']:
                 for heur in out['heuristics'][htype]:
