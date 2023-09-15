@@ -24,6 +24,7 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
+from assemblyline.odm.models.retrohunt import Retrohunt
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
@@ -53,6 +54,7 @@ class AssemblylineDatastore(object):
         self.ds.register('filescore', FileScore)
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
+        self.ds.register('retrohunt', Retrohunt)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
         self.ds.register('signature', Signature)
@@ -167,6 +169,10 @@ class AssemblylineDatastore(object):
     @property
     def workflow(self) -> ESCollection[Workflow]:
         return self.ds.workflow
+
+    @property
+    def retrohunt(self) -> ESCollection[Retrohunt]:
+        return self.ds.retrohunt
 
     def get_stats(self):
         node_stats = self.ds.with_retries(self.ds.client.nodes.stats, metric="fs")

@@ -910,7 +910,7 @@ class ESCollection(Generic[ModelType]):
 
         return data
 
-    def exists(self, key, index_type=None):
+    def exists(self, key: str, index_type: typing.Optional[Index] = None) -> bool:
         """
         Check if a document exists in the datastore.
 
@@ -919,6 +919,7 @@ class ESCollection(Generic[ModelType]):
         :return: true/false depending if the document exists or not
         """
         index_list = self.get_index_list(index_type)
+        found = False
 
         for index in index_list:
             found = self.with_retries(self.datastore.client.exists, index=index, id=key, _source=False)
@@ -971,6 +972,16 @@ class ESCollection(Generic[ModelType]):
             return None, CREATE_TOKEN
         return None
 
+    @typing.overload
+    def get(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
+            version=False) -> typing.Optional[ModelType]:
+        ...
+
+    @typing.overload
+    def get(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
+            version=False) -> typing.Optional[dict]:
+        ...
+
     def get(self, key, as_obj=True, index_type=None, version=False):
         """
         Get a document from the datastore, retry a few times if not found and normalize the
@@ -989,6 +1000,16 @@ class ESCollection(Generic[ModelType]):
             data, version = data
             return self.normalize(data, as_obj=as_obj), version
         return self.normalize(data, as_obj=as_obj)
+
+    @typing.overload
+    def get_if_exists(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
+                      version=False) -> typing.Optional[ModelType]:
+        ...
+
+    @typing.overload
+    def get_if_exists(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
+                      version=False) -> typing.Optional[dict]:
+        ...
 
     def get_if_exists(self, key, as_obj=True, index_type=None, version=False):
         """
