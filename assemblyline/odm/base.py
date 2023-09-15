@@ -19,14 +19,16 @@ import re
 import sys
 import unicodedata
 from datetime import datetime
-from typing import Dict, Tuple, Union, Any as _Any
+from typing import Any as _Any
+from typing import Dict, Tuple, Union
+
 import arrow
-from assemblyline.common.net import is_valid_domain, is_valid_ip
 from dateutil.tz import tzutc
 
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.net import is_valid_domain, is_valid_ip
 from assemblyline.common.uid import get_random_id
 
 # Python 3.6 deepcopy patch
@@ -62,18 +64,26 @@ IP_REGEX = f"(?:{IPV4_REGEX}|{IPV6_REGEX})"
 IP_ONLY_REGEX = f"^{IP_REGEX}$"
 IPV4_ONLY_REGEX = f"^{IPV4_REGEX}$"
 IPV6_ONLY_REGEX = f"^{IPV6_REGEX}$"
+PORT_REGEX = r"(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])"
 PRIVATE_IP = r"(?:(?:127|10)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|" \
              r"(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|" \
              r"(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))"
 PHONE_REGEX = r"^(\+?\d{1,2})?[ .-]?(\(\d{3}\)|\d{3})[ .-](\d{3})[ .-](\d{4})$"
+TLSH_REGEX = r"^((?:T1)?[0-9a-fA-F]{70})$"
 SSDEEP_REGEX = r"^[0-9]{1,18}:[a-zA-Z0-9/+]{0,64}:[a-zA-Z0-9/+]{0,64}$"
 MD5_REGEX = r"^[a-f0-9]{32}$"
 SHA1_REGEX = r"^[a-f0-9]{40}$"
 SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
-URI_PATH = r"(?:[/?#]\S*)"
-FULL_URI = f"^((?:(?:[A-Za-z0-9+-.]{{1,}}:)?//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?)" \
-           f"{URI_PATH}?$"
+URI_PATH = r"([/?#]\S*)"
+# Used for finding URIs in a blob
+URI_REGEX = f"((?:(?:[A-Za-z0-9+.-]{{1,}}:)//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
+            f"{URI_PATH}?)"
+# Used for direct matching
+FULL_URI = f"^{URI_REGEX}$"
+UNC_PATH_REGEX = r"^(?:\\\\(?:[a-zA-Z0-9-_\s]{1,15}){1}(?:\.[a-zA-Z0-9-_\s]{1,64}){0,3}){1}" \
+                 f"(?:@{PORT_REGEX})?" \
+                 r'(?:\\[^\\\/\:\*\?\\"\<\>\|\r\n]{1,64}){1,}\\{0,}$'
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
 
@@ -382,8 +392,14 @@ class IP(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
                              f"validator: {self.validation_regex.pattern}")
 
-        return ".".join([str(int(x)) for x in value.split(".")])
+        # An additional check for type validation
 
+        # IPv4
+        if "." in value:
+            return ".".join([str(int(x)) for x in value.split(".")])
+        # IPv6
+        else:
+            return ":".join([str(x) for x in value.split(":")])
 
 class Domain(Keyword):
     def __init__(self, *args, **kwargs):
@@ -477,7 +493,12 @@ class URI(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{match.group(2)}' in URI '{value}'"
                              " is not a valid Domain or IP.")
 
-        return match.group(0).replace(match.group(1), match.group(1).lower())
+        return match.group(0).replace(match.group(2), match.group(2).lower())
+
+
+class UNCPath(ValidatedKeyword):
+    def __init__(self, *args, **kwargs):
+        super().__init__(UNC_PATH_REGEX, *args, **kwargs)
 
 
 class URIPath(ValidatedKeyword):
@@ -749,9 +770,10 @@ class TypedList(list):
 class List(_Field):
     """A field storing a sequence of typed elements."""
 
-    def __init__(self, child_type, **kwargs):
+    def __init__(self, child_type, auto=False, **kwargs):
         super().__init__(**kwargs)
         self.child_type = child_type
+        self.auto = auto
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -767,6 +789,9 @@ class List(_Field):
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
             return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
+
+        if self.auto and not isinstance(value, list):
+            value = [value]
 
         return TypedList(self.child_type, *value, **kwargs)
 
@@ -992,8 +1017,12 @@ class Model:
             else:
                 out[name] = sub_field
 
-        if isinstance(field, Compound) and show_compound:
+        if (isinstance(field, Compound) and show_compound):
             out[name] = field
+
+        # If we're dealing with a list of Compounds, we need to validate against the Compound object
+        if isinstance(field, List) and isinstance(field.child_type, Compound) and show_compound:
+            out[name] = field.child_type
 
         return out
 

@@ -3,7 +3,9 @@ version: "2.4"
 services:
   # Service server
   al_service_server:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     ports:
       - "5003:5003"
     volumes:
@@ -17,7 +19,9 @@ services:
 
   # Create test data
   create_test_data:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     environment:
       DEV_ADMIN_PASS: $DEV_ADMIN_PASS
       DEV_USER_PASS: $DEV_USER_PASS
@@ -29,13 +33,21 @@ services:
 
   # frontend
   al_frontend:
-    image: cccs/assemblyline-ui-frontend
+    image: cccs/assemblyline-ui-frontend:stable
+    env_file:
+      - .env
     ports:
       - "3000:3000"
+    volumes:
+      - ${PATH_REWRITE:-.}/config/certs/:/etc/certs/
+    command: ["serve", "-s", "-l", "3000", '--ssl-key', '/etc/certs/tls.key', '--ssl-cert', '/etc/certs/tls.crt']
+
 
   # UI
   al_ui:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     ports:
       - "5000:5000"
     volumes:
@@ -47,7 +59,7 @@ services:
   # # internal UI
   # al_internal_ui:
   #   container_name: internal-ui
-  #   image: cccs/assemblyline_dev:4.3.1
+  #   image: cccs/assemblyline_dev:4.4.0
   #   volumes:
   #     - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
   #     - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -58,7 +70,9 @@ services:
 
   # SocketIO Server
   al_socketio:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     ports:
       - "5002:5002"
     volumes:
@@ -69,7 +83,9 @@ services:
 
   # Alerter
   al_alerter:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -85,7 +101,9 @@ services:
 
   # Expiry
   al_expiry:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -101,7 +119,9 @@ services:
 
   # Elasticsearch Metrics
   al_elastic_metrics:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -117,7 +137,9 @@ services:
 
   # Metrics aggregator
   al_metrics:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -125,7 +147,9 @@ services:
 
   # Hearbeat manager
   al_heartbeat:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -141,7 +165,9 @@ services:
 
   # Stats aggregator
   al_stats:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -149,7 +175,9 @@ services:
 
   # Workflow
   al_workflow:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -164,7 +192,9 @@ services:
         ]
 
   al_plumber:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -180,7 +210,9 @@ services:
 
   # Dispatcher processes
   al_dispatcher:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
@@ -198,7 +230,9 @@ services:
 
   # Ingester Processes
   al_ingester:
-    image: cccs/assemblyline_dev:4.3.1
+    image: cccs/assemblyline_dev:4.4.0
+    env_file:
+      - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../../..}/:/opt/alv4/

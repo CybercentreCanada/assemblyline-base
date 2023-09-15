@@ -21,6 +21,7 @@ BODY_FORMAT = {
     "IMAGE",
     "MULTI",
     "ORDERED_KEY_VALUE",
+    "TIMELINE"
 }
 constants = forge.get_constants()
 
@@ -55,6 +56,7 @@ class Section(odm.Model):
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
     classification = odm.Classification(description="Classification of the section")
     body_format = odm.Enum(values=BODY_FORMAT, index=False, description="Type of body in this section")
+    body_config = odm.Optional(odm.Mapping(odm.Any(), index=False, description="Configurations for the body of this section"))
     depth = odm.Integer(index=False, description="Depth of the section")
     heuristic = odm.Optional(odm.Compound(Heuristic), description="Heuristic used to score result section")
     tags = odm.Compound(Tagging, default={}, description="List of tags associated to this section")
@@ -82,9 +84,11 @@ class File(odm.Model):
     classification = odm.Classification(description="Classification of the file")
     is_section_image = odm.Boolean(default=False,
                                    description="Is this an image used in an Image Result Section?")
+    parent_relation = odm.Text(default="EXTRACTED", description="File relation to parent, if any.")
     allow_dynamic_recursion = odm.Boolean(
         default=False,
-        description="Allow file to be analysed during Dynamic Analysis even if Dynamic Recursion Prevention is enabled.")
+        description="Allow file to be analysed during Dynamic Analysis"
+                    "even if Dynamic Recursion Prevention is enabled.")
 
 
 @odm.model(index=True, store=True, description="Response Body of Result")
@@ -105,8 +109,8 @@ class Result(odm.Model):
     classification = odm.Classification(description="Aggregate classification for the result")
     created = odm.Date(default="NOW", description="Date at which the result object got created")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
-    response: ResponseBody = odm.Compound(ResponseBody, description="The body of the response from the service")
-    result: ResultBody = odm.Compound(ResultBody, default={}, description="The result body")
+    response: ResponseBody = odm.compound(ResponseBody, description="The body of the response from the service")
+    result: ResultBody = odm.compound(ResultBody, default={}, description="The result body")
     sha256 = odm.SHA256(store=False, description="SHA256 of the file the result object relates to")
     type = odm.Optional(odm.Keyword())
     size = odm.Optional(odm.Integer())
@@ -138,7 +142,7 @@ class Result(odm.Model):
         return '.'.join(key_list)
 
     def scored_tag_dict(self) -> Dict[str, Dict[str, Any]]:
-        tags = defaultdict(lambda: {'score': 0})
+        tags: Dict[str, Dict[str, Any]] = defaultdict(lambda: {'score': 0})
         # Save the tags and their score
         for section in self.result.sections:
             tag_list = tag_dict_to_list(flatten(section.tags.as_primitives()))

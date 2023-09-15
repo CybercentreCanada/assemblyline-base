@@ -2,7 +2,7 @@ import sys
 
 from assemblyline.common import forge
 from assemblyline.odm.random_data import create_heuristics, create_users, create_services, create_signatures, \
-    create_submission, create_alerts, create_safelists
+    create_submission, create_alerts, create_safelists, create_workflows, wipe_all_except_users
 
 
 class PrintLogger(object):
@@ -61,8 +61,11 @@ def create_extra_data(log=None, ds=None, fs=None):
         s = create_submission(ds, fs, log=log)
         submissions.append(s)
 
+    log.info("\n Creating 20 Workflows...")
+    workflows = create_workflows(ds, log)
+
     log.info("\nCreating 50 Alerts...")
-    create_alerts(ds, submission_list=submissions, log=log)
+    create_alerts(ds, submission_list=submissions, log=log, workflows=workflows)
 
     log.info("\nGenerating statistics for signatures and heuristics...")
     ds.calculate_signature_stats()
@@ -71,7 +74,12 @@ def create_extra_data(log=None, ds=None, fs=None):
 
 if __name__ == "__main__":
     datastore = forge.get_datastore()
+    filestore = forge.get_datastore()
     logger = PrintLogger()
+    if "clean" in sys.argv:
+        # Clean up data in indices except user
+        wipe_all_except_users(datastore, filestore)
+
     create_basic_data(log=logger, ds=datastore, svc="nosvc" not in sys.argv, sigs="nosigs" not in sys.argv,
                       safelist="nosl" not in sys.argv, reset="reset" in sys.argv)
     if "full" in sys.argv:

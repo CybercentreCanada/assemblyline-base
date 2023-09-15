@@ -55,7 +55,7 @@ DEFAULT_POSTPROCESS_ACTIONS = {
     # is applied to scores below 500
     'default_resubmit': PostprocessAction(dict(
         enabled=True,
-        run_on_cache=False,
+        run_on_cache=True,
         run_on_completed=True,
         filter="max_score: >=0",
         webhook=None,

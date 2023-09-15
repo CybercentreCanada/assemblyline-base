@@ -795,16 +795,11 @@ class AssemblylineDatastore(object):
                                      reverse=True)
             for section in sorted_sections:
                 file_classification = files.get(key[:64], {}).get('classification', section['classification'])
-                if user_classification:
-                    if not cl_engine.is_accessible(user_classification, section['classification']):
-                        out["filtered"] = True
-                        continue
-                    if not cl_engine.is_accessible(user_classification, file_classification):
-                        out["filtered"] = True
-                        continue
-
-                out["classification"] = cl_engine.max_classification(out["classification"], section['classification'])
-                out["classification"] = cl_engine.max_classification(out["classification"], file_classification)
+                combined_classification = cl_engine.max_classification(file_classification, section['classification'])
+                if user_classification and not cl_engine.is_accessible(user_classification, combined_classification):
+                    out["filtered"] = True
+                    continue
+                out["classification"] = cl_engine.max_classification(out["classification"], combined_classification)
 
                 h_type = "info"
 
@@ -879,7 +874,8 @@ class AssemblylineDatastore(object):
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key,
-                                    'safelisted': False
+                                    'safelisted': False,
+                                    'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
 
@@ -896,7 +892,8 @@ class AssemblylineDatastore(object):
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key,
-                                    'safelisted': True
+                                    'safelisted': True,
+                                    'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
 
@@ -1002,7 +999,8 @@ class AssemblylineDatastore(object):
                 'min': int(stats['min']),
                 'max': int(stats['max']),
                 'avg': int(stats['avg']),
-                'sum': int(stats['sum']),
+                # It's possible for the accumulated score to exceed what we can store as a signed-integer in Elastic
+                'sum': min(int(stats['sum']), 2**31-1),
                 'first_hit': first,
                 'last_hit': last
             }

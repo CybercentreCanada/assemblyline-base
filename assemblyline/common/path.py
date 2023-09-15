@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import string
 import sys
 from typing import Optional
 
@@ -15,6 +16,11 @@ def modulepath(modulename: str) -> str:
 def splitpath(path: str, sep: Optional[str] = None) -> list:
     """ Split the path into a list of items """
     return list(filter(len, path.split(sep or os.path.sep)))
+
+
+def strip_path_inclusion(path: str, base: str) -> str:
+    path = path.replace("\\", os.path.sep).replace("/", os.path.sep)
+    return path if os.path.abspath(os.path.join(base, path)).startswith(base) else os.path.basename(path)
 
 
 ASCII_NUMBERS = list(range(48, 58))

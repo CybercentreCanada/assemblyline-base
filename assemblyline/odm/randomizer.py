@@ -6,7 +6,7 @@ from typing import Optional as _Optional, Dict, Any as _Any
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
     Classification, ClassificationString, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, \
-    URIPath, URI, SSDeepHash, Email, Platform, Processor, UpperKeyword, Json, EmptyableKeyword
+    URIPath, URI, SSDeepHash, Email, Platform, Processor, UpperKeyword, Json, EmptyableKeyword, UNCPath
 from assemblyline.odm.models.tagging import Tagging
 
 config = forge.get_config()
@@ -207,6 +207,10 @@ def get_random_mac() -> str:
     return ":".join([get_random_hash(2) for _ in range(6)])
 
 
+def get_random_unc_path() -> str:
+    return "\\\\" + '\\'.join([get_random_word() for _ in range(random.randint(2, 6))])
+
+
 def get_random_uri_path() -> str:
     return f"/{'/'.join([get_random_word() for _ in range(random.randint(2, 6))])}"
 
@@ -275,7 +279,7 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         return random.choice([True, False])
     elif isinstance(field, Classification):
         if field.engine.enforce:
-            possible_classifications = list(field.engine._classification_cache)
+            possible_classifications = list(field.engine.list_all_classification_combinations(normalized=True))
             possible_classifications.extend([field.engine.UNRESTRICTED, field.engine.RESTRICTED])
         else:
             possible_classifications = [field.engine.UNRESTRICTED]
@@ -321,6 +325,8 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         return get_random_ssdeep()
     elif isinstance(field, URI):
         return get_random_uri()
+    elif isinstance(field, UNCPath):
+        return get_random_unc_path()
     elif isinstance(field, URIPath):
         return get_random_uri_path()
     elif isinstance(field, MAC):

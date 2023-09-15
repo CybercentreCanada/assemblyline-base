@@ -6,7 +6,16 @@
 #  completely disables the classification engine, any documents added while
 #  the classification engine is off gets the default unrestricted value
 enforce: false
+
+# Turn on/off dynamic group creation. This feature allow you to dynamically create classification groups based on
+#  features from the user.
 dynamic_groups: false
+
+# Set the type of dynamic groups to be used
+#  email: groups will be based of the user's email domain
+#  group: groups will be created out the the user's group values
+#  all: groups will be created out of both the email domain and the group values
+dynamic_groups_type: email
 
 # List of Classification level:
 #   Graded list were a smaller number is less restricted then an higher number.
@@ -16,18 +25,20 @@ levels:
       - UNRESTRICTED
       - UNCLASSIFIED
       - U
+      - TLP:W
+      - TLP:WHITE
     # Stylesheet applied in the UI for the different levels
     css:
       # Name of the color scheme used for display (default, primary, secondary, success, info, warning, error)
       color: default
     # Description of the classification level
-    description: Subject to standard copyright rules, TLP:WHITE information may be distributed without restriction.
+    description: Subject to standard copyright rules, TLP:CLEAR information may be distributed without restriction.
     # Interger value of the Classification level (higher is more classified)
     lvl: 100
     # Long name of the classification item
-    name: TLP:WHITE
+    name: TLP:CLEAR
     # Short name of the classification item
-    short_name: TLP:W
+    short_name: TLP:C
   - aliases: []
     css:
       color: success
@@ -39,8 +50,7 @@ levels:
     lvl: 110
     name: TLP:GREEN
     short_name: TLP:G
-  - aliases:
-      - RESTRICTED
+  - aliases: []
     css:
       color: warning
     description:
@@ -50,6 +60,16 @@ levels:
     lvl: 120
     name: TLP:AMBER
     short_name: TLP:A
+  - aliases:
+      - RESTRICTED
+    css:
+      color: warning
+    description:
+      Recipients may only share TLP:AMBER+STRICT information with members of their
+      own organization.
+    lvl: 125
+    name: TLP:AMBER+STRICT
+    short_name: TLP:A+S
 
 # List of required tokens:
 #   A user requesting access to an item must have all the
@@ -102,9 +122,9 @@ subgroups:
     # limited_to_group: CSE
 
 # Default restricted classification
-restricted: TLP:A//CMR
+restricted: TLP:A+S//CMR
 
 # Default unrestricted classification:
 #   When no classification are provided or that the classification engine is
 #   disabled, this is the classification value each items will get
-unrestricted: TLP:W
+unrestricted: TLP:C

@@ -12,8 +12,8 @@ import time
 import asyncio
 import ssl
 import tempfile
-import yaml
 
+import yaml
 import aiohttp
 import lark
 import datemath
@@ -21,6 +21,7 @@ import arrow
 
 from assemblyline.cachestore import CacheStore
 from assemblyline.common.uid import get_random_id
+from assemblyline.common.constants import CONFIG_HASH, POST_PROCESS_CONFIG_KEY
 from assemblyline.odm import base as odm
 from assemblyline.odm.models.actions import DEFAULT_POSTPROCESS_ACTIONS, PostprocessAction, Webhook
 from assemblyline.odm.models.submission import Submission
@@ -29,6 +30,7 @@ from assemblyline.odm.models.tagging import Tagging
 from assemblyline.remote.datatypes.events import EventWatcher
 from assemblyline.remote.datatypes.queues.named import NamedQueue
 from assemblyline.remote.datatypes.queues.priority import PriorityQueue
+from assemblyline.remote.datatypes.hash import Hash
 
 
 logger = logging.getLogger(__name__)
@@ -615,6 +617,7 @@ class ActionWorker:
         # Submissions that should have alerts generated
         self.alert_queue: NamedQueue[dict] = NamedQueue(ALERT_QUEUE_NAME, redis_persist)
         self.unique_queue: PriorityQueue[dict] = PriorityQueue('m-unique', redis_persist)
+        self.config_hash: Hash[str] = Hash(CONFIG_HASH, redis_persist)
 
         # Archive manager (late import due to circular import)
         from assemblyline.common.archiving import ArchiveManager
@@ -641,41 +644,52 @@ class ActionWorker:
             time.sleep(0.1)
         self.loop.call_soon_threadsafe(self.loop.stop)
 
-    def _load_actions(self, _path=''):
-        # Load the action data
-        with CacheStore('system', config=self.config, datastore=self.datastore) as cache:
-            objects = DEFAULT_POSTPROCESS_ACTIONS
-            data = cache.get('postprocess_actions')
-            if data:
-                try:
-                    raw = yaml.safe_load(data)
-                    objects = {
-                        key: PostprocessAction(data)
-                        for key, data in raw.items()
-                    }
-                except Exception:
-                    logger.exception("Couldn't load stored actions")
+    def _load_actions(self, _path: Optional[str] = None):
+        # Load the action data from redis
+        data = self.config_hash.get(POST_PROCESS_CONFIG_KEY)
+
+        # If nothing is in redis, fall back to legacy storage
+        if data is None:
+            try:
+                with CacheStore('system', config=self.config, datastore=self.datastore) as cache:
+                    byte_data = cache.get('postprocess_actions')
+                    if byte_data:
+                        data = byte_data.decode()
+            except Exception:
+                logger.warn("Couldn't access system files")
+
+        # Decode data
+        objects = DEFAULT_POSTPROCESS_ACTIONS
+        if data:
+            try:
+                raw: dict[str, Any] = yaml.safe_load(data)
+                objects = {
+                    key: PostprocessAction(data)
+                    for key, data in raw.items()
+                }
+            except Exception:
+                logger.exception("Couldn't load stored actions")
 
         # Check which ones can be active
-        ready_objects = {}
-        for key, data in objects.items():
-            if not data.enabled:
+        ready_objects: dict[str, tuple[SubmissionFilter, PostprocessAction]] = {}
+        for key, action in objects.items():
+            if not action.enabled:
                 continue
 
             try:
-                fltr = SubmissionFilter(data.filter)
+                fltr = SubmissionFilter(action.filter)
             except Exception:
                 logger.exception("Failed to load submission filter")
                 continue
 
-            if self.running_cache_tasks and data.run_on_cache:
+            if self.running_cache_tasks and action.run_on_cache:
                 if not fltr.cache_safe:
                     logger.error("Tried to apply non-cache-safe filter to cached submissions.")
                     continue
-                ready_objects[key] = fltr, data
+                ready_objects[key] = fltr, action
 
-            if not self.running_cache_tasks and data.run_on_completed:
-                ready_objects[key] = fltr, data
+            if not self.running_cache_tasks and action.run_on_completed:
+                ready_objects[key] = fltr, action
 
         # Swap in the new actions
         self.actions = ready_objects
@@ -732,14 +746,12 @@ class ActionWorker:
         else:
             submission_msg = submission
 
-        # Trigger resubmit
-        if submission.params.psid is None:
-            extended_scan = 'skipped'
-        else:
-            # We are the extended scan
-            extended_scan = 'submitted'
+        # Default values
+        extended_scan = 'skipped'
         did_resubmit = False
+        submit_to = []
 
+        # Check if we resubmit
         if resubmit is not None:
             selected = set(submission.params.services.selected)
             resubmit_to = set(submission.params.services.resubmit) | resubmit
@@ -747,22 +759,6 @@ class ActionWorker:
             if not selected.issuperset(resubmit_to):
                 submit_to = sorted(selected | resubmit_to)
                 extended_scan = 'submitted'
-
-                logger.info(f"[{submission.sid} :: {submission.files[0].sha256}] Resubmitted for extended analysis")
-                resubmission = SubmissionMessage(submission_msg.as_primitives())
-                resubmission.params.psid = submission.sid
-                resubmission.sid = get_random_id()
-                resubmission.scan_key = None
-                resubmission.params.services.resubmit = []
-                resubmission.params.services.selected = submit_to
-
-                self.unique_queue.push(submission.params.priority, dict(
-                    score=score,
-                    extended_scan=extended_scan,
-                    ingest_id=submission.metadata.get('ingest_id', None),
-                    submission=resubmission.as_primitives(),
-                ))
-                did_resubmit = True
 
         # Raise alert
         if submission.params.generate_alert and create_alert:
@@ -775,6 +771,23 @@ class ActionWorker:
                 extended_scan=extended_scan,
                 ingest_id=submission_msg.metadata.get('ingest_id', None)
             ))
+
+        if submit_to:
+            logger.info(f"[{submission.sid} :: {submission.files[0].sha256}] Resubmitted for extended analysis")
+            resubmission = SubmissionMessage(submission_msg.as_primitives())
+            resubmission.params.psid = submission.sid
+            resubmission.sid = get_random_id()
+            resubmission.scan_key = None
+            resubmission.params.services.resubmit = []
+            resubmission.params.services.selected = submit_to
+
+            self.unique_queue.push(submission.params.priority, dict(
+                score=score,
+                extended_scan=extended_scan,
+                ingest_id=submission.metadata.get('ingest_id', None),
+                submission=resubmission.as_primitives(),
+            ))
+            did_resubmit = True
 
         # Archive the submission
         if archive_submission:

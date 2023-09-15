@@ -1,5 +1,6 @@
 from assemblyline import odm
 from assemblyline.common import forge
+
 Classification = forge.get_classification()
 
 
@@ -14,11 +15,13 @@ class Workflow(odm.Model):
     creation_date = odm.Date(default="NOW", description="Creation date of the workflow")
     creator = odm.Keyword(description="UID of the creator of the workflow")
     edited_by = odm.Keyword(description="UID of the last user to edit the workflow")
+    first_seen = odm.Optional(odm.Date(), description="Date of first hit on workflow")
     hit_count = odm.Integer(default=0, description="Number of times there was a workflow hit")
     labels = odm.List(odm.Keyword(), copyto="__text__", default=[], description="Labels applied by the workflow")
     last_edit = odm.Date(default="NOW", description="Date of last edit on workflow")
     last_seen = odm.Optional(odm.Date(), description="Date of last hit on workflow")
     name = odm.Keyword(copyto="__text__", description="Name of the workflow")
+    origin = odm.Optional(odm.Keyword(), description="Which did this originate from?")
     priority = odm.Optional(odm.Enum(copyto="__text__", values=PRIORITIES),
                             description="Priority applied by the workflow")
     query = odm.Keyword(description="Query that the workflow runs")
