@@ -401,6 +401,7 @@ class IP(Keyword):
         else:
             return ":".join([str(x) for x in value.split(":")])
 
+
 class Domain(Keyword):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -771,6 +772,9 @@ class List(_Field):
     """A field storing a sequence of typed elements."""
 
     def __init__(self, child_type, auto=False, **kwargs):
+        if isinstance(child_type, Optional):
+            raise ValueError("List does not support Optional child type")
+
         super().__init__(**kwargs)
         self.child_type = child_type
         self.auto = auto
@@ -856,8 +860,11 @@ class Mapping(_Field):
     """A field storing a sequence of typed elements."""
 
     def __init__(self, child_type, **kwargs):
-        self.child_type = child_type
+        if isinstance(child_type, Optional):
+            raise ValueError("Mapping does not support Optional child type")
+
         super().__init__(**kwargs)
+        self.child_type = child_type
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -944,9 +951,12 @@ class Compound(_Field):
 
 
 class Optional(_Field):
-    """A wrapper field to allow simple types (int, float, bool) to take None values."""
+    """A wrapper field to allow other types (int, bool, Compound, ...) to take None values."""
 
     def __init__(self, child_type, **kwargs):
+        if isinstance(child_type, Optional):
+            raise ValueError("Optional does not support Optional child type")
+
         if child_type.default_set:
             kwargs['default'] = child_type.default
         super().__init__(**kwargs)
@@ -1020,8 +1030,9 @@ class Model:
         if (isinstance(field, Compound) and show_compound):
             out[name] = field
 
-        # If we're dealing with a list of Compounds, we need to validate against the Compound object
-        if isinstance(field, List) and isinstance(field.child_type, Compound) and show_compound:
+        # If we're dealing with a list of Compounds or an optional Compound,
+        # we need to validate against the Compound object
+        if isinstance(field, (List, Optional)) and isinstance(field.child_type, Compound) and show_compound:
             out[name] = field.child_type
 
         return out
