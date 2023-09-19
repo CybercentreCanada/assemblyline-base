@@ -351,6 +351,8 @@ trusted_mimes = {
     "application/x-virtualbox-vhd": "archive/vhd",
     "application/x-xz": "archive/xz",
     "application/vnd.ms-cab-compressed": "archive/cabinet",
+    "application/zstd": "archive/zstd",
+    "application/x-zstd": "archive/zstd",
 
     # JAVA Class
     "application/x-java-applet": "java/class",
