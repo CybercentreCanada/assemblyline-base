@@ -608,6 +608,9 @@ class Scaler(odm.Model):
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
     linux_node_selector = odm.compound(Selector, description="Selector for linux nodes under kubernetes")
     # windows_node_selector = odm.compound(Selector, description="Selector for windows nodes under kubernetes")
+    cluster_pod_list = odm.boolean(default=True, description="Sets if scaler list pods for all namespaces. "
+                                   "Disabling this lets you use stricter cluster roles but will make cluster resource "
+                                   "usage less accurate, setting a namespace resource quota might be needed.")
 
 
 DEFAULT_SCALER = {
