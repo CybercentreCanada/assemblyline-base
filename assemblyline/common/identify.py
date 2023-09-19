@@ -23,7 +23,7 @@ from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
 from assemblyline.remote.datatypes.events import EventWatcher
 from cart import get_metadata_only
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 constants = get_constants()
 
@@ -542,9 +542,9 @@ def uri_ident(path: str, info: Dict) -> str:
     if u.fragment:
         info["uri_info"]["fragment"] = u.fragment
     if u.username:
-        info["uri_info"]["username"] = urldecode(u.username)
+        info["uri_info"]["username"] = unquote(u.username)
     if u.password:
-        info["uri_info"]["password"] = urldecode(u.password)
+        info["uri_info"]["password"] = unquote(u.password)
     info["uri_info"]["hostname"] = u.hostname
     if u.port:
         info["uri_info"]["port"] = u.port
