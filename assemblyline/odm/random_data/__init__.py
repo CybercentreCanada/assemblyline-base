@@ -495,6 +495,7 @@ def wipe_safelist(ds):
 def wipe_workflows(ds):
     ds.workflow.wipe()
 
+
 def wipe_all_except_users(ds, fs):
     wipe_alerts(ds)
     wipe_heuristics(ds)
