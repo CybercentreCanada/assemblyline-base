@@ -900,8 +900,11 @@ class AssemblylineDatastore(object):
 
                 if screenshot_sha256 and section.get(
                         'promote_to', None) == "SCREENSHOT" and key.startswith(screenshot_sha256):
-                    screenshot_data = json.loads(section['body'])
-                    out['screenshots'].extend(screenshot_data)
+                    try:
+                        screenshot_data = json.loads(section['body'])
+                        out['screenshots'].extend(screenshot_data)
+                    except Exception:
+                        log.warning(f"Unable to load screenshots during submission summary. ({section['body']})")
 
             for htype in out['heuristics']:
                 for heur in out['heuristics'][htype]:
