@@ -63,7 +63,7 @@ class File(odm.Model):
     sha256 = odm.SHA256(copyto="__text__", description="SHA256 hash of the file")
     size = odm.Integer(store=False, description="Size of the file in bytes")
     type = odm.Keyword(copyto="__text__", description="Type of file as identified by Assemblyline")
-    screenshots = odm.List(odm.Compound(Screenshot), description="Screenshots of the file")
+    screenshots = odm.List(odm.Compound(Screenshot), default=[], description="Screenshots of the file")
 
 
 @odm.model(index=True, store=False, description="Verdict Block of Submission")
