@@ -534,7 +534,7 @@ def test_classification():
         cl = Classification(default="UNRESTRICTED", yml_config=yml_config)
 
     u = ClassificationTest({"cl": "U//REL TO D1, D2"})
-    r = ClassificationTest({"cl": "R//GOD//REL TO G1"})
+    r = ClassificationTest({"cl": "R//GOD//G1"})
 
     assert str(r.cl) == "RESTRICTED//ADMIN//ANY/GROUP 1"
 
