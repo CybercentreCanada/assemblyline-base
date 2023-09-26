@@ -785,6 +785,24 @@ def test_flat_to_nested():
     assert flat_to_nested({}) == {}
     assert flat_to_nested({'a.b.c': None}) == {'a': {'b': {'c': None}}}
 
+# This test should be deleted if we fix the code for test_flat_fields
+def test_limited_flat_fields():
+    @model()
+    class Inner(Model):
+        a = Integer()
+        b = Integer()
+
+    @model()
+    class Outer(Model):
+        a = Compound(Inner)
+        b = Optional(Compound(Inner))
+
+    assert list(Outer.flat_fields().keys()) == ["a.a", "a.b", "b.a", "b.b"]
+    assert list(Outer.flat_fields(show_compound=True).keys()) == ["a.a", "a.b", "a", "b.a", "b.b", "b"]
+    assert list(Outer.flat_fields(skip_mappings=True).keys()) == ["a.a", "a.b", "b.a", "b.b"]
+    assert list(Outer.flat_fields(show_compound=True, skip_mappings=True).keys()) == [
+        "a.a", "a.b", "a", "b.a", "b.b", "b"]
+
 
 @pytest.mark.skip("Multivalue is broken because of list being ignored in an optional")
 def test_flat_fields():
