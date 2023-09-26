@@ -1,7 +1,7 @@
 import itertools
 import logging
 from copy import copy
-from typing import Set, List, KeysView, Union, Dict, Optional, Tuple, Any
+from typing import Set, List, KeysView, Union, Dict, Optional, Tuple
 
 log = logging.getLogger('assemblyline.classification')
 
@@ -312,7 +312,7 @@ class Classification(object):
                     raise InvalidClassification(f"Unclear use of alias: {g}")
                 g1_set.add(groups[0])
             else:
-                raise InvalidClassification(f"Unknown component: {g}")
+                raise InvalidClassification(f"Unknown Subgroup: {g}")
 
         # If dynamic groups are active all remaining parts should be groups found under a
         # REL TO marking that we can merge in with the other groups
@@ -458,6 +458,7 @@ class Classification(object):
             long_format: bool = True,
             get_dynamic_groups: bool = True,
             auto_select: bool = False,
+            ignore_unused: bool = False
     ) -> Tuple[int, list[str], list[str], list[str]]:
         lvl_idx, unused = self._get_c12n_level_index(c12n)
         req, unused_parts = self._get_c12n_required(unused, long_format=long_format)
@@ -465,7 +466,7 @@ class Classification(object):
                                                                 get_dynamic_groups=get_dynamic_groups,
                                                                 auto_select=auto_select)
 
-        if unused_parts:
+        if unused_parts and not ignore_unused:
             raise InvalidClassification(f"Unparsable classification parts: {''.join(unused_parts)}")
 
         return lvl_idx, req, groups, subgroups
@@ -902,7 +903,7 @@ class Classification(object):
                                                         long_format=long_format)
 
     def normalize_classification(self, c12n: str, long_format: bool = True, skip_auto_select: bool = False,
-                                 get_dynamic_groups: bool = True) -> str:
+                                 get_dynamic_groups: bool = True, ignore_unused: bool = False) -> str:
         """
         Normalize a given classification by applying the rules defined in the classification definition.
         This function will remove any invalid parts and add missing parts to the classification.
@@ -926,7 +927,8 @@ class Classification(object):
             return c12n
 
         lvl_idx, req, groups, subgroups = self._get_classification_parts(c12n, long_format=long_format,
-                                                                         get_dynamic_groups=get_dynamic_groups)
+                                                                         get_dynamic_groups=get_dynamic_groups,
+                                                                         ignore_unused=ignore_unused)
         new_c12n = self._get_normalized_classification_text(lvl_idx, req, groups, subgroups,
                                                             long_format=long_format,
                                                             skip_auto_select=skip_auto_select)
