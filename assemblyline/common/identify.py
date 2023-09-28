@@ -23,6 +23,7 @@ from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
 from assemblyline.remote.datatypes.events import EventWatcher
 from cart import get_metadata_only
+from urllib.parse import unquote, urlparse
 
 constants = get_constants()
 
@@ -345,6 +346,10 @@ class Identify():
         elif data["type"] == "executable/windows/dos":
             data["type"] = dos_ident(path)
 
+        # If we identified the file as 'uri' from libmagic, we should further identify it, or return it as text/plain
+        elif data["type"] == "uri":
+            data["type"] = uri_ident(path, data)
+
         # If we're so far failed to identified the file, lets run the yara rules
         elif "unknown" in data["type"] or data["type"] == "text/plain":
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
@@ -503,6 +508,48 @@ def dos_ident(path: str) -> str:
     except Exception:
         pass
     return "executable/windows/dos"
+
+
+def uri_ident(path: str, info: Dict) -> str:
+    try:
+        with open(path, 'r') as f:
+            data = yaml.safe_load(f)
+    except Exception:
+        return "text/plain"
+
+    if "uri" not in data:
+        return "text/plain"
+
+    try:
+        u = urlparse(data["uri"])
+    except Exception:
+        return "text/plain"
+
+    if not u.scheme:
+        return "text/plain"
+
+    info["uri_info"] = dict(
+        uri=data["uri"],
+        scheme=u.scheme,
+        netloc=u.netloc,
+    )
+    if u.path:
+        info["uri_info"]["path"] = u.path
+    if u.params:
+        info["uri_info"]["params"] = u.params
+    if u.query:
+        info["uri_info"]["query"] = u.query
+    if u.fragment:
+        info["uri_info"]["fragment"] = u.fragment
+    if u.username:
+        info["uri_info"]["username"] = unquote(u.username)
+    if u.password:
+        info["uri_info"]["password"] = unquote(u.password)
+    info["uri_info"]["hostname"] = u.hostname
+    if u.port:
+        info["uri_info"]["port"] = u.port
+
+    return f"uri/{u.scheme}"
 
 
 if __name__ == "__main__":

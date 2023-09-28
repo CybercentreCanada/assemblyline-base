@@ -142,3 +142,7 @@
 # Android OAT
 0 string \x7fELF
 >0x1000 string oat custom: executable/android/oat
+# Assemblyline Ontology files
+0 string {"odm_type\":\ "Assemblyline\ Result\ Ontology" custom: assemblyline/ontology
+# Assemblyline uri files
+0 string #\ Assemblyline\ URI\ file\n custom: uri
