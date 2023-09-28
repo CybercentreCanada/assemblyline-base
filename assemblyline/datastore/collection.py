@@ -142,6 +142,9 @@ class ESCollection(Generic[ModelType]):
     UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
     UPDATE_APPEND_IF_MISSING = "APPEND_IF_MISSING"
+    UPDATE_MODIFY = "MODIFY"
+    UPDATE_PREPEND = "PREPEND"
+    UPDATE_PREPEND_IF_MISSING = "PREPEND_IF_MISSING"
     UPDATE_REMOVE = "REMOVE"
     UPDATE_DELETE = "DELETE"
     UPDATE_OPERATIONS = [
@@ -151,6 +154,9 @@ class ESCollection(Generic[ModelType]):
         UPDATE_INC,
         UPDATE_MAX,
         UPDATE_MIN,
+        UPDATE_MODIFY,
+        UPDATE_PREPEND,
+        UPDATE_PREPEND_IF_MISSING,
         UPDATE_REMOVE,
         UPDATE_SET,
         UPDATE_DELETE,
@@ -849,51 +855,6 @@ class ESCollection(Generic[ModelType]):
 
         return out
 
-    def multiget_search(self, key_list, offset=0, rows=10, sort=None, fl=None, track_total_hits=None,
-                        as_obj=True, index_type=None):
-        """
-        Get a list of documents from the datastore and make sure they are normalized using
-        the model class
-
-        :param index_type: Type of indices to target
-        :param as_dictionary: Return a disctionary of items or a list
-        :param track_total_hits: Should elastic track the total number of files found
-        :param fl: List of fields to return
-        :param sort: Fields to sort the data with
-        :param rows: Number of items to return
-        :param offset: Offset at which items should be returned
-        :param key_list: list of keys of documents to get
-        :return: list of instances of the model class
-        """
-        index = self.get_joined_index(index_type)
-
-        if fl:
-            field_list = fl.split(',')
-        else:
-            field_list = list(self.stored_fields.keys())
-
-        query_body = {
-            "query": {
-                "ids": {
-                    "values": key_list
-                }
-            },
-            'from_': offset,
-            'size': rows,
-            'sort': parse_sort(sort),
-            "_source": field_list
-        }
-
-        result = self.with_retries(self.datastore.client.search, index=index,
-                                   track_total_hits=track_total_hits, **query_body)
-
-        return {
-            "offset": int(offset),
-            "rows": int(rows),
-            "total": result['hits'].get('total', {}).get('value', None),
-            "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
-        }
-
     def normalize(self, data, as_obj=True) -> Union[ModelType, Dict[str, Any], None]:
         """
         Normalize the data using the model class
@@ -1159,9 +1120,25 @@ class ESCollection(Generic[ModelType]):
                          f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_MODIFY:
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.prev{val_id})) " \
+                         f"ctx._source.{doc_key}[i] = params.next{val_id}"
+                op_sources.append(script)
+                op_params[f'prev{val_id}'] = value.get('prev', None)
+                op_params[f'next{val_id}'] = value.get('next', None)
+            elif op == self.UPDATE_PREPEND:
+                op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_PREPEND_IF_MISSING:
+                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
+                         f"{{ctx._source.{doc_key}.add(0, params.value{val_id})}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
-                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1205,7 +1182,7 @@ class ESCollection(Generic[ModelType]):
         :raises: DatastoreException if operation not valid
         """
         if self.model_class:
-            fields = self.model_class.flat_fields(show_compound=True)
+            fields = self.model_class.flat_fields(show_compound=True, show_list=True)
             if 'classification in fields':
                 fields.update({"__access_lvl__": Integer(),
                                "__access_req__": List(Keyword()),
@@ -1234,24 +1211,52 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                # If we're dealing with a list of Compounds, we need to validate against the Compound object
+                is_field_list = False
+                if isinstance(field, odm.List) and isinstance(field.child_type, odm.Compound):
+                    field = field.child_type
+                    is_field_list = True
+
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND, self.
+                          UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in [self.UPDATE_SET, self.UPDATE_DEC, self.UPDATE_INC]:
+                elif op in [self.UPDATE_MODIFY]:
+                    try:
+                        value['prev'] = field.check(value.get('prev', None))
+                        value['next'] = field.check(value.get('next', None))
+                    except (ValueError, TypeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in [self.UPDATE_DEC, self.UPDATE_INC, self.UPDATE_SET]:
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                if isinstance(value, Model):
-                    value = value.as_primitives()
-                elif isinstance(value, datetime):
-                    value = value.isoformat()
-                elif isinstance(value, ClassificationObject):
-                    value = str(value)
+                def parse_value(v):
+                    if isinstance(v, Model):
+                        return v.as_primitives()
+                    elif isinstance(v, datetime):
+                        return v.isoformat()
+                    elif isinstance(v, ClassificationObject):
+                        return str(v)
+                    else:
+                        return v
+
+                try:
+                    if isinstance(value, dict) and ('prev' in value or 'next' in value):
+                        value['prev'] = parse_value(value.get('prev', None))
+                        value['next'] = parse_value(value.get('next', None))
+                    elif isinstance(value, list):
+                        value = [parse_value(v) for v in value]
+                    else:
+                        value = parse_value(value)
+                except (ValueError, TypeError):
+                    raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
             ret_ops.append((op, doc_key, value))
 
@@ -1382,7 +1387,7 @@ class ESCollection(Generic[ModelType]):
 
         return {key: val for key, val in source_data.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT):
+    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT, key_space=None):
         index = self.get_joined_index(index_type)
 
         if args is None:
@@ -1422,6 +1427,11 @@ class ESCollection(Generic[ModelType]):
 
         field_list = parsed_values['field_list'] or list(self.stored_fields.keys())
 
+        filter_queries = [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
+
+        if key_space is not None:
+            filter_queries.append({'ids': {'values': key_space}})
+
         # This is our minimal query, the following sections will fill it out
         # with whatever extra options the search has been given.
         query_body = {
@@ -1432,7 +1442,7 @@ class ESCollection(Generic[ModelType]):
                             "query": parsed_values['query']
                         }
                     },
-                    'filter': [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
+                    'filter': filter_queries
                 }
             },
             'from_': parsed_values['start'],
@@ -1560,9 +1570,9 @@ class ESCollection(Generic[ModelType]):
             raise SearchException("collection: %s, query: %s, error: %s" % (
                 self.name, query_body, str(error))).with_traceback(error.__traceback__)
 
-    def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, script_fields=[]):
+    def search(self, query, offset=0, rows=None, sort=None, fl=None, timeout=None, filters=None, access_control=None,
+               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, key_space=None,
+               script_fields=[]):
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -1591,7 +1601,8 @@ class ESCollection(Generic[ModelType]):
         :param fl: list of fields to return from the search
         :param timeout: maximum time of execution
         :param filters: additional queries to run on the original query to reduce the scope
-        :param access_control: access control parameters to limiti the scope of the query
+        :param key_space: IDs of documents for the query to limit the scope to these documents
+        :param access_control: access control parameters to limit the scope of the query
         :return: a search result object
         """
 
@@ -1633,7 +1644,7 @@ class ESCollection(Generic[ModelType]):
             args.append(('script_fields', script_fields))
 
         result = self._search(args, deep_paging_id=deep_paging_id, index_type=index_type,
-                              track_total_hits=track_total_hits)
+                              track_total_hits=track_total_hits, key_space=key_space)
 
         ret_data = {
             "offset": int(offset),
@@ -1782,8 +1793,8 @@ class ESCollection(Generic[ModelType]):
                                       f'Current settings would generate {gaps_count} steps')
             return ret_type
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1,
-                  filters=None, access_control=None, index_type=Index.HOT):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None,
+                  index_type=Index.HOT, key_space=None):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -1812,14 +1823,14 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args, index_type=index_type)
+        result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None,
-              index_type=Index.HOT, field_script=None):
+    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
+              field_script=None, key_space=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1842,7 +1853,7 @@ class ESCollection(Generic[ModelType]):
         if field_script:
             args.append(('field_script', field_script))
 
-        result = self._search(args, index_type=index_type)
+        result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
         return {row.get('key_as_string', row['key']): row['doc_count']

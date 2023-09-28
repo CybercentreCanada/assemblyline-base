@@ -360,6 +360,9 @@ def create_submission(ds, fs, log=None):
     s.params.psid = None
     s.state = 'completed'
 
+    if log:
+        log.info(f'{s}')
+
     ds.submission.save(s.sid, s)
 
     ds.emptyresult.commit()
@@ -494,6 +497,7 @@ def wipe_safelist(ds):
 
 def wipe_workflows(ds):
     ds.workflow.wipe()
+
 
 def wipe_all_except_users(ds, fs):
     wipe_alerts(ds)

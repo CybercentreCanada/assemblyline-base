@@ -45,6 +45,30 @@ with warnings.catch_warnings():
                 'a': 1
             }
         },
+        'to_update_list_of_objects': {
+            'list_of_objects': [
+                {
+                    "cid": "4tbZU5x5Fh6Oq7lbs4XR6D",
+                    "uname": "admin",
+                    "text": "UPDATE_PREPEND"
+                },
+                {
+                    "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                    "uname": "admin",
+                    "text": "UPDATE_SET"
+                },
+                {
+                    "cid": "5D13pJW8kU2JUSVjlgkRk5",
+                    "uname": "admin",
+                    "text": "UPDATE_MODIFY"
+                },
+                {
+                    "cid": "2qTELdsSNSSBHfUf3phtOM",
+                    "uname": "admin",
+                    "text": "UPDATE_APPEND"
+                }
+            ]
+        },
         'bulk_update': {'bulk_b': True, "map": {'a': 1}, 'counters': {
             'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'],
             'from_archive': False, 'list_compounds': [{'a': 'b'}]},
@@ -227,25 +251,6 @@ def _test_multiget(c: ESCollection):
     assert c.multiget([]) == {}
 
 
-def _test_multiget_search(c: ESCollection):
-    # TEST Multiget via search
-    ids = ['test1', 'int', 'test2']
-    ds_raw = c.multiget_search(ids, fl="*")['items']
-    for item in ds_raw:
-        cur_id = item.pop('id')
-        ids.remove(cur_id)
-
-        if "__non_doc_raw__" in item:
-            item = item['__non_doc_raw__']
-
-        assert test_map[cur_id] == item
-    assert len(ids) == 0
-
-    res = c.multiget_search([])
-    assert res['items'] == []
-    assert res['total'] == 0
-
-
 def _test_multiexists(c: ESCollection):
     # Test GET
     assert all(c.multiexists(['test1', 'test2', 'test3', 'test4', 'string', 'list', 'int']).values())
@@ -281,6 +286,91 @@ def _test_update(c: ESCollection):
     ]
     assert c.update('to_update', operations)
     assert c.get('to_update') == expected
+
+
+def _test_update_list_of_objects(c: ESCollection):
+    # Test Update a list of object
+    expected = {
+        'list_of_objects': [
+            {
+                "uname": "admin",
+                "text": "UPDATE_PREPEND_IF_MISSING"
+            },
+            {
+                "uname": "admin",
+                "text": "UPDATE_PREPEND"
+            },
+            {
+                "uname": "admin",
+                "text": "UPDATE_MODIFY"
+            },
+            {
+                "uname": "admin",
+                "text": "UPDATE_APPEND"
+            }, {
+                "uname": "admin",
+                "text": "UPDATE_APPEND_IF_MISSING"
+            }
+        ],
+        'from_archive': False
+    }
+    operations = [
+        (c.UPDATE_SET, "list_of_objects", [
+            {
+                "uname": "admin",
+                "text": "UPDATE_DELETE"
+            },
+            {
+                "uname": "admin",
+                "text": "UPDATE_REMOVE"
+            },
+            {
+                "uname": "admin",
+                "text": "UPDATE_SET"
+            }
+        ]),
+        (c.UPDATE_PREPEND, "list_of_objects", {
+            "uname": "admin",
+            "text": "UPDATE_PREPEND"
+        }),
+        (c.UPDATE_PREPEND_IF_MISSING, "list_of_objects", {
+            "uname": "admin",
+            "text": "UPDATE_PREPEND_IF_MISSING"
+        }),
+        (c.UPDATE_PREPEND_IF_MISSING, "list_of_objects", {
+            "uname": "admin",
+            "text": "UPDATE_PREPEND_IF_MISSING"
+        }),
+        (c.UPDATE_APPEND, "list_of_objects", {
+            "uname": "admin",
+            "text": "UPDATE_APPEND"
+        }),
+        (c.UPDATE_APPEND_IF_MISSING, "list_of_objects", {
+            "uname": "admin",
+            "text": "UPDATE_APPEND_IF_MISSING"
+        }),
+        (c.UPDATE_APPEND_IF_MISSING, "list_of_objects", {
+            "uname": "admin",
+            "text": "UPDATE_APPEND_IF_MISSING"
+        }),
+        (c.UPDATE_REMOVE, "list_of_objects", {
+            "uname": "admin",
+            "text": "UPDATE_REMOVE"
+        }),
+        (c.UPDATE_DELETE, "list_of_objects", 2),
+        (c.UPDATE_MODIFY, "list_of_objects", {
+            "prev":  {
+                "uname": "admin",
+                "text": "UPDATE_SET"
+            },
+            "next": {
+                "uname": "admin",
+                "text": "UPDATE_MODIFY"
+            }
+        })
+    ]
+    assert c.update('to_update_list_of_objects', operations)
+    assert c.get('to_update_list_of_objects') == expected
 
 
 def _test_update_by_query(c: ESCollection):
@@ -558,9 +648,9 @@ TEST_FUNCTIONS = [
     (_test_get_if_exists, "get_if_exists"),
     (_test_multiexists, "multiexists"),
     (_test_multiget, "multiget"),
-    (_test_multiget_search, "multiget_search"),
     (_test_keys, "keys"),
     (_test_update, "update"),
+    (_test_update_list_of_objects, "update_list_of_objects"),
     (_test_update_by_query, "update_by_query"),
     (_test_delete_by_query, "delete_by_query"),
     (_test_fields, "fields"),
