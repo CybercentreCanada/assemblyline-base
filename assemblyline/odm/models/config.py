@@ -4,7 +4,6 @@ from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
-
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
@@ -271,7 +270,8 @@ DEFAULT_OAUTH_PROVIDERS = {
 class OAuth(odm.Model):
     enabled: bool = odm.Boolean(description="Enable use of OAuth?")
     gravatar_enabled: bool = odm.Boolean(description="Enable gravatar?")
-    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider), default=DEFAULT_OAUTH_PROVIDERS,
+    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider),
+                                                      default=DEFAULT_OAUTH_PROVIDERS,
                                                       description="OAuth provider configuration")
 
 
@@ -279,6 +279,25 @@ DEFAULT_OAUTH = {
     "enabled": False,
     "gravatar_enabled": True,
     "providers": DEFAULT_OAUTH_PROVIDERS
+}
+
+
+DEFAULT_SAML_PROVIDERS = {}
+
+
+@odm.model(index=False, store=False, description="SAML Configuration")
+class SAML(odm.Model):
+    enabled: bool = odm.Boolean(description="Enable use of SAML?")
+    config_dir: str = odm.Keyword(description="SAML config directory")
+    auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
+    auto_sync: bool = odm.Boolean(description="Should we automatically sync with SAML server on each login?")
+
+
+DEFAULT_SAML = {
+    "enabled": True,
+    "config_dir": "assemblyline-ui/assemblyline_ui/security/saml/conf/",
+    "auto_create": True,
+    "auto_sync": True
 }
 
 
@@ -292,6 +311,7 @@ class Auth(odm.Model):
                                       description="Internal authentication settings")
     ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP, description="LDAP settings")
     oauth: OAuth = odm.Compound(OAuth, default=DEFAULT_OAUTH, description="OAuth settings")
+    saml: SAML = odm.Compound(SAML, default=DEFAULT_SAML, description="SAML settings")
 
 
 DEFAULT_AUTH = {
@@ -301,7 +321,8 @@ DEFAULT_AUTH = {
     "allow_security_tokens": True,
     "internal": DEFAULT_INTERNAL,
     "ldap": DEFAULT_LDAP,
-    "oauth": DEFAULT_OAUTH
+    "oauth": DEFAULT_OAUTH,
+    "saml": DEFAULT_SAML
 }
 
 
@@ -353,7 +374,7 @@ class Dispatcher(odm.Model):
 
 
 DEFAULT_DISPATCHER = {
-    "timeout": 15*60,
+    "timeout": 15 * 60,
     "max_inflight": 1000
 }
 
@@ -430,9 +451,9 @@ DEFAULT_INGESTER = {
     'incomplete_expire_after_seconds': 3600,
     'incomplete_stale_after_seconds': 1800,
     'sampling_at': {
-        'low':    10000000,
-        'medium':  2000000,
-        'high':    1000000,
+        'low': 10000000,
+        'medium': 2000000,
+        'high': 1000000,
         'critical': 500000,
     },
     'max_inflight': 500

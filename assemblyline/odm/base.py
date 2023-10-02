@@ -401,6 +401,7 @@ class IP(Keyword):
         else:
             return ":".join([str(x) for x in value.split(":")])
 
+
 class Domain(Keyword):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
