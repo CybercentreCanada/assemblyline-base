@@ -8,7 +8,7 @@ import time
 import yaml
 
 from string import Template
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from assemblyline.common.constants import service_queue_name
 from assemblyline.common.dict_utils import recursive_update
@@ -110,7 +110,7 @@ def get_archivestore(config=None, connection_attempts=None):
         raise ValueError("Trying to access the archive filestore but archive is disabled.")
 
 
-def get_config(yml_config=None) -> Config:
+def get_config(yml_config: Optional[str] = None) -> Config:
     if yml_config not in config_cache:
         config_cache[yml_config] = _get_config(yml_config=yml_config)
     return config_cache[yml_config]

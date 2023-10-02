@@ -44,6 +44,12 @@ class NamedQueue(Generic[T]):
             return json.loads(response[0])
         return None
 
+    def content(self) -> list[T]:
+        response = retry_call(self.c.lrange, self.name, 0, -1)
+        if response:
+            return [json.loads(resp) for resp in response]
+        return []
+
     def pop_batch(self, size) -> list[T]:
         response = retry_call(self.c.lpop, self.name, size)
 

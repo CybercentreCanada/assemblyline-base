@@ -137,6 +137,7 @@ magic_patterns = [
     {"al_type": "archive/vhd", "regex": r"^Microsoft Disk Image"},
     {"al_type": "archive/xz", "regex": r"^XZ compressed data"},
     {"al_type": "archive/zip", "regex": r"^zip archive data"},
+    {"al_type": "archive/zstd", "regex": r"^Zstandard compressed data"},
     {"al_type": "network/tcpdump", "regex": r"^(tcpdump|pcap)"},
     {"al_type": "document/pdf", "regex": r"^pdf document"},
     {"al_type": "image/bmp", "regex": r"^pc bitmap"},
@@ -351,6 +352,8 @@ trusted_mimes = {
     "application/x-virtualbox-vhd": "archive/vhd",
     "application/x-xz": "archive/xz",
     "application/vnd.ms-cab-compressed": "archive/cabinet",
+    "application/zstd": "archive/zstd",
+    "application/x-zstd": "archive/zstd",
 
     # JAVA Class
     "application/x-java-applet": "java/class",

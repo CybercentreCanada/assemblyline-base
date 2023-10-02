@@ -1,0 +1,61 @@
+{
+  "authentication": {
+    "static_keys": [
+      {
+        "key": "insecure-worker-key",
+        "roles": [
+          "Worker"
+        ]
+      },
+      {
+        "key": "insecure-search-key",
+        "roles": [
+          "Search"
+        ]
+      },
+      {
+        "key": "insecure-ingest-key",
+        "roles": [
+          "Ingest"
+        ]
+      }
+    ]
+  },
+  "database": {
+    "SQLite": {
+      "path": "/data/sqlite/staging.db"
+    }
+  },
+  "core": {
+    "batch_limit_seconds": 60,
+    "batch_limit_size": 500
+  },
+  "cache": {
+    "Directory": {
+      "path": "/tmp/",
+      "size": "100Gi"
+    }
+  },
+  "files": {
+    "S3": {
+      "access_key_id": "al_storage_key",
+      "secret_access_key": "Ch@ngeTh!sPa33w0rd",
+      "endpoint_url": "http;//minio:9000",
+      "region_name": "local",
+      "bucket": "al-storage",
+      "no_tls_verify": true
+    }
+  },
+  "blobs": {
+    "S3": {
+        "access_key_id": "al_storage_key",
+        "secret_access_key": "Ch@ngeTh!sPa33w0rd",
+        "endpoint_url": "http;//minio:9000",
+        "region_name": "local",
+        "bucket": "retrohunt-storage",
+        "no_tls_verify": true
+    }
+  },
+  "bind_address": "0.0.0.0:4443",
+  "tls": null
+}
