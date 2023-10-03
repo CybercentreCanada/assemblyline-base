@@ -1313,12 +1313,21 @@ DEFAULT_SUBMISSION = {
 @odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
 class Retrohunt(odm.Model):
     enabled = odm.Boolean(default=False, description="Is the Retrohunt functionnality enabled on the frontend")
-    dtl: int = odm.Integer(default=30, description="Number of days retrohunt jobs will remain in the system by default")
-    max_dtl: int = odm.Integer(
-        default=0, description="Maximum number of days retrohunt jobs will remain in the system")
-    url = odm.Optional(odm.Keyword(description="Base URL for service API"))
-    api_key = odm.Optional(odm.Keyword(description="Service API Key"))
-    tls_verify = odm.Boolean(description="Should tls certificates be verified", default=True)
+    dtl: int = odm.Integer(description="Number of days retrohunt jobs will remain in the system by default")
+    max_dtl: int = odm.Integer(description="Maximum number of days retrohunt jobs will remain in the system")
+    url = odm.Keyword(description="Base URL for service API")
+    api_key = odm.Keyword(description="Service API Key")
+    tls_verify = odm.Boolean(default=True, description="Should tls certificates be verified")
+
+
+DEFAULT_RETROHUNT = {
+    'enabled': False,
+    'dtl': 30,
+    'max_dtl': 0,
+    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
+    'tls_verify': True
+}
 
 
 @odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
@@ -1330,12 +1339,13 @@ class Config(odm.Model):
                                                      description="Datasources configuration")
     filestore: Filestore = odm.compound(Filestore, default=DEFAULT_FILESTORE, description="Filestore configuration")
     logging: Logging = odm.compound(Logging, default=DEFAULT_LOGGING, description="Logging configuration")
+    retrohunt: Retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
+                                        description="Retrohunt configuration for the frontend and server.")
     services: Services = odm.compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
     system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
     ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
-    retrohunt = odm.Compound(Retrohunt, description="Retrohunt configuration for the frontend and server.")
 
 
 DEFAULT_CONFIG = {
@@ -1345,6 +1355,7 @@ DEFAULT_CONFIG = {
     "datasources": DEFAULT_DATASOURCES,
     "filestore": DEFAULT_FILESTORE,
     "logging": DEFAULT_LOGGING,
+    "retrohunt": DEFAULT_RETROHUNT,
     "services": DEFAULT_SERVICES,
     "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI,
