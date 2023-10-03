@@ -227,25 +227,6 @@ def _test_multiget(c: ESCollection):
     assert c.multiget([]) == {}
 
 
-def _test_multiget_search(c: ESCollection):
-    # TEST Multiget via search
-    ids = ['test1', 'int', 'test2']
-    ds_raw = c.multiget_search(ids, fl="*")['items']
-    for item in ds_raw:
-        cur_id = item.pop('id')
-        ids.remove(cur_id)
-
-        if "__non_doc_raw__" in item:
-            item = item['__non_doc_raw__']
-
-        assert test_map[cur_id] == item
-    assert len(ids) == 0
-
-    res = c.multiget_search([])
-    assert res['items'] == []
-    assert res['total'] == 0
-
-
 def _test_multiexists(c: ESCollection):
     # Test GET
     assert all(c.multiexists(['test1', 'test2', 'test3', 'test4', 'string', 'list', 'int']).values())
@@ -340,6 +321,11 @@ def _test_search(c: ESCollection):
         assert item['id'] in test_map
         assert item.get('classification_s', None) is not None
 
+    items = c.search('*:*', key_space=['test1', 'test2', 'not_in_test_map'], fl='id')['items']
+    assert len(items) == 2
+    for item in items:
+        assert item['id'] in test_map
+
 
 def _test_group_search(c: ESCollection):
     gs_simple = c.grouped_search('lvl_i', fl='classification_s')
@@ -415,6 +401,15 @@ def _test_histogram(c: ESCollection):
         assert isinstance(v, int)
         assert v > 0
 
+    h_key_space = c.histogram(field='lvl_i', start=0, end=1000, gap=100, key_space=['test1', 'not_in_test_map'])
+    test1_key = test_map.get('test1')['lvl_i']
+    assert dict(h_key_space.items()).get(test1_key) == 1
+
+    for k, v in filter(lambda k: k[0] != test1_key, h_key_space.items()):
+        assert isinstance(k, int)
+        assert isinstance(v, int)
+        assert v == 0
+
 
 def _test_facet(c: ESCollection):
     facets = c.facet('classification_s')
@@ -423,6 +418,10 @@ def _test_facet(c: ESCollection):
         assert k in ["U", "C", "TS"]
         assert isinstance(v, int)
         assert v > 0
+
+    h_key_space = c.facet(field='lvl_i', key_space=['test1', 'not_in_test_map'])
+    test1_key = test_map.get('test1')['lvl_i']
+    assert dict(h_key_space.items()).get(test1_key) == 1
 
 
 def _test_stats(c: ESCollection):
@@ -558,7 +557,6 @@ TEST_FUNCTIONS = [
     (_test_get_if_exists, "get_if_exists"),
     (_test_multiexists, "multiexists"),
     (_test_multiget, "multiget"),
-    (_test_multiget_search, "multiget_search"),
     (_test_keys, "keys"),
     (_test_update, "update"),
     (_test_update_by_query, "update_by_query"),
