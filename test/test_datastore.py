@@ -1,16 +1,17 @@
+import logging
 import random
 import string
-import warnings
 import uuid
-
+import warnings
 from copy import copy
-from datemath import dm
-from retrying import retry
-import pytest
 
+import pytest
 from assemblyline.datastore.collection import ESCollection, Index
 from assemblyline.datastore.exceptions import VersionConflictException
+from datemath import dm
+from retrying import retry
 
+LOGGER = logging.getLogger(__name__)
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -321,6 +322,11 @@ def _test_search(c: ESCollection):
         assert item['id'] in test_map
         assert item.get('classification_s', None) is not None
 
+    items = c.search('*:*', key_space=['test1', 'test2', 'not_in_test_map'], fl='id')['items']
+    assert len(items) == 2
+    for item in items:
+        assert item['id'] in test_map
+
 
 def _test_group_search(c: ESCollection):
     gs_simple = c.grouped_search('lvl_i', fl='classification_s')
@@ -396,6 +402,15 @@ def _test_histogram(c: ESCollection):
         assert isinstance(v, int)
         assert v > 0
 
+    h_key_space = c.histogram(field='lvl_i', start=0, end=1000, gap=100, key_space=['test1', 'not_in_test_map'])
+    test1_key = test_map.get('test1')['lvl_i']
+    assert dict(h_key_space.items()).get(test1_key) == 1
+
+    for k, v in filter(lambda k: k[0] != test1_key, h_key_space.items()):
+        assert isinstance(k, int)
+        assert isinstance(v, int)
+        assert v == 0
+
 
 def _test_facet(c: ESCollection):
     facets = c.facet('classification_s')
@@ -404,6 +419,10 @@ def _test_facet(c: ESCollection):
         assert k in ["U", "C", "TS"]
         assert isinstance(v, int)
         assert v > 0
+
+    h_key_space = c.facet(field='lvl_i', key_space=['test1', 'not_in_test_map'])
+    test1_key = test_map.get('test1')['lvl_i']
+    assert dict(h_key_space.items()).get(test1_key) == 1
 
 
 def _test_stats(c: ESCollection):
