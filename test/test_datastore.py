@@ -1,17 +1,16 @@
-import logging
 import random
 import string
-import uuid
 import warnings
-from copy import copy
+import uuid
 
-import pytest
-from assemblyline.datastore.collection import ESCollection, Index
-from assemblyline.datastore.exceptions import VersionConflictException
+from copy import copy
 from datemath import dm
 from retrying import retry
+import pytest
 
-LOGGER = logging.getLogger(__name__)
+from assemblyline.datastore.collection import ESCollection, Index
+from assemblyline.datastore.exceptions import VersionConflictException
+
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
