@@ -291,13 +291,19 @@ class SAML(odm.Model):
     config_dir: str = odm.Keyword(description="SAML config directory")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
     auto_sync: bool = odm.Boolean(description="Should we automatically sync with SAML server on each login?")
+    email_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's email address ")
+    first_name_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's first name")
+    last_name_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's last name")
 
 
 DEFAULT_SAML = {
     "enabled": True,
     "config_dir": "assemblyline-ui/assemblyline_ui/security/saml/conf/",
     "auto_create": True,
-    "auto_sync": True
+    "auto_sync": True,
+    "email_attribute_name": "email",
+    "first_name_attribute_name": "firstName",
+    "last_name_attribute_name": "lastName"
 }
 
 
