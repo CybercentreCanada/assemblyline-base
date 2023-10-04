@@ -22,6 +22,8 @@ class UserSettings(odm.Model):
         default="zippy",
         description="Default user-defined password for creating password protected ZIPs when downloading files"
     )
+    demo = odm.Boolean(
+        default=False, description="Should the interface hide sensitive information for demonstration purposes?")
     expand_min_score = odm.Integer(default=500, description="Auto-expand section when score bigger then this")
     generate_alert = odm.Boolean(default=False, description="Generate an alert?")
     ignore_cache = odm.Boolean(default=False, description="Ignore service caching?")
