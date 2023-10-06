@@ -23,6 +23,7 @@ BODY_FORMAT = {
     "ORDERED_KEY_VALUE",
     "TIMELINE"
 }
+PROMOTE_TO = {"SCREENSHOT", "ENTROPY"}
 constants = forge.get_constants()
 
 
@@ -56,12 +57,16 @@ class Section(odm.Model):
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
     classification = odm.Classification(description="Classification of the section")
     body_format = odm.Enum(values=BODY_FORMAT, index=False, description="Type of body in this section")
-    body_config = odm.Optional(odm.Mapping(odm.Any(), index=False, description="Configurations for the body of this section"))
+    body_config = odm.Optional(odm.Mapping(odm.Any(), index=False,
+                               description="Configurations for the body of this section"))
     depth = odm.Integer(index=False, description="Depth of the section")
     heuristic = odm.Optional(odm.Compound(Heuristic), description="Heuristic used to score result section")
     tags = odm.Compound(Tagging, default={}, description="List of tags associated to this section")
     safelisted_tags = odm.FlattenedListObject(store=False, default={}, description="List of safelisted tags")
     title_text = odm.Text(copyto="__text__", description="Title of the section")
+    promote_to = odm.Optional(odm.Enum(
+        values=PROMOTE_TO,
+        description="This is the type of data that the current section should be promoted to."))
 
 
 @odm.model(index=True, store=True, description="Result Body")

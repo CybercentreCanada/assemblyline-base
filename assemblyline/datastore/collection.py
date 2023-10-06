@@ -849,51 +849,6 @@ class ESCollection(Generic[ModelType]):
 
         return out
 
-    def multiget_search(self, key_list, offset=0, rows=10, sort=None, fl=None, track_total_hits=None,
-                        as_obj=True, index_type=None):
-        """
-        Get a list of documents from the datastore and make sure they are normalized using
-        the model class
-
-        :param index_type: Type of indices to target
-        :param as_dictionary: Return a disctionary of items or a list
-        :param track_total_hits: Should elastic track the total number of files found
-        :param fl: List of fields to return
-        :param sort: Fields to sort the data with
-        :param rows: Number of items to return
-        :param offset: Offset at which items should be returned
-        :param key_list: list of keys of documents to get
-        :return: list of instances of the model class
-        """
-        index = self.get_joined_index(index_type)
-
-        if fl:
-            field_list = fl.split(',')
-        else:
-            field_list = list(self.stored_fields.keys())
-
-        query_body = {
-            "query": {
-                "ids": {
-                    "values": key_list
-                }
-            },
-            'from_': offset,
-            'size': rows,
-            'sort': parse_sort(sort),
-            "_source": field_list
-        }
-
-        result = self.with_retries(self.datastore.client.search, index=index,
-                                   track_total_hits=track_total_hits, **query_body)
-
-        return {
-            "offset": int(offset),
-            "rows": int(rows),
-            "total": result['hits'].get('total', {}).get('value', None),
-            "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
-        }
-
     def normalize(self, data, as_obj=True) -> Union[ModelType, Dict[str, Any], None]:
         """
         Normalize the data using the model class
@@ -1382,7 +1337,7 @@ class ESCollection(Generic[ModelType]):
 
         return {key: val for key, val in source_data.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT):
+    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT, key_space=None):
         index = self.get_joined_index(index_type)
 
         if args is None:
@@ -1422,6 +1377,11 @@ class ESCollection(Generic[ModelType]):
 
         field_list = parsed_values['field_list'] or list(self.stored_fields.keys())
 
+        filter_queries = [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
+
+        if key_space is not None:
+            filter_queries.append({'ids': {'values': key_space}})
+
         # This is our minimal query, the following sections will fill it out
         # with whatever extra options the search has been given.
         query_body = {
@@ -1432,7 +1392,7 @@ class ESCollection(Generic[ModelType]):
                             "query": parsed_values['query']
                         }
                     },
-                    'filter': [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
+                    'filter': filter_queries
                 }
             },
             'from_': parsed_values['start'],
@@ -1560,9 +1520,9 @@ class ESCollection(Generic[ModelType]):
             raise SearchException("collection: %s, query: %s, error: %s" % (
                 self.name, query_body, str(error))).with_traceback(error.__traceback__)
 
-    def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, script_fields=[]):
+    def search(self, query, offset=0, rows=None, sort=None, fl=None, timeout=None, filters=None, access_control=None,
+               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, key_space=None,
+               script_fields=[]):
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -1591,7 +1551,8 @@ class ESCollection(Generic[ModelType]):
         :param fl: list of fields to return from the search
         :param timeout: maximum time of execution
         :param filters: additional queries to run on the original query to reduce the scope
-        :param access_control: access control parameters to limiti the scope of the query
+        :param key_space: IDs of documents for the query to limit the scope to these documents
+        :param access_control: access control parameters to limit the scope of the query
         :return: a search result object
         """
 
@@ -1633,7 +1594,7 @@ class ESCollection(Generic[ModelType]):
             args.append(('script_fields', script_fields))
 
         result = self._search(args, deep_paging_id=deep_paging_id, index_type=index_type,
-                              track_total_hits=track_total_hits)
+                              track_total_hits=track_total_hits, key_space=key_space)
 
         ret_data = {
             "offset": int(offset),
@@ -1782,8 +1743,8 @@ class ESCollection(Generic[ModelType]):
                                       f'Current settings would generate {gaps_count} steps')
             return ret_type
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1,
-                  filters=None, access_control=None, index_type=Index.HOT):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None,
+                  index_type=Index.HOT, key_space=None):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -1812,14 +1773,14 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args, index_type=index_type)
+        result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None,
-              index_type=Index.HOT, field_script=None):
+    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
+              field_script=None, key_space=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1842,7 +1803,7 @@ class ESCollection(Generic[ModelType]):
         if field_script:
             args.append(('field_script', field_script))
 
-        result = self._search(args, index_type=index_type)
+        result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
         return {row.get('key_as_string', row['key']): row['doc_count']
