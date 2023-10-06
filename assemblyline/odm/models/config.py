@@ -310,6 +310,8 @@ class Alerter(odm.Model):
     alert_ttl: int = odm.Integer(description="Time to live (days) for an alert in the system")
     constant_alert_fields: List[str] = odm.List(
         odm.Keyword(), description="List of fields that should not change during an alert update")
+    constant_ignore_keys: List[str] = odm.List(odm.Keyword(),
+                                               description="List of keys to ignore in the constant alert fields.")
     default_group_field: str = odm.Keyword(description="Default field used for alert grouping view")
     delay: int = odm.Integer(
         description="Time in seconds that we give extended scans and workflow to complete their work "
@@ -327,6 +329,7 @@ class Alerter(odm.Model):
 DEFAULT_ALERTER = {
     "alert_ttl": 90,
     "constant_alert_fields": ["alert_id", "file", "ts"],
+    "constant_ignore_keys": ["screenshots"],
     "default_group_field": "file.sha256",
     "delay": 300,
     "filtering_group_fields": [
