@@ -24,7 +24,7 @@ class URIInfo(odm.Model):
     username: str = odm.Optional(odm.Keyword(description=""))
     password: str = odm.Optional(odm.Keyword(description=""))
     hostname: str = odm.Keyword(description="")
-    port: str = odm.Optional(odm.Keyword(description=""))
+    port: int = odm.Optional(odm.Integer(description=""))
 
 
 @odm.model(index=True, store=True, description="Model of File")
