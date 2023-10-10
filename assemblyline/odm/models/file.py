@@ -1,6 +1,25 @@
 from assemblyline import odm
 
 
+@odm.model(index=True, store=True, description="URI Information Model")
+class URIInfo(odm.Model):
+    uri: str = odm.Keyword(description="full URI")
+
+    # https://www.rfc-editor.org/rfc/rfc1808.html#section-2.1
+    scheme: str = odm.Keyword(description="")
+    netloc: str = odm.Keyword(description="")
+    path: str = odm.Optional(odm.Keyword(description=""))
+    params: str = odm.Optional(odm.Keyword(description=""))
+    query: str = odm.Optional(odm.Keyword(description=""))
+    fragment: str = odm.Optional(odm.Keyword(description=""))
+
+    # Ease-of-use elements
+    username: str = odm.Optional(odm.Keyword(description=""))
+    password: str = odm.Optional(odm.Keyword(description=""))
+    hostname: str = odm.Keyword(description="")
+    port: int = odm.Optional(odm.Integer(description=""))
+
+
 @odm.model(index=True, store=True, description="File Seen Model")
 class Seen(odm.Model):
     count = odm.Integer(default=1, description="How many times have we seen this file?")

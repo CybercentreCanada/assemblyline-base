@@ -23,7 +23,7 @@ BODY_FORMAT = {
     "ORDERED_KEY_VALUE",
     "TIMELINE"
 }
-PROMOTE_TO = {"SCREENSHOT", "ENTROPY"}
+PROMOTE_TO = {"SCREENSHOT", "ENTROPY", "URI_PARAMS"}
 constants = forge.get_constants()
 
 

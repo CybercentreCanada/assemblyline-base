@@ -32,6 +32,7 @@ constants = get_constants()
 # that can create files with a high-confidence type
 CUSTOM_PS1_ID = b"#!/usr/bin/env pwsh\n"
 CUSTOM_BATCH_ID = b"REM Batch extracted by Assemblyline\n"
+CUSTOM_URI_ID = "# Assemblyline URI file\n"
 
 
 class Identify():
