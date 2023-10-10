@@ -1,13 +1,6 @@
 from assemblyline import odm
 
 
-@odm.model(index=True, store=True, description="File Seen Model")
-class Seen(odm.Model):
-    count = odm.Integer(default=1, description="How many times have we seen this file?")
-    first = odm.Date(default="NOW", description="First seen timestamp")
-    last = odm.Date(default="NOW", description="Last seen timestamp")
-
-
 @odm.model(index=True, store=True, description="URI Information Model")
 class URIInfo(odm.Model):
     uri: str = odm.Keyword(description="full URI")
@@ -25,6 +18,13 @@ class URIInfo(odm.Model):
     password: str = odm.Optional(odm.Keyword(description=""))
     hostname: str = odm.Keyword(description="")
     port: int = odm.Optional(odm.Integer(description=""))
+
+
+@odm.model(index=True, store=True, description="File Seen Model")
+class Seen(odm.Model):
+    count = odm.Integer(default=1, description="How many times have we seen this file?")
+    first = odm.Date(default="NOW", description="First seen timestamp")
+    last = odm.Date(default="NOW", description="Last seen timestamp")
 
 
 @odm.model(index=True, store=True, description="Model of File")
