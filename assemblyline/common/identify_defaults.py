@@ -306,6 +306,7 @@ trusted_mimes = {
     "application/encrypted": "document/office/passwordprotected",
     # MSI file
     "application/vnd.ms-msi": "document/installer/windows",
+    "application/x-msi": "document/installer/windows",
     # PDF Document
     "application/pdf": "document/pdf",
     # Postscript document
