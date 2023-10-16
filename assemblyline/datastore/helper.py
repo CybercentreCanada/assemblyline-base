@@ -174,6 +174,9 @@ class AssemblylineDatastore(object):
     def retrohunt(self) -> ESCollection[Retrohunt]:
         return self.ds.retrohunt
 
+    def task_cleanup(self, max_tasks=None):
+        return self.ds.task_cleanup(max_tasks=max_tasks)
+
     def get_stats(self):
         node_stats = self.ds.with_retries(self.ds.client.nodes.stats, metric="fs")
         indices_stats = self.ds.with_retries(self.ds.client.indices.stats, index="*_hot",
