@@ -20,6 +20,7 @@ import elasticsearch
 import elasticsearch.helpers
 
 from assemblyline import odm
+from assemblyline.common.isotime import now
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
 from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException, ArchiveDisabled)
@@ -344,6 +345,11 @@ class ESCollection(Generic[ModelType]):
                     raise
 
         try:
+            # Force remove the tasks as we got the result already...
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.with_retries(self.datastore.client.delete, id=task['task'], index='.tasks')
+
             return res['response']
         except KeyError:
             return res['task']['status']
