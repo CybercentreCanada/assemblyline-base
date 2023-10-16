@@ -292,6 +292,24 @@ class ESCollection(Generic[ModelType]):
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
+    def task_cleanup(self, max_tasks=None):
+        # Create the query to delete the tasks
+        #   NOTE: This will delete all completed tasks older then a day
+        q = f"completed:true AND task.start_time_in_millis:<{now(-1 * 60 * 60 * 24) * 1000}"
+
+        # Create a new task to delete expired tasks
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            task = self.with_retries(self.datastore.client.delete_by_query, index='.tasks',
+                                     q=q, wait_for_completion=False, conflicts='proceed',
+                                     max_docs=max_tasks)
+
+        # Wait until the tasks deletion task is over
+        res = self._get_task_results(task)
+
+        # return the number of deleted items
+        return res['deleted']
+
     def with_retries(self, func, *args, **kwargs):
         """
         This function performs the passed function with the given args and kwargs and reconnect if it fails
