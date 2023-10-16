@@ -4,6 +4,7 @@ import logging
 import re
 import time
 import typing
+import warnings
 
 from os import environ, path
 from random import random
@@ -13,6 +14,7 @@ import elasticsearch
 import elasticsearch.helpers
 
 from assemblyline.common import forge
+from assemblyline.common.isotime import now
 from assemblyline.datastore.collection import ESCollection
 from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion, VersionConflictException)
 
@@ -211,6 +213,63 @@ class ESStore(object):
             value = value.replace(*x)
 
         return value
+
+    def task_cleanup(self, deleteable_task_age=0, max_tasks=None):
+        # Create the query to delete the tasks
+        #   NOTE: This will delete up to 'max_tasks' completed tasks older then a 'deleteable_task_age'
+        q = f"completed:true AND task.start_time_in_millis:<{now(-1 * deleteable_task_age) * 1000}"
+
+        # Create a new task to delete expired tasks
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            task = self.with_retries(self.client.delete_by_query, index='.tasks',
+                                     q=q, wait_for_completion=False, conflicts='proceed',
+                                     max_docs=max_tasks)
+
+        # Wait until the tasks deletion task is over
+        res = self._get_task_results(task)
+
+        # return the number of deleted items
+        return res['deleted']
+
+    def _get_task_results(self, task, retry_function=None):
+        # This function is only used to wait for a asynchronous task to finish in a graceful manner without
+        #  timing out the elastic client. You can create an async task for long running operation like:
+        #   - update_by_query
+        #   - delete_by_query
+        #   - reindex ...
+        if retry_function is None:
+            retry_function = self.with_retries
+
+        res = None
+        while res is None:
+            try:
+                res = retry_function(self.client.tasks.get, task_id=task['task'],
+                                     wait_for_completion=True, timeout='5s')
+            except elasticsearch.ApiError as e:
+                err_code = e.status_code
+                msg = e.message
+                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
+                    pass
+                else:
+                    raise
+
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, msg, _ = e.args
+                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
+                    pass
+                else:
+                    raise
+
+        try:
+            # Force remove the tasks as we got the result already...
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.with_retries(self.client.delete, id=task['task'], index='.tasks')
+
+            return res['response']
+        except KeyError:
+            return res['task']['status']
 
     def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
         """
