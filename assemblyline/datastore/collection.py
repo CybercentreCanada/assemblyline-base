@@ -20,7 +20,6 @@ import elasticsearch
 import elasticsearch.helpers
 
 from assemblyline import odm
-from assemblyline.common.isotime import now
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
 from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException, ArchiveDisabled)
@@ -292,24 +291,6 @@ class ESCollection(Generic[ModelType]):
             except elasticsearch.exceptions.NotFoundError:
                 pass
 
-    def task_cleanup(self, max_tasks=None):
-        # Create the query to delete the tasks
-        #   NOTE: This will delete all completed tasks older then a day
-        q = f"completed:true AND task.start_time_in_millis:<{now(-1 * 60 * 60 * 24) * 1000}"
-
-        # Create a new task to delete expired tasks
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            task = self.with_retries(self.datastore.client.delete_by_query, index='.tasks',
-                                     q=q, wait_for_completion=False, conflicts='proceed',
-                                     max_docs=max_tasks)
-
-        # Wait until the tasks deletion task is over
-        res = self._get_task_results(task)
-
-        # return the number of deleted items
-        return res['deleted']
-
     def with_retries(self, func, *args, **kwargs):
         """
         This function performs the passed function with the given args and kwargs and reconnect if it fails
@@ -335,42 +316,6 @@ class ESCollection(Generic[ModelType]):
             return data_output['__non_doc_raw__']
         data_output.pop('id', None)
         return data_output
-
-    def _get_task_results(self, task):
-        # This function is only used to wait for a asynchronous task to finish in a graceful manner without
-        #  timing out the elastic client. You can create an async task for long running operation like:
-        #   - update_by_query
-        #   - delete_by_query
-        #   - reindex ...
-        res = None
-        while res is None:
-            try:
-                res = self.with_retries(self.datastore.client.tasks.get, task_id=task['task'],
-                                        wait_for_completion=True, timeout='5s')
-            except elasticsearch.ApiError as e:
-                err_code = e.status_code
-                msg = e.message
-                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
-                    pass
-                else:
-                    raise
-
-            except elasticsearch.exceptions.TransportError as e:
-                err_code, msg, _ = e.args
-                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
-                    pass
-                else:
-                    raise
-
-        try:
-            # Force remove the tasks as we got the result already...
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self.with_retries(self.datastore.client.delete, id=task['task'], index='.tasks')
-
-            return res['response']
-        except KeyError:
-            return res['task']['status']
 
     def _get_current_alias(self, index: str) -> typing.Optional[str]:
         if self.with_retries(self.datastore.client.indices.exists_alias, name=index):
@@ -410,7 +355,7 @@ class ESCollection(Generic[ModelType]):
             task = self.with_retries(self.datastore.client.delete_by_query, index=index,
                                      query=query, wait_for_completion=False, conflicts='proceed',
                                      sort=sort, max_docs=max_docs)
-            res = self._get_task_results(task)
+            res = self.datastore._get_task_results(task, retry_function=self.with_retries)
 
             if res['version_conflicts'] == 0:
                 res['deleted'] += deleted
@@ -424,7 +369,7 @@ class ESCollection(Generic[ModelType]):
             task = self.with_retries(
                 self.datastore.client.update_by_query, index=index, script=script, query=query,
                 wait_for_completion=False, conflicts='proceed', max_docs=max_docs)
-            res = self._get_task_results(task)
+            res = self.datastore._get_task_results(task, retry_function=self.with_retries)
 
             if res['version_conflicts'] == 0:
                 res['updated'] += updated
@@ -457,7 +402,7 @@ class ESCollection(Generic[ModelType]):
         }
 
         r_task = self.with_retries(self.datastore.client.reindex, source=source, dest=dest, wait_for_completion=False)
-        res = self._get_task_results(r_task)
+        res = self.datastore._get_task_results(r_task, retry_function=self.with_retries)
         total_restaured = res['updated'] + res['created']
 
         if delete_after:
@@ -549,7 +494,7 @@ class ESCollection(Generic[ModelType]):
             source['sort'] = parse_sort(sort)
 
         r_task = self.with_retries(self.datastore.client.reindex, source=source, dest=dest, wait_for_completion=False)
-        res = self._get_task_results(r_task)
+        res = self.datastore._get_task_results(r_task, retry_function=self.with_retries)
         total_archived = res['updated'] + res['created']
         if res['total'] == total_archived or max_docs == total_archived:
             if total_archived != 0 and delete_after:
@@ -761,7 +706,7 @@ class ESCollection(Generic[ModelType]):
                 # Reindex data into target
                 r_task = self.with_retries(self.datastore.client.reindex, source={"index": index},
                                            dest={"index": new_name}, wait_for_completion=False)
-                self._get_task_results(r_task)
+                self.datastore._get_task_results(r_task, retry_function=self.with_retries)
 
                 # Commit reindexed data
                 self.with_retries(self.datastore.client.indices.refresh, index=new_name)
