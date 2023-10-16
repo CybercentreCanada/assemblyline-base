@@ -214,10 +214,10 @@ class ESStore(object):
 
         return value
 
-    def task_cleanup(self, max_tasks=None):
+    def task_cleanup(self, deleteable_task_age=0, max_tasks=None):
         # Create the query to delete the tasks
-        #   NOTE: This will delete all completed tasks older then a day
-        q = f"completed:true AND task.start_time_in_millis:<{now(-1 * 60 * 60 * 24) * 1000}"
+        #   NOTE: This will delete up to 'max_tasks' completed tasks older then a 'deleteable_task_age'
+        q = f"completed:true AND task.start_time_in_millis:<{now(-1 * deleteable_task_age) * 1000}"
 
         # Create a new task to delete expired tasks
         with warnings.catch_warnings():
