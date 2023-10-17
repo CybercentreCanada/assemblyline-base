@@ -137,7 +137,7 @@ class Result(odm.Model):
         key_list = [
             sha256,
             service_name.replace('.', '_'),
-            f"v{service_version.replace('.', '_')}",
+            f"v{service_version.replace('.', '_').replace('stable', '')}",
             f"c{generate_conf_key(service_tool_version=service_tool_version, task=task)}",
         ]
 
