@@ -43,6 +43,7 @@ type_to_extension = {
     "archive/zip": ".zip",
     "archive/7-zip": ".7z",
     "audiovisual/flash": ".swf",
+    "code/a3x": ".a3x",
     "code/batch": ".bat",
     "code/c": ".c",
     "code/csharp": ".cs",
