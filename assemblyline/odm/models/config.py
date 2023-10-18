@@ -521,6 +521,20 @@ DEFAULT_ARCHIVER = {
 }
 
 
+@odm.model(index=False, store=False, description="Plumber Configuration")
+class Plumber(odm.Model):
+    notification_queue_interval: int = odm.Integer(
+        description="Interval at which the notification queue cleanup should run")
+    notification_queue_max_age: int = odm.Integer(
+        description="Max age in seconds notification queue messages can be")
+
+
+DEFAULT_PLUMBER = {
+    'notification_queue_interval': 30 * 60,
+    'notification_queue_max_age': 24 * 60 * 60
+}
+
+
 @odm.model(index=False, store=False, description="Redis Configuration")
 class Redis(odm.Model):
     nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP,
@@ -723,6 +737,8 @@ class Core(odm.Model):
     ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER, description="Configuration for Ingester")
     metrics: Metrics = odm.Compound(Metrics, default=DEFAULT_METRICS,
                                     description="Configuration for Metrics Collection")
+    plumber: Plumber = odm.Compound(Plumber, default=DEFAULT_PLUMBER,
+                                    description="Configuration for system cleanup")
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS, description="Configuration for Redis instances")
     scaler: Scaler = odm.Compound(Scaler, default=DEFAULT_SCALER, description="Configuration for Scaler")
     updater: Updater = odm.Compound(Updater, default=DEFAULT_UPDATER, description="Configuration for Updater")
@@ -736,6 +752,7 @@ DEFAULT_CORE = {
     "expiry": DEFAULT_EXPIRY,
     "ingester": DEFAULT_INGESTER,
     "metrics": DEFAULT_METRICS,
+    "plumber": DEFAULT_PLUMBER,
     "redis": DEFAULT_REDIS,
     "scaler": DEFAULT_SCALER,
     "updater": DEFAULT_UPDATER,
