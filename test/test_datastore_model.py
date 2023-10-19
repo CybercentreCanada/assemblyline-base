@@ -6,6 +6,7 @@ from assemblyline.datastore.store import ESStore
 from assemblyline.datastore.exceptions import SearchException
 from assemblyline.odm import Model, Mapping, Classification
 from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
@@ -57,6 +58,7 @@ def es_datastore():
 
 TEST_DATA = [
     ("alert", random_model_obj(Alert)),
+    ("badlist", random_model_obj(Badlist)),
     ("cached_file", random_model_obj(CachedFile)),
     ("emptyresult", random_model_obj(EmptyResult)),
     ("error", random_model_obj(Error)),
@@ -76,6 +78,7 @@ TEST_DATA = [
     ("safelist", random_model_obj(Safelist)),
     ("workflow", random_model_obj(Workflow)),
     ("alert_min", random_minimal_obj(Alert)),
+    ("badlist_min", random_minimal_obj(Badlist)),
     ("cached_file_min", random_minimal_obj(CachedFile)),
     ("emptyresult_min", random_minimal_obj(EmptyResult)),
     ("error_min", random_minimal_obj(Error)),
