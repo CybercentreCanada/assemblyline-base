@@ -17,6 +17,7 @@ from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
 from assemblyline.odm import Model, DATEFORMAT
 from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
@@ -47,6 +48,7 @@ class AssemblylineDatastore(object):
 
         self.ds = datastore_object
         self.ds.register('alert', Alert)
+        self.ds.register('badlist', Badlist)
         self.ds.register('cached_file', CachedFile)
         self.ds.register('emptyresult', EmptyResult)
         self.ds.register('error', Error)
@@ -55,6 +57,7 @@ class AssemblylineDatastore(object):
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
         self.ds.register('retrohunt', Retrohunt)
+        self.ds.register('safelist', Safelist)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
         self.ds.register('signature', Signature)
@@ -65,7 +68,6 @@ class AssemblylineDatastore(object):
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_settings', UserSettings)
-        self.ds.register('safelist', Safelist)
         self.ds.register('workflow', Workflow)
 
     def __enter__(self):
@@ -89,6 +91,10 @@ class AssemblylineDatastore(object):
     @property
     def alert(self) -> ESCollection[Alert]:
         return self.ds.alert
+
+    @property
+    def badlist(self) -> ESCollection[Badlist]:
+        return self.ds.badlist
 
     @property
     def cached_file(self) -> ESCollection[CachedFile]:
@@ -117,6 +123,14 @@ class AssemblylineDatastore(object):
     @property
     def result(self) -> ESCollection[Result]:
         return self.ds.result
+
+    @property
+    def retrohunt(self) -> ESCollection[Retrohunt]:
+        return self.ds.retrohunt
+
+    @property
+    def safelist(self) -> ESCollection[Safelist]:
+        return self.ds.safelist
 
     @property
     def service(self) -> ESCollection[Service]:
@@ -159,20 +173,8 @@ class AssemblylineDatastore(object):
         return self.ds.user_settings
 
     @property
-    def vm(self) -> ESCollection:
-        return self.ds.vm
-
-    @property
-    def safelist(self) -> ESCollection[Safelist]:
-        return self.ds.safelist
-
-    @property
     def workflow(self) -> ESCollection[Workflow]:
         return self.ds.workflow
-
-    @property
-    def retrohunt(self) -> ESCollection[Retrohunt]:
-        return self.ds.retrohunt
 
     def task_cleanup(self, deleteable_task_age=0, max_tasks=None):
         return self.ds.task_cleanup(deleteable_task_age=deleteable_task_age, max_tasks=max_tasks)
