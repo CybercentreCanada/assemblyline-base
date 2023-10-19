@@ -1079,3 +1079,38 @@ rule code_a3x {
     condition:
         uint16(0) != 0x5A4D and any of them
 }
+
+/*
+code/au3
+*/
+
+rule code_au3 {
+
+    meta:
+        type = "code/au3"
+        score = 2
+
+    strings:
+        // Keywords: https://www.autoitscript.com/autoit3/docs/keywords.htm
+        $strong_keywords = /(ExitLoop|EndFunc|#comments-start|#include-once|#NoTrayIcon|#OnAutoItStartRegister|#pragma|#RequireAdmin|EndWith|EndSwitch)\b/i ascii wide
+
+        // Macros: https://www.autoitscript.com/autoit3/docs/macros.htm
+        // 5525cb089669d927874e4b21803cc5186e0e6acfee923990a4cf9c6289bfa4d8 only has one macro, so we should not rely on macros
+
+        // Functions: https://www.autoitscript.com/autoit3/docs/functions/
+        $strong_functions = /(WinExists|DllCall|DllStructSetData|DllStructGetSize|DllStructGetData|DllStructCreate|DllStructGetPtr|DllCallbackGetPtr|DllCallAddress|StringInStr|StringLeft|StringStripWS|DllCallbackRegister|AdlibRegister|AdlibUnRegister|AutoItSetOption|AutoItWinGetTitle|AutoItWinSetTitle|DllCallbackFree|GUISetStateHttpSetUserAgent|IniReadSection|IniReadSectionNames|IniRenameSection|IniWriteSection|MouseClickDrag|MouseGetCursor|ObjCreateInterface|OnAutoItExitRegister|OnAutoItExitUnRegister|PixelChecksum|PixelGetColor|ProcessExists|ProcessGetStats|ProcessSetPriority|ProcessWaitClose|SendKeepActive|ShellExecuteWait|SoundSetWaveVolume|SplashImageOn|StatusbarGetText|StringCompare|StringFromASCIIArray|TCPCloseSocket|UDPCloseSocket|WinGetCaretPos|WinGetClassList|WinGetClientSize|WinGetProcess|WinMenuSelectItem|WinMinimizeAll|WinMinimizeAllUndo|WinWaitActive|WinWaitNotActive|GUICreate|GUICtl[a-zA-Z]{1,20}|GUISetState)\b/i ascii wide
+
+        $weak_functions = /(IsBinary|IsString|Execute|IsBool|StringMid|StringLen|FileExists)\b/i ascii wide
+
+    condition:
+        // First off, we want at least one strong keyword
+        #strong_keywords >= 1 and (
+            // Next we are looking for a high-confidence amount of functions
+            // If we have 5 or more strong functions, great
+            #strong_functions >= 5 or (
+                // If we have at least 10 functions, whether they are strong or weak, that's good too, but we need at
+                // least 2 strong functions before we can be confident
+                (#strong_functions + #weak_functions) >= 10 and #strong_functions >= 2
+            )
+        )
+}
