@@ -1060,7 +1060,7 @@ class Model:
         markdown_content += f"{'#'*toc_depth} {cls.__name__}\n> {cls.__description}\n\n"
 
         # Table
-        table = "| Field | Type | Description | Required | Default |\n| :--- | :--- | :--- | :--- | :--- |\n"
+        table = '| Field | Type | Description | <div style="width:100px;display:inline">Required</div> | Default |\n| :--- | :--- | :--- | :--- | :--- |\n'
 
         # Determine the type of Field we're dealing with
         # if possible return the Model class if wrapped in Compound
@@ -1113,6 +1113,8 @@ class Model:
             # Is this a required field?
             if info.__class__ != Optional:
                 required = ":material-checkbox-marked-outline: Yes"
+            elif info.deprecation:
+                required = ":material-alert-box-outline: Deprecated"
             else:
                 required = ":material-minus-box-outline: Optional"
 
@@ -1129,6 +1131,11 @@ class Model:
                 default = f"`{val if not isinstance(val, dict) else info.default}`"
             elif isinstance(defaults, list) and field_type == 'List':
                 default = f'`{defaults}`'
+            if info.deprecation:
+                if not description:
+                    description = f':material-alert-outline: {info.deprecation}'
+                else:
+                    description += f'<br>:material-alert-outline: {info.deprecation}'
             row = f"| {field} | {field_type} | {description} | {required} | {default} |\n"
             table += row
 
