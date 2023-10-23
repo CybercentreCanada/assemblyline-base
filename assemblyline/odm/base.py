@@ -1060,7 +1060,7 @@ class Model:
         markdown_content += f"{'#'*toc_depth} {cls.__name__}\n> {cls.__description}\n\n"
 
         # Table
-        table = '| Field | Type | Description | <div style="width:100px;display:inline">Required</div> | Default |\n| :--- | :--- | :--- | :--- | :--- |\n'
+        table = '| Field | Type | Description | Required | Default |\n| :--- | :--- | :--- | :--- | :--- |\n'
 
         # Determine the type of Field we're dealing with
         # if possible return the Model class if wrapped in Compound
@@ -1136,7 +1136,7 @@ class Model:
                     description = f':material-alert-outline: {info.deprecation}'
                 else:
                     description += f'<br>:material-alert-outline: {info.deprecation}'
-            row = f"| {field} | {field_type} | {description} | {required} | {default} |\n"
+            row = f'| {field} | {field_type} | {description} | <div style="width:100px">{required}</div> | {default} |\n'
             table += row
 
         markdown_content += table + "\n\n"

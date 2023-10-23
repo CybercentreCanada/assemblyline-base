@@ -564,8 +564,10 @@ class Mount(odm.Model):
     resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
 
     # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
-    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only)", deprecation="Use `resource_type: configmap` and fill in the resource_name & resource_key fields to mount ConfigMaps")
-    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only)", deprecation="Use `resource_type: configmap` and fill in the resource_name & resource_key fields to mount ConfigMaps")
+    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only)",
+                                   deprecation="Use `resource_type: configmap` and fill in the `resource_name` & `resource_key` fields to mount ConfigMaps")
+    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only)",
+                            deprecation="Use `resource_type: configmap` and fill in the `resource_name` & `resource_key` fields to mount ConfigMaps")
 
 
 @odm.model(index=False, store=False,
@@ -920,9 +922,9 @@ class Services(odm.Model):
     safelist = odm.Compound(ServiceSafelist)
     registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
                               description="Global set of registries for services")
-    service_account = odm.optional(odm.keyword(description="Service account to use for pods in kubernetes "
-                                                           "where the service does not have one configured."), deprecation="Use helm values to specify service accounts settings for (non-)privileged services: "
-                                                           "privilegedServiceAccountName, unprivilegedServiceAccountName")
+    service_account = odm.optional(odm.keyword(), description="Service account to use for pods in kubernetes "
+                                                           "where the service does not have one configured.", deprecation="Use helm values to specify service accounts settings for (non-)privileged services: "
+                                                           "`privilegedServiceAccountName`, `unprivilegedServiceAccountName`")
 
 
 DEFAULT_SERVICES = {
