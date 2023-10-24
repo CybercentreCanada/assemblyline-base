@@ -143,11 +143,17 @@ class _Field:
             return obj
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
-        if self.deprecation:
-            logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
+        value = None
         if self.getter_function is not None:
-            return self.getter_function(obj, obj._odm_py_obj[self.name])
-        return obj._odm_py_obj[self.name]
+            value = self.getter_function(obj, obj._odm_py_obj[self.name])
+        else:
+            value = obj._odm_py_obj[self.name]
+
+        if value is not None and self.deprecation:
+            # Only raise deprecation warning if Field is actually in use
+            logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
+        return value
+
 
     # noinspection PyProtectedMember
     def __set__(self, obj, value):
@@ -156,6 +162,7 @@ class _Field:
             raise KeyMaskException(self.name)
         value = self.check(value)
         if self.deprecation:
+            # Only raise deprecation warning if Field is actually in use
             logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
         if self.setter_function is not None:
             value = self.setter_function(obj, value)
