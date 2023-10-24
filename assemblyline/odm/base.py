@@ -144,7 +144,7 @@ class _Field:
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         if self.deprecation:
-            logger.warning(f"'{self.name}' of '{obj.__class__.__name__}' model is deprecated: {self.deprecation}")
+            logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
         if self.getter_function is not None:
             return self.getter_function(obj, obj._odm_py_obj[self.name])
         return obj._odm_py_obj[self.name]
@@ -156,7 +156,7 @@ class _Field:
             raise KeyMaskException(self.name)
         value = self.check(value)
         if self.deprecation:
-            logger.warning(f"'{self.name}' of '{obj.__class__.__name__}' model is deprecated: {self.deprecation}")
+            logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
         if self.setter_function is not None:
             value = self.setter_function(obj, value)
         obj._odm_py_obj[self.name] = value
