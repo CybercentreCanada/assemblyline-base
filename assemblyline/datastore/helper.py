@@ -503,7 +503,7 @@ class AssemblylineDatastore(object):
         return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_file_list_from_keys(self, keys, supplementary=False):
+    def get_file_list_from_keys(self, keys):
         if len(keys) == 0:
             return {}
         keys = [x for x in list(keys) if not x.endswith(".e")]
@@ -511,12 +511,11 @@ class AssemblylineDatastore(object):
 
         out = set()
         for key, item in items.items():
-            out.add(key[:64])
+            out.add((key[:64], False))
             for extracted in item['response']['extracted']:
-                out.add(extracted['sha256'])
-            if supplementary:
+                out.add((extracted['sha256'], False))
                 for supplementary in item['response']['supplementary']:
-                    out.add(supplementary['sha256'])
+                    out.add((supplementary['sha256'], True))
 
         return list(out)
 
