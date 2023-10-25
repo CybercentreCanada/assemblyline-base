@@ -1,4 +1,4 @@
-FROM docker.elastic.co/elasticsearch/elasticsearch:7.17.4
+FROM docker.elastic.co/elasticsearch/elasticsearch:8.10.2
 
 ENV ES_JAVA_OPTS "-Xms1g -Xmx1g"
 
