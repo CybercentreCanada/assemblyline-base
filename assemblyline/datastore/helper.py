@@ -1,21 +1,20 @@
 
 import concurrent.futures
-import elasticapm
 import json
 import os
-
-from typing import Union, List
 from datetime import datetime
+from typing import List, Union
 
-from assemblyline.common.uid import get_id_from_data
+import elasticapm
 from assemblyline.common import forge
-from assemblyline.common.dict_utils import recursive_update, flatten
+from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.uid import get_id_from_data
 from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
-from assemblyline.odm import Model, DATEFORMAT
+from assemblyline.odm import DATEFORMAT, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
@@ -25,6 +24,7 @@ from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.retrohunt import Retrohunt
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
@@ -34,7 +34,6 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
-from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 
 config = forge.get_config()
@@ -173,9 +172,6 @@ class AssemblylineDatastore(object):
     @property
     def retrohunt(self) -> ESCollection[Retrohunt]:
         return self.ds.retrohunt
-
-    def task_cleanup(self, deleteable_task_age=0, max_tasks=None):
-        return self.ds.task_cleanup(deleteable_task_age=deleteable_task_age, max_tasks=max_tasks)
 
     def get_stats(self):
         node_stats = self.ds.with_retries(self.ds.client.nodes.stats, metric="fs")

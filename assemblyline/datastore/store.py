@@ -5,19 +5,16 @@ import re
 import time
 import typing
 import warnings
-
 from os import environ, path
 from random import random
 from urllib.parse import urlparse
 
 import elasticsearch
 import elasticsearch.helpers
-
 from assemblyline.common import forge
 from assemblyline.common.isotime import now
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion, VersionConflictException)
-
+from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion, VersionConflictException
 from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
@@ -213,24 +210,6 @@ class ESStore(object):
             value = value.replace(*x)
 
         return value
-
-    def task_cleanup(self, deleteable_task_age=0, max_tasks=None):
-        # Create the query to delete the tasks
-        #   NOTE: This will delete up to 'max_tasks' completed tasks older then a 'deleteable_task_age'
-        q = f"completed:true AND task.start_time_in_millis:<{now(-1 * deleteable_task_age) * 1000}"
-
-        # Create a new task to delete expired tasks
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            task = self.with_retries(self.client.delete_by_query, index='.tasks',
-                                     q=q, wait_for_completion=False, conflicts='proceed',
-                                     max_docs=max_tasks)
-
-        # Wait until the tasks deletion task is over
-        res = self._get_task_results(task)
-
-        # return the number of deleted items
-        return res['deleted']
 
     def _get_task_results(self, task, retry_function=None):
         # This function is only used to wait for a asynchronous task to finish in a graceful manner without
