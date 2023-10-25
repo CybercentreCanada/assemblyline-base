@@ -241,11 +241,6 @@ class ESStore(object):
                     raise
 
         try:
-            # Force remove the tasks as we got the result already...
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self.with_retries(self.client.delete, id=task['task'], index='.tasks')
-
             return res['response']
         except KeyError:
             return res['task']['status']
