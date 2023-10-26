@@ -38,7 +38,10 @@ rule code_javascript {
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
         $weak_js5 = /([^\w]|^)this\.[\w]+/
+        // This is shared in PowerShell (although in PowerShell it should be .Length)
         $weak_js6 = /([^\w]|^)[\w]+\.length/
+        // This is shared in C++
+        $weak_js7 = /([^\w]|^)[\w]+\.substr\(/
 
     condition:
         // Note that application/javascript is obsolete
@@ -56,11 +59,11 @@ rule code_javascript {
                         )
                         or (
                             // A bunch of function declarations is not enough since the function declaration syntax is
-                            // shared between JavaScript and PowerShell. Therefore, look for an additional indicator.
+                            // shared between JavaScript and PowerShell. Therefore, look for an additional indicator(s).
                             $function_declaration
                             and (
                                 1 of ($strong_js*)
-                                or 1 of ($weak_js*)
+                                or 2 of ($weak_js*)
                             )
                         )
                     )
@@ -513,8 +516,7 @@ rule code_ps1 {
         $strong_pwsh10 = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
         $strong_pwsh11 = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
         $strong_pwsh12 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
-        $strong_pwsh13 = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
-        $strong_pwsh14 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
+        $strong_pwsh13 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
         $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
         // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comparison_operators?view=powershell-7.3
