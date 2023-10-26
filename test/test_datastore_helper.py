@@ -388,6 +388,21 @@ def test_calculate_signature_stats(ds: AssemblylineDatastore):
     assert any([sig['stats'] != default_stats for sig in updated_signatures.values()])
 
 
+def test_task_cleanup(ds: AssemblylineDatastore):
+    assert ds.ds.client.search(index='.tasks',
+                               q="completed:true",
+                               track_total_hits=True,
+                               size=0)['hits']['total']['value'] != 0
+
+    # Attempt cleanup using the default user, assert that the cleanup didn't happen
+    assert ds.task_cleanup() == 0
+
+    # Switch to user that can perform task cleanup
+    ds.ds.switch_user("plumber")
+
+    assert ds.task_cleanup()
+
+
 def test_list_all_services(ds: AssemblylineDatastore):
     all_svc: Service = ds.list_all_services()
     all_svc_full: Service = ds.list_all_services(full=True)
@@ -479,3 +494,17 @@ def test_save_or_freshen_file(ds: AssemblylineDatastore):
     assert freshened_file.seen.count == 2
     assert freshened_file.seen.first < freshened_file.seen.last
     assert freshened_file.classification.long() == classification.normalize_classification(classification.UNRESTRICTED)
+
+
+def test_switch_user(ds: AssemblylineDatastore):
+    # Attempt to switch to another random user
+    ds.ds.switch_user("test")
+
+    # Confirm that user switch didn't happen
+    assert list(ds.ds.client.security.get_user().keys()) != ["test"]
+
+    # Switch to recognized plumber user
+    ds.ds.switch_user("plumber")
+
+    # Confirm that user switch did happen
+    assert list(ds.ds.client.security.get_user().keys()) != ["plumber"]
