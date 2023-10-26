@@ -1067,7 +1067,7 @@ class Model:
         markdown_content += f"{'#'*toc_depth} {cls.__name__}\n> {cls.__description}\n\n"
 
         # Table
-        table = '| Field | Type | Description | Required | Default |\n| :--- | :--- | :--- | :--- | :--- |\n'
+        table = "| Field | Type | Description | Required | Default |\n| :--- | :--- | :--- | :--- | :--- |\n"
 
         # Determine the type of Field we're dealing with
         # if possible return the Model class if wrapped in Compound

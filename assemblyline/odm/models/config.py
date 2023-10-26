@@ -922,9 +922,12 @@ class Services(odm.Model):
     safelist = odm.Compound(ServiceSafelist)
     registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
                               description="Global set of registries for services")
-    service_account = odm.optional(odm.keyword(), description="Service account to use for pods in kubernetes "
-                                                           "where the service does not have one configured.", deprecation="Use helm values to specify service accounts settings for (non-)privileged services: "
-                                                           "`privilegedServiceAccountName`, `unprivilegedServiceAccountName`")
+    service_account = odm.optional(odm.keyword(),
+                                   description="Service account to use for pods in kubernete"
+                                   "where the service does not have one configured.",
+                                   deprecation="Use helm values to specify service accounts settings for "
+                                   "(non-)privileged services: "
+                                   "`privilegedServiceAccountName`, `unprivilegedServiceAccountName`")
 
 
 DEFAULT_SERVICES = {
