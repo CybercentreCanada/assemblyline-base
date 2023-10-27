@@ -186,7 +186,7 @@ class Alert(odm.Model):
     events = odm.List(odm.Compound(Event), default=[], description="An audit of events applied to alert")
     workflows_completed = odm.Boolean(default=False, description="Have all workflows ran on this alert?")
 
-    def update(self, other: Alert) -> None:
+    def update(self, other: Alert, psid) -> None:
         """Update the current object given the content of a second alert."""
 
         # Make sure we are merging compatible alerts
@@ -228,6 +228,8 @@ class Alert(odm.Model):
         self.status = self.status or other.status
 
         # self.type is fine
+        if psid and self.sid == psid:
+            self.sid = other.sid
 
         # Merge the events then sort them by time
         self.events = list(sorted(set(self.events + other.events), key=lambda e: e.ts))
