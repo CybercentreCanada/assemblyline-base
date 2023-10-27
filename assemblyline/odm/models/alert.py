@@ -4,7 +4,6 @@ from assemblyline.odm.models.workflow import PRIORITIES, STATUSES
 from typing import List
 
 ES_SUBMITTED = "submitted"
-
 EXTENDED_SCAN_VALUES = {ES_SUBMITTED, "skipped", "incomplete", "completed"}
 
 
