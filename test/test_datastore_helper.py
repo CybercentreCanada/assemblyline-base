@@ -394,13 +394,20 @@ def test_task_cleanup(ds: AssemblylineDatastore):
                                track_total_hits=True,
                                size=0)['hits']['total']['value'] != 0
 
-    # Attempt cleanup using the default user, assert that the cleanup didn't happen
-    assert ds.task_cleanup() == 0
+    if ds.ds.es_version.major == 7:
+        # Superusers are allowed to interact with .tasks index
+        assert ds.task_cleanup()
 
-    # Switch to user that can perform task cleanup
-    ds.ds.switch_user("plumber")
+    elif ds.ds.es_version.major == 8:
+        # Superusers are NOT allowed to interact with .tasks index because it's a restricted index
 
-    assert ds.task_cleanup()
+        # Attempt cleanup using the default user, assert that the cleanup didn't happen
+        assert ds.task_cleanup() == 0
+
+        # Switch to user that can perform task cleanup
+        ds.ds.switch_user("plumber")
+
+        assert ds.task_cleanup()
 
 
 def test_list_all_services(ds: AssemblylineDatastore):
