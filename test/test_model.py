@@ -237,13 +237,13 @@ def test_update_alert():
                     verdict='safe',
                 )]
             ),
-            request_end_time=0,
+            request_end_time=500,
             score=0,
             yara=['yara-1', 'yara-2']
         ),
         attack=dict(),
         classification='U',
-        extended_scan='submitted',
+        extended_scan='completed',
         file=a1.file,
         heuristic=dict(),
         owner='user',
@@ -252,6 +252,9 @@ def test_update_alert():
         ts=100,
         type='big',
     ))
+
+    o1 = Alert(a1.as_primitives())
+    o2 = Alert(a2.as_primitives())
 
     assert a1.al.yara == ['yara-1']
     assert sorted(a2.al.yara) == ['yara-1', 'yara-2']
@@ -262,3 +265,7 @@ def test_update_alert():
 
     assert sorted(a1.al.yara) == ['yara-1', 'yara-2']
     assert sorted(a1.al.detailed.yara) == [dict(type='tests', value='yara-1', verdict='safe'), dict(type='tests', value='yara-2', verdict='safe')]
+
+    o2.update(o1)
+
+    assert a1 == o2
