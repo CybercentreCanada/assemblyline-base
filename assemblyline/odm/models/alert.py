@@ -180,6 +180,8 @@ class Alert(odm.Model):
         # Make sure we are merging compatible alerts
         if self.alert_id != other.alert_id:
             raise ValueError(f"Only versions of the same alert may be merged id {self.alert_id} != {other.alert_id}")
+        if self.ts != other.ts:
+            raise ValueError("Time drift in alerting detected. Possible alert ID collision.")
 
         # Merge simple compounds using their own logic
         self.al.update(other.al)
@@ -211,11 +213,9 @@ class Alert(odm.Model):
         # Prefer the current owner/priority/status, but take the other if the current isn't defined
         self.owner = self.owner or other.owner
         self.priority = self.priority or other.priority
-        self.reporting_ts = min(self.reporting_ts, other.reporting_ts)
+        self.reporting_ts = max(self.reporting_ts, other.reporting_ts)
         self.status = self.status or other.status
 
-        # Go with the earliest timestamp
-        self.ts = min(self.ts, other.ts)
         # self.type is fine
 
         # Merge the events then sort them by time
