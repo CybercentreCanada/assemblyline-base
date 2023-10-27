@@ -4,7 +4,19 @@ from assemblyline.odm.models.workflow import PRIORITIES, STATUSES
 from typing import List
 
 ES_SUBMITTED = "submitted"
-EXTENDED_SCAN_VALUES = {ES_SUBMITTED, "skipped", "incomplete", "completed"}
+ES_SKIPPED = "skipped"
+ES_INCOMPLETE = "incomplete"
+ES_COMPLETED = "completed"
+EXTENDED_SCAN_VALUES = {ES_SUBMITTED, ES_SKIPPED, ES_INCOMPLETE, ES_COMPLETED}
+EXTENDED_SCAN_PRIORITY = [ES_COMPLETED, ES_INCOMPLETE, ES_SKIPPED, ES_SUBMITTED]
+
+
+def merge_extended_scan(a: str, b: str) -> str:
+    # Select the prefered value
+    for value in EXTENDED_SCAN_PRIORITY:
+        if a == value or b == value:
+            return value
+    raise ValueError(f"Invalid program state. scan state {a} {b}")
 
 
 @odm.model(index=True, store=False, description="Assemblyline Results Block")
@@ -201,8 +213,7 @@ class Alert(odm.Model):
             self.expiry_ts = None
 
         # Prefer anything that isn't submitted
-        if self.extended_scan == ES_SUBMITTED:
-            self.extended_scan = other.extended_scan
+        self.extended_scan = merge_extended_scan(self.extended_scan, other.extended_scan)
 
         # If either is filtered, the content should be considered filtered
         self.filtered |= other.filtered
