@@ -50,19 +50,16 @@ resources:
       ports:
         - 9000:9000
 
-strategy:
-  matrix:
-    ES7:
-      elasticsearch: es7
-    ES8:
-      elasticsearch: es8
-
 jobs:
   - job: run_test
     strategy:
       matrix:
-        python3_9:
+        python3_9-es7:
           python.version: "3.9"
+          elasticsearch: es7
+        python3_9-es8:
+          python.version: "3.9"
+          elasticsearch: es8
         # python3_10:
         #   python.version: "3.10"
 
