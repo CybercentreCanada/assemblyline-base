@@ -307,29 +307,33 @@ DEFAULT_AUTH = {
 
 @odm.model(index=False, store=False, description="Alerter Configuration")
 class Alerter(odm.Model):
-    alert_ttl: int = odm.Integer(description="Time to live (days) for an alert in the system")
-    constant_alert_fields: List[str] = odm.List(
-        odm.Keyword(), description="List of fields that should not change during an alert update")
-    constant_ignore_keys: List[str] = odm.List(odm.Keyword(),
-                                               description="List of keys to ignore in the constant alert fields.")
-    default_group_field: str = odm.Keyword(description="Default field used for alert grouping view")
-    delay: int = odm.Integer(
+    alert_ttl: int = odm.integer(description="Time to live (days) for an alert in the system")
+    constant_alert_fields: List[str] = odm.sequence(
+        odm.keyword(), default=[],
+        description="List of fields that should not change during an alert update",
+        deprecation="This behavior is no longer configurable")
+    constant_ignore_keys: List[str] = odm.sequence(
+        odm.keyword(), default=[],
+        description="List of keys to ignore in the constant alert fields.",
+        deprecation="This behavior is no longer configurable")
+    default_group_field: str = odm.keyword(description="Default field used for alert grouping view")
+    delay: int = odm.integer(
         description="Time in seconds that we give extended scans and workflow to complete their work "
                     "before we start showing alerts in the alert viewer.")
-    filtering_group_fields: List[str] = odm.List(
-        odm.Keyword(),
+    filtering_group_fields: List[str] = odm.sequence(
+        odm.keyword(),
         description="List of group fields that when selected will ignore certain alerts where this field is missing.")
-    non_filtering_group_fields: List[str] = odm.List(
-        odm.Keyword(), description="List of group fields that are sure to be present in all alerts.")
-    process_alert_message: str = odm.Keyword(
+    non_filtering_group_fields: List[str] = odm.sequence(
+        odm.keyword(), description="List of group fields that are sure to be present in all alerts.")
+    process_alert_message: str = odm.keyword(
         description="Python path to the function that will process an alert message.")
-    threshold: int = odm.Integer(description="Minimum score to reach for a submission to be considered an alert.")
+    threshold: int = odm.integer(description="Minimum score to reach for a submission to be considered an alert.")
 
 
 DEFAULT_ALERTER = {
     "alert_ttl": 90,
-    "constant_alert_fields": ["alert_id", "file", "ts"],
-    "constant_ignore_keys": ["screenshots"],
+    "constant_alert_fields": [],
+    "constant_ignore_keys": [],
     "default_group_field": "file.sha256",
     "delay": 300,
     "filtering_group_fields": [
