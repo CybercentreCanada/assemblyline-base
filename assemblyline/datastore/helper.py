@@ -1,21 +1,20 @@
 
 import concurrent.futures
-import elasticapm
 import json
 import os
-
-from typing import Union, List
 from datetime import datetime
+from typing import List, Union
 
-from assemblyline.common.uid import get_id_from_data
+import elasticapm
 from assemblyline.common import forge
-from assemblyline.common.dict_utils import recursive_update, flatten
+from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.uid import get_id_from_data
 from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
-from assemblyline.odm import Model, DATEFORMAT
+from assemblyline.odm import DATEFORMAT, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
@@ -25,6 +24,7 @@ from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.retrohunt import Retrohunt
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
@@ -34,7 +34,6 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
-from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 
 config = forge.get_config()
@@ -503,7 +502,7 @@ class AssemblylineDatastore(object):
         return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_file_list_from_keys(self, keys, supplementary=False):
+    def get_file_list_from_keys(self, keys):
         if len(keys) == 0:
             return {}
         keys = [x for x in list(keys) if not x.endswith(".e")]
@@ -511,12 +510,11 @@ class AssemblylineDatastore(object):
 
         out = set()
         for key, item in items.items():
-            out.add(key[:64])
+            out.add((key[:64], False))
             for extracted in item['response']['extracted']:
-                out.add(extracted['sha256'])
-            if supplementary:
+                out.add((extracted['sha256'], False))
                 for supplementary in item['response']['supplementary']:
-                    out.add(supplementary['sha256'])
+                    out.add((supplementary['sha256'], True))
 
         return list(out)
 
@@ -1162,7 +1160,7 @@ class AssemblylineDatastore(object):
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None, is_section_image=False):
         # Remove control fields from new file info
-        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
+        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']:
             fileinfo.pop(x, None)
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):

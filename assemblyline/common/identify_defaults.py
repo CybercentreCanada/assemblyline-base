@@ -174,6 +174,10 @@ magic_patterns = [
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
     {"al_type": "image/emf", "regex": r"Windows Enhanced Metafile"},
     {"al_type": "resource/msvc", "regex": r"MSVC \.res"},
+    {"al_type": "pgp/pubkey", "regex": r"^PGP public key"},
+    {"al_type": "pgp/privkey", "regex": r"^PGP private key block"},
+    {"al_type": "pgp/encrypted", "regex": r"^PGP RSA encrypted session key"},
+    {"al_type": "gpg/symmetric", "regex": r"^GPG symmetrically encrypted data"},
 ]
 
 # LibMagic mimetypes that we blindly trust to assign an Assemblyline type
