@@ -218,6 +218,7 @@ def test_update_alert():
         heuristic=dict(),
         owner='user',
         reporting_ts=100,
+        submission_relations=[dict(parent=None, child='abc123')],
         sid='abc123',
         ts=100,
         type='big',
@@ -248,7 +249,8 @@ def test_update_alert():
         heuristic=dict(),
         owner='user',
         reporting_ts=100,
-        sid='abc123',
+        submission_relations=[dict(parent='abc123', child='abc1234')],
+        sid='abc1234',
         ts=100,
         type='big',
     ))
@@ -260,11 +262,13 @@ def test_update_alert():
     assert sorted(a2.al.yara) == ['yara-1', 'yara-2']
     assert a1.al.detailed.yara == [dict(type='tests', value='yara-1', verdict='safe')]
     assert sorted(a2.al.detailed.yara) == [dict(type='tests', value='yara-1', verdict='safe'), dict(type='tests', value='yara-2', verdict='safe')]
+    assert a1.sid == 'abc123'
 
     a1.update(a2)
 
     assert sorted(a1.al.yara) == ['yara-1', 'yara-2']
     assert sorted(a1.al.detailed.yara) == [dict(type='tests', value='yara-1', verdict='safe'), dict(type='tests', value='yara-2', verdict='safe')]
+    assert a1.sid == 'abc1234'
 
     o2.update(o1)
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from assemblyline import odm
 from assemblyline.odm.models.workflow import PRIORITIES, STATUSES
-from typing import List
+from typing import List, Optional
 
 ES_SUBMITTED = "submitted"
 ES_SKIPPED = "skipped"
@@ -161,6 +161,15 @@ class Event(odm.Model):
         return hash(tuple(sorted(self.as_primitives().items())))
 
 
+@odm.model(index=True, store=True, description="Submission relations for an alert")
+class Relationship(odm.Model):
+    child: str = odm.UUID()
+    parent: Optional[str] = odm.optional(odm.UUID())
+
+    def __hash__(self) -> int:
+        return hash(tuple(sorted(self.as_primitives().items())))
+
+
 @odm.model(index=True, store=True, description="Model for Alerts")
 class Alert(odm.Model):
     alert_id = odm.Keyword(copyto="__text__", description="ID of the alert")
@@ -178,6 +187,8 @@ class Alert(odm.Model):
     owner = odm.Optional(odm.Keyword(), description="Owner of the alert")
     priority = odm.Optional(odm.Enum(values=PRIORITIES), description="Priority applied to the alert")
     reporting_ts = odm.Date(description="Alert creation timestamp")
+    submission_relations = odm.sequence(odm.compound(Relationship), description="Describes relationships "
+                                        "between submissions used to build this alert")
     sid = odm.UUID(description="Submission ID related to this alert")
     status = odm.Optional(odm.Enum(values=STATUSES), description="Status applied to the alert")
     ts = odm.Date(description="File submission timestamp")
@@ -186,14 +197,12 @@ class Alert(odm.Model):
     events = odm.List(odm.Compound(Event), default=[], description="An audit of events applied to alert")
     workflows_completed = odm.Boolean(default=False, description="Have all workflows ran on this alert?")
 
-    def update(self, other: Alert, psid) -> None:
+    def update(self, other: Alert) -> None:
         """Update the current object given the content of a second alert."""
 
         # Make sure we are merging compatible alerts
         if self.alert_id != other.alert_id:
             raise ValueError(f"Only versions of the same alert may be merged id {self.alert_id} != {other.alert_id}")
-        if self.ts != other.ts:
-            raise ValueError("Time drift in alerting detected. Possible alert ID collision.")
 
         # Merge simple compounds using their own logic
         self.al.update(other.al)
@@ -225,11 +234,17 @@ class Alert(odm.Model):
         self.owner = self.owner or other.owner
         self.priority = self.priority or other.priority
         self.reporting_ts = max(self.reporting_ts, other.reporting_ts)
+        self.ts = min(self.ts, other.ts)
         self.status = self.status or other.status
 
         # self.type is fine
-        if psid and self.sid == psid:
-            self.sid = other.sid
+
+        # Merge the submission list and update sid to a value that isn't a parent
+        self.submission_relations = list(set(self.submission_relations + other.submission_relations))
+        parents = set(relation.parent for relation in self.submission_relations if relation.parent)
+        for relation in self.submission_relations:
+            if relation.child not in parents and relation.parent:
+                self.sid = relation.child
 
         # Merge the events then sort them by time
         self.events = list(sorted(set(self.events + other.events), key=lambda e: e.ts))
