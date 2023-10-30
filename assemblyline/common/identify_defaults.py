@@ -178,6 +178,7 @@ magic_patterns = [
     {"al_type": "pgp/privkey", "regex": r"^PGP private key block"},
     {"al_type": "pgp/encrypted", "regex": r"^PGP RSA encrypted session key"},
     {"al_type": "gpg/symmetric", "regex": r"^GPG symmetrically encrypted data"},
+    {"al_type": "video/asf", "regex": r"^Microsoft ASF"},
 ]
 
 # LibMagic mimetypes that we blindly trust to assign an Assemblyline type
@@ -219,6 +220,8 @@ trusted_mimes = {
     "video/vnd.divx": "video/divx",
     # Quicktime video
     "video/quicktime": "video/quicktime",
+    # ASF video
+    "video/x-ms-asf": "video/asf",
     # Source code C/C++
     "text/x-c++": "text/plain",
     "text/x-c": "text/plain",
