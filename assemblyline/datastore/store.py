@@ -5,25 +5,23 @@ import re
 import time
 import typing
 import warnings
-
 from os import environ, path
 from random import random
 from urllib.parse import urlparse
 
 import elasticsearch
 import elasticsearch.helpers
-
 from assemblyline.common import forge
 from assemblyline.common.isotime import now
+from assemblyline.common.security import generate_random_secret
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion, VersionConflictException)
-
+from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion, VersionConflictException
 from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
 DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
 log = logging.getLogger('assemblyline.datastore')
-
+ALT_ELASTICSEARCH_USERS = ["plumber"]
 
 class ESStore(object):
     """ Elasticsearch multi-index implementation of the ResultStore interface."""
@@ -154,6 +152,34 @@ class ESStore(object):
     def is_supported_version(self, min):
         return self.es_version >= version.parse(min)
 
+    def switch_user(self, username):
+        if username not in ALT_ELASTICSEARCH_USERS:
+            log.warning(f"Unknown alternative user '{username}' to switch to for Elasticsearch")
+            return
+
+        if username == "plumber":
+            # Ensure roles for "plumber" user are created
+            self.with_retries(
+                self.client.security.put_role,
+                name="manage_tasks",
+                indices=[{"names": [".tasks"], "privileges": ["all"], "allow_restricted_indices": True}])
+
+            # Initialize/update 'plumber' user in Elasticsearch to perform cleanup
+            password = generate_random_secret()
+            self.with_retries(
+                self.client.security.put_user,
+                username=username,
+                password=password,
+                roles=["manage_tasks", "superuser"]
+            )
+
+        # Modify the client details for next reconnect
+        self._hosts = [h.replace(f"{urlparse(h).username}:{urlparse(h).password}",
+                                    f"{username}:{password}") for h in self._hosts]
+        self.client.close()
+        self.connection_reset()
+
+
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   max_retries=0,
@@ -262,11 +288,6 @@ class ESStore(object):
                     raise
 
         try:
-            # Force remove the tasks as we got the result already...
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self.with_retries(self.client.delete, id=task['task'], index='.tasks')
-
             return res['response']
         except KeyError:
             return res['task']['status']
