@@ -229,6 +229,7 @@ trusted_mimes = {
     "application/x-wine-extension-ini": "text/ini",
     # Python
     "text/x-python": "code/python",
+    "text/x-script.python": "code/python",
     # PHP
     "text/x-php": "code/php",
     # XML file
@@ -244,7 +245,7 @@ trusted_mimes = {
     # Troff
     "text/troff": "text/troff",
     # Java
-    "text/x-java": "code/java",
+    "text/x-java": "text/plain",
     # Batch
     "text/x-msdos-batch": "code/batch",
     # Registry file
