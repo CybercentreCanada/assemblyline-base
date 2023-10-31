@@ -229,6 +229,7 @@ trusted_mimes = {
     "application/x-wine-extension-ini": "text/ini",
     # Python
     "text/x-python": "code/python",
+    "text/x-script.python": "code/python",
     # PHP
     "text/x-php": "code/php",
     # XML file
@@ -244,7 +245,10 @@ trusted_mimes = {
     # Troff
     "text/troff": "text/troff",
     # Java
-    "text/x-java": "code/java",
+    # The text/x-java mime type is not a trusted mime to map to code/java as there are false positives with this.
+    # But it is good enough to confirm that the type is at least text/plain.
+    # A type of text/plain will then get sent to the yara identification stage.
+    "text/x-java": "text/plain",
     # Batch
     "text/x-msdos-batch": "code/batch",
     # Registry file

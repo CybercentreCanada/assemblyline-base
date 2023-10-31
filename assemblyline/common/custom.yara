@@ -668,10 +668,16 @@ rule code_python {
         $strong_py4 = /(try:|except:|else:)/
         // High confidence one-liner used to execute base64 blobs
         $strong_py5 = /exec\(__import__\(['"]base64['"]\)\.b64decode\(__import__\(['"]codecs['"]\)\.getencoder\(/
+        $strong_py6 = "requests.get("
+
+        // Setup.py indicators
+        $strong_py7 = "python_requires" ascii wide
+        $strong_py8 = "setuptools.setup(" ascii wide
+        $strong_py9 = "setuptools.find_packages(" ascii wide
 
     condition:
         mime startswith "text"
-        and (2 of ($strong_py*) or $strong_py5)
+        and (2 of them or $strong_py5)
 }
 
 /*
@@ -682,6 +688,7 @@ rule code_java {
 
     meta:
         type = "code/java"
+        score = 2
 
     strings:
         $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+((abstract|final)[ \t]+)?class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{/
@@ -691,6 +698,9 @@ rule code_java {
         $ = /[ \t\n]*final[ \t]+\w/
         $ = /(ArrayList|Class|Stack|Map|Set|HashSet|PrivilegedAction|Vector)<(\w|\?)/
         $ = /(^|\n)[ \t]*package[ \t]+[\w\.]+;/
+        $ = /(^|\n)[ \t]*public[ \t]+static[ \t]+void[ \t]+main\(String/
+        $ = "import java.io.File" ascii wide
+        $ = "System.out.println" ascii wide
 
     condition:
         mime startswith "text"
