@@ -245,6 +245,9 @@ trusted_mimes = {
     # Troff
     "text/troff": "text/troff",
     # Java
+    # The text/x-java mime type is not a trusted mime to map to code/java as there are false positives with this.
+    # But it is good enough to confirm that the type is at least text/plain.
+    # A type of text/plain will then get sent to the yara identification stage.
     "text/x-java": "text/plain",
     # Batch
     "text/x-msdos-batch": "code/batch",
