@@ -22,7 +22,7 @@ from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.odm.randomizer import random_model_obj
+from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
 
 
 def test_alert_model():
@@ -191,3 +191,85 @@ def test_workflow_model():
         random_model_obj(Workflow).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'Workflow' object and validate it.")
+
+
+def test_update_alert():
+    import time
+    import assemblyline.odm.models.alert
+
+    a1 = Alert(dict(
+        alert_id='abc',
+        al=dict(
+            detailed=dict(
+                yara=[dict(
+                    type='tests',
+                    value='yara-1',
+                    verdict='safe',
+                )]
+            ),
+            request_end_time=0,
+            score=0,
+            yara=["yara-1"]
+        ),
+        attack=dict(),
+        classification='U',
+        extended_scan='submitted',
+        file=random_minimal_obj(assemblyline.odm.models.alert.File),
+        heuristic=dict(),
+        owner='user',
+        reporting_ts=100,
+        submission_relations=[dict(parent=None, child='abc123')],
+        sid='abc123',
+        ts=100,
+        type='big',
+    ))
+
+    a2 = Alert(dict(
+        alert_id='abc',
+        al=dict(
+            detailed=dict(
+                yara=[dict(
+                    type='tests',
+                    value='yara-1',
+                    verdict='safe',
+                ), dict(
+                    type='tests',
+                    value='yara-2',
+                    verdict='safe',
+                )]
+            ),
+            request_end_time=500,
+            score=0,
+            yara=['yara-1', 'yara-2']
+        ),
+        attack=dict(),
+        classification='U',
+        extended_scan='completed',
+        file=a1.file,
+        heuristic=dict(),
+        owner='user',
+        reporting_ts=100,
+        submission_relations=[dict(parent='abc123', child='abc1234')],
+        sid='abc1234',
+        ts=100,
+        type='big',
+    ))
+
+    o1 = Alert(a1.as_primitives())
+    o2 = Alert(a2.as_primitives())
+
+    assert a1.al.yara == ['yara-1']
+    assert sorted(a2.al.yara) == ['yara-1', 'yara-2']
+    assert a1.al.detailed.yara == [dict(type='tests', value='yara-1', verdict='safe')]
+    assert sorted(a2.al.detailed.yara) == [dict(type='tests', value='yara-1', verdict='safe'), dict(type='tests', value='yara-2', verdict='safe')]
+    assert a1.sid == 'abc123'
+
+    a1.update(a2)
+
+    assert sorted(a1.al.yara) == ['yara-1', 'yara-2']
+    assert sorted(a1.al.detailed.yara) == [dict(type='tests', value='yara-1', verdict='safe'), dict(type='tests', value='yara-2', verdict='safe')]
+    assert a1.sid == 'abc1234'
+
+    o2.update(o1)
+
+    assert a1 == o2
