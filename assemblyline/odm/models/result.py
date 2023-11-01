@@ -5,9 +5,9 @@ from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.caching import generate_conf_key
 from assemblyline.common.dict_utils import flatten
+from assemblyline.common.str_utils import StringTable
 from assemblyline.common.tagging import tag_dict_to_list
 from assemblyline.odm.models.tagging import Tagging
-
 
 BODY_FORMAT = {
     "TEXT",
@@ -24,6 +24,14 @@ BODY_FORMAT = {
     "TIMELINE"
 }
 PROMOTE_TO = {"SCREENSHOT", "ENTROPY", "URI_PARAMS"}
+PARENT_RELATION = StringTable('PARENT_RELATION', [
+    ('ROOT', 0),
+    ('EXTRACTED', 1),
+    ('INFORMATION', 2),
+    ('DYNAMIC', 3),
+    ('MEMDUMP', 4),
+    ('DOWNLOADED', 5),
+])
 constants = forge.get_constants()
 
 
@@ -89,7 +97,7 @@ class File(odm.Model):
     classification = odm.Classification(description="Classification of the file")
     is_section_image = odm.Boolean(default=False,
                                    description="Is this an image used in an Image Result Section?")
-    parent_relation = odm.Text(default="EXTRACTED", description="File relation to parent, if any.")
+    parent_relation = odm.Enum(values=PARENT_RELATION, index=False, description="File relation to parent, if any.")
     allow_dynamic_recursion = odm.Boolean(
         default=False,
         description="Allow file to be analysed during Dynamic Analysis"
