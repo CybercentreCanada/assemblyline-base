@@ -38,7 +38,10 @@ rule code_javascript {
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
         $weak_js5 = /([^\w]|^)this\.[\w]+/
+        // This is shared in PowerShell (although in PowerShell it should be .Length)
         $weak_js6 = /([^\w]|^)[\w]+\.length/
+        // This is shared in C++
+        $weak_js7 = /([^\w]|^)[\w]+\.substr\(/
 
     condition:
         // Note that application/javascript is obsolete
@@ -56,11 +59,11 @@ rule code_javascript {
                         )
                         or (
                             // A bunch of function declarations is not enough since the function declaration syntax is
-                            // shared between JavaScript and PowerShell. Therefore, look for an additional indicator.
+                            // shared between JavaScript and PowerShell. Therefore, look for an additional indicator(s).
                             $function_declaration
                             and (
                                 1 of ($strong_js*)
-                                or 1 of ($weak_js*)
+                                or 2 of ($weak_js*)
                             )
                         )
                     )
@@ -513,8 +516,7 @@ rule code_ps1 {
         $strong_pwsh10 = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
         $strong_pwsh11 = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
         $strong_pwsh12 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
-        $strong_pwsh13 = /\bfunction[ \t]+\w+[ \t]*\([^)]*\)[ \t\n]*{/i ascii wide
-        $strong_pwsh14 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
+        $strong_pwsh13 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
         $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
         // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comparison_operators?view=powershell-7.3
@@ -666,10 +668,16 @@ rule code_python {
         $strong_py4 = /(try:|except:|else:)/
         // High confidence one-liner used to execute base64 blobs
         $strong_py5 = /exec\(__import__\(['"]base64['"]\)\.b64decode\(__import__\(['"]codecs['"]\)\.getencoder\(/
+        $strong_py6 = "requests.get("
+
+        // Setup.py indicators
+        $strong_py7 = "python_requires" ascii wide
+        $strong_py8 = "setuptools.setup(" ascii wide
+        $strong_py9 = "setuptools.find_packages(" ascii wide
 
     condition:
         mime startswith "text"
-        and (2 of ($strong_py*) or $strong_py5)
+        and (2 of them or $strong_py5)
 }
 
 /*
@@ -680,6 +688,7 @@ rule code_java {
 
     meta:
         type = "code/java"
+        score = 2
 
     strings:
         $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+((abstract|final)[ \t]+)?class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{/
@@ -689,6 +698,9 @@ rule code_java {
         $ = /[ \t\n]*final[ \t]+\w/
         $ = /(ArrayList|Class|Stack|Map|Set|HashSet|PrivilegedAction|Vector)<(\w|\?)/
         $ = /(^|\n)[ \t]*package[ \t]+[\w\.]+;/
+        $ = /(^|\n)[ \t]*public[ \t]+static[ \t]+void[ \t]+main\(String/
+        $ = "import java.io.File" ascii wide
+        $ = "System.out.println" ascii wide
 
     condition:
         mime startswith "text"
@@ -1078,4 +1090,39 @@ rule code_a3x {
 
     condition:
         uint16(0) != 0x5A4D and any of them
+}
+
+/*
+code/au3
+*/
+
+rule code_au3 {
+
+    meta:
+        type = "code/au3"
+        score = 2
+
+    strings:
+        // Keywords: https://www.autoitscript.com/autoit3/docs/keywords.htm
+        $strong_keywords = /(ExitLoop|EndFunc|#comments-start|#include-once|#NoTrayIcon|#OnAutoItStartRegister|#pragma|#RequireAdmin|EndWith|EndSwitch)\b/i ascii wide
+
+        // Macros: https://www.autoitscript.com/autoit3/docs/macros.htm
+        // 5525cb089669d927874e4b21803cc5186e0e6acfee923990a4cf9c6289bfa4d8 only has one macro, so we should not rely on macros
+
+        // Functions: https://www.autoitscript.com/autoit3/docs/functions/
+        $strong_functions = /(WinExists|DllCall|DllStructSetData|DllStructGetSize|DllStructGetData|DllStructCreate|DllStructGetPtr|DllCallbackGetPtr|DllCallAddress|StringInStr|StringLeft|StringStripWS|DllCallbackRegister|AdlibRegister|AdlibUnRegister|AutoItSetOption|AutoItWinGetTitle|AutoItWinSetTitle|DllCallbackFree|GUISetStateHttpSetUserAgent|IniReadSection|IniReadSectionNames|IniRenameSection|IniWriteSection|MouseClickDrag|MouseGetCursor|ObjCreateInterface|OnAutoItExitRegister|OnAutoItExitUnRegister|PixelChecksum|PixelGetColor|ProcessExists|ProcessGetStats|ProcessSetPriority|ProcessWaitClose|SendKeepActive|ShellExecuteWait|SoundSetWaveVolume|SplashImageOn|StatusbarGetText|StringCompare|StringFromASCIIArray|TCPCloseSocket|UDPCloseSocket|WinGetCaretPos|WinGetClassList|WinGetClientSize|WinGetProcess|WinMenuSelectItem|WinMinimizeAll|WinMinimizeAllUndo|WinWaitActive|WinWaitNotActive|GUICreate|GUICtl[a-zA-Z]{1,20}|GUISetState)\b/i ascii wide
+
+        $weak_functions = /(IsBinary|IsString|Execute|IsBool|StringMid|StringLen|FileExists)\b/i ascii wide
+
+    condition:
+        // First off, we want at least one strong keyword
+        #strong_keywords >= 1 and (
+            // Next we are looking for a high-confidence amount of functions
+            // If we have 5 or more strong functions, great
+            #strong_functions >= 5 or (
+                // If we have at least 10 functions, whether they are strong or weak, that's good too, but we need at
+                // least 2 strong functions before we can be confident
+                (#strong_functions + #weak_functions) >= 10 and #strong_functions >= 2
+            )
+        )
 }

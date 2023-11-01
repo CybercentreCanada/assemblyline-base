@@ -174,6 +174,11 @@ magic_patterns = [
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
     {"al_type": "image/emf", "regex": r"Windows Enhanced Metafile"},
     {"al_type": "resource/msvc", "regex": r"MSVC \.res"},
+    {"al_type": "pgp/pubkey", "regex": r"^PGP public key"},
+    {"al_type": "pgp/privkey", "regex": r"^PGP private key block"},
+    {"al_type": "pgp/encrypted", "regex": r"^PGP RSA encrypted session key"},
+    {"al_type": "gpg/symmetric", "regex": r"^GPG symmetrically encrypted data"},
+    {"al_type": "video/asf", "regex": r"^Microsoft ASF"},
 ]
 
 # LibMagic mimetypes that we blindly trust to assign an Assemblyline type
@@ -215,6 +220,8 @@ trusted_mimes = {
     "video/vnd.divx": "video/divx",
     # Quicktime video
     "video/quicktime": "video/quicktime",
+    # ASF video
+    "video/x-ms-asf": "video/asf",
     # Source code C/C++
     "text/x-c++": "text/plain",
     "text/x-c": "text/plain",
@@ -222,6 +229,7 @@ trusted_mimes = {
     "application/x-wine-extension-ini": "text/ini",
     # Python
     "text/x-python": "code/python",
+    "text/x-script.python": "code/python",
     # PHP
     "text/x-php": "code/php",
     # XML file
@@ -237,7 +245,10 @@ trusted_mimes = {
     # Troff
     "text/troff": "text/troff",
     # Java
-    "text/x-java": "code/java",
+    # The text/x-java mime type is not a trusted mime to map to code/java as there are false positives with this.
+    # But it is good enough to confirm that the type is at least text/plain.
+    # A type of text/plain will then get sent to the yara identification stage.
+    "text/x-java": "text/plain",
     # Batch
     "text/x-msdos-batch": "code/batch",
     # Registry file

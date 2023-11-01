@@ -115,7 +115,7 @@ class KeyMaskException(KeyError):
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, description=None):
+    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, description=None, deprecation=None):
         self.index = index
         self.store = store
         self.multivalued = False
@@ -134,6 +134,7 @@ class _Field:
         self.default = default
         self.default_set = default is not None
         self.optional = False
+        self.deprecation = deprecation
 
     # noinspection PyProtectedMember
     def __get__(self, obj, objtype=None):
@@ -142,9 +143,17 @@ class _Field:
             return obj
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
+        value = None
         if self.getter_function is not None:
-            return self.getter_function(obj, obj._odm_py_obj[self.name])
-        return obj._odm_py_obj[self.name]
+            value = self.getter_function(obj, obj._odm_py_obj[self.name])
+        else:
+            value = obj._odm_py_obj[self.name]
+
+        if value is not None and self.deprecation:
+            # Only raise deprecation warning if Field is actually in use
+            logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
+        return value
+
 
     # noinspection PyProtectedMember
     def __set__(self, obj, value):
@@ -152,6 +161,9 @@ class _Field:
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         value = self.check(value)
+        if self.deprecation:
+            # Only raise deprecation warning if Field is actually in use
+            logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
         if self.setter_function is not None:
             value = self.setter_function(obj, value)
         obj._odm_py_obj[self.name] = value
@@ -400,6 +412,7 @@ class IP(Keyword):
         # IPv6
         else:
             return ":".join([str(x) for x in value.split(":")])
+
 
 class Domain(Keyword):
     def __init__(self, *args, **kwargs):
@@ -771,6 +784,9 @@ class List(_Field):
     """A field storing a sequence of typed elements."""
 
     def __init__(self, child_type, auto=False, **kwargs):
+        if isinstance(child_type, Optional):
+            raise ValueError("List does not support Optional child type")
+
         super().__init__(**kwargs)
         self.child_type = child_type
         self.auto = auto
@@ -856,8 +872,11 @@ class Mapping(_Field):
     """A field storing a sequence of typed elements."""
 
     def __init__(self, child_type, **kwargs):
-        self.child_type = child_type
+        if isinstance(child_type, Optional):
+            raise ValueError("Mapping does not support Optional child type")
+
         super().__init__(**kwargs)
+        self.child_type = child_type
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -944,9 +963,12 @@ class Compound(_Field):
 
 
 class Optional(_Field):
-    """A wrapper field to allow simple types (int, float, bool) to take None values."""
+    """A wrapper field to allow other types (int, bool, Compound, ...) to take None values."""
 
     def __init__(self, child_type, **kwargs):
+        if isinstance(child_type, Optional):
+            raise ValueError("Optional does not support Optional child type")
+
         if child_type.default_set:
             kwargs['default'] = child_type.default
         super().__init__(**kwargs)
@@ -1020,8 +1042,9 @@ class Model:
         if (isinstance(field, Compound) and show_compound):
             out[name] = field
 
-        # If we're dealing with a list of Compounds, we need to validate against the Compound object
-        if isinstance(field, List) and isinstance(field.child_type, Compound) and show_compound:
+        # If we're dealing with a list of Compounds or an optional Compound,
+        # we need to validate against the Compound object
+        if isinstance(field, (List, Optional)) and isinstance(field.child_type, Compound) and show_compound:
             out[name] = field.child_type
 
         return out
@@ -1108,6 +1131,8 @@ class Model:
             # Is this a required field?
             if info.__class__ != Optional:
                 required = ":material-checkbox-marked-outline: Yes"
+            elif info.deprecation:
+                required = ":material-alert-box-outline: Deprecated"
             else:
                 required = ":material-minus-box-outline: Optional"
 
@@ -1124,7 +1149,12 @@ class Model:
                 default = f"`{val if not isinstance(val, dict) else info.default}`"
             elif isinstance(defaults, list) and field_type == 'List':
                 default = f'`{defaults}`'
-            row = f"| {field} | {field_type} | {description} | {required} | {default} |\n"
+            if info.deprecation:
+                if not description:
+                    description = f':material-alert-outline: {info.deprecation}'
+                else:
+                    description += f'<br>:material-alert-outline: {info.deprecation}'
+            row = f'| {field} | {field_type} | {description} | <div style="width:100px">{required}</div> | {default} |\n'
             table += row
 
         markdown_content += table + "\n\n"

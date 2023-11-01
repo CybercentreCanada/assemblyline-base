@@ -4,6 +4,7 @@ import tempfile
 from cart import is_cart, pack_stream, unpack_stream
 from cart.cart import _unpack_header
 from assemblyline.common.dict_utils import flatten
+from assemblyline.common.file import normalize_uri_file
 
 
 def decode_file(original_path, fileinfo, identify):
@@ -36,6 +37,10 @@ def decode_file(original_path, fileinfo, identify):
 
                 if cart_extracted and extracted_path:
                     fileinfo = identify.fileinfo(extracted_path)
+        elif fileinfo['type'].startswith("uri/"):
+            dir_path = tempfile.mkdtemp()  # This does not get cleaned after execution, like the mkstemp()
+            extracted_path = normalize_uri_file(dir_path, original_path)
+            fileinfo = identify.fileinfo(extracted_path)
 
     return extracted_path, fileinfo, hdr
 

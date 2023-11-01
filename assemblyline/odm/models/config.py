@@ -307,29 +307,33 @@ DEFAULT_AUTH = {
 
 @odm.model(index=False, store=False, description="Alerter Configuration")
 class Alerter(odm.Model):
-    alert_ttl: int = odm.Integer(description="Time to live (days) for an alert in the system")
-    constant_alert_fields: List[str] = odm.List(
-        odm.Keyword(), description="List of fields that should not change during an alert update")
-    constant_ignore_keys: List[str] = odm.List(odm.Keyword(),
-                                               description="List of keys to ignore in the constant alert fields.")
-    default_group_field: str = odm.Keyword(description="Default field used for alert grouping view")
-    delay: int = odm.Integer(
+    alert_ttl: int = odm.integer(description="Time to live (days) for an alert in the system")
+    constant_alert_fields: List[str] = odm.sequence(
+        odm.keyword(), default=[],
+        description="List of fields that should not change during an alert update",
+        deprecation="This behavior is no longer configurable")
+    constant_ignore_keys: List[str] = odm.sequence(
+        odm.keyword(), default=[],
+        description="List of keys to ignore in the constant alert fields.",
+        deprecation="This behavior is no longer configurable")
+    default_group_field: str = odm.keyword(description="Default field used for alert grouping view")
+    delay: int = odm.integer(
         description="Time in seconds that we give extended scans and workflow to complete their work "
                     "before we start showing alerts in the alert viewer.")
-    filtering_group_fields: List[str] = odm.List(
-        odm.Keyword(),
+    filtering_group_fields: List[str] = odm.sequence(
+        odm.keyword(),
         description="List of group fields that when selected will ignore certain alerts where this field is missing.")
-    non_filtering_group_fields: List[str] = odm.List(
-        odm.Keyword(), description="List of group fields that are sure to be present in all alerts.")
-    process_alert_message: str = odm.Keyword(
+    non_filtering_group_fields: List[str] = odm.sequence(
+        odm.keyword(), description="List of group fields that are sure to be present in all alerts.")
+    process_alert_message: str = odm.keyword(
         description="Python path to the function that will process an alert message.")
-    threshold: int = odm.Integer(description="Minimum score to reach for a submission to be considered an alert.")
+    threshold: int = odm.integer(description="Minimum score to reach for a submission to be considered an alert.")
 
 
 DEFAULT_ALERTER = {
     "alert_ttl": 90,
-    "constant_alert_fields": ["alert_id", "file", "ts"],
-    "constant_ignore_keys": ["screenshots"],
+    "constant_alert_fields": [],
+    "constant_ignore_keys": [],
     "default_group_field": "file.sha256",
     "delay": 300,
     "filtering_group_fields": [
@@ -564,8 +568,10 @@ class Mount(odm.Model):
     resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
 
     # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
-    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only, deprecated)")
-    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only, deprecated)")
+    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only)",
+                                   deprecation="Use `resource_type: configmap` and fill in the `resource_name` & `resource_key` fields to mount ConfigMaps")
+    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only)",
+                            deprecation="Use `resource_type: configmap` and fill in the `resource_name` & `resource_key` fields to mount ConfigMaps")
 
 
 @odm.model(index=False, store=False,
@@ -625,6 +631,9 @@ class Scaler(odm.Model):
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
     linux_node_selector = odm.compound(Selector, description="Selector for linux nodes under kubernetes")
     # windows_node_selector = odm.compound(Selector, description="Selector for windows nodes under kubernetes")
+    cluster_pod_list = odm.boolean(default=True, description="Sets if scaler list pods for all namespaces. "
+                                   "Disabling this lets you use stricter cluster roles but will make cluster resource "
+                                   "usage less accurate, setting a namespace resource quota might be needed.")
 
 
 DEFAULT_SCALER = {
@@ -920,8 +929,12 @@ class Services(odm.Model):
     safelist = odm.Compound(ServiceSafelist)
     registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
                               description="Global set of registries for services")
-    service_account = odm.optional(odm.keyword(description="Service account to use for pods in kubernetes "
-                                                           "where the service does not have one configured."))
+    service_account = odm.optional(odm.keyword(),
+                                   description="Service account to use for pods in kubernete"
+                                   "where the service does not have one configured.",
+                                   deprecation="Use helm values to specify service accounts settings for "
+                                   "(non-)privileged services: "
+                                   "`privilegedServiceAccountName`, `unprivilegedServiceAccountName`")
 
 
 DEFAULT_SERVICES = {
