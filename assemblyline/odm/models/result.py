@@ -97,7 +97,11 @@ class File(odm.Model):
     classification = odm.Classification(description="Classification of the file")
     is_section_image = odm.Boolean(default=False,
                                    description="Is this an image used in an Image Result Section?")
-    parent_relation = odm.Enum(values=PARENT_RELATION, index=False, description="File relation to parent, if any.")
+    parent_relation = odm.Enum(
+        values=set(PARENT_RELATION._value_map.keys()),
+        index=False,
+        description="File relation to parent, if any."
+    )
     allow_dynamic_recursion = odm.Boolean(
         default=False,
         description="Allow file to be analysed during Dynamic Analysis"
