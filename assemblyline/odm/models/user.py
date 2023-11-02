@@ -21,6 +21,7 @@ ROLES = StringTable('ROLES', [
     ("bundle_download", 3),
     ("file_detail", 4),
     ("file_download", 5),
+    ("file_purge", 33),
     ("heuristic_view", 6),
     ("obo_access", 7),
     ("replay_trigger", 8),
@@ -46,7 +47,6 @@ ROLES = StringTable('ROLES', [
     ("retrohunt_view", 28),
     ("retrohunt_run", 29),
     ("external_query", 30),
-    ("file_purge", 31),
 ])
 
 
