@@ -2,6 +2,7 @@ import pytest
 
 from assemblyline.common import forge
 from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.config import DEFAULT_CONFIG, Config
 from assemblyline.odm.models.emptyresult import EmptyResult
@@ -30,6 +31,13 @@ def test_alert_model():
         random_model_obj(Alert).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'Alert' object and validate it.")
+
+
+def test_badlist_model():
+    try:
+        random_model_obj(Badlist).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'Badlist' object and validate it.")
 
 
 def test_cached_file_model():
