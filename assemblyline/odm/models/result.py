@@ -69,7 +69,7 @@ class Section(odm.Model):
     auto_collapse = odm.Boolean(default=False, description="Should the section be collapsed when displayed?")
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
     classification = odm.Classification(description="Classification of the section")
-    body_format = odm.Enum(values=set(BODY_FORMAT._value_map.keys()), index=False, description="Type of body in this section")
+    body_format = odm.Enum(values=BODY_FORMAT.keys(), index=False, description="Type of body in this section")
     body_config = odm.Optional(odm.Mapping(odm.Any(), index=False,
                                description="Configurations for the body of this section"))
     depth = odm.Integer(index=False, description="Depth of the section")
@@ -78,7 +78,7 @@ class Section(odm.Model):
     safelisted_tags = odm.FlattenedListObject(store=False, default={}, description="List of safelisted tags")
     title_text = odm.Text(copyto="__text__", description="Title of the section")
     promote_to = odm.Optional(odm.Enum(
-        values=set(PROMOTE_TO._value_map.keys()),
+        values=PROMOTE_TO.keys(),
         description="This is the type of data that the current section should be promoted to."))
 
 
@@ -103,7 +103,7 @@ class File(odm.Model):
     is_section_image = odm.Boolean(default=False,
                                    description="Is this an image used in an Image Result Section?")
     parent_relation = odm.Enum(
-        values=set(PARENT_RELATION._value_map.keys()),
+        values=PARENT_RELATION.keys(),
         index=False,
         description="File relation to parent, if any."
     )
