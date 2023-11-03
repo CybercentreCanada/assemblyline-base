@@ -9,21 +9,26 @@ from assemblyline.common.str_utils import StringTable
 from assemblyline.common.tagging import tag_dict_to_list
 from assemblyline.odm.models.tagging import Tagging
 
-BODY_FORMAT = {
-    "TEXT",
-    "MEMORY_DUMP",
-    "GRAPH_DATA",
-    "URL",
-    "JSON",
-    "KEY_VALUE",
-    "PROCESS_TREE",
-    "TABLE",
-    "IMAGE",
-    "MULTI",
-    "ORDERED_KEY_VALUE",
-    "TIMELINE"
-}
-PROMOTE_TO = {"SCREENSHOT", "ENTROPY", "URI_PARAMS"}
+BODY_FORMAT = StringTable('BODY_FORMAT', [
+    ('TEXT', 0),
+    ('MEMORY_DUMP', 1),
+    ('GRAPH_DATA', 2),
+    ('URL', 3),
+    ('JSON', 4),
+    ('KEY_VALUE', 5),
+    ('PROCESS_TREE', 6),
+    ('TABLE', 7),
+    ('IMAGE', 8),
+    ('MULTI', 9),
+    ('DIVIDER', 10),  # This is not a real result section and can only be use inside a multi section
+    ('ORDERED_KEY_VALUE', 11),
+    ('TIMELINE', 12)
+])
+PROMOTE_TO = StringTable('PROMOTE_TO', [
+    ('SCREENSHOT', 0),
+    ('ENTROPY', 1),
+    ('URI_PARAMS', 2)
+])
 PARENT_RELATION = StringTable('PARENT_RELATION', [
     ('ROOT', 0),
     ('EXTRACTED', 1),
@@ -64,7 +69,7 @@ class Section(odm.Model):
     auto_collapse = odm.Boolean(default=False, description="Should the section be collapsed when displayed?")
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
     classification = odm.Classification(description="Classification of the section")
-    body_format = odm.Enum(values=BODY_FORMAT, index=False, description="Type of body in this section")
+    body_format = odm.Enum(values=set(BODY_FORMAT._value_map.keys()), index=False, description="Type of body in this section")
     body_config = odm.Optional(odm.Mapping(odm.Any(), index=False,
                                description="Configurations for the body of this section"))
     depth = odm.Integer(index=False, description="Depth of the section")
@@ -73,7 +78,7 @@ class Section(odm.Model):
     safelisted_tags = odm.FlattenedListObject(store=False, default={}, description="List of safelisted tags")
     title_text = odm.Text(copyto="__text__", description="Title of the section")
     promote_to = odm.Optional(odm.Enum(
-        values=PROMOTE_TO,
+        values=set(PROMOTE_TO._value_map.keys()),
         description="This is the type of data that the current section should be promoted to."))
 
 
