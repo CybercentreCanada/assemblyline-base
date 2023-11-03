@@ -102,7 +102,7 @@ class File(odm.Model):
     classification = odm.Classification(description="Classification of the file")
     is_section_image = odm.Boolean(default=False,
                                    description="Is this an image used in an Image Result Section?")
-    parent_relation = odm.Enum(
+    parent_relation = odm.TextEnum(
         values=PARENT_RELATION.keys(),
         index=False,
         description="File relation to parent, if any."

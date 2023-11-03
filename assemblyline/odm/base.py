@@ -115,7 +115,8 @@ class KeyMaskException(KeyError):
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, description=None, deprecation=None):
+    def __init__(self, name=None, index=None, store=None,
+                 copyto=None, default=None, description=None, deprecation=None):
         self.index = index
         self.store = store
         self.multivalued = False
@@ -153,7 +154,6 @@ class _Field:
             # Only raise deprecation warning if Field is actually in use
             logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
         return value
-
 
     # noinspection PyProtectedMember
     def __set__(self, obj, value):
@@ -620,6 +620,37 @@ class Text(_Field):
 
         if value is None:
             return None
+
+        return str(value)
+
+
+class TextEnum(Text):
+    """
+    *** WARNING ***
+    DO NOT USE UNLESS YOU ABSOLUTELY NEED TO TRANSFORM A TEXT FIELD INTO AN ENUM
+
+    A field storing long string that has predefined list of possible values
+    """
+
+    def __init__(self, values, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.values = set(values)
+
+    def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
+        if not value:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] Empty enums are not allow without defaults")
+
+        if value not in self.values:
+            raise ValueError(f"[{self.name or self.parent_name}] {value} not in the possible values: {self.values}")
+
+        if value is None:
+            return value
 
         return str(value)
 
@@ -1154,7 +1185,8 @@ class Model:
                     description = f':material-alert-outline: {info.deprecation}'
                 else:
                     description += f'<br>:material-alert-outline: {info.deprecation}'
-            row = f'| {field} | {field_type} | {description} | <div style="width:100px">{required}</div> | {default} |\n'
+            row = f'| {field} | {field_type} | {description} | ' \
+                  f'<div style="width:100px">{required}</div> | {default} |\n'
             table += row
 
         markdown_content += table + "\n\n"
