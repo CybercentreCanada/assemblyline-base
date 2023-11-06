@@ -7,28 +7,27 @@ import re
 import time
 import typing
 import warnings
+
 from copy import deepcopy
+from datemath import dm
+from datemath.helpers import DateMathException
 from datetime import datetime
 from enum import Enum
 from os import environ
-from typing import Any, Dict, Generic, TypeVar, Union
+from typing import Dict, Any, Union, TypeVar, Generic
 
 import elasticsearch
 import elasticsearch.helpers
+
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
-from assemblyline.datastore.exceptions import ArchiveDisabled, DataStoreException, MultiKeyError, SearchException
+from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException, ArchiveDisabled)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
-from assemblyline.datastore.support.schemas import (
-    default_dynamic_strings,
-    default_dynamic_templates,
-    default_index,
-    default_mapping,
-)
-from assemblyline.odm.base import BANNED_FIELDS, ClassificationObject, Integer, Keyword, List, Mapping, Model, _Field
-from datemath import dm
-from datemath.helpers import DateMathException
+from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
+                                                    default_index, default_mapping)
+from assemblyline.odm.base import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model, ClassificationObject, _Field
+
 
 if typing.TYPE_CHECKING:
     from .store import ESStore
