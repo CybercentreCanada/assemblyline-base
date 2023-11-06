@@ -89,7 +89,13 @@ class File(odm.Model):
     classification = odm.Classification(description="Classification of the file")
     is_section_image = odm.Boolean(default=False,
                                    description="Is this an image used in an Image Result Section?")
-    parent_relation = odm.Text(default="EXTRACTED", description="File relation to parent, if any.")
+    # Possible values for PARENT_RELATION can be found in
+    # assemblyline-v4-service/assemblyline_v4_service/common/task.py.
+    parent_relation = odm.Text(
+        default="EXTRACTED",
+        description="File relation to parent, if any.\
+            <br>Values: `\"ROOT\", \"EXTRACTED\", \"INFORMATION\", \"DYNAMIC\", \"MEMDUMP\", \"DOWNLOADED\"`"
+    )
     allow_dynamic_recursion = odm.Boolean(
         default=False,
         description="Allow file to be analysed during Dynamic Analysis"
