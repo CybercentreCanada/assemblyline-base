@@ -1,16 +1,14 @@
 import random
 import string
-import warnings
 import uuid
-
+import warnings
 from copy import copy
-from datemath import dm
-from retrying import retry
-import pytest
 
+import pytest
 from assemblyline.datastore.collection import ESCollection, Index
 from assemblyline.datastore.exceptions import VersionConflictException
-
+from datemath import dm
+from retrying import retry
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -419,8 +417,8 @@ def _test_facet(c: ESCollection):
         assert isinstance(v, int)
         assert v > 0
 
-    h_key_space = c.facet(field='lvl_i', key_space=['test1', 'not_in_test_map'])
-    test1_key = test_map.get('test1')['lvl_i']
+    h_key_space = c.facet(field='test1_s', key_space=['test1', 'not_in_test_map'])
+    test1_key = test_map.get('test1')['test1_s']
     assert dict(h_key_space.items()).get(test1_key) == 1
 
 
