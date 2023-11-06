@@ -161,7 +161,7 @@ class ESCollection(Generic[ModelType]):
         'facet_active': False,
         'facet_mincount': 1,
         'facet_size': 10,
-        "facet_include": ".*",
+        "facet_include": None,
         'facet_fields': [],
         'stats_active': False,
         'stats_fields': [],
@@ -1423,16 +1423,18 @@ class ESCollection(Generic[ModelType]):
                             "source": field_script
                         },
                         "size": parsed_values['facet_size'],
-                        "include": parsed_values['facet_include'],
                         "min_doc_count": parsed_values['facet_mincount']
                     }
+                    if parsed_values['facet_include']:
+                        facet_body.update({"include": parsed_values['facet_include']})
                 else:
                     facet_body = {
                         "field": field,
                         "size": parsed_values['facet_size'],
-                        "include": parsed_values['facet_include'],
                         "min_doc_count": parsed_values['facet_mincount']
                     }
+                    if parsed_values['facet_include']:
+                        facet_body.update({"include": parsed_values['facet_include']})
                 query_body["aggregations"][field] = {
                     "terms": facet_body
                 }
@@ -1754,7 +1756,7 @@ class ESCollection(Generic[ModelType]):
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def facet(self, field, query="id:*", mincount=1, size=10, include=".*", filters=None, access_control=None,
+    def facet(self, field, query="id:*", mincount=1, size=10, include=None, filters=None, access_control=None,
               index_type=Index.HOT, field_script=None, key_space=None):
         if filters is None:
             filters = []
@@ -1767,7 +1769,6 @@ class ESCollection(Generic[ModelType]):
             ('facet_fields', [field]),
             ('facet_mincount', mincount),
             ('facet_size', size),
-            ('facet_include', include),
             ('rows', 0)
         ]
 
@@ -1776,6 +1777,9 @@ class ESCollection(Generic[ModelType]):
 
         if filters:
             args.append(('filters', filters))
+
+        if include:
+            args.append(('facet_include', include))
 
         if field_script:
             args.append(('field_script', field_script))
