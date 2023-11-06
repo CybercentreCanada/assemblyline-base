@@ -166,6 +166,8 @@ class ESCollection(Generic[ModelType]):
         'field_list': None,
         'facet_active': False,
         'facet_mincount': 1,
+        'facet_size': 10,
+        "facet_include": ".*",
         'facet_fields': [],
         'stats_active': False,
         'stats_fields': [],
@@ -1470,11 +1472,15 @@ class ESCollection(Generic[ModelType]):
                         "script": {
                             "source": field_script
                         },
+                        "size": parsed_values['facet_size'],
+                        "include": parsed_values['facet_include'],
                         "min_doc_count": parsed_values['facet_mincount']
                     }
                 else:
                     facet_body = {
                         "field": field,
+                        "size": parsed_values['facet_size'],
+                        "include": parsed_values['facet_include'],
                         "min_doc_count": parsed_values['facet_mincount']
                     }
                 query_body["aggregations"][field] = {
@@ -1798,8 +1804,8 @@ class ESCollection(Generic[ModelType]):
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
-              field_script=None, key_space=None):
+    def facet(self, field, query="id:*", mincount=1, size=10, include=".*", filters=None, access_control=None,
+              index_type=Index.HOT, field_script=None, key_space=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1810,6 +1816,8 @@ class ESCollection(Generic[ModelType]):
             ('facet_active', True),
             ('facet_fields', [field]),
             ('facet_mincount', mincount),
+            ('facet_size', size),
+            ('facet_include', include),
             ('rows', 0)
         ]
 
