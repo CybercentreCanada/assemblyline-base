@@ -568,10 +568,16 @@ class Mount(odm.Model):
     resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
 
     # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
-    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only)",
-                                   deprecation="Use `resource_type: configmap` and fill in the `resource_name` & `resource_key` fields to mount ConfigMaps")
-    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only)",
-                            deprecation="Use `resource_type: configmap` and fill in the `resource_name` & `resource_key` fields to mount ConfigMaps")
+    config_map: str = odm.Optional(
+        odm.Keyword(),
+        description="Name of ConfigMap (Kubernetes only)",
+        deprecation="Use `resource_type: configmap` and fill in the `resource_name` "
+        "& `resource_key` fields to mount ConfigMaps")
+    key: str = odm.Optional(
+        odm.Keyword(),
+        description="Key of ConfigMap (Kubernetes only)",
+        deprecation="Use `resource_type: configmap` and fill in the `resource_name` "
+        "& `resource_key` fields to mount ConfigMaps")
 
 
 @odm.model(index=False, store=False,
@@ -1314,6 +1320,7 @@ class Submission(odm.Model):
     default_max_supplementary: int = odm.Integer(
         description="How many supplementary files may be added to a submission?")
     dtl: int = odm.Integer(description="Number of days submissions will remain in the system by default")
+    emptyresult_dtl:  int = odm.Integer(description="Number of days emptyresult will remain in the system")
     max_dtl: int = odm.Integer(description="Maximum number of days submissions will remain in the system")
     max_extraction_depth: int = odm.Integer(description="Maximum files extraction depth")
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
@@ -1332,6 +1339,7 @@ DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
     'dtl': 30,
+    'emptyresult_dtl': 5,
     'max_dtl': 0,
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
