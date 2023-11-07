@@ -230,7 +230,7 @@ class AssemblylineDatastore(object):
 
         data = Result({
             "archive_ts": None,
-            "expiry_ts": now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
+            "expiry_ts": now_as_iso(config.submission.emptyresult_dtl * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
                 "service_name": svc_name,
