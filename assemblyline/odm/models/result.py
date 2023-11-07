@@ -8,7 +8,9 @@ from assemblyline.common.dict_utils import flatten
 from assemblyline.common.tagging import tag_dict_to_list
 from assemblyline.odm.models.tagging import Tagging
 
-
+# This is a "keys-only" representation of the BODY_FORMAT StringTable in
+# assemblyline-v4-service/assemblyline_v4_service/common/result.py.
+# Any updates here need to go in that StringTable also.
 BODY_FORMAT = {
     "TEXT",
     "MEMORY_DUMP",
@@ -23,6 +25,9 @@ BODY_FORMAT = {
     "ORDERED_KEY_VALUE",
     "TIMELINE"
 }
+# This is a "keys-only" representation of the PROMOTE_TO StringTable in
+# assemblyline-v4-service/assemblyline_v4_service/common/result.py.
+# Any updates here need to go in that StringTable also.
 PROMOTE_TO = {"SCREENSHOT", "ENTROPY", "URI_PARAMS"}
 constants = forge.get_constants()
 
