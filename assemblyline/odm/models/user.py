@@ -21,6 +21,7 @@ ROLES = StringTable('ROLES', [
     ("bundle_download", 3),
     ("file_detail", 4),
     ("file_download", 5),
+    ("file_purge", 33),
     ("heuristic_view", 6),
     ("obo_access", 7),
     ("replay_trigger", 8),
@@ -92,6 +93,7 @@ USER_ROLES_BASIC = {
 
 USER_ROLES = USER_ROLES_BASIC.union({
     ROLES.administration,      # Perform administrative tasks
+    ROLES.file_purge,          # Purge files from the filestore
     ROLES.replay_system,       # Manage status of file/submission/alerts during the replay process
     ROLES.signature_import,    # Import signatures in the system
     ROLES.signature_manage,    # Manage signatures sources in the system
@@ -163,6 +165,7 @@ ACL_MAP = {
     "E": [
         ROLES.administration,
         ROLES.apikey_access,
+        ROLES.file_purge,
         ROLES.obo_access,
         ROLES.replay_system,
         ROLES.self_manage,
