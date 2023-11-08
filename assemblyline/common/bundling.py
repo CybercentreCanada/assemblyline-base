@@ -341,7 +341,8 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                         # Make sure results meet minimum classification and save the results
                         for key, res in results['results'].items():
                             if key.endswith(".e"):
-                                datastore.emptyresult.save(key, {"expiry_ts": res['expiry_ts']})
+                                datastore.emptyresult.save(key, {"expiry_ts": now_as_iso(
+                                    config.submission.emptyresult_dtl * 24 * 60 * 60)})
                             else:
                                 res['classification'] = Classification.max_classification(
                                     res['classification'], min_classification)
