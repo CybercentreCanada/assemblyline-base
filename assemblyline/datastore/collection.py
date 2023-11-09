@@ -1791,9 +1791,11 @@ class ESCollection(Generic[ModelType]):
 
         # Convert the histogram into a dictionary
         if isinstance(field, str):
-            return {row.get('key_as_string', row['key']): row['doc_count'] for row in result['aggregations'][field]['buckets']}
+            return {row.get('key_as_string', row['key']): row['doc_count']
+                    for row in result['aggregations'][field]['buckets']}
         else:
-            return {f: {row.get('key_as_string', row['key']): row['doc_count'] for row in result['aggregations'][f]['buckets']} for f in field}
+            return {f: {row.get('key_as_string', row['key']): row['doc_count']
+                        for row in result['aggregations'][f]['buckets']} for f in field}
 
     def stats(self, field, query="id:*", filters=None, access_control=None, index_type=Index.HOT, field_script=None):
         if filters is None:
