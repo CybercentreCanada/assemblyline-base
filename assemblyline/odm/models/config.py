@@ -1166,6 +1166,8 @@ class UI(odm.Model):
     tos_lockout: bool = odm.Boolean(description="Lock out user after accepting the terms of service?")
     tos_lockout_notify: List[str] = odm.Optional(odm.List(odm.Keyword()),
                                                  description="List of admins to notify when a user gets locked out")
+    url_submission_auto_service_selection: List[str] = odm.List(
+        odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
     url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
@@ -1210,6 +1212,7 @@ DEFAULT_UI = {
     "tos": None,
     "tos_lockout": False,
     "tos_lockout_notify": None,
+    "url_submission_auto_service_selection": ["URLDownloader"],
     "url_submission_headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko)"
                       " Chrome/110.0.0.0 Safari/537.36"
