@@ -1124,10 +1124,6 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
     "max_classification": "TLP:CLEAR",
 }
 
-@odm.model(index=False, store=False, description="Egress proxy endpoint for URL submissions")
-class EgressProxy(odm.Model):
-    classification = odm.Optional(odm.ClassificationString(), description="Minimum classification required to use endpoint")
-    proxies = odm.Mapping(odm.Text(), description="Proxy definition to be passed to Python Requests methods")
 
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
@@ -1174,10 +1170,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method by default")
-    url_egress_proxies: Dict[str, EgressProxy] = odm.Optional(odm.Mapping(odm.Compound(EgressProxy)),
-                                                              description="A map of custom proxies to egress from when performing URL downloads")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
