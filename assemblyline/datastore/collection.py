@@ -1204,23 +1204,12 @@ class ESCollection(Generic[ModelType]):
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                def parse_value(v):
-                    if isinstance(v, Model):
-                        return v.as_primitives()
-                    elif isinstance(v, datetime):
-                        return v.isoformat()
-                    elif isinstance(v, ClassificationObject):
-                        return str(v)
-                    else:
-                        return v
-
-                try:
-                    if isinstance(value, list):
-                        value = [parse_value(v) for v in value]
-                    else:
-                        value = parse_value(value)
-                except (ValueError, TypeError):
-                    raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+                if isinstance(value, Model):
+                    value = value.as_primitives()
+                elif isinstance(value, datetime):
+                    value = value.isoformat()
+                elif isinstance(value, ClassificationObject):
+                    value = str(value)
 
             ret_ops.append((op, doc_key, value))
 
