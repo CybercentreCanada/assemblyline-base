@@ -1189,8 +1189,8 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND, self.
-                          UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND,
+                          self.UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
                     if not field.multivalued:
                         raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
 
