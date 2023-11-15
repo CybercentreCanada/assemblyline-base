@@ -131,6 +131,7 @@ class ESCollection(Generic[ModelType]):
     MAX_HISTOGRAM_STEPS = 100
     MAX_RETRY_BACKOFF = 10
     MAX_SEARCH_ROWS = 500
+    MAX_FACET_SIZE = 100
     RETRY_NORMAL = 1
     RETRY_NONE = 0
     RETRY_INFINITY = -1
@@ -1806,19 +1807,25 @@ class ESCollection(Generic[ModelType]):
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def facet(self, field, query="id:*", mincount=1, size=10, include=None, filters=None, access_control=None,
-              index_type=Index.HOT, field_script=None, key_space=None):
+    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
+              field_script=None, key_space=None, size=10, include=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
             filters = [filters]
 
+        if isinstance(field, str):
+            fields = [field]
+        else:
+            fields = field
+
         args = [
             ('query', query),
             ('facet_active', True),
-            ('facet_fields', [field]),
+            ('facet_fields', fields),
             ('facet_mincount', mincount),
-            ('facet_size', size),
+            ('facet_size', min(size, self.MAX_FACET_SIZE)),
+            ('facet_include', include),
             ('rows', 0)
         ]
 
@@ -1828,17 +1835,18 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
-        if include:
-            args.append(('facet_include', include))
-
         if field_script:
             args.append(('field_script', field_script))
 
         result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
-        return {row.get('key_as_string', row['key']): row['doc_count']
-                for row in result['aggregations'][field]['buckets']}
+        if isinstance(field, str):
+            return {row.get('key_as_string', row['key']): row['doc_count']
+                    for row in result['aggregations'][field]['buckets']}
+        else:
+            return {f: {row.get('key_as_string', row['key']): row['doc_count']
+                        for row in result['aggregations'][f]['buckets']} for f in field}
 
     def stats(self, field, query="id:*", filters=None, access_control=None, index_type=Index.HOT, field_script=None):
         if filters is None:
