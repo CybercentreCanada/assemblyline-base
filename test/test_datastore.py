@@ -58,11 +58,6 @@ with warnings.catch_warnings():
                     "text": "UPDATE_SET"
                 },
                 {
-                    "cid": "5D13pJW8kU2JUSVjlgkRk5",
-                    "uname": "admin",
-                    "text": "UPDATE_MODIFY"
-                },
-                {
                     "cid": "2qTELdsSNSSBHfUf3phtOM",
                     "uname": "admin",
                     "text": "UPDATE_APPEND"
@@ -302,7 +297,7 @@ def _test_update_list_of_objects(c: ESCollection):
             },
             {
                 "uname": "admin",
-                "text": "UPDATE_MODIFY"
+                "text": "UPDATE_SET"
             },
             {
                 "uname": "admin",
@@ -357,17 +352,7 @@ def _test_update_list_of_objects(c: ESCollection):
             "uname": "admin",
             "text": "UPDATE_REMOVE"
         }),
-        (c.UPDATE_DELETE, "list_of_objects", 2),
-        (c.UPDATE_MODIFY, "list_of_objects", {
-            "prev":  {
-                "uname": "admin",
-                "text": "UPDATE_SET"
-            },
-            "next": {
-                "uname": "admin",
-                "text": "UPDATE_MODIFY"
-            }
-        })
+        (c.UPDATE_DELETE, "list_of_objects", 2)
     ]
     assert c.update('to_update_list_of_objects', operations)
     assert c.get('to_update_list_of_objects') == expected

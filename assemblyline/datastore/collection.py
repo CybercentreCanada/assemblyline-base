@@ -143,7 +143,6 @@ class ESCollection(Generic[ModelType]):
     UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
     UPDATE_APPEND_IF_MISSING = "APPEND_IF_MISSING"
-    UPDATE_MODIFY = "MODIFY"
     UPDATE_PREPEND = "PREPEND"
     UPDATE_PREPEND_IF_MISSING = "PREPEND_IF_MISSING"
     UPDATE_REMOVE = "REMOVE"
@@ -155,7 +154,6 @@ class ESCollection(Generic[ModelType]):
         UPDATE_INC,
         UPDATE_MAX,
         UPDATE_MIN,
-        UPDATE_MODIFY,
         UPDATE_PREPEND,
         UPDATE_PREPEND_IF_MISSING,
         UPDATE_REMOVE,
@@ -1092,13 +1090,6 @@ class ESCollection(Generic[ModelType]):
                          f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
-            elif op == self.UPDATE_MODIFY:
-                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
-                         f"if(ctx._source.{doc_key}[i].equals(params.prev{val_id})) " \
-                         f"ctx._source.{doc_key}[i] = params.next{val_id}"
-                op_sources.append(script)
-                op_params[f'prev{val_id}'] = value.get('prev', None)
-                op_params[f'next{val_id}'] = value.get('next', None)
             elif op == self.UPDATE_PREPEND:
                 op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
                 op_params[f'value{val_id}'] = value
@@ -1183,52 +1174,37 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                # If we're dealing with a list of Compounds, we need to validate against the Compound object
-                is_field_list = False
-                if isinstance(field, odm.List) and isinstance(field.child_type, odm.Compound):
-                    field = field.child_type
-                    is_field_list = True
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND,
+                          self.UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                    if not field.multivalued:
+                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND, self.
-                          UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in [self.UPDATE_MODIFY]:
-                    try:
-                        value['prev'] = field.check(value.get('prev', None))
-                        value['next'] = field.check(value.get('next', None))
-                    except (ValueError, TypeError):
-                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
-
-                elif op in [self.UPDATE_DEC, self.UPDATE_INC, self.UPDATE_SET]:
+                elif op in [self.UPDATE_DEC, self.UPDATE_INC]:
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                def parse_value(v):
-                    if isinstance(v, Model):
-                        return v.as_primitives()
-                    elif isinstance(v, datetime):
-                        return v.isoformat()
-                    elif isinstance(v, ClassificationObject):
-                        return str(v)
-                    else:
-                        return v
+                elif op in [self.UPDATE_SET]:
+                    try:
+                        if field.multivalued and isinstance(value, list):
+                            value = [field.check(v) for v in value]
+                        else:
+                            value = field.check(value)
+                    except (ValueError, TypeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                try:
-                    if isinstance(value, dict) and ('prev' in value or 'next' in value):
-                        value['prev'] = parse_value(value.get('prev', None))
-                        value['next'] = parse_value(value.get('next', None))
-                    elif isinstance(value, list):
-                        value = [parse_value(v) for v in value]
-                    else:
-                        value = parse_value(value)
-                except (ValueError, TypeError):
-                    raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+                if isinstance(value, Model):
+                    value = value.as_primitives()
+                elif isinstance(value, datetime):
+                    value = value.isoformat()
+                elif isinstance(value, ClassificationObject):
+                    value = str(value)
 
             ret_ops.append((op, doc_key, value))
 
@@ -1792,7 +1768,8 @@ class ESCollection(Generic[ModelType]):
             ('histogram_gap', gap.strip('+').strip('-') if isinstance(gap, str) else gap),
             ('histogram_mincount', mincount),
             ('histogram_start', start),
-            ('histogram_end', end)
+            ('histogram_end', end),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1826,7 +1803,8 @@ class ESCollection(Generic[ModelType]):
             ('facet_mincount', mincount),
             ('facet_size', min(size, self.MAX_FACET_SIZE)),
             ('facet_include', include),
-            ('rows', 0)
+            ('rows', 0),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1858,7 +1836,8 @@ class ESCollection(Generic[ModelType]):
             ('query', query),
             ('stats_active', True),
             ('stats_fields', [field]),
-            ('rows', 0)
+            ('rows', 0),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1898,7 +1877,8 @@ class ESCollection(Generic[ModelType]):
             ('group_sort', group_sort),
             ('start', offset),
             ('rows', rows),
-            ('sort', sort)
+            ('sort', sort),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         filters.append("%s:*" % group_field)
