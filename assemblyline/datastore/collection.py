@@ -131,6 +131,7 @@ class ESCollection(Generic[ModelType]):
     MAX_HISTOGRAM_STEPS = 100
     MAX_RETRY_BACKOFF = 10
     MAX_SEARCH_ROWS = 500
+    MAX_FACET_SIZE = 100
     RETRY_NORMAL = 1
     RETRY_NONE = 0
     RETRY_INFINITY = -1
@@ -1756,8 +1757,8 @@ class ESCollection(Generic[ModelType]):
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def facet(self, field, query="id:*", mincount=1, size=10, include=None, filters=None, access_control=None,
-              index_type=Index.HOT, field_script=None, key_space=None):
+    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
+              field_script=None, key_space=None, size=10, include=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1773,7 +1774,7 @@ class ESCollection(Generic[ModelType]):
             ('facet_active', True),
             ('facet_fields', fields),
             ('facet_mincount', mincount),
-            ('facet_size', min(size, 100)),
+            ('facet_size', min(size, self.MAX_FACET_SIZE)),
             ('facet_include', include),
             ('rows', 0)
         ]
