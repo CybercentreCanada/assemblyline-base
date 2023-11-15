@@ -295,6 +295,10 @@ def _test_update_list_of_objects(c: ESCollection):
             },
             {
                 "uname": "admin",
+                "text": "UPDATE_SET"
+            },
+            {
+                "uname": "admin",
                 "text": "UPDATE_APPEND"
             }, {
                 "uname": "admin",
