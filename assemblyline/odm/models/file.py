@@ -1,6 +1,6 @@
 from assemblyline import odm
 
-REACTIONS_TYPES = {"thumbs_up", "thumbs_down", "heart", "smiley", "surprise", "party"}
+REACTIONS_TYPES = {"thumbs_up", "thumbs_down", "love", "smile", "surprised", "party"}
 
 
 @odm.model(index=True, store=True, description="File Seen Model")
