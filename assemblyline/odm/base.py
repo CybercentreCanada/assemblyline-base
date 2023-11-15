@@ -982,19 +982,8 @@ class Model:
     @staticmethod
     def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
         out = dict()
-
-        if show_compound and isinstance(field, Compound):
-            out[name] = field
-
-        if isinstance(field, List) and isinstance(field.child_type, Compound):
-            multivalued = False
-            if show_compound:
-                field.multivalued = True
-                out[name] = field
-
         for sub_name, sub_field in field.fields().items():
-            sub_field.multivalued = multivalued or (isinstance(
-                field, List) and not isinstance(field.child_type, Compound))
+            sub_field.multivalued = multivalued or isinstance(field, List)
 
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
@@ -1009,6 +998,14 @@ class Model:
 
             else:
                 out[name] = sub_field
+
+        if (isinstance(field, Compound) and show_compound):
+            out[name] = field
+
+        # If we're dealing with a list of Compounds or an optional Compound,
+        # we need to validate against the Compound object
+        if isinstance(field, (List, Optional)) and isinstance(field.child_type, Compound) and show_compound:
+            out[name] = field.child_type
 
         return out
 
