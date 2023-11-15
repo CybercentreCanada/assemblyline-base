@@ -23,6 +23,7 @@ DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblylin
 log = logging.getLogger('assemblyline.datastore')
 ALT_ELASTICSEARCH_USERS = ["plumber"]
 
+
 class ESStore(object):
     """ Elasticsearch multi-index implementation of the ResultStore interface."""
     MAX_RETRY_BACKOFF = 10
@@ -175,10 +176,9 @@ class ESStore(object):
 
         # Modify the client details for next reconnect
         self._hosts = [h.replace(f"{urlparse(h).username}:{urlparse(h).password}",
-                                    f"{username}:{password}") for h in self._hosts]
+                                 f"{username}:{password}") for h in self._hosts]
         self.client.close()
         self.connection_reset()
-
 
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
@@ -403,15 +403,20 @@ class ESStore(object):
                 err_code = err.meta.status
 
                 # Validate exception type
-                if not index_name or err_code not in [503, 429, 403]:
-                    raise
-
-                # Display proper error message
-                if err_code == 503:
+                if err_code == 429:
+                    if index_name:
+                        log.warning("Elasticsearch is too busy to perform the requested "
+                                    f"task on index {index_name}, retrying...")
+                    else:
+                        log.warning("Elasticsearch is too busy to perform the requested "
+                                    f"task ({str(err)}), retrying...")
+                elif err_code == 503 and index_name:
                     log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
-                elif err_code == 429:
-                    log.warning("Elasticsearch is too busy to perform the requested "
-                                f"task on index {index_name}, retrying...")
+                elif err_code == 403 and index_name:
+                    log.warning("Elasticsearch cluster is preventing writing operations "
+                                f"on index {index_name}, retrying...")
+                else:
+                    raise
 
                 # Loop and retry
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
