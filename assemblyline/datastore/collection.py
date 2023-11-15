@@ -1139,7 +1139,7 @@ class ESCollection(Generic[ModelType]):
         }
         return script
 
-    def _validate_operations(self, operations, **kwargs):
+    def _validate_operations(self, operations):
         """
         Validate the different operations received for a partial update
 
@@ -1185,7 +1185,7 @@ class ESCollection(Generic[ModelType]):
                         raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
 
                     try:
-                        value = field.check(value, **kwargs)
+                        value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
@@ -1198,7 +1198,7 @@ class ESCollection(Generic[ModelType]):
                 elif op in [self.UPDATE_SET]:
                     try:
                         if field.multivalued and isinstance(value, list):
-                            value = [field.check(v, **kwargs) for v in value]
+                            value = [field.check(v) for v in value]
                         else:
                             value = field.check(value)
                     except (ValueError, TypeError):
@@ -1230,7 +1230,7 @@ class ESCollection(Generic[ModelType]):
         :param operations: List of tuple of operations e.q. [(SET, document_key, operation_value), ...]
         :return: True is update successful
         """
-        operations = self._validate_operations(operations, is_updating=True)
+        operations = self._validate_operations(operations)
         script = self._create_scripts_from_operations(operations)
         index_list = self.get_index_list(index_type)
 

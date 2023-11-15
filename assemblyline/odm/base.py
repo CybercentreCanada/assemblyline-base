@@ -773,10 +773,7 @@ class List(_Field):
 
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
-            if kwargs.get('is_updating', None):
-                return TypedList(self.child_type, dict(value), **kwargs)[0]
-            else:
-                return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
+            return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
 
         return TypedList(self.child_type, *value, **kwargs)
 
