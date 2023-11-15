@@ -1,5 +1,7 @@
 from assemblyline import odm
 
+REACTIONS_TYPES = {"thumbs_up", "thumbs_down", "heart", "smiley", "surprise", "party"}
+
 
 @odm.model(index=True, store=True, description="File Seen Model")
 class Seen(odm.Model):
@@ -23,12 +25,19 @@ class LabelCategories(odm.Model):
         default=[])
 
 
+@odm.model(index=True, store=False, description="Reaction Model")
+class Reaction(odm.Model):
+    icon = odm.Enum(values=REACTIONS_TYPES, description="Icon of the user who made the reaction")
+    uname = odm.Keyword(description="Username of the user who made the reaction")
+
+
 @odm.model(index=True, store=False, description="Comment Model")
 class Comment(odm.Model):
     cid = odm.UUID(description="Comment ID")
     uname = odm.Keyword(description="Username of the user who made the comment")
     date = odm.Date(store=True, default="NOW", description="Datetime the comment was made on")
     text = odm.Text(description="Text of the comment written by the author")
+    reactions = odm.List(odm.Compound(Reaction), default=[], description="List of reactions made on a comment")
 
 
 @odm.model(index=True, store=True, description="Model of File")
