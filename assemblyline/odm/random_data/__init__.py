@@ -9,6 +9,7 @@ from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION, BUILD_MINOR
 from assemblyline.odm.models.alert import Alert, Event, STATUSES, PRIORITIES
+from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -360,6 +361,9 @@ def create_submission(ds, fs, log=None):
     s.params.psid = None
     s.state = 'completed'
 
+    if log:
+        log.info(f'{s}')
+
     ds.submission.save(s.sid, s)
 
     ds.emptyresult.commit()
@@ -401,6 +405,21 @@ def create_users(ds, log=None):
         log.info(f"\tU:{user_data.uname}   P:{user_pass}")
 
     ds.user.commit()
+
+
+def create_badlists(ds, log=None):
+    for _ in range(20):
+        sl = random_model_obj(Badlist, as_json=True)
+        if sl['type'] == 'file':
+            sl.pop('tag', None)
+        elif sl['type'] == 'tag':
+            sl.pop('file', None)
+        sl['hashes']['sha256'] = "0" + get_random_hash(63)
+        ds.badlist.save(sl['hashes']['sha256'], sl)
+        if log:
+            log.info(f"\t{sl['hashes']['sha256']}")
+
+    ds.badlist.commit()
 
 
 def create_safelists(ds, log=None):
@@ -492,12 +511,17 @@ def wipe_safelist(ds):
     ds.safelist.wipe()
 
 
+def wipe_badlist(ds):
+    ds.badlist.wipe()
+
+
 def wipe_workflows(ds):
     ds.workflow.wipe()
 
 
 def wipe_all_except_users(ds, fs):
     wipe_alerts(ds)
+    wipe_badlist(ds)
     wipe_heuristics(ds)
     wipe_services(ds)
     wipe_signatures(ds)

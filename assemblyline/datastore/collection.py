@@ -131,6 +131,7 @@ class ESCollection(Generic[ModelType]):
     MAX_HISTOGRAM_STEPS = 100
     MAX_RETRY_BACKOFF = 10
     MAX_SEARCH_ROWS = 500
+    MAX_FACET_SIZE = 100
     RETRY_NORMAL = 1
     RETRY_NONE = 0
     RETRY_INFINITY = -1
@@ -164,6 +165,8 @@ class ESCollection(Generic[ModelType]):
         'field_list': None,
         'facet_active': False,
         'facet_mincount': 1,
+        'facet_size': 10,
+        "facet_include": None,
         'facet_fields': [],
         'stats_active': False,
         'stats_fields': [],
@@ -1096,8 +1099,9 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
-                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1141,7 +1145,7 @@ class ESCollection(Generic[ModelType]):
         :raises: DatastoreException if operation not valid
         """
         if self.model_class:
-            fields = self.model_class.flat_fields(show_compound=True)
+            fields = self.model_class.flat_fields(show_compound=True, show_list=True)
             if 'classification in fields':
                 fields.update({"__access_lvl__": Integer(),
                                "__access_req__": List(Keyword()),
@@ -1445,13 +1449,19 @@ class ESCollection(Generic[ModelType]):
                         "script": {
                             "source": field_script
                         },
+                        "size": parsed_values['facet_size'],
                         "min_doc_count": parsed_values['facet_mincount']
                     }
+                    if parsed_values['facet_include']:
+                        facet_body.update({"include": parsed_values['facet_include']})
                 else:
                     facet_body = {
                         "field": field,
+                        "size": parsed_values['facet_size'],
                         "min_doc_count": parsed_values['facet_mincount']
                     }
+                    if parsed_values['facet_include']:
+                        facet_body.update({"include": parsed_values['facet_include']})
                 query_body["aggregations"][field] = {
                     "terms": facet_body
                 }
@@ -1775,17 +1785,24 @@ class ESCollection(Generic[ModelType]):
                 for row in result['aggregations']['histogram']['buckets']}
 
     def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
-              field_script=None, key_space=None):
+              field_script=None, key_space=None, size=10, include=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
             filters = [filters]
 
+        if isinstance(field, str):
+            fields = [field]
+        else:
+            fields = field
+
         args = [
             ('query', query),
             ('facet_active', True),
-            ('facet_fields', [field]),
+            ('facet_fields', fields),
             ('facet_mincount', mincount),
+            ('facet_size', min(size, self.MAX_FACET_SIZE)),
+            ('facet_include', include),
             ('rows', 0),
             ('df', self.DEFAULT_SEARCH_FIELD)
         ]
@@ -1802,8 +1819,12 @@ class ESCollection(Generic[ModelType]):
         result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
-        return {row.get('key_as_string', row['key']): row['doc_count']
-                for row in result['aggregations'][field]['buckets']}
+        if isinstance(field, str):
+            return {row.get('key_as_string', row['key']): row['doc_count']
+                    for row in result['aggregations'][field]['buckets']}
+        else:
+            return {f: {row.get('key_as_string', row['key']): row['doc_count']
+                        for row in result['aggregations'][f]['buckets']} for f in field}
 
     def stats(self, field, query="id:*", filters=None, access_control=None, index_type=Index.HOT, field_script=None):
         if filters is None:
