@@ -143,7 +143,6 @@ class ESCollection(Generic[ModelType]):
     UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
     UPDATE_APPEND_IF_MISSING = "APPEND_IF_MISSING"
-    UPDATE_MODIFY = "MODIFY"
     UPDATE_PREPEND = "PREPEND"
     UPDATE_PREPEND_IF_MISSING = "PREPEND_IF_MISSING"
     UPDATE_REMOVE = "REMOVE"
@@ -155,7 +154,6 @@ class ESCollection(Generic[ModelType]):
         UPDATE_INC,
         UPDATE_MAX,
         UPDATE_MIN,
-        UPDATE_MODIFY,
         UPDATE_PREPEND,
         UPDATE_PREPEND_IF_MISSING,
         UPDATE_REMOVE,
@@ -1098,13 +1096,6 @@ class ESCollection(Generic[ModelType]):
                          f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
-            elif op == self.UPDATE_MODIFY:
-                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
-                         f"if(ctx._source.{doc_key}[i].equals(params.prev{val_id})) " \
-                         f"ctx._source.{doc_key}[i] = params.next{val_id}"
-                op_sources.append(script)
-                op_params[f'prev{val_id}'] = value.get('prev', None)
-                op_params[f'next{val_id}'] = value.get('next', None)
             elif op == self.UPDATE_PREPEND:
                 op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
                 op_params[f'value{val_id}'] = value
@@ -1114,9 +1105,8 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
-                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
-                         f"ctx._source.{doc_key}.remove(i)"
+                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
+                    f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1199,16 +1189,6 @@ class ESCollection(Generic[ModelType]):
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in [self.UPDATE_MODIFY]:
-                    if not field.multivalued:
-                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
-
-                    try:
-                        value['prev'] = field.check(value.get('prev', None), **kwargs)
-                        value['next'] = field.check(value.get('next', None), **kwargs)
-                    except (ValueError, TypeError):
-                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
-
                 elif op in [self.UPDATE_DEC, self.UPDATE_INC]:
                     try:
                         value = field.check(value)
@@ -1235,10 +1215,7 @@ class ESCollection(Generic[ModelType]):
                         return v
 
                 try:
-                    if isinstance(value, dict) and ('prev' in value or 'next' in value):
-                        value['prev'] = parse_value(value.get('prev', None))
-                        value['next'] = parse_value(value.get('next', None))
-                    elif isinstance(value, list):
+                    if isinstance(value, list):
                         value = [parse_value(v) for v in value]
                     else:
                         value = parse_value(value)
