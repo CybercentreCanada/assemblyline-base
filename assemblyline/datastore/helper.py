@@ -1,21 +1,20 @@
 
 import concurrent.futures
-import elasticapm
 import json
 import os
-
-from typing import Union, List
 from datetime import datetime
+from typing import List, Union
 
-from assemblyline.common.uid import get_id_from_data
+import elasticapm
 from assemblyline.common import forge
-from assemblyline.common.dict_utils import recursive_update, flatten
+from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.uid import get_id_from_data
 from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
-from assemblyline.odm import Model, DATEFORMAT
+from assemblyline.odm import DATEFORMAT, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.emptyresult import EmptyResult
@@ -24,6 +23,8 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
+from assemblyline.odm.models.retrohunt import Retrohunt
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
@@ -33,7 +34,6 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
-from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
 
 config = forge.get_config()
@@ -53,6 +53,7 @@ class AssemblylineDatastore(object):
         self.ds.register('filescore', FileScore)
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
+        self.ds.register('retrohunt', Retrohunt)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
         self.ds.register('signature', Signature)
@@ -168,6 +169,13 @@ class AssemblylineDatastore(object):
     def workflow(self) -> ESCollection[Workflow]:
         return self.ds.workflow
 
+    @property
+    def retrohunt(self) -> ESCollection[Retrohunt]:
+        return self.ds.retrohunt
+
+    def task_cleanup(self, deleteable_task_age=0, max_tasks=None):
+        return self.ds.task_cleanup(deleteable_task_age=deleteable_task_age, max_tasks=max_tasks)
+
     def get_stats(self):
         node_stats = self.ds.with_retries(self.ds.client.nodes.stats, metric="fs")
         indices_stats = self.ds.with_retries(self.ds.client.indices.stats, index="*_hot",
@@ -220,7 +228,7 @@ class AssemblylineDatastore(object):
 
         data = Result({
             "archive_ts": None,
-            "expiry_ts": now_as_iso(config.datastore.cache_dtl * 24 * 60 * 60),
+            "expiry_ts": now_as_iso(config.submission.emptyresult_dtl * 24 * 60 * 60),
             "classification": cl_engine.UNRESTRICTED,
             "response": {
                 "service_name": svc_name,
@@ -739,7 +747,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_summary_from_keys(self, keys, cl_engine=forge.get_classification(),
-                              user_classification=None, keep_heuristic_sections=False):
+                              user_classification=None, keep_heuristic_sections=False, screenshot_sha256=None):
         out = {
             "tags": [],
             "attack_matrix": [],
@@ -752,7 +760,8 @@ class AssemblylineDatastore(object):
             "classification": cl_engine.UNRESTRICTED,
             "filtered": False,
             "heuristic_sections": {},
-            "heuristic_name_map": {}
+            "heuristic_name_map": {},
+            "screenshots": []
         }
         done_map = {
             "heuristics": set(),
@@ -788,16 +797,11 @@ class AssemblylineDatastore(object):
                                      reverse=True)
             for section in sorted_sections:
                 file_classification = files.get(key[:64], {}).get('classification', section['classification'])
-                if user_classification:
-                    if not cl_engine.is_accessible(user_classification, section['classification']):
-                        out["filtered"] = True
-                        continue
-                    if not cl_engine.is_accessible(user_classification, file_classification):
-                        out["filtered"] = True
-                        continue
-
-                out["classification"] = cl_engine.max_classification(out["classification"], section['classification'])
-                out["classification"] = cl_engine.max_classification(out["classification"], file_classification)
+                combined_classification = cl_engine.max_classification(file_classification, section['classification'])
+                if user_classification and not cl_engine.is_accessible(user_classification, combined_classification):
+                    out["filtered"] = True
+                    continue
+                out["classification"] = cl_engine.max_classification(out["classification"], combined_classification)
 
                 h_type = "info"
 
@@ -872,7 +876,8 @@ class AssemblylineDatastore(object):
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key,
-                                    'safelisted': False
+                                    'safelisted': False,
+                                    'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
 
@@ -889,13 +894,22 @@ class AssemblylineDatastore(object):
                                     'short_type': tag_type.rsplit(".", 1)[-1],
                                     'value': tag,
                                     'key': key,
-                                    'safelisted': True
+                                    'safelisted': True,
+                                    'classification': combined_classification,
                                 })
                                 done_map['tags'].add(cache_key)
 
+                if screenshot_sha256 and section.get(
+                        'promote_to', None) == "SCREENSHOT" and key.startswith(screenshot_sha256):
+                    try:
+                        screenshot_data = json.loads(section['body'])
+                        out['screenshots'].extend(screenshot_data)
+                    except Exception:
+                        log.warning(f"Unable to load screenshots during submission summary. ({section['body']})")
+
             for htype in out['heuristics']:
                 for heur in out['heuristics'][htype]:
-                    cache_key = f"{heur_id}_{key}"
+                    cache_key = f"{heur['heur_id']}_{key}"
                     heur['signatures'].extend(signatures.get(cache_key, []))
 
         return out
@@ -995,7 +1009,8 @@ class AssemblylineDatastore(object):
                 'min': int(stats['min']),
                 'max': int(stats['max']),
                 'avg': int(stats['avg']),
-                'sum': int(stats['sum']),
+                # It's possible for the accumulated score to exceed what we can store as a signed-integer in Elastic
+                'sum': min(int(stats['sum']), 2**31-1),
                 'first_hit': first,
                 'last_hit': last
             }

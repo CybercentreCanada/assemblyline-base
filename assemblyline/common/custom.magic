@@ -118,15 +118,20 @@
 0	string	AntiVir\040\Qua			custom: quarantine/avira
 0	beshort	0x0BAD					custom: quarantine/windowsdefender
 0	belong	0xDBE8C501				custom: quarantine/windowsdefender
+# Sysmon Files
+0		string
+>0		search/0x70		\<Event\ xmlns=
+>>&0	string			"http://schemas.microsoft.com/win/2004/08/events/event">	custom: metadata/sysmon/xml
+>>&0	string			'http://schemas.microsoft.com/win/2004/08/events/event'>	custom: metadata/sysmon/xml
 # Memory Dump Files
 10   string _BIOPSY:                custom: metadata/memorydump
 # Windows URL Shortcut Files
 0 string [InternetShortcut] custom: shortcut/web
 # NSIS Installer
 4  string  \xef\xbe\xad\xdeNullsoftInst custom: archive/nsis
-# Assemblyline batch file
+# Assemblyline batch file, declared in Python code in identify.py
 0 string REM\ Batch\ extracted\ by\ Assemblyline\n custom: code/batch
-# Assemblyline powershell file
+# Assemblyline powershell file, declared in Python code in identify.py
 0 string \#\!\/usr\/bin\/env\ pwsh\n custom: code/ps1
 # xxencoded and uuencoded files
 0 string XXEncode\ \ 0\.0\ \(PowerArchiver\ 2009:\ www\.powerarchiver\.com\) custom: archive/xxe
@@ -134,3 +139,12 @@
 0 string begin
 >&0 search/50 \nh custom: archive/xxe
 >&0 search/50 \nM custom: archive/uue
+# Android OAT
+0 string \x7fELF
+>0x1000 string oat custom: executable/android/oat
+# Assemblyline Ontology files
+0 string {"odm_type\":\ "Assemblyline\ Result\ Ontology" custom: assemblyline/ontology
+# Assemblyline uri files
+0 string #\ Assemblyline\ URI\ file\n custom: uri
+# OneNote .onetoc2
+0 string \xa1\x2f\xff\x43\xd9\xef\x76\x4c\x9e\xe2\x10\xea\x57\x22\x76\x5f custom: document/office/onenote

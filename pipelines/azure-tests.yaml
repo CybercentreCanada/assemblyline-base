@@ -26,8 +26,16 @@ resources:
       image: redis
       ports:
         - 6379:6379
-    - container: elasticsearch
+    - container: es7
       image: cccs/elasticsearch:7.17.4
+      env:
+        ES_JAVA_OPTS: "-Xms256m -Xmx512m"
+        DISCOVERY_TYPE: "single-node"
+        ELASTIC_PASSWORD: "devpass"
+      ports:
+        - 9200:9200
+    - container: es8
+      image: cccs/elasticsearch:8.10.2
       env:
         ES_JAVA_OPTS: "-Xms256m -Xmx512m"
         DISCOVERY_TYPE: "single-node"
@@ -46,14 +54,18 @@ jobs:
   - job: run_test
     strategy:
       matrix:
-        python3_9:
+        python3_9-es7:
           python.version: "3.9"
+          elasticsearch: es7
+        python3_9-es8:
+          python.version: "3.9"
+          elasticsearch: es8
         # python3_10:
         #   python.version: "3.10"
 
     timeoutInMinutes: 10
     services:
-      elasticsearch: elasticsearch
+      elasticsearch: $[ variables['elasticsearch'] ]
       redis: redis
       minio: minio
 
@@ -74,7 +86,7 @@ jobs:
           sudo chmod a+rw /var/cache/assemblyline/
           sudo apt-get update
           sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
-          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools
+          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools wheel
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
         displayName: Setup environment

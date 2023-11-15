@@ -65,9 +65,11 @@ with warnings.catch_warnings():
             ]
         },
         'bulk_update': {'bulk_b': True, "map": {'a': 1}, 'counters': {
-            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False},
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'],
+            'from_archive': False, 'list_compounds': [{'a': 'b'}]},
         'bulk_update2': {'bulk_b': True, "map": {'a': 1}, 'counters': {
-            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'], 'from_archive': False},
+            'lvl_i': 100, "inc_i": 0, "dec_i": 100}, "list": ['hello', 'remove'],
+            'from_archive': False, 'list_compounds': [{'a': 'b'}]},
         'delete1': {'delete_b': True, 'lvl_i': 100, 'from_archive': False},
         'delete2': {'delete_b': True, 'lvl_i': 300, 'from_archive': False},
         'delete3': {'delete_b': True, 'lvl_i': 400, 'from_archive': False},
@@ -366,7 +368,8 @@ def _test_update_by_query(c: ESCollection):
             'dec_i': 50},
         'list': ['hello', 'world!', 'test_if_missing'],
         "map": {'b': 99},
-        'from_archive': False
+        'from_archive': False,
+        'list_compounds': [{'a': 'b'}, {'a': 'c'}]
     }
     operations = [
         (c.UPDATE_SET, "counters.lvl_i", 666),
@@ -378,6 +381,7 @@ def _test_update_by_query(c: ESCollection):
         (c.UPDATE_REMOVE, "list", "remove"),
         (c.UPDATE_DELETE, "map", "a"),
         (c.UPDATE_SET, "map.b", 99),
+        (c.UPDATE_APPEND, "list_compounds", {'a': 'c'}),
     ]
     assert c.update_by_query("bulk_b:true", operations)
     expected.update({})
@@ -405,11 +409,16 @@ def _test_fields(c: ESCollection):
 
 def _test_search(c: ESCollection):
     for item in c.search('*:*', sort="id asc")['items']:
-        assert item['id'][0] in test_map
+        assert item['id'] in test_map
     for item in c.search('*:*', offset=1, rows=1,
                          filters="lvl_i:400", sort="id asc", fl='id,classification_s')['items']:
-        assert item['id'][0] in test_map
+        assert item['id'] in test_map
         assert item.get('classification_s', None) is not None
+
+    items = c.search('*:*', key_space=['test1', 'test2', 'not_in_test_map'], fl='id')['items']
+    assert len(items) == 2
+    for item in items:
+        assert item['id'] in test_map
 
 
 def _test_group_search(c: ESCollection):
@@ -456,14 +465,14 @@ def _test_deepsearch(c: ESCollection):
 
     assert len(res) == c.search('*:*', sort="id asc")['total']
     for item in res:
-        assert item['id'][0] in test_map
+        assert item['id'] in test_map
 
 
 def _test_streamsearch(c: ESCollection):
     items = list(c.stream_search('classification_s:*', filters="lvl_i:400", fl='id,classification_s'))
     assert len(items) > 0
     for item in items:
-        assert item['id'][0] in test_map
+        assert item['id'] in test_map
         assert item.get('classification_s', None) is not None
 
 
@@ -486,6 +495,15 @@ def _test_histogram(c: ESCollection):
         assert isinstance(v, int)
         assert v > 0
 
+    h_key_space = c.histogram(field='lvl_i', start=0, end=1000, gap=100, key_space=['test1', 'not_in_test_map'])
+    test1_key = test_map.get('test1')['lvl_i']
+    assert dict(h_key_space.items()).get(test1_key) == 1
+
+    for k, v in filter(lambda k: k[0] != test1_key, h_key_space.items()):
+        assert isinstance(k, int)
+        assert isinstance(v, int)
+        assert v == 0
+
 
 def _test_facet(c: ESCollection):
     facets = c.facet('classification_s')
@@ -494,6 +512,10 @@ def _test_facet(c: ESCollection):
         assert k in ["U", "C", "TS"]
         assert isinstance(v, int)
         assert v > 0
+
+    h_key_space = c.facet(field='lvl_i', key_space=['test1', 'not_in_test_map'])
+    test1_key = test_map.get('test1')['lvl_i']
+    assert dict(h_key_space.items()).get(test1_key) == 1
 
 
 def _test_stats(c: ESCollection):

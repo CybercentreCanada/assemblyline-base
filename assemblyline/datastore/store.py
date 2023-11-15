@@ -4,25 +4,24 @@ import logging
 import re
 import time
 import typing
-
+import warnings
 from os import environ, path
 from random import random
 from urllib.parse import urlparse
 
 import elasticsearch
 import elasticsearch.helpers
-
 from assemblyline.common import forge
+from assemblyline.common.isotime import now
+from assemblyline.common.security import generate_random_secret
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import (DataStoreException, UnsupportedElasticVersion,
-                                               SearchRetryException, VersionConflictException)
-
+from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion, VersionConflictException
 from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
 DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
 log = logging.getLogger('assemblyline.datastore')
-
+ALT_ELASTICSEARCH_USERS = ["plumber"]
 
 class ESStore(object):
     """ Elasticsearch multi-index implementation of the ResultStore interface."""
@@ -73,7 +72,7 @@ class ESStore(object):
 
         self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
                                                   ca_certs=self.ca_certs)
-        self.es_version = version.parse(self.client.info()['version']['number'])
+        self.es_version = version.parse(self.with_retries(self.client.info)['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
         self._test_elastic_minimum_version()
@@ -153,13 +152,39 @@ class ESStore(object):
     def is_supported_version(self, min):
         return self.es_version >= version.parse(min)
 
+    def switch_user(self, username):
+        if username not in ALT_ELASTICSEARCH_USERS:
+            log.warning(f"Unknown alternative user '{username}' to switch to for Elasticsearch")
+            return
+
+        if username == "plumber":
+            # Ensure roles for "plumber" user are created
+            self.with_retries(
+                self.client.security.put_role,
+                name="manage_tasks",
+                indices=[{"names": [".tasks"], "privileges": ["all"], "allow_restricted_indices": True}])
+
+            # Initialize/update 'plumber' user in Elasticsearch to perform cleanup
+            password = generate_random_secret()
+            self.with_retries(
+                self.client.security.put_user,
+                username=username,
+                password=password,
+                roles=["manage_tasks", "superuser"]
+            )
+
+        # Modify the client details for next reconnect
+        self._hosts = [h.replace(f"{urlparse(h).username}:{urlparse(h).password}",
+                                    f"{username}:{password}") for h in self._hosts]
+        self.client.close()
+        self.connection_reset()
+
+
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   max_retries=0,
                                                   request_timeout=TRANSPORT_TIMEOUT,
                                                   ca_certs=self.ca_certs)
-        self.es_version = version.parse(self.client.info()['version']['number'])
-        self._test_elastic_minimum_version()
 
     def close(self):
         self._closed = True
@@ -184,7 +209,10 @@ class ESStore(object):
         return self._closed
 
     def ping(self):
-        return self.client.ping()
+        try:
+            return self.client.ping()
+        except Exception:
+            return False
 
     def register(self, name: str, model_class=None):
         name_match = re.match(r'[a-z0-9_]*', name)
@@ -212,6 +240,58 @@ class ESStore(object):
 
         return value
 
+    def task_cleanup(self, deleteable_task_age=0, max_tasks=None):
+        # Create the query to delete the tasks
+        #   NOTE: This will delete up to 'max_tasks' completed tasks older then a 'deleteable_task_age'
+        q = f"completed:true AND task.start_time_in_millis:<{now(-1 * deleteable_task_age) * 1000}"
+
+        # Create a new task to delete expired tasks
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            task = self.with_retries(self.client.delete_by_query, index='.tasks',
+                                     q=q, wait_for_completion=False, conflicts='proceed',
+                                     max_docs=max_tasks)
+
+        # Wait until the tasks deletion task is over
+        res = self._get_task_results(task)
+
+        # return the number of deleted items
+        return res['deleted']
+
+    def _get_task_results(self, task, retry_function=None):
+        # This function is only used to wait for a asynchronous task to finish in a graceful manner without
+        #  timing out the elastic client. You can create an async task for long running operation like:
+        #   - update_by_query
+        #   - delete_by_query
+        #   - reindex ...
+        if retry_function is None:
+            retry_function = self.with_retries
+
+        res = None
+        while res is None:
+            try:
+                res = retry_function(self.client.tasks.get, task_id=task['task'],
+                                     wait_for_completion=True, timeout='5s')
+            except elasticsearch.ApiError as e:
+                err_code = e.status_code
+                msg = e.message
+                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
+                    pass
+                else:
+                    raise
+
+            except elasticsearch.exceptions.TransportError as e:
+                err_code, msg, _ = e.args
+                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
+                    pass
+                else:
+                    raise
+
+        try:
+            return res['response']
+        except KeyError:
+            return res['task']['status']
+
     def with_retries(self, func, *args, raise_conflicts=False, **kwargs):
         """
         This function performs the passed function with the given args and kwargs and reconnect if it fails
@@ -236,6 +316,19 @@ class ESStore(object):
 
                 return ret_val
 
+            except elasticsearch.NotFoundError as error:
+                index_name = kwargs.get('index', '').upper()
+                err_message = str(error)
+
+                # Validate exception type
+                if not index_name or "No search context found" not in err_message:
+                    raise
+
+                log.warning(f"Index {index_name} was removed while a query was running, retrying...")
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
             except elasticsearch.exceptions.ConflictError as ce:
                 if raise_conflicts:
                     # De-sync potential treads trying to write to the index
@@ -252,41 +345,75 @@ class ESStore(object):
                 log.warning(f"Elasticsearch connection timeout, server(s): "
                             f"{' | '.join(self.get_hosts(safe=True))}"
                             f", retrying {func.__name__}...")
+
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.connection_reset()
                 retries += 1
 
-            except (SearchRetryException,
-                    elasticsearch.exceptions.ConnectionError,
+            except (elasticsearch.exceptions.ConnectionError,
                     elasticsearch.exceptions.AuthenticationException) as e:
-                if not isinstance(e, SearchRetryException):
-                    log.warning(f"No connection to Elasticsearch server(s): "
-                                f"{' | '.join(self.get_hosts(safe=True))}"
-                                f", because [{e}] retrying {func.__name__}...")
+                log.warning(f"No connection to Elasticsearch server(s): "
+                            f"{' | '.join(self.get_hosts(safe=True))}"
+                            f", because [{e}] retrying {func.__name__}...")
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 self.connection_reset()
                 retries += 1
 
+            # Legacy retries, only for elastic 7.x client...
             except elasticsearch.exceptions.TransportError as e:
                 err_code, _, _ = e.args
-                if err_code == 503 or err_code == '503':
-                    log.warning(f"Looks like index {self.name} is not ready yet, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.connection_reset()
-                    retries += 1
-                elif err_code == 429 or err_code == '429':
-                    log.warning("Elasticsearch is too busy to perform the requested "
-                                f"task on index {self.name}, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.connection_reset()
-                    retries += 1
-                elif err_code == 403 or err_code == '403':
-                    log.warning("Elasticsearch cluster is preventing writing operations "
-                                f"on index {self.name}, retrying...")
-                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                    self.connection_reset()
-                    retries += 1
+                err_code = int(err_code)
+                index_name = kwargs.get('index', '').upper()
 
-                else:
+                # Validate exception type
+                if not index_name or err_code not in [503, 429, 403]:
                     raise
+
+                # Display proper error message
+                if err_code == 503:
+                    log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
+                elif err_code == 429:
+                    log.warning("Elasticsearch is too busy to perform the requested "
+                                f"task on index {index_name}, retrying...")
+                elif err_code == 403:
+                    log.warning("Elasticsearch cluster is preventing writing operations "
+                                f"on index {index_name}, retrying...")
+
+                # Loop and retry
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
+            # Elastic client 8.x retries
+            except elasticsearch.AuthorizationException:
+                index_name = kwargs.get('index', '').upper()
+                if not index_name:
+                    raise
+
+                log.warning("Elasticsearch cluster is preventing writing operations "
+                            f"on index {index_name}, retrying...")
+
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1
+
+            except elasticsearch.ApiError as err:
+                index_name = kwargs.get('index', '').upper()
+                err_code = err.meta.status
+
+                # Validate exception type
+                if not index_name or err_code not in [503, 429, 403]:
+                    raise
+
+                # Display proper error message
+                if err_code == 503:
+                    log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
+                elif err_code == 429:
+                    log.warning("Elasticsearch is too busy to perform the requested "
+                                f"task on index {index_name}, retrying...")
+
+                # Loop and retry
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                self.connection_reset()
+                retries += 1

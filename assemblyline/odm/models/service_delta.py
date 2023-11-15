@@ -48,6 +48,7 @@ class UpdateSourceDelta(odm.Model):
     headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)), description=REF_UPDATE_SOURCE)
     default_classification = odm.Optional(odm.Classification(), description=REF_UPDATE_SOURCE)
     git_branch = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
+    sync = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
 
 
 @ odm.model(index=False, store=False)
@@ -90,6 +91,7 @@ class ServiceDelta(odm.Model):
     accepts = odm.Optional(odm.Keyword(), store=True, description=REF_SERVICE)
     rejects = odm.Optional(odm.Keyword(), store=True, description=REF_SERVICE)
     category = odm.Optional(odm.Keyword(), store=True, copyto="__text__", description=REF_SERVICE)
+    classification = odm.Optional(odm.ClassificationString(), description=REF_SERVICE)
     config = odm.Optional(odm.Mapping(odm.Any()), index=False, description=REF_SERVICE)
     description = odm.Optional(odm.Text(), store=True, copyto="__text__", description=REF_SERVICE)
     default_result_classification = odm.Optional(odm.ClassificationString(), description=REF_SERVICE)
@@ -97,6 +99,7 @@ class ServiceDelta(odm.Model):
     is_external = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     licence_count = odm.Optional(odm.Integer(), description=REF_SERVICE)
     max_queue_length = odm.Optional(odm.Integer(), description=REF_SERVICE)
+    min_instances = odm.Optional(odm.Integer(), description=REF_SERVICE)
 
     uses_tags: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     uses_tag_scores: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)

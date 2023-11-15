@@ -8,7 +8,7 @@ from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION, BUILD_MINOR
-from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.alert import Alert, Event, STATUSES, PRIORITIES
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -48,9 +48,9 @@ class NullLogger(object):
         pass
 
 
-def create_alerts(ds, alert_count=50, submission_list=None, log=None):
+def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflows=[]):
     for _ in range(alert_count):
-        a = random_model_obj(Alert)
+        a: Alert = random_model_obj(Alert)
         a.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
         if isinstance(submission_list, list):
             submission = random.choice(submission_list)
@@ -58,6 +58,23 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None):
             a.sid = submission.sid
 
         a.owner = random.choice(['admin', 'user', 'other', None])
+        if workflows:
+            def generate_workflow_event(wf) -> Event:
+                event: Event = random_minimal_obj(Event)
+                if random.randint(0, 1) == 0:
+                    # Overwrite with workflow information
+                    event.entity_type = 'workflow'
+                    event.entity_name = wf.name
+                    event.entity_id = wf.workflow_id
+                else:
+                    # Overwrite with user information
+                    event.entity_type = 'user'
+                    event.entity_id = get_random_word()
+                event.labels = [get_random_word() for _ in range(random.randint(0, 20))]
+                event.status = random.choice(list(STATUSES) + [None])
+                event.priority = random.choice(list(PRIORITIES) + [None])
+                return event
+            a.events = [generate_workflow_event(random.choice(workflows)) for _ in range(random.randint(0, 5))]
 
         # Clear sub-types
         for data_type in a.al.detailed.fields():
@@ -402,13 +419,18 @@ def create_safelists(ds, log=None):
 
 
 def create_workflows(ds, log=None):
+    workflows = []
     for _ in range(20):
         w_id = get_random_id()
-        ds.workflow.save(w_id, random_model_obj(Workflow))
+        workflow = random_model_obj(Workflow)
+        workflow.workflow_id = w_id
+        ds.workflow.save(w_id, workflow)
         if log:
             log.info(f'\t{w_id}')
+        workflows.append(workflow)
 
     ds.workflow.commit()
+    return workflows
 
 
 def get_suricata_sig_path():
@@ -472,3 +494,13 @@ def wipe_safelist(ds):
 
 def wipe_workflows(ds):
     ds.workflow.wipe()
+
+
+def wipe_all_except_users(ds, fs):
+    wipe_alerts(ds)
+    wipe_heuristics(ds)
+    wipe_services(ds)
+    wipe_signatures(ds)
+    wipe_submissions(ds, fs)
+    wipe_safelist(ds)
+    wipe_workflows(ds)

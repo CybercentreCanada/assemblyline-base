@@ -49,7 +49,7 @@ class SubmissionParams(odm.Model):
     deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
     description = odm.Text(store=True, copyto="__text__", description="Description of the submission")
     generate_alert = odm.Boolean(default=False, description="Should this submission generate an alert?")
-    groups = odm.List(odm.Keyword(), default=["USERS"], description="List of groups related to this scan")
+    groups = odm.List(odm.Keyword(), default=[], description="List of groups related to this scan")
     ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
     ignore_dynamic_recursion_prevention = odm.Boolean(
         default=False, description="Should we ignore dynamic recursion prevention?")
@@ -134,7 +134,7 @@ class Submission(odm.Model):
     metadata = odm.FlattenedObject(store=False, description="Metadata associated to the submission")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details")
     results: list[str] = odm.List(odm.Keyword(), store=False, description="List of result keys")
-    sid = odm.UUID(copyto="__text__", description="Submission ID")
+    sid: str = odm.UUID(copyto="__text__", description="Submission ID")
     state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission")
     to_be_deleted = odm.Boolean(
         default=False, description="This document is going to be deleted as soon as it finishes")

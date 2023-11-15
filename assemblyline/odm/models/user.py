@@ -21,6 +21,7 @@ ROLES = StringTable('ROLES', [
     ("bundle_download", 3),
     ("file_detail", 4),
     ("file_download", 5),
+    ("file_purge", 33),
     ("heuristic_view", 6),
     ("obo_access", 7),
     ("replay_trigger", 8),
@@ -43,6 +44,9 @@ ROLES = StringTable('ROLES', [
     ("archive_trigger", 25),
     ("archive_download", 26),
     ("self_manage", 27),
+    ("retrohunt_view", 28),
+    ("retrohunt_run", 29),
+    ("external_query", 30),
 ])
 
 
@@ -66,6 +70,7 @@ USER_ROLES_BASIC = {
     ROLES.archive_download,    # Download file from the archive
     ROLES.apikey_access,       # Allow access via API keys
     ROLES.bundle_download,     # Create bundle of a submission
+    ROLES.external_query,      # Allow federated searches against external systems
     ROLES.file_detail,         # View files in the file viewer
     ROLES.file_download,       # Download files from the system
     ROLES.heuristic_view,      # View heuristics of the system
@@ -82,10 +87,13 @@ USER_ROLES_BASIC = {
     ROLES.submission_view,     # View submission's results
     ROLES.workflow_manage,     # Manage (add/delete) workflows
     ROLES.workflow_view,       # View workflows
+    ROLES.retrohunt_view,      # View yara searches
+    ROLES.retrohunt_run,       # Run yara searches
 }
 
 USER_ROLES = USER_ROLES_BASIC.union({
     ROLES.administration,      # Perform administrative tasks
+    ROLES.file_purge,          # Purge files from the filestore
     ROLES.replay_system,       # Manage status of file/submission/alerts during the replay process
     ROLES.signature_import,    # Import signatures in the system
     ROLES.signature_manage,    # Manage signatures sources in the system
@@ -122,6 +130,7 @@ USER_TYPE_DEP = {
         ROLES.self_manage,
         ROLES.submission_create,
         ROLES.replay_trigger,
+        ROLES.retrohunt_run,
     }
 }
 
@@ -131,6 +140,7 @@ ACL_MAP = {
         ROLES.archive_view,
         ROLES.archive_download,
         ROLES.bundle_download,
+        ROLES.external_query,
         ROLES.file_detail,
         ROLES.file_download,
         ROLES.heuristic_view,
@@ -139,6 +149,7 @@ ACL_MAP = {
         ROLES.signature_view,
         ROLES.submission_view,
         ROLES.workflow_view,
+        ROLES.retrohunt_view,
     ],
     "W": [
         ROLES.alert_manage,
@@ -148,11 +159,13 @@ ACL_MAP = {
         ROLES.safelist_manage,
         ROLES.submission_create,
         ROLES.submission_delete,
-        ROLES.submission_manage
+        ROLES.submission_manage,
+        ROLES.retrohunt_run,
     ],
     "E": [
         ROLES.administration,
         ROLES.apikey_access,
+        ROLES.file_purge,
         ROLES.obo_access,
         ROLES.replay_system,
         ROLES.self_manage,
@@ -226,7 +239,7 @@ class User(odm.Model):
                                         description="Maximum classification for the user")
     dn = odm.Optional(odm.Keyword(store=False, copyto="__text__"), description="User's LDAP DN")
     email = odm.Optional(odm.Email(copyto="__text__"), description="User's email address")
-    groups = odm.List(odm.Keyword(), copyto="__text__", default=["USERS"],
+    groups = odm.List(odm.UpperKeyword(), copyto="__text__", default=[],
                       description="List of groups the user submits to")
     is_active = odm.Boolean(default=True, description="Is the user active?")
     name = odm.Keyword(copyto="__text__", description="Full name of the user")

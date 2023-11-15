@@ -1,34 +1,42 @@
 import logging
-import magic
-import msoffcrypto
 import re
-import ssdeep
 import struct
 import subprocess
 import sys
 import threading
 import uuid
+import zipfile
+from binascii import hexlify
+from typing import Dict, Optional, Tuple, Union
+
+import os
+import magic
+import msoffcrypto
 import yaml
 import yara
-import zipfile
-
-from binascii import hexlify
-from cart import get_metadata_only
-from typing import Tuple, Union, Dict
-
-from assemblyline.common.digests import get_digests_for_file
-from assemblyline.common.forge import get_constants, get_cachestore, get_config, get_datastore
-from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs, magic_patterns as default_magic_patterns, \
-    trusted_mimes as default_trusted_mimes
+from assemblyline.common.digests import get_digests_for_file, DEFAULT_BLOCKSIZE
+from assemblyline.common.forge import get_cachestore, get_config, get_constants, get_datastore
+from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs
+from assemblyline.common.identify_defaults import magic_patterns as default_magic_patterns
+from assemblyline.common.identify_defaults import trusted_mimes as default_trusted_mimes
 from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
 from assemblyline.remote.datatypes.events import EventWatcher
+from cart import get_metadata_only
+from urllib.parse import unquote, urlparse
 
 constants = get_constants()
 
 
+# These headers are found in the custom.magic file to assist with identification, and are imported by services
+# that can create files with a high-confidence type
+CUSTOM_PS1_ID = b"#!/usr/bin/env pwsh\n"
+CUSTOM_BATCH_ID = b"REM Batch extracted by Assemblyline\n"
+CUSTOM_URI_ID = "# Assemblyline URI file\n"
+
+
 class Identify():
-    def __init__(self, use_cache=True, config=None, datastore=None, log=None) -> None:
+    def __init__(self, use_cache: bool = True, config=None, datastore=None, log=None) -> None:
         self.log = log or logging.getLogger('assemblyline.identify')
         self.config = None
         self.datastore = None
@@ -57,19 +65,25 @@ class Identify():
                 'patterns': self._load_magic_patterns,
                 'yara': self._load_yara_file
             }
-            self.reload_watcher = EventWatcher()
+            self.reload_watcher: Optional[EventWatcher[str]] = EventWatcher()
             self.reload_watcher.register('system.identify', self._handle_reload_event)
             self.reload_watcher.start()
         else:
             self.reload_watcher = None
             self.reload_map = {}
 
-    def _handle_reload_event(self, data):
-        func = self.reload_map.get(data, None)
-        if func:
-            func()
+    def _handle_reload_event(self, data: Optional[str]):
+        if data is None:
+            # handle disconnect event, we may be out of sync
+            for reload_func in self.reload_map.values():
+                reload_func()
         else:
-            self.log.error(f"Invalid system.identify message received: {data}")
+            # update information
+            func = self.reload_map.get(data, None)
+            if func is not None:
+                func()
+            else:
+                self.log.error(f"Invalid system.identify message received: {data}")
 
     def _load_magic_patterns(self):
         self.magic_patterns = default_magic_patterns
@@ -223,7 +237,9 @@ class Identify():
                 label = dotdump(label)
 
                 if self.custom.match(label):
-                    data["type"] = label.split("custom: ")[1].strip()
+                    # Some things, like executable have additional data appended to their identification, like
+                    # ", dynamically linked, stripped" that we do not want to use as part of the type.
+                    data["type"] = label.split("custom: ")[1].split(",", 1)[0].strip()
                     break
 
             # Second priority is mime times marked as trusted
@@ -305,10 +321,15 @@ class Identify():
 
         return fallback
 
-    def fileinfo(self, path: str) -> Dict:
+    def fileinfo(self, path: str, generate_hashes: bool = True, skip_fuzzy_hashes: bool = False) -> Dict:
         path = safe_str(path)
-        data = get_digests_for_file(path, on_first_block=self.ident)
-        data["ssdeep"] = ssdeep.hash_from_file(path)
+        if generate_hashes:
+            data = get_digests_for_file(path, on_first_block=self.ident, skip_fuzzy_hashes=skip_fuzzy_hashes)
+        else:
+            with open(path, 'rb') as f:
+                first_block = f.read(DEFAULT_BLOCKSIZE)
+            data = self.ident(first_block, len(first_block), path)
+            data["size"] = os.path.getsize(path)
 
         # Check if file empty
         if not int(data.get("size", -1)):
@@ -325,6 +346,10 @@ class Identify():
         # Further identify dos executables has this may be a PE that has been misidentified
         elif data["type"] == "executable/windows/dos":
             data["type"] = dos_ident(path)
+
+        # If we identified the file as 'uri' from libmagic, we should further identify it, or return it as text/plain
+        elif data["type"] == "uri":
+            data["type"] = uri_ident(path, data)
 
         # If we're so far failed to identified the file, lets run the yara rules
         elif "unknown" in data["type"] or data["type"] == "text/plain":
@@ -486,6 +511,48 @@ def dos_ident(path: str) -> str:
     return "executable/windows/dos"
 
 
+def uri_ident(path: str, info: Dict) -> str:
+    try:
+        with open(path, 'r') as f:
+            data = yaml.safe_load(f)
+    except Exception:
+        return "text/plain"
+
+    if "uri" not in data:
+        return "text/plain"
+
+    try:
+        u = urlparse(data["uri"])
+    except Exception:
+        return "text/plain"
+
+    if not u.scheme:
+        return "text/plain"
+
+    info["uri_info"] = dict(
+        uri=data["uri"],
+        scheme=u.scheme,
+        netloc=u.netloc,
+    )
+    if u.path:
+        info["uri_info"]["path"] = u.path
+    if u.params:
+        info["uri_info"]["params"] = u.params
+    if u.query:
+        info["uri_info"]["query"] = u.query
+    if u.fragment:
+        info["uri_info"]["fragment"] = u.fragment
+    if u.username:
+        info["uri_info"]["username"] = unquote(u.username)
+    if u.password:
+        info["uri_info"]["password"] = unquote(u.password)
+    info["uri_info"]["hostname"] = u.hostname
+    if u.port:
+        info["uri_info"]["port"] = u.port
+
+    return f"uri/{u.scheme}"
+
+
 if __name__ == "__main__":
     from pprint import pprint
 
@@ -502,7 +569,7 @@ if __name__ == "__main__":
     else:
         name = sys.stdin.readline().strip()
         while name:
-            a = identify.fileinfo(name)
+            a = identify.fileinfo(name, skip_fuzzy_hashes=True)
             print(
                 "\t".join(
                     dotdump(str(a[k]))

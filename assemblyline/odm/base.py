@@ -19,14 +19,16 @@ import re
 import sys
 import unicodedata
 from datetime import datetime
-from typing import Dict, Tuple, Union, Any as _Any
+from typing import Any as _Any
+from typing import Dict, Tuple, Union
+
 import arrow
-from assemblyline.common.net import is_valid_domain, is_valid_ip
 from dateutil.tz import tzutc
 
 from assemblyline.common import forge
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.net import is_valid_domain, is_valid_ip
 from assemblyline.common.uid import get_random_id
 
 # Python 3.6 deepcopy patch
@@ -62,19 +64,25 @@ IP_REGEX = f"(?:{IPV4_REGEX}|{IPV6_REGEX})"
 IP_ONLY_REGEX = f"^{IP_REGEX}$"
 IPV4_ONLY_REGEX = f"^{IPV4_REGEX}$"
 IPV6_ONLY_REGEX = f"^{IPV6_REGEX}$"
+PORT_REGEX = r"(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])"
 PRIVATE_IP = r"(?:(?:127|10)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|" \
              r"(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|" \
              r"(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))"
 PHONE_REGEX = r"^(\+?\d{1,2})?[ .-]?(\(\d{3}\)|\d{3})[ .-](\d{3})[ .-](\d{4})$"
+TLSH_REGEX = r"^((?:T1)?[0-9a-fA-F]{70})$"
 SSDEEP_REGEX = r"^[0-9]{1,18}:[a-zA-Z0-9/+]{0,64}:[a-zA-Z0-9/+]{0,64}$"
 MD5_REGEX = r"^[a-f0-9]{32}$"
 SHA1_REGEX = r"^[a-f0-9]{40}$"
 SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
-URI_PATH = r"(?:[/?#]\S*)"
-FULL_URI = f"^((?:(?:[A-Za-z0-9+-.]{{1,}}:)?//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?)" \
-           f"{URI_PATH}?$"
+URI_PATH = r"([/?#]\S*)"
+# Used for finding URIs in a blob
+URI_REGEX = f"((?:(?:[A-Za-z0-9+.-]{{1,}}:)//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
+            f"{URI_PATH}?)"
+# Used for direct matching
+FULL_URI = f"^{URI_REGEX}$"
 UNC_PATH_REGEX = r"^(?:\\\\(?:[a-zA-Z0-9-_\s]{1,15}){1}(?:\.[a-zA-Z0-9-_\s]{1,64}){0,3}){1}" \
+                 f"(?:@{PORT_REGEX})?" \
                  r'(?:\\[^\\\/\:\*\?\\"\<\>\|\r\n]{1,64}){1,}\\{0,}$'
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
@@ -107,7 +115,7 @@ class KeyMaskException(KeyError):
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, description=None):
+    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, description=None, deprecation=None):
         self.index = index
         self.store = store
         self.multivalued = False
@@ -126,6 +134,7 @@ class _Field:
         self.default = default
         self.default_set = default is not None
         self.optional = False
+        self.deprecation = deprecation
 
     # noinspection PyProtectedMember
     def __get__(self, obj, objtype=None):
@@ -134,9 +143,17 @@ class _Field:
             return obj
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
+        value = None
         if self.getter_function is not None:
-            return self.getter_function(obj, obj._odm_py_obj[self.name])
-        return obj._odm_py_obj[self.name]
+            value = self.getter_function(obj, obj._odm_py_obj[self.name])
+        else:
+            value = obj._odm_py_obj[self.name]
+
+        if value is not None and self.deprecation:
+            # Only raise deprecation warning if Field is actually in use
+            logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
+        return value
+
 
     # noinspection PyProtectedMember
     def __set__(self, obj, value):
@@ -144,6 +161,9 @@ class _Field:
         if self.name in obj._odm_removed:
             raise KeyMaskException(self.name)
         value = self.check(value)
+        if self.deprecation:
+            # Only raise deprecation warning if Field is actually in use
+            logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
         if self.setter_function is not None:
             value = self.setter_function(obj, value)
         obj._odm_py_obj[self.name] = value
@@ -384,7 +404,14 @@ class IP(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
                              f"validator: {self.validation_regex.pattern}")
 
-        return ".".join([str(int(x)) for x in value.split(".")])
+        # An additional check for type validation
+
+        # IPv4
+        if "." in value:
+            return ".".join([str(int(x)) for x in value.split(".")])
+        # IPv6
+        else:
+            return ":".join([str(x) for x in value.split(":")])
 
 
 class Domain(Keyword):
@@ -479,7 +506,7 @@ class URI(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{match.group(2)}' in URI '{value}'"
                              " is not a valid Domain or IP.")
 
-        return match.group(0).replace(match.group(1), match.group(1).lower())
+        return match.group(0).replace(match.group(2), match.group(2).lower())
 
 
 class UNCPath(ValidatedKeyword):
@@ -756,9 +783,13 @@ class TypedList(list):
 class List(_Field):
     """A field storing a sequence of typed elements."""
 
-    def __init__(self, child_type, **kwargs):
+    def __init__(self, child_type, auto=False, **kwargs):
+        if isinstance(child_type, Optional):
+            raise ValueError("List does not support Optional child type")
+
         super().__init__(**kwargs)
         self.child_type = child_type
+        self.auto = auto
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -774,6 +805,9 @@ class List(_Field):
             # The following piece of code transforms the dictionary of list into a list of
             # dictionaries so the rest of the model validation can go through.
             return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
+
+        if self.auto and not isinstance(value, list):
+            value = [value]
 
         return TypedList(self.child_type, *value, **kwargs)
 
@@ -838,8 +872,11 @@ class Mapping(_Field):
     """A field storing a sequence of typed elements."""
 
     def __init__(self, child_type, **kwargs):
-        self.child_type = child_type
+        if isinstance(child_type, Optional):
+            raise ValueError("Mapping does not support Optional child type")
+
         super().__init__(**kwargs)
+        self.child_type = child_type
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -926,9 +963,12 @@ class Compound(_Field):
 
 
 class Optional(_Field):
-    """A wrapper field to allow simple types (int, float, bool) to take None values."""
+    """A wrapper field to allow other types (int, bool, Compound, ...) to take None values."""
 
     def __init__(self, child_type, **kwargs):
+        if isinstance(child_type, Optional):
+            raise ValueError("Optional does not support Optional child type")
+
         if child_type.default_set:
             kwargs['default'] = child_type.default
         super().__init__(**kwargs)
@@ -1091,6 +1131,8 @@ class Model:
             # Is this a required field?
             if info.__class__ != Optional:
                 required = ":material-checkbox-marked-outline: Yes"
+            elif info.deprecation:
+                required = ":material-alert-box-outline: Deprecated"
             else:
                 required = ":material-minus-box-outline: Optional"
 
@@ -1107,7 +1149,12 @@ class Model:
                 default = f"`{val if not isinstance(val, dict) else info.default}`"
             elif isinstance(defaults, list) and field_type == 'List':
                 default = f'`{defaults}`'
-            row = f"| {field} | {field_type} | {description} | {required} | {default} |\n"
+            if info.deprecation:
+                if not description:
+                    description = f':material-alert-outline: {info.deprecation}'
+                else:
+                    description += f'<br>:material-alert-outline: {info.deprecation}'
+            row = f'| {field} | {field_type} | {description} | <div style="width:100px">{required}</div> | {default} |\n'
             table += row
 
         markdown_content += table + "\n\n"

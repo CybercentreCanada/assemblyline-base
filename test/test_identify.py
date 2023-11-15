@@ -27,7 +27,7 @@ def test_id_file_base():
                     continue
 
                 file_path = os.path.join(file_base_dir, file_name)
-                data = identify.fileinfo(file_path)
+                data = identify.fileinfo(file_path, generate_hashes=False)
                 actual_value = data.get("type", "")
                 expected_value = json_contents[file_name]
                 assert actual_value == expected_value
@@ -60,4 +60,4 @@ if SAMPLES_LOCATION:
     @pytest.mark.parametrize("sample", Path(SAMPLES_LOCATION).rglob("*.cart"), ids=get_ids, indirect=True)
     def test_identify_samples(sample):
         with forge.get_identify(use_cache=False) as identify:
-            assert identify.fileinfo(sample[0])["type"] == sample[1]
+            assert identify.fileinfo(sample[0], generate_hashes=False)["type"] == sample[1]

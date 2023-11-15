@@ -5,6 +5,7 @@ from typing import Optional
 EPOCH = datetime.utcfromtimestamp(0)
 ISO_FMT = '%Y-%m-%dT%H:%M:%S'
 LOCAL_FMT = '%Y-%m-%d %H:%M:%S'
+LOCAL_FMT_WITH_MS = f"{LOCAL_FMT}.%f"
 DB_FMT = '%Y%m%d'
 
 MAX_TIME = datetime.max
@@ -49,8 +50,20 @@ def epoch_to_iso(t: float) -> str:
 
 
 def epoch_to_local(t: float) -> str:
-    s = datetime.fromtimestamp(t).strftime(LOCAL_FMT)
+    s = format_time(datetime.fromtimestamp(t), LOCAL_FMT)
     return ''.join((s, _epoch_to_ms(t)))[:26]
+
+
+def epoch_to_local_with_ms(t: float, trunc: int = 0) -> str:
+    """
+    trunc is the number of last digits of subsecond to truncate from the timestamp
+    Example: If you want 3 millisecond digits, set trunc=3. If you want the last 2 millisecond digits, set trunc=4.
+    """
+    s = format_time(datetime.fromtimestamp(t), LOCAL_FMT_WITH_MS)
+    if trunc:
+        # We don't need precision to the nano second. Milliseconds work just fine. Set trunc=3.
+        s = s[:-1*trunc]
+    return s
 
 
 def iso_to_epoch(ts: str, hp: bool = False) -> float:
@@ -75,8 +88,21 @@ def local_to_epoch(ts: str, hp: bool = False) -> float:
         return epoch + (utc_offset_from_local(epoch) * 3600)
 
 
+def local_with_ms_to_epoch(ts: str, hp: bool = False) -> float:
+    epoch = iso_to_epoch("%sZ" % ts.replace(" ", "T"))
+    if hp:
+        return int((epoch + (utc_offset_from_local_with_ms(epoch) * 3600)) * 1000000)
+    else:
+        return epoch + (utc_offset_from_local_with_ms(epoch) * 3600)
+
+
 def local_to_iso(ts: str) -> str:
     return epoch_to_iso(local_to_epoch(ts))
+
+
+def local_to_local_with_ms(ts: str) -> str:
+    # We don't need precision to the nano second. Milliseconds work just fine.
+    return epoch_to_local_with_ms(local_to_epoch(ts), trunc=3)
 
 
 def now(offset: float = 0.0, hp: bool = False) -> float:
@@ -98,13 +124,19 @@ def now_as_local(offset: float = 0.0) -> str:
 
 
 def now_as_db(offset: float = 0.0, date_format: str = DB_FMT) -> str:
-    return datetime.fromtimestamp(now(offset)).strftime(date_format)
+    return format_time(datetime.fromtimestamp(now(offset)), date_format)
 
 
 def utc_offset_from_local(cur_time: Optional[float] = None) -> float:
     if not cur_time:
         cur_time = time()
     return int(cur_time - iso_to_epoch("%sZ" % epoch_to_local(cur_time).replace(" ", "T"))) / 3600
+
+
+def utc_offset_from_local_with_ms(cur_time: Optional[float] = None) -> float:
+    if not cur_time:
+        cur_time = time()
+    return int(cur_time - iso_to_epoch("%sZ" % epoch_to_local_with_ms(cur_time).replace(" ", "T"))) / 3600
 
 
 def trunc_day(timeobj: datetime) -> datetime:
@@ -123,3 +155,15 @@ def format_time(timeobj: datetime, date_format: Optional[str] = None) -> str:
         return timeobj.isoformat() + 'Z'
     else:
         return timeobj.strftime(date_format)
+
+
+def ensure_time_format(ts: str, date_format: str) -> str:
+    """
+    A nice helper method for checking a time format without having to deal with datetime. Just pass a timestamp string
+    and a date format and you'll get the timestamp back if the date format is followed, or an error will be raised.
+    """
+    try:
+        datetime.strptime(ts, date_format)
+    except ValueError:
+        raise
+    return ts

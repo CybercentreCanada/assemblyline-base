@@ -80,6 +80,7 @@ class UpdateSource(odm.Model):
         default=Classification.UNRESTRICTED,
         description="Default classification used in absence of one defined in files from source")
     git_branch: str = odm.Optional(odm.Keyword(default=""), description="Branch to checkout from Git repository.")
+    sync: bool = odm.Boolean(default=False, description="Synchronize signatures with remote source. Allows system to auto-disable signatures no longer found in source.")
 
 
 @ odm.model(index=False, store=False, description="Update Configuration for Signatures")
@@ -114,6 +115,9 @@ class Service(odm.Model):
 
     category = odm.Keyword(store=True, default="Static Analysis", copyto="__text__",
                            description="Which category does this service belong to?")
+    classification = odm.ClassificationString(
+        default=Classification.UNRESTRICTED, description="Classification of the service"
+    )
     config = odm.Mapping(odm.Any(), default={}, index=False, store=False, description="Service Configuration")
     description = odm.Text(store=True, default="NA", copyto="__text__", description="Description of service")
     default_result_classification = odm.ClassificationString(
@@ -122,6 +126,7 @@ class Service(odm.Model):
     is_external: bool = odm.Boolean(
         default=False, description="Does this service perform analysis outside of Assemblyline?")
     licence_count: int = odm.Integer(default=0, description="How many licences is the service allowed to use?")
+    min_instances: int = odm.Optional(odm.Integer(), description="The minimum number of service instances. Overrides Scaler's min_instances configuration.")
     max_queue_length: int = odm.Integer(
         default=0,
         description="If more than this many jobs are queued for this service drop those over this limit. 0 is unlimited.")

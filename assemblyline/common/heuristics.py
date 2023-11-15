@@ -119,7 +119,7 @@ class Heuristic(object):
                 self.attack_ids.append(a_id)
                 software_def = software_map[a_id]
                 implant_name = software_def.get('name', None)
-                if implant_name:
+                if implant_name and software_def.get('type', None) == 'malware':
                     self.associated_tags.append(('attribution.implant', implant_name.upper()))
 
                 for s_a_id in software_def['attack_ids']:

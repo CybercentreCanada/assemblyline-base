@@ -1,10 +1,6 @@
 from typing import Iterable
 
 
-class SearchRetryException(Exception):
-    pass
-
-
 class DataStoreException(Exception):
     pass
 
