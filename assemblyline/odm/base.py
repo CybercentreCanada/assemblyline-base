@@ -787,6 +787,9 @@ class List(_Field):
         if isinstance(child_type, Optional):
             raise ValueError("List does not support Optional child type")
 
+        if isinstance(child_type, List):
+            raise ValueError("List of Lists are not supported")
+
         super().__init__(**kwargs)
         self.child_type = child_type
         self.auto = auto
@@ -1405,23 +1408,3 @@ def construct_safe(mod, data) -> tuple[_Any, dict]:
         return mod(clean), dropped
     except ValueError:
         return None, recursive_update(dropped, clean)
-
-
-if __name__ == "__main__":
-    from pprint import pprint
-
-    @model()
-    class Inner(Model):
-        ia = Integer()
-        ib = Optional(Integer())
-
-    @model()
-    class Outer(Model):
-        a = Optional(Mapping(List(Compound(Inner))))
-        b = Optional(List(Mapping(Compound(Inner))))
-        c = List(List(List(Compound(Inner))))
-        d = Mapping(Mapping(Mapping(Compound(Inner))))
-        e = Mapping(List(Mapping(List(Mapping(List(Compound(Inner)))))))
-
-    pprint({k: {"type": v.__class__.__name__, "name": v.name, "parent_name": v.parent_name,
-           "multivalued": v.multivalued, "optional": v.optional} for k, v in Outer.flat_fields(show_compound=True).items()})
