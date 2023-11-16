@@ -1044,7 +1044,7 @@ class Model:
 
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
-                                                 show_compound, show_list, skip_mappings,
+                                                 show_compound, skip_mappings,
                                                  multivalued=multivalued or isinstance(sub_field, List)))
 
             elif sub_name:
