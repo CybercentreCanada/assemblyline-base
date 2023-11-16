@@ -288,6 +288,11 @@ def test_create_list():
         class Test(Model):
             a = List(Optional(Integer()))
 
+    with pytest.raises(ValueError):
+        @model()
+        class Test(Model):
+            a = List(List(Integer()))
+
 
 def test_create_list_compounds():
     @model()
@@ -786,7 +791,6 @@ def test_flat_to_nested():
     assert flat_to_nested({'a.b.c': None}) == {'a': {'b': {'c': None}}}
 
 
-# This test should be deleted if we fix the code for test_flat_fields
 def test_limited_flat_fields():
     @model()
     class Inner(Model):
@@ -879,7 +883,7 @@ def test_flat_fields():
     class Outer(Model):
         a = Optional(Mapping(List(Compound(Inner))))
         b = Optional(List(Mapping(Compound(Inner))))
-        c = List(List(List(Compound(Inner))))
+        c = List(Compound(Inner))
         d = Mapping(Mapping(Mapping(Compound(Inner))))
         e = List(Mapping(List(Mapping(List(Compound(Inner))))))
 
