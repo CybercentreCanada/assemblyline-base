@@ -2,7 +2,7 @@ import sys
 
 from assemblyline.common import forge
 from assemblyline.odm.random_data import create_heuristics, create_users, create_services, create_signatures, \
-    create_submission, create_alerts, create_safelists, create_workflows, wipe_all_except_users
+    create_submission, create_alerts, create_safelists, create_workflows, wipe_all_except_users, create_badlists
 
 
 class PrintLogger(object):
@@ -19,7 +19,7 @@ class PrintLogger(object):
         print(f"{self.indent}[E] {msg}")
 
 
-def create_basic_data(log=None, ds=None, svc=True, sigs=True, safelist=True, reset=False):
+def create_basic_data(log=None, ds=None, svc=True, sigs=True, safelist=True, reset=False, badlist=True):
     ds = ds or forge.get_datastore()
 
     if reset:
@@ -35,6 +35,10 @@ def create_basic_data(log=None, ds=None, svc=True, sigs=True, safelist=True, res
     if svc:
         log.info("\nCreating services...")
         create_services(ds, log=log)
+
+    if badlist:
+        log.info("\nCreating random badlist...")
+        create_badlists(ds, log=log)
 
     if safelist:
         log.info("\nCreating random safelist...")
@@ -81,7 +85,7 @@ if __name__ == "__main__":
         wipe_all_except_users(datastore, filestore)
 
     create_basic_data(log=logger, ds=datastore, svc="nosvc" not in sys.argv, sigs="nosigs" not in sys.argv,
-                      safelist="nosl" not in sys.argv, reset="reset" in sys.argv)
+                      safelist="nosl" not in sys.argv, reset="reset" in sys.argv, badlist="nobl" not in sys.argv)
     if "full" in sys.argv:
         create_extra_data(log=logger, ds=datastore)
 
