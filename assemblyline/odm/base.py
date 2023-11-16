@@ -1020,24 +1020,36 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
+    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False, optional=False):
         out = dict()
 
-        # If field is a compound and we should show it
+        # Optionals and Lists do not need to be parsed, we can just analyse their inner type
+        if isinstance(field, (Optional, List)):
+            out.update(Model._recurse_fields(name, field.child_type, show_compound, skip_mappings,
+                                             multivalued=multivalued or isinstance(field, List),
+                                             optional=optional or isinstance(field, Optional)))
+            return out
+
+        # If field is a Compound and were asked to show it, add it to the field list
         if show_compound and isinstance(field, Compound):
+            # Set the multivalued and optional flag on the field
+            field.multivalued = multivalued
+            field.optional = optional
+
+            # Compound when showed will absorb multivalue and optional flag
+            multivalued = False
+            optional = False
+
             out[name] = field
 
-        # If we're dealing with a list or an optional Compound, we need to validate against the Compound object
-        if isinstance(field, (Optional, List)) and isinstance(field.child_type, Compound) and show_compound:
-            # Lists of compounds are multivalued but internal fields of the compound aren't necessary
-            if isinstance(field, List):
-                multivalued = False
-                field.child_type.multivalued = True
-            out[name] = field.child_type
-
         for sub_name, sub_field in field.fields().items():
-            sub_field.multivalued = multivalued or (isinstance(
-                field, List) and not isinstance(field.child_type, Compound))
+            # Set the multivalued and optional flag on the field
+            sub_field.multivalued = multivalued
+            sub_field.optional = optional
+
+            # Make sure the Compound name is propagated as the parent_name
+            if isinstance(field, Compound):
+                sub_field.parent_name = name
 
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
@@ -1045,7 +1057,8 @@ class Model:
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
                                                  show_compound, skip_mappings,
-                                                 multivalued=multivalued or isinstance(sub_field, List)))
+                                                 multivalued=multivalued or isinstance(sub_field, List),
+                                                 optional=optional or isinstance(sub_field, Optional)))
 
             elif sub_name:
                 out[".".join([name, sub_name])] = sub_field
@@ -1392,3 +1405,23 @@ def construct_safe(mod, data) -> tuple[_Any, dict]:
         return mod(clean), dropped
     except ValueError:
         return None, recursive_update(dropped, clean)
+
+
+if __name__ == "__main__":
+    from pprint import pprint
+
+    @model()
+    class Inner(Model):
+        ia = Integer()
+        ib = Optional(Integer())
+
+    @model()
+    class Outer(Model):
+        a = Optional(Mapping(List(Compound(Inner))))
+        b = Optional(List(Mapping(Compound(Inner))))
+        c = List(List(List(Compound(Inner))))
+        d = Mapping(Mapping(Mapping(Compound(Inner))))
+        e = Mapping(List(Mapping(List(Mapping(List(Compound(Inner)))))))
+
+    pprint({k: {"type": v.__class__.__name__, "name": v.name, "parent_name": v.parent_name,
+           "multivalued": v.multivalued, "optional": v.optional} for k, v in Outer.flat_fields(show_compound=True).items()})
