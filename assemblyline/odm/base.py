@@ -115,7 +115,8 @@ class KeyMaskException(KeyError):
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, description=None, deprecation=None):
+    def __init__(self, name=None, index=None, store=None, copyto=None,
+                 default=None, description=None, deprecation=None):
         self.index = index
         self.store = store
         self.multivalued = False
@@ -153,7 +154,6 @@ class _Field:
             # Only raise deprecation warning if Field is actually in use
             logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
         return value
-
 
     # noinspection PyProtectedMember
     def __set__(self, obj, value):
@@ -1022,8 +1022,22 @@ class Model:
     @staticmethod
     def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
         out = dict()
+
+        # If field is a compound and we should show it
+        if show_compound and isinstance(field, Compound):
+            out[name] = field
+
+        # If we're dealing with a list or an optional Compound, we need to validate against the Compound object
+        if isinstance(field, (Optional, List)) and isinstance(field.child_type, Compound) and show_compound:
+            # Lists of compounds are multivalued but internal fields of the compound aren't necessary
+            if isinstance(field, List):
+                multivalued = False
+                field.child_type.multivalued = True
+            out[name] = field.child_type
+
         for sub_name, sub_field in field.fields().items():
-            sub_field.multivalued = multivalued or isinstance(field, List)
+            sub_field.multivalued = multivalued or (isinstance(
+                field, List) and not isinstance(field.child_type, Compound))
 
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
@@ -1038,14 +1052,6 @@ class Model:
 
             else:
                 out[name] = sub_field
-
-        if (isinstance(field, Compound) and show_compound):
-            out[name] = field
-
-        # If we're dealing with a list of Compounds or an optional Compound,
-        # we need to validate against the Compound object
-        if isinstance(field, (List, Optional)) and isinstance(field.child_type, Compound) and show_compound:
-            out[name] = field.child_type
 
         return out
 
@@ -1154,7 +1160,8 @@ class Model:
                     description = f':material-alert-outline: {info.deprecation}'
                 else:
                     description += f'<br>:material-alert-outline: {info.deprecation}'
-            row = f'| {field} | {field_type} | {description} | <div style="width:100px">{required}</div> | {default} |\n'
+            row = f'| {field} | {field_type} | {description} | ' \
+                  f'<div style="width:100px">{required}</div> | {default} |\n'
             table += row
 
         markdown_content += table + "\n\n"
