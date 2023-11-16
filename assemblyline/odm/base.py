@@ -1020,7 +1020,7 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, show_compound, show_list, skip_mappings, multivalued=False):
+    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
         out = dict()
 
         # If field is a compound and we should show it
@@ -1056,7 +1056,7 @@ class Model:
         return out
 
     @classmethod
-    def flat_fields(cls, show_compound=False, show_list=False, skip_mappings=False) -> dict[str, _Field]:
+    def flat_fields(cls, show_compound=False, skip_mappings=False) -> dict[str, _Field]:
         """
         Describe the elements of the model.
 
@@ -1071,7 +1071,7 @@ class Model:
             if isinstance(field, _Field):
                 if skip_mappings and isinstance(field, Mapping):
                     continue
-                out.update(Model._recurse_fields(name, field, show_compound, show_list, skip_mappings,
+                out.update(Model._recurse_fields(name, field, show_compound, skip_mappings,
                                                  multivalued=isinstance(field, List)))
         return out
 
