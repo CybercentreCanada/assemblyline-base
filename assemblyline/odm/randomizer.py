@@ -135,6 +135,10 @@ def get_random_hash(hash_len: int) -> str:
     return "".join([random.choice(HASH_ALPHA) for _ in range(hash_len)])
 
 
+def get_random_tlsh():
+    return f"T{get_random_hash(71)}"
+
+
 def get_random_heuristic_id() -> str:
     return f"{get_random_service_name().upper()}.{random.randint(1, 5)}"
 
@@ -356,6 +360,8 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         if name:
             if "sha256" in name:
                 return get_random_hash(64)
+            elif "tlsh" in name:
+                return get_random_tlsh()
             elif "yara" in name:
                 return get_random_rule()
             elif "filetype" in name:
