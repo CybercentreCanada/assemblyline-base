@@ -45,10 +45,10 @@ class Processing(odm.Model):
 
 @odm.model(description="Chance of Processing")
 class ProcessingChance(odm.Model):
-    critical = odm.Integer(description="Chance of processing critical items")
-    high = odm.Integer(description="Chance of processing high items")
-    low = odm.Integer(description="Chance of processing low items")
-    medium = odm.Integer(description="Chance of processing medium items")
+    critical = odm.Float(description="Chance of processing critical items")
+    high = odm.Float(description="Chance of processing high items")
+    low = odm.Float(description="Chance of processing low items")
+    medium = odm.Float(description="Chance of processing medium items")
 
 
 @odm.model(description="Heartbeat Model")
