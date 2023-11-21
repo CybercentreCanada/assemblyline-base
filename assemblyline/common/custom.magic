@@ -88,8 +88,6 @@
 0   string  PTCH\007\001  custom: resource/ptc
 0       string  SBle
 >16     string  MRAH     custom: resource/sbr
-0   string
->&0     regex/40        [0-9]\\.[0-9]\\.[0-9][a-zA-Z][0-9]     custom: resource/unity
 # Database files
 # DBF
 0   string  DBPF\002\000\000\000\001    custom: db/dbf
