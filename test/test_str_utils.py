@@ -70,6 +70,7 @@ def test_truncate():
     # We should handle other value types also
     assert str_utils.truncate(1234) == "1234"
     assert str_utils.truncate(1234.1) == "1234.1"
+    assert str_utils.truncate(12345678901234567890, 15) == "123456789012345..."
 
 
 def test_remove_bidir_unicode_controls():
