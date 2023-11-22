@@ -421,12 +421,6 @@ def test_translate_str():
                          b'\xcd\x93\xef\x82\xb5\x82\xad\x82\xc8\x82\xa2')['language'] == "Japanese"
 
 
-def test_truncate():
-    assert truncate(b"blah") == "blah"
-    assert truncate(b"blah", 10) == "blah"
-    assert truncate(b"blahblahblahblah", 10) == "blahblahbl..."
-
-
 def test_uid():
     test_data = "test" * 1000
     rid = get_random_id()

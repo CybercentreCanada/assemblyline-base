@@ -56,6 +56,22 @@ def test_translate_str():
     assert result['encoding'] == 'utf-8'
 
 
+def test_truncate():
+    # Bytes are converted to strings
+    assert str_utils.truncate(b"blah") == "blah"
+    # Strings are handled normally
+    assert str_utils.truncate("blah") == "blah"
+    # Long strings are truncated at a length of 100 by default
+    assert str_utils.truncate(
+        "blahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblah"
+    ) == "blahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblahblah..."
+    # You can also decide the length at which to truncate
+    assert str_utils.truncate(b"blahblahblahblah", 10) == "blahblahbl..."
+    # We should handle other value types also
+    assert str_utils.truncate(1234) == "1234"
+    assert str_utils.truncate(1234.1) == "1234.1"
+
+
 def test_remove_bidir_unicode_controls():
     test_str = 'a\u202Db\u202Ac\u200Ed\u200Fe\u202Efg\u202B'
     assert str_utils.remove_bidir_unicode_controls(test_str) == 'abcdefg'
