@@ -156,7 +156,8 @@ def truncate(data: Union[bytes, str], length: int = 100) -> str:
     :param length: The limit of characters to the buffer
     :return str: The potentially truncated buffer
     """
-    string = safe_str(data)
+    # We need to force the value to be a string because the output is a string
+    string = safe_str(data, force_str=True)
     if len(string) > length:
         return string[:length] + '...'
     return string
