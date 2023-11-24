@@ -55,6 +55,7 @@ class Badlist(odm.Model):
     attribution = odm.Optional(odm.Compound(Attribution), description="Attribution related to the bad hash")
     classification = odm.Classification(description="Computed max classification for the bad hash")
     enabled = odm.Boolean(default=True, description="Is bad hash enabled or not?")
+    expiry_ts = odm.Optional(odm.Date, description="When does this item expire from the list?")
     hashes = odm.Compound(Hashes, default={}, description="List of hashes related to the bad hash")
     file = odm.Optional(odm.Compound(File), description="Information about the file")
     sources = odm.List(odm.Compound(Source), description="List of reasons why hash is badlisted")
