@@ -139,6 +139,9 @@ class Service(odm.Model):
         default=False, description="Does this service use temp data from other services for analysis?")
     uses_metadata: bool = odm.Boolean(
         default=False, description="Does this service use submission metadata for analysis?")
+    monitored_keys: list[str] = odm.sequence(
+        odm.keyword(), default=[], description=""
+        "This service watches these temporary keys for changes when partial results are produced.")
 
     name: str = odm.Keyword(store=True, copyto="__text__", description="Name of service")
     version = odm.Keyword(store=True, description="Version of service")
