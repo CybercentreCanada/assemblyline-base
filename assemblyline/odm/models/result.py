@@ -175,6 +175,6 @@ class Result(odm.Model):
         if len(self.response.extracted) == 0 and \
                 len(self.response.supplementary) == 0 and \
                 len(self.result.sections) == 0 and \
-                self.result.score == 0:
+                self.result.score == 0 and not self.partial:
             return True
         return False
