@@ -20,6 +20,8 @@ from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
 DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
+DATASTORE_VERIFY_CERTS = environ.get('DATASTORE_VERIFY_CERTS', 'true').lower() == 'true'
+
 log = logging.getLogger('assemblyline.datastore')
 ALT_ELASTICSEARCH_USERS = ["plumber"]
 
@@ -72,7 +74,7 @@ class ESStore(object):
         self.ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
 
         self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs)
+                                                  ca_certs=self.ca_certs, verify_certs=DATASTORE_VERIFY_CERTS)
         self.es_version = version.parse(self.with_retries(self.client.info)['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
