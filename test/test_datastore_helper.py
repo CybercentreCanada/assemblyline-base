@@ -237,6 +237,9 @@ def test_get_file_scores_from_keys(ds: AssemblylineDatastore):
 
     # Check if all files that are obvious from the results are there
     for f in submission.files:
+        if not [r for r in submission.results if r.startswith(f.sha256) and not r.endswith('.e')]:
+            # If this file has no actual results, we can't expect there to be a file score
+            continue
         assert f.sha256 in file_scores
     for r in submission.results:
         if r.endswith('.e'):
