@@ -239,6 +239,9 @@ def test_get_file_scores_from_keys(ds: AssemblylineDatastore):
     for f in submission.files:
         assert f.sha256 in file_scores
     for r in submission.results:
+        if r.endswith('.e'):
+            # We can't expect a file tied to an empty_result to have a file score
+            continue
         assert r[:64] in file_scores
 
     for s in file_scores.values():
