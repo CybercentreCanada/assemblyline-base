@@ -188,6 +188,10 @@ def _get_value(key, data):
         if " " in value or ":" in value or "/" in value:
             value = f'"{value}"'
 
+        if "\\" in value:
+            # Escape backslashes for queries
+            value.replace("\\", "\\\\")
+
         return value
 
 
