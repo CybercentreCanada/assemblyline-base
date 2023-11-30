@@ -288,6 +288,11 @@ def test_create_list():
         class Test(Model):
             a = List(Optional(Integer()))
 
+    with pytest.raises(ValueError):
+        @model()
+        class Test(Model):
+            a = List(List(Integer()))
+
 
 def test_create_list_compounds():
     @model()
@@ -785,7 +790,7 @@ def test_flat_to_nested():
     assert flat_to_nested({}) == {}
     assert flat_to_nested({'a.b.c': None}) == {'a': {'b': {'c': None}}}
 
-# This test should be deleted if we fix the code for test_flat_fields
+
 def test_limited_flat_fields():
     @model()
     class Inner(Model):
@@ -801,10 +806,8 @@ def test_limited_flat_fields():
     assert set(Outer.flat_fields(show_compound=True).keys()) == {"a", "a.a", "a.b", "b", "b.a", "b.b"}
     assert set(Outer.flat_fields(skip_mappings=True).keys()) == {"a.a", "a.b", "b.a", "b.b"}
     assert set(Outer.flat_fields(show_compound=True, skip_mappings=True).keys()) == \
-        {"a", "a.a", "a.b", "b", "b.a", "b.b"}
 
 
-@pytest.mark.skip("Multivalue is broken because of list being ignored in an optional")
 def test_flat_fields():
     @model()
     class Inner(Model):
@@ -845,7 +848,7 @@ def test_flat_fields():
     @model()
     class Inner(Model):
         a = Integer()
-        b = Integer()
+        b = Optional(Integer())
 
     @model()
     class Outer(Model):
@@ -859,13 +862,12 @@ def test_flat_fields():
     assert {
         k: v.multivalued for k, v in Outer.flat_fields().items()} == {
         "a.a": False, "a.b": False, "b.a": False, "b.b": False, "c.a": True, "c.b": True, "d.a": True, "d.b": True,
-        "e.a": False, "e.b": False, "f.a": False, "f.b": False}
+        "e": False, "f": False}
 
     assert {
         k: v.multivalued for k, v in Outer.flat_fields(show_compound=True).items()} == {
-        "a.a": False, "a.b": False, "a": False, "b.a": False, "b.b": False, "b": False, "c.a": True, "c.b": True,
-        "c": True, "d.a": True, "d.b": True, "d": True, "e.a": False, "e.b": False, "e": False, "f.a": False,
-        "f.b": False, "f": False}
+        "a.a": False, "a.b": False, "a": False, "b.a": False, "b.b": False, "b": False, "c.a": False, "c.b": False,
+        "c": True, "d.a": False, "d.b": False, "d": True, "e": False, "f": False}
 
     assert {
         k: v.multivalued for k, v in Outer.flat_fields(skip_mappings=True).items()} == {
@@ -873,33 +875,25 @@ def test_flat_fields():
 
     assert {
         k: v.multivalued for k, v in Outer.flat_fields(show_compound=True, skip_mappings=True).items()} == {
-        "a.a": False, "a.b": False, "a": False, "b.a": False, "b.b": False, "b": False, "c.a": True, "c.b": True,
-        "c": True, "d.a": True, "d.b": True, "d": True}
+        "a.a": False, "a.b": False, "a": False, "b.a": False, "b.b": False, "b": False, "c.a": False, "c.b": False,
+        "c": True, "d.a": False, "d.b": False, "d": True}
 
     @model()
     class Outer(Model):
         a = Optional(Mapping(List(Compound(Inner))))
         b = Optional(List(Mapping(Compound(Inner))))
-        c = List(List(List(Compound(Inner))))
+        c = List(Compound(Inner))
         d = Mapping(Mapping(Mapping(Compound(Inner))))
-        e = Mapping(List(Mapping(List(Mapping(List(Compound(Inner)))))))
+        e = List(Mapping(List(Mapping(List(Compound(Inner))))))
 
-    assert {k: v.multivalued for k, v in Outer.flat_fields().items()} == {"a.a": True, "a.b": True, "b.a": True,
-                                                                          "b.b": True, "c.a": True, "c.b": True,
-                                                                          "d.a": False, "d.b": False, "e.a": True,
-                                                                          "e.b": True}
+    assert {k: v.multivalued for k, v in Outer.flat_fields().items()} == {
+        "a": False, "b": True, "c.a": True, "c.b": True, "d": False, "e": True}
 
-    assert {
-        k: v.multivalued for k, v in Outer.flat_fields(show_compound=True).items()} == {
-        "a.a": True, "a.b": True, "a": True, "b.a": True, "b.b": True, "b": True, "c.a": True, "c.b": True,
-        "c": True, "d.a": False, "d.b": False, "d": False, "e.a": True, "e.b": True, "e": True}
+    assert {k: v.multivalued for k, v in Outer.flat_fields(show_compound=True).items()} == {
+        "a": False, "b": True, "c": True, "c.a": False, "c.b": False, "d": False, "e": True}
 
-    assert {
-        k: v.multivalued for k, v in Outer.flat_fields(skip_mappings=True).items()} == {
-        "a.a": True, "a.b": True, "b.a": True, "b.b": True, "c.a": True, "c.b": True, "d.a": False, "d.b": False,
-        "e.a": True, "e.b": True}
+    assert {k: v.multivalued for k, v in Outer.flat_fields(skip_mappings=True).items()} == {
+        "c.a": True, "c.b": True}
 
-    assert {
-        k: v.multivalued for k, v in Outer.flat_fields(show_compound=True, skip_mappings=True).items()} == {
-        "a.a": True, "a.b": True, "a": True, "b.a": True, "b.b": True, "b": True, "c.a": True, "c.b": True,
-        "c": True, "d.a": False, "d.b": False, "d": False, "e.a": True, "e.b": True, "e": True}
+    assert {k: v.multivalued for k, v in Outer.flat_fields(show_compound=True, skip_mappings=True).items()} == {
+        "c": True, "c.a": False, "c.b": False}

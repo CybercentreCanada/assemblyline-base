@@ -143,6 +143,8 @@ class ESCollection(Generic[ModelType]):
     UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
     UPDATE_APPEND_IF_MISSING = "APPEND_IF_MISSING"
+    UPDATE_PREPEND = "PREPEND"
+    UPDATE_PREPEND_IF_MISSING = "PREPEND_IF_MISSING"
     UPDATE_REMOVE = "REMOVE"
     UPDATE_DELETE = "DELETE"
     UPDATE_OPERATIONS = [
@@ -152,6 +154,8 @@ class ESCollection(Generic[ModelType]):
         UPDATE_INC,
         UPDATE_MAX,
         UPDATE_MIN,
+        UPDATE_PREPEND,
+        UPDATE_PREPEND_IF_MISSING,
         UPDATE_REMOVE,
         UPDATE_SET,
         UPDATE_DELETE,
@@ -1086,9 +1090,18 @@ class ESCollection(Generic[ModelType]):
                          f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_PREPEND:
+                op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_PREPEND_IF_MISSING:
+                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
+                         f"{{ctx._source.{doc_key}.add(0, params.value{val_id})}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
-                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1161,15 +1174,28 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND,
+                          self.UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                    if not field.multivalued:
+                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
+
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in [self.UPDATE_SET, self.UPDATE_DEC, self.UPDATE_INC]:
+                elif op in [self.UPDATE_DEC, self.UPDATE_INC]:
                     try:
                         value = field.check(value)
+                    except (ValueError, TypeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in [self.UPDATE_SET]:
+                    try:
+                        if field.multivalued and isinstance(value, list):
+                            value = [field.check(v) for v in value]
+                        else:
+                            value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
@@ -1742,7 +1768,8 @@ class ESCollection(Generic[ModelType]):
             ('histogram_gap', gap.strip('+').strip('-') if isinstance(gap, str) else gap),
             ('histogram_mincount', mincount),
             ('histogram_start', start),
-            ('histogram_end', end)
+            ('histogram_end', end),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1776,7 +1803,8 @@ class ESCollection(Generic[ModelType]):
             ('facet_mincount', mincount),
             ('facet_size', min(size, self.MAX_FACET_SIZE)),
             ('facet_include', include),
-            ('rows', 0)
+            ('rows', 0),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1808,7 +1836,8 @@ class ESCollection(Generic[ModelType]):
             ('query', query),
             ('stats_active', True),
             ('stats_fields', [field]),
-            ('rows', 0)
+            ('rows', 0),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1848,7 +1877,8 @@ class ESCollection(Generic[ModelType]):
             ('group_sort', group_sort),
             ('start', offset),
             ('rows', rows),
-            ('sort', sort)
+            ('sort', sort),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         filters.append("%s:*" % group_field)

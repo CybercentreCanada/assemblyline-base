@@ -379,6 +379,8 @@ class Expiry(odm.Model):
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
     delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
+    safelisted_tag_dtl = odm.Integer(description="The default period, in days, before tags expire from Safelist")
+    badlisted_tag_dtl = odm.Integer(description="The default period, in days, before tags expire from Badlist")
 
 
 DEFAULT_EXPIRY = {
@@ -390,6 +392,8 @@ DEFAULT_EXPIRY = {
     'delete_workers': 2,
     'iteration_max_tasks': 20,
     'delete_batch_size': 2000,
+    'safelisted_tag_dtl': 30,
+    'badlisted_tag_dtl': 30
 }
 
 
@@ -1170,8 +1174,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")

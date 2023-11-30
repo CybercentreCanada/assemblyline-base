@@ -50,6 +50,6 @@ def sequence(child_type: _InnerType, **kwargs) -> list[_InnerType]:
 def mapping(child_type: _InnerType, **kwargs) -> dict[str, _InnerType]:
     return typing.cast(dict[str, _InnerType], Mapping(child_type, **kwargs))
 
-
+  
 def compound(child_type: typing.Callable[..., _InnerType], **kwargs) -> _InnerType:
     return typing.cast(_InnerType, Compound(child_type, **kwargs))

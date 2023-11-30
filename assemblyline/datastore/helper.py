@@ -264,16 +264,17 @@ class AssemblylineDatastore(object):
         f_plan = self.file.get_bulk_plan()
 
         # Add delete operation for submission and cache
+        # NOTE: we will use the search operation because there should not be a lot of submission_tree or summary
         s_plan.add_delete_operation(sid)
-        for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id,_index", as_obj=False):
+        for x in self.submission_tree.search(f"id:{sid}*", fl="id,_index", rows=1000, as_obj=False)['items']:
             st_plan.add_delete_operation(x['id'], index=x['_index'])
-        for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id,_index", as_obj=False):
+        for x in self.submission_summary.search(f"id:{sid}*", fl="id,_index", rows=1000, as_obj=False)['items']:
             ss_plan.add_delete_operation(x['id'], index=x['_index'])
 
         # Gather file list
         errors = submission['errors']
         results = submission["results"]
-        files = set()
+        files_to_delete = set()
         fix_classification_files = set()
         supp_map = {}
 
@@ -281,28 +282,27 @@ class AssemblylineDatastore(object):
         temp_files.extend([x[:64] for x in results])
         temp_files = set(temp_files)
 
+        # Gather all supplementary files
+        for result in self.result.search("response.supplementary.sha256:*",
+                                         fl="*", rows=len(results), as_obj=False, key_space=results)['items']:
+            sha256 = result['sha256']
+            supp_map.setdefault(sha256, set())
+            for supp in result['response']['supplementary']:
+                supp_map[sha256].add(supp['sha256'])
+
         # Inspect each files to see if they are reused
         for temp in temp_files:
-            # Hunt for supplementary files
-            supp_list = set()
-            for res in self.result.stream_search(f"id:{temp}* AND response.supplementary.sha256:*",
-                                                 fl="id", as_obj=False):
-                if res['id'] in results:
-                    result = self.result.get(res['id'], as_obj=False)
-                    for supp in result['response']['supplementary']:
-                        supp_list.add(supp['sha256'])
-
-            # Check if we delete or update classification
+            # Check if we delete the file or update the classification
             if self.submission.search(f"errors:{temp}* OR results:{temp}*", rows=0, as_obj=False)["total"] < 2:
-                files.add(temp)
-                files = files.union(supp_list)
+                files_to_delete.add(temp)
+                supp_list = supp_map.pop(temp, set())
+                files_to_delete = files_to_delete.union(supp_list)
             else:
                 fix_classification_files.add(temp)
-                supp_map[temp] = supp_list
 
         # Filter results and errors
-        errors = [x for x in errors if x[:64] in files]
-        results = [x for x in results if x[:64] in files]
+        errors = [x for x in errors if x[:64] in files_to_delete]
+        results = [x for x in results if x[:64] in files_to_delete]
 
         # Delete files, errors, results that were only used once
         for e in errors:
@@ -312,7 +312,7 @@ class AssemblylineDatastore(object):
                 er_plan.add_delete_operation(r)
             else:
                 r_plan.add_delete_operation(r)
-        for f in files:
+        for f in files_to_delete:
             f_plan.add_delete_operation(f)
             if transport:
                 transport.delete(f)
@@ -324,7 +324,7 @@ class AssemblylineDatastore(object):
                 if cur_file:
                     # Find possible classification for the file in the system
                     query = f"NOT id:{sid} AND (files.sha256:{f} OR results:{f}* OR errors:{f}*)"
-                    classifications = list(self.submission.facet('classification', query=query).keys())
+                    classifications = list(self.submission.facet('classification', query=query, size=100).keys())
 
                     if len(classifications) > 0:
                         new_file_class = classifications[0]
@@ -371,7 +371,7 @@ class AssemblylineDatastore(object):
         # Gather file list
         errors = submission['errors']
         results = submission["results"]
-        files = set()
+        files_to_delete = set()
         fix_classification_files = set()
         supp_map = {}
 
@@ -379,28 +379,27 @@ class AssemblylineDatastore(object):
         temp_files.extend([x[:64] for x in results])
         temp_files = set(temp_files)
 
+        # Gather all supplementary files
+        for result in self.result.search("response.supplementary.sha256:*",
+                                         fl="*", rows=len(results), as_obj=False, key_space=results)['items']:
+            sha256 = result['sha256']
+            supp_map.setdefault(sha256, set())
+            for supp in result['response']['supplementary']:
+                supp_map[sha256].add(supp['sha256'])
+
         # Inspect each files to see if they are reused
         for temp in temp_files:
-            # Hunt for supplementary files
-            supp_list = set()
-            for res in self.result.stream_search(f"id:{temp}* AND response.supplementary.sha256:*",
-                                                 fl="id", as_obj=False):
-                if res['id'] in results:
-                    result = self.result.get(res['id'], as_obj=False)
-                    for supp in result['response']['supplementary']:
-                        supp_list.add(supp['sha256'])
-
-            # Check if we delete or update classification
+            # Check if we delete the file or update the classification
             if self.submission.search(f"errors:{temp}* OR results:{temp}*", rows=0, as_obj=False)["total"] < 2:
-                files.add(temp)
-                files = files.union(supp_list)
+                files_to_delete.add(temp)
+                supp_list = supp_map.pop(temp, set())
+                files_to_delete = files_to_delete.union(supp_list)
             else:
                 fix_classification_files.add(temp)
-                supp_map[temp] = supp_list
 
         # Filter results and errors
-        errors = [x for x in errors if x[:64] in files]
-        results = [x for x in results if x[:64] in files]
+        errors = [x for x in errors if x[:64] in files_to_delete]
+        results = [x for x in results if x[:64] in files_to_delete]
 
         # Delete files, errors, results that were only used once
         for e in errors:
@@ -410,7 +409,7 @@ class AssemblylineDatastore(object):
                 self.emptyresult.delete(r)
             else:
                 self.result.delete(r)
-        for f in files:
+        for f in files_to_delete:
             self.file.delete(f)
             if transport:
                 transport.delete(f)
@@ -422,7 +421,7 @@ class AssemblylineDatastore(object):
                 if cur_file:
                     # Find possible classification for the file in the system
                     query = f"NOT id:{sid} AND (files.sha256:{f} OR results:{f}* OR errors:{f}*)"
-                    classifications = list(self.submission.facet('classification', query=query).keys())
+                    classifications = list(self.submission.facet('classification', query=query, size=100).keys())
 
                     if len(classifications) > 0:
                         new_file_class = classifications[0]
@@ -460,11 +459,12 @@ class AssemblylineDatastore(object):
                                 self.file.update(supp, update_params)
 
         # Delete the submission and cached trees and summaries
+        # NOTE: we will use the search operation because there should not be a lot of submission_tree or summary
         self.submission.delete(sid)
-        for t in [x['id'] for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
-            self.submission_tree.delete(t)
-        for s in [x['id'] for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
-            self.submission_summary.delete(s)
+        for t in self.submission_tree.search(f"id:{sid}*", fl="id", rows=1000, as_obj=False)['items']:
+            self.submission_tree.delete(t['id'])
+        for s in self.submission_summary.search(f"id:{sid}*", fl="id", rows=1000, as_obj=False)['items']:
+            self.submission_summary.delete(s['id'])
 
     @elasticapm.capture_span(span_type='datastore')
     def get_all_heuristics(self):
@@ -504,7 +504,7 @@ class AssemblylineDatastore(object):
         return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_file_list_from_keys(self, keys, supplementary=False):
+    def get_file_list_from_keys(self, keys):
         if len(keys) == 0:
             return {}
         keys = [x for x in list(keys) if not x.endswith(".e")]
@@ -512,12 +512,11 @@ class AssemblylineDatastore(object):
 
         out = set()
         for key, item in items.items():
-            out.add(key[:64])
+            out.add((key[:64], False))
             for extracted in item['response']['extracted']:
-                out.add(extracted['sha256'])
-            if supplementary:
+                out.add((extracted['sha256'], False))
                 for supplementary in item['response']['supplementary']:
-                    out.add(supplementary['sha256'])
+                    out.add((supplementary['sha256'], True))
 
         return list(out)
 
@@ -1163,7 +1162,7 @@ class AssemblylineDatastore(object):
     def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
                              cl_engine=forge.get_classification(), redis=None, is_section_image=False):
         # Remove control fields from new file info
-        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
+        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']:
             fileinfo.pop(x, None)
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):
