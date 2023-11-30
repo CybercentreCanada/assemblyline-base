@@ -280,4 +280,4 @@ def test_update_alert():
 
     o2.update(o1)
 
-    assert a1 == o2
+    assert a1.as_primitives() == o2.as_primitives()
