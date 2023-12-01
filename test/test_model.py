@@ -204,6 +204,7 @@ def test_workflow_model():
 def test_update_alert():
     import time
     import assemblyline.odm.models.alert
+    from collections import Counter
 
     a1 = Alert(dict(
         alert_id='abc',
@@ -280,4 +281,4 @@ def test_update_alert():
 
     o2.update(o1)
 
-    assert a1.as_primitives() == o2.as_primitives()
+    assert Counter(a1.as_primitives()) == Counter(o2.as_primitives())
