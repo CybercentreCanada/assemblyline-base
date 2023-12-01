@@ -13,6 +13,7 @@ rule code_javascript {
         $strong_js2  = /\beval[ \t]*\(['"]/
 
         // jscript
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         $strong_js3  = /new[ \t]+ActiveXObject\(/
 
         $strong_js4  = /Scripting\.Dictionary['"]/
@@ -31,13 +32,15 @@ rule code_javascript {
         // Firefox browser specific method
         $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
 
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         // This method of function declaration is shared with PowerShell, so it should be considered weak-ish
         $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
 
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
-        $weak_js5 = /([^\w]|^)this\.[\w]+/
+        // Supported and inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
+        $weak_js5 = /([^\w]|^)this[\.\[][\w'"]+/
         // This is shared in PowerShell (although in PowerShell it should be .Length)
         $weak_js6 = /([^\w]|^)[\w]+\.length/
         // This is shared in C++
@@ -542,6 +545,7 @@ rule code_ps1 {
         $weak_pwsh7 = /[\s\(]\-(not)\s/ ascii wide
         $weak_pwsh8 = /\s\-(and|or|xor)\s/ ascii wide
 
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         // This method of function declaration is shared with JavaScript, so it should be considered weak
         $weak_pwsh9  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
 
