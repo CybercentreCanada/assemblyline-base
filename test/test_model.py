@@ -204,7 +204,6 @@ def test_workflow_model():
 def test_update_alert():
     import time
     import assemblyline.odm.models.alert
-    from collections import Counter
 
     a1 = Alert(dict(
         alert_id='abc',
@@ -281,4 +280,12 @@ def test_update_alert():
 
     o2.update(o1)
 
-    assert Counter(a1.as_primitives()) == Counter(o2.as_primitives())
+    # Submission relations might be out of order after update, so test them independently
+    a1, o2 = a1.as_primitives(), o2.as_primitives()
+    a1_sub_rel, o2_sub_rel = a1.pop('submission_relations'), o2.pop('submission_relations')
+    assert len(a1_sub_rel) == len(o2_sub_rel)
+    for rel in a1_sub_rel:
+        assert rel in o2_sub_rel
+
+    # Compare the rest of the alert properties
+    assert a1 == o2
