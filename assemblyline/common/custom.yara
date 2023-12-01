@@ -1101,10 +1101,20 @@ rule code_a3x {
         $ = "/AutoIt3ExecuteLine" ascii wide
         $ = "/AutoIt3ExecuteScript" ascii wide
         $ = "/AutoIt3OutputDebug" ascii wide
-        $ = ">>>AUTOIT NO CMDEXECUTE<<<" ascii wide
         $ = ">>>AUTOIT SCRIPT<<<" ascii wide
+
+        // Supported by https://github.com/CERT-Polska/karton-autoit-ripper/blob/9aef5046d012f4a14f0c12de7a682fad0202c19c/karton/autoit_ripper/autoit.yar
+        $ = ">>>AUTOIT NO CMDEXECUTE<<<" ascii wide
         $ = "This is a third-party compiled AutoIt script." ascii wide
         $ = "AU3!EA06" ascii wide
+
+        // Inspired by https://github.com/CERT-Polska/karton-autoit-ripper/blob/9aef5046d012f4a14f0c12de7a682fad0202c19c/karton/autoit_ripper/autoit.yar
+        $ = "AutoIt v3" ascii wide
+        $ = "AU3_GetPluginDetails" ascii wide
+        $ = "AU3!EA05"
+        $ = "AutoIt script files (*.au3, *.a3x)" wide
+        $ = { A3 48 4B BE 98 6C 4A A9 99 4C 53 0A 86 D6 48 7D 41 55 33 21 45 41 30 36 }
+        $ = { A3 48 4B BE 98 6C 4A A9 99 4C 53 0A 86 D6 48 7D 41 55 33 21 45 41 30 35 }
 
     condition:
         uint16(0) != 0x5A4D and any of them
