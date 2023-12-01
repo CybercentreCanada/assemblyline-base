@@ -176,6 +176,11 @@ def _get_value(key, data):
             value = str(value[0])
             if " " in value or ":" in value or "/" in value:
                 value = f'"{value}"'
+
+            if "\\" in value:
+                # Escape backslashes for queries
+                value.replace("\\", "\\\\")
+
             return value
         else:
             return None
@@ -187,6 +192,10 @@ def _get_value(key, data):
         value = str(value)
         if " " in value or ":" in value or "/" in value:
             value = f'"{value}"'
+
+        if "\\" in value:
+            # Escape backslashes for queries
+            value.replace("\\", "\\\\")
 
         return value
 
