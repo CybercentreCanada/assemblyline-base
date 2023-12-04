@@ -10,9 +10,11 @@ rule code_javascript {
     strings:
         $not_html = /^\s*<\w/
 
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $strong_js2  = /\beval[ \t]*\(['"]/
 
         // jscript
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         $strong_js3  = /new[ \t]+ActiveXObject\(/
 
         $strong_js4  = /Scripting\.Dictionary['"]/
@@ -21,6 +23,8 @@ rule code_javascript {
         $strong_js7  = /submitForm\(['"]/
         $strong_js8  = /\b(document|window)(\[['"a-zA-Z]|\.)\w+\b/
         $strong_js9  = "setTimeout("
+        // Suported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=/
         // If this is exactly in the sample, will trigger a second time because of strong_js10
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
@@ -31,13 +35,24 @@ rule code_javascript {
         // Firefox browser specific method
         $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
 
+        // Inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
+        $strong_js14 = "alert("
+        $strong_js15 = ".charAt("
+        $strong_js16 = "decodeURIComponent("
+        $strong_js17 = ".charCodeAt("
+        $strong_js18 = ".toString("
+
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         // This method of function declaration is shared with PowerShell, so it should be considered weak-ish
         $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
 
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
-        $weak_js5 = /([^\w]|^)this\.[\w]+/
+        // Supported and inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
+        $weak_js5 = /([^\w]|^)this[\.\[][\w'"]+/
         // This is shared in PowerShell (although in PowerShell it should be .Length)
         $weak_js6 = /([^\w]|^)[\w]+\.length/
         // This is shared in C++
@@ -134,20 +149,32 @@ rule code_vbs {
     strings:
         $multiline = " = @'\r\n" //powershell multiline string
 
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
         $strong_vbs1 = /(^|\n)On[ \t]+Error[ \t]+Resume[ \t]+Next/i ascii wide
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
         $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\r]/i ascii wide
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
         $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)/i ascii wide
         $strong_vbs4 = "\nExecuteGlobal" ascii wide
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
         $strong_vbs6 = /(^|\n|:)(Attribute|Set|const)[ \t]+\w+[ \t]+=/i ascii wide
         $strong_vbs7 = /(^|\n)[ \t]*Err.Raise[ \t]+\d+(,[ \t]+"[^"]+")+/i ascii wide
         $strong_vbs8 = /[ \t(=]replace\(/i ascii wide
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
         // CreateObject("blah")
         $strong_vbs9 = "CreateObject(" nocase ascii wide
         $strong_vbs10 = "GetObject(" nocase ascii wide
         $strong_vbs11 = "\nEval(" nocase ascii wide
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
         $strong_vbs12 = "Execute(" nocase ascii wide
         $strong_vbs13 = "\nMsgBox \"" nocase ascii wide
+        // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
+        $strong_vbs14 = "Array(" nocase ascii wide
         // Dim blah
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
         $weak_vbs1 = /\bDim\b\s+\w+[\r:]/i ascii wide
 
     condition:
@@ -226,7 +253,9 @@ rule code_html_1 {
         score = 10
 
     strings:
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L670
         $html_doctype = /(^|\n|\>)[ \t]*<!doctype html>/i
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L670
         $html_start = /(^|\n|\>)[ \t]*<html/i
         $html_end = /(^|\n|\>)[ \t]*<\/html/i
 
@@ -303,6 +332,7 @@ rule code_html_component {
     strings:
         $component1 = "public:component " nocase
         $component2 = "/public:component" nocase
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L670
         $script = "<script" nocase
         $lang_js1 = "language=\"javascript\"" nocase
         $lang_js2 = "language=\"jscript\"" nocase
@@ -504,8 +534,11 @@ rule code_ps1 {
         score = 1
 
     strings:
-        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))\b/i ascii wide
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
+        // Supported and inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L406
+        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep|Process)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item|WmiObject)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item|ItemProperty|StringMode)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest)|Copy-Item)\b/i ascii wide
         $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)\b/i ascii wide
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
         $strong_pwsh3 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
         $strong_pwsh4 = "System.Net.WebClient" nocase ascii wide
         $strong_pwsh5 = "Net.ServicePointManager" nocase ascii wide
@@ -517,6 +550,10 @@ rule code_ps1 {
         $strong_pwsh11 = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
         $strong_pwsh12 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
         $strong_pwsh13 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
+        // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
+        $strong_pwsh14 = /\|[ \t]*iex\b/i ascii wide
+        // Inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L406
+        $strong_pwsh15 = "$PSHOME" nocase ascii wide
         $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
         // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comparison_operators?view=powershell-7.3
@@ -535,6 +572,7 @@ rule code_ps1 {
         $weak_pwsh7 = /[\s\(]\-(not)\s/ ascii wide
         $weak_pwsh8 = /\s\-(and|or|xor)\s/ ascii wide
 
+        // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         // This method of function declaration is shared with JavaScript, so it should be considered weak
         $weak_pwsh9  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
 
@@ -1083,10 +1121,20 @@ rule code_a3x {
         $ = "/AutoIt3ExecuteLine" ascii wide
         $ = "/AutoIt3ExecuteScript" ascii wide
         $ = "/AutoIt3OutputDebug" ascii wide
-        $ = ">>>AUTOIT NO CMDEXECUTE<<<" ascii wide
         $ = ">>>AUTOIT SCRIPT<<<" ascii wide
+
+        // Supported by https://github.com/CERT-Polska/karton-autoit-ripper/blob/9aef5046d012f4a14f0c12de7a682fad0202c19c/karton/autoit_ripper/autoit.yar
+        $ = ">>>AUTOIT NO CMDEXECUTE<<<" ascii wide
         $ = "This is a third-party compiled AutoIt script." ascii wide
         $ = "AU3!EA06" ascii wide
+
+        // Inspired by https://github.com/CERT-Polska/karton-autoit-ripper/blob/9aef5046d012f4a14f0c12de7a682fad0202c19c/karton/autoit_ripper/autoit.yar
+        $ = "AutoIt v3" ascii wide
+        $ = "AU3_GetPluginDetails" ascii wide
+        $ = "AU3!EA05"
+        $ = "AutoIt script files (*.au3, *.a3x)" wide
+        $ = { A3 48 4B BE 98 6C 4A A9 99 4C 53 0A 86 D6 48 7D 41 55 33 21 45 41 30 36 }
+        $ = { A3 48 4B BE 98 6C 4A A9 99 4C 53 0A 86 D6 48 7D 41 55 33 21 45 41 30 35 }
 
     condition:
         uint16(0) != 0x5A4D and any of them
