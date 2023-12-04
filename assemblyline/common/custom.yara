@@ -10,6 +10,7 @@ rule code_javascript {
     strings:
         $not_html = /^\s*<\w/
 
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $strong_js2  = /\beval[ \t]*\(['"]/
 
         // jscript
@@ -22,6 +23,8 @@ rule code_javascript {
         $strong_js7  = /submitForm\(['"]/
         $strong_js8  = /\b(document|window)(\[['"a-zA-Z]|\.)\w+\b/
         $strong_js9  = "setTimeout("
+        // Suported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=/
         // If this is exactly in the sample, will trigger a second time because of strong_js10
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/
@@ -32,11 +35,20 @@ rule code_javascript {
         // Firefox browser specific method
         $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
 
+        // Inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
+        $strong_js14 = "alert("
+        $strong_js15 = ".charAt("
+        $strong_js16 = "decodeURIComponent("
+        $strong_js17 = ".charCodeAt("
+        $strong_js18 = ".toString("
+
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         // This method of function declaration is shared with PowerShell, so it should be considered weak-ish
         $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
 
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
+        // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/
         $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
         // Supported and inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
