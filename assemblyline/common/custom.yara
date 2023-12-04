@@ -518,7 +518,8 @@ rule code_ps1 {
 
     strings:
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
-        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest))\b/i ascii wide
+        // Supported and inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L406
+        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep|Process)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item|WmiObject)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item|ItemProperty|StringMode)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest)|Copy-Item)\b/i ascii wide
         $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)\b/i ascii wide
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
         $strong_pwsh3 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
@@ -534,6 +535,8 @@ rule code_ps1 {
         $strong_pwsh13 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
         // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
         $strong_pwsh14 = /\|[ \t]*iex\b/i ascii wide
+        // Inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L406
+        $strong_pwsh15 = "$PSHOME" nocase ascii wide
         $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
         // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comparison_operators?view=powershell-7.3
