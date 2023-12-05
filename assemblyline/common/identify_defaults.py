@@ -177,6 +177,7 @@ magic_patterns = [
     {"al_type": "pgp/pubkey", "regex": r"^PGP public key"},
     {"al_type": "pgp/privkey", "regex": r"^PGP private key block"},
     {"al_type": "pgp/encrypted", "regex": r"^PGP RSA encrypted session key"},
+    {"al_type": "pgp/message", "regex": r"^PGP message Public-Key Encrypted Session Key"},
     {"al_type": "gpg/symmetric", "regex": r"^GPG symmetrically encrypted data"},
     {"al_type": "video/asf", "regex": r"^Microsoft ASF"},
 ]
