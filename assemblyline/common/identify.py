@@ -419,6 +419,8 @@ def zip_ident(path: str, fallback: str) -> str:
     doc_types = False
     android_manifest = False
     android_dex = False
+    nuspec = False
+    psmdcp = False
 
     for file_name in file_list:
         if file_name.startswith("META-INF/"):
@@ -429,6 +431,10 @@ def zip_ident(path: str, fallback: str) -> str:
             android_dex = True
         elif file_name.startswith("Payload/") and file_name.endswith(".app/Info.plist"):
             is_ipa = True
+        elif file_name.endswith(".nuspec"):
+            nuspec = True
+        elif file_name.startswith("package/services/metadata/core-properties/") and file_name.endswith(".psmdcp"):
+            psmdcp = True
         elif file_name.endswith(".class"):
             tot_class += 1
         elif file_name.endswith(".jar"):
@@ -464,6 +470,9 @@ def zip_ident(path: str, fallback: str) -> str:
             return "document/office/excel"
         elif is_ppt:
             return "document/office/powerpoint"
+        elif nuspec and psmdcp:
+            # It is a nupkg file. Identify as archive/zip for now.
+            return "archive/zip"
         else:
             return "document/office/unknown"
     else:
