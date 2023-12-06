@@ -186,7 +186,8 @@ class ESStore(object):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   max_retries=0,
                                                   request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs)
+                                                  ca_certs=self.ca_certs,
+                                                  verify_certs=DATASTORE_VERIFY_CERTS)
 
     def close(self):
         self._closed = True
