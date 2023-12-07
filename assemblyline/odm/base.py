@@ -637,10 +637,10 @@ class IndexText(_Field):
 class Integer(_Field):
     """A field storing an integer value."""
 
-    def __init__(self, max=None, min=None, *args, **kwargs):
+    def __init__(self, max: int = None, min: int = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.max = int(max)
-        self.min = int(min)
+        self.max = max
+        self.min = min
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -668,10 +668,10 @@ class Integer(_Field):
 class Float(_Field):
     """A field storing a floating point value."""
 
-    def __init__(self, max=None, min=None, *args, **kwargs):
+    def __init__(self, max: float = None, min: float = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.max = float(max)
-        self.min = float(min)
+        self.max = max
+        self.min = min
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
