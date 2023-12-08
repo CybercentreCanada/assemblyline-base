@@ -39,8 +39,7 @@ class TimeExpiredCache(Generic[T]):
         self.raise_on_error = raise_on_error
         self.cache: dict[Hashable, T] = {}
         self.timeout_list: list[Tuple[float, Hashable]] = []
-        timeout_thread = threading.Thread(target=self._process_timeouts, name="_process_timeouts")
-        timeout_thread.setDaemon(True)
+        timeout_thread = threading.Thread(target=self._process_timeouts, name="_process_timeouts", daemon=True)
         timeout_thread.start()
 
     def __len__(self):
