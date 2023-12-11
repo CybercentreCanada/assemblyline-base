@@ -109,6 +109,7 @@ class ServiceDelta(odm.Model):
     uses_tag_scores: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     uses_temp_submission_data: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     uses_metadata: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
+    monitored_keys = odm.optional(odm.sequence(odm.keyword()))
 
     name = odm.Optional(odm.Keyword(), store=True, copyto="__text__", description=REF_SERVICE)
     version = odm.Keyword(store=True, description=REF_SERVICE)
