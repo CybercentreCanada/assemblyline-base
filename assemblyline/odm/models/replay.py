@@ -38,6 +38,12 @@ class InputModule(odm.Model):
     filter_queries = odm.List(odm.Keyword())
 
 
+DEFAULT_INPUT = {
+    'enabled': True,
+    'threads': 6,
+    'filter_queries': []
+}
+
 DEFAULT_ALERT_INPUT = {
     'enabled': True,
     'threads': 6,
@@ -60,7 +66,11 @@ DEFAULT_SUBMISSION_INPUT = {
 class Creator(odm.Model):
     client = odm.Compound(Client, default=DEFAULT_CLIENT)
     alert_input = odm.Compound(InputModule, default=DEFAULT_ALERT_INPUT)
+    # TODO: To be implemented with (*)lists revamp
+    # badlist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
+    # safelist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
     submission_input = odm.Compound(InputModule, default=DEFAULT_SUBMISSION_INPUT)
+    workflow_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
     lookback_time: str = odm.Keyword()
     output_filestore: str = odm.Keyword()
     working_directory: str = odm.Keyword()
@@ -69,7 +79,10 @@ class Creator(odm.Model):
 DEFAULT_CREATOR = {
     'client': DEFAULT_CLIENT,
     'alert_input': DEFAULT_ALERT_INPUT,
+    # 'badlist_input': DEFAULT_INPUT,
+    # 'safelist_input': DEFAULT_INPUT,
     'submission_input': DEFAULT_SUBMISSION_INPUT,
+    'workflow_input': DEFAULT_INPUT,
     'lookback_time': '*',
     'output_filestore': 'file:///tmp/replay/output',
     'working_directory': '/tmp/replay/work',
