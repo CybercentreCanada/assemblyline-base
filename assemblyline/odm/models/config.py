@@ -198,6 +198,8 @@ class OAuthProvider(odm.Model):
                                   description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
                                       description="Password to your application to authenticate to the OAuth provider")
+    redirect_uri: str = odm.Optional(odm.Keyword(),
+                                     description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
     request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
