@@ -73,6 +73,7 @@ jobs:
         inputs:
           versionSpec: "$(python.version)"
       - script: |
+          ls -al
           sudo mkdir -p /etc/assemblyline/
           sudo mkdir -p /var/cache/assemblyline/
           sudo cp pipelines/config.yml /etc/assemblyline
@@ -83,10 +84,8 @@ jobs:
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
         displayName: Setup environment
-        workingDirectory: assemblyline-base
       - script: python -m pytest --durations=10 -rsx -vv --ignore=test/test_identify.py
         displayName: Test
-        workingDirectory: assemblyline-base
   - job: run_identify_test
     container:
       image: cccstemp.azurecr.io/assemblyline-root-build:stable
