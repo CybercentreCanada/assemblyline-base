@@ -73,7 +73,6 @@ jobs:
         inputs:
           versionSpec: "$(python.version)"
       - script: |
-          ls -al
           sudo mkdir -p /etc/assemblyline/
           sudo mkdir -p /var/cache/assemblyline/
           sudo cp pipelines/config.yml /etc/assemblyline
