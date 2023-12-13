@@ -2,10 +2,6 @@ name: tests
 
 variables:
   - group: unittest-samples
-  - name: checkout_location
-    value: "samples"
-  - name: samples_location
-    value: "$(Agent.BuildDirectory)/$(checkout_location)"
 
 trigger: ["*"]
 pr: ["*"]
@@ -72,9 +68,6 @@ jobs:
     steps:
       - checkout: self
         fetchDepth: 1
-      - checkout: unittest-samples
-        fetchDepth: 1
-        path: $(checkout_location)
       - task: UsePythonVersion@0
         displayName: Set python version
         inputs:
@@ -90,7 +83,25 @@ jobs:
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
         displayName: Setup environment
-        workingDirectory: assemblyline-base
-      - script: python -m pytest --durations=10 -rsx -vv
+      - script: python -m pytest --durations=10 -rsx -vv --ignore=test/test_identify.py
         displayName: Test
-        workingDirectory: assemblyline-base
+  - job: run_identify_test
+    container:
+      image: cccstemp.azurecr.io/assemblyline-root-build:stable
+      endpoint: cccstemp
+    timeoutInMinutes: 10
+    steps:
+      - checkout: self
+        fetchDepth: 1
+      - checkout: unittest-samples
+        fetchDepth: 1
+      - script: |
+          set -exv
+          env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools wheel
+          env "PATH=$PATH" python -m pip install --no-cache-dir -e assemblyline-base
+          env "PATH=$PATH" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
+        displayName: Setup environment
+      - script: |
+          set -exv
+          env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
+        displayName: Test File Identification
