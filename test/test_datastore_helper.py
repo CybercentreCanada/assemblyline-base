@@ -219,12 +219,18 @@ def test_get_file_list_from_keys(ds: AssemblylineDatastore):
     submission: Submission = ds.submission.search("id:*", rows=1, fl="*")['items'][0]
 
     # Get related file list
-    file_list = ds.get_file_list_from_keys(submission.results)
+    file_list = [sha256 for sha256, supplementary, in ds.get_file_list_from_keys(submission.results)]
 
     # Check if all files that are obvious from the results are there
     for f in submission.files:
+        if not [r for r in submission.results if r.startswith(f.sha256) and not r.endswith('.e')]:
+            # If this file has no actual results, we can't this file to show up in the file list
+            continue
         assert f.sha256 in file_list
     for r in submission.results:
+        if r.endswith('.e'):
+            # We can't expect a file tied to be in the file list
+            continue
         assert r[:64] in file_list
 
 
@@ -237,8 +243,14 @@ def test_get_file_scores_from_keys(ds: AssemblylineDatastore):
 
     # Check if all files that are obvious from the results are there
     for f in submission.files:
+        if not [r for r in submission.results if r.startswith(f.sha256) and not r.endswith('.e')]:
+            # If this file has no actual results, we can't expect there to be a file score
+            continue
         assert f.sha256 in file_scores
     for r in submission.results:
+        if r.endswith('.e'):
+            # We can't expect a file tied to an empty_result to have a file score
+            continue
         assert r[:64] in file_scores
 
     for s in file_scores.values():

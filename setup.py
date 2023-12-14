@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup, find_packages, Extension
+from setuptools import Extension, find_packages, setup
 
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
@@ -115,6 +115,7 @@ setup(
             "*.pxd",
             "*.lark",
             "VERSION",
-        ]
+        ],
+        "assemblyline": ["py.typed"]
     }
 )

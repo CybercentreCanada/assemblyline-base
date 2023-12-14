@@ -198,6 +198,8 @@ class OAuthProvider(odm.Model):
                                   description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
                                       description="Password to your application to authenticate to the OAuth provider")
+    redirect_uri: str = odm.Optional(odm.Keyword(),
+                                     description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
     request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
@@ -1175,8 +1177,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1321,6 +1323,13 @@ DEFAULT_VERDICTS = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    'union',
+    'overwrite',
+    'ignore',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -1341,7 +1350,15 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'ancestry': 'ignore',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -1355,7 +1372,8 @@ DEFAULT_SUBMISSION = {
     'max_temp_data_length': 4096,
     'sha256_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
 }
 
 
