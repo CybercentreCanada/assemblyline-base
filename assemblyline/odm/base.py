@@ -637,27 +637,63 @@ class IndexText(_Field):
 class Integer(_Field):
     """A field storing an integer value."""
 
+    def __init__(self, max: int = None, min: int = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max = max
+        self.min = min
+
     def check(self, value, **kwargs):
         if self.optional and value is None:
             return None
 
         if value is None or value == "":
             if self.default_set:
-                return self.default
-        return int(value)
+                ret_val = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] No value provided and no default value set.")
+        else:
+            ret_val = int(value)
+
+        # Test min/max
+        if self.max is not None and ret_val > self.max:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value bigger then the max value. ({value} > {self.max})")
+        if self.min is not None and ret_val < self.min:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value smaller then the min value. ({value} < {self.max})")
+
+        return ret_val
 
 
 class Float(_Field):
     """A field storing a floating point value."""
 
+    def __init__(self, max: float = None, min: float = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max = max
+        self.min = min
+
     def check(self, value, **kwargs):
         if self.optional and value is None:
             return None
 
-        if not value:
+        if value is None or value == "":
             if self.default_set:
-                return self.default
-        return float(value)
+                ret_val = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] No value provided and no default value set.")
+        else:
+            ret_val = float(value)
+
+        # Test min/max
+        if self.max is not None and ret_val > self.max:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value bigger then the max value. ({value} > {self.max})")
+        if self.min is not None and ret_val < self.min:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value smaller then the min value. ({value} < {self.max})")
+
+        return ret_val
 
 
 class ClassificationObject(object):
@@ -1177,7 +1213,7 @@ class Model:
                 else:
                     description += f'<br>:material-alert-outline: {info.deprecation}'
             row = f'| {field} | {field_type} | {description} | ' \
-                  f'<div style="width:100px">{required}</div> | {default} |\n'
+                f'<div style="width:100px">{required}</div> | {default} |\n'
             table += row
 
         markdown_content += table + "\n\n"

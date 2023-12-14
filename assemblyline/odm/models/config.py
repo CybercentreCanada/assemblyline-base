@@ -381,8 +381,8 @@ class Expiry(odm.Model):
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
     delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
-    safelisted_tag_dtl = odm.Integer(description="The default period, in days, before tags expire from Safelist")
-    badlisted_tag_dtl = odm.Integer(description="The default period, in days, before tags expire from Badlist")
+    safelisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Safelist")
+    badlisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Badlist")
 
 
 DEFAULT_EXPIRY = {
@@ -394,8 +394,8 @@ DEFAULT_EXPIRY = {
     'delete_workers': 2,
     'iteration_max_tasks': 20,
     'delete_batch_size': 2000,
-    'safelisted_tag_dtl': 30,
-    'badlisted_tag_dtl': 30
+    'safelisted_tag_dtl': 0,
+    'badlisted_tag_dtl': 0
 }
 
 
@@ -424,7 +424,7 @@ class Ingester(odm.Model):
     sampling_at: Dict[str, int] = odm.Mapping(odm.Integer(),
                                               description="Thresholds at certain buckets before sampling")
     max_inflight = odm.Integer(description="How long can a queue get before we start dropping files")
-    cache_dtl: int = odm.Integer(description="How long are files results cached")
+    cache_dtl: int = odm.Integer(min=0, description="How long are files results cached")
 
 
 DEFAULT_INGESTER = {
@@ -794,6 +794,7 @@ class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
     archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
     cache_dtl = odm.Integer(
+        min=0,
         default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
 
@@ -1335,9 +1336,9 @@ class Submission(odm.Model):
     default_max_extracted: int = odm.Integer(description="How many extracted files may be added to a submission?")
     default_max_supplementary: int = odm.Integer(
         description="How many supplementary files may be added to a submission?")
-    dtl: int = odm.Integer(description="Number of days submissions will remain in the system by default")
-    emptyresult_dtl:  int = odm.Integer(description="Number of days emptyresult will remain in the system")
-    max_dtl: int = odm.Integer(description="Maximum number of days submissions will remain in the system")
+    dtl: int = odm.Integer(min=0, description="Number of days submissions will remain in the system by default")
+    emptyresult_dtl:  int = odm.Integer(min=0, description="Number of days emptyresult will remain in the system")
+    max_dtl: int = odm.Integer(min=0, description="Maximum number of days submissions will remain in the system")
     max_extraction_depth: int = odm.Integer(description="Maximum files extraction depth")
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
@@ -1379,8 +1380,8 @@ DEFAULT_SUBMISSION = {
 @odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
 class Retrohunt(odm.Model):
     enabled = odm.Boolean(default=False, description="Is the Retrohunt functionnality enabled on the frontend")
-    dtl: int = odm.Integer(description="Number of days retrohunt jobs will remain in the system by default")
-    max_dtl: int = odm.Integer(description="Maximum number of days retrohunt jobs will remain in the system")
+    dtl: int = odm.Integer(min=0, description="Number of days retrohunt jobs will remain in the system by default")
+    max_dtl: int = odm.Integer(min=0, description="Maximum number of days retrohunt jobs will remain in the system")
     url = odm.Keyword(description="Base URL for service API")
     api_key = odm.Keyword(description="Service API Key")
     tls_verify = odm.Boolean(default=True, description="Should tls certificates be verified")
