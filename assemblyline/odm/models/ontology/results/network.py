@@ -16,21 +16,16 @@ REQUEST_METHODS = [
     "NOTIFY", "POLL", "PROPFIND", "PROPPATCH", "SEARCH", "SUBSCRIBE", "UNLOCK", "UNSUBSCRIBE", "X-MS-ENUMATTS"
 ]
 
+LOOKUP_TYPES = ["A", "AAAA", "AFSDB", "APL", "CAA", "CDNSKEY", "CDS", "CERT", "CNAME", "CSYNC", "DHCID", "DLV",
+                "DNAME", "DNSKEY", "DS", "EUI48", "EUI64", "HINFO", "HIP", "HTTPS", "IPSECKEY", "KEY", "KX", "LOC",
+                "MX", "NAPTR", "NS", "NSEC", "NSEC3", "NSEC3PARAM", "OPENPGPKEY", "PTR", "RRSIG", "RP", "SIG",
+                "SMIMEA", "SOA", "SRV", "SSHFP", "SVCB", "TA", "TKEY", "TLSA", "TSIG", "TXT", "URI", "ZONEMD"]
 
 @odm.model(description="Details for a DNS request")
 class NetworkDNS(odm.Model):
     domain = odm.Domain(description="The domain requested")
     resolved_ips = odm.List(odm.IP(), description="A list of IPs that were resolved")
-    lookup_type = odm.Enum(values=[
-        # https://en.wikipedia.org/wiki/List_of_DNS_record_types
-        "A", "AAAA", "AFSDB", "ALIAS", "APL", "CAA", "CDNSKEY", "CDS",
-        "CERT", "CNAME", "CSYNC", "DHCID", "DLV", "DNAME", "DNSKEY",
-        "DS", "EUI48", "EUI64", "HINFO", "HIP", "HTTPS", "IPSECKEY",
-        "KEY", "KX", "LOC", "MX", "NAPTR", "NS", "NSEC", "NSEC3",
-        "NSEC3PARAM", "OPENPGPKEY", "PTR", "RRSIG", "RP", "SIG", "SMIMEA",
-        "SOA", "SRV", "SSHFP", "SVCB", "TA", "TKEY", "TLSA", "TSIG", "TXT",
-        "URI", "ZONEMD",
-    ], description="The type of DNS request")
+    lookup_type = odm.Enum(values=LOOKUP_TYPES, description="The type of DNS request")
 
 
 @odm.model(description="Details for an HTTP request")
