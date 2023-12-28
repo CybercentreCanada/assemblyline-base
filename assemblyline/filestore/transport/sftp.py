@@ -1,6 +1,7 @@
 import logging
 import os
 import posixpath
+import re
 import tempfile
 import warnings
 
@@ -24,12 +25,6 @@ def reconnect_retry_on_fail(func):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
-            if not self.validate_host:
-                cnopts = pysftp.CnOpts()
-                cnopts.hostkeys = None
-            else:
-                cnopts = None
-
             try:
                 if not self.sftp:
                     self.sftp = pysftp.Connection(self.host,
@@ -37,7 +32,8 @@ def reconnect_retry_on_fail(func):
                                                   password=self.password,
                                                   private_key=self.private_key,
                                                   private_key_pass=self.private_key_pass,
-                                                  cnopts=cnopts)
+                                                  port=self.port,
+                                                  cnopts=self.cnopts)
                 return func(self, *args, **kwargs)
             except SSHException:
                 pass
@@ -53,7 +49,7 @@ def reconnect_retry_on_fail(func):
                                           password=self.password,
                                           private_key=self.private_key,
                                           private_key_pass=self.private_key_pass,
-                                          cnopts=cnopts)
+                                          cnopts=self.cnopts)
             return func(self, *args, **kwargs)
 
     new_func.__name__ = func.__name__
@@ -67,17 +63,33 @@ class TransportSFTP(Transport):
     SFTP Transport class.
     """
 
-    def __init__(self, base=None, host=None, password=None, user=None, private_key=None, private_key_pass=None,
-                 validate_host=False):
+    def __init__(self, base=None, host=None, password=None, user=None, port=None, private_key=None,
+                 private_key_pass=None, validate_host=False):
         self.log = logging.getLogger('assemblyline.transport.sftp')
-        self.base = base
-        self.sftp = None
+        if base == "/":
+            self.base = "./"
+        else:
+            self.base = base
         self.host = host
+        self.port = int(port or 22)
         self.password = password
         self.user = user
         self.private_key = private_key
         self.private_key_pass = private_key_pass
-        self.validate_host = validate_host
+        if not validate_host:
+            self.cnopts = pysftp.CnOpts()
+            self.cnopts.hostkeys = None
+        else:
+            self.cnopts = None
+
+        # Connect on create
+        self.sftp = pysftp.Connection(self.host,
+                                      username=self.user,
+                                      password=self.password,
+                                      private_key=self.private_key,
+                                      private_key_pass=self.private_key_pass,
+                                      port=self.port,
+                                      cnopts=self.cnopts)
 
         def sftp_normalize(path):
             # If they've provided an absolute path. Leave it a is.
@@ -159,10 +171,16 @@ class TransportSFTP(Transport):
         finalpath = posixpath.join(dirname, filename)
         assert (finalpath == dst_path)
 
+        # Validate content
+        if isinstance(content, str):
+            content_data = content.encode('utf-8')
+        else:
+            content_data = content
+
         # Write content to a tempfile
         fd, src_path = tempfile.mkstemp(prefix="filestore.local_path")
         with open(fd, "wb") as f:
-            f.write(content)
+            f.write(content_data)
 
         # Upload the tempfile
         self.makedirs(dirname)
