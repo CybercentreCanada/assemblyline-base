@@ -208,7 +208,16 @@ class TransportFTP(Transport):
     def get(self, path: str) -> bytes:
         path = self.normalize(path)
         bio = BytesIO()
-        self.ftp.retrbinary('RETR ' + path, bio.write)
+
+        try:
+            self.ftp.retrbinary('RETR ' + path, bio.write)
+        except ftplib.error_perm as e:
+            # If the file doesnt exist we get a 550.
+            if not str(e).startswith('550'):
+                raise
+
+            raise FileNotFoundError(f"{path} does not exists.")
+
         return bio.getvalue()
 
     @reconnect_retry_on_fail

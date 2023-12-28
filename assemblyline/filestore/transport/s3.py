@@ -163,8 +163,12 @@ class TransportS3(Transport):
         fd, dst_path = tempfile.mkstemp(prefix="s3_transport.", suffix=".download")
         os.close(fd)  # We don't need the file descriptor open
 
-        self.download(path, dst_path)
         try:
+            try:
+                self.download(path, dst_path)
+            except Exception:
+                raise FileNotFoundError(f"{path} does not exists.")
+
             with open(dst_path, "rb") as downloaded:
                 return downloaded.read()
         finally:

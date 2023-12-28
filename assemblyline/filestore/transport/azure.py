@@ -173,7 +173,13 @@ class TransportAzure(Transport):
         my_blob = BytesIO()
 
         blob_client = self.service_client.get_blob_client(self.blob_container, key)
-        blob_data = self.with_retries(blob_client.download_blob)
+        try:
+            blob_data = self.with_retries(blob_client.download_blob)
+        except TransportException as e:
+            if not isinstance(e.cause, ResourceNotFoundError):
+                raise
+            else:
+                raise FileNotFoundError(f"{path} does not exists.")
         blob_data.readinto(my_blob)
         return my_blob.getvalue()
 
