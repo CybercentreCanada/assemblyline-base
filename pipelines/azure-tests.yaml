@@ -76,6 +76,7 @@ jobs:
     timeoutInMinutes: 10
     services:
       elasticsearch: $[ variables['elasticsearch'] ]
+      sftp: sftp
       redis: redis
       minio: minio
 
