@@ -1,7 +1,6 @@
 import logging
 import os
 import posixpath
-import re
 import tempfile
 import warnings
 
