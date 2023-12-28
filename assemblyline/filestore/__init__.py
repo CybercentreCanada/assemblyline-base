@@ -250,7 +250,7 @@ class FileStore(object):
         }[location]
 
         transports = self.transports[start:end]
-        assert(len(transports) >= 1)
+        assert (len(transports) >= 1)
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
