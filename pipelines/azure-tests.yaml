@@ -22,6 +22,16 @@ resources:
       image: redis
       ports:
         - 6379:6379
+    - container: sftp
+      image: linuxserver/openssh-server
+      env:
+        SUDO_ACCESS: "false"
+        PASSWORD_ACCESS: "true"
+        USER_PASSWORD: "password"
+        USER_NAME: "user"
+        LOG_STDOUT: "true"
+      ports:
+        - 2222:2222
     - container: es7
       image: cccs/elasticsearch:7.17.4
       env:
@@ -62,6 +72,7 @@ jobs:
     timeoutInMinutes: 10
     services:
       elasticsearch: $[ variables['elasticsearch'] ]
+      sftp: sftp
       redis: redis
       minio: minio
 
