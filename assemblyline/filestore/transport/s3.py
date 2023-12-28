@@ -2,9 +2,10 @@ import boto3
 import logging
 import os
 import tempfile
+import threading
+
 from typing import Iterable, Optional
 
-from botocore.config import Config
 from botocore.exceptions import ClientError, EndpointConnectionError, ConnectionClosedError
 from io import BytesIO
 
@@ -18,6 +19,7 @@ except ImportError:
 
 
 disable_warnings()
+boto3_client_lock = threading.Lock()
 
 """
 This class assumes a flat file structure in the S3 bucket.  This is due to the way the AL datastore currently handles
@@ -56,16 +58,17 @@ class TransportS3(Transport):
 
         self.endpoint_url = "{scheme}://{host}:{port}".format(scheme=self.scheme, host=self.host, port=self.port)
 
-        session = boto3.session.Session()
-        self.client = session.client(
-            "s3",
-            aws_access_key_id=accesskey,
-            aws_secret_access_key=secretkey,
-            endpoint_url=self.endpoint_url,
-            region_name=aws_region,
-            use_ssl=self.use_ssl,
-            verify=verify,
-        )
+        with boto3_client_lock:
+            session = boto3.session.Session()
+            self.client = session.client(
+                "s3",
+                aws_access_key_id=accesskey,
+                aws_secret_access_key=secretkey,
+                endpoint_url=self.endpoint_url,
+                region_name=aws_region,
+                use_ssl=self.use_ssl,
+                verify=verify,
+            )
 
         bucket_exist = False
         try:
@@ -160,7 +163,7 @@ class TransportS3(Transport):
         fd, dst_path = tempfile.mkstemp(prefix="s3_transport.", suffix=".download")
         os.close(fd)  # We don't need the file descriptor open
 
-        self.with_retries(self.download, path, dst_path)
+        self.download(path, dst_path)
         try:
             with open(dst_path, "rb") as downloaded:
                 return downloaded.read()
