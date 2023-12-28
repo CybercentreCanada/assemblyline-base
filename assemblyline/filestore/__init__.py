@@ -9,6 +9,7 @@ import elasticapm
 
 from assemblyline.common.exceptions import get_stacktrace_info
 from assemblyline.filestore.transport.azure import TransportAzure
+from assemblyline.filestore.transport.base import TransportException
 from assemblyline.filestore.transport.ftp import TransportFTP
 from assemblyline.filestore.transport.http import TransportHTTP
 from assemblyline.filestore.transport.local import TransportLocal
@@ -107,7 +108,7 @@ def create_transport(url, connection_attempts=None):
         valid_bool_keys = ['validate_host']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
-        t = TransportSFTP(base=base, host=host, password=password, user=user, **extras)
+        t = TransportSFTP(base=base, host=host, password=password, user=user, port=port, **extras)
 
     elif scheme == 'http' or scheme == 'https':
         valid_str_keys = ['pki']
@@ -222,8 +223,13 @@ class FileStore(object):
     def get(self, path: str, location='any') -> Optional[bytes]:
         for t in self.slice(location):
             try:
-                if t.exists(path):
-                    return t.get(path)
+                return t.get(path)
+            except TransportException as ex:
+                if isinstance(ex.cause, FileNotFoundError):
+                    pass
+                else:
+                    trace = get_stacktrace_info(ex)
+                    self.log.warning('Transport problem: %s', trace)
             except Exception as ex:
                 trace = get_stacktrace_info(ex)
                 self.log.warning('Transport problem: %s', trace)
