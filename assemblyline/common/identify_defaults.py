@@ -139,6 +139,7 @@ magic_patterns = [
     {"al_type": "archive/xz", "regex": r"^XZ compressed data"},
     {"al_type": "archive/zip", "regex": r"^zip archive data"},
     {"al_type": "archive/zstd", "regex": r"^Zstandard compressed data"},
+    {"al_type": "archive/zpaq", "regex": r"^ZPAQ file"},
     {"al_type": "network/tcpdump", "regex": r"^(tcpdump|pcap)"},
     {"al_type": "document/pdf", "regex": r"^pdf document"},
     {"al_type": "image/bmp", "regex": r"^pc bitmap"},
