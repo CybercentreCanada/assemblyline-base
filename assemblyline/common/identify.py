@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import struct
@@ -352,8 +353,15 @@ class Identify():
             data["type"] = uri_ident(path, data)
 
         # If we're so far failed to identified the file, lets run the yara rules
-        elif "unknown" in data["type"] or data["type"] == "text/plain":
+        elif "unknown" in data["type"]:
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
+        elif data["type"] == "text/plain":
+            # Check if the file is a misidentified json first before running the yara rules
+            try:
+                json.load(open(path))
+                data["type"] = "text/json"
+            except Exception:
+                data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
         # Extra checks for office documents
         #  - Check for encryption
