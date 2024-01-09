@@ -360,7 +360,7 @@ class Identify():
             try:
                 json.load(open(path))
                 data["type"] = "text/json"
-            except (json.JSONDecodeError, UnicodeDecodeError):
+            except Exception:
                 data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
         # Extra checks for office documents
