@@ -11,52 +11,52 @@ rule code_javascript {
         $not_html = /^\s*<\w/
 
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
-        $strong_js2  = /\beval[ \t]*\(['"]/
+        $strong_js2  = /\beval[ \t]*\(['"]/ ascii wide
 
         // jscript
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
-        $strong_js3  = /new[ \t]+ActiveXObject\(/
+        $strong_js3  = /new[ \t]+ActiveXObject\(/ ascii wide
 
-        $strong_js4  = /Scripting\.Dictionary['"]/
-        $strong_js5  = "unescape("
-        $strong_js6  = ".createElement("
-        $strong_js7  = /submitForm\(['"]/
-        $strong_js8  = /\b(document|window)(\[['"a-zA-Z]|\.)\w+\b/
-        $strong_js9  = "setTimeout("
+        $strong_js4  = /Scripting\.Dictionary['"]/ ascii wide
+        $strong_js5  = "unescape(" ascii wide
+        $strong_js6  = ".createElement(" ascii wide
+        $strong_js7  = /submitForm\(['"]/ ascii wide
+        $strong_js8  = /\b(document|window)(\[['"a-zA-Z]|\.)\w+\b/ ascii wide
+        $strong_js9  = "setTimeout(" ascii wide
         // Suported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
-        $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=/
+        $strong_js10 = /(^|;|\s)(var|let|const)[ \t]+\w+[ \t]*=/ ascii wide
         // If this is exactly in the sample, will trigger a second time because of strong_js10
-        $strong_js11 = /(^|\n)window.location.href[ \t]*=/
+        $strong_js11 = /(^|\n)window.location.href[ \t]*=/ ascii wide
 
         // Used in a lot of malware samples to fail silently
-        $strong_js12 = /catch\s+\(\w*\)\s+\{/
+        $strong_js12 = /catch\s+\(\w*\)\s+\{/ ascii wide
 
         // Firefox browser specific method
-        $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/
+        $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/ ascii wide
 
         // Inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
-        $strong_js14 = "alert("
-        $strong_js15 = ".charAt("
-        $strong_js16 = "decodeURIComponent("
-        $strong_js17 = ".charCodeAt("
-        $strong_js18 = ".toString("
+        $strong_js14 = "alert(" ascii wide
+        $strong_js15 = ".charAt(" ascii wide
+        $strong_js16 = "decodeURIComponent(" ascii wide
+        $strong_js17 = ".charCodeAt(" ascii wide
+        $strong_js18 = ".toString(" ascii wide
 
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         // This method of function declaration is shared with PowerShell, so it should be considered weak-ish
-        $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
+        $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/ ascii wide
 
-        $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/
+        $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/ ascii wide
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
-        $weak_js3 = /Math\.(round|pow|sin|cos)\(/
-        $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/
+        $weak_js3 = /Math\.(round|pow|sin|cos)\(/ ascii wide
+        $weak_js4 = /(isNaN|isFinite|parseInt|parseFloat|toLowerCase|toUpperCase)\(/ ascii wide
         // Supported and inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
-        $weak_js5 = /([^\w]|^)this[\.\[][\w'"]+/
+        $weak_js5 = /([^\w]|^)this[\.\[][\w'"]+/ ascii wide
         // This is shared in PowerShell (although in PowerShell it should be .Length)
-        $weak_js6 = /([^\w]|^)[\w]+\.length/
+        $weak_js6 = /([^\w]|^)[\w]+\.length/ ascii wide
         // This is shared in C++
-        $weak_js7 = /([^\w]|^)[\w]+\.substr\(/
+        $weak_js7 = /([^\w]|^)[\w]+\.substr\(/ ascii wide
 
     condition:
         // Note that application/javascript is obsolete
@@ -101,15 +101,15 @@ rule code_jscript {
         score = 5
 
     strings:
-        $jscript1 = "ActiveXObject" fullword
-        $jscript2 = "= GetObject("
-        $jscript3 = "WScript.CreateObject("
+        $jscript1 = "ActiveXObject" fullword ascii wide
+        $jscript2 = "= GetObject(" ascii wide
+        $jscript3 = "WScript.CreateObject(" ascii wide
 
         // Conditional comments
-        $jscript4 = "/*@cc_on"
-        $jscript5 = "@*/"
-        $jscript6 = "/*@if (@_jscript_version >= "
-        $jscript7 = "/*@end"
+        $jscript4 = "/*@cc_on" ascii wide
+        $jscript5 = "@*/" ascii wide
+        $jscript6 = "/*@if (@_jscript_version >= " ascii wide
+        $jscript7 = "/*@end" ascii wide
 
     condition:
         code_javascript
@@ -173,15 +173,25 @@ rule code_vbs {
         $strong_vbs13 = "\nMsgBox \"" nocase ascii wide
         // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
         $strong_vbs14 = "Array(" nocase ascii wide
+        $weak_vbs1 = "\"Scripting.FileSystemObject\"" nocase ascii wide
+        $weak_vbs2 = ".OpenAsTextStream(" nocase ascii wide
+        $weak_vbs3 = ".CreateTextFile" nocase ascii wide
         // Dim blah
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
-        $weak_vbs1 = /\bDim\b\s+\w+[\r:]/i ascii wide
+        $dim_declaration = /\bDim\b\s+\w+[\r:]/i ascii wide
 
     condition:
         not code_javascript and not $multiline
-        and (2 of ($strong_vbs*)
-            or (1 of ($strong_vbs*)
-            and (#weak_vbs1) > 3))
+        and (
+            2 of ($strong_vbs*)
+            or (
+                1 of ($strong_vbs*)
+                and (
+                    (#dim_declaration) > 3
+                    or 2 of ($weak_vbs*)
+                )
+            )
+        )
 }
 
 /*
