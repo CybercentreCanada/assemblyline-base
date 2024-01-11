@@ -546,7 +546,7 @@ rule code_ps1 {
     strings:
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
         // Supported and inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L406
-        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep|Process)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item|WmiObject)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item|ItemProperty|StringMode)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest)|Copy-Item)\b/i ascii wide
+        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep|Process)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item|WmiObject)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item|ItemProperty|StringMode)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest)|Copy-Item|Import-Module)\b/i ascii wide
         $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)\b/i ascii wide
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
         $strong_pwsh3 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
@@ -589,13 +589,12 @@ rule code_ps1 {
     condition:
         (
             mime startswith "text"
-            and
-                (
-                    2 of ($strong_pwsh*)
-                    or
-                    3 of them
-                )
-        ) or (
+            and (
+                2 of ($strong_pwsh*)
+                or 3 of them
+            )
+        )
+        or (
             mime == "application/octet-stream"
             and 3 of ($strong_pwsh*)
         )
@@ -856,19 +855,38 @@ rule code_batch {
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
     condition:
-        (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
-        and (for 1 of ($obf1) :( # > 3 )
-             // powershell can have a command in it that looks like this: "powershell -command blah"
-             // so we need something else
-             or ($power1 and $command and (1 of ($cmd*) or 1 of ($rem*)))
-             or ($power1 and 1 of ($cmd*))
-             or for 1 of ($cmd*) :( # > 3 )
-             or $exp
-             or (2 of ($cmd*)
-                and (#rem1+#rem2+#set) > 4))
-             or (for 1 of ($obf2) :( # > 3 )
+        (
+            mime startswith "text"
+            or uint16(0) == 0xFEFF  // little-endian utf-16 BOM at 0
+        )
+        and (
+            for 1 of ($obf1) :( # > 3 )
+            // powershell can have a command in it that looks like this: "powershell -command blah"
+            // so we need something else
+            or (
+                $power1
+                and $command
+                and (
+                    1 of ($cmd*)
+                    or 1 of ($rem*)
+                )
+            )
+            or (
+                $power1
                 and 1 of ($cmd*)
-                and (#rem1+#rem2+#set) > 4)
+            )
+            or for 1 of ($cmd*) :( # > 3 )
+            or $exp
+            or (
+                2 of ($cmd*)
+                and (#rem1+#rem2+#set) > 4
+            )
+        )
+        or (
+            for 1 of ($obf2) :( # > 3 )
+            and 1 of ($cmd*)
+            and (#rem1+#rem2+#set) > 4
+        )
 }
 
 rule code_batch_small {
@@ -888,10 +906,15 @@ rule code_batch_small {
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
 
     condition:
-        (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
+        (
+            mime startswith "text"
+            or uint16(0) == 0xFEFF  // little-endian utf-16 BOM at 0
+        )
         and filesize < 512
-        and (1 of ($batch*)
-            or (#rem+#set) > 4)
+        and (
+            1 of ($batch*)
+            or (#rem+#set) > 4
+        )
 }
 
 /*
@@ -1174,13 +1197,16 @@ rule code_au3 {
 
     condition:
         // First off, we want at least one strong keyword
-        #strong_keywords >= 1 and (
+        #strong_keywords >= 1
+        and (
             // Next we are looking for a high-confidence amount of functions
             // If we have 5 or more strong functions, great
-            #strong_functions >= 5 or (
+            #strong_functions >= 5
+            or (
                 // If we have at least 10 functions, whether they are strong or weak, that's good too, but we need at
                 // least 2 strong functions before we can be confident
-                (#strong_functions + #weak_functions) >= 10 and #strong_functions >= 2
+                (#strong_functions + #weak_functions) >= 10
+                and #strong_functions >= 2
             )
         )
 }
