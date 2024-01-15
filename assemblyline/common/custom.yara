@@ -546,24 +546,65 @@ rule code_ps1 {
     strings:
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
         // Supported and inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L406
-        $strong_pwsh1 = /(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep|Process)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item|WmiObject)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item|ItemProperty|StringMode)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest)|Copy-Item)\b/i ascii wide
-        $strong_pwsh2 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)\b/i ascii wide
+        $strong_pwsh1 = "IWR" nocase ascii wide fullword
+        $strong_pwsh2 = "Add-MpPreference" nocase ascii wide fullword
+        $strong_pwsh3 = "Add-Type" nocase ascii wide fullword
+        $strong_pwsh4 = "Start-BitsTransfer" nocase ascii wide fullword
+        $strong_pwsh5 = "Start-Sleep" nocase ascii wide fullword
+        $strong_pwsh6 = "Start-Process" nocase ascii wide fullword
+        $strong_pwsh7 = "Get-ExecutionPolicy" nocase ascii wide fullword
+        $strong_pwsh8 = "Get-Service" nocase ascii wide fullword
+        $strong_pwsh9 = "Get-Process" nocase ascii wide fullword
+        $strong_pwsh10 = "Get-Counter" nocase ascii wide fullword
+        $strong_pwsh11 = "Get-WinEvent" nocase ascii wide fullword
+        $strong_pwsh12 = "Get-ChildItem" nocase ascii wide fullword
+        $strong_pwsh13 = "Get-Variable" nocase ascii wide fullword
+        $strong_pwsh14 = "Get-Item" nocase ascii wide fullword
+        $strong_pwsh15 = "Get-WmiObject" nocase ascii wide fullword
+        $strong_pwsh16 = "Where-Object" nocase ascii wide fullword
+        $strong_pwsh17 = "ConvertTo-HTML" nocase ascii wide fullword
+        $strong_pwsh18 = "Select-Object" nocase ascii wide fullword
+        $strong_pwsh19 = "Clear-History" nocase ascii wide fullword
+        $strong_pwsh20 = "Clear-Content" nocase ascii wide fullword
+        $strong_pwsh21 = "ForEach-Object" nocase ascii wide fullword
+        $strong_pwsh22 = "Compare-Object" nocase ascii wide fullword
+        $strong_pwsh23 = "New-ItemProperty" nocase ascii wide fullword
+        $strong_pwsh24 = "New-Object" nocase ascii wide fullword
+        $strong_pwsh25 = "New-WebServiceProxy" nocase ascii wide fullword
+        $strong_pwsh26 = "Set-Alias" nocase ascii wide fullword
+        $strong_pwsh27 = "Set-Location" nocase ascii wide fullword
+        $strong_pwsh28 = "Set-Item" nocase ascii wide fullword
+        $strong_pwsh29 = "Set-ItemProperty" nocase ascii wide fullword
+        $strong_pwsh30 = "Set-StringMode" nocase ascii wide fullword
+        $strong_pwsh31 = "Wait-Job" nocase ascii wide fullword
+        $strong_pwsh32 = "Test-Path" nocase ascii wide fullword
+        $strong_pwsh33 = "Rename-Item" nocase ascii wide fullword
+        $strong_pwsh34 = "Stop-Process" nocase ascii wide fullword
+        $strong_pwsh35 = "Out-String" nocase ascii wide fullword
+        $strong_pwsh36 = "Write-Error" nocase ascii wide fullword
+        $strong_pwsh37 = "Invoke-Expression" nocase ascii wide fullword
+        $strong_pwsh38 = "Invoke-WebRequest" nocase ascii wide fullword
+        $strong_pwsh39 = "Copy-Item" nocase ascii wide fullword
+        $strong_pwsh40 = "Import-Module" nocase ascii wide fullword
+        $strong_pwsh41 = "Expand-Archive" nocase ascii wide fullword
+
+        $strong_pwsh100 = /(-ExclusionPath|-memberDefinition|-Name|-namespace|-passthru|-command|-TypeName|-join|-split|-sou|-dest|-property|-OutF(ile)?|-ExecutionPolicy Bypass|-uri|-AllowStartIfOnBatteries|-MultipleInstances|-TaskName|-Trigger)\b/i ascii wide
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
-        $strong_pwsh3 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
-        $strong_pwsh4 = "System.Net.WebClient" nocase ascii wide
-        $strong_pwsh5 = "Net.ServicePointManager" nocase ascii wide
-        $strong_pwsh6 = "Net.SecurityProtocolType" nocase ascii wide
-        $strong_pwsh7 = /\[(System\.)?Text\.Encoding\]::UTF8/i ascii wide
-        $strong_pwsh8 = /\[(System\.)?Convert\]::ToInt32/i ascii wide
-        $strong_pwsh9 = /\[(System\.)?String]::Join\(/i ascii wide
-        $strong_pwsh10 = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
-        $strong_pwsh11 = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
-        $strong_pwsh12 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
-        $strong_pwsh13 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
+        $strong_pwsh101 = /(\.Get(String|Field|Type|Method)|FromBase64String)\(/i ascii wide
+        $strong_pwsh102 = "System.Net.WebClient" nocase ascii wide
+        $strong_pwsh103 = "Net.ServicePointManager" nocase ascii wide
+        $strong_pwsh104 = "Net.SecurityProtocolType" nocase ascii wide
+        $strong_pwsh105 = /\[(System\.)?Text\.Encoding\]::UTF8/i ascii wide
+        $strong_pwsh106 = /\[(System\.)?Convert\]::ToInt32/i ascii wide
+        $strong_pwsh107 = /\[(System\.)?String]::Join\(/i ascii wide
+        $strong_pwsh108 = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
+        $strong_pwsh109 = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
+        $strong_pwsh110 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
+        $strong_pwsh111 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
         // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
-        $strong_pwsh14 = /\|[ \t]*iex\b/i ascii wide
+        $strong_pwsh112 = /\|[ \t]*iex\b/i ascii wide
         // Inspired by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L406
-        $strong_pwsh15 = "$PSHOME" nocase ascii wide
+        $strong_pwsh113 = "$PSHOME" nocase ascii wide
         $weak_pwsh1 = /\$\w+[ \t]*=[ \t]*[^;\n|]+[;\n|]/ ascii wide
 
         // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comparison_operators?view=powershell-7.3
@@ -589,15 +630,32 @@ rule code_ps1 {
     condition:
         (
             mime startswith "text"
-            and
-                (
-                    2 of ($strong_pwsh*)
-                    or
-                    3 of them
-                )
-        ) or (
+            and (
+                2 of ($strong_pwsh*)
+                or 3 of them
+            )
+        )
+        or (
             mime == "application/octet-stream"
             and 3 of ($strong_pwsh*)
+        )
+}
+
+rule code_ps1_first_line {
+
+    meta:
+        type = "code/ps1"
+        score = 5
+
+    strings:
+        $strong_pwsh = /^[^\n]*(IWR|Add-(MpPreference|Type)|Start-(BitsTransfer|Sleep|Process)|Get-(ExecutionPolicy|Service|Process|Counter|WinEvent|ChildItem|Variable|Item|WmiObject)|Where-Object|ConvertTo-HTML|Select-Object|Clear-(History|Content)|ForEach-Object|Compare-Object|New-(ItemProperty|Object|WebServiceProxy)|Set-(Alias|Location|Item|ItemProperty|StringMode)|Wait-Job|Test-Path|Rename-Item|Stop-Process|Out-String|Write-Error|Invoke-(Expression|WebRequest)|Copy-Item|Import-Module|Expand-Archive)\b/i ascii wide
+        $powershell = /^[^\n]*\^?p(\^|%[^%\n]{0,100}%)?o(\^|%[^%\n]{0,100}%)?w(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?r(\^|%[^%\n]{0,100}%)?s(\^|%[^%\n]{0,100}%)?h(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?l(\^|%[^%\n]{0,100}%)?l(\^|%[^%\n]{0,100}%)?(\.(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?x(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?)?\b/i
+
+    condition:
+        code_ps1
+        and (
+            @strong_pwsh[1] < @powershell[1]
+            or ($strong_pwsh and not $powershell)
         )
 }
 
@@ -856,19 +914,38 @@ rule code_batch {
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
     condition:
-        (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
-        and (for 1 of ($obf1) :( # > 3 )
-             // powershell can have a command in it that looks like this: "powershell -command blah"
-             // so we need something else
-             or ($power1 and $command and (1 of ($cmd*) or 1 of ($rem*)))
-             or ($power1 and 1 of ($cmd*))
-             or for 1 of ($cmd*) :( # > 3 )
-             or $exp
-             or (2 of ($cmd*)
-                and (#rem1+#rem2+#set) > 4))
-             or (for 1 of ($obf2) :( # > 3 )
+        (
+            mime startswith "text"
+            or uint16(0) == 0xFEFF  // little-endian utf-16 BOM at 0
+        )
+        and (
+            for 1 of ($obf1) :( # > 3 )
+            // powershell can have a command in it that looks like this: "powershell -command blah"
+            // so we need something else
+            or (
+                $power1
+                and $command
+                and (
+                    1 of ($cmd*)
+                    or 1 of ($rem*)
+                )
+            )
+            or (
+                $power1
                 and 1 of ($cmd*)
-                and (#rem1+#rem2+#set) > 4)
+            )
+            or for 1 of ($cmd*) :( # > 3 )
+            or $exp
+            or (
+                2 of ($cmd*)
+                and (#rem1+#rem2+#set) > 4
+            )
+        )
+        or (
+            for 1 of ($obf2) :( # > 3 )
+            and 1 of ($cmd*)
+            and (#rem1+#rem2+#set) > 4
+        )
 }
 
 rule code_batch_small {
@@ -888,10 +965,15 @@ rule code_batch_small {
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
 
     condition:
-        (mime startswith "text" or uint16(0) == 0xFEFF)  // little-endian utf-16 BOM at 0
+        (
+            mime startswith "text"
+            or uint16(0) == 0xFEFF  // little-endian utf-16 BOM at 0
+        )
         and filesize < 512
-        and (1 of ($batch*)
-            or (#rem+#set) > 4)
+        and (
+            1 of ($batch*)
+            or (#rem+#set) > 4
+        )
 }
 
 /*
@@ -1174,13 +1256,16 @@ rule code_au3 {
 
     condition:
         // First off, we want at least one strong keyword
-        #strong_keywords >= 1 and (
+        #strong_keywords >= 1
+        and (
             // Next we are looking for a high-confidence amount of functions
             // If we have 5 or more strong functions, great
-            #strong_functions >= 5 or (
+            #strong_functions >= 5
+            or (
                 // If we have at least 10 functions, whether they are strong or weak, that's good too, but we need at
                 // least 2 strong functions before we can be confident
-                (#strong_functions + #weak_functions) >= 10 and #strong_functions >= 2
+                (#strong_functions + #weak_functions) >= 10
+                and #strong_functions >= 2
             )
         )
 }
