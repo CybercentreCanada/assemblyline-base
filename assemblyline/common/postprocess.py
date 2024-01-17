@@ -381,16 +381,16 @@ class ExpressionTransformer(lark.Transformer):
                 '>=': operator.ge,
             }[args[0]]
 
-            try:
-                datemath.dm(args[1])
-                return DatePrefixOperation(op, args[1])
-            except (arrow.ParserError, datemath.DateMathException):
-                pass
-
             # Try to detect a number
             try:
                 return NumberPrefixOperation(op, float(args[1]))
             except (ValueError, TypeError):
+                pass
+
+            try:
+                datemath.dm(args[1])
+                return DatePrefixOperation(op, args[1])
+            except (arrow.ParserError, datemath.DateMathException):
                 pass
 
             return StringPrefixOperation(op, str(args[1]))
