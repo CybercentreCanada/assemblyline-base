@@ -11,6 +11,7 @@ from assemblyline.common import forge
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.tagging import tag_dict_to_list
 from assemblyline.common.uid import get_id_from_data
 from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
@@ -42,6 +43,9 @@ from assemblyline.odm.models.workflow import Workflow
 config = forge.get_config()
 
 THREAD_POOL_SIZE = int(os.environ.get("POOL_SIZE", 20))
+
+JSON_SECTIONS = ["GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "PROCESS_TREE",
+                 "TABLE", "IMAGE", "MULTI", "ORDERED_KEY_VALUE", "TIMELINE"]
 
 
 class AssemblylineDatastore(object):
@@ -1234,3 +1238,48 @@ class AssemblylineDatastore(object):
                 return
             except VersionConflictException as vce:
                 log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")
+
+    @elasticapm.capture_span(span_type='datastore')
+    def get_ai_formatted_submission_data(self, sid, min_score=0, user_classification=None,
+                                         cl_engine=forge.get_classification()):
+        def fix_section_data(result):
+            new_sections = []
+            for section in result['result'].get('sections', []):
+                # Skip section with a small score
+                if section.get('heuristic', {}).get('score', -1) < min_score:
+                    continue
+
+                # Loading JSON formatted sections
+                if section['body_format'] in JSON_SECTIONS and isinstance(section['body'], str):
+                    try:
+                        section['body'] = json.loads(section['body'])
+                    except ValueError:
+                        pass
+
+                # Changing tags to a list
+                section['tags'] = tag_dict_to_list(flatten(section.get('tags', {})), safelisted=False, ai=True)
+                if not section['tags']:
+                    section.pop('tags')
+
+                # Add the section to the new section array
+                new_sections.append(section)
+
+            # Update result sections
+            result['result']['sections'] = new_sections
+
+            return result
+
+        submission = self.submission.get(sid)
+        if not submission or (user_classification and not cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=submission.classification.value)):
+            return None
+
+        results = [fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True))
+                   for r in self.result.multiget(
+                       submission.results, as_dictionary=False, error_on_missing=False)
+                   if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
+                       user_c12n=user_classification, c12n=r.classification.value))]
+
+        output = submission.as_primitives(strip_non_ai_fields=True, strip_null=True)
+        output['results'] = results
+        return output
