@@ -116,9 +116,10 @@ class KeyMaskException(KeyError):
 
 class _Field:
     def __init__(self, name=None, index=None, store=None, copyto=None,
-                 default=None, description=None, deprecation=None):
+                 default=None, description=None, deprecation=None, ai=True):
         self.index = index
         self.store = store
+        self.ai = ai
         self.multivalued = False
         self.copyto = []
         if isinstance(copyto, str):
@@ -156,6 +157,7 @@ class _Field:
         return value
 
     # noinspection PyProtectedMember
+
     def __set__(self, obj, value):
         """Set the value of this field, calling a setter method if available."""
         if self.name in obj._odm_removed:
@@ -1010,6 +1012,7 @@ class Optional(_Field):
 
         if child_type.default_set:
             kwargs['default'] = child_type.default
+        kwargs['ai'] = kwargs.get('ai', child_type.ai)
         super().__init__(**kwargs)
         self.default_set = True
         child_type.optional = True
@@ -1295,27 +1298,39 @@ class Model:
         # attribute assignment
         self.__frozen = True
 
-    def as_primitives(self, hidden_fields=False, strip_null=False):
+    def as_primitives(self, hidden_fields=False, strip_null=False, strip_non_ai_fields=False):
         """Convert the object back into primitives that can be json serialized."""
         out = {}
 
         fields = self.fields()
         for key, value in self._odm_py_obj.items():
             field_type = fields.get(key, Any)
+            if strip_non_ai_fields and not field_type.ai:
+                continue
+
             if value is not None or (value is None and field_type.default_set):
                 if strip_null and value is None:
                     continue
 
                 if isinstance(value, Model):
-                    out[key] = value.as_primitives(strip_null=strip_null)
+                    data = value.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, datetime):
                     out[key] = value.strftime(DATEFORMAT)
                 elif isinstance(value, TypedMapping):
-                    out[key] = {k: v.as_primitives(strip_null=strip_null)
-                                if isinstance(v, Model) else v for k, v in value.items()}
+                    data = {k: v.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                            if isinstance(v, Model) else v for k, v in value.items()}
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, TypedList):
-                    out[key] = [v.as_primitives(strip_null=strip_null)
-                                if isinstance(v, Model) else v for v in value]
+                    data = [v.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                            if isinstance(v, Model) else v for v in value]
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, ClassificationObject):
                     out[key] = str(value)
                     if hidden_fields:
