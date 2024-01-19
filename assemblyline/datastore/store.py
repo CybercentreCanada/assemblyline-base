@@ -188,6 +188,7 @@ class ESStore(object):
                                                   request_timeout=TRANSPORT_TIMEOUT,
                                                   ca_certs=self.ca_certs,
                                                   verify_certs=DATASTORE_VERIFY_CERTS)
+        log.info("Reconnected to Elasticsearch")
 
     def close(self):
         self._closed = True
@@ -309,7 +310,7 @@ class ESStore(object):
                 ret_val = func(*args, **kwargs)
 
                 if retries:
-                    log.info('Reconnected to elasticsearch!')
+                    log.info(f"Retrying datastore operation: {func.__name__}")
 
                 if updated:
                     ret_val['updated'] += updated
@@ -329,7 +330,6 @@ class ESStore(object):
 
                 log.warning(f"Index {index_name} was removed while a query was running, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.exceptions.ConflictError as ce:
@@ -341,7 +341,6 @@ class ESStore(object):
                 deleted += ce.info.get('deleted', 0)
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.exceptions.ConnectionTimeout:
@@ -385,7 +384,6 @@ class ESStore(object):
 
                 # Loop and retry
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             # Elastic client 8.x retries
@@ -398,7 +396,6 @@ class ESStore(object):
                             f"on index {index_name}, retrying...")
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.ApiError as err:
@@ -423,5 +420,4 @@ class ESStore(object):
 
                 # Loop and retry
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
