@@ -1240,7 +1240,7 @@ class AssemblylineDatastore(object):
                 log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_ai_formatted_submission_data(self, sid, min_score=0, user_classification=None,
+    def get_ai_formatted_submission_data(self, sid, user_classification=None,
                                          cl_engine=forge.get_classification()):
         def fix_section_data(result):
             new_sections = []
@@ -1269,17 +1269,27 @@ class AssemblylineDatastore(object):
 
             return result
 
+        # Get the submission data
         submission = self.submission.get(sid)
         if not submission or (user_classification and not cl_engine.is_accessible(
                 user_c12n=user_classification, c12n=submission.classification.value)):
             return None
 
-        results = [fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True))
-                   for r in self.result.multiget(
-                       submission.results, as_dictionary=False, error_on_missing=False)
-                   if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
-                       user_c12n=user_classification, c12n=r.classification.value))]
+        # Auto adjust min_score
+        if submission.max_score < 0:
+            min_score = -1000000
+        else:
+            min_score = 300
 
+        # Parse results
+        results = [
+            fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True))
+            for r in self.result.multiget(
+                submission.results, as_dictionary=False, error_on_missing=False)
+            if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=r.classification.value))]
+
+        # Create output
         output = submission.as_primitives(strip_non_ai_fields=True, strip_null=True)
         output['results'] = results
         return output
