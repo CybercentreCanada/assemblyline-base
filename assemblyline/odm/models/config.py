@@ -1009,6 +1009,54 @@ DEFAULT_STATISTICS = {
 
 
 @odm.model(index=False, store=False, description="Alerting Metadata")
+class AI(odm.Model):
+    chat_url: str = odm.Keyword(description="URL to the AI API")
+    code_system_message: str = odm.Keyword(
+        description="Default system message used in the API call to the AI for analysing code.")
+    enabled: bool = odm.Boolean(description="Is AI support enabled?")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Headers used by the url_download method")
+    max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
+    model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Other kwargs options directly passed to the API.")
+    report_system_message: str = odm.Keyword(
+        description="Default system message used in the API call to the AI for summarizing reports.")
+    verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
+
+
+DEFAULT_AI = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'code_system_message': "You are an assistant that helps the user understand what a given piece of code does by "
+                           "briefly summarizing the it and explaining what outcome of it will be.",
+    'enabled': False,
+    'headers': {"Content-Type": "application/json"},
+    'max_tokens': 800,
+    'model_name': "gpt-3.5-turbo",
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    },
+    'report_system_message': """
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
+to extract information of importance and discard what is not.
+
+Assemblyline uses a scoring mecanism where any scores below 0 is considered safe, scores between 0 and 300 and
+considered informational, scores between 300 and 700 are considered suspicious, scores between 700 and 1000 are
+considered highly-suspicious and scores with a 1000 points and up are considered malicious.
+
+Once JSON has been submitted, the user expects a summary of the output of AssemblyLine in plain English.
+
+The metadata portion of the YAML file indicate where the file scanned was collected and should not influence is the
+file is malicious or not.
+""",
+    'verify': True
+}
+
+
+@odm.model(index=False, store=False, description="Alerting Metadata")
 class AlertingMeta(odm.Model):
     important: List[str] = odm.List(odm.Keyword(), description="Metadata keys that are considered important")
     subject: List[str] = odm.List(odm.Keyword(), description="Metadata keys that refer to an email's subject")
@@ -1134,6 +1182,7 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
+    ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
                                                description="Alerting metadata fields")
     allow_malicious_hinting: bool = odm.Boolean(
@@ -1187,6 +1236,7 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
+    "ai": DEFAULT_AI,
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
