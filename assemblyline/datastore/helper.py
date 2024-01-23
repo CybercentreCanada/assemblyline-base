@@ -1308,26 +1308,29 @@ class AssemblylineDatastore(object):
         items = self.result.search(f"id:{sha256}*", fl="result.score", access_control=user_access_control,
                                    as_obj=False, rows=1, sort="result.score desc")['items']
         if items:
-            # Auto adjust min_score
-            if items[0]['result']['score'] < 0:
-                min_score = -1000000
-            else:
-                min_score = 300
-
-            # Get the list of active result keys
-            active_keys, _ = self.list_file_active_keys(sha256, user_access_control, min_score=min_score)
-
-            # Parse results
-            results = [
-                self._fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True), min_score)
-                for r in self.result.multiget(active_keys, as_dictionary=False, error_on_missing=False)
-                if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
-                    user_c12n=user_classification, c12n=r.classification.value))]
+            max_score = items[0]['result']['score']
         else:
-            results = []
+            max_score = 0
+
+        # Auto adjust min_score
+        if max_score < 0:
+            min_score = -1000000
+        else:
+            min_score = 300
+
+        # Get the list of active result keys
+        active_keys, _ = self.list_file_active_keys(sha256, user_access_control, min_score=min_score)
+
+        # Parse results
+        results = [
+            self._fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True), min_score)
+            for r in self.result.multiget(active_keys, as_dictionary=False, error_on_missing=False)
+            if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=r.classification.value))]
 
         # Create output
         output = file_obj.as_primitives(strip_non_ai_fields=True, strip_null=True)
+        output['max_score'] = max_score
         output['results'] = results
         return output
 
