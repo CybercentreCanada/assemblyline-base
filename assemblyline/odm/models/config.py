@@ -1018,7 +1018,7 @@ class AI(odm.Model):
                                            description="Headers used by the url_download method")
     max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
     model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
-    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
                                            description="Other kwargs options directly passed to the API.")
     report_system_message: str = odm.Keyword(
         description="Default system message used in the API call to the AI for summarizing reports.")
