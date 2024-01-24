@@ -1,12 +1,14 @@
 
 import concurrent.futures
+import elasticapm
 import json
 import os
+
 from datetime import datetime
 from typing import List, Union
 
-import elasticapm
 from assemblyline.common import forge
+from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.uid import get_id_from_data
@@ -336,8 +338,13 @@ class AssemblylineDatastore(object):
 
                     # Find the results for that classification and alter them if the new classification does not match
                     for item in self.result.stream_search(f"id:{f}*", fl="classification,id,_index", as_obj=False):
-                        new_class = cl_engine.max_classification(
-                            item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        try:
+                            new_class = cl_engine.max_classification(
+                                item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        except InvalidClassification:
+                            # If we can't find common grounds for reclassifying the results... we simply wont.
+                            continue
+
                         if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
                             data = cl_engine.get_access_control_parts(new_class)
                             data['classification'] = new_class
@@ -433,8 +440,13 @@ class AssemblylineDatastore(object):
 
                     # Find the results for that classification and alter them if the new classification does not match
                     for item in self.result.stream_search(f"id:{f}*", fl="classification,id", as_obj=False):
-                        new_class = cl_engine.max_classification(
-                            item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        try:
+                            new_class = cl_engine.max_classification(
+                                item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        except InvalidClassification:
+                            # If we can't find common grounds for reclassifying the results... we simply wont.
+                            continue
+
                         if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
                             parts = cl_engine.get_access_control_parts(new_class)
                             update_params = [(ESCollection.UPDATE_SET, 'classification', new_class)]
