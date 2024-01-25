@@ -1,11 +1,11 @@
-FROM python:3.9-slim-buster
+FROM python:3.11-slim-bookworm
 
 # Upgrade packages
 RUN apt-get update && apt-get -yy upgrade && rm -rf /var/lib/apt/lists/*
 
 # SSDEEP pkg requirments
 RUN apt-get update -yy \
-    && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 \
+    && apt-get install -yy build-essential libffi-dev libfuzzy-dev libldap2-dev libsasl2-dev libmagic1 libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create Assemblyline source directory
@@ -18,7 +18,9 @@ RUN mkdir -p /var/log/assemblyline
 RUN mkdir -p /opt/alv4
 WORKDIR /opt/alv4
 
-#
+# Setup environment varibles
+ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline_client:/opt/alv4/assemblyline-ui
+
 COPY assemblyline-base assemblyline-base
 RUN pip install --no-warn-script-location -e ./assemblyline-base[test]
 
@@ -26,6 +28,7 @@ COPY assemblyline-core assemblyline-core
 RUN pip install --no-warn-script-location -e ./assemblyline-core[test]
 
 COPY assemblyline-ui assemblyline-ui
+RUN pip install --no-warn-script-location -e ./assemblyline-ui[socketio]
 RUN pip install --no-warn-script-location -e ./assemblyline-ui[test]
 
 COPY assemblyline_client assemblyline_client
