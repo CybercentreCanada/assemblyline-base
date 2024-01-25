@@ -60,14 +60,12 @@ jobs:
   - job: run_test
     strategy:
       matrix:
-        python3_9-es7:
-          python.version: "3.9"
+        python3_11-es7:
+          python.version: "3.11"
           elasticsearch: es7
-        python3_9-es8:
-          python.version: "3.9"
+        python3_11-es8:
+          python.version: "3.11"
           elasticsearch: es8
-        # python3_10:
-        #   python.version: "3.10"
 
     timeoutInMinutes: 10
     services:
