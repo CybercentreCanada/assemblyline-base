@@ -26,8 +26,26 @@ resources:
       image: redis
       ports:
         - 6379:6379
-    - container: elasticsearch
+    - container: sftp
+      image: linuxserver/openssh-server
+      env:
+        SUDO_ACCESS: "false"
+        PASSWORD_ACCESS: "true"
+        USER_PASSWORD: "password"
+        USER_NAME: "user"
+        LOG_STDOUT: "true"
+      ports:
+        - 2222:2222
+    - container: es7
       image: cccs/elasticsearch:7.17.4
+      env:
+        ES_JAVA_OPTS: "-Xms256m -Xmx512m"
+        DISCOVERY_TYPE: "single-node"
+        ELASTIC_PASSWORD: "devpass"
+      ports:
+        - 9200:9200
+    - container: es8
+      image: cccs/elasticsearch:8.10.2
       env:
         ES_JAVA_OPTS: "-Xms256m -Xmx512m"
         DISCOVERY_TYPE: "single-node"
@@ -46,14 +64,19 @@ jobs:
   - job: run_test
     strategy:
       matrix:
-        python3_9:
+        python3_9-es7:
           python.version: "3.9"
+          elasticsearch: es7
+        python3_9-es8:
+          python.version: "3.9"
+          elasticsearch: es8
         # python3_10:
         #   python.version: "3.10"
 
     timeoutInMinutes: 10
     services:
-      elasticsearch: elasticsearch
+      elasticsearch: $[ variables['elasticsearch'] ]
+      sftp: sftp
       redis: redis
       minio: minio
 

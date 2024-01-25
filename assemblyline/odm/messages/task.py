@@ -1,6 +1,7 @@
 from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.odm.models.config import ServiceSafelist
+from assemblyline.odm.models.file import URIInfo
 Classification = forge.get_classification()
 
 MSG_TYPES = {"Task"}
@@ -15,7 +16,10 @@ class FileInfo(odm.Model):
     sha1 = odm.SHA1(description="SHA1 hash of the file")
     sha256 = odm.SHA256(description="SHA256 hash of the file")
     size = odm.Integer(description="Size of the file in bytes")
+    ssdeep = odm.Optional(odm.SSDeepHash(description="SSDEEP hash of the file"))
+    tlsh = odm.Optional(odm.Keyword(description="TLSH hash of the file"))
     type = odm.Keyword(description="Type of file as identified by Assemblyline")
+    uri_info = odm.Optional(odm.Compound(URIInfo), description="URI structure to speed up specialty file searching")
 
 
 @odm.model(description="Tag Item")

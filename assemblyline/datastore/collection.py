@@ -131,6 +131,7 @@ class ESCollection(Generic[ModelType]):
     MAX_HISTOGRAM_STEPS = 100
     MAX_RETRY_BACKOFF = 10
     MAX_SEARCH_ROWS = 500
+    MAX_FACET_SIZE = 100
     RETRY_NORMAL = 1
     RETRY_NONE = 0
     RETRY_INFINITY = -1
@@ -160,6 +161,8 @@ class ESCollection(Generic[ModelType]):
         'field_list': None,
         'facet_active': False,
         'facet_mincount': 1,
+        'facet_size': 10,
+        "facet_include": None,
         'facet_fields': [],
         'stats_active': False,
         'stats_fields': [],
@@ -317,37 +320,6 @@ class ESCollection(Generic[ModelType]):
         data_output.pop('id', None)
         return data_output
 
-    def _get_task_results(self, task):
-        # This function is only used to wait for a asynchronous task to finish in a graceful manner without
-        #  timing out the elastic client. You can create an async task for long running operation like:
-        #   - update_by_query
-        #   - delete_by_query
-        #   - reindex ...
-        res = None
-        while res is None:
-            try:
-                res = self.with_retries(self.datastore.client.tasks.get, task_id=task['task'],
-                                        wait_for_completion=True, timeout='5s')
-            except elasticsearch.ApiError as e:
-                err_code = e.status_code
-                msg = e.message
-                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
-                    pass
-                else:
-                    raise
-
-            except elasticsearch.exceptions.TransportError as e:
-                err_code, msg, _ = e.args
-                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
-                    pass
-                else:
-                    raise
-
-        try:
-            return res['response']
-        except KeyError:
-            return res['task']['status']
-
     def _get_current_alias(self, index: str) -> typing.Optional[str]:
         if self.with_retries(self.datastore.client.indices.exists_alias, name=index):
             return next(iter(self.with_retries(self.datastore.client.indices.get_alias, index=index)), None)
@@ -386,7 +358,7 @@ class ESCollection(Generic[ModelType]):
             task = self.with_retries(self.datastore.client.delete_by_query, index=index,
                                      query=query, wait_for_completion=False, conflicts='proceed',
                                      sort=sort, max_docs=max_docs)
-            res = self._get_task_results(task)
+            res = self.datastore._get_task_results(task, retry_function=self.with_retries)
 
             if res['version_conflicts'] == 0:
                 res['deleted'] += deleted
@@ -400,7 +372,7 @@ class ESCollection(Generic[ModelType]):
             task = self.with_retries(
                 self.datastore.client.update_by_query, index=index, script=script, query=query,
                 wait_for_completion=False, conflicts='proceed', max_docs=max_docs)
-            res = self._get_task_results(task)
+            res = self.datastore._get_task_results(task, retry_function=self.with_retries)
 
             if res['version_conflicts'] == 0:
                 res['updated'] += updated
@@ -433,7 +405,7 @@ class ESCollection(Generic[ModelType]):
         }
 
         r_task = self.with_retries(self.datastore.client.reindex, source=source, dest=dest, wait_for_completion=False)
-        res = self._get_task_results(r_task)
+        res = self.datastore._get_task_results(r_task, retry_function=self.with_retries)
         total_restaured = res['updated'] + res['created']
 
         if delete_after:
@@ -525,7 +497,7 @@ class ESCollection(Generic[ModelType]):
             source['sort'] = parse_sort(sort)
 
         r_task = self.with_retries(self.datastore.client.reindex, source=source, dest=dest, wait_for_completion=False)
-        res = self._get_task_results(r_task)
+        res = self.datastore._get_task_results(r_task, retry_function=self.with_retries)
         total_archived = res['updated'] + res['created']
         if res['total'] == total_archived or max_docs == total_archived:
             if total_archived != 0 and delete_after:
@@ -737,7 +709,7 @@ class ESCollection(Generic[ModelType]):
                 # Reindex data into target
                 r_task = self.with_retries(self.datastore.client.reindex, source={"index": index},
                                            dest={"index": new_name}, wait_for_completion=False)
-                self._get_task_results(r_task)
+                self.datastore._get_task_results(r_task, retry_function=self.with_retries)
 
                 # Commit reindexed data
                 self.with_retries(self.datastore.client.indices.refresh, index=new_name)
@@ -848,51 +820,6 @@ class ESCollection(Generic[ModelType]):
             raise MultiKeyError(key_list, out)
 
         return out
-
-    def multiget_search(self, key_list, offset=0, rows=10, sort=None, fl=None, track_total_hits=None,
-                        as_obj=True, index_type=None):
-        """
-        Get a list of documents from the datastore and make sure they are normalized using
-        the model class
-
-        :param index_type: Type of indices to target
-        :param as_dictionary: Return a disctionary of items or a list
-        :param track_total_hits: Should elastic track the total number of files found
-        :param fl: List of fields to return
-        :param sort: Fields to sort the data with
-        :param rows: Number of items to return
-        :param offset: Offset at which items should be returned
-        :param key_list: list of keys of documents to get
-        :return: list of instances of the model class
-        """
-        index = self.get_joined_index(index_type)
-
-        if fl:
-            field_list = fl.split(',')
-        else:
-            field_list = list(self.stored_fields.keys())
-
-        query_body = {
-            "query": {
-                "ids": {
-                    "values": key_list
-                }
-            },
-            'from_': offset,
-            'size': rows,
-            'sort': parse_sort(sort),
-            "_source": field_list
-        }
-
-        result = self.with_retries(self.datastore.client.search, index=index,
-                                   track_total_hits=track_total_hits, **query_body)
-
-        return {
-            "offset": int(offset),
-            "rows": int(rows),
-            "total": result['hits'].get('total', {}).get('value', None),
-            "items": [self._format_output(doc, field_list, as_obj=as_obj) for doc in result['hits']['hits']]
-        }
 
     def normalize(self, data, as_obj=True) -> Union[ModelType, Dict[str, Any], None]:
         """
@@ -1382,7 +1309,7 @@ class ESCollection(Generic[ModelType]):
 
         return {key: val for key, val in source_data.items() if key in fields}
 
-    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT):
+    def _search(self, args=None, deep_paging_id=None, track_total_hits=None, index_type=Index.HOT, key_space=None):
         index = self.get_joined_index(index_type)
 
         if args is None:
@@ -1422,6 +1349,11 @@ class ESCollection(Generic[ModelType]):
 
         field_list = parsed_values['field_list'] or list(self.stored_fields.keys())
 
+        filter_queries = [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
+
+        if key_space is not None:
+            filter_queries.append({'ids': {'values': key_space}})
+
         # This is our minimal query, the following sections will fill it out
         # with whatever extra options the search has been given.
         query_body = {
@@ -1432,7 +1364,7 @@ class ESCollection(Generic[ModelType]):
                             "query": parsed_values['query']
                         }
                     },
-                    'filter': [{'query_string': {'query': ff}} for ff in parsed_values['filters']]
+                    'filter': filter_queries
                 }
             },
             'from_': parsed_values['start'],
@@ -1491,13 +1423,19 @@ class ESCollection(Generic[ModelType]):
                         "script": {
                             "source": field_script
                         },
+                        "size": parsed_values['facet_size'],
                         "min_doc_count": parsed_values['facet_mincount']
                     }
+                    if parsed_values['facet_include']:
+                        facet_body.update({"include": parsed_values['facet_include']})
                 else:
                     facet_body = {
                         "field": field,
+                        "size": parsed_values['facet_size'],
                         "min_doc_count": parsed_values['facet_mincount']
                     }
+                    if parsed_values['facet_include']:
+                        facet_body.update({"include": parsed_values['facet_include']})
                 query_body["aggregations"][field] = {
                     "terms": facet_body
                 }
@@ -1560,9 +1498,9 @@ class ESCollection(Generic[ModelType]):
             raise SearchException("collection: %s, query: %s, error: %s" % (
                 self.name, query_body, str(error))).with_traceback(error.__traceback__)
 
-    def search(self, query, offset=0, rows=None, sort=None,
-               fl=None, timeout=None, filters=None, access_control=None,
-               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, script_fields=[]):
+    def search(self, query, offset=0, rows=None, sort=None, fl=None, timeout=None, filters=None, access_control=None,
+               deep_paging_id=None, as_obj=True, index_type=Index.HOT, track_total_hits=None, key_space=None,
+               script_fields=[]):
         """
         This function should perform a search through the datastore and return a
         search result object that consist on the following::
@@ -1591,7 +1529,8 @@ class ESCollection(Generic[ModelType]):
         :param fl: list of fields to return from the search
         :param timeout: maximum time of execution
         :param filters: additional queries to run on the original query to reduce the scope
-        :param access_control: access control parameters to limiti the scope of the query
+        :param key_space: IDs of documents for the query to limit the scope to these documents
+        :param access_control: access control parameters to limit the scope of the query
         :return: a search result object
         """
 
@@ -1633,7 +1572,7 @@ class ESCollection(Generic[ModelType]):
             args.append(('script_fields', script_fields))
 
         result = self._search(args, deep_paging_id=deep_paging_id, index_type=index_type,
-                              track_total_hits=track_total_hits)
+                              track_total_hits=track_total_hits, key_space=key_space)
 
         ret_data = {
             "offset": int(offset),
@@ -1782,8 +1721,8 @@ class ESCollection(Generic[ModelType]):
                                       f'Current settings would generate {gaps_count} steps')
             return ret_type
 
-    def histogram(self, field, start, end, gap, query="id:*", mincount=1,
-                  filters=None, access_control=None, index_type=Index.HOT):
+    def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None,
+                  index_type=Index.HOT, key_space=None):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -1812,24 +1751,31 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
-        result = self._search(args, index_type=index_type)
+        result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
         return {type_modifier(row.get('key_as_string', row['key'])): row['doc_count']
                 for row in result['aggregations']['histogram']['buckets']}
 
-    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None,
-              index_type=Index.HOT, field_script=None):
+    def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
+              field_script=None, key_space=None, size=10, include=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
             filters = [filters]
 
+        if isinstance(field, str):
+            fields = [field]
+        else:
+            fields = field
+
         args = [
             ('query', query),
             ('facet_active', True),
-            ('facet_fields', [field]),
+            ('facet_fields', fields),
             ('facet_mincount', mincount),
+            ('facet_size', min(size, self.MAX_FACET_SIZE)),
+            ('facet_include', include),
             ('rows', 0)
         ]
 
@@ -1842,11 +1788,15 @@ class ESCollection(Generic[ModelType]):
         if field_script:
             args.append(('field_script', field_script))
 
-        result = self._search(args, index_type=index_type)
+        result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
-        return {row.get('key_as_string', row['key']): row['doc_count']
-                for row in result['aggregations'][field]['buckets']}
+        if isinstance(field, str):
+            return {row.get('key_as_string', row['key']): row['doc_count']
+                    for row in result['aggregations'][field]['buckets']}
+        else:
+            return {f: {row.get('key_as_string', row['key']): row['doc_count']
+                        for row in result['aggregations'][f]['buckets']} for f in field}
 
     def stats(self, field, query="id:*", filters=None, access_control=None, index_type=Index.HOT, field_script=None):
         if filters is None:

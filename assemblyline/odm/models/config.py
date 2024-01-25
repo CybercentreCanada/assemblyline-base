@@ -198,6 +198,8 @@ class OAuthProvider(odm.Model):
                                   description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
                                       description="Password to your application to authenticate to the OAuth provider")
+    redirect_uri: str = odm.Optional(odm.Keyword(),
+                                     description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
     request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
@@ -307,26 +309,33 @@ DEFAULT_AUTH = {
 
 @odm.model(index=False, store=False, description="Alerter Configuration")
 class Alerter(odm.Model):
-    alert_ttl: int = odm.Integer(description="Time to live (days) for an alert in the system")
-    constant_alert_fields: List[str] = odm.List(
-        odm.Keyword(), description="List of fields that should not change during an alert update")
-    default_group_field: str = odm.Keyword(description="Default field used for alert grouping view")
-    delay: int = odm.Integer(
+    alert_ttl: int = odm.integer(description="Time to live (days) for an alert in the system")
+    constant_alert_fields: List[str] = odm.sequence(
+        odm.keyword(), default=[],
+        description="List of fields that should not change during an alert update",
+        deprecation="This behavior is no longer configurable")
+    constant_ignore_keys: List[str] = odm.sequence(
+        odm.keyword(), default=[],
+        description="List of keys to ignore in the constant alert fields.",
+        deprecation="This behavior is no longer configurable")
+    default_group_field: str = odm.keyword(description="Default field used for alert grouping view")
+    delay: int = odm.integer(
         description="Time in seconds that we give extended scans and workflow to complete their work "
                     "before we start showing alerts in the alert viewer.")
-    filtering_group_fields: List[str] = odm.List(
-        odm.Keyword(),
+    filtering_group_fields: List[str] = odm.sequence(
+        odm.keyword(),
         description="List of group fields that when selected will ignore certain alerts where this field is missing.")
-    non_filtering_group_fields: List[str] = odm.List(
-        odm.Keyword(), description="List of group fields that are sure to be present in all alerts.")
-    process_alert_message: str = odm.Keyword(
+    non_filtering_group_fields: List[str] = odm.sequence(
+        odm.keyword(), description="List of group fields that are sure to be present in all alerts.")
+    process_alert_message: str = odm.keyword(
         description="Python path to the function that will process an alert message.")
-    threshold: int = odm.Integer(description="Minimum score to reach for a submission to be considered an alert.")
+    threshold: int = odm.integer(description="Minimum score to reach for a submission to be considered an alert.")
 
 
 DEFAULT_ALERTER = {
     "alert_ttl": 90,
-    "constant_alert_fields": ["alert_id", "file", "ts"],
+    "constant_alert_fields": [],
+    "constant_ignore_keys": [],
     "default_group_field": "file.sha256",
     "delay": 300,
     "filtering_group_fields": [
@@ -518,6 +527,20 @@ DEFAULT_ARCHIVER = {
 }
 
 
+@odm.model(index=False, store=False, description="Plumber Configuration")
+class Plumber(odm.Model):
+    notification_queue_interval: int = odm.Integer(
+        description="Interval at which the notification queue cleanup should run")
+    notification_queue_max_age: int = odm.Integer(
+        description="Max age in seconds notification queue messages can be")
+
+
+DEFAULT_PLUMBER = {
+    'notification_queue_interval': 30 * 60,
+    'notification_queue_max_age': 24 * 60 * 60
+}
+
+
 @odm.model(index=False, store=False, description="Redis Configuration")
 class Redis(odm.Model):
     nonpersistent: RedisServer = odm.Compound(RedisServer, default=DEFAULT_REDIS_NP,
@@ -547,8 +570,16 @@ class Mount(odm.Model):
     resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
 
     # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
-    config_map: str = odm.Optional(odm.Keyword(), description="Name of ConfigMap (Kubernetes only, deprecated)")
-    key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap (Kubernetes only, deprecated)")
+    config_map: str = odm.Optional(
+        odm.Keyword(),
+        description="Name of ConfigMap (Kubernetes only)",
+        deprecation="Use `resource_type: configmap` and fill in the `resource_name` "
+        "& `resource_key` fields to mount ConfigMaps")
+    key: str = odm.Optional(
+        odm.Keyword(),
+        description="Key of ConfigMap (Kubernetes only)",
+        deprecation="Use `resource_type: configmap` and fill in the `resource_name` "
+        "& `resource_key` fields to mount ConfigMaps")
 
 
 @odm.model(index=False, store=False,
@@ -608,6 +639,9 @@ class Scaler(odm.Model):
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
     linux_node_selector = odm.compound(Selector, description="Selector for linux nodes under kubernetes")
     # windows_node_selector = odm.compound(Selector, description="Selector for windows nodes under kubernetes")
+    cluster_pod_list = odm.boolean(default=True, description="Sets if scaler list pods for all namespaces. "
+                                   "Disabling this lets you use stricter cluster roles but will make cluster resource "
+                                   "usage less accurate, setting a namespace resource quota might be needed.")
 
 
 DEFAULT_SCALER = {
@@ -717,6 +751,8 @@ class Core(odm.Model):
     ingester: Ingester = odm.Compound(Ingester, default=DEFAULT_INGESTER, description="Configuration for Ingester")
     metrics: Metrics = odm.Compound(Metrics, default=DEFAULT_METRICS,
                                     description="Configuration for Metrics Collection")
+    plumber: Plumber = odm.Compound(Plumber, default=DEFAULT_PLUMBER,
+                                    description="Configuration for system cleanup")
     redis: Redis = odm.Compound(Redis, default=DEFAULT_REDIS, description="Configuration for Redis instances")
     scaler: Scaler = odm.Compound(Scaler, default=DEFAULT_SCALER, description="Configuration for Scaler")
     updater: Updater = odm.Compound(Updater, default=DEFAULT_UPDATER, description="Configuration for Updater")
@@ -730,6 +766,7 @@ DEFAULT_CORE = {
     "expiry": DEFAULT_EXPIRY,
     "ingester": DEFAULT_INGESTER,
     "metrics": DEFAULT_METRICS,
+    "plumber": DEFAULT_PLUMBER,
     "redis": DEFAULT_REDIS,
     "scaler": DEFAULT_SCALER,
     "updater": DEFAULT_UPDATER,
@@ -900,8 +937,12 @@ class Services(odm.Model):
     safelist = odm.Compound(ServiceSafelist)
     registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
                               description="Global set of registries for services")
-    service_account = odm.optional(odm.keyword(description="Service account to use for pods in kubernetes "
-                                                           "where the service does not have one configured."))
+    service_account = odm.optional(odm.keyword(),
+                                   description="Service account to use for pods in kubernete"
+                                   "where the service does not have one configured.",
+                                   deprecation="Use helm values to specify service accounts settings for "
+                                   "(non-)privileged services: "
+                                   "`privilegedServiceAccountName`, `unprivilegedServiceAccountName`")
 
 
 DEFAULT_SERVICES = {
@@ -1127,6 +1168,8 @@ class UI(odm.Model):
     tos_lockout: bool = odm.Boolean(description="Lock out user after accepting the terms of service?")
     tos_lockout_notify: List[str] = odm.Optional(odm.List(odm.Keyword()),
                                                  description="List of admins to notify when a user gets locked out")
+    url_submission_auto_service_selection: List[str] = odm.List(
+        odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
     url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
@@ -1171,6 +1214,7 @@ DEFAULT_UI = {
     "tos": None,
     "tos_lockout": False,
     "tos_lockout_notify": None,
+    "url_submission_auto_service_selection": ["URLDownloader"],
     "url_submission_headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko)"
                       " Chrome/110.0.0.0 Safari/537.36"
@@ -1281,6 +1325,7 @@ class Submission(odm.Model):
     default_max_supplementary: int = odm.Integer(
         description="How many supplementary files may be added to a submission?")
     dtl: int = odm.Integer(description="Number of days submissions will remain in the system by default")
+    emptyresult_dtl:  int = odm.Integer(description="Number of days emptyresult will remain in the system")
     max_dtl: int = odm.Integer(description="Maximum number of days submissions will remain in the system")
     max_extraction_depth: int = odm.Integer(description="Maximum files extraction depth")
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
@@ -1299,6 +1344,7 @@ DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
     'default_max_supplementary': 500,
     'dtl': 30,
+    'emptyresult_dtl': 5,
     'max_dtl': 0,
     'max_extraction_depth': 6,
     'max_file_size': 104857600,
@@ -1313,12 +1359,21 @@ DEFAULT_SUBMISSION = {
 @odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
 class Retrohunt(odm.Model):
     enabled = odm.Boolean(default=False, description="Is the Retrohunt functionnality enabled on the frontend")
-    dtl: int = odm.Integer(default=30, description="Number of days retrohunt jobs will remain in the system by default")
-    max_dtl: int = odm.Integer(
-        default=0, description="Maximum number of days retrohunt jobs will remain in the system")
+    dtl: int = odm.Integer(description="Number of days retrohunt jobs will remain in the system by default")
+    max_dtl: int = odm.Integer(description="Maximum number of days retrohunt jobs will remain in the system")
     url = odm.Keyword(description="Base URL for service API")
     api_key = odm.Keyword(description="Service API Key")
-    tls_verify = odm.Boolean(description="Should tls certificates be verified", default=True)
+    tls_verify = odm.Boolean(default=True, description="Should tls certificates be verified")
+
+
+DEFAULT_RETROHUNT = {
+    'enabled': False,
+    'dtl': 30,
+    'max_dtl': 0,
+    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
+    'tls_verify': True
+}
 
 
 @odm.model(index=False, store=False, description="Assemblyline Deployment Configuration")
@@ -1330,13 +1385,13 @@ class Config(odm.Model):
                                                      description="Datasources configuration")
     filestore: Filestore = odm.compound(Filestore, default=DEFAULT_FILESTORE, description="Filestore configuration")
     logging: Logging = odm.compound(Logging, default=DEFAULT_LOGGING, description="Logging configuration")
+    retrohunt: Retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
+                                        description="Retrohunt configuration for the frontend and server.")
     services: Services = odm.compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
     system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
     ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
-    retrohunt = odm.Optional(odm.Compound(
-        Retrohunt, description="Retrohunt configuration for the frontend and server."))
 
 
 DEFAULT_CONFIG = {
@@ -1346,6 +1401,7 @@ DEFAULT_CONFIG = {
     "datasources": DEFAULT_DATASOURCES,
     "filestore": DEFAULT_FILESTORE,
     "logging": DEFAULT_LOGGING,
+    "retrohunt": DEFAULT_RETROHUNT,
     "services": DEFAULT_SERVICES,
     "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI,

@@ -223,8 +223,14 @@ def test_get_file_list_from_keys(ds: AssemblylineDatastore):
 
     # Check if all files that are obvious from the results are there
     for f in submission.files:
+        if not [r for r in submission.results if r.startswith(f.sha256) and not r.endswith('.e')]:
+            # If this file has no actual results, we can't this file to show up in the file list
+            continue
         assert f.sha256 in file_list
     for r in submission.results:
+        if r.endswith('.e'):
+            # We can't expect a file tied to be in the file list
+            continue
         assert r[:64] in file_list
 
 
@@ -237,8 +243,14 @@ def test_get_file_scores_from_keys(ds: AssemblylineDatastore):
 
     # Check if all files that are obvious from the results are there
     for f in submission.files:
+        if not [r for r in submission.results if r.startswith(f.sha256) and not r.endswith('.e')]:
+            # If this file has no actual results, we can't expect there to be a file score
+            continue
         assert f.sha256 in file_scores
     for r in submission.results:
+        if r.endswith('.e'):
+            # We can't expect a file tied to an empty_result to have a file score
+            continue
         assert r[:64] in file_scores
 
     for s in file_scores.values():
@@ -388,6 +400,28 @@ def test_calculate_signature_stats(ds: AssemblylineDatastore):
     assert any([sig['stats'] != default_stats for sig in updated_signatures.values()])
 
 
+def test_task_cleanup(ds: AssemblylineDatastore):
+    assert ds.ds.client.search(index='.tasks',
+                               q="completed:true",
+                               track_total_hits=True,
+                               size=0)['hits']['total']['value'] != 0
+
+    if ds.ds.es_version.major == 7:
+        # Superusers are allowed to interact with .tasks index
+        assert ds.task_cleanup()
+
+    elif ds.ds.es_version.major == 8:
+        # Superusers are NOT allowed to interact with .tasks index because it's a restricted index
+
+        # Attempt cleanup using the default user, assert that the cleanup didn't happen
+        assert ds.task_cleanup() == 0
+
+        # Switch to user that can perform task cleanup
+        ds.ds.switch_user("plumber")
+
+        assert ds.task_cleanup()
+
+
 def test_list_all_services(ds: AssemblylineDatastore):
     all_svc: Service = ds.list_all_services()
     all_svc_full: Service = ds.list_all_services(full=True)
@@ -479,3 +513,17 @@ def test_save_or_freshen_file(ds: AssemblylineDatastore):
     assert freshened_file.seen.count == 2
     assert freshened_file.seen.first < freshened_file.seen.last
     assert freshened_file.classification.long() == classification.normalize_classification(classification.UNRESTRICTED)
+
+
+def test_switch_user(ds: AssemblylineDatastore):
+    # Attempt to switch to another random user
+    ds.ds.switch_user("test")
+
+    # Confirm that user switch didn't happen
+    assert list(ds.ds.client.security.get_user().keys()) != ["test"]
+
+    # Switch to recognized plumber user
+    ds.ds.switch_user("plumber")
+
+    # Confirm that user switch did happen
+    assert list(ds.ds.client.security.get_user().keys()) != ["plumber"]

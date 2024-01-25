@@ -21,6 +21,7 @@ ROLES = StringTable('ROLES', [
     ("bundle_download", 3),
     ("file_detail", 4),
     ("file_download", 5),
+    ("file_purge", 33),
     ("heuristic_view", 6),
     ("obo_access", 7),
     ("replay_trigger", 8),
@@ -46,6 +47,8 @@ ROLES = StringTable('ROLES', [
     ("retrohunt_view", 28),
     ("retrohunt_run", 29),
     ("external_query", 30),
+    ("badlist_view", 31),
+    ("badlist_manage", 32),
 ])
 
 
@@ -76,7 +79,7 @@ USER_ROLES_BASIC = {
     ROLES.obo_access,          # Allow access via On Behalf Off tokens
     ROLES.replay_trigger,      # Allow submission to be replayed on another server
     ROLES.safelist_view,       # View safelist items
-    ROLES.safelist_manage,     # Manage (add/delete) safelist items,
+    ROLES.safelist_manage,     # Manage (add/delete) safelist items
     ROLES.self_manage,         # Manage currently logged in user settings
     ROLES.signature_download,  # Download signatures from the system
     ROLES.signature_view,      # View signatures
@@ -88,10 +91,13 @@ USER_ROLES_BASIC = {
     ROLES.workflow_view,       # View workflows
     ROLES.retrohunt_view,      # View yara searches
     ROLES.retrohunt_run,       # Run yara searches
+    ROLES.badlist_view,        # View badlist items
+    ROLES.badlist_manage,      # Manage (add/delete) badlist items
 }
 
 USER_ROLES = USER_ROLES_BASIC.union({
     ROLES.administration,      # Perform administrative tasks
+    ROLES.file_purge,          # Purge files from the filestore
     ROLES.replay_system,       # Manage status of file/submission/alerts during the replay process
     ROLES.signature_import,    # Import signatures in the system
     ROLES.signature_manage,    # Manage signatures sources in the system
@@ -100,6 +106,7 @@ USER_ROLES = USER_ROLES_BASIC.union({
 USER_TYPE_DEP = {
     TYPES.admin: USER_ROLES,
     TYPES.signature_importer: {
+        ROLES.badlist_manage,
         ROLES.safelist_manage,
         ROLES.self_manage,
         ROLES.signature_download,
@@ -113,6 +120,7 @@ USER_TYPE_DEP = {
     TYPES.viewer: {
         ROLES.alert_view,
         ROLES.apikey_access,
+        ROLES.badlist_view,
         ROLES.file_detail,
         ROLES.obo_access,
         ROLES.heuristic_view,
@@ -137,6 +145,7 @@ ACL_MAP = {
         ROLES.alert_view,
         ROLES.archive_view,
         ROLES.archive_download,
+        ROLES.badlist_view,
         ROLES.bundle_download,
         ROLES.external_query,
         ROLES.file_detail,
@@ -153,6 +162,7 @@ ACL_MAP = {
         ROLES.alert_manage,
         ROLES.archive_trigger,
         ROLES.archive_manage,
+        ROLES.badlist_manage,
         ROLES.replay_trigger,
         ROLES.safelist_manage,
         ROLES.submission_create,
@@ -163,6 +173,7 @@ ACL_MAP = {
     "E": [
         ROLES.administration,
         ROLES.apikey_access,
+        ROLES.file_purge,
         ROLES.obo_access,
         ROLES.replay_system,
         ROLES.self_manage,

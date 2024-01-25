@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import struct
@@ -23,6 +24,7 @@ from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
 from assemblyline.remote.datatypes.events import EventWatcher
 from cart import get_metadata_only
+from urllib.parse import unquote, urlparse
 
 constants = get_constants()
 
@@ -31,6 +33,7 @@ constants = get_constants()
 # that can create files with a high-confidence type
 CUSTOM_PS1_ID = b"#!/usr/bin/env pwsh\n"
 CUSTOM_BATCH_ID = b"REM Batch extracted by Assemblyline\n"
+CUSTOM_URI_ID = "# Assemblyline URI file\n"
 
 
 class Identify():
@@ -345,9 +348,20 @@ class Identify():
         elif data["type"] == "executable/windows/dos":
             data["type"] = dos_ident(path)
 
+        # If we identified the file as 'uri' from libmagic, we should further identify it, or return it as text/plain
+        elif data["type"] == "uri":
+            data["type"] = uri_ident(path, data)
+
         # If we're so far failed to identified the file, lets run the yara rules
-        elif "unknown" in data["type"] or data["type"] == "text/plain":
+        elif "unknown" in data["type"]:
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
+        elif data["type"] == "text/plain":
+            # Check if the file is a misidentified json first before running the yara rules
+            try:
+                json.load(open(path))
+                data["type"] = "text/json"
+            except Exception:
+                data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
         # Extra checks for office documents
         #  - Check for encryption
@@ -413,6 +427,8 @@ def zip_ident(path: str, fallback: str) -> str:
     doc_types = False
     android_manifest = False
     android_dex = False
+    nuspec = False
+    psmdcp = False
 
     for file_name in file_list:
         if file_name.startswith("META-INF/"):
@@ -423,6 +439,10 @@ def zip_ident(path: str, fallback: str) -> str:
             android_dex = True
         elif file_name.startswith("Payload/") and file_name.endswith(".app/Info.plist"):
             is_ipa = True
+        elif file_name.endswith(".nuspec"):
+            nuspec = True
+        elif file_name.startswith("package/services/metadata/core-properties/") and file_name.endswith(".psmdcp"):
+            psmdcp = True
         elif file_name.endswith(".class"):
             tot_class += 1
         elif file_name.endswith(".jar"):
@@ -458,6 +478,9 @@ def zip_ident(path: str, fallback: str) -> str:
             return "document/office/excel"
         elif is_ppt:
             return "document/office/powerpoint"
+        elif nuspec and psmdcp:
+            # It is a nupkg file. Identify as archive/zip for now.
+            return "archive/zip"
         else:
             return "document/office/unknown"
     else:
@@ -503,6 +526,48 @@ def dos_ident(path: str) -> str:
     except Exception:
         pass
     return "executable/windows/dos"
+
+
+def uri_ident(path: str, info: Dict) -> str:
+    try:
+        with open(path, 'r') as f:
+            data = yaml.safe_load(f)
+    except Exception:
+        return "text/plain"
+
+    if "uri" not in data:
+        return "text/plain"
+
+    try:
+        u = urlparse(data["uri"])
+    except Exception:
+        return "text/plain"
+
+    if not u.scheme:
+        return "text/plain"
+
+    info["uri_info"] = dict(
+        uri=data["uri"],
+        scheme=u.scheme,
+        netloc=u.netloc,
+    )
+    if u.path:
+        info["uri_info"]["path"] = u.path
+    if u.params:
+        info["uri_info"]["params"] = u.params
+    if u.query:
+        info["uri_info"]["query"] = u.query
+    if u.fragment:
+        info["uri_info"]["fragment"] = u.fragment
+    if u.username:
+        info["uri_info"]["username"] = unquote(u.username)
+    if u.password:
+        info["uri_info"]["password"] = unquote(u.password)
+    info["uri_info"]["hostname"] = u.hostname
+    if u.port:
+        info["uri_info"]["port"] = u.port
+
+    return f"uri/{u.scheme}"
 
 
 if __name__ == "__main__":

@@ -60,12 +60,14 @@ def test_metrics_export(redis_connection):
         if 'counter' in read and 'performance_counter.t' in read:
             break
 
-        if time.time() - start > 20:
+        if sent and time.time() - start > 20:
             assert False, read
 
         if not sent:
             sent = True
             export_metrics_once('test', Metrics, {'counter': 99, 'performance_counter': 6}, redis=redis_connection)
+            # Set the start time to when the metrics should've been exported
+            start = time.time()
 
         if metric_message is None:
             time.sleep(0.1)

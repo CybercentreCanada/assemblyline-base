@@ -8,7 +8,9 @@ from assemblyline.common.dict_utils import flatten
 from assemblyline.common.tagging import tag_dict_to_list
 from assemblyline.odm.models.tagging import Tagging
 
-
+# This is a "keys-only" representation of the BODY_FORMAT StringTable in
+# assemblyline-v4-service/assemblyline_v4_service/common/result.py.
+# Any updates here need to go in that StringTable also.
 BODY_FORMAT = {
     "TEXT",
     "MEMORY_DUMP",
@@ -23,6 +25,10 @@ BODY_FORMAT = {
     "ORDERED_KEY_VALUE",
     "TIMELINE"
 }
+# This is a "keys-only" representation of the PROMOTE_TO StringTable in
+# assemblyline-v4-service/assemblyline_v4_service/common/result.py.
+# Any updates here need to go in that StringTable also.
+PROMOTE_TO = {"SCREENSHOT", "ENTROPY", "URI_PARAMS"}
 constants = forge.get_constants()
 
 
@@ -56,12 +62,16 @@ class Section(odm.Model):
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
     classification = odm.Classification(description="Classification of the section")
     body_format = odm.Enum(values=BODY_FORMAT, index=False, description="Type of body in this section")
-    body_config = odm.Optional(odm.Mapping(odm.Any(), index=False, description="Configurations for the body of this section"))
+    body_config = odm.Optional(odm.Mapping(odm.Any(), index=False,
+                               description="Configurations for the body of this section"))
     depth = odm.Integer(index=False, description="Depth of the section")
     heuristic = odm.Optional(odm.Compound(Heuristic), description="Heuristic used to score result section")
     tags = odm.Compound(Tagging, default={}, description="List of tags associated to this section")
     safelisted_tags = odm.FlattenedListObject(store=False, default={}, description="List of safelisted tags")
     title_text = odm.Text(copyto="__text__", description="Title of the section")
+    promote_to = odm.Optional(odm.Enum(
+        values=PROMOTE_TO,
+        description="This is the type of data that the current section should be promoted to."))
 
 
 @odm.model(index=True, store=True, description="Result Body")
@@ -84,7 +94,13 @@ class File(odm.Model):
     classification = odm.Classification(description="Classification of the file")
     is_section_image = odm.Boolean(default=False,
                                    description="Is this an image used in an Image Result Section?")
-    parent_relation = odm.Text(default="EXTRACTED", description="File relation to parent, if any.")
+    # Possible values for PARENT_RELATION can be found in
+    # assemblyline-v4-service/assemblyline_v4_service/common/task.py.
+    parent_relation = odm.Text(
+        default="EXTRACTED",
+        description="File relation to parent, if any.\
+            <br>Values: `\"ROOT\", \"EXTRACTED\", \"INFORMATION\", \"DYNAMIC\", \"MEMDUMP\", \"DOWNLOADED\"`"
+    )
     allow_dynamic_recursion = odm.Boolean(
         default=False,
         description="Allow file to be analysed during Dynamic Analysis"
