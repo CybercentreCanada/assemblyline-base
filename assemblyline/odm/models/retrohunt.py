@@ -27,7 +27,7 @@ class Retrohunt(odm.Model):
     completed_time = odm.Optional(odm.Date(store=False), description="Time that the search ended")
     
     # Search data
-    code = odm.keyword(description="Unique code identifying this retrohunt job")
+    key = odm.keyword(description="Unique code identifying this retrohunt job")
     raw_query = odm.keyword(store=False, description="Text of filter query derived from yara signature")
     yara_signature = odm.keyword(copyto="__text__", store=False, description="Text of original yara signature run")
 
@@ -42,6 +42,7 @@ class Retrohunt(odm.Model):
 
 @odm.model(index=True, store=True, description="A hit encountered during a retrohunt search.")
 class RetrohuntHit(odm.Model):
+    key = odm.keyword(description="Unique code indentifying this hit")
     classification = odm.Classification(description="Classification string for the retrohunt job and results list")
     sha256 = odm.SHA256()
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry for this entry.")
