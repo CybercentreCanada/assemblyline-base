@@ -1008,28 +1008,31 @@ DEFAULT_STATISTICS = {
 }
 
 
-@odm.model(index=False, store=False, description="Alerting Metadata")
+@odm.model(index=False, store=False, description="Parameters used during a AI query")
+class AIQueryParams(odm.Model):
+    system_message: str = odm.Keyword(
+        description="System message used for the query.")
+    max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
+                                           description="Other kwargs options directly passed to the API.")
+
+
+@odm.model(index=False, store=False, description="AI support configuration block")
 class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
-    code_system_message: str = odm.Keyword(
-        description="Default system message used in the API call to the AI for analysing code.")
-    detailed_report_system_message: str = odm.Keyword(
-        description="Default system message used in the API call to the AI for detailed analysisof the reports.")
+    code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
+    detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
+    executive_summary: AIQueryParams = odm.Compound(
+        AIQueryParams, description="Parameters used for executive summaries")
     enabled: bool = odm.Boolean(description="Is AI support enabled?")
     headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                            description="Headers used by the url_download method")
-    max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
     model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
-    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
-                                           description="Other kwargs options directly passed to the API.")
-    report_system_message: str = odm.Keyword(
-        description="Default system message used in the API call to the AI for summarizing reports.")
     verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
 
 
-DEFAULT_AI = {
-    'chat_url': "https://api.openai.com/v1/chat/completions",
-    'code_system_message': """
+DEFAULT_AI_CODE = {
+    'system_message': """
 You are an assistant that provides explanation of code snippets found in AssemblyLine,
 a malware detection and analysis tool. Start by providing a short summary of the intent behind the
 code and then follow with a detailed explanation of what the code is doing. Format your explanation
@@ -1042,7 +1045,17 @@ The given code is printing "Hello World!" to the console.
 ## Details
 The code has only one line of code and prints a string to the console using the print() function.
 """,
-    'detailed_report_system_message': """
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    }
+}
+
+DEFAULT_AI_DETAILED_REPORT = {
+    'system_message': """
 You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
 to extract information of importance and discard what is not. Assemblyline uses a scoring mecanism where any scores
 below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
@@ -1053,19 +1066,17 @@ Once YAML has been submitted, the user expects a summary of the output of Assemb
 providing some highlights of the results and then provide a more detailed description of the observations.  Format your
 answer using the Markdown syntax.
 """,
-    'enabled': False,
-    'headers': {
-        "Content-Type": "application/json"
-    },
-    'max_tokens': 800,
-    'model_name': "gpt-3.5-turbo",
+    'max_tokens': 2048,
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "temperature": 1,
         "top_p": 1
-    },
-    'report_system_message': """
+    }
+}
+
+DEFAULT_AI_EXECUTIVE_SUMMARY = {
+    "system_message": """
 You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
 is to extract information of importance and discard what is not.  Assemblyline uses a scoring mecanism where any scores
 below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
@@ -1075,6 +1086,26 @@ are considered malicious.
 Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
 plain English.  Highlight important information using inline code block from the Markdown syntax.
 """,
+    'max_tokens': 512,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    }
+}
+
+
+DEFAULT_AI = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'code': DEFAULT_AI_CODE,
+    'detailed_report': DEFAULT_AI_DETAILED_REPORT,
+    'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
+    'enabled': False,
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-3.5-turbo",
     'verify': True
 }
 
