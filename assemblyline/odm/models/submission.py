@@ -139,7 +139,7 @@ class Submission(odm.Model):
     to_be_deleted = odm.Boolean(
         default=False, description="This document is going to be deleted as soon as it finishes", ai=False)
     times = odm.Compound(Times, default={}, description="Submission-specific times")
-    verdict = odm.Compound(Verdict, default={}, description="Malicious verdict details")
+    verdict = odm.Compound(Verdict, default={}, description="Malicious verdict details", ai=False)
     from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive", ai=False)
 
     # the filescore key, used in deduplication. This is a non-unique key, that is

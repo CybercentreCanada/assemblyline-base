@@ -1013,6 +1013,8 @@ class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
     code_system_message: str = odm.Keyword(
         description="Default system message used in the API call to the AI for analysing code.")
+    detailed_report_system_message: str = odm.Keyword(
+        description="Default system message used in the API call to the AI for detailed analysisof the reports.")
     enabled: bool = odm.Boolean(description="Is AI support enabled?")
     headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                            description="Headers used by the url_download method")
@@ -1027,10 +1029,34 @@ class AI(odm.Model):
 
 DEFAULT_AI = {
     'chat_url': "https://api.openai.com/v1/chat/completions",
-    'code_system_message': "You are an assistant that helps the user understand what a given piece of code does by "
-                           "briefly summarizing the it and explaining what outcome of it will be.",
+    'code_system_message': """
+You are an assistant that provides explanation of code snippets found in AssemblyLine,
+a malware detection and analysis tool. Start by providing a short summary of the intent behind the
+code and then follow with a detailed explanation of what the code is doing. Format your explanation
+using the Markdown syntax.
+
+User: print("Hello World!")
+Assistant:
+## Summary
+The given code is printing "Hello World!" to the console.
+## Details
+The code has only one line of code and prints a string to the console using the print() function.
+""",
+    'detailed_report_system_message': """
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
+to extract information of importance and discard what is not. Assemblyline uses a scoring mecanism where any scores
+below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
+considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
+up are considered malicious.
+
+Once YAML has been submitted, the user expects a summary of the output of AssemblyLine in plain English.  Start by
+providing some highlights of the results and then provide a more detailed description of the observations.  Format your
+answer using the Markdown syntax.
+""",
     'enabled': False,
-    'headers': {"Content-Type": "application/json"},
+    'headers': {
+        "Content-Type": "application/json"
+    },
     'max_tokens': 800,
     'model_name': "gpt-3.5-turbo",
     'options': {
@@ -1040,17 +1066,14 @@ DEFAULT_AI = {
         "top_p": 1
     },
     'report_system_message': """
-You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
-to extract information of importance and discard what is not.
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
+is to extract information of importance and discard what is not.  Assemblyline uses a scoring mecanism where any scores
+below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
+considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and up
+are considered malicious.
 
-Assemblyline uses a scoring mecanism where any scores below 0 is considered safe, scores between 0 and 300 and
-considered informational, scores between 300 and 700 are considered suspicious, scores between 700 and 1000 are
-considered highly-suspicious and scores with a 1000 points and up are considered malicious.
-
-Once JSON has been submitted, the user expects a summary of the output of AssemblyLine in plain English.
-
-The metadata portion of the YAML file indicate where the file scanned was collected and should not influence is the
-file is malicious or not.
+Once YAML has been submitted, the user expects a one paragraph executive summary of the output of AssemblyLine in
+plain English.  Highlight important information using inline code block from the Markdown syntax.
 """,
     'verify': True
 }
