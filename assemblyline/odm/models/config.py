@@ -1057,14 +1057,14 @@ The code has only one line of code and prints a string to the console using the 
 DEFAULT_AI_DETAILED_REPORT = {
     'system_message': """
 You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
-to extract information of importance and discard what is not. Assemblyline uses a scoring mecanism where any scores
+to extract information of importance and discard what is not. Assemblyline uses a scoring mechanism where any scores
 below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
 considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
 up are considered malicious.
 
-Once YAML has been submitted, the user expects a summary of the output of AssemblyLine in plain English.  Start by
-providing some highlights of the results and then provide a more detailed description of the observations.  Format your
-answer using the Markdown syntax.
+Once YAML has been submitted, the user expects a two-part result in plain English.  The first part is a one or two
+paragraph executive summary which provides some highlights of the results, and the second part is a detailed description
+of the observations found in the report.  Format your answer using the Markdown syntax.
 """,
     'max_tokens': 2048,
     'options': {
@@ -1078,7 +1078,7 @@ answer using the Markdown syntax.
 DEFAULT_AI_EXECUTIVE_SUMMARY = {
     "system_message": """
 You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
-is to extract information of importance and discard what is not.  Assemblyline uses a scoring mecanism where any scores
+is to extract information of importance and discard what is not.  Assemblyline uses a scoring mechanism where any scores
 below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
 considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and up
 are considered malicious.
