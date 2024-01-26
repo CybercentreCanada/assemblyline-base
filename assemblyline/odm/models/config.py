@@ -1072,7 +1072,7 @@ below 0 is considered safe, scores between 0 and 300 are considered informationa
 considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and up
 are considered malicious.
 
-Once YAML has been submitted, the user expects a one paragraph executive summary of the output of AssemblyLine in
+Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
 plain English.  Highlight important information using inline code block from the Markdown syntax.
 """,
     'verify': True
