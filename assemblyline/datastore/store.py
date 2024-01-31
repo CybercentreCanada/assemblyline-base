@@ -20,8 +20,11 @@ from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
 DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
+DATASTORE_VERIFY_CERTS = environ.get('DATASTORE_VERIFY_CERTS', 'true').lower() == 'true'
+
 log = logging.getLogger('assemblyline.datastore')
 ALT_ELASTICSEARCH_USERS = ["plumber"]
+
 
 class ESStore(object):
     """ Elasticsearch multi-index implementation of the ResultStore interface."""
@@ -71,7 +74,7 @@ class ESStore(object):
         self.ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
 
         self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs)
+                                                  ca_certs=self.ca_certs, verify_certs=DATASTORE_VERIFY_CERTS)
         self.es_version = version.parse(self.with_retries(self.client.info)['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
@@ -175,16 +178,17 @@ class ESStore(object):
 
         # Modify the client details for next reconnect
         self._hosts = [h.replace(f"{urlparse(h).username}:{urlparse(h).password}",
-                                    f"{username}:{password}") for h in self._hosts]
+                                 f"{username}:{password}") for h in self._hosts]
         self.client.close()
         self.connection_reset()
-
 
     def connection_reset(self):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   max_retries=0,
                                                   request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs)
+                                                  ca_certs=self.ca_certs,
+                                                  verify_certs=DATASTORE_VERIFY_CERTS)
+        log.info("Reconnected to Elasticsearch")
 
     def close(self):
         self._closed = True
@@ -306,7 +310,7 @@ class ESStore(object):
                 ret_val = func(*args, **kwargs)
 
                 if retries:
-                    log.info('Reconnected to elasticsearch!')
+                    log.info(f"Retrying datastore operation: {func.__name__}")
 
                 if updated:
                     ret_val['updated'] += updated
@@ -326,7 +330,6 @@ class ESStore(object):
 
                 log.warning(f"Index {index_name} was removed while a query was running, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.exceptions.ConflictError as ce:
@@ -338,7 +341,6 @@ class ESStore(object):
                 deleted += ce.info.get('deleted', 0)
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.exceptions.ConnectionTimeout:
@@ -382,7 +384,6 @@ class ESStore(object):
 
                 # Loop and retry
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             # Elastic client 8.x retries
@@ -395,7 +396,6 @@ class ESStore(object):
                             f"on index {index_name}, retrying...")
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.ApiError as err:
@@ -403,17 +403,21 @@ class ESStore(object):
                 err_code = err.meta.status
 
                 # Validate exception type
-                if not index_name or err_code not in [503, 429, 403]:
-                    raise
-
-                # Display proper error message
-                if err_code == 503:
+                if err_code == 429:
+                    if index_name:
+                        log.warning("Elasticsearch is too busy to perform the requested "
+                                    f"task on index {index_name}, retrying...")
+                    else:
+                        log.warning("Elasticsearch is too busy to perform the requested "
+                                    f"task ({str(err)}), retrying...")
+                elif err_code == 503 and index_name:
                     log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
-                elif err_code == 429:
-                    log.warning("Elasticsearch is too busy to perform the requested "
-                                f"task on index {index_name}, retrying...")
+                elif err_code == 403 and index_name:
+                    log.warning("Elasticsearch cluster is preventing writing operations "
+                                f"on index {index_name}, retrying...")
+                else:
+                    raise
 
                 # Loop and retry
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1

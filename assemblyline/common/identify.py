@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import struct
@@ -352,8 +353,15 @@ class Identify():
             data["type"] = uri_ident(path, data)
 
         # If we're so far failed to identified the file, lets run the yara rules
-        elif "unknown" in data["type"] or data["type"] == "text/plain":
+        elif "unknown" in data["type"]:
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
+        elif data["type"] == "text/plain":
+            # Check if the file is a misidentified json first before running the yara rules
+            try:
+                json.load(open(path))
+                data["type"] = "text/json"
+            except Exception:
+                data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
         # Extra checks for office documents
         #  - Check for encryption
@@ -419,6 +427,8 @@ def zip_ident(path: str, fallback: str) -> str:
     doc_types = False
     android_manifest = False
     android_dex = False
+    nuspec = False
+    psmdcp = False
 
     for file_name in file_list:
         if file_name.startswith("META-INF/"):
@@ -429,6 +439,10 @@ def zip_ident(path: str, fallback: str) -> str:
             android_dex = True
         elif file_name.startswith("Payload/") and file_name.endswith(".app/Info.plist"):
             is_ipa = True
+        elif file_name.endswith(".nuspec"):
+            nuspec = True
+        elif file_name.startswith("package/services/metadata/core-properties/") and file_name.endswith(".psmdcp"):
+            psmdcp = True
         elif file_name.endswith(".class"):
             tot_class += 1
         elif file_name.endswith(".jar"):
@@ -464,6 +478,9 @@ def zip_ident(path: str, fallback: str) -> str:
             return "document/office/excel"
         elif is_ppt:
             return "document/office/powerpoint"
+        elif nuspec and psmdcp:
+            # It is a nupkg file. Identify as archive/zip for now.
+            return "archive/zip"
         else:
             return "document/office/unknown"
     else:

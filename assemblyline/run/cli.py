@@ -119,7 +119,7 @@ def submission_delete_tree(key, logger):
     try:
         with forge.get_filestore() as f_transport:
             # noinspection PyUnresolvedReferences
-            DATASTORE.delete_submission_tree(key, transport=f_transport)
+            DATASTORE.delete_submission_tree_bulk(key, transport=f_transport)
     except Exception as e:
         logger.error(e)
         return "DELETE", "submission", key, False, isinstance(logger, PrintLogger)

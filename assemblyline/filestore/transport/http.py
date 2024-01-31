@@ -104,6 +104,8 @@ class TransportHTTP(Transport):
         resp = self.session.get(path, auth=self.auth, cert=self.pki, verify=self.verify)
         if resp.ok:
             return resp.content
+        elif resp.status_code == 404:
+            raise FileNotFoundError(f"{path} does not exists.")
         else:
             raise TransportException("[%s] %s: %s" % (resp.status_code, resp.reason, path))
 

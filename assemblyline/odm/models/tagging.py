@@ -164,6 +164,7 @@ class Tagging(odm.Model):
         class FileJAR(odm.Model):
             main_class = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Main Class")
             main_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Main Package")
+            imported_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Imported package")
 
         @odm.model(index=True, store=False, description="File Name Model")
         class FileName(odm.Model):

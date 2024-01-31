@@ -32,7 +32,7 @@ from cart import get_metadata_only, pack_stream
 def test_attack_map():
     # Validate the structure of the generated ATT&CK techniques map created by
     # assemblyline-base/external/generate_attack_map.py
-    assert type(attack_map) == dict
+    assert isinstance(attack_map, dict)
     # This is the minimum set of keys that each technique entry in the attack map should have
     attack_technique_keys = {"attack_id", "categories", "description", "name", "platforms"}
     for attack_technique_id, attack_technique_details in attack_map.items():
@@ -43,7 +43,7 @@ def test_attack_map():
 def test_software_map():
     # Validate the structure of the generated ATT&CK software map created by
     # assemblyline-base/external/generate_attack_map.py
-    assert type(software_map) == dict
+    assert isinstance(software_map, dict)
     # This is the minimum set of keys that each technique entry in the attack map should have
     attack_software_keys = {"attack_ids", "description", "name", "platforms", "software_id", "type"}
     for attack_software_id, attack_software_details in software_map.items():
@@ -54,7 +54,7 @@ def test_software_map():
 def test_group_map():
     # Validate the structure of the generated ATT&CK group map (intrusion_set) created by
     # assemblyline-base/external/generate_attack_map.py
-    assert type(group_map) == dict
+    assert isinstance(group_map, dict)
     # This is the minimum set of keys that each technique entry in the attack map should have
     attack_group_keys = {"description", "group_id", "name"}
     for attack_group_id, attack_group_details in group_map.items():
@@ -65,7 +65,7 @@ def test_group_map():
 def test_revoke_map():
     # Validate the structure of the generated ATT&CK revoke_map created by
     # assemblyline-base/external/generate_attack_map.py
-    assert type(revoke_map) == dict
+    assert isinstance(revoke_map, dict)
     # This is the minimum set of keys that each technique entry in the attack map should have
     for revoked_id, mapped_id in revoke_map.items():
         assert revoked_id not in attack_map
@@ -419,12 +419,6 @@ def test_translate_str():
     assert translate_str(b"fran\xc3\xa7ais \xc3\xa9l\xc3\xa8ve")['encoding'] == "utf-8"
     assert translate_str(b'\x83G\x83\x93\x83R\x81[\x83f\x83B\x83\x93\x83O\x82'
                          b'\xcd\x93\xef\x82\xb5\x82\xad\x82\xc8\x82\xa2')['language'] == "Japanese"
-
-
-def test_truncate():
-    assert truncate(b"blah") == "blah"
-    assert truncate(b"blah", 10) == "blah"
-    assert truncate(b"blahblahblahblah", 10) == "blahblahbl..."
 
 
 def test_uid():

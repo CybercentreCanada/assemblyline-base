@@ -1,6 +1,17 @@
 version: "3"
 
 services:
+  sftp:
+    image: linuxserver/openssh-server
+    environment:
+      - SUDO_ACCESS=false
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=password
+      - USER_NAME=user
+      - LOG_STDOUT=true
+    ports:
+      - "2222:2222"
+
   minio:
     image: minio/minio
     environment:

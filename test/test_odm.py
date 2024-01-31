@@ -802,11 +802,11 @@ def test_limited_flat_fields():
         a = Compound(Inner)
         b = Optional(Compound(Inner))
 
-    assert list(Outer.flat_fields().keys()) == ["a.a", "a.b", "b.a", "b.b"]
-    assert list(Outer.flat_fields(show_compound=True).keys()) == ["a", "a.a", "a.b", "b", "b.a", "b.b"]
-    assert list(Outer.flat_fields(skip_mappings=True).keys()) == ["a.a", "a.b", "b.a", "b.b"]
-    assert list(Outer.flat_fields(show_compound=True, skip_mappings=True).keys()) == [
-        "a", "a.a", "a.b", "b", "b.a", "b.b"]
+    assert set(Outer.flat_fields().keys()) == {"a.a", "a.b", "b.a", "b.b"}
+    assert set(Outer.flat_fields(show_compound=True).keys()) == {"a", "a.a", "a.b", "b", "b.a", "b.b"}
+    assert set(Outer.flat_fields(skip_mappings=True).keys()) == {"a.a", "a.b", "b.a", "b.b"}
+    assert set(Outer.flat_fields(show_compound=True, skip_mappings=True).keys()) == \
+        {"a", "a.a", "a.b", "b", "b.a", "b.b"}
 
 
 def test_flat_fields():

@@ -1,8 +1,10 @@
 import re
 
 import pytest
-
 from assemblyline.odm.base import FULL_URI, TLSH_REGEX
+
+FULL_URI_COMP = re.compile(FULL_URI)
+TLSH_REGEX_COMP = re.compile(TLSH_REGEX)
 
 
 @pytest.mark.parametrize("value, ismatch", [
@@ -25,11 +27,19 @@ from assemblyline.odm.base import FULL_URI, TLSH_REGEX
     ("//1.1.1.1:1", False),
 ])
 def test_full_uri_regex(value, ismatch):
-    validation_regex = re.compile(FULL_URI)
     if ismatch:
-        assert validation_regex.match(value) is not None
+        assert FULL_URI_COMP.match(value) is not None
     else:
-        assert validation_regex.match(value) is None
+        assert FULL_URI_COMP.match(value) is None
+
+
+@pytest.mark.parametrize(("value", "expected"), [
+    ("https://example.com/@this/is/a/path", "example.com"),
+    ("https://example.com?@query", "example.com"),
+    ("https://example.com#@fragment", "example.com"),
+])
+def test_full_uri_capture(value, expected):
+    assert FULL_URI_COMP.match(value).group(2) == expected
 
 
 @pytest.mark.parametrize("value, ismatch", [
@@ -44,8 +54,7 @@ def test_full_uri_regex(value, ismatch):
     ("", False),
 ])
 def test_tlsh_regex(value, ismatch):
-    validation_regex = re.compile(TLSH_REGEX)
     if ismatch:
-        assert validation_regex.match(value) is not None
+        assert TLSH_REGEX_COMP.match(value) is not None
     else:
-        assert validation_regex.match(value) is None
+        assert TLSH_REGEX_COMP.match(value) is None

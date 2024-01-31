@@ -2,6 +2,7 @@ import pytest
 
 from assemblyline.common import forge
 from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.config import DEFAULT_CONFIG, Config
 from assemblyline.odm.models.emptyresult import EmptyResult
@@ -30,6 +31,13 @@ def test_alert_model():
         random_model_obj(Alert).as_primitives()
     except (ValueError, TypeError, KeyError):
         pytest.fail("Could not generate 'Alert' object and validate it.")
+
+
+def test_badlist_model():
+    try:
+        random_model_obj(Badlist).as_primitives()
+    except (ValueError, TypeError, KeyError):
+        pytest.fail("Could not generate 'Badlist' object and validate it.")
 
 
 def test_cached_file_model():
@@ -272,4 +280,12 @@ def test_update_alert():
 
     o2.update(o1)
 
+    # Submission relations might be out of order after update, so test them independently
+    a1, o2 = a1.as_primitives(), o2.as_primitives()
+    a1_sub_rel, o2_sub_rel = a1.pop('submission_relations'), o2.pop('submission_relations')
+    assert len(a1_sub_rel) == len(o2_sub_rel)
+    for rel in a1_sub_rel:
+        assert rel in o2_sub_rel
+
+    # Compare the rest of the alert properties
     assert a1 == o2

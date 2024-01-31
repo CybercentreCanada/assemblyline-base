@@ -139,6 +139,7 @@ magic_patterns = [
     {"al_type": "archive/xz", "regex": r"^XZ compressed data"},
     {"al_type": "archive/zip", "regex": r"^zip archive data"},
     {"al_type": "archive/zstd", "regex": r"^Zstandard compressed data"},
+    {"al_type": "archive/zpaq", "regex": r"^ZPAQ file"},
     {"al_type": "network/tcpdump", "regex": r"^(tcpdump|pcap)"},
     {"al_type": "document/pdf", "regex": r"^pdf document"},
     {"al_type": "image/bmp", "regex": r"^pc bitmap"},
@@ -177,6 +178,7 @@ magic_patterns = [
     {"al_type": "pgp/pubkey", "regex": r"^PGP public key"},
     {"al_type": "pgp/privkey", "regex": r"^PGP private key block"},
     {"al_type": "pgp/encrypted", "regex": r"^PGP RSA encrypted session key"},
+    {"al_type": "pgp/message", "regex": r"^PGP message Public-Key Encrypted Session Key"},
     {"al_type": "gpg/symmetric", "regex": r"^GPG symmetrically encrypted data"},
     {"al_type": "video/asf", "regex": r"^Microsoft ASF"},
 ]
@@ -367,6 +369,11 @@ trusted_mimes = {
     "application/vnd.ms-cab-compressed": "archive/cabinet",
     "application/zstd": "archive/zstd",
     "application/x-zstd": "archive/zstd",
+ 
+    # Inspired by https://github.com/CAPESandbox/sflock/blob/1fe3cf32d01d66c4ad38696c609b13d4f4bc9ea3/sflock/ident.py#L116
+    "application/x-7z-compressed": "archive/7-zip",
+    "application/x-bzip2": "archive/bzip2",
+    "application/java-archive": "java/jar",
 
     # JAVA Class
     "application/x-java-applet": "java/class",
