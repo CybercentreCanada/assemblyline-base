@@ -219,7 +219,7 @@ def test_get_file_list_from_keys(ds: AssemblylineDatastore):
     submission: Submission = ds.submission.search("id:*", rows=1, fl="*")['items'][0]
 
     # Get related file list
-    file_list = ds.get_file_list_from_keys(submission.results)
+    file_list = [sha256 for sha256, supplementary, in ds.get_file_list_from_keys(submission.results)]
 
     # Check if all files that are obvious from the results are there
     for f in submission.files:
