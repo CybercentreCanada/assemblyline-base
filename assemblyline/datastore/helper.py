@@ -1171,8 +1171,9 @@ class AssemblylineDatastore(object):
         return heuristics
 
     @elasticapm.capture_span(span_type='datastore')
-    def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
-                             cl_engine=forge.get_classification(), redis=None, is_section_image=False):
+    def save_or_freshen_file(
+            self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(),
+            redis=None, is_section_image=False, is_supplementary=False):
         # Remove control fields from new file info
         for x in ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']:
             fileinfo.pop(x, None)
@@ -1228,6 +1229,9 @@ class AssemblylineDatastore(object):
 
             # Update section image status
             current_fileinfo['is_section_image'] = current_fileinfo.get('is_section_image', False) or is_section_image
+
+            # Update section image status
+            current_fileinfo['is_supplementary'] = current_fileinfo.get('is_supplementary', False) or is_supplementary
 
             try:
                 self.file.save(sha256, current_fileinfo, version=version)
