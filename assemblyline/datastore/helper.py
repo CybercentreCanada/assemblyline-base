@@ -1335,13 +1335,14 @@ class AssemblylineDatastore(object):
         return output
 
     @elasticapm.capture_span(span_type='datastore')
-    def list_file_active_keys(self, sha256, access_control=None, min_score=None):
+    def list_file_active_keys(self, sha256, access_control=None, min_score=None, index_type=None):
         query = f"id:{sha256}*"
         if min_score:
             query += f" AND result.score:>={min_score}"
 
         item_list = [x for x in self.result.stream_search(query, fl="id,created,response.service_name,result.score",
-                                                          access_control=access_control, as_obj=False)]
+                                                          access_control=access_control, as_obj=False,
+                                                          index_type=index_type)]
 
         item_list.sort(key=lambda k: k["created"], reverse=True)
 
