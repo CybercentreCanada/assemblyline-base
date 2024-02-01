@@ -808,6 +808,7 @@ def test_limited_flat_fields():
     assert set(Outer.flat_fields(show_compound=True, skip_mappings=True).keys()) == \
         {"a", "a.a", "a.b", "b", "b.a", "b.b"}
 
+
 def test_flat_fields():
     @model()
     class Inner(Model):
