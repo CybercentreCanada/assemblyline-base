@@ -1,6 +1,4 @@
 FROM python:3.11-slim-bookworm
-# NOTE: to build this container you must be in a directory where assemblyline-base, assemblyline-ui,
-# assemblyline-core, assemblyline-service-server and assemblyline-service-client code is checked out
 
 # Setup environment varibles
 ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline_client:/opt/alv4/assemblyline-ui

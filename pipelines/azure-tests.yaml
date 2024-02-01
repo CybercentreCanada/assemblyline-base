@@ -66,6 +66,12 @@ jobs:
         python3_11-es8:
           python.version: "3.11"
           elasticsearch: es8
+        python3_12-es7:
+          python.version: "3.12"
+          elasticsearch: es7
+        python3_12-es8:
+          python.version: "3.12"
+          elasticsearch: es8
 
     timeoutInMinutes: 10
     services:

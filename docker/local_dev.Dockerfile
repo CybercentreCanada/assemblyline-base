@@ -1,3 +1,5 @@
+# NOTE: to build this container you must be in a directory where assemblyline-base, assemblyline-ui,
+# assemblyline-core, assemblyline-service-server and assemblyline-service-client code is checked out
 FROM python:3.11-slim-bookworm
 
 # Upgrade packages
@@ -21,6 +23,8 @@ WORKDIR /opt/alv4
 # Setup environment varibles
 ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline_client:/opt/alv4/assemblyline-ui
 
+RUN pip install --upgrade pip
+
 COPY assemblyline-base assemblyline-base
 RUN pip install --no-warn-script-location -e ./assemblyline-base[test]
 
@@ -28,8 +32,7 @@ COPY assemblyline-core assemblyline-core
 RUN pip install --no-warn-script-location -e ./assemblyline-core[test]
 
 COPY assemblyline-ui assemblyline-ui
-RUN pip install --no-warn-script-location -e ./assemblyline-ui[socketio]
-RUN pip install --no-warn-script-location -e ./assemblyline-ui[test]
+RUN pip install --no-warn-script-location -e ./assemblyline-ui[test,socketio]
 
 COPY assemblyline_client assemblyline_client
 RUN pip install --no-warn-script-location -e ./assemblyline_client[test]
