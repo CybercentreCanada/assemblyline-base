@@ -1269,9 +1269,10 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_ai_formatted_submission_data(self, sid, user_classification=None,
-                                         cl_engine=forge.get_classification()):
+                                         cl_engine=forge.get_classification(),
+                                         index_type=None):
         # Get the submission data
-        submission = self.submission.get(sid)
+        submission = self.submission.get(sid, index_type=index_type)
         if not submission or (user_classification and not cl_engine.is_accessible(
                 user_c12n=user_classification, c12n=submission.classification.value)):
             return None
@@ -1286,7 +1287,7 @@ class AssemblylineDatastore(object):
         results = [
             self._fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True), min_score)
             for r in self.result.multiget(
-                submission.results, as_dictionary=False, error_on_missing=False)
+                submission.results, as_dictionary=False, error_on_missing=False, index_type=index_type)
             if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
                 user_c12n=user_classification, c12n=r.classification.value))]
 
@@ -1297,16 +1298,17 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_ai_formatted_file_results_data(self, sha256, user_classification=None, user_access_control=None,
-                                           cl_engine=forge.get_classification()):
+                                           cl_engine=forge.get_classification(),
+                                           index_type=None):
         # Get the submission data
-        file_obj = self.file.get(sha256)
+        file_obj = self.file.get(sha256, index_type=index_type)
         if not file_obj or (user_classification and not cl_engine.is_accessible(
                 user_c12n=user_classification, c12n=file_obj.classification.value)):
             return None
 
         # Check for the max service score
         items = self.result.search(f"id:{sha256}*", fl="result.score", access_control=user_access_control,
-                                   as_obj=False, rows=1, sort="result.score desc")['items']
+                                   as_obj=False, rows=1, sort="result.score desc", index_type=index_type)['items']
         if items:
             max_score = items[0]['result']['score']
         else:
@@ -1319,12 +1321,14 @@ class AssemblylineDatastore(object):
             min_score = 300
 
         # Get the list of active result keys
-        active_keys, _ = self.list_file_active_keys(sha256, user_access_control, min_score=min_score)
+        active_keys, _ = self.list_file_active_keys(
+            sha256, user_access_control, min_score=min_score, index_type=index_type)
 
         # Parse results
         results = [
             self._fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True), min_score)
-            for r in self.result.multiget(active_keys, as_dictionary=False, error_on_missing=False)
+            for r in self.result.multiget(active_keys, as_dictionary=False,
+                                          error_on_missing=False, index_type=index_type)
             if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
                 user_c12n=user_classification, c12n=r.classification.value))]
 
