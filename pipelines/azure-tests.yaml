@@ -2,6 +2,10 @@ name: tests
 
 variables:
   - group: unittest-samples
+  - ${{ if eq(variables['System.PullRequest.TargetBranchName'], 'master') }}:
+    - NIGHTLY_IMAGE: stable
+  - ${{ else }}:
+    - NIGHTLY_IMAGE: latest
 
 trigger: ["*"]
 pr: ["*"]
@@ -102,7 +106,7 @@ jobs:
         displayName: Test
   - job: run_identify_test
     container:
-      image: cccstemp.azurecr.io/assemblyline-root-build:stable
+      image: cccstemp.azurecr.io/assemblyline-root-build:$NIGHTLY_IMAGE
       endpoint: cccstemp
     timeoutInMinutes: 10
     steps:
