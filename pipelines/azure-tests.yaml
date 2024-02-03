@@ -121,7 +121,7 @@ jobs:
           env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
         displayName: Test File Identification
   - job: run_identify_test_stable
-    condition: $(eq(variables['System.PullRequest.targetBranchName'], 'master'))
+    condition: eq(variables['System.PullRequest.targetBranchName'], 'master')
     container:
       image: cccstemp.azurecr.io/assemblyline-root-build:stable
       endpoint: cccstemp
