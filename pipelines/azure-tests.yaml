@@ -102,7 +102,7 @@ jobs:
         displayName: Test
   - job: run_identify_test_latest
     container:
-      image: cccstemp.azurecr.io/assemblyline-root-build:stable
+      image: cccstemp.azurecr.io/assemblyline-root-build:latest
       endpoint: cccstemp
     timeoutInMinutes: 10
     steps:
