@@ -2,10 +2,7 @@ name: tests
 
 variables:
   - group: unittest-samples
-  - ${{ if eq(variables['System.PullRequest.targetBranchName'], 'master') }}:
-    - nightly_image: stable
-  - ${{ else }}:
-    - nightly_image: latest
+
 trigger: ["*"]
 pr: ["*"]
 
@@ -103,9 +100,30 @@ jobs:
         displayName: Setup environment
       - script: python -m pytest --durations=10 -rsx -vv --ignore=test/test_identify.py
         displayName: Test
-  - job: run_identify_test
+  - job: run_identify_test_latest
     container:
-      image: cccstemp.azurecr.io/assemblyline-root-build:$(variables.nightly_image)
+      image: cccstemp.azurecr.io/assemblyline-root-build:stable
+      endpoint: cccstemp
+    timeoutInMinutes: 10
+    steps:
+      - checkout: self
+        fetchDepth: 1
+      - checkout: unittest-samples
+        fetchDepth: 1
+      - script: |
+          set -exv
+          env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools wheel
+          env "PATH=$PATH" python -m pip install --no-cache-dir -e assemblyline-base
+          env "PATH=$PATH" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
+        displayName: Setup environment
+      - script: |
+          set -exv
+          env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
+        displayName: Test File Identification
+  - job: run_identify_test_stable
+    condition: $(eq(variables['System.PullRequest.targetBranchName'], 'master'))
+    container:
+      image: cccstemp.azurecr.io/assemblyline-root-build:stable
       endpoint: cccstemp
     timeoutInMinutes: 10
     steps:
