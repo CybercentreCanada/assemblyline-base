@@ -66,9 +66,8 @@ DEFAULT_SUBMISSION_INPUT = {
 class Creator(odm.Model):
     client = odm.Compound(Client, default=DEFAULT_CLIENT)
     alert_input = odm.Compound(InputModule, default=DEFAULT_ALERT_INPUT)
-    # TODO: To be implemented with (*)lists revamp
-    # badlist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
-    # safelist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
+    badlist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
+    safelist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
     submission_input = odm.Compound(InputModule, default=DEFAULT_SUBMISSION_INPUT)
     workflow_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
     lookback_time: str = odm.Keyword()
@@ -79,8 +78,8 @@ class Creator(odm.Model):
 DEFAULT_CREATOR = {
     'client': DEFAULT_CLIENT,
     'alert_input': DEFAULT_ALERT_INPUT,
-    # 'badlist_input': DEFAULT_INPUT,
-    # 'safelist_input': DEFAULT_INPUT,
+    'badlist_input': DEFAULT_INPUT,
+    'safelist_input': DEFAULT_INPUT,
     'submission_input': DEFAULT_SUBMISSION_INPUT,
     'workflow_input': DEFAULT_INPUT,
     'lookback_time': '*',
