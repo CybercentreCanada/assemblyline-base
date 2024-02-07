@@ -11,7 +11,7 @@ from assemblyline.common import forge
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
-from assemblyline.common.tagging import tag_dict_to_list
+from assemblyline.common.tagging import tag_dict_to_ai_list
 from assemblyline.common.uid import get_id_from_data
 from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
@@ -1255,7 +1255,7 @@ class AssemblylineDatastore(object):
                     pass
 
             # Changing tags to a list
-            section['tags'] = tag_dict_to_list(flatten(section.get('tags', {})), safelisted=False, ai=True)
+            section['tags'] = tag_dict_to_ai_list(flatten(section.get('tags', {})))
             if not section['tags']:
                 section.pop('tags')
 
