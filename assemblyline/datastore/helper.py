@@ -27,7 +27,7 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.retrohunt import Retrohunt
+from assemblyline.odm.models.retrohunt import Retrohunt, RetrohuntHit
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
@@ -62,6 +62,7 @@ class AssemblylineDatastore(object):
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
         self.ds.register('retrohunt', Retrohunt)
+        self.ds.register('retrohunt_hit', RetrohuntHit)
         self.ds.register('safelist', Safelist)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
@@ -132,6 +133,10 @@ class AssemblylineDatastore(object):
     @property
     def retrohunt(self) -> ESCollection[Retrohunt]:
         return self.ds.retrohunt
+    
+    @property
+    def retrohunt_hit(self) -> ESCollection[RetrohuntHit]:
+        return self.ds.retrohunt_hit
 
     @property
     def safelist(self) -> ESCollection[Safelist]:
