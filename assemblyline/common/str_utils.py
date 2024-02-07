@@ -61,7 +61,7 @@ def wrap_bidir_unicode_string(uni_str):
 # the result of an overlong encoding of basic ASCII characters. There
 # are similar restrictions on the valid values for 3 and 4-byte sequences.
 _valid_utf8 = re.compile(rb"""((?:
-    [\x09\x0a\x20-\x7e]|             # 1-byte (ASCII excluding control chars).
+    [\x09\x0a\x0d\x20-\x7e]|         # 1-byte (ASCII excluding control chars).
     [\xc2-\xdf][\x80-\xbf]|          # 2-bytes (excluding overlong sequences).
     [\xe0][\xa0-\xbf][\x80-\xbf]|    # 3-bytes (excluding overlong sequences).
 

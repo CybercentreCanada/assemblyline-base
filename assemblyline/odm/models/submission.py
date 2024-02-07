@@ -122,29 +122,29 @@ class Verdict(odm.Model):
 
 @odm.model(index=True, store=True, description="Model of Submission")
 class Submission(odm.Model):
-    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)"))
-    archived = odm.Boolean(default=False, description="Document is present in the malware archive")
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)", ai=False))
+    archived = odm.Boolean(default=False, description="Document is present in the malware archive", ai=False)
     classification = odm.Classification(description="Classification of the submission")
-    error_count = odm.Integer(description="Total number of errors in the submission")
-    errors: list[str] = odm.List(odm.Keyword(), store=False, description="List of error keys")
-    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
-    file_count = odm.Integer(description="Total number of files in the submission")
+    error_count = odm.Integer(description="Total number of errors in the submission", ai=False)
+    errors: list[str] = odm.List(odm.Keyword(), store=False, description="List of error keys", ai=False)
+    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp", ai=False)
+    file_count = odm.Integer(description="Total number of files in the submission", ai=False)
     files: list[File] = odm.List(odm.Compound(File), description="List of files that were originally submitted")
     max_score = odm.Integer(description="Maximum score of all the files in the scan")
     metadata = odm.FlattenedObject(store=False, description="Metadata associated to the submission")
-    params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details")
-    results: list[str] = odm.List(odm.Keyword(), store=False, description="List of result keys")
+    params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details", ai=False)
+    results: list[str] = odm.List(odm.Keyword(), store=False, description="List of result keys", ai=False)
     sid: str = odm.UUID(copyto="__text__", description="Submission ID")
-    state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission")
+    state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission", ai=False)
     to_be_deleted = odm.Boolean(
-        default=False, description="This document is going to be deleted as soon as it finishes")
+        default=False, description="This document is going to be deleted as soon as it finishes", ai=False)
     times = odm.Compound(Times, default={}, description="Submission-specific times")
-    verdict = odm.Compound(Verdict, default={}, description="Malicious verdict details")
-    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive")
+    verdict = odm.Compound(Verdict, default={}, description="Malicious verdict details", ai=False)
+    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive", ai=False)
 
     # the filescore key, used in deduplication. This is a non-unique key, that is
     # shared by submissions that may be processed as duplicates.
-    scan_key = odm.Optional(odm.Keyword(store=False, index=False))
+    scan_key = odm.Optional(odm.Keyword(store=False, index=False, ai=False))
 
     def is_submit(self):
         return self.state == 'submitted'
