@@ -116,9 +116,10 @@ class KeyMaskException(KeyError):
 
 class _Field:
     def __init__(self, name=None, index=None, store=None, copyto=None,
-                 default=None, description=None, deprecation=None):
+                 default=None, description=None, deprecation=None, ai=True):
         self.index = index
         self.store = store
+        self.ai = ai
         self.multivalued = False
         self.copyto = []
         if isinstance(copyto, str):
@@ -156,6 +157,7 @@ class _Field:
         return value
 
     # noinspection PyProtectedMember
+
     def __set__(self, obj, value):
         """Set the value of this field, calling a setter method if available."""
         if self.name in obj._odm_removed:
@@ -823,6 +825,9 @@ class List(_Field):
         if isinstance(child_type, Optional):
             raise ValueError("List does not support Optional child type")
 
+        if isinstance(child_type, List):
+            raise ValueError("List of Lists are not supported")
+
         super().__init__(**kwargs)
         self.child_type = child_type
         self.auto = auto
@@ -1007,6 +1012,7 @@ class Optional(_Field):
 
         if child_type.default_set:
             kwargs['default'] = child_type.default
+        kwargs['ai'] = kwargs.get('ai', child_type.ai)
         super().__init__(**kwargs)
         self.default_set = True
         child_type.optional = True
@@ -1056,10 +1062,36 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
+    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False, optional=False):
         out = dict()
+
+        # Optionals and Lists do not need to be parsed, we can just analyse their inner type
+        if isinstance(field, (Optional, List)):
+            out.update(Model._recurse_fields(name, field.child_type, show_compound, skip_mappings,
+                                             multivalued=multivalued or isinstance(field, List),
+                                             optional=optional or isinstance(field, Optional)))
+            return out
+
+        # If field is a Compound and were asked to show it, add it to the field list
+        if show_compound and isinstance(field, Compound):
+            # Set the multivalued and optional flag on the field
+            field.multivalued = multivalued
+            field.optional = optional
+
+            # Compound when showed will absorb multivalue and optional flag
+            multivalued = False
+            optional = False
+
+            out[name] = field
+
         for sub_name, sub_field in field.fields().items():
-            sub_field.multivalued = multivalued or isinstance(field, List)
+            # Set the multivalued and optional flag on the field
+            sub_field.multivalued = multivalued
+            sub_field.optional = optional
+
+            # Make sure the Compound name is propagated as the parent_name
+            if isinstance(field, Compound):
+                sub_field.parent_name = name
 
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
@@ -1067,21 +1099,14 @@ class Model:
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
                                                  show_compound, skip_mappings,
-                                                 multivalued=multivalued or isinstance(sub_field, List)))
+                                                 multivalued=multivalued or isinstance(sub_field, List),
+                                                 optional=optional or isinstance(sub_field, Optional)))
 
             elif sub_name:
                 out[".".join([name, sub_name])] = sub_field
 
             else:
                 out[name] = sub_field
-
-        if (isinstance(field, Compound) and show_compound):
-            out[name] = field
-
-        # If we're dealing with a list of Compounds or an optional Compound,
-        # we need to validate against the Compound object
-        if isinstance(field, (List, Optional)) and isinstance(field.child_type, Compound) and show_compound:
-            out[name] = field.child_type
 
         return out
 
@@ -1273,27 +1298,39 @@ class Model:
         # attribute assignment
         self.__frozen = True
 
-    def as_primitives(self, hidden_fields=False, strip_null=False):
+    def as_primitives(self, hidden_fields=False, strip_null=False, strip_non_ai_fields=False):
         """Convert the object back into primitives that can be json serialized."""
         out = {}
 
         fields = self.fields()
         for key, value in self._odm_py_obj.items():
             field_type = fields.get(key, Any)
+            if strip_non_ai_fields and not field_type.ai:
+                continue
+
             if value is not None or (value is None and field_type.default_set):
                 if strip_null and value is None:
                     continue
 
                 if isinstance(value, Model):
-                    out[key] = value.as_primitives(strip_null=strip_null)
+                    data = value.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, datetime):
                     out[key] = value.strftime(DATEFORMAT)
                 elif isinstance(value, TypedMapping):
-                    out[key] = {k: v.as_primitives(strip_null=strip_null)
-                                if isinstance(v, Model) else v for k, v in value.items()}
+                    data = {k: v.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                            if isinstance(v, Model) else v for k, v in value.items()}
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, TypedList):
-                    out[key] = [v.as_primitives(strip_null=strip_null)
-                                if isinstance(v, Model) else v for v in value]
+                    data = [v.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                            if isinstance(v, Model) else v for v in value]
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, ClassificationObject):
                     out[key] = str(value)
                     if hidden_fields:
