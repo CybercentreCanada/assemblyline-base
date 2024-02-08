@@ -49,6 +49,7 @@ ROLES = StringTable('ROLES', [
     ("external_query", 30),
     ("badlist_view", 31),
     ("badlist_manage", 32),
+    ("archive_comment", 33),
 ])
 
 
@@ -70,6 +71,7 @@ USER_ROLES_BASIC = {
     ROLES.archive_view,        # View archived data in the system
     ROLES.archive_manage,      # Modify attributes of archived Submissions/Files/Results
     ROLES.archive_download,    # Download file from the archive
+    ROLES.archive_comment,     # Comment on archived files
     ROLES.apikey_access,       # Allow access via API keys
     ROLES.bundle_download,     # Create bundle of a submission
     ROLES.external_query,      # Allow federated searches against external systems
