@@ -2,6 +2,9 @@ name: tests
 
 variables:
   - group: unittest-samples
+  # Try to checkout the matching branch, if the command fails, don't care.
+  - name: "BRANCH_NAME"
+    value: $[coalesce(variables['System.PullRequest.SourceBranch'], variables['System.PullRequest.TargetBranch'], replace(variables['Build.SourceBranch'], 'refs/heads/', ''), 'main')]
 
 trigger: ["*"]
 pr: ["*"]
@@ -118,8 +121,13 @@ jobs:
         displayName: Setup environment
       - script: |
           set -exv
+          cd assemblyline-unittest-samples
+          git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
+          git status
+          cd ..
           env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
-        displayName: Test File Identification
+        displayName: Test File Identification w/ development nightly
+
   - job: run_identify_test_stable
     condition: eq(variables['System.PullRequest.targetBranchName'], 'master')
     container:
@@ -139,5 +147,9 @@ jobs:
         displayName: Setup environment
       - script: |
           set -exv
+          cd assemblyline-unittest-samples
+          git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
+          git status
+          cd ..
           env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
-        displayName: Test File Identification
+        displayName: Test File Identification w/ stable nightly
