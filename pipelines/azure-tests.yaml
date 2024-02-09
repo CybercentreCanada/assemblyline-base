@@ -122,6 +122,8 @@ jobs:
       - script: |
           set -exv
           cd assemblyline-unittest-samples
+          git remote set-branches origin '*'
+          git fetch --depth=1
           git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
           git status
           cd ..
@@ -148,6 +150,8 @@ jobs:
       - script: |
           set -exv
           cd assemblyline-unittest-samples
+          git remote set-branches origin '*'
+          git fetch --depth=1
           git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
           git status
           cd ..
