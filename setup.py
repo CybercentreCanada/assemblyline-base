@@ -52,6 +52,9 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
     ],
     keywords="assemblyline automated malware analysis gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test', 'test/*']),
@@ -81,7 +84,7 @@ setup(
         'pytz',
         'apscheduler',
         'websocket_client<1.0.0',
-        'elastic-apm[flask]!=6.3.0,!=6.3.1,!=6.3.2,<6.13.0',  # Exclude broken elastic APM version
+        'elastic-apm[flask]!=6.3.0,!=6.3.1,!=6.3.2,<=6.20.0',  # Exclude broken elastic APM version
         'cython',
         'docker',
         'kubernetes>18',

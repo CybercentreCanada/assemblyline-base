@@ -113,8 +113,10 @@ magic_patterns = [
     {"al_type": "executable/windows/com", "regex": r"^com executable"},
     {"al_type": "executable/windows/dos", "regex": r"^8086 relocatable"},
     {"al_type": "executable/windows/coff", "regex": r"^MS Windows COFF"},
-    {"al_type": "executable/linux/elf32", "regex": r"^elf 32-bit (l|m)sb +(pie )?executable"},
-    {"al_type": "executable/linux/elf64", "regex": r"^elf 64-bit (l|m)sb +(pie )?executable"},
+    {"al_type": "executable/linux/elf32", "regex": r"^elf 32-bit (l|m)sb executable"},
+    {"al_type": "executable/linux/elf64", "regex": r"^elf 64-bit (l|m)sb executable"},
+    {"al_type": "executable/linux/pie32", "regex": r"^elf 32-bit (l|m)sb pie executable"},
+    {"al_type": "executable/linux/pie64", "regex": r"^elf 64-bit (l|m)sb pie executable"},
     {"al_type": "executable/linux/so32", "regex": r"^elf 32-bit (l|m)sb +shared object"},
     {"al_type": "executable/linux/so64", "regex": r"^elf 64-bit (l|m)sb +shared object"},
     {"al_type": "executable/linux/coff32", "regex": r"^(Intel 80386|i386|80386) COFF"},
@@ -369,7 +371,7 @@ trusted_mimes = {
     "application/vnd.ms-cab-compressed": "archive/cabinet",
     "application/zstd": "archive/zstd",
     "application/x-zstd": "archive/zstd",
- 
+
     # Inspired by https://github.com/CAPESandbox/sflock/blob/1fe3cf32d01d66c4ad38696c609b13d4f4bc9ea3/sflock/ident.py#L116
     "application/x-7z-compressed": "archive/7-zip",
     "application/x-bzip2": "archive/bzip2",
