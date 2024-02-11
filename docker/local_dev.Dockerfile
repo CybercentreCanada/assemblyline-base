@@ -24,6 +24,7 @@ WORKDIR /opt/alv4
 ENV PYTHONPATH /opt/alv4/assemblyline-base:/opt/alv4/assemblyline-core:/opt/alv4/assemblyline-service-server:/opt/alv4/assemblyline-service-client:/opt/alv4/assemblyline_client:/opt/alv4/assemblyline-ui
 
 RUN pip install --upgrade pip
+RUN pip install debugpy
 
 COPY assemblyline-base assemblyline-base
 RUN pip install --no-warn-script-location -e ./assemblyline-base[test]

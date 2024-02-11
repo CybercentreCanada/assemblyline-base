@@ -77,7 +77,7 @@ setup(
         'tabulate',
         'PyYAML',
         'easydict',
-        'passlib',
+        'bcrypt',
         'cart',
         'ssdeep',
         'python-magic',
