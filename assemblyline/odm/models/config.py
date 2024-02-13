@@ -1479,7 +1479,7 @@ DEFAULT_RETROHUNT = {
     'enabled': False,
     'dtl': 30,
     'max_dtl': 0,
-    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'url': 'https://hauntedhouse:4443',
     'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
     'tls_verify': True
 }

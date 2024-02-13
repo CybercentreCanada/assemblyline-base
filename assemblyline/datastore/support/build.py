@@ -1,3 +1,4 @@
+from assemblyline.odm.base import _Field
 from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
     SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword, \
@@ -61,8 +62,10 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
     mappings = {}
     dynamic = []
 
-    def set_mapping(temp_field, body):
+    def set_mapping(temp_field: _Field, body):
         body['index'] = temp_field.index
+        if temp_field.store is not None:
+            body['store'] = temp_field.store
         if body.get('type', 'text') != 'text':
             body['doc_values'] = temp_field.index
         if temp_field.copyto:
