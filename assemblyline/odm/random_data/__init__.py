@@ -407,8 +407,8 @@ def create_users(ds, log=None):
     ds.user.commit()
 
 
-def create_badlists(ds, log=None):
-    for _ in range(20):
+def create_badlists(ds, count=20, log=None):
+    for _ in range(count):
         sl = random_model_obj(Badlist, as_json=True)
         if sl['type'] == 'file':
             sl.pop('tag', None)
@@ -422,8 +422,8 @@ def create_badlists(ds, log=None):
     ds.badlist.commit()
 
 
-def create_safelists(ds, log=None):
-    for _ in range(20):
+def create_safelists(ds, count=20, log=None):
+    for _ in range(count):
         sl = random_model_obj(Safelist, as_json=True)
         if sl['type'] == 'file':
             sl.pop('tag', None)
@@ -436,10 +436,9 @@ def create_safelists(ds, log=None):
 
     ds.safelist.commit()
 
-
-def create_workflows(ds, log=None):
+def create_workflows(ds, count=20, log=None):
     workflows = []
-    for _ in range(20):
+    for _ in range(count):
         w_id = get_random_id()
         workflow = random_model_obj(Workflow)
         workflow.workflow_id = w_id
