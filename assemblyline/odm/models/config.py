@@ -1026,9 +1026,11 @@ class AI(odm.Model):
         AIQueryParams, description="Parameters used for executive summaries")
     enabled: bool = odm.Boolean(description="Is AI support enabled?")
     headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                           description="Headers used by the url_download method")
+                                           description="Headers used by the _call_ai_backend method")
     model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
     verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
 
 
 DEFAULT_AI_CODE = {
