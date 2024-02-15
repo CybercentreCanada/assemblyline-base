@@ -34,7 +34,7 @@ constants = forge.get_constants()
 
 @odm.model(index=True, store=False)
 class Attack(odm.Model):
-    attack_id = odm.Keyword(copyto="__text__", description="ID")
+    attack_id = odm.Keyword(copyto="__text__", description="ID", ai=False)
     pattern = odm.Keyword(copyto="__text__", description="Pattern Name")
     categories = odm.List(odm.Keyword(), description="Categories")
 
@@ -48,30 +48,30 @@ class Signature(odm.Model):
 
 @odm.model(index=True, store=False, description="Heuristic associated to the Section")
 class Heuristic(odm.Model):
-    heur_id = odm.Keyword(copyto="__text__", description="ID of the heuristic triggered")
+    heur_id = odm.Keyword(copyto="__text__", description="ID of the heuristic triggered", ai=False)
     name = odm.Keyword(copyto="__text__", description="Name of the heuristic")
     attack = odm.List(odm.Compound(Attack), default=[], description="List of Att&ck IDs related to this heuristic")
     signature = odm.List(odm.Compound(Signature), default=[],
-                         description="List of signatures that triggered the heuristic")
+                         description="List of signatures that triggered the heuristic", ai=False)
     score = odm.Integer(description="Calculated Heuristic score")
 
 
 @odm.model(index=True, store=False, description="Result Section")
 class Section(odm.Model):
-    auto_collapse = odm.Boolean(default=False, description="Should the section be collapsed when displayed?")
+    auto_collapse = odm.Boolean(default=False, description="Should the section be collapsed when displayed?", ai=False)
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
-    classification = odm.Classification(description="Classification of the section")
+    classification = odm.Classification(description="Classification of the section", ai=False)
     body_format = odm.Enum(values=BODY_FORMAT, index=False, description="Type of body in this section")
     body_config = odm.Optional(odm.Mapping(odm.Any(), index=False,
-                               description="Configurations for the body of this section"))
-    depth = odm.Integer(index=False, description="Depth of the section")
+                               description="Configurations for the body of this section"), ai=False)
+    depth = odm.Integer(index=False, description="Depth of the section", ai=False)
     heuristic = odm.Optional(odm.Compound(Heuristic), description="Heuristic used to score result section")
     tags = odm.Compound(Tagging, default={}, description="List of tags associated to this section")
-    safelisted_tags = odm.FlattenedListObject(store=False, default={}, description="List of safelisted tags")
+    safelisted_tags = odm.FlattenedListObject(store=False, default={}, description="List of safelisted tags", ai=False)
     title_text = odm.Text(copyto="__text__", description="Title of the section")
     promote_to = odm.Optional(odm.Enum(
         values=PROMOTE_TO,
-        description="This is the type of data that the current section should be promoted to."))
+        description="This is the type of data that the current section should be promoted to.", ai=False))
 
 
 @odm.model(index=True, store=True, description="Result Body")
@@ -91,47 +91,54 @@ class File(odm.Model):
     name = odm.Keyword(copyto="__text__", description="Name of the file")
     sha256 = odm.SHA256(copyto="__text__", description="SHA256 of the file")
     description = odm.Text(copyto="__text__", description="Description of the file")
-    classification = odm.Classification(description="Classification of the file")
+    classification = odm.Classification(description="Classification of the file", ai=False)
     is_section_image = odm.Boolean(default=False,
-                                   description="Is this an image used in an Image Result Section?")
+                                   description="Is this an image used in an Image Result Section?", ai=False)
     # Possible values for PARENT_RELATION can be found in
     # assemblyline-v4-service/assemblyline_v4_service/common/task.py.
     parent_relation = odm.Text(
         default="EXTRACTED",
         description="File relation to parent, if any.\
-            <br>Values: `\"ROOT\", \"EXTRACTED\", \"INFORMATION\", \"DYNAMIC\", \"MEMDUMP\", \"DOWNLOADED\"`"
+            <br>Values: `\"ROOT\", \"EXTRACTED\", \"INFORMATION\", \"DYNAMIC\", \"MEMDUMP\", \"DOWNLOADED\"`", ai=False
     )
     allow_dynamic_recursion = odm.Boolean(
         default=False,
         description="Allow file to be analysed during Dynamic Analysis"
-                    "even if Dynamic Recursion Prevention is enabled.")
+                    "even if Dynamic Recursion Prevention is enabled.", ai=False)
 
 
 @odm.model(index=True, store=True, description="Response Body of Result")
 class ResponseBody(odm.Model):
-    milestones = odm.Compound(Milestone, default={}, description="Milestone block")
-    service_version = odm.Keyword(store=False, description="Version of the service")
+    milestones = odm.Compound(Milestone, default={}, description="Milestone block", ai=False)
+    service_version = odm.Keyword(store=False, description="Version of the service", ai=False)
     service_name = odm.Keyword(copyto="__text__", description="Name of the service that scanned the file")
-    service_tool_version = odm.Optional(odm.Keyword(copyto="__text__"), description="Tool version of the service")
-    supplementary = odm.List(odm.Compound(File), default=[], description="List of supplementary files")
+    service_tool_version = odm.Optional(
+        odm.Keyword(copyto="__text__"),
+        description="Tool version of the service", ai=False)
+    supplementary = odm.List(odm.Compound(File), default=[], description="List of supplementary files", ai=False)
     extracted = odm.List(odm.Compound(File), default=[], description="List of extracted files")
-    service_context = odm.Optional(odm.Keyword(index=False, store=False), description="Context about the service")
-    service_debug_info = odm.Optional(odm.Keyword(index=False, store=False), description="Debug info about the service")
+    service_context = odm.Optional(
+        odm.Keyword(index=False, store=False),
+        description="Context about the service", ai=False)
+    service_debug_info = odm.Optional(
+        odm.Keyword(index=False, store=False),
+        description="Debug info about the service", ai=False)
 
 
 @odm.model(index=True, store=True, description="Result Model")
 class Result(odm.Model):
-    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)"))
-    classification = odm.Classification(description="Aggregate classification for the result")
-    created = odm.Date(default="NOW", description="Date at which the result object got created")
-    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp")
+    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)", ai=False))
+    classification = odm.Classification(description="Aggregate classification for the result", ai=False)
+    created = odm.Date(default="NOW", description="Date at which the result object got created", ai=False)
+    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp", ai=False)
     response: ResponseBody = odm.compound(ResponseBody, description="The body of the response from the service")
     result: ResultBody = odm.compound(ResultBody, default={}, description="The result body")
     sha256 = odm.SHA256(store=False, description="SHA256 of the file the result object relates to")
     type = odm.Optional(odm.Keyword())
     size = odm.Optional(odm.Integer())
-    drop_file = odm.Boolean(default=False, description="Use to not pass to other stages after this run")
-    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive")
+    drop_file = odm.Boolean(default=False, description="Use to not pass to other stages after this run", ai=False)
+    partial = odm.Boolean(default=False, description="Invalidate the current result cache creation")
+    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive", ai=False)
 
     def build_key(self, service_tool_version=None, task=None):
         return self.help_build_key(
@@ -140,16 +147,17 @@ class Result(odm.Model):
             self.response.service_version,
             self.is_empty(),
             service_tool_version=service_tool_version,
-            task=task
+            task=task,
+            partial=self.partial
         )
 
     @staticmethod
-    def help_build_key(sha256, service_name, service_version, is_empty, service_tool_version=None, task=None):
+    def help_build_key(sha256, service_name, service_version, is_empty, service_tool_version=None, task=None, partial=False):
         key_list = [
             sha256,
             service_name.replace('.', '_'),
             f"v{service_version.replace('.', '_')}",
-            f"c{generate_conf_key(service_tool_version=service_tool_version, task=task)}",
+            f"c{generate_conf_key(service_tool_version=service_tool_version, task=task, partial_result=partial)}",
         ]
 
         if is_empty:
@@ -173,6 +181,6 @@ class Result(odm.Model):
         if len(self.response.extracted) == 0 and \
                 len(self.response.supplementary) == 0 and \
                 len(self.result.sections) == 0 and \
-                self.result.score == 0:
+                self.result.score == 0 and not self.partial:
             return True
         return False

@@ -1008,6 +1008,110 @@ DEFAULT_STATISTICS = {
 }
 
 
+@odm.model(index=False, store=False, description="Parameters used during a AI query")
+class AIQueryParams(odm.Model):
+    system_message: str = odm.Keyword(
+        description="System message used for the query.")
+    max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
+                                           description="Other kwargs options directly passed to the API.")
+
+
+@odm.model(index=False, store=False, description="AI support configuration block")
+class AI(odm.Model):
+    chat_url: str = odm.Keyword(description="URL to the AI API")
+    code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
+    detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
+    executive_summary: AIQueryParams = odm.Compound(
+        AIQueryParams, description="Parameters used for executive summaries")
+    enabled: bool = odm.Boolean(description="Is AI support enabled?")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Headers used by the _call_ai_backend method")
+    model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
+    verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
+
+
+DEFAULT_AI_CODE = {
+    'system_message': """
+You are an assistant that provides explanation of code snippets found in AssemblyLine,
+a malware detection and analysis tool. Start by providing a short summary of the intent behind the
+code and then follow with a detailed explanation of what the code is doing. Format your explanation
+using the Markdown syntax.
+
+User: print("Hello World!")
+Assistant:
+## Summary
+The given code is printing "Hello World!" to the console.
+## Details
+The code has only one line of code and prints a string to the console using the print() function.
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    }
+}
+
+DEFAULT_AI_DETAILED_REPORT = {
+    'system_message': """
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
+to extract information of importance and discard what is not. Assemblyline uses a scoring mechanism where any scores
+below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
+considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
+up are considered malicious.
+
+Once YAML has been submitted, the user expects a two-part result in plain English.  The first part is a one or two
+paragraph executive summary which provides some highlights of the results, and the second part is a detailed description
+of the observations found in the report.  Format your answer using the Markdown syntax.
+""",
+    'max_tokens': 2048,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    }
+}
+
+DEFAULT_AI_EXECUTIVE_SUMMARY = {
+    "system_message": """
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
+is to extract information of importance and discard what is not.  Assemblyline uses a scoring mechanism where any scores
+below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
+considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and up
+are considered malicious.
+
+Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
+plain English.  Highlight important information using inline code block from the Markdown syntax.
+""",
+    'max_tokens': 512,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    }
+}
+
+
+DEFAULT_AI = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'code': DEFAULT_AI_CODE,
+    'detailed_report': DEFAULT_AI_DETAILED_REPORT,
+    'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
+    'enabled': False,
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-3.5-turbo",
+    'verify': True
+}
+
+
 @odm.model(index=False, store=False, description="Alerting Metadata")
 class AlertingMeta(odm.Model):
     important: List[str] = odm.List(odm.Keyword(), description="Metadata keys that are considered important")
@@ -1134,6 +1238,7 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
+    ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
                                                description="Alerting metadata fields")
     allow_malicious_hinting: bool = odm.Boolean(
@@ -1177,8 +1282,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1187,6 +1292,7 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
+    "ai": DEFAULT_AI,
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
@@ -1323,6 +1429,13 @@ DEFAULT_VERDICTS = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    'union',
+    'overwrite',
+    'ignore',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -1343,7 +1456,15 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'ancestry': 'ignore',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -1357,7 +1478,8 @@ DEFAULT_SUBMISSION = {
     'max_temp_data_length': 4096,
     'sha256_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
 }
 
 

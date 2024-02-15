@@ -11,6 +11,7 @@ from assemblyline.common import forge
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.tagging import tag_dict_to_ai_list
 from assemblyline.common.uid import get_id_from_data
 from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
@@ -26,7 +27,7 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.retrohunt import Retrohunt
+from assemblyline.odm.models.retrohunt import Retrohunt, RetrohuntHit
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
@@ -43,6 +44,9 @@ config = forge.get_config()
 
 THREAD_POOL_SIZE = int(os.environ.get("POOL_SIZE", 20))
 
+JSON_SECTIONS = ["GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "PROCESS_TREE",
+                 "TABLE", "IMAGE", "MULTI", "ORDERED_KEY_VALUE", "TIMELINE"]
+
 
 class AssemblylineDatastore(object):
     def __init__(self, datastore_object: ESStore):
@@ -58,6 +62,7 @@ class AssemblylineDatastore(object):
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
         self.ds.register('retrohunt', Retrohunt)
+        self.ds.register('retrohunt_hit', RetrohuntHit)
         self.ds.register('safelist', Safelist)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
@@ -128,6 +133,10 @@ class AssemblylineDatastore(object):
     @property
     def retrohunt(self) -> ESCollection[Retrohunt]:
         return self.ds.retrohunt
+    
+    @property
+    def retrohunt_hit(self) -> ESCollection[RetrohuntHit]:
+        return self.ds.retrohunt_hit
 
     @property
     def safelist(self) -> ESCollection[Safelist]:
@@ -499,7 +508,7 @@ class AssemblylineDatastore(object):
         if key.endswith(".e"):
             data = self.create_empty_result_from_key(key, cl_engine, as_obj=as_obj)
         else:
-            data = self.result.get(key, as_obj=False)
+            data = self.result.get(key, as_obj=as_obj)
 
         return data
 
@@ -1234,3 +1243,165 @@ class AssemblylineDatastore(object):
                 return
             except VersionConflictException as vce:
                 log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")
+
+    @elasticapm.capture_span(span_type='datastore')
+    def _fix_section_data(self, result, min_score):
+        new_sections = []
+        for section in result['result'].get('sections', []):
+            # Skip section with a small score
+            if section.get('heuristic', {}).get('score', -1) < min_score:
+                continue
+
+            # Loading JSON formatted sections
+            if section['body_format'] in JSON_SECTIONS and isinstance(section['body'], str):
+                try:
+                    section['body'] = json.loads(section['body'])
+                except ValueError:
+                    pass
+
+            # Changing tags to a list
+            section['tags'] = tag_dict_to_ai_list(flatten(section.get('tags', {})))
+            if not section['tags']:
+                section.pop('tags')
+
+            # Add the section to the new section array
+            new_sections.append(section)
+
+        # Update result sections
+        result['result']['sections'] = new_sections
+
+        return result
+
+    @elasticapm.capture_span(span_type='datastore')
+    def get_ai_formatted_submission_data(self, sid, user_classification=None,
+                                         cl_engine=forge.get_classification(),
+                                         index_type=None):
+        # Get the submission data
+        submission = self.submission.get(sid, index_type=index_type)
+        if not submission or (user_classification and not cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=submission.classification.value)):
+            return None
+
+        # Auto adjust min_score
+        if submission.max_score < 0:
+            min_score = -1000000
+        else:
+            min_score = 300
+
+        # Parse results
+        results = [
+            self._fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True), min_score)
+            for r in self.result.multiget(
+                submission.results, as_dictionary=False, error_on_missing=False, index_type=index_type)
+            if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=r.classification.value))]
+
+        # Create output
+        output = submission.as_primitives(strip_non_ai_fields=True, strip_null=True)
+        output['results'] = results
+        return output
+
+    @elasticapm.capture_span(span_type='datastore')
+    def get_ai_formatted_file_results_data(self, sha256, user_classification=None, user_access_control=None,
+                                           cl_engine=forge.get_classification(),
+                                           index_type=None):
+        # Get the submission data
+        file_obj = self.file.get(sha256, index_type=index_type)
+        if not file_obj or (user_classification and not cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=file_obj.classification.value)):
+            return None
+
+        # Check for the max service score
+        items = self.result.search(f"id:{sha256}*", fl="result.score", access_control=user_access_control,
+                                   as_obj=False, rows=1, sort="result.score desc", index_type=index_type)['items']
+        if items:
+            max_score = items[0]['result']['score']
+        else:
+            max_score = 0
+
+        # Auto adjust min_score
+        if max_score < 0:
+            min_score = -1000000
+        else:
+            min_score = 300
+
+        # Get the list of active result keys
+        active_keys, _ = self.list_file_active_keys(
+            sha256, user_access_control, min_score=min_score, index_type=index_type)
+
+        # Parse results
+        results = [
+            self._fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True), min_score)
+            for r in self.result.multiget(active_keys, as_dictionary=False,
+                                          error_on_missing=False, index_type=index_type)
+            if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=r.classification.value))]
+
+        # Create output
+        output = file_obj.as_primitives(strip_non_ai_fields=True, strip_null=True)
+        output['max_score'] = max_score
+        output['results'] = results
+        return output
+
+    @elasticapm.capture_span(span_type='datastore')
+    def list_file_active_keys(self, sha256, access_control=None, min_score=None, index_type=None):
+        query = f"id:{sha256}*"
+        if min_score:
+            query += f" AND result.score:>={min_score}"
+
+        item_list = [x for x in self.result.stream_search(query, fl="id,created,response.service_name,result.score",
+                                                          access_control=access_control, as_obj=False,
+                                                          index_type=index_type)]
+
+        item_list.sort(key=lambda k: k["created"], reverse=True)
+
+        active_found = set()
+        active_keys = []
+        alternates = []
+        for item in item_list:
+            if item['response']['service_name'] not in active_found:
+                active_keys.append(item['id'])
+                active_found.add(item['response']['service_name'])
+            else:
+                alternates.append(item)
+
+        return active_keys, alternates
+
+    @elasticapm.capture_span(span_type='datastore')
+    def list_file_childrens(self, sha256, access_control=None):
+        query = f'id:{sha256}* AND response.extracted.sha256:*'
+        service_resp = self.result.grouped_search("response.service_name", query=query, fl='*',
+                                                  sort="created desc", access_control=access_control,
+                                                  as_obj=False)
+
+        output = []
+        processed_sha256 = []
+        for r in service_resp['items']:
+            for extracted in r['items'][0]['response']['extracted']:
+                if extracted['sha256'] not in processed_sha256:
+                    processed_sha256.append(extracted['sha256'])
+                    output.append({
+                        'name': extracted['name'],
+                        'sha256': extracted['sha256']
+                    })
+        return output
+
+    @elasticapm.capture_span(span_type='datastore')
+    def list_file_parents(self, sha256, access_control=None):
+        query = f"response.extracted.sha256:{sha256}"
+        processed_sha256 = []
+        output = []
+
+        response = self.result.search(query, fl='id', sort="created desc",
+                                      access_control=access_control, as_obj=False)
+        for p in response['items']:
+            key = p['id']
+            sha256 = key[:64]
+            if sha256 not in processed_sha256:
+                output.append(key)
+                processed_sha256.append(sha256)
+
+            if len(processed_sha256) >= 10:
+                break
+
+        return output
