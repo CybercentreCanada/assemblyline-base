@@ -1315,6 +1315,7 @@ DEFAULT_UI = {
     "rss_feeds": [
         "https://alpytest.blob.core.windows.net/pytest/stable.json",
         "https://alpytest.blob.core.windows.net/pytest/services.json",
+        "https://alpytest.blob.core.windows.net/pytest/community.json",
         "https://alpytest.blob.core.windows.net/pytest/blog.json"
     ],
     "services_feed": "https://alpytest.blob.core.windows.net/pytest/services.json",
