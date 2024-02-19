@@ -56,18 +56,6 @@ services:
     working_dir: /opt/alv4/assemblyline-ui/assemblyline_ui/
     command: python3 app.py
 
-  # # internal UI
-  # al_internal_ui:
-  #   container_name: internal-ui
-  #   image: cccs/assemblyline_dev:4.5.0
-  #   volumes:
-  #     - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-  #     - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
-  #   environment:
-  #     AL_UNSECURED_UI: "true"
-  #   working_dir: /opt/alv4/assemblyline-ui/assemblyline_ui/
-  #   command: python3 app.py
-
   # SocketIO Server
   al_socketio:
     image: cccs/assemblyline_dev:4.5.0
