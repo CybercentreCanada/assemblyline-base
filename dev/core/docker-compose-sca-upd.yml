@@ -8,7 +8,6 @@ services:
     environment:
       DOCKER_CONFIGURATION_PATH: /mount/service_config/
       DOCKER_CONFIGURATION_VOLUME: service_config
-      UI_SERVER: "https://nginx"
       AL_CORE_NETWORK: external
     volumes:
       - type: volume
@@ -33,7 +32,6 @@ services:
     env_file:
       - .env
     environment:
-      UI_SERVER: "https://nginx"
       AL_CORE_NETWORK: external
       CONTAINER_CHECK_INTERVAL: 5
       UPDATE_CHECK_INTERVAL: 5
