@@ -16,7 +16,7 @@ Assemblyline 4 will only work on systems running python3.9 and was only tested o
 
 If used outside of our normal container this library requires outside linux libraries.
 
-- libffi6 (dev)
+- libffi8 (dev)
 - libfuxxy2 (dev)
 - libmagic1
 - python3.9 (dev)
@@ -24,4 +24,4 @@ If used outside of our normal container this library requires outside linux libr
 Here is an example on how you would get those libraries on a `Ubuntu 20.04+` system:
 
     sudo add-apt-repository ppa:deadsnakes/ppa
-    sudo apt install libffi6 libfuzzy2 libmagic1 build-essential libffi-dev python3.9 python3.9-dev python3-pip libfuzzy-dev
+    sudo apt install libffi8 libfuzzy2 libmagic1 build-essential libffi-dev python3.11 python3.11-dev python3-pip libfuzzy-dev
