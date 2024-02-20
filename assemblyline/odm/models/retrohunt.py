@@ -19,8 +19,8 @@ class Retrohunt(odm.Model):
     description = odm.Text(copyto="__text__", description="Human readable description of this retrohunt job")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp of this retrohunt job")
 
-    start_group = odm.integer(description="Earliest expiry group this search will include")
-    end_group = odm.integer(description="Latest expiry group this search will include")
+    start_group = odm.long(description="Earliest expiry group this search will include")
+    end_group = odm.long(description="Latest expiry group this search will include")
     
     created_time = odm.date(description="Start time for the search.")
     started_time = odm.date(description="Start time for the search.")
