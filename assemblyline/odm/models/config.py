@@ -108,6 +108,7 @@ class LDAP(odm.Model):
     classification_mappings: Dict[str, str] = odm.Any(description="Classification mapping")
     email_field: str = odm.Keyword(description="Name of the field containing the email address")
     group_lookup_query: str = odm.Keyword(description="How the group lookup is queried")
+    group_lookup_with_uid: bool = odm.Boolean(description="Use username/uid instead of dn for group lookup")
     image_field: str = odm.Keyword(description="Name of the field containing the user's avatar")
     image_format: str = odm.Keyword(description="Type of image used to store the avatar")
     name_field: str = odm.Keyword(description="Name of the field containing the user's name")
@@ -131,6 +132,7 @@ DEFAULT_LDAP = {
     "base": "ou=people,dc=assemblyline,dc=local",
     "email_field": "mail",
     "group_lookup_query": "(&(objectClass=Group)(member=%s))",
+    "group_lookup_with_uid": False,
     "image_field": "jpegPhoto",
     "image_format": "jpeg",
     "name_field": "cn",
@@ -1026,9 +1028,11 @@ class AI(odm.Model):
         AIQueryParams, description="Parameters used for executive summaries")
     enabled: bool = odm.Boolean(description="Is AI support enabled?")
     headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                           description="Headers used by the url_download method")
+                                           description="Headers used by the _call_ai_backend method")
     model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
     verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
 
 
 DEFAULT_AI_CODE = {
