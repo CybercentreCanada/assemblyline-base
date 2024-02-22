@@ -175,6 +175,7 @@ magic_patterns = [
     {"al_type": "document/email", "regex": r"Mime entity text"},
     {"al_type": "document/email", "regex": r"MIME entity, ASCII text"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
+    {"al_type": "metadata/minidump", "regex": r"Mini DuMP crash report"},
     {"al_type": "image/emf", "regex": r"Windows Enhanced Metafile"},
     {"al_type": "resource/msvc", "regex": r"MSVC \.res"},
     {"al_type": "pgp/pubkey", "regex": r"^PGP public key"},
