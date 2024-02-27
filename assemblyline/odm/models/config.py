@@ -1022,6 +1022,7 @@ class AIQueryParams(odm.Model):
 @odm.model(index=False, store=False, description="AI support configuration block")
 class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
+    assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
     code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
     detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
     executive_summary: AIQueryParams = odm.Compound(
@@ -1033,6 +1034,20 @@ class AI(odm.Model):
     verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
     proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                            description="Proxies used by the _call_ai_backend method")
+
+
+DEFAULT_AI_ASSISTANT = {
+    'system_message': """
+You are the Assemblyline AI Assistant, you are here to help users understand the results produced by Assemblyline.
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
 
 
 DEFAULT_AI_CODE = {
@@ -1053,8 +1068,8 @@ The code has only one line of code and prints a string to the console using the 
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
@@ -1074,8 +1089,8 @@ of the observations found in the report.  Format your answer using the Markdown 
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
@@ -1094,14 +1109,15 @@ plain English.  Highlight important information using inline code block from the
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
 
 DEFAULT_AI = {
     'chat_url': "https://api.openai.com/v1/chat/completions",
+    'assistant': DEFAULT_AI_ASSISTANT,
     'code': DEFAULT_AI_CODE,
     'detailed_report': DEFAULT_AI_DETAILED_REPORT,
     'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
