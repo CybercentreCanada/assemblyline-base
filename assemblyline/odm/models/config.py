@@ -1022,6 +1022,7 @@ class AIQueryParams(odm.Model):
 @odm.model(index=False, store=False, description="AI support configuration block")
 class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
+    assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
     code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
     detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
     executive_summary: AIQueryParams = odm.Compound(
@@ -1035,12 +1036,26 @@ class AI(odm.Model):
                                            description="Proxies used by the _call_ai_backend method")
 
 
+DEFAULT_AI_ASSISTANT = {
+    'system_message': """
+You are the Assemblyline AI Assistant, you are here to help users understand the results produced by Assemblyline.
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+
 DEFAULT_AI_CODE = {
     'system_message': """
 You are an assistant that provides explanation of code snippets found in AssemblyLine,
 a malware detection and analysis tool. Start by providing a short summary of the intent behind the
 code and then follow with a detailed explanation of what the code is doing. Format your explanation
-using the Markdown syntax.
+using the Markdown syntax. Your answer must be written in plain $(LANG).
 
 User: print("Hello World!")
 Assistant:
@@ -1053,8 +1068,8 @@ The code has only one line of code and prints a string to the console using the 
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
@@ -1066,7 +1081,7 @@ below 0 is considered safe, scores between 0 and 300 are considered informationa
 considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
 up are considered malicious.
 
-Once YAML has been submitted, the user expects a two-part result in plain English.  The first part is a one or two
+Once YAML has been submitted, the user expects a two-part result in plain $(LANG)..  The first part is a one or two
 paragraph executive summary which provides some highlights of the results, and the second part is a detailed description
 of the observations found in the report.  Format your answer using the Markdown syntax.
 """,
@@ -1074,8 +1089,8 @@ of the observations found in the report.  Format your answer using the Markdown 
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
@@ -1088,20 +1103,21 @@ considered suspicious, scores between 700 and 1000 are considered highly-suspici
 are considered malicious.
 
 Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
-plain English.  Highlight important information using inline code block from the Markdown syntax.
+plain $(LANG)..  Highlight important information using inline code block from the Markdown syntax.
 """,
     'max_tokens': 512,
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
 
 DEFAULT_AI = {
     'chat_url': "https://api.openai.com/v1/chat/completions",
+    'assistant': DEFAULT_AI_ASSISTANT,
     'code': DEFAULT_AI_CODE,
     'detailed_report': DEFAULT_AI_DETAILED_REPORT,
     'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
