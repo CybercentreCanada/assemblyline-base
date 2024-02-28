@@ -1055,7 +1055,7 @@ DEFAULT_AI_CODE = {
 You are an assistant that provides explanation of code snippets found in AssemblyLine,
 a malware detection and analysis tool. Start by providing a short summary of the intent behind the
 code and then follow with a detailed explanation of what the code is doing. Format your explanation
-using the Markdown syntax.
+using the Markdown syntax. Your answer must be written in plain $(LANG).
 
 User: print("Hello World!")
 Assistant:
@@ -1081,7 +1081,7 @@ below 0 is considered safe, scores between 0 and 300 are considered informationa
 considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
 up are considered malicious.
 
-Once YAML has been submitted, the user expects a two-part result in plain English.  The first part is a one or two
+Once YAML has been submitted, the user expects a two-part result in plain $(LANG)..  The first part is a one or two
 paragraph executive summary which provides some highlights of the results, and the second part is a detailed description
 of the observations found in the report.  Format your answer using the Markdown syntax.
 """,
@@ -1103,7 +1103,7 @@ considered suspicious, scores between 700 and 1000 are considered highly-suspici
 are considered malicious.
 
 Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
-plain English.  Highlight important information using inline code block from the Markdown syntax.
+plain $(LANG)..  Highlight important information using inline code block from the Markdown syntax.
 """,
     'max_tokens': 512,
     'options': {
