@@ -1450,9 +1450,10 @@ class MetadataValidator:
                     except Exception:
                         pass
                     try:
+                        value = Date().check(value)
                         if value is None:
                             raise ValueError()
-                        metadata[key] = Date().check(value)
+                        metadata[key] = value.strftime(DATEFORMAT)
                     except Exception:
                         return (key, f'Metadata field {key} expected a date, received "{value}" instead')
                 else:
