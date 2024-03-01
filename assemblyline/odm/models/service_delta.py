@@ -36,6 +36,7 @@ class DockerConfigDelta(odm.Model):
     ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     ram_mb_min = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     service_account = odm.optional(odm.keyword(description=REF_DOCKER_CONFIG))
+    labels = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)), description=REF_DOCKER_CONFIG)
 
 
 @odm.model(index=False, store=False)
