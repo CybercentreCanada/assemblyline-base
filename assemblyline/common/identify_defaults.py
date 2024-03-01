@@ -145,6 +145,7 @@ magic_patterns = [
     {"al_type": "network/tcpdump", "regex": r"^(tcpdump|pcap)"},
     {"al_type": "document/pdf", "regex": r"^pdf document"},
     {"al_type": "document/epub", "regex": r"^EPUB document"},
+    {"al_type": "document/mobi", "regex": r"^Mobipocket E-book"},
     {"al_type": "image/bmp", "regex": r"^pc bitmap"},
     {"al_type": "image/gif", "regex": r"^gif image data"},
     {"al_type": "image/jpg", "regex": r"^jpeg image data"},
