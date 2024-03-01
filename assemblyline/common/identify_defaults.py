@@ -144,6 +144,7 @@ magic_patterns = [
     {"al_type": "archive/zpaq", "regex": r"^ZPAQ file"},
     {"al_type": "network/tcpdump", "regex": r"^(tcpdump|pcap)"},
     {"al_type": "document/pdf", "regex": r"^pdf document"},
+    {"al_type": "document/epub", "regex": r"^EPUB document"},
     {"al_type": "image/bmp", "regex": r"^pc bitmap"},
     {"al_type": "image/gif", "regex": r"^gif image data"},
     {"al_type": "image/jpg", "regex": r"^jpeg image data"},
@@ -380,6 +381,9 @@ trusted_mimes = {
 
     # JAVA Class
     "application/x-java-applet": "java/class",
+
+    # EPUB
+    "application/epub+zip": "document/epub",
 
     # Packet capture
     "application/vnd.tcpdump.pcap": "network/tcpdump",
