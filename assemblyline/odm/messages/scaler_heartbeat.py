@@ -1,8 +1,8 @@
 from assemblyline import odm
+from assemblyline.odm.models.service import SUPPORTED_OS
 
 MSG_TYPES = {"ScalerHeartbeat"}
 LOADER_CLASS = "assemblyline.odm.messages.scaler_heartbeat.ScalerMessage"
-
 
 @odm.model(description="Metrics")
 class Metrics(odm.Model):
@@ -16,6 +16,7 @@ class Metrics(odm.Model):
 class Heartbeat(odm.Model):
     instances = odm.Integer(description="Number of instances")
     metrics = odm.Compound(Metrics, description="Metrics")
+    operating_system = odm.Enum(values=SUPPORTED_OS, default='linux', description="Operating System")
 
 
 @odm.model(description="Model of Scaler Heartbeat Message")
