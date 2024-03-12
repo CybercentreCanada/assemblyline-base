@@ -2,10 +2,9 @@ name: tests
 
 variables:
   - group: unittest-samples
-  - name: checkout_location
-    value: "samples"
-  - name: samples_location
-    value: "$(Agent.BuildDirectory)/$(checkout_location)"
+  # Try to checkout the matching branch, if the command fails, don't care.
+  - name: "BRANCH_NAME"
+    value: $[coalesce(variables['System.PullRequest.SourceBranch'], variables['System.PullRequest.TargetBranch'], replace(variables['Build.SourceBranch'], 'refs/heads/', ''), 'main')]
 
 trigger: ["*"]
 pr: ["*"]
@@ -64,14 +63,18 @@ jobs:
   - job: run_test
     strategy:
       matrix:
-        python3_9-es7:
-          python.version: "3.9"
+        python3_11-es7:
+          python.version: "3.11"
           elasticsearch: es7
-        python3_9-es8:
-          python.version: "3.9"
+        python3_11-es8:
+          python.version: "3.11"
           elasticsearch: es8
-        # python3_10:
-        #   python.version: "3.10"
+        python3_12-es7:
+          python.version: "3.12"
+          elasticsearch: es7
+        python3_12-es8:
+          python.version: "3.12"
+          elasticsearch: es8
 
     timeoutInMinutes: 10
     services:
@@ -83,9 +86,6 @@ jobs:
     steps:
       - checkout: self
         fetchDepth: 1
-      - checkout: unittest-samples
-        fetchDepth: 1
-        path: $(checkout_location)
       - task: UsePythonVersion@0
         displayName: Set python version
         inputs:
@@ -101,7 +101,54 @@ jobs:
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
         displayName: Setup environment
-        workingDirectory: assemblyline-base
-      - script: python -m pytest --durations=10 -rsx -vv
+      - script: python -m pytest --durations=10 -rsx -vv --ignore=test/test_identify.py
         displayName: Test
-        workingDirectory: assemblyline-base
+  - job: run_identify_test_latest
+    container:
+      image: cccstemp.azurecr.io/assemblyline-root-build:latest
+      endpoint: cccstemp
+    timeoutInMinutes: 10
+    steps:
+      - checkout: self
+        fetchDepth: 1
+      - checkout: unittest-samples
+      - script: |
+          set -exv
+          env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools wheel
+          env "PATH=$PATH" python -m pip install --no-cache-dir -e assemblyline-base
+          env "PATH=$PATH" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
+        displayName: Setup environment
+      - script: |
+          set -exv
+          cd assemblyline-unittest-samples
+          git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
+          git status
+          cd ..
+          env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
+        displayName: Test File Identification w/ development nightly
+
+  - job: run_identify_test_stable
+    condition: eq(variables['System.PullRequest.targetBranchName'], 'master')
+    container:
+      image: cccstemp.azurecr.io/assemblyline-root-build:stable
+      endpoint: cccstemp
+    timeoutInMinutes: 10
+    steps:
+      - checkout: self
+        fetchDepth: 1
+      - checkout: unittest-samples
+        fetchDepth: 1
+      - script: |
+          set -exv
+          env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools wheel
+          env "PATH=$PATH" python -m pip install --no-cache-dir -e assemblyline-base
+          env "PATH=$PATH" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
+        displayName: Setup environment
+      - script: |
+          set -exv
+          cd assemblyline-unittest-samples
+          git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
+          git status
+          cd ..
+          env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
+        displayName: Test File Identification w/ stable nightly

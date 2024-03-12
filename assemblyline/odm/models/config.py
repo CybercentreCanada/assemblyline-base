@@ -108,6 +108,7 @@ class LDAP(odm.Model):
     classification_mappings: Dict[str, str] = odm.Any(description="Classification mapping")
     email_field: str = odm.Keyword(description="Name of the field containing the email address")
     group_lookup_query: str = odm.Keyword(description="How the group lookup is queried")
+    group_lookup_with_uid: bool = odm.Boolean(description="Use username/uid instead of dn for group lookup")
     image_field: str = odm.Keyword(description="Name of the field containing the user's avatar")
     image_format: str = odm.Keyword(description="Type of image used to store the avatar")
     name_field: str = odm.Keyword(description="Name of the field containing the user's name")
@@ -131,6 +132,7 @@ DEFAULT_LDAP = {
     "base": "ou=people,dc=assemblyline,dc=local",
     "email_field": "mail",
     "group_lookup_query": "(&(objectClass=Group)(member=%s))",
+    "group_lookup_with_uid": False,
     "image_field": "jpegPhoto",
     "image_format": "jpeg",
     "name_field": "cn",
@@ -381,6 +383,8 @@ class Expiry(odm.Model):
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
     delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
+    safelisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Safelist")
+    badlisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Badlist")
 
 
 DEFAULT_EXPIRY = {
@@ -392,6 +396,8 @@ DEFAULT_EXPIRY = {
     'delete_workers': 2,
     'iteration_max_tasks': 20,
     'delete_batch_size': 2000,
+    'safelisted_tag_dtl': 0,
+    'badlisted_tag_dtl': 0
 }
 
 
@@ -420,7 +426,7 @@ class Ingester(odm.Model):
     sampling_at: Dict[str, int] = odm.Mapping(odm.Integer(),
                                               description="Thresholds at certain buckets before sampling")
     max_inflight = odm.Integer(description="How long can a queue get before we start dropping files")
-    cache_dtl: int = odm.Integer(description="How long are files results cached")
+    cache_dtl: int = odm.Integer(min=0, description="How long are files results cached")
 
 
 DEFAULT_INGESTER = {
@@ -790,6 +796,7 @@ class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
     archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
     cache_dtl = odm.Integer(
+        min=0,
         default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
 
@@ -1003,6 +1010,110 @@ DEFAULT_STATISTICS = {
 }
 
 
+@odm.model(index=False, store=False, description="Parameters used during a AI query")
+class AIQueryParams(odm.Model):
+    system_message: str = odm.Keyword(
+        description="System message used for the query.")
+    max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
+                                           description="Other kwargs options directly passed to the API.")
+
+
+@odm.model(index=False, store=False, description="AI support configuration block")
+class AI(odm.Model):
+    chat_url: str = odm.Keyword(description="URL to the AI API")
+    code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
+    detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
+    executive_summary: AIQueryParams = odm.Compound(
+        AIQueryParams, description="Parameters used for executive summaries")
+    enabled: bool = odm.Boolean(description="Is AI support enabled?")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Headers used by the _call_ai_backend method")
+    model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
+    verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
+
+
+DEFAULT_AI_CODE = {
+    'system_message': """
+You are an assistant that provides explanation of code snippets found in AssemblyLine,
+a malware detection and analysis tool. Start by providing a short summary of the intent behind the
+code and then follow with a detailed explanation of what the code is doing. Format your explanation
+using the Markdown syntax.
+
+User: print("Hello World!")
+Assistant:
+## Summary
+The given code is printing "Hello World!" to the console.
+## Details
+The code has only one line of code and prints a string to the console using the print() function.
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    }
+}
+
+DEFAULT_AI_DETAILED_REPORT = {
+    'system_message': """
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
+to extract information of importance and discard what is not. Assemblyline uses a scoring mechanism where any scores
+below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
+considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
+up are considered malicious.
+
+Once YAML has been submitted, the user expects a two-part result in plain English.  The first part is a one or two
+paragraph executive summary which provides some highlights of the results, and the second part is a detailed description
+of the observations found in the report.  Format your answer using the Markdown syntax.
+""",
+    'max_tokens': 2048,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    }
+}
+
+DEFAULT_AI_EXECUTIVE_SUMMARY = {
+    "system_message": """
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
+is to extract information of importance and discard what is not.  Assemblyline uses a scoring mechanism where any scores
+below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
+considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and up
+are considered malicious.
+
+Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
+plain English.  Highlight important information using inline code block from the Markdown syntax.
+""",
+    'max_tokens': 512,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 1,
+        "top_p": 1
+    }
+}
+
+
+DEFAULT_AI = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'code': DEFAULT_AI_CODE,
+    'detailed_report': DEFAULT_AI_DETAILED_REPORT,
+    'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
+    'enabled': False,
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-3.5-turbo",
+    'verify': True
+}
+
+
 @odm.model(index=False, store=False, description="Alerting Metadata")
 class AlertingMeta(odm.Model):
     important: List[str] = odm.List(odm.Keyword(), description="Metadata keys that are considered important")
@@ -1129,6 +1240,7 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
+    ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
                                                description="Alerting metadata fields")
     allow_malicious_hinting: bool = odm.Boolean(
@@ -1182,6 +1294,7 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
+    "ai": DEFAULT_AI,
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
@@ -1324,9 +1437,9 @@ class Submission(odm.Model):
     default_max_extracted: int = odm.Integer(description="How many extracted files may be added to a submission?")
     default_max_supplementary: int = odm.Integer(
         description="How many supplementary files may be added to a submission?")
-    dtl: int = odm.Integer(description="Number of days submissions will remain in the system by default")
-    emptyresult_dtl:  int = odm.Integer(description="Number of days emptyresult will remain in the system")
-    max_dtl: int = odm.Integer(description="Maximum number of days submissions will remain in the system")
+    dtl: int = odm.Integer(min=0, description="Number of days submissions will remain in the system by default")
+    emptyresult_dtl:  int = odm.Integer(min=0, description="Number of days emptyresult will remain in the system")
+    max_dtl: int = odm.Integer(min=0, description="Maximum number of days submissions will remain in the system")
     max_extraction_depth: int = odm.Integer(description="Maximum files extraction depth")
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
@@ -1359,8 +1472,8 @@ DEFAULT_SUBMISSION = {
 @odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
 class Retrohunt(odm.Model):
     enabled = odm.Boolean(default=False, description="Is the Retrohunt functionnality enabled on the frontend")
-    dtl: int = odm.Integer(description="Number of days retrohunt jobs will remain in the system by default")
-    max_dtl: int = odm.Integer(description="Maximum number of days retrohunt jobs will remain in the system")
+    dtl: int = odm.Integer(min=0, description="Number of days retrohunt jobs will remain in the system by default")
+    max_dtl: int = odm.Integer(min=0, description="Maximum number of days retrohunt jobs will remain in the system")
     url = odm.Keyword(description="Base URL for service API")
     api_key = odm.Keyword(description="Service API Key")
     tls_verify = odm.Boolean(default=True, description="Should tls certificates be verified")

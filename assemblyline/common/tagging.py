@@ -24,6 +24,15 @@ def tag_dict_to_list(tag_dict: dict, safelisted: bool = False) -> list[dict]:
     ]
 
 
+def tag_dict_to_ai_list(tag_dict: dict) -> list[dict]:
+    return [
+        {'type': k, 'value': t}
+        for k, v in tag_dict.items()
+        if v is not None
+        for t in v
+    ]
+
+
 def get_safelist_key(t_type: str, t_value: str) -> str:
     return f"{t_type}__{t_value}"
 

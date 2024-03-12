@@ -15,6 +15,7 @@ class Workflow(odm.Model):
     creation_date = odm.Date(default="NOW", description="Creation date of the workflow")
     creator = odm.Keyword(description="UID of the creator of the workflow")
     edited_by = odm.Keyword(description="UID of the last user to edit the workflow")
+    enabled = odm.Boolean(default=True, description="Is this workflow enabled?")
     first_seen = odm.Optional(odm.Date(), description="Date of first hit on workflow")
     hit_count = odm.Integer(default=0, description="Number of times there was a workflow hit")
     labels = odm.List(odm.Keyword(), copyto="__text__", default=[], description="Labels applied by the workflow")
