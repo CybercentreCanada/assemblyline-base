@@ -154,6 +154,7 @@ class Event(odm.Model):
     entity_name: str = odm.Keyword(description="Name of entity")
     ts: str = odm.Date(default="NOW", description="Timestamp of event")
     labels: List[str] = odm.Optional(odm.List(odm.Keyword()), description="Labels added during event")
+    labels_removed: List[str] = odm.Optional(odm.List(odm.Keyword()), description="Labels removed during event")
     status: str = odm.Optional(odm.Enum(values=STATUSES), description="Status applied during event")
     priority: str = odm.Optional(odm.Enum(values=PRIORITIES), description="Priority applied during event")
 
