@@ -30,7 +30,7 @@ rule code_javascript {
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/ ascii wide
 
         // Used in a lot of malware samples to fail silently
-        $strong_js12 = /catch\s+\(\w*\)\s+\{/ ascii wide
+        $strong_js12 = /catch\s*\(\w*\)\s*\{/ ascii wide
 
         // Firefox browser specific method
         $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/ ascii wide
