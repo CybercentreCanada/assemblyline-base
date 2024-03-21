@@ -177,6 +177,7 @@ magic_patterns = [
     {"al_type": "document/email", "regex": r"Mime entity text"},
     {"al_type": "document/email", "regex": r"MIME entity, ASCII text"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
+    {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows 10-11 Event Log"},
     {"al_type": "metadata/minidump", "regex": r"Mini DuMP crash report"},
     {"al_type": "image/emf", "regex": r"Windows Enhanced Metafile"},
     {"al_type": "resource/msvc", "regex": r"MSVC \.res"},
@@ -260,6 +261,8 @@ trusted_mimes = {
     "text/x-msdos-batch": "code/batch",
     # Registry file
     "text/x-ms-regedit": "text/windows/registry",
+    # Sysmon EVTX file
+    "metadata/sysmon/evt": "application/x-ms-evtx",
     # JSON file
     "application/json": "text/json",
 
