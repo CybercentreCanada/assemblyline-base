@@ -1022,6 +1022,7 @@ class AIQueryParams(odm.Model):
 @odm.model(index=False, store=False, description="AI support configuration block")
 class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
     assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
     code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
     detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
@@ -1117,6 +1118,7 @@ plain $(LANG)..  Highlight important information using inline code block from th
 
 DEFAULT_AI = {
     'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
     'assistant': DEFAULT_AI_ASSISTANT,
     'code': DEFAULT_AI_CODE,
     'detailed_report': DEFAULT_AI_DETAILED_REPORT,
