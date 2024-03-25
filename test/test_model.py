@@ -204,6 +204,25 @@ def test_workflow_model():
 def test_update_alert():
     import time
     import assemblyline.odm.models.alert
+    from assemblyline.odm.models.alert import Event
+
+    ea = Event(dict(
+        entity_type='user',
+        entity_id='abc123',
+        entity_name='abc123',
+        labels=['1', '2'],
+        status='MALICIOUS',
+        priority='LOW',
+    ))
+
+    eb = Event(dict(
+        entity_type='user',
+        entity_id='abc123',
+        entity_name='abc123',
+        labels=[],
+        status='MALICIOUS',
+        priority='LOW',
+    ))
 
     a1 = Alert(dict(
         alert_id='abc',
@@ -230,6 +249,7 @@ def test_update_alert():
         sid='abc123',
         ts=100,
         type='big',
+        events=[ea],
     ))
 
     a2 = Alert(dict(
@@ -261,6 +281,7 @@ def test_update_alert():
         sid='abc1234',
         ts=100,
         type='big',
+        events=[ea, eb],
     ))
 
     o1 = Alert(a1.as_primitives())
