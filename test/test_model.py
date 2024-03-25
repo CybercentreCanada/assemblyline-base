@@ -298,6 +298,7 @@ def test_update_alert():
     assert sorted(a1.al.yara) == ['yara-1', 'yara-2']
     assert sorted(a1.al.detailed.yara) == [dict(type='tests', value='yara-1', verdict='safe'), dict(type='tests', value='yara-2', verdict='safe')]
     assert a1.sid == 'abc1234'
+    assert a1.events == [ea, eb]
 
     o2.update(o1)
 
