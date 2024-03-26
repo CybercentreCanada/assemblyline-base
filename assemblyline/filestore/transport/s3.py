@@ -113,7 +113,7 @@ class TransportS3(Transport):
             # Assume the role with web identity
             role = boto3.client("sts").assume_role_with_web_identity(
                 RoleArn=role_arn,
-                RoleSessionName="iam-role-session",
+                RoleSessionName="assemblyline",
                 WebIdentityToken=web_identity_token,
             )
 
