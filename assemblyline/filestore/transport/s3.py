@@ -127,7 +127,7 @@ class TransportS3(Transport):
                 credentials["SessionToken"],
             )
         except Exception as e:
-            logging.error(f"Error assuming role with web identity: {e}")
+            self.log.error(f"Error assuming role with web identity: {e}")
             raise
 
     def __str__(self):
