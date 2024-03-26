@@ -59,15 +59,16 @@ class TransportS3(Transport):
         self.endpoint_url = "{scheme}://{host}:{port}".format(scheme=self.scheme, host=self.host, port=self.port)
 
         with boto3_client_lock:
+            session = boto3.session.Session()
+            sessiontoken = None
             if accesskey is None and os.getenv("AWS_WEB_IDENTITY_TOKEN_FILE"):
-                session = self.assumed_role_session()
-            else:
-                session = boto3.session.Session(
-                    aws_access_key_id=accesskey,
-                    aws_secret_access_key=secretkey,
-                )
+                accesskey, secretkey, sessiontoken = self.assumed_role_session()
+
             self.client = session.client(
                 "s3",
+                aws_access_key_id=accesskey,
+                aws_secret_access_key=secretkey,
+                aws_session_token=sessiontoken,
                 endpoint_url=self.endpoint_url,
                 region_name=aws_region,
                 use_ssl=self.use_ssl,
@@ -100,7 +101,7 @@ class TransportS3(Transport):
 
         super(TransportS3, self).__init__(normalize=s3_normalize)
 
-    def assumed_role_session(self):
+    def assumed_role_session(self) -> tuple[str, str, str]:
         role_arn = os.getenv("AWS_ROLE_ARN")
         token_file_location = os.getenv("AWS_WEB_IDENTITY_TOKEN_FILE")
 
@@ -119,11 +120,11 @@ class TransportS3(Transport):
             # Extract credentials
             credentials = role["Credentials"]
 
-            # Return a new session with the assumed credentials
-            return boto3.session.Session(
-                aws_access_key_id=credentials["AccessKeyId"],
-                aws_secret_access_key=credentials["SecretAccessKey"],
-                aws_session_token=credentials["SessionToken"],
+            # Return the assumed credentials
+            return (
+                credentials["AccessKeyId"],
+                credentials["SecretAccessKey"],
+                credentials["SessionToken"],
             )
         except Exception as e:
             logging.error(f"Error assuming role with web identity: {e}")
