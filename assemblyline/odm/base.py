@@ -1298,6 +1298,31 @@ class Model:
         # attribute assignment
         self.__frozen = True
 
+    def as_camel_case(self):
+        """Returns the object keys as camelCase"""
+        def snake_to_camel(snake_str):
+            """Converts a snake_case string to camelCase."""
+            if snake_str == "name_id_format":
+                # SAML Pascal exception to CamelCase
+                return "NameIDFormat"
+            
+            # Locale/country code exception (e.g., "en_us" to "en-US")
+            if "_" in snake_str and len(snake_str) == 5 and snake_str[2] == "_":
+                return snake_str[:2] + "-" + snake_str[3:].upper()
+        
+            components = snake_str.split('_')
+            return components[0] + ''.join(x.title() for x in components[1:])
+        
+        def to_camel_case(data):
+            """Recursively converts all dictionary keys from snake_case to camelCase."""
+            if isinstance(data, dict):
+                return {snake_to_camel(key): to_camel_case(value) for key, value in data.items()}
+            elif isinstance(data, list):
+                return [to_camel_case(item) for item in data]
+            else:
+                return data
+        return to_camel_case(self._odm_py_obj)    
+        
     def as_primitives(self, hidden_fields=False, strip_null=False, strip_non_ai_fields=False):
         """Convert the object back into primitives that can be json serialized."""
         out = {}
