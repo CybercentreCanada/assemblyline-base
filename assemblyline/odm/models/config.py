@@ -1022,6 +1022,8 @@ class AIQueryParams(odm.Model):
 @odm.model(index=False, store=False, description="AI support configuration block")
 class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
+    assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
     code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
     detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
     executive_summary: AIQueryParams = odm.Compound(
@@ -1035,12 +1037,26 @@ class AI(odm.Model):
                                            description="Proxies used by the _call_ai_backend method")
 
 
+DEFAULT_AI_ASSISTANT = {
+    'system_message': """
+You are the Assemblyline AI Assistant, you are here to help users understand the results produced by Assemblyline.
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+
 DEFAULT_AI_CODE = {
     'system_message': """
 You are an assistant that provides explanation of code snippets found in AssemblyLine,
 a malware detection and analysis tool. Start by providing a short summary of the intent behind the
 code and then follow with a detailed explanation of what the code is doing. Format your explanation
-using the Markdown syntax.
+using the Markdown syntax. Your answer must be written in plain $(LANG).
 
 User: print("Hello World!")
 Assistant:
@@ -1053,8 +1069,8 @@ The code has only one line of code and prints a string to the console using the 
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
@@ -1066,7 +1082,7 @@ below 0 is considered safe, scores between 0 and 300 are considered informationa
 considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
 up are considered malicious.
 
-Once YAML has been submitted, the user expects a two-part result in plain English.  The first part is a one or two
+Once YAML has been submitted, the user expects a two-part result in plain $(LANG)..  The first part is a one or two
 paragraph executive summary which provides some highlights of the results, and the second part is a detailed description
 of the observations found in the report.  Format your answer using the Markdown syntax.
 """,
@@ -1074,8 +1090,8 @@ of the observations found in the report.  Format your answer using the Markdown 
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
@@ -1088,20 +1104,22 @@ considered suspicious, scores between 700 and 1000 are considered highly-suspici
 are considered malicious.
 
 Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
-plain English.  Highlight important information using inline code block from the Markdown syntax.
+plain $(LANG)..  Highlight important information using inline code block from the Markdown syntax.
 """,
     'max_tokens': 512,
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 1,
-        "top_p": 1
+        "temperature": 0,
+        "top_p": 0
     }
 }
 
 
 DEFAULT_AI = {
     'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'assistant': DEFAULT_AI_ASSISTANT,
     'code': DEFAULT_AI_CODE,
     'detailed_report': DEFAULT_AI_DETAILED_REPORT,
     'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
@@ -1271,7 +1289,8 @@ class UI(odm.Model):
     read_only_offset: str = odm.Keyword(
         default="", description="Offset of the read only mode for all paging and searches")
     rss_feeds: List[str] = odm.List(odm.Keyword(), default=[], description="List of RSS feeds to display on the UI")
-    services_feed: str = odm.Keyword(description="Feed of all the services available on AL")
+    services_feed: str = odm.Keyword(description="Feed of all the services built by the Assemblyline Team")
+    community_feed: str = odm.Keyword(description="Feed of all the services built by the Assemblyline community.")
     secret_key: str = odm.Keyword(description="Flask secret key to store cookies, etc.")
     session_duration: int = odm.Integer(description="Duration of the user session before the user has to login again")
     statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS,
@@ -1284,8 +1303,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1318,9 +1337,11 @@ DEFAULT_UI = {
     "rss_feeds": [
         "https://alpytest.blob.core.windows.net/pytest/stable.json",
         "https://alpytest.blob.core.windows.net/pytest/services.json",
+        "https://alpytest.blob.core.windows.net/pytest/community.json",
         "https://alpytest.blob.core.windows.net/pytest/blog.json"
     ],
     "services_feed": "https://alpytest.blob.core.windows.net/pytest/services.json",
+    "community_feed": "https://alpytest.blob.core.windows.net/pytest/community.json",
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
     "statistics": DEFAULT_STATISTICS,
@@ -1431,6 +1452,13 @@ DEFAULT_VERDICTS = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    'union',
+    'overwrite',
+    'ignore',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -1451,7 +1479,15 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'ancestry': 'ignore',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -1465,7 +1501,8 @@ DEFAULT_SUBMISSION = {
     'max_temp_data_length': 4096,
     'sha256_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
 }
 
 
@@ -1483,7 +1520,7 @@ DEFAULT_RETROHUNT = {
     'enabled': False,
     'dtl': 30,
     'max_dtl': 0,
-    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'url': 'https://hauntedhouse:4443',
     'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
     'tls_verify': True
 }

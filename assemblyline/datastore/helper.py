@@ -5,7 +5,7 @@ import json
 import os
 
 from datetime import datetime
-from typing import List, Union
+from typing import List, Union, Optional, Any, Tuple
 
 from assemblyline.common import forge
 from assemblyline.common.classification import InvalidClassification
@@ -17,7 +17,7 @@ from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
-from assemblyline.odm import DATEFORMAT, Model
+from assemblyline.odm import DATEFORMAT, Model, Date
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
@@ -27,7 +27,7 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.retrohunt import Retrohunt
+from assemblyline.odm.models.retrohunt import Retrohunt, RetrohuntHit
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
@@ -62,6 +62,7 @@ class AssemblylineDatastore(object):
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
         self.ds.register('retrohunt', Retrohunt)
+        self.ds.register('retrohunt_hit', RetrohuntHit)
         self.ds.register('safelist', Safelist)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
@@ -132,6 +133,10 @@ class AssemblylineDatastore(object):
     @property
     def retrohunt(self) -> ESCollection[Retrohunt]:
         return self.ds.retrohunt
+    
+    @property
+    def retrohunt_hit(self) -> ESCollection[RetrohuntHit]:
+        return self.ds.retrohunt_hit
 
     @property
     def safelist(self) -> ESCollection[Safelist]:
@@ -503,7 +508,7 @@ class AssemblylineDatastore(object):
         if key.endswith(".e"):
             data = self.create_empty_result_from_key(key, cl_engine, as_obj=as_obj)
         else:
-            data = self.result.get(key, as_obj=False)
+            data = self.result.get(key, as_obj=as_obj)
 
         return data
 
@@ -1400,3 +1405,67 @@ class AssemblylineDatastore(object):
                 break
 
         return output
+
+
+class MetadataValidator:
+    """
+    Type mismatched metadata recived by ingestion can cause us to suffer
+    errors in ingester when it goes to save the submission.
+    
+    This class aims to limit those errors by offering limited validation
+    at the time of the API call, letting the user get a reasonable error instead.
+    """
+    def __init__(self, datastore: AssemblylineDatastore) -> None:
+        self.datastore = datastore
+        self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
+
+    def get_metadata(self) -> dict[str, dict[str, Any]]:
+        """Fetch the type mapping for submission metadata."""
+        fields = self.datastore.submission.fields()
+        selected = {}
+        for key, value in fields.items():
+            prefix, _, key = key.partition('.')
+            if prefix == 'metadata':
+                selected[key] = value
+        return selected
+
+    def check_metadata(self, metadata: dict[str, Any]) -> Optional[Tuple[str, str]]:
+        """
+        Check if the type of every metedata field for obvious errors.
+
+        This isn't meant to be comprehensive, just to cover the types that most frequently
+        cause issues for us.
+
+        Return a tuple of (key name, error message) if any problems are detected.
+        """
+        for key, value in metadata.items():
+            try:
+                type_name = self.metadata[key]["type"]
+                if type_name == 'integer':
+                    try:
+                        number = int(value)
+                        if number < -(2 ** 31) or number > (2 ** 31 - 1):
+                            return (key, f'Metadata field {key} only supports signed 32 bit values')
+                    except ValueError:
+                        return (key, f'Metadata field {key} expected a number, received "{value}" instead')
+                elif type_name == 'date':
+                    try:
+                        int(value)
+                        return (key, f'Metadata field {key} expected a date, refusing to coerce a number')
+                    except Exception:
+                        pass
+                    try:
+                        value = Date().check(value)
+                        if value is None:
+                            raise ValueError()
+                        metadata[key] = value.strftime(DATEFORMAT)
+                    except Exception:
+                        return (key, f'Metadata field {key} expected a date, received "{value}" instead')
+                else:
+                    # Everything else seems fine so far
+                    pass
+            except KeyError:
+                pass
+
+        # No problems encountered
+        return None

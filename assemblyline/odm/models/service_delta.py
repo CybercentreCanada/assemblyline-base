@@ -1,6 +1,9 @@
 from assemblyline import odm
 from assemblyline.odm.models.service import SIGNATURE_DELIMITERS
 
+REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
+REF_ENVVAR = "Refer to:<br>[Service - Enviroment Variable](../service/#environmentvariable)"
+
 
 REF_DEPENDENCY_CONFIG = "Refer to:<br>[Service - DependencyConfig](../service/#dependencyconfig)"
 REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
@@ -28,10 +31,12 @@ class DockerConfigDelta(odm.Model):
     registry_username = odm.Optional(odm.Keyword(default=""), description=REF_DOCKER_CONFIG)
     registry_password = odm.Optional(odm.Keyword(default=""), description=REF_DOCKER_CONFIG)
     registry_type = odm.Optional(odm.Enum(values=["docker", "harbor"]), description=REF_DOCKER_CONFIG)
+    operating_system = odm.Optional(odm.Enum(values=['windows', 'linux']), description=REF_DOCKER_CONFIG)
     ports = odm.Optional(odm.List(odm.Keyword()), description=REF_DOCKER_CONFIG)
     ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     ram_mb_min = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     service_account = odm.optional(odm.keyword(description=REF_DOCKER_CONFIG))
+    labels = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)), description=REF_DOCKER_CONFIG)
 
 
 @odm.model(index=False, store=False)
@@ -105,6 +110,7 @@ class ServiceDelta(odm.Model):
     uses_tag_scores: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     uses_temp_submission_data: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     uses_metadata: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
+    monitored_keys = odm.optional(odm.sequence(odm.keyword()))
 
     name = odm.Optional(odm.Keyword(), store=True, copyto="__text__", description=REF_SERVICE)
     version = odm.Keyword(store=True, description=REF_SERVICE)
