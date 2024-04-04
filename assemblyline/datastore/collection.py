@@ -668,6 +668,10 @@ class ESCollection(Generic[ModelType]):
                 logger.info(f"Perform shard fix operation from {temp_name.upper()} to {index.upper()}.")
                 self._safe_index_copy(method, temp_name, index, settings=settings)
 
+                # Make 100% sure new fixed index is ready
+                logger.info(f"Waiting for {index.upper()} status to be YELLOW.")
+                self._wait_for_status(index, 'yellow')
+
                 # Make the original index the new alias
                 logger.info(f"Make {index.upper()} the current alias for {name.upper()} "
                             f"and delete {temp_name.upper()}.")
