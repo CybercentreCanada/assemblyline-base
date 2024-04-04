@@ -669,8 +669,12 @@ class ESCollection(Generic[ModelType]):
                 self._safe_index_copy(method, temp_name, index, settings=settings)
 
                 # Make the original index the new alias
-                logger.info(f"Make {index.upper()} the current alias for {name.upper()}.")
-                actions = [{"add":  {"index": index, "alias": name}}]
+                logger.info(f"Make {index.upper()} the current alias for {name.upper()} "
+                            f"but {temp_name.upper()} is not part of the alias anymore.")
+                actions = [
+                    {"add":  {"index": index, "alias": name, "is_write_index": True}},
+                    {"remove":  {"index": temp_name, "alias": name}}
+                ]
                 self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
             # Restore writes
