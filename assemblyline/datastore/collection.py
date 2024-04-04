@@ -668,15 +668,9 @@ class ESCollection(Generic[ModelType]):
                 logger.info(f"Perform shard fix operation from {temp_name.upper()} to {index.upper()}.")
                 self._safe_index_copy(method, temp_name, index, settings=settings)
 
-                # Make 100% sure new fixed index is ready
-                logger.info(f"Waiting for {index.upper()} status to be YELLOW.")
-                self._wait_for_status(index, 'yellow')
-
                 # Make the original index the new alias
-                logger.info(f"Make {index.upper()} the current alias for {name.upper()} "
-                            f"and delete {temp_name.upper()}.")
-                actions = [{"add":  {"index": index, "alias": name}}, {
-                    "remove_index": {"index": temp_name}}]
+                logger.info(f"Make {index.upper()} the current alias for {name.upper()}.")
+                actions = [{"add":  {"index": index, "alias": name}}]
                 self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
             # Restore writes
@@ -687,6 +681,15 @@ class ESCollection(Generic[ModelType]):
             logger.info(f"Restore original routing table for {name.upper()}.")
             self.with_retries(self.datastore.client.indices.put_settings, index=name,
                               settings=clone_finish_settings)
+
+            # Make 100% sure new fixed index is ready
+            logger.info(f"Waiting for {index.upper()} status to be GREEN.")
+            self._wait_for_status(index, 'green')
+
+            # Make sure the temporary index is deleted
+            if self.with_retries(self.datastore.client.indices.exists, index=temp_name):
+                logger.info(f"Delete extra {temp_name.upper()} index.")
+                self.with_retries(self.datastore.client.indices.delete, index=temp_name)
 
     def reindex(self, index_type=None):
         """
