@@ -670,9 +670,11 @@ class ESCollection(Generic[ModelType]):
 
                 # Make the original index the new alias
                 logger.info(f"Make {index.upper()} the current alias for {name.upper()} "
-                            f"and delete {temp_name.upper()}.")
-                actions = [{"add":  {"index": index, "alias": name}}, {
-                    "remove_index": {"index": temp_name}}]
+                            f"but {temp_name.upper()} is not part of the alias anymore.")
+                actions = [
+                    {"add":  {"index": index, "alias": name, "is_write_index": True}},
+                    {"remove":  {"index": temp_name, "alias": name}}
+                ]
                 self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
             # Restore writes
@@ -683,6 +685,15 @@ class ESCollection(Generic[ModelType]):
             logger.info(f"Restore original routing table for {name.upper()}.")
             self.with_retries(self.datastore.client.indices.put_settings, index=name,
                               settings=clone_finish_settings)
+
+            # Make 100% sure new fixed index is ready
+            logger.info(f"Waiting for {index.upper()} status to be GREEN.")
+            self._wait_for_status(index, 'green')
+
+            # Make sure the temporary index is deleted
+            if self.with_retries(self.datastore.client.indices.exists, index=temp_name):
+                logger.info(f"Delete extra {temp_name.upper()} index.")
+                self.with_retries(self.datastore.client.indices.delete, index=temp_name)
 
     def reindex(self, index_type=None):
         """
@@ -1099,8 +1110,9 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
-                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:

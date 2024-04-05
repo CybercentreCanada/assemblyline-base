@@ -40,6 +40,7 @@ class DockerConfig(odm.Model):
                                                description="The password or token to use when pulling the image")
     registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker',
                                   description="The type of container registry")
+    operating_system: str = odm.Enum(values=['windows', 'linux'], default="linux", description="What operating system does this container run under?")
     ports: list[str] = odm.List(odm.Keyword(), default=[], description="What ports of container to expose?")
     ram_mb: int = odm.Integer(default=512, description="Container RAM limit")
     ram_mb_min: int = odm.Integer(default=256, description="Container RAM request")
@@ -140,6 +141,9 @@ class Service(odm.Model):
         default=False, description="Does this service use temp data from other services for analysis?")
     uses_metadata: bool = odm.Boolean(
         default=False, description="Does this service use submission metadata for analysis?")
+    monitored_keys: list[str] = odm.sequence(
+        odm.keyword(), default=[],
+        description="This service watches these temporary keys for changes when partial results are produced.")
 
     name: str = odm.Keyword(store=True, copyto="__text__", description="Name of service")
     version = odm.Keyword(store=True, description="Version of service")
@@ -151,9 +155,8 @@ class Service(odm.Model):
 
     stage = odm.Keyword(store=True, default="CORE", copyto="__text__",
                         description="Which execution stage does this service run in?")
-    submission_params: SubmissionParams = odm.List(
-        odm.Compound(SubmissionParams),
-        index=False, default=[],
+    submission_params: list[SubmissionParams] = odm.sequence(
+        odm.compound(SubmissionParams), index=False, default=[],
         description="Submission parameters of service")
     timeout: int = odm.Integer(default=60, description="Service task timeout, in seconds")
 

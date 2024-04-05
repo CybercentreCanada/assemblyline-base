@@ -5,7 +5,7 @@ from assemblyline.odm.base import *
 
 # Imports that have the same effect as some part of the one above so that
 # type checking can use this file properly.
-from assemblyline.odm.base import Keyword, Optional, Boolean, Integer, List, Compound, Mapping, Date
+from assemblyline.odm.base import Keyword, Optional, Boolean, Integer, Long, List, Compound, Mapping, Date, Enum
 from datetime import datetime
 
 _InnerType = typing.TypeVar("_InnerType")
@@ -43,6 +43,10 @@ def integer(*args, **kwargs) -> int:
     return typing.cast(int, Integer(*args, **kwargs))
 
 
+def long(*args, **kwargs) -> int:
+    return typing.cast(int, Long(*args, **kwargs))
+
+
 def sequence(child_type: _InnerType, **kwargs) -> list[_InnerType]:
     return typing.cast(list[_InnerType], List(child_type, **kwargs))
 
@@ -50,6 +54,10 @@ def sequence(child_type: _InnerType, **kwargs) -> list[_InnerType]:
 def mapping(child_type: _InnerType, **kwargs) -> dict[str, _InnerType]:
     return typing.cast(dict[str, _InnerType], Mapping(child_type, **kwargs))
 
-
+  
 def compound(child_type: typing.Callable[..., _InnerType], **kwargs) -> _InnerType:
     return typing.cast(_InnerType, Compound(child_type, **kwargs))
+
+
+def enum(values: typing.Iterable[str], **kwargs) -> str:
+    return typing.cast(str, Enum(values, **kwargs))

@@ -1022,6 +1022,7 @@ class AIQueryParams(odm.Model):
 @odm.model(index=False, store=False, description="AI support configuration block")
 class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
     assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
     code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
     detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
@@ -1117,6 +1118,7 @@ plain $(LANG)..  Highlight important information using inline code block from th
 
 DEFAULT_AI = {
     'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
     'assistant': DEFAULT_AI_ASSISTANT,
     'code': DEFAULT_AI_CODE,
     'detailed_report': DEFAULT_AI_DETAILED_REPORT,
@@ -1301,8 +1303,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1450,6 +1452,13 @@ DEFAULT_VERDICTS = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    'union',
+    'overwrite',
+    'ignore',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -1470,7 +1479,15 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'ancestry': 'ignore',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -1484,7 +1501,8 @@ DEFAULT_SUBMISSION = {
     'max_temp_data_length': 4096,
     'sha256_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
 }
 
 
@@ -1502,7 +1520,7 @@ DEFAULT_RETROHUNT = {
     'enabled': False,
     'dtl': 30,
     'max_dtl': 0,
-    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'url': 'https://hauntedhouse:4443',
     'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
     'tls_verify': True
 }
