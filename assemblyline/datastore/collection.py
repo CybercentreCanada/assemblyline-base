@@ -1909,13 +1909,13 @@ class ESCollection(Generic[ModelType]):
         }
 
     @staticmethod
-    def _get_odm_type(ds_type):
+    def _get_odm_type(ds_type: str):
         try:
             return back_mapping[ds_type].__name__.lower()
         except KeyError:
             return ds_type.lower()
 
-    def fields(self):
+    def fields(self) -> dict[str, dict[str, Any]]:
         """
         This function should return all the fields in the index with their types
 
