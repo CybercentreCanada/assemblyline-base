@@ -154,15 +154,14 @@ class Event(odm.Model):
     entity_name: str = odm.Keyword(description="Name of entity")
     ts: str = odm.Date(default="NOW", description="Timestamp of event")
     labels: List[str] = odm.sequence(odm.keyword(), default=[], description="Labels added during event")
-    labels_removed: List[str] = odm.optional(odm.sequence(odm.keyword()), description="Labels removed during event")
+    labels_removed: List[str] = odm.sequence(odm.keyword(), default=[], description="Labels removed during event")
     status: str = odm.Optional(odm.Enum(values=STATUSES), description="Status applied during event")
     priority: str = odm.Optional(odm.Enum(values=PRIORITIES), description="Priority applied during event")
 
     def __hash__(self) -> int:
         data = self.as_primitives()
         data['labels'] = tuple(sorted(self.labels))
-        if self.labels_removed:
-            data['labels_removed'] = tuple(sorted(self.labels_removed))
+        data['labels_removed'] = tuple(sorted(self.labels_removed))
         return hash(tuple(sorted(data.items())))
 
 
