@@ -527,7 +527,7 @@ class ArchiverMetadata(odm.Model):
     values = odm.List(odm.Keyword(), default=[], description="List of possible values to pick from")
 
 
-DEFAULT_ARCHIVER_METADATA = {
+EXEMPLE_ARCHIVER_METADATA = {
     'rationale': {
         'default': "File is malicious",
         'editable': True,
@@ -586,7 +586,7 @@ class Archiver(odm.Model):
 
 
 DEFAULT_ARCHIVER = {
-    'metadata': DEFAULT_ARCHIVER_METADATA,
+    'metadata': {},
     'minimum_required_services': [],
     'use_webhook': False,
     'use_metadata': False,
