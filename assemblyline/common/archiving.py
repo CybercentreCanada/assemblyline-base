@@ -40,19 +40,21 @@ class ArchiveManager():
             self.scheduler = Scheduler(self.datastore, self.config, redis)
             self.submission_traffic = CommsQueue('submissions', host=redis)
 
-    def archive_submission(self, submission, delete_after: bool = False):
+    def archive_submission(self, submission, delete_after: bool = False, metadata=None):
         if self.config.datastore.archive.enabled and Scheduler:
             sub_selected = self.scheduler.expand_categories(submission['params']['services']['selected'])
             min_selected = self.scheduler.expand_categories(self.config.core.archiver.minimum_required_services)
 
             if set(min_selected).issubset(set(sub_selected)):
-                self.archive_queue.push(('submission', submission['sid'], delete_after))
+                self.archive_queue.push(('submission', submission['sid'], delete_after, metadata))
                 return {"action": "archive"}
             else:
                 params = submission['params']
                 params['auto_archive'] = True
                 params['delete_after_archive'] = delete_after
                 params['services']['selected'] = list(set(sub_selected).union(set(min_selected)))
+                if metadata:
+                    submission['metadata'].update({f"archive.{k}": v for k, v in metadata.items()})
                 try:
                     submission_obj = Submission({
                         "files": submission["files"],
