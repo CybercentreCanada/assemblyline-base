@@ -681,6 +681,8 @@ class RegistryConfiguration(odm.Model):
     name: str = odm.Text(description="Name of container registry")
     proxies: Dict = odm.Optional(odm.Mapping(odm.Text()),
                                  description="Proxy configuration that is passed to Python Requests")
+    token_server: str = odm.Optional(odm.Text(),
+                                     description="Token server name to facilitate anonymous pull access")
 
 
 @odm.model(index=False, store=False)
