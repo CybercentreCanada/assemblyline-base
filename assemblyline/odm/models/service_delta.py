@@ -31,7 +31,6 @@ class DockerConfigDelta(odm.Model):
     registry_username = odm.Optional(odm.Keyword(default=""), description=REF_DOCKER_CONFIG)
     registry_password = odm.Optional(odm.Keyword(default=""), description=REF_DOCKER_CONFIG)
     registry_type = odm.Optional(odm.Enum(values=["docker", "harbor"]), description=REF_DOCKER_CONFIG)
-    operating_system = odm.Optional(odm.Enum(values=['windows', 'linux']), description=REF_DOCKER_CONFIG)
     ports = odm.Optional(odm.List(odm.Keyword()), description=REF_DOCKER_CONFIG)
     ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     ram_mb_min = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
