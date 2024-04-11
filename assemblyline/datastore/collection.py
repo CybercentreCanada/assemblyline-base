@@ -1915,7 +1915,7 @@ class ESCollection(Generic[ModelType]):
         except KeyError:
             return ds_type.lower()
 
-    def fields(self) -> dict[str, dict[str, Any]]:
+    def fields(self, include_description=False) -> dict[str, dict[str, Any]]:
         """
         This function should return all the fields in the index with their types
 
@@ -1960,6 +1960,8 @@ class ESCollection(Generic[ModelType]):
                 "stored": field_model.store if field_model else False,
                 "type": f_type
             }
+            if include_description:
+                collection_data[p_name]['description'] = field_model.description if field_model else ''
 
         return collection_data
 
