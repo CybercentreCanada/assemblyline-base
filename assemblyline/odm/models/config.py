@@ -1414,6 +1414,37 @@ class Sha256Source(odm.Model):
                                           description="Proxy used to connect to the URL")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
+HASH_PATTERN_MAP = {
+    "sha256": odm.SHA256_REGEX,
+    "sha1": odm.SHA1_REGEX,
+    "md5": odm.MD5_REGEX,
+    "tlsh": odm.TLSH_REGEX,
+    "ssdeep": odm.SSDEEP_REGEX,
+}
+
+@odm.model(index=False, store=False, description="A source entry for the sha256 downloader")
+class FileSource(odm.Model):
+    name: str = odm.Keyword(description="Name of the sha256 source")
+    hash_type: str = odm.Keyword(default="sha256",
+                                 description="Method of fetching file from source by string input. This also supports custom types."
+                                 f"({HASH_PATTERN_MAP.keys()})")
+    hash_pattern: str = odm.Optional(odm.Text(),
+                                     description="Pattern to detect/validation custom string to fetch file with")
+    classification = odm.Optional(
+        odm.ClassificationString(
+            description="Minimum classification applied to the downloaded "
+                        "files and required to know the existance of the source."))
+    data: str = odm.Optional(odm.Keyword(description="Data block sent during the URL call (Uses replace pattern)"))
+    failure_pattern: str = odm.Optional(odm.Keyword(
+        description="Pattern to find as a failure case when API return 200 OK on failures..."))
+    method: str = odm.Enum(values=['GET', 'POST'], default="GET", description="Method used to call the URL")
+    url: str = odm.Keyword(description="Url to fetch the file via SHA256 from (Uses replace pattern)")
+    replace_pattern: str = odm.Keyword(description="Pattern to replace in the URL with the SHA256")
+    headers: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Headers used to connect to the URL")
+    proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Proxy used to connect to the URL")
+    verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
 EXAMPLE_SHA256_SOURCE_VT = {
     # This is an example on how this would work with VirusTotal
@@ -1465,9 +1496,10 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    sha256_sources: List[Sha256Source] = odm.List(
-        odm.Compound(Sha256Source),
-        default=[], description="List of external source to fetch file via their SHA256 hashes")
+    sha256_sources: List[Sha256Source] = odm.List(odm.Compound(Sha256Source),default=[],
+                                                  description="List of external source to fetch file via their SHA256 hashes",
+                                                  deprecation="Use submission.file_sources which is an extension of this configuration")
+    file_sources: List[FileSource] = odm.List(odm.Compound(FileSource), default=[], description="List of external source to fetch file")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
