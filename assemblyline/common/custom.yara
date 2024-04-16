@@ -30,7 +30,7 @@ rule code_javascript {
         $strong_js11 = /(^|\n)window.location.href[ \t]*=/ ascii wide
 
         // Used in a lot of malware samples to fail silently
-        $strong_js12 = /catch\s+\(\w*\)\s+\{/ ascii wide
+        $strong_js12 = /catch\s*\(\w*\)\s*\{/ ascii wide
 
         // Firefox browser specific method
         $strong_js13 = /user_pref\("[\w.]+",\s*[\w"']+\)/ ascii wide
@@ -369,19 +369,27 @@ rule document_email_1 {
         score = 15
 
     strings:
+        // This is a common JavaScript key
         $rec = "From:"
         $subrec1 = "Bcc:"
+        // This is a common JavaScript key
         $subrec2 = "To:"
         $subrec3 = "Date:"
+        // This is a common JavaScript key
         $opt1 = "Subject:"
         $opt2 = "Received: from"
         $opt3 = "MIME-Version:"
         $opt4 = "Content-Type:"
 
     condition:
-        all of ($rec*)
-        and 1 of ($subrec*)
-        and 1 of ($opt*)
+        // This is a relatively* trusted mime for identifying JavaScript that could be mis-identified as emails
+        mime != "application/javascript"
+        and
+        (
+            all of ($rec*)
+            and 1 of ($subrec*)
+            and 1 of ($opt*)
+        )
 }
 
 rule document_email_2 {
@@ -910,7 +918,7 @@ rule code_batch {
         $cmd7 = /(^|\n|@|&)timeout[ \t](\/\w+|[-]?\d{1,5})/i
         $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $rem2 = /(^|\n)::/
-        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
+        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?%?\^?\w+/i
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
 
     condition:

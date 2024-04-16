@@ -50,6 +50,7 @@ ROLES = StringTable('ROLES', [
     ("badlist_view", 31),
     ("badlist_manage", 32),
     ("archive_comment", 33),
+    ("assistant_use", 34),
 ])
 
 
@@ -103,6 +104,7 @@ USER_ROLES = USER_ROLES_BASIC.union({
     ROLES.replay_system,       # Manage status of file/submission/alerts during the replay process
     ROLES.signature_import,    # Import signatures in the system
     ROLES.signature_manage,    # Manage signatures sources in the system
+    ROLES.assistant_use,       # Use the Assemblyline Assistant
 })
 
 USER_TYPE_DEP = {

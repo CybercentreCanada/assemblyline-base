@@ -127,6 +127,7 @@ magic_patterns = [
     {"al_type": "executable/mach-o", "regex": r"^Mach-O"},
     {"al_type": "archive/7-zip", "regex": r"^7-zip archive data"},
     {"al_type": "archive/ace", "regex": r"^ACE archive data"},
+    {"al_type": "archive/asar", "regex": r"^Electron ASAR archive"},
     {"al_type": "archive/bzip2", "regex": r"^bzip2 compressed data"},
     {"al_type": "archive/cabinet", "regex": r"^installshield cab"},
     {"al_type": "archive/cabinet", "regex": r"^microsoft cabinet archive data"},
@@ -136,7 +137,7 @@ magic_patterns = [
     {"al_type": "archive/lzma", "regex": r"^LZMA compressed data"},
     {"al_type": "archive/rar", "regex": r"^rar archive data"},
     {"al_type": "archive/tar", "regex": r"^(GNU|POSIX) tar archive"},
-    {"al_type": "archive/ar", "regex": r"ar archive"},
+    {"al_type": "archive/ar", "regex": r"^current ar archive"},
     {"al_type": "archive/vhd", "regex": r"^Microsoft Disk Image"},
     {"al_type": "archive/xz", "regex": r"^XZ compressed data"},
     {"al_type": "archive/zip", "regex": r"^zip archive data"},
@@ -144,6 +145,8 @@ magic_patterns = [
     {"al_type": "archive/zpaq", "regex": r"^ZPAQ file"},
     {"al_type": "network/tcpdump", "regex": r"^(tcpdump|pcap)"},
     {"al_type": "document/pdf", "regex": r"^pdf document"},
+    {"al_type": "document/epub", "regex": r"^EPUB document"},
+    {"al_type": "document/mobi", "regex": r"^Mobipocket E-book"},
     {"al_type": "image/bmp", "regex": r"^pc bitmap"},
     {"al_type": "image/gif", "regex": r"^gif image data"},
     {"al_type": "image/jpg", "regex": r"^jpeg image data"},
@@ -175,6 +178,8 @@ magic_patterns = [
     {"al_type": "document/email", "regex": r"Mime entity text"},
     {"al_type": "document/email", "regex": r"MIME entity, ASCII text"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
+    {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows 10-11 Event Log"},
+    {"al_type": "metadata/minidump", "regex": r"Mini DuMP crash report"},
     {"al_type": "image/emf", "regex": r"Windows Enhanced Metafile"},
     {"al_type": "resource/msvc", "regex": r"MSVC \.res"},
     {"al_type": "pgp/pubkey", "regex": r"^PGP public key"},
@@ -257,6 +262,8 @@ trusted_mimes = {
     "text/x-msdos-batch": "code/batch",
     # Registry file
     "text/x-ms-regedit": "text/windows/registry",
+    # Sysmon EVTX file
+    "metadata/sysmon/evt": "application/x-ms-evtx",
     # JSON file
     "application/json": "text/json",
 
@@ -379,6 +386,9 @@ trusted_mimes = {
 
     # JAVA Class
     "application/x-java-applet": "java/class",
+
+    # EPUB
+    "application/epub+zip": "document/epub",
 
     # Packet capture
     "application/vnd.tcpdump.pcap": "network/tcpdump",
