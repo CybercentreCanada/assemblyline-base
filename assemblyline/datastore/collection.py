@@ -1110,8 +1110,9 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
-                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1926,7 +1927,7 @@ class ESCollection(Generic[ModelType]):
         except KeyError:
             return ds_type.lower()
 
-    def fields(self) -> dict[str, dict[str, Any]]:
+    def fields(self, include_description=False) -> dict[str, dict[str, Any]]:
         """
         This function should return all the fields in the index with their types
 
@@ -1971,6 +1972,8 @@ class ESCollection(Generic[ModelType]):
                 "stored": field_model.store if field_model else False,
                 "type": f_type
             }
+            if include_description:
+                collection_data[p_name]['description'] = field_model.description if field_model else ''
 
         return collection_data
 

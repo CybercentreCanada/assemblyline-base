@@ -43,7 +43,7 @@ BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "_
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
 FLATTENED_OBJECT_SANITIZER = re.compile("^[a-z][a-z0-9_.]*$")
-NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -]*$")
+NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -.]*$")
 UTC_TZ = tzutc()
 
 DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\U0010ffff][A-Za-z0-9\u00a1-\U0010ffff_-]{0,62})?" \
@@ -77,7 +77,7 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
-URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
+URI_REGEX = f"((?:(?:[A-Za-z0-9+.-]{{1,}}:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
             f"{URI_PATH}?)"
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
@@ -1093,14 +1093,15 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False, optional=False):
+    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False, optional=False, description=None):
         out = dict()
 
         # Optionals and Lists do not need to be parsed, we can just analyse their inner type
         if isinstance(field, (Optional, List)):
             out.update(Model._recurse_fields(name, field.child_type, show_compound, skip_mappings,
                                              multivalued=multivalued or isinstance(field, List),
-                                             optional=optional or isinstance(field, Optional)))
+                                             optional=optional or isinstance(field, Optional),
+                                             description=field.description or description))
             return out
 
         # If field is a Compound and were asked to show it, add it to the field list
@@ -1108,6 +1109,7 @@ class Model:
             # Set the multivalued and optional flag on the field
             field.multivalued = multivalued
             field.optional = optional
+            field.description = field.description or description
 
             # Compound when showed will absorb multivalue and optional flag
             multivalued = False
@@ -1119,6 +1121,7 @@ class Model:
             # Set the multivalued and optional flag on the field
             sub_field.multivalued = multivalued
             sub_field.optional = optional
+            sub_field.description = sub_field.description or description
 
             # Make sure the Compound name is propagated as the parent_name
             if isinstance(field, Compound):
@@ -1131,7 +1134,8 @@ class Model:
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
                                                  show_compound, skip_mappings,
                                                  multivalued=multivalued or isinstance(sub_field, List),
-                                                 optional=optional or isinstance(sub_field, Optional)))
+                                                 optional=optional or isinstance(sub_field, Optional),
+                                                 description=sub_field.description or field.description))
 
             elif sub_name:
                 out[".".join([name, sub_name])] = sub_field

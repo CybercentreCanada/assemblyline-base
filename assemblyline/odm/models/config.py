@@ -5,7 +5,7 @@ from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 
-AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
+AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group', 'multi_group']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 
@@ -521,15 +521,77 @@ DEFAULT_METRICS = {
 
 
 @odm.model(index=False, store=False, description="Malware Archive Configuration")
+class ArchiverMetadata(odm.Model):
+    default = odm.Optional(odm.Keyword(description="Default value for the metadata"))
+    editable = odm.Boolean(default=False, description="Can the user provide a custom value")
+    values = odm.List(odm.Keyword(), default=[], description="List of possible values to pick from")
+
+
+EXEMPLE_ARCHIVER_METADATA = {
+    'rationale': {
+        'default': "File is malicious",
+        'editable': True,
+        'values': ["File is malicious", "File is interesting", "I just feel like keeping this..."]
+    }
+}
+
+
+@odm.model(index=False, store=False, description="Named Value")
+class NamedValue(odm.Model):
+    name = odm.Keyword(description="Name")
+    value = odm.Keyword(description="Value")
+
+
+@odm.model(index=False, store=False, description="Webhook Configuration")
+class Webhook(odm.Model):
+    password = odm.Optional(odm.Keyword(default=""), description="Password used to authenticate with source")
+    ca_cert = odm.Optional(odm.Keyword(default=""), description="CA cert for source")
+    ssl_ignore_errors = odm.Boolean(default=False, description="Ignore SSL errors when reaching out to source?")
+    proxy = odm.Optional(odm.Keyword(default=""), description="Proxy server for source")
+    method = odm.Keyword(default='POST', description="HTTP method used to access webhook")
+    uri = odm.Keyword(description="URI to source")
+    username = odm.Optional(odm.Keyword(default=""), description="Username used to authenticate with source")
+    headers = odm.List(odm.Compound(NamedValue), default=[], description="Headers")
+    retries = odm.Integer(default=3)
+
+
+DEFAULT_ARCHIVER_WEBHOOK = {
+    'password': None,
+    'ca_cert': None,
+    'ssl_ignore_errors': False,
+    'proxy': None,
+    'method': "POST",
+    'uri': "https://archiving-hook",
+    'username': None,
+    'headers': [],
+    'retries': 3
+}
+
+
+@odm.model(index=False, store=False, description="Malware Archive Configuration")
 class Archiver(odm.Model):
+    metadata: Dict = odm.Mapping(
+        odm.Compound(ArchiverMetadata),
+        description="Proxy configuration that is passed to Python Requests")
     minimum_required_services: List[str] = odm.List(
         odm.keyword(),
         default=[],
         description="List of minimum required service before archiving takes place")
+    webhook = odm.Optional(odm.Compound(Webhook), description="Webhook to call before triggering the archiving process")
+    use_metadata: bool = odm.Boolean(
+        default=False, description="Should the UI ask form metadata to be filed out when archiving")
+    use_webhook: bool = odm.Optional(odm.Boolean(
+        default=False,
+        description="Should the archiving go through the webhook prior to actually trigger the archiving function"))
 
 
 DEFAULT_ARCHIVER = {
-    'minimum_required_services': []
+    'metadata': {},
+    'minimum_required_services': [],
+    'use_webhook': False,
+    'use_metadata': False,
+    'webhook': DEFAULT_ARCHIVER_WEBHOOK,
+
 }
 
 
@@ -1024,6 +1086,7 @@ class AIQueryParams(odm.Model):
 @odm.model(index=False, store=False, description="AI support configuration block")
 class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
     assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
     code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
     detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
@@ -1039,8 +1102,16 @@ class AI(odm.Model):
 
 
 DEFAULT_AI_ASSISTANT = {
-    'system_message': """
-You are the Assemblyline AI Assistant, you are here to help users understand the results produced by Assemblyline.
+    'system_message': """## Task And Context
+
+You are the Assemblyline AI Assistant. You help people answer their questions and other requests interactively
+regarding Assemblyline. Please answer using only the information provided to you in the prompt. If there is not
+enough information in the prompt to answer the user's question, please say so. Please do NOT use any information
+you know about Assemblyline unless it is provided to you.
+
+## Style Guide
+
+- Your answer must be written in plain $(LANG).
 """,
     'max_tokens': 1024,
     'options': {
@@ -1053,11 +1124,19 @@ You are the Assemblyline AI Assistant, you are here to help users understand the
 
 
 DEFAULT_AI_CODE = {
-    'system_message': """
+    'system_message': """## Task And Context
+
 You are an assistant that provides explanation of code snippets found in AssemblyLine,
 a malware detection and analysis tool. Start by providing a short summary of the intent behind the
-code and then follow with a detailed explanation of what the code is doing. Format your explanation
-using the Markdown syntax. Your answer must be written in plain $(LANG).
+code and then follow with a detailed explanation of what the code is doing.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+
+## Exemple output
 
 User: print("Hello World!")
 Assistant:
@@ -1076,16 +1155,26 @@ The code has only one line of code and prints a string to the console using the 
 }
 
 DEFAULT_AI_DETAILED_REPORT = {
-    'system_message': """
-You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
-to extract information of importance and discard what is not. Assemblyline uses a scoring mechanism where any scores
-below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
-considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
-up are considered malicious.
+    'system_message': """## Task And Context
 
-Once YAML has been submitted, the user expects a two-part result in plain $(LANG)..  The first part is a one or two
-paragraph executive summary which provides some highlights of the results, and the second part is a detailed description
-of the observations found in the report.  Format your answer using the Markdown syntax.
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role is
+to extract information of importance and discard what is not. Once a YAML Assemblyline report is submitted to you, the
+user expects a two-part result.
+
+The first part is a one or two paragraph executive summary which provides some highlights of the results, and the
+second part is a detailed description of the observations found in the report.
+
+## Assemblyline scoring definition
+
+Assemblyline uses a scoring mechanism where any scores below 0 is considered safe, scores between 0 and 300 are
+considered informational, scores between 300 and 700 are considered suspicious, scores between 700 and 1000 are
+considered highly-suspicious and scores with 1000 points and up are considered malicious.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
 """,
     'max_tokens': 2048,
     'options': {
@@ -1097,15 +1186,23 @@ of the observations found in the report.  Format your answer using the Markdown 
 }
 
 DEFAULT_AI_EXECUTIVE_SUMMARY = {
-    "system_message": """
-You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
-is to extract information of importance and discard what is not.  Assemblyline uses a scoring mechanism where any scores
-below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
-considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and up
-are considered malicious.
+    "system_message": """## Task And Context
 
-Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
-plain $(LANG)..  Highlight important information using inline code block from the Markdown syntax.
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
+is to extract information of importance and discard what is not. Once YAML has been submitted, the user expects a one
+or two paragraph executive summary of the output of AssemblyLine.
+
+## Assemblyline scoring definition
+
+Assemblyline uses a scoring mechanism where any scores below 0 is considered safe, scores between 0 and 300 are
+considered informational, scores between 300 and 700 are considered suspicious, scores between 700 and 1000 are
+considered highly-suspicious and scores with 1000 points and up are considered malicious.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
 """,
     'max_tokens': 512,
     'options': {
@@ -1119,6 +1216,7 @@ plain $(LANG)..  Highlight important information using inline code block from th
 
 DEFAULT_AI = {
     'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
     'assistant': DEFAULT_AI_ASSISTANT,
     'code': DEFAULT_AI_CODE,
     'detailed_report': DEFAULT_AI_DETAILED_REPORT,
@@ -1303,8 +1401,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1452,6 +1550,13 @@ DEFAULT_VERDICTS = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    'union',
+    'overwrite',
+    'ignore',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -1472,7 +1577,15 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'ancestry': 'ignore',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -1486,7 +1599,8 @@ DEFAULT_SUBMISSION = {
     'max_temp_data_length': 4096,
     'sha256_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
 }
 
 

@@ -469,8 +469,9 @@ def test_non_indexed_mapping():
     with pytest.raises(KeyError):
         _ = test.a['abc']
 
+    # Make sure a key with rather bad characters fails
     with pytest.raises(KeyError):
-        test.a['abc.abc.abc'] = None
+        test.a['abc()|\0abcabc'] = None
 
     test.a['4abc'] = 1
     test.a['ABC'] = 1
