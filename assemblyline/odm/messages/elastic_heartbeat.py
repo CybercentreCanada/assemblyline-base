@@ -13,6 +13,7 @@ class IndexData(odm.Model):
 @odm.model(description="Heartbeat Model for Elasticsearch")
 class Heartbeat(odm.Model):
     instances = odm.Integer(description="Number of Elasticsearch instances with assigned shards")
+    unassigned_shards = odm.Integer(description="Number of unassigned shards in the cluster")
     request_time = odm.Float(description="Time to load shard metrics")
     shard_sizes = odm.sequence(odm.compound(IndexData), description="Information about each index")
 
