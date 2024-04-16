@@ -7,7 +7,7 @@ LOADER_CLASS = "assemblyline.odm.messages.retrohunt_heartbeat.RetrohuntMessage"
 @odm.model(description="Heartbeat Model for retrohunt")
 class Heartbeat(odm.Model):
     instances = odm.Integer(description="Number of retrohunt workers")
-    request_time = odm.Float(description="Time to load metrics")
+    request_time = odm.Optional(odm.Float(description="Time to load metrics"))
     pending_files = odm.integer(description="Files not yet available for searching")
     ingested_last_minute = odm.integer(description="Files ingested in last minute")
     worker_storage_available = odm.integer(description="Free storage for most depleted worker")
