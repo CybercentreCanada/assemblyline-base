@@ -54,7 +54,7 @@ class NetworkConnection(odm.Model):
     source_port = odm.Optional(odm.Integer(), description="The source port of the connection")
     http_details = odm.Optional(odm.Compound(NetworkHTTP), description="HTTP-specific details of request")
     dns_details = odm.Optional(odm.Compound(NetworkDNS), description="DNS-specific details of request")
-    connection_type = odm.Optional(odm.Enum(values=['http', 'dns'], description="Type of connection being made"))
+    connection_type = odm.Optional(odm.Enum(values=['http', 'dns', 'tls'], description="Type of connection being made"))
 
     def get_oid(data: dict):
         return f"network_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"
