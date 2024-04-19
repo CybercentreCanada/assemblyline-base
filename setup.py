@@ -95,7 +95,8 @@ setup(
         'msoffcrypto-tool',
         'chardet',
         'yara-python',
-        'python-tlsh'
+        'python-tlsh',
+        'hauntedhouse==0.1.10',
     ],
     extras_require={
         'test': [
