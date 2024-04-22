@@ -57,7 +57,7 @@ class NetworkConnection(odm.Model):
     connection_type = odm.Optional(odm.Enum(values=['http', 'dns', 'tls'], description="Type of connection being made"))
 
     def get_oid(data: dict):
-        connection_type = data.get('connection_type'):
+        connection_type = data.get('connection_type')
         hash_dict = {key: data.get(key) for key in OID_PARTS}
         oid_prefix = "network"
         if connection_type == "http":
