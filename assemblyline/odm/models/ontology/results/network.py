@@ -5,7 +5,7 @@ from assemblyline.common.dict_utils import get_dict_fingerprint_hash
 
 OID_PARTS = ['source_ip', 'source_port',
              'destination_ip', 'destination_port',
-             'transport_layer_protocol', 'connection_type', 'dns_details.domain']
+             'transport_layer_protocol', 'connection_type']
 
 
 REQUEST_METHODS = [
@@ -57,7 +57,19 @@ class NetworkConnection(odm.Model):
     connection_type = odm.Optional(odm.Enum(values=['http', 'dns', 'tls'], description="Type of connection being made"))
 
     def get_oid(data: dict):
-        return f"network_{get_dict_fingerprint_hash({key: data.get(key) for key in OID_PARTS})}"
+        connection_type = data.get('connection_type'):
+        hash_dict = {key: data.get(key) for key in OID_PARTS}
+        oid_prefix = "network"
+        if connection_type == "http":
+            # Include the requested URI as part of the hash
+            oid_prefix = "network_http"
+            hash_dict['http_details'] = {'request_uri': data.get('http_details', {}).get('request_uri', None)}
+        elif connection_type == "dns":
+            # Include the requested domain as part of the hash
+            oid_prefix = "network_dns"
+            hash_dict['dns_details'] = {'domain': data.get('dns_details', {}).get('domain', None)}
+
+        return f"{oid_prefix}_{get_dict_fingerprint_hash(hash_dict)}"
 
     def get_tag(data: dict):
         return f"{data.get('destination_ip')}:{data.get('destination_port')}"
