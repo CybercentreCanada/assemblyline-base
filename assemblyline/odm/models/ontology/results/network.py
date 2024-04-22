@@ -5,7 +5,7 @@ from assemblyline.common.dict_utils import get_dict_fingerprint_hash
 
 OID_PARTS = ['source_ip', 'source_port',
              'destination_ip', 'destination_port',
-             'transport_layer_protocol', 'connection_type', 'dns_details.domain']
+             'transport_layer_protocol', 'connection_type', 'dns_details.domain', 'http_details.request_uri']
 
 
 REQUEST_METHODS = [
