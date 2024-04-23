@@ -29,7 +29,7 @@ class Cache(object):
         key_str = "-".join([str(x) for x in args])
         return get_id_from_data(key_str)
 
-    def get(self, key, ttl=None):
+    def get(self, key, ttl=None, reset=True):
         # Get the key name
         cache_name = self._get_key(key)
 
@@ -38,8 +38,10 @@ class Cache(object):
         if not item:
             return item
 
-        # Reset the cache while we're still using it
-        retry_call(self.c.expire, cache_name, ttl or self.ttl)
+        if reset:
+            # Reset the cache while we're still using it
+            retry_call(self.c.expire, cache_name, ttl or self.ttl)
+
         return json.loads(item)
 
     def ready(self):
