@@ -830,6 +830,8 @@ class ESCollection(Generic[ModelType]):
                     add_to_output(row['_source'], row['_id'])
                 except ValueError:
                     log.error(f'MGet returned multiple documents for id: {row["_id"]}')
+                except KeyError:
+                    log.error(f'MGet returned a document without any data {row["_id"]}')
 
         if key_list and error_on_missing:
             raise MultiKeyError(key_list, out)
