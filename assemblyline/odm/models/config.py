@@ -1517,6 +1517,7 @@ DEFAULT_SUBMISSION = {
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
     'sha256_sources': [],
+    'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
     'verdicts': DEFAULT_VERDICTS
 }
