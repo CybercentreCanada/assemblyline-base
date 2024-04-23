@@ -362,6 +362,9 @@ def create_submission(ds, fs, log=None):
     s.params.psid = None
     s.state = 'completed'
 
+    if log:
+        log.info(f'{s}')
+
     ds.submission.save(s.sid, s)
 
     ds.emptyresult.commit()

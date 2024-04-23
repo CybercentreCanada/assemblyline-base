@@ -508,7 +508,7 @@ class AssemblylineDatastore(object):
         if key.endswith(".e"):
             data = self.create_empty_result_from_key(key, cl_engine, as_obj=as_obj)
         else:
-            data = self.result.get(key, as_obj=False)
+            data = self.result.get(key, as_obj=as_obj)
 
         return data
 

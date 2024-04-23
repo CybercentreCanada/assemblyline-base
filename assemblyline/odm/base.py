@@ -43,7 +43,7 @@ BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "_
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
 FLATTENED_OBJECT_SANITIZER = re.compile("^[a-z][a-z0-9_.]*$")
-NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -]*$")
+NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -.]*$")
 UTC_TZ = tzutc()
 
 DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\U0010ffff][A-Za-z0-9\u00a1-\U0010ffff_-]{0,62})?" \
@@ -77,7 +77,7 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
-URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
+URI_REGEX = f"((?:(?:[A-Za-z0-9+.-]{{1,}}:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
             f"{URI_PATH}?)"
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
