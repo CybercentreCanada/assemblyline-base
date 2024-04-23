@@ -1129,7 +1129,7 @@ DEFAULT_AI_EXECUTIVE_SUMMARY = {
 
 You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
 is to extract information of importance and discard what is not. Once YAML has been submitted, the user expects a one
-or two paragraph executive summary of the output of AssemblyLine.
+or two paragraph executive summary of the output of AssemblyLine. DO NOT write any headers in your output.
 
 ## Assemblyline scoring definition
 
