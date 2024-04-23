@@ -87,28 +87,6 @@ class IndentedPrintLogger():
         print(f"    [EX] {msg}", end=end)
 
 
-class PrintLogger(object):
-    @staticmethod
-    def info(msg, end=None):
-        print(msg, end=end)
-
-    @staticmethod
-    def warning(msg, end=None):
-        print(f"[W] {msg}", end=end)
-
-    @staticmethod
-    def warn(msg, end=None):
-        print(f"[W] {msg}", end=end)
-
-    @staticmethod
-    def error(msg, end=None):
-        print(f"[E] {msg}", end=end)
-
-    @staticmethod
-    def exception(msg, end=None):
-        print(f"[EX] {msg}", end=end)
-
-
 def init():
     global DATASTORE
     DATASTORE = forge.get_datastore(archive_access=True)
@@ -122,9 +100,9 @@ def submission_delete_tree(key, logger):
             DATASTORE.delete_submission_tree_bulk(key, transport=f_transport)
     except Exception as e:
         logger.error(e)
-        return "DELETE", "submission", key, False, isinstance(logger, PrintLogger)
+        return "DELETE", "submission", key, False, isinstance(logger, al_log.PrintLogger)
 
-    return "deleted", "submission", key, True, isinstance(logger, PrintLogger)
+    return "deleted", "submission", key, True, isinstance(logger, al_log.PrintLogger)
 
 
 def action_done(args):
@@ -145,7 +123,7 @@ def action_done(args):
 # noinspection PyMethodMayBeStatic,PyProtectedMember,PyBroadException
 class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
-    def __init__(self, show_prompt=True, logger_class=PrintLogger):
+    def __init__(self, show_prompt=True, logger_class=al_log.PrintLogger):
         cmd.Cmd.__init__(self)
         self.logger = logger_class()
         self.prompt = ""
@@ -1024,7 +1002,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 for index in indices:
                     collection = self.datastore.get_collection(index)
                     collection.fix_shards(logger=IndentedPrintLogger()
-                                          if isinstance(self.logger, PrintLogger) else self.logger)
+                                          if isinstance(self.logger, al_log.PrintLogger) else self.logger)
                     self.logger.info(f"    Index {index.upper()} shards configuration updated.")
 
                 self.logger.info("Completed!")
