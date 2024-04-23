@@ -5,7 +5,7 @@ from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 
-AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
+AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group', 'multi_group']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 
@@ -212,6 +212,7 @@ class OAuthProvider(odm.Model):
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
     jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
+    jwt_token_alg: str = odm.Keyword(default="RS256", description="Algorythm use the validate JWT OBO tokens")
     uid_field: str = odm.Optional(odm.Keyword(), description="Name of the field that will contain the user ID")
     user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
     user_groups: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
@@ -681,6 +682,8 @@ class RegistryConfiguration(odm.Model):
     name: str = odm.Text(description="Name of container registry")
     proxies: Dict = odm.Optional(odm.Mapping(odm.Text()),
                                  description="Proxy configuration that is passed to Python Requests")
+    token_server: str = odm.Optional(odm.Text(),
+                                     description="Token server name to facilitate anonymous pull access")
 
 
 @odm.model(index=False, store=False)
@@ -1538,7 +1541,7 @@ DEFAULT_RETROHUNT = {
     'enabled': False,
     'dtl': 30,
     'max_dtl': 0,
-    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'url': 'https://hauntedhouse:4443',
     'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
     'tls_verify': True
 }

@@ -77,7 +77,7 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
-URI_REGEX = f"((?:(?:[A-Za-z0-9+.-]{{1,}}:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
+URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
             f"{URI_PATH}?)"
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
@@ -637,6 +637,37 @@ class IndexText(_Field):
 
 
 class Integer(_Field):
+    """A field storing an integer value."""
+
+    def __init__(self, max: int = None, min: int = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max = max
+        self.min = min
+
+    def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
+        if value is None or value == "":
+            if self.default_set:
+                ret_val = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] No value provided and no default value set.")
+        else:
+            ret_val = int(value)
+
+        # Test min/max
+        if self.max is not None and ret_val > self.max:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value bigger then the max value. ({value} > {self.max})")
+        if self.min is not None and ret_val < self.min:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value smaller then the min value. ({value} < {self.max})")
+
+        return ret_val
+
+
+class Long(_Field):
     """A field storing an integer value."""
 
     def __init__(self, max: int = None, min: int = None, *args, **kwargs):

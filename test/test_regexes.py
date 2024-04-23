@@ -25,6 +25,13 @@ TLSH_REGEX_COMP = re.compile(TLSH_REGEX)
     ("net.tcp://1.1.1.1:1", True),
     # URI requires a scheme: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier#scheme
     ("//1.1.1.1:1", False),
+    # Scheme must start with A-Z: https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
+    ("7://site.com:8080/stuff", False),
+    ("9http://1.1.1.1/stuff", False),
+    (".jpg-ohttp://1.1.1.1/", False),
+    (".://site.com/?e=stuff", False),
+    ("-urihttps://site.com/", False),
+    ("+://site.com/", False),
 ])
 def test_full_uri_regex(value, ismatch):
     if ismatch:

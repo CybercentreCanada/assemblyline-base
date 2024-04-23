@@ -369,19 +369,27 @@ rule document_email_1 {
         score = 15
 
     strings:
+        // This is a common JavaScript key
         $rec = "From:"
         $subrec1 = "Bcc:"
+        // This is a common JavaScript key
         $subrec2 = "To:"
         $subrec3 = "Date:"
+        // This is a common JavaScript key
         $opt1 = "Subject:"
         $opt2 = "Received: from"
         $opt3 = "MIME-Version:"
         $opt4 = "Content-Type:"
 
     condition:
-        all of ($rec*)
-        and 1 of ($subrec*)
-        and 1 of ($opt*)
+        // This is a relatively* trusted mime for identifying JavaScript that could be mis-identified as emails
+        mime != "application/javascript"
+        and
+        (
+            all of ($rec*)
+            and 1 of ($subrec*)
+            and 1 of ($opt*)
+        )
 }
 
 rule document_email_2 {

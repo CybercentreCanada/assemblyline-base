@@ -9,10 +9,12 @@ import yaml
 
 from string import Template
 from typing import TYPE_CHECKING, Optional
+from hauntedhouse import Client
 
 from assemblyline.common.constants import service_queue_name
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
+
 
 if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
@@ -201,6 +203,20 @@ def get_tag_safelister(log=None, yml_config=None, config=None, datastore=None):
         raise InvalidSafelist('Could not find any tag_safelist file to load.')
 
     return TagSafelister(tag_safelist_data, log=log)
+
+
+def get_hauntedhouse_client(config: Config) -> Optional[Client]:
+    if config.retrohunt.enabled:
+        ca_path = None
+        if config.retrohunt.tls_verify:
+            ca_path = '/etc/assemblyline/ssl/al_root-ca.crt'
+
+        return Client(
+            address=config.retrohunt.url,
+            api_key=config.retrohunt.api_key,
+            verify=ca_path
+        )
+    return None
 
 
 class CachedObject:

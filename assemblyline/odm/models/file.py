@@ -84,5 +84,5 @@ class File(odm.Model):
     ssdeep = odm.SSDeepHash(store=False, description="SSDEEP hash of the file", ai=False)
     type = odm.Keyword(copyto="__text__", description="Type of file as identified by Assemblyline")
     tlsh = odm.Optional(odm.Keyword(copyto="__text__", description="TLSH hash of the file", ai=False))
-    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive", ai=False)
+    from_archive = odm.Boolean(index=False, store=False, default=False, description="Was loaded from the archive", ai=False)
     uri_info = odm.Optional(odm.Compound(URIInfo), description="URI structure to speed up specialty file searching")
