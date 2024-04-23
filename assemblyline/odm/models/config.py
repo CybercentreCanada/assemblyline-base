@@ -212,6 +212,7 @@ class OAuthProvider(odm.Model):
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
     jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
+    jwt_token_alg: str = odm.Keyword(default="RS256", description="Algorythm use the validate JWT OBO tokens")
     uid_field: str = odm.Optional(odm.Keyword(), description="Name of the field that will contain the user ID")
     user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
     user_groups: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
