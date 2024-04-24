@@ -856,6 +856,8 @@ class ESCollection(Generic[ModelType]):
                     add_to_output(row['_source'], row['_id'])
                 except ValueError:
                     log.error(f'MGet returned multiple documents for id: {row["_id"]}')
+                except KeyError:
+                    log.error(f'MGet returned a document without any data {row["_id"]}')
 
         if key_list and error_on_missing:
             raise MultiKeyError(key_list, out)
@@ -1136,8 +1138,9 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
-                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:

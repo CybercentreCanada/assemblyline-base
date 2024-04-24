@@ -1404,8 +1404,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1515,6 +1515,48 @@ class Sha256Source(odm.Model):
                                           description="Proxy used to connect to the URL")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
+HASH_PATTERN_MAP = {
+    "sha256": odm.SHA256_REGEX,
+    "sha1": odm.SHA1_REGEX,
+    "md5": odm.MD5_REGEX,
+    "tlsh": odm.TLSH_REGEX,
+    "ssdeep": odm.SSDEEP_REGEX,
+}
+
+@odm.model(index=False, store=False, description="A file source entry for remote fetching via string")
+class FileSource(odm.Model):
+    name: str = odm.Keyword(description="Name of the sha256 source")
+    hash_types: List[str] = odm.List(odm.Keyword(), default=["sha256"],
+                                     description="Method(s) of fetching file from source by string input"
+                                     f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
+                                     )
+    hash_patterns: Dict[str, str] = odm.Optional(odm.Mapping(odm.Text()),
+                                     description="Custom types to regex pattern definition for input detection/validation")
+    classification = odm.Optional(
+        odm.ClassificationString(
+            description="Minimum classification applied to the downloaded "
+                        "files and required to know the existance of the source."))
+    data: str = odm.Optional(odm.Keyword(description="Data block sent during the URL call (Uses replace pattern)"))
+    failure_pattern: str = odm.Optional(odm.Keyword(
+        description="Pattern to find as a failure case when API return 200 OK on failures..."))
+    method: str = odm.Enum(values=['GET', 'POST'], default="GET", description="Method used to call the URL")
+    url: str = odm.Keyword(description="Url to fetch the file via SHA256 from (Uses replace pattern)")
+    replace_pattern: str = odm.Keyword(description="Pattern to replace in the URL with the SHA256")
+    headers: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Headers used to connect to the URL")
+    proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Proxy used to connect to the URL")
+    verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
+
+EXAMPLE_FILE_SOURCE_VT = {
+    # This is an example on how this would work with VirusTotal as a file source
+    # Note: This supports downloading using multiple hash types in a single source configuration
+    "name": "VirusTotal",
+    "hash_types": ["sha256", "sha1", "md5"],
+    "url": r"https://www.virustotal.com/api/v3/files/{HASH}/download",
+    "replace_pattern": r"{HASH}",
+    "headers": {"x-apikey": "YOUR_KEY"},
+}
 
 EXAMPLE_SHA256_SOURCE_VT = {
     # This is an example on how this would work with VirusTotal
@@ -1553,6 +1595,13 @@ DEFAULT_VERDICTS = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    'union',
+    'overwrite',
+    'ignore',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -1566,14 +1615,23 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    sha256_sources: List[Sha256Source] = odm.List(
-        odm.Compound(Sha256Source),
-        default=[], description="List of external source to fetch file via their SHA256 hashes")
+    sha256_sources: List[Sha256Source] = odm.List(odm.Compound(Sha256Source),default=[],
+                                                  description="List of external source to fetch file via their SHA256 hashes",
+                                                  deprecation="Use submission.file_sources which is an extension of this configuration")
+    file_sources: List[FileSource] = odm.List(odm.Compound(FileSource), default=[], description="List of external source to fetch file")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'ancestry': 'ignore',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -1586,8 +1644,10 @@ DEFAULT_SUBMISSION = {
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
     'sha256_sources': [],
+    'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
 }
 
 
