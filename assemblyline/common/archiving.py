@@ -47,7 +47,8 @@ class ArchiveManager():
             self.scheduler = Scheduler(self.datastore, self.config, redis)
             self.submission_traffic = CommsQueue('submissions', host=redis)
 
-    def archive_submission(self, submission, delete_after: bool = False, metadata=None, skip_hook=False):
+    def archive_submission(self, submission, delete_after: bool = False, metadata=None, skip_hook=False,
+                           use_alternate_dtl=False):
         if self.config.datastore.archive.enabled and Scheduler:
             sub_selected = self.scheduler.expand_categories(submission['params']['services']['selected'])
             min_selected = self.scheduler.expand_categories(self.config.core.archiver.minimum_required_services)
@@ -55,14 +56,16 @@ class ArchiveManager():
             if set(min_selected).issubset(set(sub_selected)):
                 # Should we send it to a webhook ?
                 if self.config.core.archiver.use_webhook and not skip_hook:
-                    return {"action": "hooked", "success": self._process_hook(submission, delete_after, metadata)}
+                    return {"action": "hooked", "success": self._process_hook(submission, delete_after,
+                                                                              metadata, use_alternate_dtl)}
 
-                self.archive_queue.push(('submission', submission['sid'], delete_after, metadata))
+                self.archive_queue.push(('submission', submission['sid'], delete_after, metadata, use_alternate_dtl))
                 return {"action": "archive", "success": True}
             else:
                 params = submission['params']
                 params['auto_archive'] = True
                 params['delete_after_archive'] = delete_after
+                params['use_archive_alternate_dtl'] = use_alternate_dtl
                 params['services']['selected'] = list(set(sub_selected).union(set(min_selected)))
                 if metadata and self.config.core.archiver.use_metadata:
                     submission['metadata'].update({f"archive.{k}": v for k, v in metadata.items()})
@@ -91,7 +94,7 @@ class ArchiveManager():
         else:
             self.log.warning("Trying to archive a submission when archiving is disabled.")
 
-    def _process_hook(self, submission: Submission, delete_after: bool = False, metadata=None):
+    def _process_hook(self, submission: Submission, delete_after: bool = False, metadata=None, use_alternate_dtl=False):
         backoff = 0.0
         cafile = None
         hook = self.config.core.archiver.webhook
@@ -100,7 +103,8 @@ class ArchiveManager():
             payload = json.dumps({
                 'delete_after': delete_after,
                 'metadata': metadata,
-                'submission': submission
+                'submission': submission,
+                'use_alternate_dtl': use_alternate_dtl
             })
 
             # Setup auth headers and other headers

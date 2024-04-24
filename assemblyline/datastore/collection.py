@@ -9,6 +9,7 @@ import typing
 import warnings
 
 from copy import deepcopy
+from assemblyline.common.isotime import now_as_iso
 from datemath import dm
 from datemath.helpers import DateMathException
 from datetime import datetime
@@ -22,7 +23,8 @@ import elasticsearch.helpers
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
-from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException, ArchiveDisabled)
+from assemblyline.datastore.exceptions import (
+    DataStoreException, MultiKeyError, SearchException, ArchiveDisabled, VersionConflictException)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
 from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                     default_index, default_mapping)
@@ -191,7 +193,7 @@ class ESCollection(Generic[ModelType]):
         'script_fields': []
     }
 
-    def __init__(self, datastore: ESStore, name, model_class=None, validate=True):
+    def __init__(self, datastore: ESStore, name, model_class=None, validate=True, archive_alernate_dtl=0):
         self.replicas = environ.get(f"ELASTIC_{name.upper()}_REPLICAS", environ.get('ELASTIC_DEFAULT_REPLICAS', 0))
         self.shards = environ.get(f"ELASTIC_{name.upper()}_SHARDS", environ.get('ELASTIC_DEFAULT_SHARDS', 1))
         self.archive_replicas = environ.get(f"ELASTIC_{name.upper()}_ARCHIVE_REPLICAS", self.replicas)
@@ -210,6 +212,7 @@ class ESCollection(Generic[ModelType]):
 
         self.model_class = model_class
         self.validate = validate
+        self.archive_alernate_dtl = archive_alernate_dtl
 
         self._ensure_collection()
 
@@ -437,7 +440,7 @@ class ESCollection(Generic[ModelType]):
 
         return total_restaured
 
-    def archive(self, key, delete_after=False, allow_missing=False):
+    def archive(self, key, delete_after=False, allow_missing=False, use_alternate_dtl=False):
         """
         Copy/Move a single document into the archive and return the document that was archived.
 
@@ -448,14 +451,20 @@ class ESCollection(Generic[ModelType]):
         if not self.archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
+        # Compute new expiry
+        if use_alternate_dtl and self.archive_alernate_dtl != 0:
+            new_expiry = now_as_iso(self.archive_alernate_dtl * 24 * 60 * 60)
+        else:
+            new_expiry = None
+
         # Check if already in archive
         if not self.exists(key, index_type=Index.ARCHIVE):
             # Get the document from hot index
             doc = self.get_if_exists(key, index_type=Index.HOT)
             if doc:
-                # Reset Expiry if present
+                # Set new document expiry if collection has expiry
                 try:
-                    doc.expiry_ts = None
+                    doc.expiry_ts = new_expiry
                 except (AttributeError, KeyError, ValueError):
                     pass
 
@@ -463,6 +472,23 @@ class ESCollection(Generic[ModelType]):
                 self.save(key, doc, index_type=Index.ARCHIVE)
             elif not allow_missing:
                 raise DataStoreException(f"{key} does not exists in {self.name} hot index therefor cannot be archived.")
+            # Document already in archive, edit expiry
+        else:
+            archived_doc, version = self.get_if_exists(key, index_type=Index.ARCHIVE, version=True)
+            if archived_doc:
+                while True:
+                    # Set new document expiry if collection has expiry
+                    try:
+                        archived_doc.expiry_ts = new_expiry
+
+                        # Save the document to the archive
+                        self.save(key, archived_doc, index_type=Index.ARCHIVE, version=version)
+                        break
+                    except (AttributeError, KeyError, ValueError):
+                        break
+                    except VersionConflictException:
+                        # Retry due to version conflict
+                        pass
 
         if delete_after:
             self.delete(key, index_type=Index.HOT)

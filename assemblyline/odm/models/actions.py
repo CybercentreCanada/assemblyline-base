@@ -37,6 +37,7 @@ class PostprocessAction(odm.Model):
     raise_alert = boolean(default=False, description="Raise an alert when this action is triggered")
     resubmit = optional(compound(ResubmitOptions), description="Resubmission configuration")
     archive_submission = boolean(default=False, description="Archive the submission when this action is triggered")
+    use_archive_alternate_dtl = boolean(default=False, description="Should we use the alternate dtl while archiving?")
 
 
 DEFAULT_POSTPROCESS_ACTIONS = {
@@ -49,7 +50,8 @@ DEFAULT_POSTPROCESS_ACTIONS = {
         webhook=None,
         raise_alert=True,
         resubmit=None,
-        archive_submission=False
+        archive_submission=False,
+        use_archive_alternate_dtl=False
     )),
     # Resubmit submissions on completion. All submissions with score >= 0 are elegable, but sampling
     # is applied to scores below 500
@@ -64,6 +66,7 @@ DEFAULT_POSTPROCESS_ACTIONS = {
             additional_services=[],
             random_below=500
         )),
-        archive_submission=False
+        archive_submission=False,
+        use_archive_alternate_dtl=False
     ))
 }
