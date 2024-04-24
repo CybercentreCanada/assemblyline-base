@@ -1422,14 +1422,15 @@ HASH_PATTERN_MAP = {
     "ssdeep": odm.SSDEEP_REGEX,
 }
 
-@odm.model(index=False, store=False, description="A source entry for the sha256 downloader")
+@odm.model(index=False, store=False, description="A file source entry for remote fetching via string")
 class FileSource(odm.Model):
     name: str = odm.Keyword(description="Name of the sha256 source")
-    hash_type: str = odm.Keyword(default="sha256",
-                                 description="Method of fetching file from source by string input. This also supports custom types."
-                                 f"({HASH_PATTERN_MAP.keys()})")
-    hash_pattern: str = odm.Optional(odm.Text(),
-                                     description="Pattern to detect/validation custom string to fetch file with")
+    hash_types: List[str] = odm.List(odm.Keyword(), default=["sha256"],
+                                     description="Method(s) of fetching file from source by string input"
+                                     f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
+                                     )
+    hash_patterns: Dict[str, str] = odm.Optional(odm.Mapping(odm.Text()),
+                                     description="Custom types to regex pattern definition for input detection/validation")
     classification = odm.Optional(
         odm.ClassificationString(
             description="Minimum classification applied to the downloaded "
