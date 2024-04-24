@@ -571,6 +571,8 @@ DEFAULT_ARCHIVER_WEBHOOK = {
 
 @odm.model(index=False, store=False, description="Malware Archive Configuration")
 class Archiver(odm.Model):
+    alternate_dtl: int = odm.Integer(description="Alternate number of days to keep the data in the "
+                                                 "malware archive. (0: Disabled, will keep data forever)")
     metadata: Dict = odm.Mapping(
         odm.Compound(ArchiverMetadata),
         description="Proxy configuration that is passed to Python Requests")
@@ -587,12 +589,12 @@ class Archiver(odm.Model):
 
 
 DEFAULT_ARCHIVER = {
+    'alternate_dtl': 0,
     'metadata': {},
     'minimum_required_services': [],
     'use_webhook': False,
     'use_metadata': False,
-    'webhook': DEFAULT_ARCHIVER_WEBHOOK,
-
+    'webhook': DEFAULT_ARCHIVER_WEBHOOK
 }
 
 
