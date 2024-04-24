@@ -1447,6 +1447,16 @@ class FileSource(odm.Model):
                                           description="Proxy used to connect to the URL")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
+EXAMPLE_FILE_SOURCE_VT = {
+    # This is an example on how this would work with VirusTotal as a file source
+    # Note: This supports downloading using multiple hash types in a single source configuration
+    "name": "VirusTotal",
+    "hash_types": ["sha256", "sha1", "md5"],
+    "url": r"https://www.virustotal.com/api/v3/files/{HASH}/download",
+    "replace_pattern": r"{HASH}",
+    "headers": {"x-apikey": "YOUR_KEY"},
+}
+
 EXAMPLE_SHA256_SOURCE_VT = {
     # This is an example on how this would work with VirusTotal
     "name": "VirusTotal",
