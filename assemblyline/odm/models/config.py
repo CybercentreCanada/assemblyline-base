@@ -1017,6 +1017,7 @@ DEFAULT_STATISTICS = {
 class AIQueryParams(odm.Model):
     system_message: str = odm.Keyword(
         description="System message used for the query.")
+    task: str = odm.Keyword(default="", description="Task description sent to the AI")
     max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
     options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
                                            description="Other kwargs options directly passed to the API.")
@@ -1041,7 +1042,7 @@ class AI(odm.Model):
 
 
 DEFAULT_AI_ASSISTANT = {
-    'system_message': """## Task And Context
+    'system_message': """## Context
 
 You are the Assemblyline AI Assistant. You help people answer their questions and other requests interactively
 regarding Assemblyline. Please answer using only the information provided to you in the prompt. If there is not
@@ -1063,26 +1064,21 @@ you know about Assemblyline unless it is provided to you.
 
 
 DEFAULT_AI_CODE = {
-    'system_message': """## Task And Context
+    'system_message': """## Context
 
 You are an assistant that provides explanation of code snippets found in AssemblyLine,
-a malware detection and analysis tool. Start by providing a short summary of the intent behind the
-code and then follow with a detailed explanation of what the code is doing.
+a malware detection and analysis tool.
 
 ## Style Guide
 
 - Your output must be formatted in standard Markdown syntax
 - Highlight important information using backticks
 - Your answer must be written in plain $(LANG).
+""",
+    'task': """Take the code file below and give me a two part result:
 
-## Exemple output
-
-User: print("Hello World!")
-Assistant:
-## Summary
-The given code is printing "Hello World!" to the console.
-## Details
-The code has only one line of code and prints a string to the console using the print() function.
+- The first part is a short summary of the intent behind the code titled "Code Intent Summary"
+- The second part is a detailed explanation of what the code is doing titled "Detailed Code Analysis"
 """,
     'max_tokens': 1024,
     'options': {
@@ -1093,27 +1089,23 @@ The code has only one line of code and prints a string to the console using the 
     }
 }
 
+
 DEFAULT_AI_DETAILED_REPORT = {
-    'system_message': """## Task And Context
+    'system_message': """## Context
 
 You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role is
-to extract information of importance and discard what is not. Once a YAML Assemblyline report is submitted to you, the
-user expects a two-part result.
-
-The first part is a one or two paragraph executive summary which provides some highlights of the results, and the
-second part is a detailed description of the observations found in the report.
-
-## Assemblyline scoring definition
-
-Assemblyline uses a scoring mechanism where any scores below 0 is considered safe, scores between 0 and 300 are
-considered informational, scores between 300 and 700 are considered suspicious, scores between 700 and 1000 are
-considered highly-suspicious and scores with 1000 points and up are considered malicious.
+to extract information of importance and discard what is not.
 
 ## Style Guide
 
 - Your output must be formatted in standard Markdown syntax
 - Highlight important information using backticks
 - Your answer must be written in plain $(LANG).
+""",
+    'task': """Take the Assemblyline report below in yaml format and create a two part result:
+
+- The first part is a one or two paragraph executive summary which provides some highlights of the results
+- The second part is a detailed description of the observations found in the report
 """,
     'max_tokens': 2048,
     'options': {
@@ -1124,24 +1116,21 @@ considered highly-suspicious and scores with 1000 points and up are considered m
     }
 }
 
+
 DEFAULT_AI_EXECUTIVE_SUMMARY = {
-    "system_message": """## Task And Context
+    "system_message": """## Context
 
 You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
-is to extract information of importance and discard what is not. Once YAML has been submitted, the user expects a one
-or two paragraph executive summary of the output of AssemblyLine. DO NOT write any headers in your output.
-
-## Assemblyline scoring definition
-
-Assemblyline uses a scoring mechanism where any scores below 0 is considered safe, scores between 0 and 300 are
-considered informational, scores between 300 and 700 are considered suspicious, scores between 700 and 1000 are
-considered highly-suspicious and scores with 1000 points and up are considered malicious.
+is to extract information of importance and discard what is not.
 
 ## Style Guide
 
 - Your output must be formatted in standard Markdown syntax
 - Highlight important information using backticks
 - Your answer must be written in plain $(LANG).
+""",
+    'task': """Take the Assemblyline report below in yaml format and summarize the information found in the
+report into a one or two paragraph executive summary. DO NOT write any headers in your output.
 """,
     'max_tokens': 512,
     'options': {
@@ -1166,6 +1155,71 @@ DEFAULT_AI = {
     },
     'model_name': "gpt-3.5-turbo",
     'verify': True
+}
+
+
+@odm.model(index=False, store=False, description="Connection information to an AI backend")
+class AIConnection(odm.Model):
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
+    chat_url: str = odm.Keyword(description="URL to the AI API")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), default={},
+                                           description="Headers used by the _call_ai_backend method")
+    model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
+    verify: bool = odm.Boolean(default=True, description="Should the SSL connection to the AI API be verified.")
+
+
+@odm.model(index=False, store=False, description="Definition of each parameters used in the different AI functions")
+class AIFunctionParameters(odm.Model):
+    assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
+    code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
+    detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
+    executive_summary: AIQueryParams = odm.Compound(
+        AIQueryParams, description="Parameters used for executive summaries")
+
+
+@odm.model(index=False, store=False, description="AI Multi-Backend support configuration block")
+class AIBackends(odm.Model):
+    enabled: bool = odm.Boolean(description="Is AI support enabled?")
+    api_connections: List[Dict] = odm.List(odm.Compound(AIConnection),
+                                           description="List of API definitions use in the API Pool")
+    function_params: AIFunctionParameters = odm.Compound(
+        AIFunctionParameters, description="Definition of each parameters used in the different AI functions")
+
+
+DEFAULT_MAIN_CONNECTION = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-3.5-turbo",
+    'proxies': None,
+    'verify': True
+}
+
+
+DEFAULT_FALLBACK_CONNECTION = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-4",
+    'proxies': None,
+    'verify': True
+}
+
+DEFAULT_AI_BACKENDS = {
+    'enabled': False,
+    'api_connections': [DEFAULT_MAIN_CONNECTION, DEFAULT_FALLBACK_CONNECTION],
+    'function_params': {
+        'assistant': DEFAULT_AI_ASSISTANT,
+        'code': DEFAULT_AI_CODE,
+        'detailed_report': DEFAULT_AI_DETAILED_REPORT,
+        'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
+    }
 }
 
 
@@ -1296,6 +1350,8 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
+    ai_backends: AIBackends = odm.Compound(AIBackends, default=DEFAULT_AI_BACKENDS,
+                                           description="AI Multi-backends support for the UI")
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
                                                description="Alerting metadata fields")
     allow_malicious_hinting: bool = odm.Boolean(
@@ -1351,6 +1407,7 @@ class UI(odm.Model):
 
 DEFAULT_UI = {
     "ai": DEFAULT_AI,
+    "ai_backends": DEFAULT_AI_BACKENDS,
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
