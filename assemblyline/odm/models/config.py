@@ -1104,8 +1104,10 @@ Your role is to extract information of importance and discard what is not.
 """,
     'task': """Take the Assemblyline report below in yaml format and create a two part result:
 
-- The first part is a one or two paragraph executive summary which provides some highlights of the results
-- The second part is a detailed description of the observations found in the report
+- The first part is a one or two paragraph executive summary titled "## Executive Summary" which
+  provides some high level highlights of the results
+- The second part is a detailed description of the observations found in the report, this section
+  is titled "## Detailed Analysis"
 """,
     'max_tokens': 2048,
     'options': {
@@ -1132,7 +1134,7 @@ is to extract information of importance and discard what is not.
     'task': """Take the Assemblyline report below in yaml format and summarize the information found in the
 report into a one or two paragraph executive summary. DO NOT write any headers in your output.
 """,
-    'max_tokens': 512,
+    'max_tokens': 1024,
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
