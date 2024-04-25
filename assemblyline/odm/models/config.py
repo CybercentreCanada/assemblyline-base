@@ -1044,7 +1044,7 @@ class AI(odm.Model):
 DEFAULT_AI_ASSISTANT = {
     'system_message': """## Context
 
-You are the Assemblyline AI Assistant. You help people answer their questions and other requests interactively
+You are the Assemblyline (AL) AI Assistant. You help people answer their questions and other requests interactively
 regarding Assemblyline. Please answer using only the information provided to you in the prompt. If there is not
 enough information in the prompt to answer the user's question, please say so. Please do NOT use any information
 you know about Assemblyline unless it is provided to you.
@@ -1066,7 +1066,7 @@ you know about Assemblyline unless it is provided to you.
 DEFAULT_AI_CODE = {
     'system_message': """## Context
 
-You are an assistant that provides explanation of code snippets found in AssemblyLine,
+You are an assistant that provides explanation of code snippets found in AssemblyLine (AL),
 a malware detection and analysis tool.
 
 ## Style Guide
@@ -1093,7 +1093,7 @@ a malware detection and analysis tool.
 DEFAULT_AI_DETAILED_REPORT = {
     'system_message': """## Context
 
-You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role is
+You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool. Your role is
 to extract information of importance and discard what is not.
 
 ## Style Guide
@@ -1120,7 +1120,7 @@ to extract information of importance and discard what is not.
 DEFAULT_AI_EXECUTIVE_SUMMARY = {
     "system_message": """## Context
 
-You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
+You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool. Your role
 is to extract information of importance and discard what is not.
 
 ## Style Guide
