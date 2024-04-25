@@ -1093,8 +1093,8 @@ a malware detection and analysis tool.
 DEFAULT_AI_DETAILED_REPORT = {
     'system_message': """## Context
 
-You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool. Your role is
-to extract information of importance and discard what is not.
+You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool.
+Your role is to extract information of importance and discard what is not.
 
 ## Style Guide
 
