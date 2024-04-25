@@ -1077,8 +1077,8 @@ a malware detection and analysis tool.
 """,
     'task': """Take the code file below and give me a two part result:
 
-- The first part is a short summary of the intent behind the code titled "Code Intent Summary"
-- The second part is a detailed explanation of what the code is doing titled "Detailed Code Analysis"
+- The first part is a short summary of the intent behind the code titled "## Summary"
+- The second part is a detailed explanation of what the code is doing titled "## Detailed Analysis"
 """,
     'max_tokens': 1024,
     'options': {
