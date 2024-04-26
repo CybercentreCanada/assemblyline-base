@@ -5,7 +5,7 @@ from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 
-AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
+AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group', 'multi_group']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 
@@ -108,6 +108,7 @@ class LDAP(odm.Model):
     classification_mappings: Dict[str, str] = odm.Any(description="Classification mapping")
     email_field: str = odm.Keyword(description="Name of the field containing the email address")
     group_lookup_query: str = odm.Keyword(description="How the group lookup is queried")
+    group_lookup_with_uid: bool = odm.Boolean(description="Use username/uid instead of dn for group lookup")
     image_field: str = odm.Keyword(description="Name of the field containing the user's avatar")
     image_format: str = odm.Keyword(description="Type of image used to store the avatar")
     name_field: str = odm.Keyword(description="Name of the field containing the user's name")
@@ -131,6 +132,7 @@ DEFAULT_LDAP = {
     "base": "ou=people,dc=assemblyline,dc=local",
     "email_field": "mail",
     "group_lookup_query": "(&(objectClass=Group)(member=%s))",
+    "group_lookup_with_uid": False,
     "image_field": "jpegPhoto",
     "image_format": "jpeg",
     "name_field": "cn",
@@ -210,6 +212,7 @@ class OAuthProvider(odm.Model):
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
     jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
+    jwt_token_alg: str = odm.Keyword(default="RS256", description="Algorythm use the validate JWT OBO tokens")
     uid_field: str = odm.Optional(odm.Keyword(), description="Name of the field that will contain the user ID")
     user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
     user_groups: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
@@ -679,6 +682,8 @@ class RegistryConfiguration(odm.Model):
     name: str = odm.Text(description="Name of container registry")
     proxies: Dict = odm.Optional(odm.Mapping(odm.Text()),
                                  description="Proxy configuration that is passed to Python Requests")
+    token_server: str = odm.Optional(odm.Text(),
+                                     description="Token server name to facilitate anonymous pull access")
 
 
 @odm.model(index=False, store=False)
@@ -1008,6 +1013,162 @@ DEFAULT_STATISTICS = {
 }
 
 
+@odm.model(index=False, store=False, description="Parameters used during a AI query")
+class AIQueryParams(odm.Model):
+    system_message: str = odm.Keyword(
+        description="System message used for the query.")
+    max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
+                                           description="Other kwargs options directly passed to the API.")
+
+
+@odm.model(index=False, store=False, description="AI support configuration block")
+class AI(odm.Model):
+    chat_url: str = odm.Keyword(description="URL to the AI API")
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
+    assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
+    code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
+    detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
+    executive_summary: AIQueryParams = odm.Compound(
+        AIQueryParams, description="Parameters used for executive summaries")
+    enabled: bool = odm.Boolean(description="Is AI support enabled?")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Headers used by the _call_ai_backend method")
+    model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
+    verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
+
+
+DEFAULT_AI_ASSISTANT = {
+    'system_message': """## Task And Context
+
+You are the Assemblyline AI Assistant. You help people answer their questions and other requests interactively
+regarding Assemblyline. Please answer using only the information provided to you in the prompt. If there is not
+enough information in the prompt to answer the user's question, please say so. Please do NOT use any information
+you know about Assemblyline unless it is provided to you.
+
+## Style Guide
+
+- Your answer must be written in plain $(LANG).
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+
+DEFAULT_AI_CODE = {
+    'system_message': """## Task And Context
+
+You are an assistant that provides explanation of code snippets found in AssemblyLine,
+a malware detection and analysis tool. Start by providing a short summary of the intent behind the
+code and then follow with a detailed explanation of what the code is doing.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+
+## Exemple output
+
+User: print("Hello World!")
+Assistant:
+## Summary
+The given code is printing "Hello World!" to the console.
+## Details
+The code has only one line of code and prints a string to the console using the print() function.
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+DEFAULT_AI_DETAILED_REPORT = {
+    'system_message': """## Task And Context
+
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role is
+to extract information of importance and discard what is not. Once a YAML Assemblyline report is submitted to you, the
+user expects a two-part result.
+
+The first part is a one or two paragraph executive summary which provides some highlights of the results, and the
+second part is a detailed description of the observations found in the report.
+
+## Assemblyline scoring definition
+
+Assemblyline uses a scoring mechanism where any scores below 0 is considered safe, scores between 0 and 300 are
+considered informational, scores between 300 and 700 are considered suspicious, scores between 700 and 1000 are
+considered highly-suspicious and scores with 1000 points and up are considered malicious.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+""",
+    'max_tokens': 2048,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+DEFAULT_AI_EXECUTIVE_SUMMARY = {
+    "system_message": """## Task And Context
+
+You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
+is to extract information of importance and discard what is not. Once YAML has been submitted, the user expects a one
+or two paragraph executive summary of the output of AssemblyLine. DO NOT write any headers in your output.
+
+## Assemblyline scoring definition
+
+Assemblyline uses a scoring mechanism where any scores below 0 is considered safe, scores between 0 and 300 are
+considered informational, scores between 300 and 700 are considered suspicious, scores between 700 and 1000 are
+considered highly-suspicious and scores with 1000 points and up are considered malicious.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+""",
+    'max_tokens': 512,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+
+DEFAULT_AI = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'assistant': DEFAULT_AI_ASSISTANT,
+    'code': DEFAULT_AI_CODE,
+    'detailed_report': DEFAULT_AI_DETAILED_REPORT,
+    'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
+    'enabled': False,
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-3.5-turbo",
+    'verify': True
+}
+
+
 @odm.model(index=False, store=False, description="Alerting Metadata")
 class AlertingMeta(odm.Model):
     important: List[str] = odm.List(odm.Keyword(), description="Metadata keys that are considered important")
@@ -1134,6 +1295,7 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
+    ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
                                                description="Alerting metadata fields")
     allow_malicious_hinting: bool = odm.Boolean(
@@ -1164,7 +1326,8 @@ class UI(odm.Model):
     read_only_offset: str = odm.Keyword(
         default="", description="Offset of the read only mode for all paging and searches")
     rss_feeds: List[str] = odm.List(odm.Keyword(), default=[], description="List of RSS feeds to display on the UI")
-    services_feed: str = odm.Keyword(description="Feed of all the services available on AL")
+    services_feed: str = odm.Keyword(description="Feed of all the services built by the Assemblyline Team")
+    community_feed: str = odm.Keyword(description="Feed of all the services built by the Assemblyline community.")
     secret_key: str = odm.Keyword(description="Flask secret key to store cookies, etc.")
     session_duration: int = odm.Integer(description="Duration of the user session before the user has to login again")
     statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS,
@@ -1187,6 +1350,7 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
+    "ai": DEFAULT_AI,
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
@@ -1210,9 +1374,11 @@ DEFAULT_UI = {
     "rss_feeds": [
         "https://alpytest.blob.core.windows.net/pytest/stable.json",
         "https://alpytest.blob.core.windows.net/pytest/services.json",
+        "https://alpytest.blob.core.windows.net/pytest/community.json",
         "https://alpytest.blob.core.windows.net/pytest/blog.json"
     ],
     "services_feed": "https://alpytest.blob.core.windows.net/pytest/services.json",
+    "community_feed": "https://alpytest.blob.core.windows.net/pytest/community.json",
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
     "statistics": DEFAULT_STATISTICS,
@@ -1375,7 +1541,7 @@ DEFAULT_RETROHUNT = {
     'enabled': False,
     'dtl': 30,
     'max_dtl': 0,
-    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'url': 'https://hauntedhouse:4443',
     'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
     'tls_verify': True
 }

@@ -1,4 +1,5 @@
-from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, \
+from assemblyline.odm.base import _Field
+from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, Long, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
     SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword, \
     Json, ValidatedKeyword, UNCPath
@@ -8,6 +9,7 @@ __type_mapping = {
     Keyword: 'keyword',
     Boolean: 'boolean',
     Integer: 'integer',
+    Long: 'long',
     Float: 'float',
     Date: 'date',
     Text: 'text',
@@ -61,8 +63,10 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
     mappings = {}
     dynamic = []
 
-    def set_mapping(temp_field, body):
+    def set_mapping(temp_field: _Field, body):
         body['index'] = temp_field.index
+        if temp_field.store is not None:
+            body['store'] = temp_field.store
         if body.get('type', 'text') != 'text':
             body['doc_values'] = temp_field.index
         if temp_field.copyto:
@@ -96,7 +100,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                         'index': True},
                 })
 
-        elif isinstance(field, (Boolean, Integer, Float, Text)):
+        elif isinstance(field, (Boolean, Integer, Long, Float, Text)):
             mappings[name.strip(".")] = set_mapping(field, {
                 'type': __type_mapping[field.__class__]
             })

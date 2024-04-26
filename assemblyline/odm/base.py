@@ -77,7 +77,7 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
-URI_REGEX = f"((?:(?:[A-Za-z0-9+.-]{{1,}}:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
+URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
             f"{URI_PATH}?)"
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
@@ -116,9 +116,10 @@ class KeyMaskException(KeyError):
 
 class _Field:
     def __init__(self, name=None, index=None, store=None, copyto=None,
-                 default=None, description=None, deprecation=None):
+                 default=None, description=None, deprecation=None, ai=True):
         self.index = index
         self.store = store
+        self.ai = ai
         self.multivalued = False
         self.copyto = []
         if isinstance(copyto, str):
@@ -156,6 +157,7 @@ class _Field:
         return value
 
     # noinspection PyProtectedMember
+
     def __set__(self, obj, value):
         """Set the value of this field, calling a setter method if available."""
         if self.name in obj._odm_removed:
@@ -665,6 +667,37 @@ class Integer(_Field):
         return ret_val
 
 
+class Long(_Field):
+    """A field storing an integer value."""
+
+    def __init__(self, max: int = None, min: int = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max = max
+        self.min = min
+
+    def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
+        if value is None or value == "":
+            if self.default_set:
+                ret_val = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] No value provided and no default value set.")
+        else:
+            ret_val = int(value)
+
+        # Test min/max
+        if self.max is not None and ret_val > self.max:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value bigger then the max value. ({value} > {self.max})")
+        if self.min is not None and ret_val < self.min:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value smaller then the min value. ({value} < {self.max})")
+
+        return ret_val
+
+
 class Float(_Field):
     """A field storing a floating point value."""
 
@@ -1010,6 +1043,7 @@ class Optional(_Field):
 
         if child_type.default_set:
             kwargs['default'] = child_type.default
+        kwargs['ai'] = kwargs.get('ai', child_type.ai)
         super().__init__(**kwargs)
         self.default_set = True
         child_type.optional = True
@@ -1059,14 +1093,15 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False, optional=False):
+    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False, optional=False, description=None):
         out = dict()
 
         # Optionals and Lists do not need to be parsed, we can just analyse their inner type
         if isinstance(field, (Optional, List)):
             out.update(Model._recurse_fields(name, field.child_type, show_compound, skip_mappings,
                                              multivalued=multivalued or isinstance(field, List),
-                                             optional=optional or isinstance(field, Optional)))
+                                             optional=optional or isinstance(field, Optional),
+                                             description=field.description or description))
             return out
 
         # If field is a Compound and were asked to show it, add it to the field list
@@ -1074,6 +1109,7 @@ class Model:
             # Set the multivalued and optional flag on the field
             field.multivalued = multivalued
             field.optional = optional
+            field.description = field.description or description
 
             # Compound when showed will absorb multivalue and optional flag
             multivalued = False
@@ -1085,6 +1121,7 @@ class Model:
             # Set the multivalued and optional flag on the field
             sub_field.multivalued = multivalued
             sub_field.optional = optional
+            sub_field.description = sub_field.description or description
 
             # Make sure the Compound name is propagated as the parent_name
             if isinstance(field, Compound):
@@ -1097,7 +1134,8 @@ class Model:
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
                                                  show_compound, skip_mappings,
                                                  multivalued=multivalued or isinstance(sub_field, List),
-                                                 optional=optional or isinstance(sub_field, Optional)))
+                                                 optional=optional or isinstance(sub_field, Optional),
+                                                 description=sub_field.description or field.description))
 
             elif sub_name:
                 out[".".join([name, sub_name])] = sub_field
@@ -1295,27 +1333,39 @@ class Model:
         # attribute assignment
         self.__frozen = True
 
-    def as_primitives(self, hidden_fields=False, strip_null=False):
+    def as_primitives(self, hidden_fields=False, strip_null=False, strip_non_ai_fields=False):
         """Convert the object back into primitives that can be json serialized."""
         out = {}
 
         fields = self.fields()
         for key, value in self._odm_py_obj.items():
             field_type = fields.get(key, Any)
+            if strip_non_ai_fields and not field_type.ai:
+                continue
+
             if value is not None or (value is None and field_type.default_set):
                 if strip_null and value is None:
                     continue
 
                 if isinstance(value, Model):
-                    out[key] = value.as_primitives(strip_null=strip_null)
+                    data = value.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, datetime):
                     out[key] = value.strftime(DATEFORMAT)
                 elif isinstance(value, TypedMapping):
-                    out[key] = {k: v.as_primitives(strip_null=strip_null)
-                                if isinstance(v, Model) else v for k, v in value.items()}
+                    data = {k: v.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                            if isinstance(v, Model) else v for k, v in value.items()}
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, TypedList):
-                    out[key] = [v.as_primitives(strip_null=strip_null)
-                                if isinstance(v, Model) else v for v in value]
+                    data = [v.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                            if isinstance(v, Model) else v for v in value]
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, ClassificationObject):
                     out[key] = str(value)
                     if hidden_fields:

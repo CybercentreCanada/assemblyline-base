@@ -7,8 +7,7 @@ RUN sed -i -e "s/-Xms1g/# -Xms1g/g" \
 
 COPY set_vars.sh /usr/share/elasticsearch/set_vars.sh
 
-# uncomment user switch for 8.x
-# USER root
+USER root
 
 RUN chmod +x /usr/share/elasticsearch/set_vars.sh
 

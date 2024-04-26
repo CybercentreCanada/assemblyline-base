@@ -53,6 +53,7 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflows=
     for _ in range(alert_count):
         a: Alert = random_model_obj(Alert)
         a.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
+        a.label = list(set(a.label))
         if isinstance(submission_list, list):
             submission = random.choice(submission_list)
             a.file.sha256 = submission.files[0].sha256
@@ -71,7 +72,7 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflows=
                     # Overwrite with user information
                     event.entity_type = 'user'
                     event.entity_id = get_random_word()
-                event.labels = [get_random_word() for _ in range(random.randint(0, 20))]
+                event.labels = list(set([get_random_word() for _ in range(random.randint(0, 20))]))
                 event.status = random.choice(list(STATUSES) + [None])
                 event.priority = random.choice(list(PRIORITIES) + [None])
                 return event
@@ -404,8 +405,8 @@ def create_users(ds, log=None):
     ds.user.commit()
 
 
-def create_badlists(ds, log=None):
-    for _ in range(20):
+def create_badlists(ds, count=20, log=None):
+    for _ in range(count):
         sl = random_model_obj(Badlist, as_json=True)
         if sl['type'] == 'file':
             sl.pop('tag', None)
@@ -419,8 +420,8 @@ def create_badlists(ds, log=None):
     ds.badlist.commit()
 
 
-def create_safelists(ds, log=None):
-    for _ in range(20):
+def create_safelists(ds, count=20, log=None):
+    for _ in range(count):
         sl = random_model_obj(Safelist, as_json=True)
         if sl['type'] == 'file':
             sl.pop('tag', None)
@@ -434,9 +435,9 @@ def create_safelists(ds, log=None):
     ds.safelist.commit()
 
 
-def create_workflows(ds, log=None):
+def create_workflows(ds, count=20, log=None):
     workflows = []
-    for _ in range(20):
+    for _ in range(count):
         w_id = get_random_id()
         workflow = random_model_obj(Workflow)
         workflow.workflow_id = w_id

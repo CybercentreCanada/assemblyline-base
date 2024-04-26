@@ -146,3 +146,5 @@
 0 string #\ Assemblyline\ URI\ file\n custom: uri
 # OneNote .onetoc2
 0 string \xa1\x2f\xff\x43\xd9\xef\x76\x4c\x9e\xe2\x10\xea\x57\x22\x76\x5f custom: document/office/onenote
+# Minidump Files
+0 string MDMP custom: metadata/minidump

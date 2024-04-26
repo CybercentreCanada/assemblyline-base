@@ -322,10 +322,17 @@ class Identify():
 
         return fallback
 
-    def fileinfo(self, path: str, generate_hashes: bool = True, skip_fuzzy_hashes: bool = False) -> Dict:
+    def fileinfo(
+        self, path: str, generate_hashes: bool = True, skip_fuzzy_hashes: bool = False, calculate_entropy: bool = True
+    ) -> Dict:
         path = safe_str(path)
         if generate_hashes:
-            data = get_digests_for_file(path, on_first_block=self.ident, skip_fuzzy_hashes=skip_fuzzy_hashes)
+            data = get_digests_for_file(
+                path,
+                on_first_block=self.ident,
+                skip_fuzzy_hashes=skip_fuzzy_hashes,
+                calculate_entropy=calculate_entropy,
+            )
         else:
             with open(path, 'rb') as f:
                 first_block = f.read(DEFAULT_BLOCKSIZE)

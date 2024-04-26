@@ -49,6 +49,8 @@ ROLES = StringTable('ROLES', [
     ("external_query", 30),
     ("badlist_view", 31),
     ("badlist_manage", 32),
+    ("archive_comment", 33),
+    ("assistant_use", 34),
 ])
 
 
@@ -70,6 +72,7 @@ USER_ROLES_BASIC = {
     ROLES.archive_view,        # View archived data in the system
     ROLES.archive_manage,      # Modify attributes of archived Submissions/Files/Results
     ROLES.archive_download,    # Download file from the archive
+    ROLES.archive_comment,     # Comment on archived files
     ROLES.apikey_access,       # Allow access via API keys
     ROLES.bundle_download,     # Create bundle of a submission
     ROLES.external_query,      # Allow federated searches against external systems
@@ -101,6 +104,7 @@ USER_ROLES = USER_ROLES_BASIC.union({
     ROLES.replay_system,       # Manage status of file/submission/alerts during the replay process
     ROLES.signature_import,    # Import signatures in the system
     ROLES.signature_manage,    # Manage signatures sources in the system
+    ROLES.assistant_use,       # Use the Assemblyline Assistant
 })
 
 USER_TYPE_DEP = {
