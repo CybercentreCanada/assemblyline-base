@@ -61,9 +61,14 @@ class NetworkConnection(odm.Model):
         hash_dict = {key: data.get(key) for key in OID_PARTS}
         oid_prefix = "network"
         if connection_type == "http":
-            # Include the requested URI as part of the hash
             oid_prefix = "network_http"
-            hash_dict['http_details'] = {'request_uri': data.get('http_details', {}).get('request_uri', None)}
+            http_details = data.get('http_details', {})
+
+            # Include any details involved in the request for hashing
+            hash_dict['http_details'] = {
+                field: http_details.get(field)
+                for field in NetworkHTTP.fields().keys() if field.startswith('request_')
+            }
         elif connection_type == "dns":
             # Include the requested domain as part of the hash
             oid_prefix = "network_dns"
