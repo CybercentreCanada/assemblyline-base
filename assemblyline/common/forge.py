@@ -131,7 +131,10 @@ def get_datastore(config=None, archive_access=False):
     if not config:
         config = get_config()
 
-    return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=archive_access))
+    return AssemblylineDatastore(
+        ESStore(
+            config.datastore.hosts, archive_access=archive_access,
+            archive_alernate_dtl=config.core.archiver.alternate_dtl))
 
 
 def get_cachestore(component, config=None, datastore=None):

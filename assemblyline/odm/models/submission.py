@@ -75,6 +75,8 @@ class SubmissionParams(odm.Model):
     delete_after_archive = odm.Boolean(
         default=False,
         description="When the submission is archived, should we delete it from hot storage right away?")
+    use_archive_alternate_dtl = odm.Boolean(default=False,
+                                            description="Should we use the alternate dtl while archiving?")
 
     def get_hashing_keys(self):
         """Get the sections of the submission parameters that should be used in result hashes."""
