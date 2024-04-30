@@ -1653,6 +1653,26 @@ DEFAULT_VERDICTS = {
     'malicious': 1000
 }
 
+METADATA_FIELDTYPE_MAP = {
+    'date': odm.Date,
+    'bool': odm.Boolean,
+    'str': odm.Text,
+    'ip': odm.IP,
+    'domain': odm.Domain,
+    'email': odm.Email,
+    'uri': odm.URI,
+    'int': odm.Integer,
+    'classification': odm.ClassificationString
+}
+
+@odm.model(index=False, store=False, description="Configuration about submission metadata")
+class SubmissionMetadata(odm.Model):
+    required_fields: List[str] = odm.List(odm.Keyword(), default=[],
+                                          description="Required fields to submit to the system when creating any submission")
+    field_validation: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
+                                                    description="Used to perform validation of the data provided in the metadata field. You can provide one of the recognized types or a custom pattern for validation. "
+                                                   f"Recognized values are {list(METADATA_FIELDTYPE_MAP.keys())}. "
+                                                   "You can also use a list for enum validation.")
 
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
@@ -1667,6 +1687,8 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
+    metadata: SubmissionMetadata = odm.Compound(SubmissionMetadata,
+                                                description="Metadata requirements for the submission to comply to.")
     sha256_sources: List[Sha256Source] = odm.List(odm.Compound(Sha256Source),default=[],
                                                   description="List of external source to fetch file via their SHA256 hashes",
                                                   deprecation="Use submission.file_sources which is an extension of this configuration")
@@ -1687,6 +1709,9 @@ DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
+    'metadata': {
+        'required_fields': []
+    },
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
