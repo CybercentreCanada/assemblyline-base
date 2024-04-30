@@ -3,6 +3,7 @@ import concurrent.futures
 import elasticapm
 import json
 import os
+import re
 
 from datetime import datetime
 from typing import List, Union, Optional, Any, Tuple
@@ -133,7 +134,7 @@ class AssemblylineDatastore(object):
     @property
     def retrohunt(self) -> ESCollection[Retrohunt]:
         return self.ds.retrohunt
-    
+
     @property
     def retrohunt_hit(self) -> ESCollection[RetrohuntHit]:
         return self.ds.retrohunt_hit
@@ -1411,13 +1412,15 @@ class MetadataValidator:
     """
     Type mismatched metadata recived by ingestion can cause us to suffer
     errors in ingester when it goes to save the submission.
-    
+
     This class aims to limit those errors by offering limited validation
     at the time of the API call, letting the user get a reasonable error instead.
     """
     def __init__(self, datastore: AssemblylineDatastore) -> None:
         self.datastore = datastore
         self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
+        self.required_metadata = config.submission.metadata.required_fields
+        self.meta_validation = config.submission.metadata.field_validation
 
     def get_metadata(self) -> dict[str, dict[str, Any]]:
         """Fetch the type mapping for submission metadata."""
@@ -1438,6 +1441,40 @@ class MetadataValidator:
 
         Return a tuple of (key name, error message) if any problems are detected.
         """
+        # Check to see if there's any required metadata that's missing
+        missing_metadata = []
+        for field in self.required_metadata:
+            if field not in metadata:
+                missing_metadata.append(field)
+
+        if self.required_metadata and missing_metadata:
+            return (None, f"Required metadata is missing from submission: {missing_metadata}")
+
+        if self.meta_validation:
+            # Validate the format of the data given based on the configuration
+            for meta_field, validator in self.meta_validation.items():
+                meta_value = metadata.get(meta_field)
+
+                # Skip over validation of metadata that's missing and not required
+                if meta_value == None and meta_field not in self.required_metadata:
+                    continue
+
+                if isinstance(validator, list):
+                    # List-type validator implies an Enum-like validation
+                    if not meta_value in validator:
+                        return(field, f"Validation of '{field}' failed: {meta_value} not in {validator}")
+                elif validator in self.meta_validation:
+                    # Validate using the related ODM model
+                    try:
+                        self.meta_validation[validator].check(meta_value)
+                    except ValueError as e:
+                        return(field, f"Validation of '{field}' of type {validator} failed: {e}")
+                else:
+                    # Assume this is a regex pattern for custom validation of metadata
+                    if not re.match(validator, meta_value):
+                        return(field, f"Validation of '{field}' with custom pattern ({validator}) failed.")
+
+        # Check to see if any other metadata causes a conflict with Elasticsearch
         for key, value in metadata.items():
             try:
                 type_name = self.metadata[key]["type"]
