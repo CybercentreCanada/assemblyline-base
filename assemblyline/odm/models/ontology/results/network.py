@@ -73,6 +73,7 @@ class NetworkConnection(odm.Model):
             # Include the requested domain as part of the hash
             oid_prefix = "network_dns"
             hash_dict['dns_details'] = {'domain': data.get('dns_details', {}).get('domain', None)}
+            hash_dict['lookup_type'] = {'type': data.get('lookup_type', {}).get('type', None)}
 
         return f"{oid_prefix}_{get_dict_fingerprint_hash(hash_dict)}"
 
