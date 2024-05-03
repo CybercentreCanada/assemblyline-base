@@ -72,8 +72,10 @@ class NetworkConnection(odm.Model):
         elif connection_type == "dns":
             # Include the requested domain as part of the hash
             oid_prefix = "network_dns"
-            hash_dict['dns_details'] = {'domain': data.get('dns_details', {}).get('domain', None)}
-            hash_dict['lookup_type'] = data.get('lookup_type', {})
+            hash_dict['dns_details'] = {
+              'domain': data.get('dns_details', {}).get('domain', None),
+              'lookup_type': data.get('dns_details', {}).get('lookup_type', None)
+            }
 
         return f"{oid_prefix}_{get_dict_fingerprint_hash(hash_dict)}"
 
