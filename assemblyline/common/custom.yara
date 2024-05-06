@@ -780,18 +780,23 @@ rule code_python {
         $strong_py2 = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+/
         $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
         $strong_py4 = /(try:|except:|else:)/
-        // High confidence one-liner used to execute base64 blobs
-        $strong_py5 = /exec\(__import__\(['"]base64['"]\)\.b64decode\(__import__\(['"]codecs['"]\)\.getencoder\(/
-        $strong_py6 = "requests.get("
+        $strong_py5 = "requests.get("
 
         // Setup.py indicators
-        $strong_py7 = "python_requires" ascii wide
-        $strong_py8 = "setuptools.setup(" ascii wide
-        $strong_py9 = "setuptools.find_packages(" ascii wide
+        $strong_py6 = "python_requires" ascii wide
+        $strong_py7 = "setuptools.setup(" ascii wide
+        $strong_py8 = "setuptools.find_packages(" ascii wide
+
+        // High confidence one-liner used to execute base64 blobs
+        $executor1 = /exec\(__import__\(['"]base64['"]\)\.b64decode\(__import__\(['"]codecs['"]\)\.getencoder\(/
+        $executor2 = "exec(zlib.decompress(base64.b64decode("
 
     condition:
         mime startswith "text"
-        and (2 of them or $strong_py5)
+        and (
+            2 of ($strong_py*)
+            or any of ($executor*)
+        )
 }
 
 /*
