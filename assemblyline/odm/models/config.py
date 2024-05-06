@@ -8,6 +8,11 @@ from assemblyline.odm.models.service_delta import DockerConfigDelta
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group', 'multi_group']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
+DEFAULT_DAILY_API_QUOTA = 10000
+DEFAULT_API_QUOTA = 10
+DEFAULT_DAILY_SUBMISSION_QUOTA = 500
+DEFAULT_SUBMISSION_QUOTA = 5
+
 
 @odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
@@ -1413,6 +1418,22 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 }
 
 
+@odm.model(index=False, store=False, description="Default API and submission quota values for the system")
+class Quotas(odm.Model):
+    concurrent_api_calls: int = odm.Integer(description="Maximum concurrent API Calls can be running for a user.")
+    concurrent_submissions: int = odm.Integer(description="Maximum concurrent Submission can be running for a user.")
+    daily_api_calls: int = odm.Integer(description="Maximum daily API calls a user can issue.")
+    daily_submissions: int = odm.Integer(description="Maximum daily submission a user can do.")
+
+
+DEFAULT_QUOTAS = {
+    'concurrent_api_calls': DEFAULT_API_QUOTA,
+    'concurrent_submissions': DEFAULT_SUBMISSION_QUOTA,
+    'daily_api_calls': DEFAULT_DAILY_API_QUOTA,
+    'daily_submissions': DEFAULT_DAILY_SUBMISSION_QUOTA
+}
+
+
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
@@ -1433,6 +1454,8 @@ class UI(odm.Model):
         values=["info", "warning", "success", "error"],
         description="Banner message level")
     debug: bool = odm.Boolean(description="Enable debugging?")
+    default_quotas: Quotas = odm.Compound(Quotas, default=DEFAULT_QUOTAS,
+                                          description="Default API quotas values")
     discover_url: str = odm.Optional(odm.Keyword(), description="Discover URL")
     download_encoding = odm.Enum(values=["raw", "cart"], description="Which encoding will be used for downloads?")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
@@ -1484,6 +1507,7 @@ DEFAULT_UI = {
     "banner": None,
     "banner_level": 'info',
     "debug": False,
+    "default_quotas": DEFAULT_QUOTAS,
     "discover_url": None,
     "download_encoding": "cart",
     "email": None,
@@ -1574,6 +1598,7 @@ class Sha256Source(odm.Model):
                                           description="Proxy used to connect to the URL")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
+
 HASH_PATTERN_MAP = {
     "sha256": odm.SHA256_REGEX,
     "sha1": odm.SHA1_REGEX,
@@ -1582,6 +1607,7 @@ HASH_PATTERN_MAP = {
     "ssdeep": odm.SSDEEP_REGEX,
 }
 
+
 @odm.model(index=False, store=False, description="A file source entry for remote fetching via string")
 class FileSource(odm.Model):
     name: str = odm.Keyword(description="Name of the sha256 source")
@@ -1589,8 +1615,8 @@ class FileSource(odm.Model):
                                      description="Method(s) of fetching file from source by string input"
                                      f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
                                      )
-    hash_patterns: Dict[str, str] = odm.Optional(odm.Mapping(odm.Text()),
-                                     description="Custom types to regex pattern definition for input detection/validation")
+    hash_patterns: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Text()), description="Custom types to regex pattern definition for input detection/validation")
     classification = odm.Optional(
         odm.ClassificationString(
             description="Minimum classification applied to the downloaded "
@@ -1606,6 +1632,7 @@ class FileSource(odm.Model):
     proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
                                           description="Proxy used to connect to the URL")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
+
 
 EXAMPLE_FILE_SOURCE_VT = {
     # This is an example on how this would work with VirusTotal as a file source
@@ -1667,10 +1694,15 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    sha256_sources: List[Sha256Source] = odm.List(odm.Compound(Sha256Source),default=[],
-                                                  description="List of external source to fetch file via their SHA256 hashes",
-                                                  deprecation="Use submission.file_sources which is an extension of this configuration")
-    file_sources: List[FileSource] = odm.List(odm.Compound(FileSource), default=[], description="List of external source to fetch file")
+    sha256_sources: List[Sha256Source] = odm.List(
+        odm.Compound(Sha256Source),
+        default=[],
+        description="List of external source to fetch file via their SHA256 hashes",
+        deprecation="Use submission.file_sources which is an extension of this configuration")
+    file_sources: List[FileSource] = odm.List(
+        odm.Compound(FileSource),
+        default=[],
+        description="List of external source to fetch file")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,

@@ -4,10 +4,6 @@ from assemblyline.common.str_utils import StringTable
 
 Classification = forge.get_classification()
 
-DEFAULT_DAILY_API_QUOTA = 10000
-DEFAULT_API_QUOTA = 10
-DEFAULT_DAILY_SUBMISSION_QUOTA = 500
-DEFAULT_SUBMISSION_QUOTA = 5
 
 TYPES = StringTable('TYPES', [
     ("admin", 0),
@@ -245,10 +241,9 @@ class User(odm.Model):
     agrees_with_tos = odm.Optional(
         odm.Date(index=False, store=False),
         description="Date the user agree with terms of service")
-    api_quota = odm.Integer(default=DEFAULT_API_QUOTA, store=False,
-                            description="Maximum number of concurrent API requests")
-    api_daily_quota = odm.Integer(default=DEFAULT_DAILY_API_QUOTA, store=False,
-                                  description="Maximum number of API calls a user can do daily")
+    api_quota = odm.Optional(odm.Integer(store=False, description="Maximum number of concurrent API requests"))
+    api_daily_quota = odm.Optional(odm.Integer(
+        store=False, description="Maximum number of API calls a user can do daily"))
     apikeys = odm.Mapping(odm.Compound(ApiKey), default={}, index=False, store=False, description="Mapping of API keys")
     apps = odm.Mapping(odm.Compound(Apps), default={}, index=False, store=False,
                        description="Applications with access to the account")
@@ -267,11 +262,11 @@ class User(odm.Model):
         odm.Keyword(index=False, store=False),
         description="Secret key to generate one time passwords")
     password = odm.Keyword(index=False, store=False, description="BCrypt hash of the user's password")
-    submission_quota = odm.Integer(default=DEFAULT_SUBMISSION_QUOTA, store=False,
-                                   description="Maximum number of concurrent submissions")
-    submission_daily_quota = odm.Integer(
-        default=DEFAULT_DAILY_SUBMISSION_QUOTA, store=False,
-        description="Maximum number of submissions a user can do daily")
+    submission_quota = odm.Optional(odm.Integer(store=False,
+                                                description="Maximum number of concurrent submissions"))
+    submission_daily_quota = odm.Optional(odm.Integer(
+        store=False,
+        description="Maximum number of submissions a user can do daily"))
     type = odm.List(odm.Enum(values=USER_TYPES), default=['user'], description="Type of user")
     roles = odm.List(odm.Enum(values=USER_ROLES), default=[], description="Default roles for user")
     security_tokens = odm.Mapping(odm.Keyword(), index=False, store=False, default={},
