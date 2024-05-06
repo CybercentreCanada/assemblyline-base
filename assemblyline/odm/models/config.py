@@ -8,9 +8,9 @@ from assemblyline.odm.models.service_delta import DockerConfigDelta
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group', 'multi_group']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
-DEFAULT_DAILY_API_QUOTA = 10000
+DEFAULT_DAILY_API_QUOTA = 0
 DEFAULT_API_QUOTA = 10
-DEFAULT_DAILY_SUBMISSION_QUOTA = 500
+DEFAULT_DAILY_SUBMISSION_QUOTA = 0
 DEFAULT_SUBMISSION_QUOTA = 5
 
 
