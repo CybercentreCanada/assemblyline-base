@@ -13,7 +13,11 @@ class DailyQuotaTracker(object):
     def _increment(self, user, type):
         counter = self._counter_name(user, type)
         val = retry_call(self.c.incr, counter)
-        retry_call(self.c.expire, counter, self.ttl)
+
+        # Set the expiry only for the first call of the day
+        if val == 1:
+            retry_call(self.c.expire, counter, self.ttl)
+
         return val
 
     def increment_api(self, user):
