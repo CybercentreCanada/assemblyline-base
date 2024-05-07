@@ -5,7 +5,7 @@ from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 
-AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
+AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group', 'multi_group']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 
@@ -212,6 +212,7 @@ class OAuthProvider(odm.Model):
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
     jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
+    jwt_token_alg: str = odm.Keyword(default="RS256", description="Algorythm use the validate JWT OBO tokens")
     uid_field: str = odm.Optional(odm.Keyword(), description="Name of the field that will contain the user ID")
     user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
     user_groups: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
@@ -671,15 +672,79 @@ DEFAULT_METRICS = {
 
 
 @odm.model(index=False, store=False, description="Malware Archive Configuration")
+class ArchiverMetadata(odm.Model):
+    default = odm.Optional(odm.Keyword(description="Default value for the metadata"))
+    editable = odm.Boolean(default=False, description="Can the user provide a custom value")
+    values = odm.List(odm.Keyword(), default=[], description="List of possible values to pick from")
+
+
+EXEMPLE_ARCHIVER_METADATA = {
+    'rationale': {
+        'default': "File is malicious",
+        'editable': True,
+        'values': ["File is malicious", "File is interesting", "I just feel like keeping this..."]
+    }
+}
+
+
+@odm.model(index=False, store=False, description="Named Value")
+class NamedValue(odm.Model):
+    name = odm.Keyword(description="Name")
+    value = odm.Keyword(description="Value")
+
+
+@odm.model(index=False, store=False, description="Webhook Configuration")
+class Webhook(odm.Model):
+    password = odm.Optional(odm.Keyword(default=""), description="Password used to authenticate with source")
+    ca_cert = odm.Optional(odm.Keyword(default=""), description="CA cert for source")
+    ssl_ignore_errors = odm.Boolean(default=False, description="Ignore SSL errors when reaching out to source?")
+    proxy = odm.Optional(odm.Keyword(default=""), description="Proxy server for source")
+    method = odm.Keyword(default='POST', description="HTTP method used to access webhook")
+    uri = odm.Keyword(description="URI to source")
+    username = odm.Optional(odm.Keyword(default=""), description="Username used to authenticate with source")
+    headers = odm.List(odm.Compound(NamedValue), default=[], description="Headers")
+    retries = odm.Integer(default=3)
+
+
+DEFAULT_ARCHIVER_WEBHOOK = {
+    'password': None,
+    'ca_cert': None,
+    'ssl_ignore_errors': False,
+    'proxy': None,
+    'method': "POST",
+    'uri': "https://archiving-hook",
+    'username': None,
+    'headers': [],
+    'retries': 3
+}
+
+
+@odm.model(index=False, store=False, description="Malware Archive Configuration")
 class Archiver(odm.Model):
+    alternate_dtl: int = odm.Integer(description="Alternate number of days to keep the data in the "
+                                                 "malware archive. (0: Disabled, will keep data forever)")
+    metadata: Dict = odm.Mapping(
+        odm.Compound(ArchiverMetadata),
+        description="Proxy configuration that is passed to Python Requests")
     minimum_required_services: List[str] = odm.List(
         odm.keyword(),
         default=[],
         description="List of minimum required service before archiving takes place")
+    webhook = odm.Optional(odm.Compound(Webhook), description="Webhook to call before triggering the archiving process")
+    use_metadata: bool = odm.Boolean(
+        default=False, description="Should the UI ask form metadata to be filed out when archiving")
+    use_webhook: bool = odm.Optional(odm.Boolean(
+        default=False,
+        description="Should the archiving go through the webhook prior to actually trigger the archiving function"))
 
 
 DEFAULT_ARCHIVER = {
-    'minimum_required_services': []
+    'alternate_dtl': 0,
+    'metadata': {},
+    'minimum_required_services': [],
+    'use_webhook': False,
+    'use_metadata': False,
+    'webhook': DEFAULT_ARCHIVER_WEBHOOK
 }
 
 
@@ -831,6 +896,8 @@ class RegistryConfiguration(odm.Model):
     name: str = odm.Text(description="Name of container registry")
     proxies: Dict = odm.Optional(odm.Mapping(odm.Text()),
                                  description="Proxy configuration that is passed to Python Requests")
+    token_server: str = odm.Optional(odm.Text(),
+                                     description="Token server name to facilitate anonymous pull access")
 
 
 @odm.model(index=False, store=False)
@@ -1164,6 +1231,7 @@ DEFAULT_STATISTICS = {
 class AIQueryParams(odm.Model):
     system_message: str = odm.Keyword(
         description="System message used for the query.")
+    task: str = odm.Keyword(default="", description="Task description sent to the AI")
     max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
     options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
                                            description="Other kwargs options directly passed to the API.")
@@ -1172,6 +1240,7 @@ class AIQueryParams(odm.Model):
 @odm.model(index=False, store=False, description="AI support configuration block")
 class AI(odm.Model):
     chat_url: str = odm.Keyword(description="URL to the AI API")
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
     assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
     code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
     detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
@@ -1187,8 +1256,16 @@ class AI(odm.Model):
 
 
 DEFAULT_AI_ASSISTANT = {
-    'system_message': """
-You are the Assemblyline AI Assistant, you are here to help users understand the results produced by Assemblyline.
+    'system_message': """## Context
+
+You are the Assemblyline (AL) AI Assistant. You help people answer their questions and other requests interactively
+regarding Assemblyline.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
 """,
     'max_tokens': 1024,
     'options': {
@@ -1201,18 +1278,21 @@ You are the Assemblyline AI Assistant, you are here to help users understand the
 
 
 DEFAULT_AI_CODE = {
-    'system_message': """
-You are an assistant that provides explanation of code snippets found in AssemblyLine,
-a malware detection and analysis tool. Start by providing a short summary of the intent behind the
-code and then follow with a detailed explanation of what the code is doing. Format your explanation
-using the Markdown syntax. Your answer must be written in plain $(LANG).
+    'system_message': """## Context
 
-User: print("Hello World!")
-Assistant:
-## Summary
-The given code is printing "Hello World!" to the console.
-## Details
-The code has only one line of code and prints a string to the console using the print() function.
+You are an assistant that provides explanation of code snippets found in AssemblyLine (AL),
+a malware detection and analysis tool.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+""",
+    'task': """Take the code file below and give me a two part result:
+
+- The first part is a short summary of the intent behind the code titled "## Summary"
+- The second part is a detailed explanation of what the code is doing titled "## Detailed Analysis"
 """,
     'max_tokens': 1024,
     'options': {
@@ -1223,17 +1303,25 @@ The code has only one line of code and prints a string to the console using the 
     }
 }
 
-DEFAULT_AI_DETAILED_REPORT = {
-    'system_message': """
-You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool.  Your role is
-to extract information of importance and discard what is not. Assemblyline uses a scoring mechanism where any scores
-below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
-considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and
-up are considered malicious.
 
-Once YAML has been submitted, the user expects a two-part result in plain $(LANG)..  The first part is a one or two
-paragraph executive summary which provides some highlights of the results, and the second part is a detailed description
-of the observations found in the report.  Format your answer using the Markdown syntax.
+DEFAULT_AI_DETAILED_REPORT = {
+    'system_message': """## Context
+
+You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool.
+Your role is to extract information of importance and discard what is not.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+""",
+    'task': """Take the Assemblyline report below in yaml format and create a two part result:
+
+- The first part is a one or two paragraph executive summary titled "## Executive Summary" which
+  provides some high level highlights of the results
+- The second part is a detailed description of the observations found in the report, this section
+  is titled "## Detailed Analysis"
 """,
     'max_tokens': 2048,
     'options': {
@@ -1244,18 +1332,23 @@ of the observations found in the report.  Format your answer using the Markdown 
     }
 }
 
-DEFAULT_AI_EXECUTIVE_SUMMARY = {
-    "system_message": """
-You are an assistant that summarizes the output of AssemblyLine, a malware detection and analysis tool. Your role
-is to extract information of importance and discard what is not.  Assemblyline uses a scoring mechanism where any scores
-below 0 is considered safe, scores between 0 and 300 are considered informational, scores between 300 and 700 are
-considered suspicious, scores between 700 and 1000 are considered highly-suspicious and scores with 1000 points and up
-are considered malicious.
 
-Once YAML has been submitted, the user expects a one or two paragraph executive summary of the output of AssemblyLine in
-plain $(LANG)..  Highlight important information using inline code block from the Markdown syntax.
+DEFAULT_AI_EXECUTIVE_SUMMARY = {
+    "system_message": """## Context
+
+You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool. Your role
+is to extract information of importance and discard what is not.
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
 """,
-    'max_tokens': 512,
+    'task': """Take the Assemblyline report below in yaml format and summarize the information found in the
+report into a one or two paragraph executive summary. DO NOT write any headers in your output.
+""",
+    'max_tokens': 1024,
     'options': {
         "frequency_penalty": 0,
         "presence_penalty": 0,
@@ -1267,6 +1360,7 @@ plain $(LANG)..  Highlight important information using inline code block from th
 
 DEFAULT_AI = {
     'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
     'assistant': DEFAULT_AI_ASSISTANT,
     'code': DEFAULT_AI_CODE,
     'detailed_report': DEFAULT_AI_DETAILED_REPORT,
@@ -1277,6 +1371,71 @@ DEFAULT_AI = {
     },
     'model_name': "gpt-3.5-turbo",
     'verify': True
+}
+
+
+@odm.model(index=False, store=False, description="Connection information to an AI backend")
+class AIConnection(odm.Model):
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
+    chat_url: str = odm.Keyword(description="URL to the AI API")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), default={},
+                                           description="Headers used by the _call_ai_backend method")
+    model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
+    verify: bool = odm.Boolean(default=True, description="Should the SSL connection to the AI API be verified.")
+
+
+@odm.model(index=False, store=False, description="Definition of each parameters used in the different AI functions")
+class AIFunctionParameters(odm.Model):
+    assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
+    code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
+    detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
+    executive_summary: AIQueryParams = odm.Compound(
+        AIQueryParams, description="Parameters used for executive summaries")
+
+
+@odm.model(index=False, store=False, description="AI Multi-Backend support configuration block")
+class AIBackends(odm.Model):
+    enabled: bool = odm.Boolean(description="Is AI support enabled?")
+    api_connections: List[Dict] = odm.List(odm.Compound(AIConnection),
+                                           description="List of API definitions use in the API Pool")
+    function_params: AIFunctionParameters = odm.Compound(
+        AIFunctionParameters, description="Definition of each parameters used in the different AI functions")
+
+
+DEFAULT_MAIN_CONNECTION = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-3.5-turbo",
+    'proxies': None,
+    'verify': True
+}
+
+
+DEFAULT_FALLBACK_CONNECTION = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-4",
+    'proxies': None,
+    'verify': True
+}
+
+DEFAULT_AI_BACKENDS = {
+    'enabled': False,
+    'api_connections': [DEFAULT_MAIN_CONNECTION, DEFAULT_FALLBACK_CONNECTION],
+    'function_params': {
+        'assistant': DEFAULT_AI_ASSISTANT,
+        'code': DEFAULT_AI_CODE,
+        'detailed_report': DEFAULT_AI_DETAILED_REPORT,
+        'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
+    }
 }
 
 
@@ -1407,6 +1566,8 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
+    ai_backends: AIBackends = odm.Compound(AIBackends, default=DEFAULT_AI_BACKENDS,
+                                           description="AI Multi-backends support for the UI")
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
                                                description="Alerting metadata fields")
     allow_malicious_hinting: bool = odm.Boolean(
@@ -1462,6 +1623,7 @@ class UI(odm.Model):
 
 DEFAULT_UI = {
     "ai": DEFAULT_AI,
+    "ai_backends": DEFAULT_AI_BACKENDS,
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
@@ -1562,6 +1724,48 @@ class Sha256Source(odm.Model):
                                           description="Proxy used to connect to the URL")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
+HASH_PATTERN_MAP = {
+    "sha256": odm.SHA256_REGEX,
+    "sha1": odm.SHA1_REGEX,
+    "md5": odm.MD5_REGEX,
+    "tlsh": odm.TLSH_REGEX,
+    "ssdeep": odm.SSDEEP_REGEX,
+}
+
+@odm.model(index=False, store=False, description="A file source entry for remote fetching via string")
+class FileSource(odm.Model):
+    name: str = odm.Keyword(description="Name of the sha256 source")
+    hash_types: List[str] = odm.List(odm.Keyword(), default=["sha256"],
+                                     description="Method(s) of fetching file from source by string input"
+                                     f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
+                                     )
+    hash_patterns: Dict[str, str] = odm.Optional(odm.Mapping(odm.Text()),
+                                     description="Custom types to regex pattern definition for input detection/validation")
+    classification = odm.Optional(
+        odm.ClassificationString(
+            description="Minimum classification applied to the downloaded "
+                        "files and required to know the existance of the source."))
+    data: str = odm.Optional(odm.Keyword(description="Data block sent during the URL call (Uses replace pattern)"))
+    failure_pattern: str = odm.Optional(odm.Keyword(
+        description="Pattern to find as a failure case when API return 200 OK on failures..."))
+    method: str = odm.Enum(values=['GET', 'POST'], default="GET", description="Method used to call the URL")
+    url: str = odm.Keyword(description="Url to fetch the file via SHA256 from (Uses replace pattern)")
+    replace_pattern: str = odm.Keyword(description="Pattern to replace in the URL with the SHA256")
+    headers: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Headers used to connect to the URL")
+    proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Proxy used to connect to the URL")
+    verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
+
+EXAMPLE_FILE_SOURCE_VT = {
+    # This is an example on how this would work with VirusTotal as a file source
+    # Note: This supports downloading using multiple hash types in a single source configuration
+    "name": "VirusTotal",
+    "hash_types": ["sha256", "sha1", "md5"],
+    "url": r"https://www.virustotal.com/api/v3/files/{HASH}/download",
+    "replace_pattern": r"{HASH}",
+    "headers": {"x-apikey": "YOUR_KEY"},
+}
 
 EXAMPLE_SHA256_SOURCE_VT = {
     # This is an example on how this would work with VirusTotal
@@ -1613,9 +1817,10 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    sha256_sources: List[Sha256Source] = odm.List(
-        odm.Compound(Sha256Source),
-        default=[], description="List of external source to fetch file via their SHA256 hashes")
+    sha256_sources: List[Sha256Source] = odm.List(odm.Compound(Sha256Source),default=[],
+                                                  description="List of external source to fetch file via their SHA256 hashes",
+                                                  deprecation="Use submission.file_sources which is an extension of this configuration")
+    file_sources: List[FileSource] = odm.List(odm.Compound(FileSource), default=[], description="List of external source to fetch file")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
@@ -1633,6 +1838,7 @@ DEFAULT_SUBMISSION = {
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
     'sha256_sources': [],
+    'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
     'verdicts': DEFAULT_VERDICTS
 }
@@ -1652,7 +1858,7 @@ DEFAULT_RETROHUNT = {
     'enabled': False,
     'dtl': 30,
     'max_dtl': 0,
-    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'url': 'https://hauntedhouse:4443',
     'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
     'tls_verify': True
 }

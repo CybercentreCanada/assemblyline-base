@@ -59,7 +59,7 @@ class ESStore(object):
     ID = 'id'
     MIN_ELASTIC_VERSION = '7.10'
 
-    def __init__(self, hosts, archive_access=True):
+    def __init__(self, hosts, archive_access=True, archive_alernate_dtl=0):
         config = forge.get_config()
         self._hosts = hosts
         self._closed = False
@@ -67,6 +67,7 @@ class ESStore(object):
         self._models = {}
         self.archive_indices = config.datastore.archive.indices if config.datastore.archive.enabled else []
         self.validate = True
+        self.archive_alernate_dtl = archive_alernate_dtl
 
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
@@ -91,11 +92,14 @@ class ESStore(object):
 
     def __getattr__(self, name) -> ESCollection:
         if not self.validate:
-            return ESCollection(self, name, model_class=self._models[name], validate=self.validate)
+            return ESCollection(
+                self, name, model_class=self._models[name],
+                validate=self.validate, archive_alernate_dtl=self.archive_alernate_dtl)
 
         if name not in self._collections:
             self._collections[name] = ESCollection(
-                self, name, model_class=self._models[name], validate=self.validate)
+                self, name, model_class=self._models[name],
+                validate=self.validate, archive_alernate_dtl=self.archive_alernate_dtl)
 
         return self._collections[name]
 
