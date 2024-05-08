@@ -410,15 +410,16 @@ def create_users(ds, log=None):
 
 def create_badlists(ds, count=20, log=None):
     for _ in range(count):
-        sl = random_model_obj(Badlist, as_json=True)
-        if sl['type'] == 'file':
-            sl.pop('tag', None)
-        elif sl['type'] == 'tag':
-            sl.pop('file', None)
-        sl['hashes']['sha256'] = "0" + get_random_hash(63)
-        ds.badlist.save(sl['hashes']['sha256'], sl)
+        bl = random_model_obj(Badlist, as_json=True)
+        bl['expiry_ts'] = now_as_iso(60 * 60 * 24 * 14)
+        if bl['type'] == 'file':
+            bl.pop('tag', None)
+        elif bl['type'] == 'tag':
+            bl.pop('file', None)
+        bl['hashes']['sha256'] = "0" + get_random_hash(63)
+        ds.badlist.save(bl['hashes']['sha256'], bl)
         if log:
-            log.info(f"\t{sl['hashes']['sha256']}")
+            log.info(f"\t{bl['hashes']['sha256']}")
 
     ds.badlist.commit()
 
@@ -426,6 +427,7 @@ def create_badlists(ds, count=20, log=None):
 def create_safelists(ds, count=20, log=None):
     for _ in range(count):
         sl = random_model_obj(Safelist, as_json=True)
+        sl['expiry_ts'] = now_as_iso(60 * 60 * 24 * 14)
         if sl['type'] == 'file':
             sl.pop('tag', None)
         elif sl['type'] == 'tag':

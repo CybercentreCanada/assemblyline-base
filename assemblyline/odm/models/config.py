@@ -389,7 +389,7 @@ class Expiry(odm.Model):
     workers = odm.Integer(description="Number of concurrent workers")
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
-    delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
+    delete_batch_size = odm.Integer(max=10000, description="How large a batch get deleted per iteration.")
     safelisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Safelist")
     badlisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Badlist")
 
@@ -401,7 +401,7 @@ DEFAULT_EXPIRY = {
     'sleep_time': 15,
     'workers': 20,
     'delete_workers': 2,
-    'iteration_max_tasks': 20,
+    'iteration_max_tasks': 50,
     'delete_batch_size': 2000,
     'safelisted_tag_dtl': 0,
     'badlisted_tag_dtl': 0
