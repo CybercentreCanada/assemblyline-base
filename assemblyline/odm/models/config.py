@@ -383,7 +383,7 @@ class Expiry(odm.Model):
     workers = odm.Integer(description="Number of concurrent workers")
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
-    delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
+    delete_batch_size = odm.Integer(max=10000, description="How large a batch get deleted per iteration.")
     safelisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Safelist")
     badlisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Badlist")
 
@@ -395,7 +395,7 @@ DEFAULT_EXPIRY = {
     'sleep_time': 15,
     'workers': 20,
     'delete_workers': 2,
-    'iteration_max_tasks': 20,
+    'iteration_max_tasks': 50,
     'delete_batch_size': 2000,
     'safelisted_tag_dtl': 0,
     'badlisted_tag_dtl': 0
@@ -1574,6 +1574,7 @@ class Sha256Source(odm.Model):
                                           description="Proxy used to connect to the URL")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
+
 HASH_PATTERN_MAP = {
     "sha256": odm.SHA256_REGEX,
     "sha1": odm.SHA1_REGEX,
@@ -1582,6 +1583,7 @@ HASH_PATTERN_MAP = {
     "ssdeep": odm.SSDEEP_REGEX,
 }
 
+
 @odm.model(index=False, store=False, description="A file source entry for remote fetching via string")
 class FileSource(odm.Model):
     name: str = odm.Keyword(description="Name of the sha256 source")
@@ -1589,8 +1591,8 @@ class FileSource(odm.Model):
                                      description="Method(s) of fetching file from source by string input"
                                      f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
                                      )
-    hash_patterns: Dict[str, str] = odm.Optional(odm.Mapping(odm.Text()),
-                                     description="Custom types to regex pattern definition for input detection/validation")
+    hash_patterns: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Text()), description="Custom types to regex pattern definition for input detection/validation")
     classification = odm.Optional(
         odm.ClassificationString(
             description="Minimum classification applied to the downloaded "
@@ -1606,6 +1608,7 @@ class FileSource(odm.Model):
     proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
                                           description="Proxy used to connect to the URL")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
+
 
 EXAMPLE_FILE_SOURCE_VT = {
     # This is an example on how this would work with VirusTotal as a file source
@@ -1667,10 +1670,15 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    sha256_sources: List[Sha256Source] = odm.List(odm.Compound(Sha256Source),default=[],
-                                                  description="List of external source to fetch file via their SHA256 hashes",
-                                                  deprecation="Use submission.file_sources which is an extension of this configuration")
-    file_sources: List[FileSource] = odm.List(odm.Compound(FileSource), default=[], description="List of external source to fetch file")
+    sha256_sources: List[Sha256Source] = odm.List(
+        odm.Compound(Sha256Source),
+        default=[],
+        description="List of external source to fetch file via their SHA256 hashes",
+        deprecation="Use submission.file_sources which is an extension of this configuration")
+    file_sources: List[FileSource] = odm.List(
+        odm.Compound(FileSource),
+        default=[],
+        description="List of external source to fetch file")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
