@@ -4,7 +4,6 @@ from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
-
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group', 'multi_group']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
@@ -292,26 +291,26 @@ DEFAULT_SAML_SETTINGS = {
     "strict": True,
     "debug": False,
     "sp": {
-        "entity_id": "http://localhost:5000/api/v4/auth/saml/metadata",
+        "entity_id": "https://localhost/api/v4/auth/saml/metadata",
         "assertion_consumer_service": {
-            "url": "http://localhost:5000/api/v4/auth/saml/acs",
+            "url": "https://localhost/api/v4/auth/saml/acs",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
         "single_logout_service": {
-            "url": "http://localhost:5000/api/v4/auth/saml/sls",
-            "response_url": "http://localhost:5000/api/v4/auth/saml/sls",
+            "url": "https://localhost/api/v4/auth/saml/sls",
+            "response_url": "https://localhost/api/v4/auth/saml/sls",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
         "name_id_format": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
     },
     "idp": {
-        "entity_id": "http://localhost:5000/api/v4/auth/saml/metadata",
+        "entity_id": "https://mocksaml.com/api/saml/metadata",
         "single_sign_on_service": {
-            "url": "http://localhost:5000/api/v4/auth/saml/sso",
+            "url": "https://mocksaml.com/api/saml/sso",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
         "single_logout_service": {
-            "url": "http://localhost:5000/api/v4/auth/saml/sls",
+            "url": "https://mocksaml.com/api/saml/sso",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         }
     },
