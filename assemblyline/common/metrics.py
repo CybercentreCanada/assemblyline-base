@@ -7,12 +7,14 @@ from assemblyline.odm.messages import PerformanceTimer
 # for expiry but still exist.
 EXPIRY_METRICS = [
     'alert',
+    'badlist',
     'cached_file',
     'emptyresult',
     'error',
     'file',
     'filescore',
     'result',
+    'safelist',
     'submission',
     'submission_tree',
     'submission_summary'
@@ -24,6 +26,7 @@ class MetricsFactory(object):
 
     Left in place until we decide we are absolutely not switching methods again.
     """
+
     def __init__(self, metrics_type, schema, name=None, redis=None, config=None, export_zero=True):
         self.config = config or forge.get_config()
         self.redis = redis or get_client(
