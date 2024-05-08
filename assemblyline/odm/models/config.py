@@ -292,26 +292,26 @@ DEFAULT_SAML_SETTINGS = {
     "strict": True,
     "debug": False,
     "sp": {
-        "entity_id": "http://localhost:5000/saml/metadata",
+        "entity_id": "http://localhost:5000/api/v4/auth/saml/metadata",
         "assertion_consumer_service": {
-            "url": "http://localhost:5000/saml/acs",
+            "url": "http://localhost:5000/api/v4/auth/saml/acs",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
         "single_logout_service": {
-            "url": "http://localhost:5000/saml/sls",
-            "response_url": "http://localhost:5000/saml/sls",
+            "url": "http://localhost:5000/api/v4/auth/saml/sls",
+            "response_url": "http://localhost:5000/api/v4/auth/saml/sls",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
         "name_id_format": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
     },
     "idp": {
-        "entity_id": "http://localhost:5000/saml/metadata",
+        "entity_id": "http://localhost:5000/api/v4/auth/saml/metadata",
         "single_sign_on_service": {
-            "url": "http://localhost:5000/saml/sso",
+            "url": "http://localhost:5000/api/v4/auth/saml/sso",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
         "single_logout_service": {
-            "url": "http://localhost:5000/saml/sls",
+            "url": "http://localhost:5000/api/v4/auth/saml/sls",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         }
     },
@@ -422,6 +422,7 @@ class SAML(odm.Model):
     email_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's email address ", default="email")
     first_name_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's first name", default="firstName")
     last_name_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's last name", default="lastName")
+    lowercase_urlencoding: str = odm.Keyword(description="Enable lowercase encoding if using ADFS as IdP", default=False)
     settings: SAMLSettings = odm.Compound(SAMLSettings, default=DEFAULT_SAML_SETTINGS, description="SAML settings method")
 
 DEFAULT_SAML = {
@@ -431,6 +432,7 @@ DEFAULT_SAML = {
     "email_attribute_name": "email",
     "first_name_attribute_name": "firstName",
     "last_name_attribute_name": "lastName",
+    'lowercase_urlencoding': False,
     "settings": DEFAULT_SAML_SETTINGS
 }
 
