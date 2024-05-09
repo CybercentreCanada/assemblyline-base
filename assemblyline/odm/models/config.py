@@ -316,6 +316,14 @@ DEFAULT_SAML_SETTINGS = {
     },
 }
 
+DEFAULT_SAML_ATTRIBUTES = {
+    "email_attribute": "email",
+    "fullname_attribute": "name",
+    "groups_attribute": "groups",
+    "roles_attribute": "roles",
+    "group_role_mapping": {},
+}
+
 @odm.model(index=False, store=False, description="SAML Assertion Consumer Service")
 class SAMLAssertionConsumerService(odm.Model):
     url: str = odm.Keyword(description="URL")
@@ -413,25 +421,30 @@ class SAMLSettings(odm.Model):
     contact_person: SAMLContacts = odm.Optional(odm.Compound(SAMLContacts), description="Contact settings")
     organization: Dict[str, SAMLOrganization] = odm.Optional(odm.Mapping(odm.Compound(SAMLOrganization)), description="Organization settings")
 
+@odm.model(index=False, store=False, description="SAML Attributes")
+class SAMLAttributes(odm.Model):
+    username_attribute: str = odm.Optional(odm.Keyword(default="uid"), description="SAML attribute name for AL username")
+    email_attribute: str = odm.Keyword(description="SAML attribute name for a user's email address ", default="email")
+    fullname_attribute: str = odm.Keyword(description="SAML attribute name for a user's first name", default="name")
+    groups_attribute: str = odm.Keyword(description="SAML attribute name for the groups", default="groups")
+    roles_attribute: str = odm.Keyword(description="SAML attribute name for the roles", default="roles")
+    group_role_mapping: Dict[str, str] = odm.Mapping(odm.Keyword(), description="SAML group to role mapping", default={})
+
 @odm.model(index=False, store=False, description="SAML Configuration")
 class SAML(odm.Model):
     enabled: bool = odm.Boolean(description="Enable use of SAML?")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing", default=True)
     auto_sync: bool = odm.Boolean(description="Should we automatically sync with SAML server on each login?", default=True)
-    email_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's email address ", default="email")
-    first_name_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's first name", default="firstName")
-    last_name_attribute_name: str = odm.Keyword(description="SAML attribute name for a user's last name", default="lastName")
-    lowercase_urlencoding: str = odm.Keyword(description="Enable lowercase encoding if using ADFS as IdP", default=False)
+    lowercase_urlencoding: bool = odm.Boolean(description="Enable lowercase encoding if using ADFS as IdP", default=False)
+    attributes: SAMLAttributes = odm.Compound(SAMLAttributes, default=DEFAULT_SAML_ATTRIBUTES, description="SAML attributes")
     settings: SAMLSettings = odm.Compound(SAMLSettings, default=DEFAULT_SAML_SETTINGS, description="SAML settings method")
 
 DEFAULT_SAML = {
     "enabled": False,
     "auto_create": True,
     "auto_sync": True,
-    "email_attribute_name": "email",
-    "first_name_attribute_name": "firstName",
-    "last_name_attribute_name": "lastName",
-    'lowercase_urlencoding': False,
+    "lowercase_urlencoding": False,
+    "attributes": DEFAULT_SAML_ATTRIBUTES,
     "settings": DEFAULT_SAML_SETTINGS
 }
 
