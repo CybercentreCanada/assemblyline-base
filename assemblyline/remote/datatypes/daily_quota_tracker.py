@@ -25,3 +25,13 @@ class DailyQuotaTracker(object):
 
     def increment_submission(self, user):
         return self._increment(user, 'submission')
+
+    def _get(self, user, type):
+        counter = self._counter_name(user, type)
+        return retry_call(self.c.get, counter) or 0
+
+    def get_api(self, user):
+        return int(self._get(user, 'api'))
+
+    def get_submission(self, user):
+        return int(self._get(user, 'submission'))
