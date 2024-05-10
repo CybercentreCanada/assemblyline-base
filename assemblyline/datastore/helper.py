@@ -1420,6 +1420,7 @@ class MetadataValidator:
     def __init__(self, datastore: AssemblylineDatastore) -> None:
         self.datastore = datastore
         self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
+        self.meta_config = config.submission.metadata
 
     def get_metadata(self) -> dict[str, dict[str, Any]]:
         """Fetch the type mapping for submission metadata."""
@@ -1442,27 +1443,26 @@ class MetadataValidator:
         """
         # Check to see if there's any required metadata that's missing
         missing_metadata = []
-        for meta in config.submission.metadata:
-            if meta.field_name not in metadata and meta.submission_required:
-                missing_metadata.append(meta.field_name)
+        for field_name, field_config in self.meta_config.items():
+            if field_name not in metadata and field_config.submission_required:
+                missing_metadata.append(field_name)
 
         if missing_metadata:
             return (None, f"Required metadata is missing from submission: {missing_metadata}")
 
-        for meta in config.submission.metadata:
+        for field_name, field_config in self.meta_config.items():
             # Validate the format of the data given based on the configuration
-            meta_field = meta.field_name
-            validator = METADATA_FIELDTYPE_MAP[meta.validator_type](**(meta.validator_params or {}))
-            meta_value = metadata.get(meta_field)
+            validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(field_config.validator_params or {}))
+            meta_value = metadata.get(field_name)
 
             # Skip over validation of metadata that's missing and not required
-            if meta_value == None and not meta.submission_required:
+            if meta_value == None and not field_config.submission_required:
                 continue
 
             try:
                 validator.check(meta_value)
             except ValueError as e:
-                return (meta_field, f"Validation of '{meta_field}' of type {validator} failed: {e}")
+                return (field_name, f"Validation of '{field_name}' of type {validator} failed: {e}")
 
         # Check to see if any other metadata causes a conflict with Elasticsearch
         for key, value in metadata.items():

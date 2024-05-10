@@ -8,9 +8,9 @@ import random
 from retrying import retry
 
 from assemblyline.common import forge
-from assemblyline.datastore.helper import AssemblylineDatastore
+from assemblyline.datastore.helper import AssemblylineDatastore, MetadataValidator
 from assemblyline.odm.base import DATEFORMAT, KeyMaskException
-from assemblyline.odm.models.config import Config
+from assemblyline.odm.models.config import Config, SubmissionMetadata
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
@@ -470,6 +470,44 @@ def test_list_all_heuristics(ds: AssemblylineDatastore):
     for heur in heuristics:
         assert heur.heur_id.split(".")[0] in all_services
 
+def test_metadata_validation(ds: AssemblylineDatastore):
+    validator = MetadataValidator(ds)
+
+    # Run validator with no submission metadata validation configured
+    validator.meta_config = {}
+    assert not validator.check_metadata({'blah': 'blee'})
+
+    # Run validation using validator parameters
+    validator.meta_config = {
+        'blah': SubmissionMetadata({
+            'submission_required': True,
+            'validator_type': 'regex',
+            'validator_params': {
+                'validation_regex': 'blee'
+            }
+        })
+    }
+    assert not validator.check_metadata({'blah': 'blee'})
+
+    # Run validator with validation configured but is missing metadata
+    assert validator.check_metadata({'bloo': 'blee'})
+
+    # Run validation using invalid metadata
+    validator.meta_config = {
+        'blah': SubmissionMetadata({
+            'submission_required': True,
+            'validator_type': 'int',
+        })
+    }
+    assert validator.check_metadata({'blah': 'blee'})
+
+    # Run validation on field that's not required (but still provided and is invalid)
+    validator.meta_config = {
+        'blah': SubmissionMetadata({
+            'validator_type': 'int',
+        })
+    }
+    assert validator.check_metadata({'blah': 'blee'})
 
 def test_save_or_freshen_file(ds: AssemblylineDatastore):
     classification = forge.get_classification()

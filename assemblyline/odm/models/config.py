@@ -1668,12 +1668,11 @@ METADATA_FIELDTYPE_MAP = {
 
 @odm.model(index=False, store=False, description="Configuration about submission metadata")
 class SubmissionMetadata(odm.Model):
-    field_name: str = odm.Keyword()
     submission_required: bool = odm.Boolean(default=False, description="Is this metadata required on submission?")
     archive_required: bool = odm.Boolean(default=False, description="Is this metadata required on archive?")
-    validator_type: str = odm.Enum(values=METADATA_FIELDTYPE_MAP.keys(),
+    validator_type: str = odm.Enum(values=METADATA_FIELDTYPE_MAP.keys(), default="str",
                                    description="Type of validation to apply to metadata value")
-    validator_params: Dict[str, Any] = odm.Mapping(odm.Any(),
+    validator_params: Dict[str, Any] = odm.Optional(odm.Mapping(odm.Any()),
                                                    description="Configuration parameters to apply to validator")
 
 @odm.model(index=False, store=False,
@@ -1689,7 +1688,8 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    metadata: SubmissionMetadata = odm.List(SubmissionMetadata, description="Metadata compliance rules")
+    metadata: SubmissionMetadata = odm.Mapping(odm.Compound(SubmissionMetadata),
+                                               description="Metadata compliance rules")
     sha256_sources: List[Sha256Source] = odm.List(odm.Compound(Sha256Source),default=[],
                                                   description="List of external source to fetch file via their SHA256 hashes",
                                                   deprecation="Use submission.file_sources which is an extension of this configuration")
@@ -1710,9 +1710,7 @@ DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
-    'metadata': {
-        'required_fields': []
-    },
+    'metadata': {},
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
