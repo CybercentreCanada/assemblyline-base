@@ -22,6 +22,7 @@ from assemblyline.odm import DATEFORMAT, Model, Date
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
+from assemblyline.odm.models.config import METADATA_FIELDTYPE_MAP
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -1419,8 +1420,6 @@ class MetadataValidator:
     def __init__(self, datastore: AssemblylineDatastore) -> None:
         self.datastore = datastore
         self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
-        self.required_metadata = config.submission.metadata.required_fields
-        self.meta_validation = config.submission.metadata.field_validation
 
     def get_metadata(self) -> dict[str, dict[str, Any]]:
         """Fetch the type mapping for submission metadata."""
@@ -1443,36 +1442,27 @@ class MetadataValidator:
         """
         # Check to see if there's any required metadata that's missing
         missing_metadata = []
-        for field in self.required_metadata:
-            if field not in metadata:
-                missing_metadata.append(field)
+        for meta in config.submission.metadata:
+            if meta.field_name not in metadata and meta.submission_required:
+                missing_metadata.append(meta.field_name)
 
-        if self.required_metadata and missing_metadata:
+        if missing_metadata:
             return (None, f"Required metadata is missing from submission: {missing_metadata}")
 
-        if self.meta_validation:
+        for meta in config.submission.metadata:
             # Validate the format of the data given based on the configuration
-            for meta_field, validator in self.meta_validation.items():
-                meta_value = metadata.get(meta_field)
+            meta_field = meta.field_name
+            validator = METADATA_FIELDTYPE_MAP[meta.validator_type](**(meta.validator_params or {}))
+            meta_value = metadata.get(meta_field)
 
-                # Skip over validation of metadata that's missing and not required
-                if meta_value == None and meta_field not in self.required_metadata:
-                    continue
+            # Skip over validation of metadata that's missing and not required
+            if meta_value == None and not meta.submission_required:
+                continue
 
-                if isinstance(validator, list):
-                    # List-type validator implies an Enum-like validation
-                    if not meta_value in validator:
-                        return(field, f"Validation of '{field}' failed: {meta_value} not in {validator}")
-                elif validator in self.meta_validation:
-                    # Validate using the related ODM model
-                    try:
-                        self.meta_validation[validator].check(meta_value)
-                    except ValueError as e:
-                        return(field, f"Validation of '{field}' of type {validator} failed: {e}")
-                else:
-                    # Assume this is a regex pattern for custom validation of metadata
-                    if not re.match(validator, meta_value):
-                        return(field, f"Validation of '{field}' with custom pattern ({validator}) failed.")
+            try:
+                validator.check(meta_value)
+            except ValueError as e:
+                return (meta_field, f"Validation of '{meta_field}' of type {validator} failed: {e}")
 
         # Check to see if any other metadata causes a conflict with Elasticsearch
         for key, value in metadata.items():

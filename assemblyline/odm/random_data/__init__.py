@@ -16,7 +16,7 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.ontology import ResultOntology
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.service import Service, UpdateSource
+from assemblyline.odm.models.service import Service, UpdateSource, SubmissionParams
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.user import TYPES, User
 from assemblyline.odm.models.user_settings import UserSettings
@@ -152,6 +152,8 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
             "docker_config": {
                 "image": f"cccs/alsvc_{svc_name.lower()}:latest",
             },
+            "submission_params": [],
+            "is_external": random.choice([True, False]),
         }
 
         if random.choice([True, False]):
@@ -160,6 +162,19 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
                 "update_interval_seconds": 600,
                 "generates_signatures": True
             }
+
+        if random.choice([True, False]):
+            for _ in range(random.randrange(6, 10)):
+                param = random_model_obj(SubmissionParams)
+                if param.type == "list":
+                    param.list = [get_random_word() for __ in range(random.randrange(2, 5))]
+                else:
+                    param.list = None
+
+                if param.type == "bool":
+                    param.value = random.choice([True, False])
+
+                service_data['submission_params'].append(param)
 
         service_data = Service(service_data)
         for x in range(4):

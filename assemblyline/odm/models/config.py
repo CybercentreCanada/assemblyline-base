@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List, Union
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
@@ -1662,17 +1662,19 @@ METADATA_FIELDTYPE_MAP = {
     'email': odm.Email,
     'uri': odm.URI,
     'int': odm.Integer,
-    'classification': odm.ClassificationString
+    'regex': odm.ValidatedKeyword,
+    'enum': odm.Enum
 }
 
 @odm.model(index=False, store=False, description="Configuration about submission metadata")
 class SubmissionMetadata(odm.Model):
-    required_fields: List[str] = odm.List(odm.Keyword(), default=[],
-                                          description="Required fields to submit to the system when creating any submission")
-    field_validation: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
-                                                    description="Used to perform validation of the data provided in the metadata field. You can provide one of the recognized types or a custom pattern for validation. "
-                                                   f"Recognized values are {list(METADATA_FIELDTYPE_MAP.keys())}. "
-                                                   "You can also use a list for enum validation.")
+    field_name: str = odm.Keyword()
+    submission_required: bool = odm.Boolean(default=False, description="Is this metadata required on submission?")
+    archive_required: bool = odm.Boolean(default=False, description="Is this metadata required on archive?")
+    validator_type: str = odm.Enum(values=METADATA_FIELDTYPE_MAP.keys(),
+                                   description="Type of validation to apply to metadata value")
+    validator_params: Dict[str, Any] = odm.Mapping(odm.Any(),
+                                                   description="Configuration parameters to apply to validator")
 
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
@@ -1687,8 +1689,7 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    metadata: SubmissionMetadata = odm.Compound(SubmissionMetadata,
-                                                description="Metadata requirements for the submission to comply to.")
+    metadata: SubmissionMetadata = odm.List(SubmissionMetadata, description="Metadata compliance rules")
     sha256_sources: List[Sha256Source] = odm.List(odm.Compound(Sha256Source),default=[],
                                                   description="List of external source to fetch file via their SHA256 hashes",
                                                   deprecation="Use submission.file_sources which is an extension of this configuration")
