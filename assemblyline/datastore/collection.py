@@ -1786,7 +1786,7 @@ class ESCollection(Generic[ModelType]):
             return ret_type
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None,
-                  index_type=Index.HOT, key_space=None):
+                  index_type=Index.HOT, key_space=None, timeout=None):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -1816,6 +1816,9 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
+
         result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
@@ -1823,7 +1826,7 @@ class ESCollection(Generic[ModelType]):
                 for row in result['aggregations']['histogram']['buckets']}
 
     def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
-              field_script=None, key_space=None, size=10, include=None):
+              field_script=None, key_space=None, size=10, include=None, timeout=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1851,6 +1854,9 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
+
         if field_script:
             args.append(('field_script', field_script))
 
@@ -1864,7 +1870,8 @@ class ESCollection(Generic[ModelType]):
             return {f: {row.get('key_as_string', row['key']): row['doc_count']
                         for row in result['aggregations'][f]['buckets']} for f in field}
 
-    def stats(self, field, query="id:*", filters=None, access_control=None, index_type=Index.HOT, field_script=None):
+    def stats(self, field, query="id:*", filters=None, access_control=None,
+              index_type=Index.HOT, field_script=None, timeout=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1884,6 +1891,9 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
+
         if field_script:
             args.append(('field_script', field_script))
 
@@ -1892,7 +1902,7 @@ class ESCollection(Generic[ModelType]):
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True, index_type=Index.HOT,
-                       track_total_hits=None):
+                       track_total_hits=None, timeout=None):
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
@@ -1932,6 +1942,9 @@ class ESCollection(Generic[ModelType]):
 
         if filters:
             args.append(('filters', filters))
+
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
 
         result = self._search(args, index_type=index_type, track_total_hits=track_total_hits)
 
