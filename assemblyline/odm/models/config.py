@@ -1109,7 +1109,7 @@ DEFAULT_AI_ASSISTANT = {
     'system_message': """## Context
 
 You are the Assemblyline (AL) AI Assistant. You help people answer their questions and other requests interactively
-regarding Assemblyline.
+regarding Assemblyline. $(EXTRA_CONTEXT)
 
 ## Style Guide
 
@@ -1131,7 +1131,7 @@ DEFAULT_AI_CODE = {
     'system_message': """## Context
 
 You are an assistant that provides explanation of code snippets found in AssemblyLine (AL),
-a malware detection and analysis tool.
+a malware detection and analysis tool. $(EXTRA_CONTEXT)
 
 ## Style Guide
 
@@ -1158,7 +1158,7 @@ DEFAULT_AI_DETAILED_REPORT = {
     'system_message': """## Context
 
 You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool.
-Your role is to extract information of importance and discard what is not.
+Your role is to extract information of importance and discard what is not. $(EXTRA_CONTEXT)
 
 ## Style Guide
 
@@ -1187,7 +1187,7 @@ DEFAULT_AI_EXECUTIVE_SUMMARY = {
     "system_message": """## Context
 
 You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool. Your role
-is to extract information of importance and discard what is not.
+is to extract information of importance and discard what is not. $(EXTRA_CONTEXT)
 
 ## Style Guide
 
