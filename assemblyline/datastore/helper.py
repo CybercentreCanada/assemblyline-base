@@ -1446,7 +1446,7 @@ class MetadataValidator:
             # Check to see if there's any required metadata that's missing
             missing_metadata = []
             for field_name, field_config in validation_scheme.items():
-                if field_name not in metadata and field_config.submission_required:
+                if field_name not in metadata and field_config.required:
                     missing_metadata.append(field_name)
 
             if missing_metadata:
@@ -1458,7 +1458,7 @@ class MetadataValidator:
                 meta_value = metadata.get(field_name)
 
                 # Skip over validation of metadata that's missing and not required
-                if meta_value == None and not field_config.submission_required:
+                if meta_value == None and not field_config.required:
                     continue
 
                 try:
