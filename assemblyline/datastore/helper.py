@@ -1246,6 +1246,18 @@ class AssemblylineDatastore(object):
             except VersionConflictException as vce:
                 log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")
 
+    def _get_verdict_from_score(self, score):
+        if score >= config.submission.verdicts.malicious:
+            return "malicious"
+        elif score >= config.submission.verdicts.highly_suspicious:
+            return "highly suspicious"
+        elif score >= config.submission.verdicts.suspicious:
+            return "suspicious"
+        elif score >= config.submission.verdicts.info:
+            return "informative"
+        else:
+            return "safe"
+
     @elasticapm.capture_span(span_type='datastore')
     def _fix_section_data(self, result, min_score):
         new_sections = []
@@ -1254,8 +1266,14 @@ class AssemblylineDatastore(object):
             if section.get('heuristic', {}).get('score', -1) < min_score:
                 continue
 
+            # Rewrite heuristic score as a verdict
+            if 'heuristic' in section:
+                heur_score = section['heuristic'].pop('score', 0)
+                section['heuristic']['verdict'] = self._get_verdict_from_score(heur_score)
+
             # Loading JSON formatted sections
-            if section['body_format'] in JSON_SECTIONS and isinstance(section['body'], str):
+            body_format = section['body_format']
+            if body_format in JSON_SECTIONS and isinstance(section['body'], str):
                 try:
                     section['body'] = json.loads(section['body'])
                 except ValueError:
@@ -1271,6 +1289,10 @@ class AssemblylineDatastore(object):
 
         # Update result sections
         result['result']['sections'] = new_sections
+
+        # Rewrite score as verdict
+        result_score = result['result'].pop('score', 0)
+        result['result']['verdict'] = self._get_verdict_from_score(result_score)
 
         return result
 
@@ -1300,6 +1322,7 @@ class AssemblylineDatastore(object):
 
         # Create output
         output = submission.as_primitives(strip_non_ai_fields=True, strip_null=True)
+        output['verdict'] = self._get_verdict_from_score(output.pop('max_score', 0))
         output['results'] = results
         return output
 
@@ -1341,7 +1364,7 @@ class AssemblylineDatastore(object):
 
         # Create output
         output = file_obj.as_primitives(strip_non_ai_fields=True, strip_null=True)
-        output['max_score'] = max_score
+        output['verdict'] = self._get_verdict_from_score(max_score)
         output['results'] = results
         return output
 
@@ -1417,6 +1440,7 @@ class MetadataValidator:
     This class aims to limit those errors by offering limited validation
     at the time of the API call, letting the user get a reasonable error instead.
     """
+
     def __init__(self, datastore: AssemblylineDatastore) -> None:
         self.datastore = datastore
         self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
