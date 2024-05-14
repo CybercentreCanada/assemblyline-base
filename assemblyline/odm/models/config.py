@@ -321,7 +321,7 @@ DEFAULT_SAML_ATTRIBUTES = {
     "fullname_attribute": "name",
     "groups_attribute": "groups",
     "roles_attribute": "roles",
-    "group_role_mapping": {},
+    "group_type_mapping": {},
 }
 
 @odm.model(index=False, store=False, description="SAML Assertion Consumer Service")
@@ -428,7 +428,7 @@ class SAMLAttributes(odm.Model):
     fullname_attribute: str = odm.Keyword(description="SAML attribute name for a user's first name", default="name")
     groups_attribute: str = odm.Keyword(description="SAML attribute name for the groups", default="groups")
     roles_attribute: str = odm.Keyword(description="SAML attribute name for the roles", default="roles")
-    group_role_mapping: Dict[str, str] = odm.Mapping(odm.Keyword(), description="SAML group to role mapping", default={})
+    group_type_mapping: Dict[str, str] = odm.Mapping(odm.Keyword(), description="SAML group to role mapping", default={})
 
 @odm.model(index=False, store=False, description="SAML Configuration")
 class SAML(odm.Model):
