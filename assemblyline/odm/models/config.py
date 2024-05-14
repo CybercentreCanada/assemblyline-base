@@ -1682,7 +1682,7 @@ class MetadataConfig(odm.Model):
                                                description="Metadata specification for archiving")
     submit: Dict[str, SubmissionMetadata] = odm.Mapping(odm.Compound(SubmissionMetadata),
                                                description="Metadata specification for submission")
-    ingest_schemes = Dict[str, Dict[str, SubmissionMetadata]] = odm.Mapping(odm.Mapping(odm.Compound(SubmissionMetadata)),
+    ingest: Dict[str, Dict[str, SubmissionMetadata]] = odm.Mapping(odm.Mapping(odm.Compound(SubmissionMetadata)),
                                                description="Metadata specification for certain ingestion based on ingest_type")
 
 @odm.model(index=False, store=False,
@@ -1727,7 +1727,7 @@ DEFAULT_SUBMISSION = {
     'metadata': {
         'archive': {},
         'submit': {},
-        'ingest_schemes': {}
+        'ingest': {}
     },
     'sha256_sources': [],
     'file_sources': [],
