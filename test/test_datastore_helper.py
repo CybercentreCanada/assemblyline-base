@@ -10,7 +10,7 @@ from retrying import retry
 from assemblyline.common import forge
 from assemblyline.datastore.helper import AssemblylineDatastore, MetadataValidator
 from assemblyline.odm.base import DATEFORMAT, KeyMaskException
-from assemblyline.odm.models.config import Config, SubmissionMetadata
+from assemblyline.odm.models.config import Config, Metadata
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
@@ -478,7 +478,7 @@ def test_metadata_validation(ds: AssemblylineDatastore):
 
     # Run validation using validator parameters
     meta_config = {
-        'blah': SubmissionMetadata({
+        'blah': Metadata({
             'required': True,
             'validator_type': 'regex',
             'validator_params': {
@@ -493,7 +493,7 @@ def test_metadata_validation(ds: AssemblylineDatastore):
 
     # Run validation using invalid metadata
     assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
-        'blah': SubmissionMetadata({
+        'blah': Metadata({
             'required': True,
             'validator_type': 'integer',
         })
@@ -501,7 +501,7 @@ def test_metadata_validation(ds: AssemblylineDatastore):
 
     # Run validation on field that's not required (but still provided and is invalid)
     assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
-        'blah': SubmissionMetadata({
+        'blah': Metadata({
             'validator_type': 'integer',
         })
     })

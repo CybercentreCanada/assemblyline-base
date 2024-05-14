@@ -22,7 +22,7 @@ from assemblyline.odm import DATEFORMAT, Model, Date
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
-from assemblyline.odm.models.config import METADATA_FIELDTYPE_MAP, SubmissionMetadata
+from assemblyline.odm.models.config import METADATA_FIELDTYPE_MAP, Metadata
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -1456,7 +1456,7 @@ class MetadataValidator:
         return selected
 
     def check_metadata(self, metadata: dict[str, Any],
-                       validation_scheme: dict[str, SubmissionMetadata] = None) -> Optional[Tuple[str, str]]:
+                       validation_scheme: dict[str, Metadata] = None) -> Optional[Tuple[str, str]]:
         """
         Check if the type of every metedata field for obvious errors.
 

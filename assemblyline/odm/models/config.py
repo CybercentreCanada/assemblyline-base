@@ -1694,21 +1694,31 @@ METADATA_FIELDTYPE_MAP = {
     'enum': odm.Enum
 }
 
-@odm.model(index=False, store=False, description="Configuration about submission metadata")
-class SubmissionMetadata(odm.Model):
+@odm.model(index=False, store=False, description="Metadata configuration")
+class Metadata(odm.Model):
     validator_type: str = odm.Enum(values=METADATA_FIELDTYPE_MAP.keys(), default="str",
                                    description="Type of validation to apply to metadata value")
     validator_params: Dict[str, Any] = odm.Mapping(odm.Any(), default={},
                                                    description="Configuration parameters to apply to validator")
     required: bool = odm.Boolean(default=False, description="Is this field required?")
 
+@odm.model(index=False, store=False, description="Configuration for metadata compliance with APIs")
 class MetadataConfig(odm.Model):
-    archive: Dict[str, SubmissionMetadata] = odm.Mapping(odm.Compound(SubmissionMetadata),
+    archive: Dict[str, Metadata] = odm.Mapping(odm.Compound(Metadata),
                                                description="Metadata specification for archiving")
-    submit: Dict[str, SubmissionMetadata] = odm.Mapping(odm.Compound(SubmissionMetadata),
+    submit: Dict[str, Metadata] = odm.Mapping(odm.Compound(Metadata),
                                                description="Metadata specification for submission")
-    ingest: Dict[str, Dict[str, SubmissionMetadata]] = odm.Mapping(odm.Mapping(odm.Compound(SubmissionMetadata)),
-                                               description="Metadata specification for certain ingestion based on ingest_type")
+    ingest: Dict[str, Dict[str, Metadata]] = odm.Mapping(odm.Mapping(odm.Compound(Metadata)),
+                     description="Metadata specification for certain ingestion based on ingest_type")
+
+DEFAULT_METADATA_CONFIGURATION = {
+    'archive': {},
+    'submit': {},
+    'ingest': {
+        # Metadata rule for when: ingest_type: "INGEST", by default there are no rules set.
+        "INGEST": {}
+    }
+}
 
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
@@ -1723,7 +1733,8 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    metadata: MetadataConfig = odm.Compound(MetadataConfig, description="Metadata compliance rules")
+    metadata: MetadataConfig = odm.Compound(MetadataConfig, default=DEFAULT_METADATA_CONFIGURATION,
+                                            description="Metadata compliance rules")
     sha256_sources: List[Sha256Source] = odm.List(
         odm.Compound(Sha256Source),
         default=[],
@@ -1749,14 +1760,7 @@ DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
-    'metadata': {
-        'archive': {},
-        'submit': {},
-        'ingest': {
-            # Metadata rule for when: ingest_type: "INGEST", by default there are no rules set.
-            "INGEST": {}
-        }
-    },
+    'metadata': DEFAULT_METADATA_CONFIGURATION,
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
