@@ -494,7 +494,7 @@ def test_metadata_validation(ds: AssemblylineDatastore):
     # Run validation using invalid metadata
     assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
         'blah': SubmissionMetadata({
-            'submission_required': True,
+            'required': True,
             'validator_type': 'int',
         })
     })

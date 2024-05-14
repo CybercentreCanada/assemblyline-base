@@ -1727,7 +1727,10 @@ DEFAULT_SUBMISSION = {
     'metadata': {
         'archive': {},
         'submit': {},
-        'ingest': {}
+        'ingest': {
+            # Metadata rule for when: ingest_type: "INGEST", by default there are no rules set.
+            "INGEST": {}
+        }
     },
     'sha256_sources': [],
     'file_sources': [],
