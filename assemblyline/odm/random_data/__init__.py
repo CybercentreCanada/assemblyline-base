@@ -157,6 +157,9 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
         }
 
         if random.choice([True, False]):
+            service_data['description'] = get_random_phrase(10, 20)
+
+        if random.choice([True, False]):
             service_data['update_config'] = {
                 "sources": [random_model_obj(UpdateSource)],
                 "update_interval_seconds": 600,

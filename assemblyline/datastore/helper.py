@@ -22,7 +22,7 @@ from assemblyline.odm import DATEFORMAT, Model, Date
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
-from assemblyline.odm.models.config import METADATA_FIELDTYPE_MAP
+from assemblyline.odm.models.config import METADATA_FIELDTYPE_MAP, SubmissionMetadata
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -1420,7 +1420,6 @@ class MetadataValidator:
     def __init__(self, datastore: AssemblylineDatastore) -> None:
         self.datastore = datastore
         self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
-        self.meta_config = config.submission.metadata
 
     def get_metadata(self) -> dict[str, dict[str, Any]]:
         """Fetch the type mapping for submission metadata."""
@@ -1432,7 +1431,8 @@ class MetadataValidator:
                 selected[key] = value
         return selected
 
-    def check_metadata(self, metadata: dict[str, Any]) -> Optional[Tuple[str, str]]:
+    def check_metadata(self, metadata: dict[str, Any],
+                       validation_scheme: dict[str, SubmissionMetadata] = None) -> Optional[Tuple[str, str]]:
         """
         Check if the type of every metedata field for obvious errors.
 
@@ -1441,28 +1441,30 @@ class MetadataValidator:
 
         Return a tuple of (key name, error message) if any problems are detected.
         """
-        # Check to see if there's any required metadata that's missing
-        missing_metadata = []
-        for field_name, field_config in self.meta_config.items():
-            if field_name not in metadata and field_config.submission_required:
-                missing_metadata.append(field_name)
 
-        if missing_metadata:
-            return (None, f"Required metadata is missing from submission: {missing_metadata}")
+        if validation_scheme:
+            # Check to see if there's any required metadata that's missing
+            missing_metadata = []
+            for field_name, field_config in validation_scheme.items():
+                if field_name not in metadata and field_config.submission_required:
+                    missing_metadata.append(field_name)
 
-        for field_name, field_config in self.meta_config.items():
-            # Validate the format of the data given based on the configuration
-            validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(field_config.validator_params or {}))
-            meta_value = metadata.get(field_name)
+            if missing_metadata:
+                return (None, f"Required metadata is missing from submission: {missing_metadata}")
 
-            # Skip over validation of metadata that's missing and not required
-            if meta_value == None and not field_config.submission_required:
-                continue
+            for field_name, field_config in validation_scheme.items():
+                # Validate the format of the data given based on the configuration
+                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(field_config.validator_params or {}))
+                meta_value = metadata.get(field_name)
 
-            try:
-                validator.check(meta_value)
-            except ValueError as e:
-                return (field_name, f"Validation of '{field_name}' of type {validator} failed: {e}")
+                # Skip over validation of metadata that's missing and not required
+                if meta_value == None and not field_config.submission_required:
+                    continue
+
+                try:
+                    validator.check(meta_value)
+                except ValueError as e:
+                    return (field_name, f"Validation of '{field_name}' of type {validator} failed: {e}")
 
         # Check to see if any other metadata causes a conflict with Elasticsearch
         for key, value in metadata.items():

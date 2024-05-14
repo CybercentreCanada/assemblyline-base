@@ -474,40 +474,37 @@ def test_metadata_validation(ds: AssemblylineDatastore):
     validator = MetadataValidator(ds)
 
     # Run validator with no submission metadata validation configured
-    validator.meta_config = {}
-    assert not validator.check_metadata({'blah': 'blee'})
+    assert not validator.check_metadata({'blah': 'blee'}, validation_scheme={})
 
     # Run validation using validator parameters
-    validator.meta_config = {
+    meta_config = {
         'blah': SubmissionMetadata({
-            'submission_required': True,
+            'required': True,
             'validator_type': 'regex',
             'validator_params': {
                 'validation_regex': 'blee'
             }
         })
     }
-    assert not validator.check_metadata({'blah': 'blee'})
+    assert not validator.check_metadata({'blah': 'blee'}, validation_scheme=meta_config)
 
     # Run validator with validation configured but is missing metadata
-    assert validator.check_metadata({'bloo': 'blee'})
+    assert validator.check_metadata({'bloo': 'blee'}, validation_scheme=meta_config)
 
     # Run validation using invalid metadata
-    validator.meta_config = {
+    assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
         'blah': SubmissionMetadata({
             'submission_required': True,
             'validator_type': 'int',
         })
-    }
-    assert validator.check_metadata({'blah': 'blee'})
+    })
 
     # Run validation on field that's not required (but still provided and is invalid)
-    validator.meta_config = {
+    assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
         'blah': SubmissionMetadata({
             'validator_type': 'int',
         })
-    }
-    assert validator.check_metadata({'blah': 'blee'})
+    })
 
 def test_save_or_freshen_file(ds: AssemblylineDatastore):
     classification = forge.get_classification()

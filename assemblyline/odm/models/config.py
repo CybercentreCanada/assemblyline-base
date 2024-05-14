@@ -1671,12 +1671,19 @@ METADATA_FIELDTYPE_MAP = {
 
 @odm.model(index=False, store=False, description="Configuration about submission metadata")
 class SubmissionMetadata(odm.Model):
-    submission_required: bool = odm.Boolean(default=False, description="Is this metadata required on submission?")
-    archive_required: bool = odm.Boolean(default=False, description="Is this metadata required on archive?")
     validator_type: str = odm.Enum(values=METADATA_FIELDTYPE_MAP.keys(), default="str",
                                    description="Type of validation to apply to metadata value")
-    validator_params: Dict[str, Any] = odm.Optional(odm.Mapping(odm.Any()),
+    validator_params: Dict[str, Any] = odm.Mapping(odm.Any(), default={},
                                                    description="Configuration parameters to apply to validator")
+    required: bool = odm.Boolean(default=False, description="Is this field required?")
+
+class MetadataConfig(odm.Model):
+    archive: Dict[str, SubmissionMetadata] = odm.Mapping(odm.Compound(SubmissionMetadata),
+                                               description="Metadata specification for archiving")
+    submit: Dict[str, SubmissionMetadata] = odm.Mapping(odm.Compound(SubmissionMetadata),
+                                               description="Metadata specification for submission")
+    ingest_schemes = Dict[str, Dict[str, SubmissionMetadata]] = odm.Mapping(odm.Mapping(odm.Compound(SubmissionMetadata)),
+                                               description="Metadata specification for certain ingestion based on ingest_type")
 
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
@@ -1691,8 +1698,7 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
-    metadata: SubmissionMetadata = odm.Mapping(odm.Compound(SubmissionMetadata),
-                                               description="Metadata compliance rules")
+    metadata: MetadataConfig = odm.Compound(MetadataConfig, description="Metadata compliance rules")
     sha256_sources: List[Sha256Source] = odm.List(
         odm.Compound(Sha256Source),
         default=[],
@@ -1718,7 +1724,11 @@ DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
-    'metadata': {},
+    'metadata': {
+        'archive': {},
+        'submit': {},
+        'ingest_schemes': {}
+    },
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
