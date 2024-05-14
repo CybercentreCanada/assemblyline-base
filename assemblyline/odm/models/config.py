@@ -1658,13 +1658,13 @@ DEFAULT_VERDICTS = {
 
 METADATA_FIELDTYPE_MAP = {
     'date': odm.Date,
-    'bool': odm.Boolean,
-    'str': odm.Text,
+    'boolean': odm.Boolean,
+    'text': odm.Text,
     'ip': odm.IP,
     'domain': odm.Domain,
     'email': odm.Email,
     'uri': odm.URI,
-    'int': odm.Integer,
+    'integer': odm.Integer,
     'regex': odm.ValidatedKeyword,
     'enum': odm.Enum
 }
