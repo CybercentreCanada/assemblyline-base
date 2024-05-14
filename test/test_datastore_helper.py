@@ -495,14 +495,14 @@ def test_metadata_validation(ds: AssemblylineDatastore):
     assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
         'blah': SubmissionMetadata({
             'required': True,
-            'validator_type': 'int',
+            'validator_type': 'integer',
         })
     })
 
     # Run validation on field that's not required (but still provided and is invalid)
     assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
         'blah': SubmissionMetadata({
-            'validator_type': 'int',
+            'validator_type': 'integer',
         })
     })
 
