@@ -330,15 +330,18 @@ DEFAULT_SAML_ATTRIBUTES = {
     "group_type_mapping": {},
 }
 
+
 @odm.model(index=False, store=False, description="SAML Assertion Consumer Service")
 class SAMLAssertionConsumerService(odm.Model):
     url: str = odm.Keyword(description="URL")
     binding: str = odm.Keyword(description="Binding", default="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST")
 
+
 @odm.model(index=False, store=False, description="SAML Single Sign On Service")
 class SAMLSingleSignOnService(odm.Model):
     url: str = odm.Keyword(description="URL")
     binding: str = odm.Keyword(description="Binding", default="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")
+
 
 @odm.model(index=False, store=False, description="SAML Single Logout Service")
 class SAMLSingleLogoutService(odm.Model):
@@ -346,52 +349,69 @@ class SAMLSingleLogoutService(odm.Model):
     response_url: str = odm.Optional(odm.Keyword(), description="Response URL")
     binding: str = odm.Keyword(description="Binding", default="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")
 
+
 @odm.model(index=False, store=False, description="SAML Attribute")
 class SAMLRequestedAttribute(odm.Model):
     name: str = odm.Keyword(description="Name")
     is_required: bool = odm.Boolean(description="Is required?", default=False)
-    name_format: str = odm.Keyword(description="Name Format", default="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified")
-    friendly_name: str =  odm.Keyword(description="Friendly Name", default="")
+    name_format: str = odm.Keyword(description="Name Format",
+                                   default="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified")
+    friendly_name: str = odm.Keyword(description="Friendly Name", default="")
     attribute_value: List[str] = odm.List(odm.Keyword(), description="Attribute Value", default=[])
+
 
 @odm.model(index=False, store=False, description="SAML Attribute Consuming Service")
 class SAMLAttributeConsumingService(odm.Model):
     service_name: str = odm.Keyword(description="Service Name")
     service_description: str = odm.Keyword(description="Service Description")
-    requested_attributes: List[SAMLRequestedAttribute] = odm.List(odm.Compound(SAMLRequestedAttribute), description="Requested Attributes", default=[])
+    requested_attributes: List[SAMLRequestedAttribute] = odm.List(
+        odm.Compound(SAMLRequestedAttribute),
+        description="Requested Attributes", default=[])
+
 
 @odm.model(index=False, store=False, description="SAML Service Provider")
 class SAMLServiceProvider(odm.Model):
     entity_id: str = odm.Keyword(description="Entity ID")
-    assertion_consumer_service: SAMLAssertionConsumerService = odm.Compound(SAMLAssertionConsumerService, description="Assertion Consumer Service")
-    single_logout_service: SAMLSingleLogoutService = odm.Compound(SAMLSingleLogoutService, description="Single Logout Service")
-    attribute_consuming_service: SAMLAttributeConsumingService = odm.Optional(odm.Compound(SAMLAttributeConsumingService), description="Attribute Consuming Service")
-    name_id_format: str = odm.Keyword(description="Name ID Format", default="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")
+    assertion_consumer_service: SAMLAssertionConsumerService = odm.Compound(
+        SAMLAssertionConsumerService, description="Assertion Consumer Service")
+    single_logout_service: SAMLSingleLogoutService = odm.Compound(
+        SAMLSingleLogoutService, description="Single Logout Service")
+    attribute_consuming_service: SAMLAttributeConsumingService = odm.Optional(
+        odm.Compound(SAMLAttributeConsumingService), description="Attribute Consuming Service")
+    name_id_format: str = odm.Keyword(description="Name ID Format",
+                                      default="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")
     x509cert: str = odm.Optional(odm.Keyword(), description="X509 Certificate")
     private_key: str = odm.Optional(odm.Keyword(), description="Private Key")
+
 
 @odm.model(index=False, store=False, description="SAML Identity Provider")
 class SAMLIdentityProvider(odm.Model):
     entity_id: str = odm.Keyword(description="Entity ID")
-    single_sign_on_service: SAMLSingleSignOnService = odm.Compound(SAMLSingleSignOnService, description="Single Sign On Service")
-    single_logout_service: SAMLSingleLogoutService = odm.Compound(SAMLSingleLogoutService, description="Single Logout Service")
+    single_sign_on_service: SAMLSingleSignOnService = odm.Compound(
+        SAMLSingleSignOnService, description="Single Sign On Service")
+    single_logout_service: SAMLSingleLogoutService = odm.Compound(
+        SAMLSingleLogoutService, description="Single Logout Service")
     x509cert: str = odm.Optional(odm.Keyword(), description="X509 Certificate")
+
 
 @odm.model(index=False, store=False, description="SAML Contact Entry")
 class SAMLContactPerson(odm.Model):
     given_name: str = odm.Keyword(description="Given Name")
     email_address: str = odm.Keyword(description="Email Address")
 
+
 @odm.model(index=False, store=False, description="SAML Contacts")
 class SAMLContacts(odm.Model):
     technical: SAMLContactPerson = odm.Compound(SAMLContactPerson, description="Technical Contact")
     support: SAMLContactPerson = odm.Compound(SAMLContactPerson, description="Support Contact")
+
 
 @odm.model(index=False, store=False, description="SAML Organization")
 class SAMLOrganization(odm.Model):
     name: str = odm.Keyword(description="Name")
     display_name: str = odm.Keyword(description="Display Name")
     url: str = odm.Keyword(description="URL")
+
 
 @odm.model(index=False, store=False, description="SAML Security")
 class SAMLSecurity(odm.Model):
@@ -407,7 +427,8 @@ class SAMLSecurity(odm.Model):
     want_name_id_encrypted: bool = odm.Optional(odm.Boolean(), description="Want Name ID Encrypted")
     want_attribute_statement: bool = odm.Optional(odm.Boolean(), description="Want Attribute Statement")
     requested_authn_context: bool = odm.Optional(odm.Boolean(), description="Requested Authn Context")
-    requested_authn_context_comparison: str = odm.Optional(odm.Keyword(), description="Requested Authn Context Comparison")
+    requested_authn_context_comparison: str = odm.Optional(
+        odm.Keyword(), description="Requested Authn Context Comparison")
     fail_on_authn_context_mismatch: bool = odm.Optional(odm.Boolean(), description="Fail On Authn Context Mismatch")
     metadata_valid_until: str = odm.Optional(odm.Keyword(), description="Metadata Valid Until")
     metadata_cache_duration: str = odm.Optional(odm.Keyword(), description="Metadata Cache Duration")
@@ -417,6 +438,7 @@ class SAMLSecurity(odm.Model):
     allow_repeat_attribute_name: bool = odm.Optional(odm.Boolean(), description="Allow Repeat Attribute Name")
     reject_deprecated_algorithm: bool = odm.Optional(odm.Boolean(), description="Reject Deprecated Algorithm")
 
+
 @odm.model(index=False, store=False, description="SAML Settings")
 class SAMLSettings(odm.Model):
     strict: bool = odm.Boolean(description="Should we be strict in our SAML checks?", default=True)
@@ -425,25 +447,36 @@ class SAMLSettings(odm.Model):
     idp: SAMLIdentityProvider = odm.Compound(SAMLIdentityProvider, description="IDP settings")
     security: SAMLSecurity = odm.Optional(odm.Compound(SAMLSecurity), description="Security settings")
     contact_person: SAMLContacts = odm.Optional(odm.Compound(SAMLContacts), description="Contact settings")
-    organization: Dict[str, SAMLOrganization] = odm.Optional(odm.Mapping(odm.Compound(SAMLOrganization)), description="Organization settings")
+    organization: Dict[str, SAMLOrganization] = odm.Optional(odm.Mapping(
+        odm.Compound(SAMLOrganization)), description="Organization settings")
+
 
 @odm.model(index=False, store=False, description="SAML Attributes")
 class SAMLAttributes(odm.Model):
-    username_attribute: str = odm.Optional(odm.Keyword(default="uid"), description="SAML attribute name for AL username")
+    username_attribute: str = odm.Optional(
+        odm.Keyword(default="uid"),
+        description="SAML attribute name for AL username")
     email_attribute: str = odm.Keyword(description="SAML attribute name for a user's email address ", default="email")
     fullname_attribute: str = odm.Keyword(description="SAML attribute name for a user's first name", default="name")
     groups_attribute: str = odm.Keyword(description="SAML attribute name for the groups", default="groups")
     roles_attribute: str = odm.Keyword(description="SAML attribute name for the roles", default="roles")
-    group_type_mapping: Dict[str, str] = odm.Mapping(odm.Keyword(), description="SAML group to role mapping", default={})
+    group_type_mapping: Dict[str, str] = odm.Mapping(
+        odm.Keyword(), description="SAML group to role mapping", default={})
+
 
 @odm.model(index=False, store=False, description="SAML Configuration")
 class SAML(odm.Model):
     enabled: bool = odm.Boolean(description="Enable use of SAML?")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing", default=True)
-    auto_sync: bool = odm.Boolean(description="Should we automatically sync with SAML server on each login?", default=True)
-    lowercase_urlencoding: bool = odm.Boolean(description="Enable lowercase encoding if using ADFS as IdP", default=False)
-    attributes: SAMLAttributes = odm.Compound(SAMLAttributes, default=DEFAULT_SAML_ATTRIBUTES, description="SAML attributes")
-    settings: SAMLSettings = odm.Compound(SAMLSettings, default=DEFAULT_SAML_SETTINGS, description="SAML settings method")
+    auto_sync: bool = odm.Boolean(
+        description="Should we automatically sync with SAML server on each login?", default=True)
+    lowercase_urlencoding: bool = odm.Boolean(
+        description="Enable lowercase encoding if using ADFS as IdP", default=False)
+    attributes: SAMLAttributes = odm.Compound(
+        SAMLAttributes, default=DEFAULT_SAML_ATTRIBUTES, description="SAML attributes")
+    settings: SAMLSettings = odm.Compound(SAMLSettings, default=DEFAULT_SAML_SETTINGS,
+                                          description="SAML settings method")
+
 
 DEFAULT_SAML = {
     "enabled": False,
