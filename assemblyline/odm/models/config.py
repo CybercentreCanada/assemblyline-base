@@ -297,17 +297,17 @@ DEFAULT_SAML_SETTINGS = {
     "strict": True,
     "debug": False,
     "sp": {
-        "entity_id": "https://localhost/api/v4/auth/saml/metadata",
+        "entity_id": "https://localhost/api/v4/auth/saml/metadata/",
         "assertion_consumer_service": {
-            "url": "https://localhost/api/v4/auth/saml/acs",
+            "url": "https://localhost/api/v4/auth/saml/acs/",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
         "single_logout_service": {
-            "url": "https://localhost/api/v4/auth/saml/sls",
-            "response_url": "https://localhost/api/v4/auth/saml/sls",
+            "url": "https://localhost/api/v4/auth/saml/sls/",
+            "response_url": "https://localhost/api/v4/auth/saml/sls/",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
-        "name_id_format": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        "name_id_format": "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
     },
     "idp": {
         "entity_id": "https://mocksaml.com/api/saml/metadata",
