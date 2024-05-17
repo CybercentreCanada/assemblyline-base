@@ -294,20 +294,15 @@ DEFAULT_OAUTH = {
 
 
 DEFAULT_SAML_SETTINGS = {
-    "strict": True,
+    "strict": False,
     "debug": False,
     "sp": {
-        "entity_id": "https://localhost/api/v4/auth/saml/metadata/",
+        "entity_id": "https://assemblyline/sp",
         "assertion_consumer_service": {
             "url": "https://localhost/api/v4/auth/saml/acs/",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
         },
-        "single_logout_service": {
-            "url": "https://localhost/api/v4/auth/saml/sls/",
-            "response_url": "https://localhost/api/v4/auth/saml/sls/",
-            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
-        },
-        "name_id_format": "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
+        "name_id_format": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
     },
     "idp": {
         "entity_id": "https://mocksaml.com/api/saml/metadata",
@@ -315,10 +310,6 @@ DEFAULT_SAML_SETTINGS = {
             "url": "https://mocksaml.com/api/saml/sso",
             "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         },
-        "single_logout_service": {
-            "url": "https://mocksaml.com/api/saml/sso",
-            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
-        }
     },
 }
 
@@ -340,13 +331,6 @@ class SAMLAssertionConsumerService(odm.Model):
 @odm.model(index=False, store=False, description="SAML Single Sign On Service")
 class SAMLSingleSignOnService(odm.Model):
     url: str = odm.Keyword(description="URL")
-    binding: str = odm.Keyword(description="Binding", default="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")
-
-
-@odm.model(index=False, store=False, description="SAML Single Logout Service")
-class SAMLSingleLogoutService(odm.Model):
-    url: str = odm.Keyword(description="URL")
-    response_url: str = odm.Optional(odm.Keyword(), description="Response URL")
     binding: str = odm.Keyword(description="Binding", default="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")
 
 
@@ -374,8 +358,6 @@ class SAMLServiceProvider(odm.Model):
     entity_id: str = odm.Keyword(description="Entity ID")
     assertion_consumer_service: SAMLAssertionConsumerService = odm.Compound(
         SAMLAssertionConsumerService, description="Assertion Consumer Service")
-    single_logout_service: SAMLSingleLogoutService = odm.Compound(
-        SAMLSingleLogoutService, description="Single Logout Service")
     attribute_consuming_service: SAMLAttributeConsumingService = odm.Optional(
         odm.Compound(SAMLAttributeConsumingService), description="Attribute Consuming Service")
     name_id_format: str = odm.Keyword(description="Name ID Format",
@@ -389,8 +371,6 @@ class SAMLIdentityProvider(odm.Model):
     entity_id: str = odm.Keyword(description="Entity ID")
     single_sign_on_service: SAMLSingleSignOnService = odm.Compound(
         SAMLSingleSignOnService, description="Single Sign On Service")
-    single_logout_service: SAMLSingleLogoutService = odm.Compound(
-        SAMLSingleLogoutService, description="Single Logout Service")
     x509cert: str = odm.Optional(odm.Keyword(), description="X509 Certificate")
 
 
