@@ -1455,7 +1455,8 @@ class MetadataValidator:
         return selected
 
     def check_metadata(self, metadata: dict[str, Any],
-                       validation_scheme: dict[str, Metadata] = None) -> Optional[Tuple[str, str]]:
+                       validation_scheme: dict[str, Metadata] = None,
+                       skip_elastic_fields: bool = False) -> Optional[Tuple[str, str]]:
         """
         Check if the type of every metedata field for obvious errors.
 
@@ -1489,35 +1490,36 @@ class MetadataValidator:
                 except ValueError as e:
                     return (field_name, f"Validation of '{field_name}' of type {validator} failed: {e}")
 
-        # Check to see if any other metadata causes a conflict with Elasticsearch
-        for key, value in metadata.items():
-            try:
-                type_name = self.metadata[key]["type"]
-                if type_name == 'integer':
-                    try:
-                        number = int(value)
-                        if number < -(2 ** 31) or number > (2 ** 31 - 1):
-                            return (key, f'Metadata field {key} only supports signed 32 bit values')
-                    except ValueError:
-                        return (key, f'Metadata field {key} expected a number, received "{value}" instead')
-                elif type_name == 'date':
-                    try:
-                        int(value)
-                        return (key, f'Metadata field {key} expected a date, refusing to coerce a number')
-                    except Exception:
+        if not skip_elastic_fields:
+            # Check to see if any other metadata causes a conflict with Elasticsearch
+            for key, value in metadata.items():
+                try:
+                    type_name = self.metadata[key]["type"]
+                    if type_name == 'integer':
+                        try:
+                            number = int(value)
+                            if number < -(2 ** 31) or number > (2 ** 31 - 1):
+                                return (key, f'Metadata field {key} only supports signed 32 bit values')
+                        except ValueError:
+                            return (key, f'Metadata field {key} expected a number, received "{value}" instead')
+                    elif type_name == 'date':
+                        try:
+                            int(value)
+                            return (key, f'Metadata field {key} expected a date, refusing to coerce a number')
+                        except Exception:
+                            pass
+                        try:
+                            value = Date().check(value)
+                            if value is None:
+                                raise ValueError()
+                            metadata[key] = value.strftime(DATEFORMAT)
+                        except Exception:
+                            return (key, f'Metadata field {key} expected a date, received "{value}" instead')
+                    else:
+                        # Everything else seems fine so far
                         pass
-                    try:
-                        value = Date().check(value)
-                        if value is None:
-                            raise ValueError()
-                        metadata[key] = value.strftime(DATEFORMAT)
-                    except Exception:
-                        return (key, f'Metadata field {key} expected a date, received "{value}" instead')
-                else:
-                    # Everything else seems fine so far
+                except KeyError:
                     pass
-            except KeyError:
-                pass
 
         # No problems encountered
         return None
