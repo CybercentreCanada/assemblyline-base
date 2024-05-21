@@ -3,7 +3,6 @@ import concurrent.futures
 import elasticapm
 import json
 import os
-import re
 
 from datetime import datetime
 from typing import List, Union, Optional, Any, Tuple
@@ -1482,7 +1481,7 @@ class MetadataValidator:
                 meta_value = metadata.get(field_name)
 
                 # Skip over validation of metadata that's missing and not required
-                if meta_value == None and not field_config.required:
+                if meta_value is None and not field_config.required:
                     continue
 
                 try:
