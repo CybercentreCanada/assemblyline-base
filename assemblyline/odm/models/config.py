@@ -581,14 +581,17 @@ class Archiver(odm.Model):
                                                  "malware archive. (0: Disabled, will keep data forever)")
     metadata: Dict = odm.Mapping(
         odm.Compound(ArchiverMetadata),
-        description="Proxy configuration that is passed to Python Requests")
+        description="Proxy configuration that is passed to Python Requests",
+        deprecation="The configuration for the archive metadata validation and requirements has moved to"
+                    "`submission.metadata.archive`.")
     minimum_required_services: List[str] = odm.List(
         odm.keyword(),
         default=[],
         description="List of minimum required service before archiving takes place")
     webhook = odm.Optional(odm.Compound(Webhook), description="Webhook to call before triggering the archiving process")
     use_metadata: bool = odm.Boolean(
-        default=False, description="Should the UI ask form metadata to be filed out when archiving")
+        default=False, description="Should the UI ask form metadata to be filed out when archiving",
+        deprecation="This field is no longer required...")
     use_webhook: bool = odm.Optional(odm.Boolean(
         default=False,
         description="Should the archiving go through the webhook prior to actually trigger the archiving function"))
