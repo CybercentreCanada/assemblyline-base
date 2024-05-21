@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
@@ -1684,6 +1684,7 @@ DEFAULT_VERDICTS = {
 METADATA_FIELDTYPE_MAP = {
     'date': odm.Date,
     'boolean': odm.Boolean,
+    'keyword': odm.Keyword,
     'text': odm.Text,
     'ip': odm.IP,
     'domain': odm.Domain,
@@ -1694,22 +1695,27 @@ METADATA_FIELDTYPE_MAP = {
     'enum': odm.Enum
 }
 
+
 @odm.model(index=False, store=False, description="Metadata configuration")
 class Metadata(odm.Model):
     validator_type: str = odm.Enum(values=METADATA_FIELDTYPE_MAP.keys(), default="str",
                                    description="Type of validation to apply to metadata value")
     validator_params: Dict[str, Any] = odm.Mapping(odm.Any(), default={},
                                                    description="Configuration parameters to apply to validator")
+    suggestions: List[str] = odm.List(odm.Keyword(), default=[], description="List of suggestions for this field")
+    default: Any = odm.Optional(odm.Keyword(description="Default value for the field"))
     required: bool = odm.Boolean(default=False, description="Is this field required?")
+
 
 @odm.model(index=False, store=False, description="Configuration for metadata compliance with APIs")
 class MetadataConfig(odm.Model):
     archive: Dict[str, Metadata] = odm.Mapping(odm.Compound(Metadata),
                                                description="Metadata specification for archiving")
     submit: Dict[str, Metadata] = odm.Mapping(odm.Compound(Metadata),
-                                               description="Metadata specification for submission")
-    ingest: Dict[str, Dict[str, Metadata]] = odm.Mapping(odm.Mapping(odm.Compound(Metadata)),
-                     description="Metadata specification for certain ingestion based on ingest_type")
+                                              description="Metadata specification for submission")
+    ingest: Dict[str, Dict[str, Metadata]] = odm.Mapping(odm.Mapping(odm.Compound(
+        Metadata)), description="Metadata specification for certain ingestion based on ingest_type")
+
 
 DEFAULT_METADATA_CONFIGURATION = {
     'archive': {},
@@ -1719,6 +1725,7 @@ DEFAULT_METADATA_CONFIGURATION = {
         "INGEST": {}
     }
 }
+
 
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
