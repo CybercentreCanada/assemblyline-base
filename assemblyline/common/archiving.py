@@ -67,8 +67,9 @@ class ArchiveManager():
                 params['delete_after_archive'] = delete_after
                 params['use_archive_alternate_dtl'] = use_alternate_dtl
                 params['services']['selected'] = list(set(sub_selected).union(set(min_selected)))
-                if metadata and self.config.core.archiver.use_metadata:
-                    submission['metadata'].update({f"archive.{k}": v for k, v in metadata.items()})
+                if metadata and self.config.submission.metadata.archive:
+                    submission['metadata'].update({k: v for k, v in metadata.items()
+                                                  if k not in submission['metadata']})
                 try:
                     submission_obj = Submission({
                         "files": submission["files"],
