@@ -780,18 +780,24 @@ rule code_python {
         $strong_py2 = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+/
         $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
         $strong_py4 = /(try:|except:|else:)/
-        // High confidence one-liner used to execute base64 blobs
-        $strong_py5 = /exec\(__import__\(['"]base64['"]\)\.b64decode\(__import__\(['"]codecs['"]\)\.getencoder\(/
-        $strong_py6 = "requests.get("
+        $strong_py5 = "requests.get("
 
         // Setup.py indicators
-        $strong_py7 = "python_requires" ascii wide
-        $strong_py8 = "setuptools.setup(" ascii wide
-        $strong_py9 = "setuptools.find_packages(" ascii wide
+        $strong_py6 = "python_requires" ascii wide
+        $strong_py7 = "setuptools.setup(" ascii wide
+        $strong_py8 = "setuptools.find_packages(" ascii wide
+
+        // High confidence one-liner used to execute base64 blobs
+        // reference: https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/exec-base64.yml
+        $executor1 = /(exec|eval|check_output|run|call|[Pp]open|os\.system)\(((zlib|__import__\(['"]zlib['"]\))\.decompress\()?(base64|__import__\(['"]base64['"]\))\.b64decode\(/
+        $executor2 = /(marshal|__import__\(['"]marshal['"]\)|pickle|__import__\(['"]pickle['"]\))\.loads\(zlib\.decompress\(/
 
     condition:
         mime startswith "text"
-        and (2 of them or $strong_py5)
+        and (
+            2 of ($strong_py*)
+            or any of ($executor*)
+        )
 }
 
 /*
