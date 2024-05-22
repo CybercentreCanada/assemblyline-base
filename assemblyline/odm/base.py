@@ -77,7 +77,7 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
-URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
+URI_REGEX = f"((?:(?:[A-Za-z0-9+.-]{{1,}}:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
             f"{URI_PATH}?)"
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
@@ -1332,6 +1332,31 @@ class Model:
         # Since the layout of model objects should be fixed, don't allow any further
         # attribute assignment
         self.__frozen = True
+
+    def as_camel_case(self):
+        """Returns the object keys as camelCase"""
+        def snake_to_camel(snake_str):
+            """Converts a snake_case string to camelCase."""
+            if snake_str == "name_id_format":
+                # SAML Pascal exception to CamelCase
+                return "NameIDFormat"
+
+            # Locale/country code exception (e.g., "en_us" to "en-US")
+            if "_" in snake_str and len(snake_str) == 5 and snake_str[2] == "_":
+                return snake_str[:2] + "-" + snake_str[3:].upper()
+
+            components = snake_str.split('_')
+            return components[0] + ''.join(x.title() for x in components[1:])
+
+        def to_camel_case(data):
+            """Recursively converts all dictionary keys from snake_case to camelCase."""
+            if isinstance(data, dict):
+                return {snake_to_camel(key): to_camel_case(value) for key, value in data.items() if value is not None}
+            elif isinstance(data, list):
+                return [to_camel_case(item) for item in data]
+            else:
+                return data
+        return to_camel_case(self.as_primitives())
 
     def as_primitives(self, hidden_fields=False, strip_null=False, strip_non_ai_fields=False):
         """Convert the object back into primitives that can be json serialized."""
