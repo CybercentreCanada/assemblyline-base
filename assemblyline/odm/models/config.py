@@ -1,8 +1,9 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
+
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota', 'submission_daily_quota']
@@ -758,14 +759,17 @@ class Archiver(odm.Model):
                                                  "malware archive. (0: Disabled, will keep data forever)")
     metadata: Dict = odm.Mapping(
         odm.Compound(ArchiverMetadata),
-        description="Proxy configuration that is passed to Python Requests")
+        description="Proxy configuration that is passed to Python Requests",
+        deprecation="The configuration for the archive metadata validation and requirements has moved to"
+                    "`submission.metadata.archive`.")
     minimum_required_services: List[str] = odm.List(
         odm.keyword(),
         default=[],
         description="List of minimum required service before archiving takes place")
     webhook = odm.Optional(odm.Compound(Webhook), description="Webhook to call before triggering the archiving process")
     use_metadata: bool = odm.Boolean(
-        default=False, description="Should the UI ask form metadata to be filed out when archiving")
+        default=False, description="Should the UI ask form metadata to be filed out when archiving",
+        deprecation="This field is no longer required...")
     use_webhook: bool = odm.Optional(odm.Boolean(
         default=False,
         description="Should the archiving go through the webhook prior to actually trigger the archiving function"))
@@ -1873,6 +1877,51 @@ DEFAULT_VERDICTS = {
     'malicious': 1000
 }
 
+METADATA_FIELDTYPE_MAP = {
+    'date': odm.Date,
+    'boolean': odm.Boolean,
+    'keyword': odm.Keyword,
+    'text': odm.Text,
+    'ip': odm.IP,
+    'domain': odm.Domain,
+    'email': odm.Email,
+    'uri': odm.URI,
+    'integer': odm.Integer,
+    'regex': odm.ValidatedKeyword,
+    'enum': odm.Enum
+}
+
+
+@odm.model(index=False, store=False, description="Metadata configuration")
+class Metadata(odm.Model):
+    validator_type: str = odm.Enum(values=METADATA_FIELDTYPE_MAP.keys(), default="str",
+                                   description="Type of validation to apply to metadata value")
+    validator_params: Dict[str, Any] = odm.Mapping(odm.Any(), default={},
+                                                   description="Configuration parameters to apply to validator")
+    suggestions: List[str] = odm.List(odm.Keyword(), default=[], description="List of suggestions for this field")
+    default: Any = odm.Optional(odm.Keyword(description="Default value for the field"))
+    required: bool = odm.Boolean(default=False, description="Is this field required?")
+
+
+@odm.model(index=False, store=False, description="Configuration for metadata compliance with APIs")
+class MetadataConfig(odm.Model):
+    archive: Dict[str, Metadata] = odm.Mapping(odm.Compound(Metadata),
+                                               description="Metadata specification for archiving")
+    submit: Dict[str, Metadata] = odm.Mapping(odm.Compound(Metadata),
+                                              description="Metadata specification for submission")
+    ingest: Dict[str, Dict[str, Metadata]] = odm.Mapping(odm.Mapping(odm.Compound(
+        Metadata)), description="Metadata specification for certain ingestion based on ingest_type")
+
+
+DEFAULT_METADATA_CONFIGURATION = {
+    'archive': {},
+    'submit': {},
+    'ingest': {
+        # Metadata rule for when: ingest_type: "INGEST", by default there are no rules set.
+        "INGEST": {}
+    }
+}
+
 
 TEMPORARY_KEY_TYPE = [
     'union',
@@ -1894,6 +1943,8 @@ class Submission(odm.Model):
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
+    metadata: MetadataConfig = odm.Compound(MetadataConfig, default=DEFAULT_METADATA_CONFIGURATION,
+                                            description="Metadata compliance rules")
     sha256_sources: List[Sha256Source] = odm.List(
         odm.Compound(Sha256Source),
         default=[],
@@ -1927,6 +1978,7 @@ DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
+    'metadata': DEFAULT_METADATA_CONFIGURATION,
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
