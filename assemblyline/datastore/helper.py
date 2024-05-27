@@ -21,6 +21,7 @@ from assemblyline.odm import DATEFORMAT, Model, Date
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
+from assemblyline.odm.models.config import METADATA_FIELDTYPE_MAP, Metadata
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -1453,7 +1454,9 @@ class MetadataValidator:
                 selected[key] = value
         return selected
 
-    def check_metadata(self, metadata: dict[str, Any]) -> Optional[Tuple[str, str]]:
+    def check_metadata(self, metadata: dict[str, Any],
+                       validation_scheme: dict[str, Metadata] = None,
+                       skip_elastic_fields: bool = False) -> Optional[Tuple[str, str]]:
         """
         Check if the type of every metedata field for obvious errors.
 
@@ -1462,34 +1465,61 @@ class MetadataValidator:
 
         Return a tuple of (key name, error message) if any problems are detected.
         """
-        for key, value in metadata.items():
-            try:
-                type_name = self.metadata[key]["type"]
-                if type_name == 'integer':
-                    try:
-                        number = int(value)
-                        if number < -(2 ** 31) or number > (2 ** 31 - 1):
-                            return (key, f'Metadata field {key} only supports signed 32 bit values')
-                    except ValueError:
-                        return (key, f'Metadata field {key} expected a number, received "{value}" instead')
-                elif type_name == 'date':
-                    try:
-                        int(value)
-                        return (key, f'Metadata field {key} expected a date, refusing to coerce a number')
-                    except Exception:
+
+        if validation_scheme:
+            # Check to see if there's any required metadata that's missing
+            missing_metadata = []
+            for field_name, field_config in validation_scheme.items():
+                if field_name not in metadata and field_config.required:
+                    missing_metadata.append(field_name)
+
+            if missing_metadata:
+                return (None, f"Required metadata is missing from submission: {missing_metadata}")
+
+            for field_name, field_config in validation_scheme.items():
+                # Validate the format of the data given based on the configuration
+                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(field_config.validator_params or {}))
+                meta_value = metadata.get(field_name)
+
+                # Skip over validation of metadata that's missing and not required
+                if meta_value is None and not field_config.required:
+                    continue
+
+                try:
+                    validator.check(meta_value)
+                except ValueError as e:
+                    return (field_name, f"Validation of '{field_name}' of type {validator} failed: {e}")
+
+        if not skip_elastic_fields:
+            # Check to see if any other metadata causes a conflict with Elasticsearch
+            for key, value in metadata.items():
+                try:
+                    type_name = self.metadata[key]["type"]
+                    if type_name == 'integer':
+                        try:
+                            number = int(value)
+                            if number < -(2 ** 31) or number > (2 ** 31 - 1):
+                                return (key, f'Metadata field {key} only supports signed 32 bit values')
+                        except ValueError:
+                            return (key, f'Metadata field {key} expected a number, received "{value}" instead')
+                    elif type_name == 'date':
+                        try:
+                            int(value)
+                            return (key, f'Metadata field {key} expected a date, refusing to coerce a number')
+                        except Exception:
+                            pass
+                        try:
+                            value = Date().check(value)
+                            if value is None:
+                                raise ValueError()
+                            metadata[key] = value.strftime(DATEFORMAT)
+                        except Exception:
+                            return (key, f'Metadata field {key} expected a date, received "{value}" instead')
+                    else:
+                        # Everything else seems fine so far
                         pass
-                    try:
-                        value = Date().check(value)
-                        if value is None:
-                            raise ValueError()
-                        metadata[key] = value.strftime(DATEFORMAT)
-                    except Exception:
-                        return (key, f'Metadata field {key} expected a date, received "{value}" instead')
-                else:
-                    # Everything else seems fine so far
+                except KeyError:
                     pass
-            except KeyError:
-                pass
 
         # No problems encountered
         return None
