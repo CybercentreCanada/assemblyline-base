@@ -1612,6 +1612,8 @@ HASH_PATTERN_MAP = {
 @odm.model(index=False, store=False, description="A file source entry for remote fetching via string")
 class FileSource(odm.Model):
     name: str = odm.Keyword(description="Name of the sha256 source")
+    auto_select: bool = odm.boolean(
+        default=False, description="Should we force the source to be auto-selected for the user ?")
     hash_types: List[str] = odm.List(odm.Keyword(), default=["sha256"],
                                      description="Method(s) of fetching file from source by string input"
                                      f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
