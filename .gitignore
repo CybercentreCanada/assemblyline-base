@@ -85,3 +85,6 @@ venv.bak/
 # Cython debug symbols
 cython_debug/
 assemblyline/common/frequency.c
+
+# MacOS
+.DS_Store
