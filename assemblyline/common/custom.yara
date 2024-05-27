@@ -780,18 +780,24 @@ rule code_python {
         $strong_py2 = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+/
         $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
         $strong_py4 = /(try:|except:|else:)/
-        // High confidence one-liner used to execute base64 blobs
-        $strong_py5 = /exec\(__import__\(['"]base64['"]\)\.b64decode\(__import__\(['"]codecs['"]\)\.getencoder\(/
-        $strong_py6 = "requests.get("
+        $strong_py5 = "requests.get("
 
         // Setup.py indicators
-        $strong_py7 = "python_requires" ascii wide
-        $strong_py8 = "setuptools.setup(" ascii wide
-        $strong_py9 = "setuptools.find_packages(" ascii wide
+        $strong_py6 = "python_requires" ascii wide
+        $strong_py7 = "setuptools.setup(" ascii wide
+        $strong_py8 = "setuptools.find_packages(" ascii wide
+
+        // High confidence one-liner used to execute base64 blobs
+        // reference: https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/exec-base64.yml
+        $executor1 = /(exec|eval|check_output|run|call|[Pp]open|os\.system)\(((zlib|__import__\(['"]zlib['"]\))\.decompress\()?(base64|__import__\(['"]base64['"]\))\.b64decode\(/
+        $executor2 = /(marshal|__import__\(['"]marshal['"]\)|pickle|__import__\(['"]pickle['"]\))\.loads\(zlib\.decompress\(/
 
     condition:
         mime startswith "text"
-        and (2 of them or $strong_py5)
+        and (
+            2 of ($strong_py*)
+            or any of ($executor*)
+        )
 }
 
 /*
@@ -901,7 +907,7 @@ rule code_batch {
     strings:
         $obf1 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
         // Example: %blah1%%blah2%%blah3%%blah4%%blah5%%blah6%%blah7%%blah8%%blah9%%blah10%
-        $obf2 = /\%([^:\n\r\%]+(\%\%)?)+\%/
+        $obf2 = /%%\w{1,500}%(%\w{1,500}%){4,30}/
         // powershell does not need to be followed with -c or -command for it to be considered batch
         $power1 = /(^|\n|@|&|\b)\^?p(\^|%[^%\n]{0,100}%)?o(\^|%[^%\n]{0,100}%)?w(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?r(\^|%[^%\n]{0,100}%)?s(\^|%[^%\n]{0,100}%)?h(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?l(\^|%[^%\n]{0,100}%)?l(\^|%[^%\n]{0,100}%)?(\.(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?x(\^|%[^%\n]{0,100}%)?e(\^|%[^%\n]{0,100}%)?)?\b/i
         // check for it seperately
@@ -909,50 +915,70 @@ rule code_batch {
 
         // del is not a batch-specific command, and is an alias for Remove-Item in PowerShell.
         // Therefore do not include it in the command set for batch.
-        $cmd1 = /(^|\n|@|&)(echo|netsh|goto|pkgmgr|netstat|taskkill|vssadmin|tasklist|schtasks)[ \t][\/]?\w+/i
+        $cmd0 = /(^|\n|@|&)echo[ \t]{1,10}(%\w+%|\w+)/i
+        $cmd1 = /(^|\n|@|&)(netsh|goto|pkgmgr|netstat|taskkill|vssadmin|tasklist|schtasks|copy)[ \t][\/]?\w+/i
         $cmd2 = /(^|\n|@|&)net[ \t]+(share|stop|start|accounts|computer|config|continue|file|group|localgroup|pause|session|statistics|time|use|user|view)/i
         $cmd3 = /(^|\n|@|&)reg[ \t]+(delete|query|add|copy|save|load|unload|restore|compare|export|import|flags)[ \t]+/i
         $cmd4 = /(^|\n|@|&|^\s)start[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)+["']?([A-Z]:)?([\\|\/]?[\w.]+)+/i
         $cmd5 = /(^|\n)exit\s*$/i
         $cmd6 = /(^|\n|@|&)%comspec%/i
         $cmd7 = /(^|\n|@|&)timeout[ \t](\/\w+|[-]?\d{1,5})/i
+        $cmd8 = /(^|\n|@|&)for[ \t]\/f[ \t]/i
         $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
         $rem2 = /(^|\n)::/
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?%?\^?\w+/i
-        $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion)/i
+        $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion|enableExtensions|disableExtensions)/i
 
     condition:
         (
-            mime startswith "text"
-            or uint16(0) == 0xFEFF  // little-endian utf-16 BOM at 0
-        )
-        and (
-            for 1 of ($obf1) :( # > 3 )
-            // powershell can have a command in it that looks like this: "powershell -command blah"
-            // so we need something else
-            or (
-                $power1
-                and $command
-                and (
-                    1 of ($cmd*)
-                    or 1 of ($rem*)
+            (
+                mime startswith "text"
+                or uint16(0) == 0xFEFF  // little-endian utf-16 BOM at 0
+                or $cmd1 at 0
+            )
+            and (
+                #obf1 > 3
+                // powershell can have a command in it that looks like this: "powershell -command blah"
+                // so we need something else
+                or (
+                    $power1
+                    and $command
+                    and (
+                        1 of ($cmd*)
+                        or 1 of ($rem*)
+                    )
                 )
-            )
-            or (
-                $power1
-                and 1 of ($cmd*)
-            )
-            or for 1 of ($cmd*) :( # > 3 )
-            or $exp
-            or (
-                2 of ($cmd*)
-                and (#rem1+#rem2+#set) > 4
+                or (
+                    $power1
+                    and 1 of ($cmd*)
+                )
+                or for 1 of ($cmd*) :( # > 3 )
+                or $exp
+                or (
+                    2 of ($cmd*)
+                    and (#rem1+#rem2+#set) > 4
+                )
             )
         )
         or (
-            for 1 of ($obf2) :( # > 3 )
+            mime == "application/octet-stream"
+            and
+            (
+                for 1 of ($cmd*) :( # > 20 )
+                or (
+                    2 of ($cmd*)
+                    and (#rem1+#rem2+#set) > 20
+                )
+            )
+        )
+        or (
+            #obf2 > 3
             and 1 of ($cmd*)
             and (#rem1+#rem2+#set) > 4
+        )
+        or (
+            #obf2 > 10
+            and #set > 30
         )
 }
 
