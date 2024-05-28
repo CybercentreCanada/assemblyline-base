@@ -457,109 +457,58 @@ class ESCollection(Generic[ModelType]):
         else:
             new_expiry = None
 
-        # Check if already in archive
-        if not self.exists(key, index_type=Index.ARCHIVE):
-            # File is not in archive
-            # Get the document from hot index
-            doc = self.get_if_exists(key, index_type=Index.HOT)
-            if doc:
-                # Set the time at which the file was archived
-                try:
-                    doc.archive_ts = now_as_iso()
-                except (AttributeError, KeyError, ValueError):
-                    pass
-
-                # Set new document expiry determined earlier
-                try:
-                    doc.expiry_ts = new_expiry
-                except (AttributeError, KeyError, ValueError):
-                    pass
-
-                # Save the document to the archive
-                self.save(key, doc, index_type=Index.ARCHIVE)
-            elif not allow_missing:
-                raise DataStoreException(f"{key} does not exists in {self.name} hot index therefor cannot be archived.")
-        else:
-            # Document already in archive, edit expiry and set archive_ts is it was not already
-            while True:
-                archived_doc, version = self.get_if_exists(key, index_type=Index.ARCHIVE, version=True)
-                if archived_doc:
-                    try:
-                        # Set the time at which the file was archived if it was not set already
+        while True:
+            try:
+                doc, version = self.get_if_exists(key, index_type=Index.ARCHIVE, version=True)
+                # Check if already in archive
+                if not doc:
+                    # File is not in archive
+                    # Get the document from hot index
+                    doc = self.get_if_exists(key, index_type=Index.HOT)
+                    if doc:
+                        # Set the time at which the file was archived
                         try:
-                            if archived_doc.archive_ts is None:
-                                archived_doc.archive_ts = now_as_iso()
+                            doc.archive_ts = now_as_iso()
                         except (AttributeError, KeyError, ValueError):
                             pass
 
-                        # Set new document expiry if the document already has one
-                        #   ** This will either prolong the expiry time as its a fix values based of now
-                        #      or it will reset it to null
-                        if archived_doc.expiry_ts is not None:
-                            archived_doc.expiry_ts = new_expiry
+                        # Set new document expiry determined earlier
+                        try:
+                            doc.expiry_ts = new_expiry
+                        except (AttributeError, KeyError, ValueError):
+                            pass
 
-                        # Save the document to the archive
-                        self.save(key, archived_doc, index_type=Index.ARCHIVE, version=version)
-                        break
-                    except (AttributeError, KeyError, ValueError):
-                        break
-                    except VersionConflictException:
-                        # Retry due to version conflict
-                        pass
-                elif not allow_missing:
-                    raise DataStoreException(f"{key} does not exists in {self.name} archive index therefor we "
-                                             "cannot edit the expiry and archive time.")
+                    elif not allow_missing:
+                        raise DataStoreException(
+                            f"{key} does not exists in {self.name} hot index therefor cannot be archived.")
                 else:
-                    break
+                    # Set the time at which the file was archived if it was not set already
+                    try:
+                        if doc.archive_ts is None:
+                            doc.archive_ts = now_as_iso()
+                    except (AttributeError, KeyError, ValueError):
+                        pass
+
+                    # Set new document expiry if the document already has one
+                    #   ** This will either prolong the expiry time as its a fix values based of now
+                    #      or it will reset it to null
+                    try:
+                        if doc.expiry_ts is not None:
+                            doc.expiry_ts = new_expiry
+                    except (AttributeError, KeyError, ValueError):
+                        pass
+
+                # Save the document to the archive
+                self.save(key, doc, index_type=Index.ARCHIVE, version=version)
+                break
+            except VersionConflictException:
+                # Retry due to version conflict
+                pass
 
         if delete_after:
             self.delete(key, index_type=Index.HOT)
 
         return True
-
-    def archive_by_query(self, query, max_docs=None, sort=None, delete_after=False):
-        """
-        This function should archive to document that are matching to query to an time splitted index
-
-        :param query: query to run to archive documents
-        :return: Number of archived documents
-        """
-        if not self.archive_name:
-            raise ArchiveDisabled("This datastore object does not have archive access.")
-
-        source = {
-            "index": self.name,
-            "query": {
-                "bool": {
-                    "must": {
-                        "query_string": {
-                            "query": query
-                        }
-                    }
-                }
-            }
-        }
-        dest = {
-            "index": self.archive_name
-        }
-        if max_docs:
-            source['size'] = max_docs
-
-        if sort:
-            source['sort'] = parse_sort(sort)
-
-        r_task = self.with_retries(self.datastore.client.reindex, source=source, dest=dest, wait_for_completion=False)
-        res = self.datastore._get_task_results(r_task, retry_function=self.with_retries)
-        total_archived = res['updated'] + res['created']
-        if res['total'] == total_archived or max_docs == total_archived:
-            if total_archived != 0 and delete_after:
-                info = self._delete_async(self.name, query={"bool": {"must": {"query_string": {"query": query}}}},
-                                          max_docs=max_docs, sort=sort_str(parse_sort(sort)))
-                return info.get('deleted', 0) == total_archived
-            else:
-                return True
-        else:
-            return False
 
     def bulk(self, operations):
         """
