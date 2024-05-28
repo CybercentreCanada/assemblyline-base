@@ -124,7 +124,7 @@ class Verdict(odm.Model):
 
 @odm.model(index=True, store=True, description="Model of Submission")
 class Submission(odm.Model):
-    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)", ai=False))
+    archive_ts = odm.Optional(odm.Date(description="Time at which the submission was archived", ai=False))
     archived = odm.Boolean(default=False, description="Document is present in the malware archive", ai=False)
     classification = odm.Classification(description="Classification of the submission")
     error_count = odm.Integer(description="Total number of errors in the submission", ai=False)

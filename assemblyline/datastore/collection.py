@@ -462,6 +462,12 @@ class ESCollection(Generic[ModelType]):
             # Get the document from hot index
             doc = self.get_if_exists(key, index_type=Index.HOT)
             if doc:
+                # Set the time at which the file was archived
+                try:
+                    doc.archive_ts = now_as_iso()
+                except (AttributeError, KeyError, ValueError):
+                    pass
+
                 # Set new document expiry if collection has expiry
                 try:
                     doc.expiry_ts = new_expiry
