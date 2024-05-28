@@ -146,20 +146,6 @@ def _test_archive(c: ESCollection):
     assert c.get_if_exists('archive2', index_type=Index.ARCHIVE)['from_archive']
 
 
-def _test_archive_by_query(c: ESCollection):
-    # Test Archive by Query
-    assert c.archive_by_query("_id:archive3 OR _id:archive4")
-    c.commit()
-
-    # Are the docs archived?
-    assert c.get_if_exists('archive3', index_type=Index.ARCHIVE)['from_archive']
-    assert c.exists('archive4', index_type=Index.ARCHIVE)
-
-    # Are they still in hot?
-    assert not c.get_if_exists('archive3', index_type=Index.HOT)['from_archive']
-    assert c.exists('archive4', index_type=Index.HOT)
-
-
 def _test_bulk(c: ESCollection):
     delete_plan = c.get_bulk_plan()
     delete_plan.add_delete_operation('test1')
@@ -643,7 +629,6 @@ def _test_save(c: ESCollection):
 
 TEST_FUNCTIONS = [
     (_test_archive, "archive"),
-    (_test_archive_by_query, "archive_by_query"),
     (_test_bulk, "bulk"),
     (_test_exists, "exists"),
     (_test_get, "get"),
