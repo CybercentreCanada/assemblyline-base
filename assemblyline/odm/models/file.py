@@ -61,7 +61,7 @@ class Comment(odm.Model):
 
 @odm.model(index=True, store=True, description="Model of File")
 class File(odm.Model):
-    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)", ai=False))
+    archive_ts = odm.Optional(odm.Date(store=False, description="Time at which the file was archived", ai=False))
     ascii = odm.Keyword(index=False, store=False,
                         description="Dotted ASCII representation of the first 64 bytes of the file", ai=False)
     classification = odm.Classification(description="Classification of the file")
@@ -84,5 +84,6 @@ class File(odm.Model):
     ssdeep = odm.SSDeepHash(store=False, description="SSDEEP hash of the file", ai=False)
     type = odm.Keyword(copyto="__text__", description="Type of file as identified by Assemblyline")
     tlsh = odm.Optional(odm.Keyword(copyto="__text__", description="TLSH hash of the file", ai=False))
-    from_archive = odm.Boolean(index=False, store=False, default=False, description="Was loaded from the archive", ai=False)
+    from_archive = odm.Boolean(index=False, store=False, default=False,
+                               description="Was loaded from the archive", ai=False)
     uri_info = odm.Optional(odm.Compound(URIInfo), description="URI structure to speed up specialty file searching")
