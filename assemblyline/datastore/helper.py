@@ -133,7 +133,7 @@ class AssemblylineDatastore(object):
     @property
     def retrohunt(self) -> ESCollection[Retrohunt]:
         return self.ds.retrohunt
-    
+
     @property
     def retrohunt_hit(self) -> ESCollection[RetrohuntHit]:
         return self.ds.retrohunt_hit
@@ -1415,10 +1415,11 @@ class MetadataValidator:
     """
     Type mismatched metadata recived by ingestion can cause us to suffer
     errors in ingester when it goes to save the submission.
-    
+
     This class aims to limit those errors by offering limited validation
     at the time of the API call, letting the user get a reasonable error instead.
     """
+
     def __init__(self, datastore: AssemblylineDatastore) -> None:
         self.datastore = datastore
         self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
