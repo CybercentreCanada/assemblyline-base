@@ -137,6 +137,7 @@ class Result(odm.Model):
     type = odm.Optional(odm.Keyword())
     size = odm.Optional(odm.Integer())
     drop_file = odm.Boolean(default=False, description="Use to not pass to other stages after this run", ai=False)
+    partial = odm.Boolean(default=False, description="Invalidate the current result cache creation")
     from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive", ai=False)
 
     def build_key(self, service_tool_version=None, task=None):
@@ -146,16 +147,17 @@ class Result(odm.Model):
             self.response.service_version,
             self.is_empty(),
             service_tool_version=service_tool_version,
-            task=task
+            task=task,
+            partial=self.partial
         )
 
     @staticmethod
-    def help_build_key(sha256, service_name, service_version, is_empty, service_tool_version=None, task=None):
+    def help_build_key(sha256, service_name, service_version, is_empty, service_tool_version=None, task=None, partial=False):
         key_list = [
             sha256,
             service_name.replace('.', '_'),
             f"v{service_version.replace('.', '_')}",
-            f"c{generate_conf_key(service_tool_version=service_tool_version, task=task)}",
+            f"c{generate_conf_key(service_tool_version=service_tool_version, task=task, partial_result=partial)}",
         ]
 
         if is_empty:
@@ -179,6 +181,6 @@ class Result(odm.Model):
         if len(self.response.extracted) == 0 and \
                 len(self.response.supplementary) == 0 and \
                 len(self.result.sections) == 0 and \
-                self.result.score == 0:
+                self.result.score == 0 and not self.partial:
             return True
         return False

@@ -840,6 +840,19 @@ class Mount(odm.Model):
         "& `resource_key` fields to mount ConfigMaps")
 
 
+KUBERNETES_TOLERATION_OPS = ['Exists', 'Equal']
+KUBERNETES_TOLERATION_EFFECTS = ['NoSchedule', 'PreferNoSchedule', 'NoExecute']
+
+@odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a label query.")
+class Toleration(odm.Model):
+    key = odm.Optional(odm.Keyword(), description="The taint key that the toleration applies to")
+    operator = odm.Enum(values=KUBERNETES_TOLERATION_OPS,
+                        default="Equal", description="Relationship between taint key and value")
+    value = odm.Optional(odm.Keyword(), description="Taint value the toleration matches to")
+    effect = odm.Optional(odm.Enum(KUBERNETES_TOLERATION_EFFECTS), description="The taint effect to match.")
+    toleration_seconds = odm.Optional(odm.Integer(min=0),
+                                      description="The period of time the toleration tolerates the taint")
+
 @odm.model(index=False, store=False,
            description="A set of default values to be used running a service when no other value is set")
 class ScalerServiceDefaults(odm.Model):
@@ -851,6 +864,9 @@ class ScalerServiceDefaults(odm.Model):
                                                       description="Environment variables to pass onto services")
     mounts: List[Mount] = odm.List(odm.Compound(Mount), default=[],
                                    description="A list of volume mounts for every service")
+    tolerations: List[Toleration] = odm.List(odm.Compound(Toleration), default=[],
+                                             description="Toleration to apply to service pods.\n"
+                                             "Reference: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/")
 
 
 # The operations we support for label and field selectors are based on the common subset of
@@ -868,7 +884,6 @@ class FieldSelector(odm.Model):
 
 # Excluded from this list is Gt and Lt for above reason
 KUBERNETES_LABEL_OPS = ['In', 'NotIn', 'Exists', 'DoesNotExist']
-
 
 @odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a label query.")
 class LabelSelector(odm.Model):
@@ -1667,8 +1682,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1910,6 +1925,13 @@ DEFAULT_METADATA_CONFIGURATION = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    'union',
+    'overwrite',
+    'ignore',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -1938,7 +1960,15 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'ancestry': 'ignore',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -1954,7 +1984,8 @@ DEFAULT_SUBMISSION = {
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
 }
 
 
