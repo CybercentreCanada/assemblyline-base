@@ -61,7 +61,7 @@ class Comment(odm.Model):
 
 @odm.model(index=True, store=True, description="Model of File")
 class File(odm.Model):
-    archive_ts = odm.Optional(odm.Date(store=False, description="Archiving timestamp (Deprecated)", ai=False))
+    archive_ts = odm.Optional(odm.Date(description="Time at which the file was archived", ai=False))
     ascii = odm.Keyword(index=False, store=False,
                         description="Dotted ASCII representation of the first 64 bytes of the file", ai=False)
     classification = odm.Classification(description="Classification of the file")
