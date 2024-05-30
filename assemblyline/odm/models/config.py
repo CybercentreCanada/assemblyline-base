@@ -588,6 +588,8 @@ DEFAULT_EXPIRY = {
 
 @odm.model(index=False, store=False, description="Ingester Configuration")
 class Ingester(odm.Model):
+    always_create_submission: bool = odm.Boolean(default=False,
+                                                 description="Always create submissions even on cache hit?")
     default_user: str = odm.Keyword(description="Default user for bulk ingestion and unattended submissions")
     default_services: List[str] = odm.List(odm.Keyword(), description="Default service selection")
     default_resubmit_services: List[str] = odm.List(odm.Keyword(),
