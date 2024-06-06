@@ -451,8 +451,8 @@ class Tagging(odm.Model):
             ja3_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="JA3 String")
             ja3s_hash = odm.Optional(odm.List(odm.MD5(copyto="__text__")), description="JA3S Hash")
             ja3s_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="JA3S String")
-            ja4_hash = odm.Optional(odm.List(odm.ValidatedKeyword(pattern=JA4_REGEX, copyto="__text__")), description="JA4 Hash")
-            ja4s_hash = odm.Optional(odm.List(odm.ValidatedKeyword(pattern=JA4_REGEX, copyto="__text__")), description="JA4S Hash")
+            ja4_hash = odm.Optional(odm.List(odm.ValidatedKeyword(validation_regex=JA4_REGEX, copyto="__text__")), description="JA4 Hash")
+            ja4s_hash = odm.Optional(odm.List(odm.ValidatedKeyword(validation_regex=JA4_REGEX, copyto="__text__")), description="JA4S Hash")
             sni = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="SNI")
 
         attack = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Attack")
