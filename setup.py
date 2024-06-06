@@ -97,6 +97,7 @@ setup(
         'yara-python',
         'python-tlsh',
         'hauntedhouse==0.1.10',
+        'rstr'
     ],
     extras_require={
         'test': [
