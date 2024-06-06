@@ -68,6 +68,7 @@ class Creator(odm.Model):
     alert_input = odm.Compound(InputModule, default=DEFAULT_ALERT_INPUT)
     badlist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
     safelist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
+    signature_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
     submission_input = odm.Compound(InputModule, default=DEFAULT_SUBMISSION_INPUT)
     workflow_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
     lookback_time: str = odm.Keyword()
