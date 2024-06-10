@@ -845,6 +845,7 @@ class Mount(odm.Model):
 KUBERNETES_TOLERATION_OPS = ['Exists', 'Equal']
 KUBERNETES_TOLERATION_EFFECTS = ['NoSchedule', 'PreferNoSchedule', 'NoExecute']
 
+
 @odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a label query.")
 class Toleration(odm.Model):
     key = odm.Optional(odm.Keyword(), description="The taint key that the toleration applies to")
@@ -854,6 +855,7 @@ class Toleration(odm.Model):
     effect = odm.Optional(odm.Enum(KUBERNETES_TOLERATION_EFFECTS), description="The taint effect to match.")
     toleration_seconds = odm.Optional(odm.Integer(min=0),
                                       description="The period of time the toleration tolerates the taint")
+
 
 @odm.model(index=False, store=False,
            description="A set of default values to be used running a service when no other value is set")
@@ -866,9 +868,11 @@ class ScalerServiceDefaults(odm.Model):
                                                       description="Environment variables to pass onto services")
     mounts: List[Mount] = odm.List(odm.Compound(Mount), default=[],
                                    description="A list of volume mounts for every service")
-    tolerations: List[Toleration] = odm.List(odm.Compound(Toleration), default=[],
-                                             description="Toleration to apply to service pods.\n"
-                                             "Reference: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/")
+    tolerations: List[Toleration] = odm.List(
+        odm.Compound(Toleration),
+        default=[],
+        description="Toleration to apply to service pods.\n"
+        "Reference: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/")
 
 
 # The operations we support for label and field selectors are based on the common subset of
@@ -886,6 +890,7 @@ class FieldSelector(odm.Model):
 
 # Excluded from this list is Gt and Lt for above reason
 KUBERNETES_LABEL_OPS = ['In', 'NotIn', 'Exists', 'DoesNotExist']
+
 
 @odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a label query.")
 class LabelSelector(odm.Model):
@@ -1633,6 +1638,23 @@ DEFAULT_QUOTAS = {
 }
 
 
+@odm.model(index=False, store=False, description="Header value")
+class HeaderValue(odm.Model):
+    name = odm.Keyword(description="Name of the header")
+    value = odm.Optional(odm.Keyword(description="Explicit value to put in the header"))
+    key = odm.Optional(odm.Keyword(description="Key to lookup in the currently logged in user"))
+
+
+@odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
+class APIProxies(odm.Model):
+    url = odm.Keyword(description="URL to redirect to")
+    verify = odm.Boolean(default=True, description="Should we verify the cert or not")
+    headers = odm.List(odm.Compound(HeaderValue), default=[], description="Headers to add to the request")
+
+
+DEFAULT_API_PROXIES = {}
+
+
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
@@ -1646,6 +1668,9 @@ class UI(odm.Model):
     allow_zip_downloads: bool = odm.Boolean(description="Allow user to download files as password protected ZIPs?")
     allow_replay: bool = odm.Boolean(description="Allow users to request replay on another server?")
     allow_url_submissions: bool = odm.Boolean(description="Allow file submissions via url?")
+    api_proxies: APIProxies = odm.Mapping(
+        odm.Compound(APIProxies),
+        default=DEFAULT_API_PROXIES, description="Proxy requests to the configured API target and add headers")
     audit: bool = odm.Boolean(description="Should API calls be audited and saved to a separate log file?")
     banner: Dict[str, str] = odm.Optional(odm.Mapping(
         odm.Keyword()), description="Banner message display on the main page (format: {<language_code>: message})")
@@ -1702,6 +1727,7 @@ DEFAULT_UI = {
     "allow_zip_downloads": True,
     "allow_replay": False,
     "allow_url_submissions": True,
+    "api_proxies": DEFAULT_API_PROXIES,
     "audit": True,
     "banner": None,
     "banner_level": 'info',
@@ -2007,10 +2033,10 @@ class Config(odm.Model):
     retrohunt: Retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
                                         description="Retrohunt configuration for the frontend and server.")
     services: Services = odm.compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
-    system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
-    ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
+    system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
+    ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
 
 
 DEFAULT_CONFIG = {
@@ -2022,9 +2048,9 @@ DEFAULT_CONFIG = {
     "logging": DEFAULT_LOGGING,
     "retrohunt": DEFAULT_RETROHUNT,
     "services": DEFAULT_SERVICES,
+    "submission": DEFAULT_SUBMISSION,
     "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI,
-    "submission": DEFAULT_SUBMISSION,
 }
 
 
