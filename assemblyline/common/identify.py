@@ -438,6 +438,7 @@ def zip_ident(path: str, fallback: str) -> str:
     psmdcp = False
 
     for file_name in file_list:
+        # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_jar.yara#L11
         if file_name.startswith("META-INF/"):
             is_jar = True
         elif file_name == "AndroidManifest.xml":
@@ -464,6 +465,7 @@ def zip_ident(path: str, fallback: str) -> str:
             doc_props = True
         elif file_name.startswith("_rels/"):
             doc_rels = True
+        # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_office_open_xml.yara
         elif file_name == "[Content_Types].xml":
             doc_types = True
 
