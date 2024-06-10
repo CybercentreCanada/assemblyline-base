@@ -204,6 +204,7 @@ magic_patterns = [
     {"al_type": "audiovisual/flash", "regex": r"Macromedia Flash"},
     {"al_type": "code/autorun", "regex": r"microsoft windows autorun"},
     {"al_type": "code/batch", "regex": r"dos batch file"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L181
     {"al_type": "java/jar", "regex": r"[ (]Jar[) ]"},
     # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_java_class.yara
     {"al_type": "java/class", "regex": r"java class data"},
@@ -221,6 +222,7 @@ magic_patterns = [
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows 10-11 Event Log"},
     {"al_type": "metadata/minidump", "regex": r"Mini DuMP crash report"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L165
     {"al_type": "image/emf", "regex": r"Windows Enhanced Metafile"},
     {"al_type": "resource/msvc", "regex": r"MSVC \.res"},
     {"al_type": "pgp/pubkey", "regex": r"^PGP public key"},
@@ -229,6 +231,8 @@ magic_patterns = [
     {"al_type": "pgp/message", "regex": r"^PGP message Public-Key Encrypted Session Key"},
     {"al_type": "gpg/symmetric", "regex": r"^GPG symmetrically encrypted data"},
     {"al_type": "video/asf", "regex": r"^Microsoft ASF"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L201
+    {"al_type": "code/php", "regex": r"^PHP script"},
 ]
 
 # LibMagic mimetypes that we blindly trust to assign an Assemblyline type
