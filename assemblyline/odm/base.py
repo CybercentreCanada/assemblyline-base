@@ -86,6 +86,7 @@ UNC_PATH_REGEX = r"^(?:\\\\(?:[a-zA-Z0-9-_\s]{1,15}){1}(?:\.[a-zA-Z0-9-_\s]{1,64
                  r'(?:\\[^\\\/\:\*\?\\"\<\>\|\r\n]{1,64}){1,}\\{0,}$'
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
+JA4_REGEX = r"(t|q)([sd]|[0-3]){2}(d|i)\d{2}\d{2}\w{2}_[a-f0-9]{12}_[a-f0-9]{12}"
 
 logger = logging.getLogger('assemblyline.odm')
 

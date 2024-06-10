@@ -1,4 +1,5 @@
 import datetime
+import rstr
 import random
 import time
 from typing import Optional as _Optional, Dict, Any as _Any
@@ -6,7 +7,8 @@ from typing import Optional as _Optional, Dict, Any as _Any
 from assemblyline.common.uid import get_random_id
 from assemblyline.odm import Boolean, Enum, Keyword, Text, List, Model, Compound, Integer, Float, Date, Mapping, \
     Classification, ClassificationString, Optional, Any, forge, IP, Domain, MD5, SHA1, SHA256, PhoneNumber, MAC, \
-    URIPath, URI, SSDeepHash, Email, Platform, Processor, UpperKeyword, Json, EmptyableKeyword, UNCPath, Long
+    URIPath, URI, SSDeepHash, Email, Platform, Processor, UpperKeyword, Json, EmptyableKeyword, UNCPath, Long, \
+    ValidatedKeyword
 from assemblyline.odm.models.tagging import Tagging
 
 config = forge.get_config()
@@ -356,6 +358,9 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
         )
     elif isinstance(field, UpperKeyword):
         return get_random_word().upper()
+    elif isinstance(field, ValidatedKeyword):
+        # Generate value based on regex pattern
+        return rstr.xeger(field.validation_regex)
     elif isinstance(field, Keyword) or isinstance(field, EmptyableKeyword):
         if name:
             if "sha256" in name:
