@@ -9,6 +9,7 @@ import threading
 import uuid
 import zipfile
 from binascii import hexlify
+from tempfile import NamedTemporaryFile
 from typing import Dict, Optional, Tuple, Union
 from urllib.parse import unquote, urlparse
 
@@ -25,7 +26,7 @@ from assemblyline.common.identify_defaults import trusted_mimes as default_trust
 from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
 from assemblyline.remote.datatypes.events import EventWatcher
-from cart import get_metadata_only
+from cart import get_metadata_only, unpack_file
 
 constants = get_constants()
 
@@ -584,15 +585,26 @@ if __name__ == "__main__":
     from pprint import pprint
 
     use_cache = True
+    uncart = False
     args = sys.argv[1:]
     if "--no-cache" in args:
         args.remove("--no-cache")
         use_cache = False
+    if "--uncart" in args:
+        args.remove("--uncart")
+        uncart = True
 
     identify = Identify(use_cache=use_cache)
 
     if len(args) > 0:
-        pprint(identify.fileinfo(args[0]))
+        fileinfo_data = identify.fileinfo(args[0])
+
+        if fileinfo_data["type"] == "archive/cart" and uncart:
+            with NamedTemporaryFile("w") as f:
+                unpack_file(args[0], f.name)
+                fileinfo_data = identify.fileinfo(f.name)
+
+        pprint(fileinfo_data)
     else:
         name = sys.stdin.readline().strip()
         while name:
