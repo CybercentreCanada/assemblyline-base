@@ -1475,7 +1475,10 @@ class MetadataValidator:
             missing_metadata = []
             for field_name, field_config in validation_scheme.items():
                 if field_name not in metadata and field_config.required:
-                    missing_metadata.append(field_name)
+                    if field_config.default:
+                        metadata[field_name] = field_config.default
+                    else:
+                        missing_metadata.append(field_name)
 
             if missing_metadata:
                 return (None, f"Required metadata is missing from submission: {missing_metadata}")
