@@ -847,6 +847,7 @@ class Mount(odm.Model):
 KUBERNETES_TOLERATION_OPS = ['Exists', 'Equal']
 KUBERNETES_TOLERATION_EFFECTS = ['NoSchedule', 'PreferNoSchedule', 'NoExecute']
 
+
 @odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a label query.")
 class Toleration(odm.Model):
     key = odm.Optional(odm.Keyword(), description="The taint key that the toleration applies to")
@@ -856,6 +857,7 @@ class Toleration(odm.Model):
     effect = odm.Optional(odm.Enum(KUBERNETES_TOLERATION_EFFECTS), description="The taint effect to match.")
     toleration_seconds = odm.Optional(odm.Integer(min=0),
                                       description="The period of time the toleration tolerates the taint")
+
 
 @odm.model(index=False, store=False,
            description="A set of default values to be used running a service when no other value is set")
@@ -868,9 +870,11 @@ class ScalerServiceDefaults(odm.Model):
                                                       description="Environment variables to pass onto services")
     mounts: List[Mount] = odm.List(odm.Compound(Mount), default=[],
                                    description="A list of volume mounts for every service")
-    tolerations: List[Toleration] = odm.List(odm.Compound(Toleration), default=[],
-                                             description="Toleration to apply to service pods.\n"
-                                             "Reference: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/")
+    tolerations: List[Toleration] = odm.List(
+        odm.Compound(Toleration),
+        default=[],
+        description="Toleration to apply to service pods.\n"
+        "Reference: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/")
 
 
 # The operations we support for label and field selectors are based on the common subset of
@@ -888,6 +892,7 @@ class FieldSelector(odm.Model):
 
 # Excluded from this list is Gt and Lt for above reason
 KUBERNETES_LABEL_OPS = ['In', 'NotIn', 'Exists', 'DoesNotExist']
+
 
 @odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a label query.")
 class LabelSelector(odm.Model):
