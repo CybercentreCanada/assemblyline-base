@@ -32,7 +32,7 @@ class TransportS3(Transport):
     DEFAULT_HOST = "s3.amazonaws.com"
 
     def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket="al-storage",
-                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None):
+                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None, boto_defaults=False):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
@@ -60,15 +60,23 @@ class TransportS3(Transport):
 
         with boto3_client_lock:
             session = boto3.session.Session()
-            self.client = session.client(
-                "s3",
-                aws_access_key_id=accesskey,
-                aws_secret_access_key=secretkey,
-                endpoint_url=self.endpoint_url,
-                region_name=aws_region,
-                use_ssl=self.use_ssl,
-                verify=verify,
-            )
+            if boto_defaults:
+                self.client = session.client(
+                    "s3",
+                    region_name=aws_region,
+                    use_ssl=self.use_ssl,
+                    verify=verify,
+                )
+            else:
+                self.client = session.client(
+                    "s3",
+                    aws_access_key_id=accesskey,
+                    aws_secret_access_key=secretkey,
+                    endpoint_url=self.endpoint_url,
+                    region_name=aws_region,
+                    use_ssl=self.use_ssl,
+                    verify=verify,
+                )
 
         bucket_exist = False
         try:
