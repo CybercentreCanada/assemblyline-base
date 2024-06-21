@@ -209,6 +209,7 @@ magic_patterns = [
     # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_java_class.yara
     {"al_type": "java/class", "regex": r"java class data"},
     {"al_type": "resource/pyc", "regex": r"python [^\|]+byte"},
+    {"al_type": "resource/pyc", "regex": r"^Byte-compiled Python module"},
     {"al_type": "android/apk", "regex": r"Android package \(APK\)"},
     {"al_type": "code/xml", "regex": r"OpenGIS KML"},
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L161
@@ -284,6 +285,8 @@ trusted_mimes = {
     # Python
     "text/x-python": "code/python",
     "text/x-script.python": "code/python",
+    "application/x-bytecode.python": "resource/pyc",
+    "text/x-bytecode.python": "resource/pyc",
     # PHP
     "text/x-php": "code/php",
     # XML file
