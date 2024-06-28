@@ -781,6 +781,10 @@ rule code_python {
         $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
         $strong_py4 = /(try:|except:|else:)/
         $strong_py5 = "requests.get("
+        $strong_py9 = "requests.post("
+        $strong_py10 = "requests.request("
+        $strong_py11 = "socket.gethostbyname("
+        $strong_py12 = "socket.gethostname("
 
         // Setup.py indicators
         $strong_py6 = "python_requires" ascii wide
