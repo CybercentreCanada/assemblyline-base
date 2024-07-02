@@ -780,16 +780,38 @@ rule code_python {
         $strong_py2 = /(^|\n)[ \t]*from[ \t]+[\w.]+[ \t]+import[ \t]+[\w.*]+/
         $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
         $strong_py4 = /(try:|except:|else:)/
-        $strong_py5 = "requests.get("
-        $strong_py9 = "requests.post("
-        $strong_py10 = "requests.request("
-        $strong_py11 = "socket.gethostbyname("
-        $strong_py12 = "socket.gethostname("
 
         // Setup.py indicators
-        $strong_py6 = "python_requires" ascii wide
-        $strong_py7 = "setuptools.setup(" ascii wide
-        $strong_py8 = "setuptools.find_packages(" ascii wide
+        $strong_py50 = "python_requires" ascii wide
+        $strong_py51 = "setuptools.setup(" ascii wide
+        $strong_py52 = "setuptools.find_packages(" ascii wide
+
+        // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/exfiltrate-sensitive-data.yml
+        $strong_py100 = "requests.get("
+        $strong_py101 = "requests.post("
+        $strong_py102 = "requests.request("
+        $strong_py103 = "urllib.request.Request("
+        $strong_py104 = "urllib.request.urlopen("
+        $strong_py105 = "urllib.urlopen("
+        $strong_py106 = "socket.gethostbyname("
+        $strong_py107 = "socket.gethostname("
+        $strong_py108 = "os.getcwd()"
+        $strong_py109 = "getpass.getuser()"
+        $strong_py110 = "platform.node()"
+        // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/silent-process-execution.yml
+        $strong_py120 = "subprocess.DEVNULL"
+        // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/clipboard-access.yml
+        $strong_py130 = "pyperclip.copy("
+        $strong_py131 = "pyperclip.paste()"
+        $strong_py132 = "pandas.read_clipboard("
+        // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/obfuscation.yml
+        $strong_py140 = "eval(\"\\145\\166\\141\\154\")"
+        $strong_py141 = "eval(\"\\x65\\x76\\x61\\x6c\")"
+        // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/download-executable.yml
+        $strong_py150 = "os.system("
+        $strong_py151 = "os.chmod("
+        $strong_py151 = "os.rename("
+
 
         // High confidence one-liner used to execute base64 blobs
         // reference: https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/exec-base64.yml
