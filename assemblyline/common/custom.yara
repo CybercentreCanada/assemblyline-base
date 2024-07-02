@@ -810,7 +810,7 @@ rule code_python {
         // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/download-executable.yml
         $strong_py150 = "os.system("
         $strong_py151 = "os.chmod("
-        $strong_py151 = "os.rename("
+        $strong_py152 = "os.rename("
 
 
         // High confidence one-liner used to execute base64 blobs
