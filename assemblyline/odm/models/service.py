@@ -169,3 +169,5 @@ class Service(odm.Model):
     update_config: UpdateConfig = odm.Optional(
         odm.Compound(UpdateConfig),
         description="Update configuration for fetching external resources")
+
+    recursion_prevention: list[str] = odm.sequence(odm.Keyword(), default=[], description="List of service names/categories where recursion is prevented.")

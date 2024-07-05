@@ -57,9 +57,14 @@ class Task(odm.Model):
     ignore_cache = odm.Boolean(
         default=False, description="Whether the service cache should be ignored during the processing of this task")
 
+    ignore_recursion_prevention = odm.Boolean(
+        default=False,
+        description="Whether the service should ignore recursion prevention or not")
+
+    # TODO: The following three lines can be removed after assemblyline upgrade to version 4.6+
     ignore_dynamic_recursion_prevention = odm.Boolean(
         default=False,
-        description="Whether the service should ignore the dynamic recursion prevention or not")
+        description="Whether the service should ignore dynamic recursion prevention or not")
 
     ignore_filtering = odm.Boolean(default=False, description="Should the service filter it's output?")
 
