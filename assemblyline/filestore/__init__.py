@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 import elasticapm
 from assemblyline.common.exceptions import FileStoreException, get_stacktrace_info
-from assemblyline.filestore.transport.azure import ManagedIdentityTransportAzure, TransportAzure
+from assemblyline.filestore.transport.azure import TransportAzure
 from assemblyline.filestore.transport.base import TransportException
 from assemblyline.filestore.transport.ftp import TransportFTP
 from assemblyline.filestore.transport.http import TransportHTTP
@@ -46,7 +46,7 @@ def _get_extras(parsed_dict, valid_str_keys=None, valid_bool_keys=None):
     return out
 
 
-def create_transport(url, connection_attempts=None, use_mi=False):
+def create_transport(url, connection_attempts=None):
     """
     Transports are being initiated using a URL. They follow the normal URL format:
     scheme://user:pass@host:port/path/to/file
@@ -137,10 +137,10 @@ def create_transport(url, connection_attempts=None, use_mi=False):
 
     elif scheme == 'azure':
         valid_str_keys = ['access_key', 'tenant_id', 'client_id', 'client_secret']
-        valid_bool_keys = ['allow_directory_access']
+        valid_bool_keys = ['allow_directory_access', 'use_mi']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
-        t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, use_mi=use_mi, **extras)
+        t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, **extras)
 
     else:
         raise FileStoreException("Unknown transport: %s" % scheme)
@@ -149,10 +149,10 @@ def create_transport(url, connection_attempts=None, use_mi=False):
 
 
 class FileStore(object):
-    def __init__(self, *transport_urls, connection_attempts=None, use_mi=False):
+    def __init__(self, *transport_urls, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport')
         self.transport_urls = transport_urls
-        self.transports = [create_transport(url, connection_attempts, use_mi) for url in transport_urls]
+        self.transports = [create_transport(url, connection_attempts) for url in transport_urls]
         self.local_transports = [
             t for t in self.transports if isinstance(t, TransportLocal)
         ]

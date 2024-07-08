@@ -105,7 +105,7 @@ def get_archivestore(config=None, connection_attempts=None):
         config = get_config()
     if config.datastore.archive.enabled:
         archive_storage_url = config.filestore.archive or config.filestore.storage
-        return FileStore(*archive_storage_url, connection_attempts=connection_attempts, use_mi=config.filestore.use_mi)
+        return FileStore(*archive_storage_url, connection_attempts=connection_attempts)
     else:
         raise ValueError("Trying to access the archive filestore but archive is disabled.")
 
@@ -144,7 +144,7 @@ def get_filestore(config=None, connection_attempts=None):
     from assemblyline.filestore import FileStore
     if config is None:
         config = get_config()
-    return FileStore(*config.filestore.storage, connection_attempts=connection_attempts, use_mi=config.filestore.use_mi)
+    return FileStore(*config.filestore.storage, connection_attempts=connection_attempts)
 
 
 def get_identify(use_cache=True, config=None, datastore=None, log=None):
