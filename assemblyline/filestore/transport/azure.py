@@ -29,7 +29,7 @@ This class assumes a flat file structure in the Azure storage blob.
 class TransportAzure(Transport):
 
     def __init__(self, base=None, access_key=None, tenant_id=None, client_id=None, client_secret=None,
-                host=None, connection_attempts=None, allow_directory_access=False, use_mi=False):
+                host=None, connection_attempts=None, allow_directory_access=False, use_default_credentials=False):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
         self.connection_attempts: Optional[int] = connection_attempts
@@ -48,7 +48,7 @@ class TransportAzure(Transport):
             self.base_path = None
 
         # Get credentials
-        if use_mi:
+        if use_default_credentials:
             self.credential = DefaultAzureCredential()
         elif access_key:
             self.credential = access_key

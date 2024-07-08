@@ -77,7 +77,7 @@ def create_transport(url, connection_attempts=None):
         sftp: private_key (string), private_key_pass (string), validate_host (bool)
         s3: aws_region (string), s3_bucket (string), use_ssl (bool), verify (bool)
         file: normalize (bool)
-        azure: access_key (string), tenant_id (string), client_id (string), client_secret (string), allow_directory_access (bool), use_mi (bool)
+        azure: access_key (string), tenant_id (string), client_id (string), client_secret (string), allow_directory_access (bool), use_default_credentials (bool)
 
     """
 
@@ -137,7 +137,7 @@ def create_transport(url, connection_attempts=None):
 
     elif scheme == 'azure':
         valid_str_keys = ['access_key', 'tenant_id', 'client_id', 'client_secret']
-        valid_bool_keys = ['allow_directory_access', 'use_mi']
+        valid_bool_keys = ['allow_directory_access', 'use_default_credentials']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, **extras)
