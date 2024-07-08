@@ -5,7 +5,7 @@ from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
-                    'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota', 'submission_daily_quota']
+                      'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota', 'submission_daily_quota']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 DEFAULT_DAILY_API_QUOTA = 0
@@ -191,27 +191,27 @@ class OAuthProvider(odm.Model):
                                                 description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
     uid_randomize: bool = odm.Boolean(default=False,
-                                    description="Should we generate a random username for the authenticated user?")
+                                      description="Should we generate a random username for the authenticated user?")
     uid_randomize_digits: int = odm.Integer(default=0,
                                             description="How many digits should we add at the end of the username?")
     uid_randomize_delimiter: str = odm.Keyword(default="-",
-                                            description="What is the delimiter used by the random name generator?")
+                                               description="What is the delimiter used by the random name generator?")
     uid_regex: str = odm.Optional(
         odm.Keyword(),
         description="Regex used to parse an email address and capture parts to create a user ID out of it")
     uid_format: str = odm.Optional(odm.Keyword(),
-                                description="Format of the user ID based on the captured parts from the regex")
+                                   description="Format of the user ID based on the captured parts from the regex")
     client_id: str = odm.Optional(odm.Keyword(),
-                                description="ID of your application to authenticate to the OAuth provider")
+                                  description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
-                                    description="Password to your application to authenticate to the OAuth provider")
+                                      description="Password to your application to authenticate to the OAuth provider")
     auto_no_secret: bool = odm.Boolean(default=False, description="Should we use the client secret for the OAuth?")
     client_scope: str = odm.Optional(odm.Keyword(),
                                     description="Managed Identity scope to authenticate to the OAuth provider")
     client_tenants: List[str] = odm.List(odm.Keyword(), default=[],
                                     description="List of tenants that are allowed to authenticate to the OAuth provider")
     redirect_uri: str = odm.Optional(odm.Keyword(),
-                                    description="URI to redirect to after authentication with OAuth provider")
+                                     description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
     request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
@@ -220,7 +220,7 @@ class OAuthProvider(odm.Model):
     authorize_params: str = odm.Optional(odm.Keyword(), description="Parameters used to authorize access to a resource")
     api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                description="Keyword arguments passed to the different URLs")
+                                                 description="Keyword arguments passed to the different URLs")
     jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
     jwt_token_alg: str = odm.Keyword(default="RS256", description="Algorythm use the validate JWT OBO tokens")
     uid_field: str = odm.Optional(odm.Keyword(), description="Name of the field that will contain the user ID")
@@ -238,7 +238,7 @@ class OAuthProvider(odm.Model):
     external_token_alternate_audiences: List[str] = odm.List(
         odm.Keyword(), default=[], description="List of valid alternate audiences for the external token.")
     email_fields: List[str] = odm.List(odm.Keyword(), default=DEFAULT_EMAIL_FIELDS,
-                                    description="List of fields in the claim to get the email from")
+                                       description="List of fields in the claim to get the email from")
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
