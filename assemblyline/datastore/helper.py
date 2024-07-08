@@ -1,12 +1,11 @@
 
 import concurrent.futures
-import elasticapm
 import json
 import os
-
 from datetime import datetime
-from typing import List, Union, Optional, Any, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
+import elasticapm
 from assemblyline.common import forge
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.dict_utils import flatten, recursive_update
@@ -17,7 +16,7 @@ from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
-from assemblyline.odm import DATEFORMAT, Model, Date
+from assemblyline.odm import DATEFORMAT, Date, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile

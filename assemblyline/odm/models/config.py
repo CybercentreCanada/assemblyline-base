@@ -1114,7 +1114,7 @@ class Filestore(odm.Model):
     archive: List[str] = odm.List(odm.Keyword(), description="List of filestores used for malware archive")
     cache: List[str] = odm.List(odm.Keyword(), description="List of filestores used for caching")
     storage: List[str] = odm.List(odm.Keyword(), description="List of filestores used for storage")
-
+    use_mi: bool = odm.Optional(odm.Boolean(description="Azure specific configuration to auth with Blob storage using an MI"))
 
 DEFAULT_FILESTORE = {
     "archive": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-archive&use_ssl=False"],
