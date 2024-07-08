@@ -205,11 +205,6 @@ class OAuthProvider(odm.Model):
                                   description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
                                       description="Password to your application to authenticate to the OAuth provider")
-    auto_no_secret: bool = odm.Boolean(default=False, description="Should we use the client secret for the OAuth?")
-    client_scope: str = odm.Optional(odm.Keyword(),
-                                    description="Managed Identity scope to authenticate to the OAuth provider")
-    client_tenants: List[str] = odm.List(odm.Keyword(), default=[],
-                                    description="List of tenants that are allowed to authenticate to the OAuth provider")
     redirect_uri: str = odm.Optional(odm.Keyword(),
                                      description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
@@ -1114,6 +1109,7 @@ class Filestore(odm.Model):
     archive: List[str] = odm.List(odm.Keyword(), description="List of filestores used for malware archive")
     cache: List[str] = odm.List(odm.Keyword(), description="List of filestores used for caching")
     storage: List[str] = odm.List(odm.Keyword(), description="List of filestores used for storage")
+
 
 DEFAULT_FILESTORE = {
     "archive": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-archive&use_ssl=False"],
