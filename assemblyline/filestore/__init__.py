@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, AnyStr, Optional, Tuple
 from urllib.parse import parse_qs, unquote, urlparse
 
 import elasticapm
-from assemblyline.common.exceptions import FileStoreException, get_stacktrace_info
+from assemblyline.common.exceptions import get_stacktrace_info
 from assemblyline.filestore.transport.azure import TransportAzure
 from assemblyline.filestore.transport.base import TransportException
 from assemblyline.filestore.transport.ftp import TransportFTP
