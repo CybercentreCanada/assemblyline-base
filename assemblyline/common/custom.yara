@@ -781,12 +781,16 @@ rule code_python {
         $strong_py3 = /(^|\n)[ \t]*def[ \t]*\w+[ \t]*\([^)]*\)[ \t]*:/
         $strong_py4 = /(try:|except:|else:)/
 
+        $strong_py20 = "asyncio.run("
+        $strong_py21 = "asyncio.sleep("
+
         // Setup.py indicators
         $strong_py50 = "python_requires" ascii wide
         $strong_py51 = "setuptools.setup(" ascii wide
         $strong_py52 = "setuptools.find_packages(" ascii wide
 
         // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/exfiltrate-sensitive-data.yml
+        // and similar
         $strong_py100 = "requests.get("
         $strong_py101 = "requests.post("
         $strong_py102 = "requests.request("
@@ -798,6 +802,8 @@ rule code_python {
         $strong_py108 = "os.getcwd()"
         $strong_py109 = "getpass.getuser()"
         $strong_py110 = "platform.node()"
+        $strong_py111 = "httpx.AsyncClient("
+        $strong_py112 = "httpx.Client("
         // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/silent-process-execution.yml
         $strong_py120 = "subprocess.DEVNULL"
         // https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/clipboard-access.yml
