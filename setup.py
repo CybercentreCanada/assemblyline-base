@@ -89,7 +89,6 @@ setup(
         'docker',
         'kubernetes>18',
         'notifications-python-client',
-        'rstr',
         # Blacklist a bad release of the azure library until a release newer than that comes out
         'azure-storage-blob!=12.4.0',
         'azure-identity',
@@ -98,6 +97,7 @@ setup(
         'yara-python',
         'python-tlsh',
         'hauntedhouse==0.1.10',
+        'rstr'
     ],
     extras_require={
         'test': [

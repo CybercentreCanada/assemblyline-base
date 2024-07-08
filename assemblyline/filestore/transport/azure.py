@@ -1,24 +1,19 @@
 import logging
 import os
 import time
+from typing import Optional, Iterable
+
+# noinspection PyProtectedMember
+from azure.core.exceptions import ServiceRequestError, DecodeError, \
+    ResourceExistsError, ResourceNotFoundError, ClientAuthenticationError, \
+    ResourceModifiedError, ResourceNotModifiedError, TooManyRedirectsError, ODataV4Error
+from azure.identity import ClientSecretCredential
+from azure.storage.blob import BlobServiceClient
 from io import BytesIO
-from typing import Iterable, Optional
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
-from azure.core.exceptions import (
-    ClientAuthenticationError,
-    DecodeError,
-    ODataV4Error,
-    ResourceExistsError,
-    ResourceModifiedError,
-    ResourceNotFoundError,
-    ResourceNotModifiedError,
-    ServiceRequestError,
-    TooManyRedirectsError,
-)
-from azure.identity import ClientSecretCredential, DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+
 
 """
 This class assumes a flat file structure in the Azure storage blob.
@@ -29,7 +24,7 @@ This class assumes a flat file structure in the Azure storage blob.
 class TransportAzure(Transport):
 
     def __init__(self, base=None, access_key=None, tenant_id=None, client_id=None, client_secret=None,
-                host=None, connection_attempts=None, allow_directory_access=False, use_mi=False):
+                 host=None, connection_attempts=None, allow_directory_access=False):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
         self.connection_attempts: Optional[int] = connection_attempts
@@ -48,9 +43,7 @@ class TransportAzure(Transport):
             self.base_path = None
 
         # Get credentials
-        if use_mi:
-            self.credential = DefaultAzureCredential()
-        elif access_key:
+        if access_key:
             self.credential = access_key
         elif tenant_id and client_id and client_secret:
             self.credential = ClientSecretCredential(tenant_id=tenant_id,

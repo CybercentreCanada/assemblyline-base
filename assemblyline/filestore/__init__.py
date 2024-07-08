@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, AnyStr, Optional, Tuple
-from urllib.parse import parse_qs, unquote, urlparse
+from typing import AnyStr, TYPE_CHECKING, Optional, Tuple
+from urllib.parse import urlparse, parse_qs, unquote
 
 import elasticapm
-from assemblyline.common.exceptions import FileStoreException, get_stacktrace_info
-from assemblyline.filestore.transport.azure import ManagedIdentityTransportAzure, TransportAzure
+
+from assemblyline.common.exceptions import get_stacktrace_info
+from assemblyline.filestore.transport.azure import TransportAzure
 from assemblyline.filestore.transport.base import TransportException
 from assemblyline.filestore.transport.ftp import TransportFTP
 from assemblyline.filestore.transport.http import TransportHTTP
@@ -46,9 +47,9 @@ def _get_extras(parsed_dict, valid_str_keys=None, valid_bool_keys=None):
     return out
 
 
-def create_transport(url, connection_attempts=None, use_mi=False):
+def create_transport(url, connection_attempts=None):
     """
-    Transports are being initiated using a URL. They follow the normal URL format:
+    Transport are being initiated using an URL. They follow the normal url format:
     scheme://user:pass@host:port/path/to/file
 
     In this example, it will extract the following parameters:
@@ -59,7 +60,7 @@ def create_transport(url, connection_attempts=None, use_mi=False):
     port: port
     base: /path/to/file
 
-    Certain transports can have extra parameters, those parameters need to be specified in the query part of the URL.
+    Certain transports can have extra parameters, those parameters need to be specified in the query part of the url.
     e.g.: sftp://host.com/path/to/file?private_key=/etc/ssl/pkey&private_key_pass=pass&validate_host=true
     scheme: sftp
     host: host.com
@@ -69,15 +70,14 @@ def create_transport(url, connection_attempts=None, use_mi=False):
     private_key_pass: pass
     validate_host: True
 
-    NOTE: For transports with extra parameters, only specific extra parameters are allowed. This is the list of extra
-    parameters allowed:
+    NOTE: For transport with extra parameters, only specific extra parameters are allow. This is the list of extra
+          parameter allowed:
 
-        ftp: use_tls (bool)
-        http: pki (string)
-        sftp: private_key (string), private_key_pass (string), validate_host (bool)
-        s3: aws_region (string), s3_bucket (string), use_ssl (bool), verify (bool)
-        file: normalize (bool)
-        azure: access_key (string), tenant_id (string), client_id (string), client_secret (string), allow_directory_access (bool)
+          ftp: use_tls (bool)
+          http: pki (string)
+          sftp: private_key (string), private_key_pass (string), validate_host (bool)
+          s3: aws_region (string), s3_bucket(string), use_ssl (bool), verify (bool)
+          file: normalize (bool)
 
     """
 
@@ -140,7 +140,7 @@ def create_transport(url, connection_attempts=None, use_mi=False):
         valid_bool_keys = ['allow_directory_access']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
-        t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, use_mi=use_mi, **extras)
+        t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, **extras)
 
     else:
         raise FileStoreException("Unknown transport: %s" % scheme)
@@ -149,10 +149,10 @@ def create_transport(url, connection_attempts=None, use_mi=False):
 
 
 class FileStore(object):
-    def __init__(self, *transport_urls, connection_attempts=None, use_mi=False):
+    def __init__(self, *transport_urls, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport')
         self.transport_urls = transport_urls
-        self.transports = [create_transport(url, connection_attempts, use_mi) for url in transport_urls]
+        self.transports = [create_transport(url, connection_attempts) for url in transport_urls]
         self.local_transports = [
             t for t in self.transports if isinstance(t, TransportLocal)
         ]
