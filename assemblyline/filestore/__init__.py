@@ -77,7 +77,7 @@ def create_transport(url, connection_attempts=None):
         sftp: private_key (string), private_key_pass (string), validate_host (bool)
         s3: aws_region (string), s3_bucket (string), use_ssl (bool), verify (bool)
         file: normalize (bool)
-        azure: access_key (string), tenant_id (string), client_id (string), client_secret (string), allow_directory_access (bool)
+        azure: access_key (string), tenant_id (string), client_id (string), client_secret (string), allow_directory_access (bool), use_mi (bool)
 
     """
 
