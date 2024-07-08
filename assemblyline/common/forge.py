@@ -1,20 +1,18 @@
 # This file contains the loaders for the different components of the system
 from __future__ import annotations
 
-import elasticapm
 import importlib
 import os
 import time
-import yaml
-
 from string import Template
 from typing import TYPE_CHECKING, Optional
-from hauntedhouse import Client
 
+import elasticapm
+import yaml
 from assemblyline.common.constants import service_queue_name
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
-
+from hauntedhouse import Client
 
 if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
@@ -107,7 +105,7 @@ def get_archivestore(config=None, connection_attempts=None):
         config = get_config()
     if config.datastore.archive.enabled:
         archive_storage_url = config.filestore.archive or config.filestore.storage
-        return FileStore(*archive_storage_url, connection_attempts=connection_attempts)
+        return FileStore(*archive_storage_url, connection_attempts=connection_attempts, use_mi=config.filestore.use_mi)
     else:
         raise ValueError("Trying to access the archive filestore but archive is disabled.")
 
@@ -146,7 +144,7 @@ def get_filestore(config=None, connection_attempts=None):
     from assemblyline.filestore import FileStore
     if config is None:
         config = get_config()
-    return FileStore(*config.filestore.storage, connection_attempts=connection_attempts)
+    return FileStore(*config.filestore.storage, connection_attempts=connection_attempts, use_mi=config.filestore.use_mi)
 
 
 def get_identify(use_cache=True, config=None, datastore=None, log=None):
@@ -193,7 +191,7 @@ def get_tag_safelist_data(yml_config=None):
 
 
 def get_tag_safelister(log=None, yml_config=None, config=None, datastore=None):
-    from assemblyline.common.tagging import TagSafelister, InvalidSafelist
+    from assemblyline.common.tagging import InvalidSafelist, TagSafelister
 
     with get_cachestore('system', config=config, datastore=datastore) as cache:
         tag_safelist_yml = cache.get('tag_safelist_yml')

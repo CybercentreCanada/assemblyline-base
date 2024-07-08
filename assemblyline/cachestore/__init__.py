@@ -23,7 +23,7 @@ class CacheStore(object):
 
         self.component = component
         self.datastore = datastore or forge.get_datastore(config=config)
-        self.filestore = FileStore(*config.filestore.cache)
+        self.filestore = FileStore(*config.filestore.cache, use_mi=config.filestore.use_mi)
 
     def __enter__(self) -> 'CacheStore':
         return self
