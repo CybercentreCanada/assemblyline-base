@@ -188,7 +188,7 @@ class OAuthProvider(odm.Model):
     auto_create: bool = odm.Boolean(default=True, description="Auto-create users if they are missing")
     auto_sync: bool = odm.Boolean(default=False, description="Should we automatically sync with OAuth provider?")
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
-                                                description="Automatic role and classification assignments")
+                                                   description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
     uid_randomize: bool = odm.Boolean(default=False,
                                       description="Should we generate a random username for the authenticated user?")
