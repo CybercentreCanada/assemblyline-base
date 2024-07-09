@@ -265,6 +265,8 @@ class User(odm.Model):
     password = odm.Keyword(index=False, store=False, description="BCrypt hash of the user's password")
     submission_quota = odm.Optional(odm.Integer(store=False,
                                                 description="Maximum number of concurrent submissions (0: No Quota)"))
+    submission_async_quota = odm.Optional(odm.Integer(
+        store=False, description="Maximum number of concurrent async submission (0: No Quota)"))
     submission_daily_quota = odm.Optional(odm.Integer(
         store=False,
         description="Maximum number of submissions a user can do daily (0: No Quota)"))
