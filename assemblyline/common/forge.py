@@ -1,20 +1,18 @@
 # This file contains the loaders for the different components of the system
 from __future__ import annotations
 
-import elasticapm
 import importlib
 import os
 import time
-import yaml
-
 from string import Template
 from typing import TYPE_CHECKING, Optional
-from hauntedhouse import Client
 
+import elasticapm
+import yaml
 from assemblyline.common.constants import service_queue_name
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
-
+from hauntedhouse import Client
 
 if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
@@ -193,7 +191,7 @@ def get_tag_safelist_data(yml_config=None):
 
 
 def get_tag_safelister(log=None, yml_config=None, config=None, datastore=None):
-    from assemblyline.common.tagging import TagSafelister, InvalidSafelist
+    from assemblyline.common.tagging import InvalidSafelist, TagSafelister
 
     with get_cachestore('system', config=config, datastore=datastore) as cache:
         tag_safelist_yml = cache.get('tag_safelist_yml')

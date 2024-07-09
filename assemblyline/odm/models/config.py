@@ -5,13 +5,15 @@ from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
-                      'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota', 'submission_daily_quota']
+                      'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
+                      'submission_async_quota', 'submission_daily_quota']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 DEFAULT_DAILY_API_QUOTA = 0
 DEFAULT_API_QUOTA = 10
 DEFAULT_DAILY_SUBMISSION_QUOTA = 0
 DEFAULT_SUBMISSION_QUOTA = 5
+DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -1628,8 +1630,11 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 
 @odm.model(index=False, store=False, description="Default API and submission quota values for the system")
 class Quotas(odm.Model):
-    concurrent_api_calls: int = odm.Integer(description="Maximum concurrent API Calls can be running for a user.")
-    concurrent_submissions: int = odm.Integer(description="Maximum concurrent Submission can be running for a user.")
+    concurrent_api_calls: int = odm.Integer(description="Maximum concurrent API Calls that can be running for a user.")
+    concurrent_submissions: int = odm.Integer(
+        description="Maximum concurrent Submission that can be running for a user.")
+    concurrent_async_submissions: int = odm.Integer(
+        description="Maximum concurrent asynchroneous Submission that can be running for a user.")
     daily_api_calls: int = odm.Integer(description="Maximum daily API calls a user can issue.")
     daily_submissions: int = odm.Integer(description="Maximum daily submission a user can do.")
 
@@ -1637,6 +1642,7 @@ class Quotas(odm.Model):
 DEFAULT_QUOTAS = {
     'concurrent_api_calls': DEFAULT_API_QUOTA,
     'concurrent_submissions': DEFAULT_SUBMISSION_QUOTA,
+    'concurrent_async_submissions': DEFAULT_ASYNC_SUBMISSION_QUOTA,
     'daily_api_calls': DEFAULT_DAILY_API_QUOTA,
     'daily_submissions': DEFAULT_DAILY_SUBMISSION_QUOTA
 }
