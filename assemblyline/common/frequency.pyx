@@ -6,12 +6,12 @@ from libc.string cimport memset
 def counts(b, c, d=None):
     if d is None:
         d = {}
-    cdef int t[256]
+    cdef long t[256]
     cdef unsigned char* s = b
     cdef int l = c
     cdef int i = 0
 
-    memset(t, 0, 256 * sizeof(int))
+    memset(t, 0, 256 * sizeof(long))
 
     for k, v in d.iteritems():
         t[k] = v
@@ -37,4 +37,3 @@ def counts_old(s, d=None):
         t[ord(c)] += 1
 
     return {i: t[i] for i in range(256) if t[i]}
-
