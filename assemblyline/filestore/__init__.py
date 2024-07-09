@@ -125,7 +125,7 @@ def create_transport(url, connection_attempts=None):
 
     elif scheme == 's3':
         valid_str_keys = ['aws_region', 's3_bucket']
-        valid_bool_keys = ['use_ssl', 'verify']
+        valid_bool_keys = ['use_ssl', 'verify', 'boto_defaults']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         # If user/password not specified, access might be dictated by IAM roles
