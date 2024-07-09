@@ -208,8 +208,6 @@ class OAuthProvider(odm.Model):
     auto_no_secret: bool = odm.Boolean(default=False, description="Should we use the client secret for the OAuth?")
     client_scope: str = odm.Optional(odm.Keyword(),
                                     description="Managed Identity scope to authenticate to the OAuth provider")
-    client_tenants: List[str] = odm.List(odm.Keyword(), default=[],
-                                    description="List of tenants that are allowed to authenticate to the OAuth provider")
     redirect_uri: str = odm.Optional(odm.Keyword(),
                                      description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
