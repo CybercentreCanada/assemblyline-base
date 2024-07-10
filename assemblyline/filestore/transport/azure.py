@@ -17,7 +17,7 @@ from azure.core.exceptions import (
     ServiceRequestError,
     TooManyRedirectsError,
 )
-from azure.identity import ClientSecretCredential, DefaultAzureCredential
+from azure.identity import ClientSecretCredential, DefaultAzureCredential, WorkloadIdentityCredential
 from azure.storage.blob import BlobServiceClient
 
 """
@@ -49,7 +49,17 @@ class TransportAzure(Transport):
 
         # Get credentials
         if use_default_credentials:
-            self.credential = DefaultAzureCredential()
+            # Each pod is allowed 1 service account, which supports 1 client id.
+            # If that service account / client id is already being used, we need to specify this env.
+            # Also configure the AZURE_TENANT_ID_FILESTORE if you're doing cross tenant auth
+            filestore_client_id = os.getenv("AZURE_CLIENT_ID_FILESTORE")
+            filestore_tenant_id = os.getenv("AZURE_TENANT_ID_FILESTORE")
+            if filestore_client_id and filestore_tenant_id:
+                self.credential = WorkloadIdentityCredential(tenant_id=filestore_tenant_id,
+                                                            client_id=filestore_client_id)
+            else:
+                # Service accounts will by default create the enviromental variables, and use them as params
+                self.credential = DefaultAzureCredential()
         elif access_key:
             self.credential = access_key
         elif tenant_id and client_id and client_secret:
