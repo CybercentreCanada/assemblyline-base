@@ -1225,7 +1225,7 @@ class AssemblylineDatastore(object):
                     ])
                     if expiry:
                         operations.append((self.file.UPDATE_MAX, 'expiry_ts', expiry))
-                    if self.file.update(sha256, operations):
+                    if self.file.update(sha256, operations, retry_on_conflict=8):
                         return
 
             # Add new fileinfo to current from database
