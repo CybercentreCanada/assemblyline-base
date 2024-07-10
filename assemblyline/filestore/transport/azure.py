@@ -49,14 +49,9 @@ class TransportAzure(Transport):
 
         # Get credentials
         if use_default_credentials:
-            # Each pod is allowed 1 service account, which supports 1 client id.
-            # If that service account / client id is already being used, we need to specify this env.
-            # Also configure the AZURE_TENANT_ID_FILESTORE if you're doing cross tenant auth
-            filestore_client_id = os.getenv("AZURE_CLIENT_ID_FILESTORE")
-            filestore_tenant_id = os.getenv("AZURE_TENANT_ID_FILESTORE")
-            if filestore_client_id and filestore_tenant_id:
-                self.credential = WorkloadIdentityCredential(tenant_id=filestore_tenant_id,
-                                                            client_id=filestore_client_id)
+            if (tenant_id and client_id) and (not client_secret):
+                self.credential = WorkloadIdentityCredential(tenant_id=tenant_id,
+                                                            client_id=client_id)
             else:
                 # Service accounts will by default create the enviromental variables, and use them as params
                 self.credential = DefaultAzureCredential()

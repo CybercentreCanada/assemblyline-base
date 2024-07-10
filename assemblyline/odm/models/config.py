@@ -203,13 +203,18 @@ class OAuthProvider(odm.Model):
         description="Regex used to parse an email address and capture parts to create a user ID out of it")
     uid_format: str = odm.Optional(odm.Keyword(),
                                    description="Format of the user ID based on the captured parts from the regex")
+
     client_id: str = odm.Optional(odm.Keyword(),
-                                  description="ID of your application to authenticate to the OAuth provider")
+                                    description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
-                                      description="Password to your application to authenticate to the OAuth provider")
-    auto_no_secret: bool = odm.Boolean(default=False, description="Should we use the client secret for the OAuth?")
-    client_scope: str = odm.Optional(odm.Keyword(),
+                                    description="Password to your application to authenticate to the OAuth provider")
+
+    use_aad_managed_identity: bool = odm.Boolean(default=False,
+                                                description="Use Managed Identity for Auth")
+    aad_mi_client_scope: str = odm.Optional(odm.Keyword(),
                                     description="Managed Identity scope to authenticate to the OAuth provider")
+    aad_mi_tenant_id: str = odm.Optional(odm.Keyword(description="Workload Identity tenant id"))
+
     redirect_uri: str = odm.Optional(odm.Keyword(),
                                      description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
@@ -1210,8 +1215,13 @@ class Services(odm.Model):
                                              "Intended for use with local registries.")
     preferred_update_channel: str = odm.Keyword(description="Default update channel to be used for new services")
     allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
-    allow_mi_auth: bool = odm.Optional(odm.Boolean(description="Allow authentication with registry through managed identity"))
-    mi_scope: str = odm.Optional(odm.Keyword(description="Managed Identity authentication scope"))
+
+    use_acr_mi_auth: bool = odm.Optional(odm.Boolean(default=False,
+        description="Allow authentication with registry through managed identity"))
+    acr_mi_scope: str = odm.Optional(odm.Keyword(description="Workload Identity scope"))
+    acr_mi_client_id: str = odm.Optional(odm.Keyword(description="Workload Identity client id"))
+    acr_mi_tenant_id: str = odm.Optional(odm.Keyword(description="Workload Identity tenant id"))
+
     preferred_registry_type: str = odm.Enum(
         values=REGISTRY_TYPES,
         default='docker',
