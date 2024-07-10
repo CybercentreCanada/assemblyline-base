@@ -1219,7 +1219,7 @@ class ESCollection(Generic[ModelType]):
 
         return ret_ops
 
-    def update(self, key, operations, index_type=Index.HOT):
+    def update(self, key, operations, index_type=Index.HOT, retry_on_conflict=None):
         """
         This function performs an atomic update on some fields from the
         underlying documents referenced by the id using a list of operations.
@@ -1240,7 +1240,8 @@ class ESCollection(Generic[ModelType]):
 
         for index in index_list:
             try:
-                res = self.with_retries(self.datastore.client.update, index=index, id=key, script=script)
+                res = self.with_retries(self.datastore.client.update, index=index, id=key,
+                                        script=script, retry_on_conflict=retry_on_conflict)
                 return res['result'] == "updated"
             except elasticsearch.NotFoundError:
                 pass
