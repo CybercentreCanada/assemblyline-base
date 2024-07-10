@@ -2,8 +2,10 @@ from typing import Any, Dict, List
 
 from assemblyline import odm
 from assemblyline.common.constants import PRIORITIES
+from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
+from assemblyline.odm.models.submission import SubmissionParams, DEFAULT_SRV_SEL
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
@@ -16,6 +18,7 @@ DEFAULT_DAILY_SUBMISSION_QUOTA = 0
 DEFAULT_SUBMISSION_QUOTA = 5
 DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
+Classification = get_classification()
 
 @odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
@@ -1989,6 +1992,39 @@ DEFAULT_METADATA_CONFIGURATION = {
     }
 }
 
+@odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
+class SubmissionProfile(odm.Model):
+    name = odm.Text(description="Submission profile name")
+    classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
+                                              description="Submission profile classification")
+    params = odm.Compound(SubmissionParams, description="Submission parameters for profile")
+
+DEFAULT_SUBMISSION_PROFILES = [
+    {
+        # Only perform static analysis
+        "name": "Static Analysis"
+    },
+    {
+        # Perform static analysis along with dynamic analysis
+        "name": "Dynamic Analysis",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
+            }
+        }
+
+    },
+    {
+        # Perform static analysis along with internet connected services
+        "name": "Static Analysis with Internet",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
+            }
+        }
+
+    },
+]
 
 TEMPORARY_KEY_TYPE = [
     # Keep this key as submission wide list merging equal items
@@ -2031,6 +2067,8 @@ class Submission(odm.Model):
     temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
                                                  description="Set the operation that will be used to update values "
                                                              "using this key in the temporary submission data.")
+    profiles = odm.List(odm.Compound(SubmissionProfile),
+                        description="Submission profiles with preset submission parameters")
 
 
 DEFAULT_TEMPORARY_KEYS = {
@@ -2055,6 +2093,7 @@ DEFAULT_SUBMISSION = {
     'verdicts': DEFAULT_VERDICTS,
     'default_temporary_keys': DEFAULT_TEMPORARY_KEYS,
     'temporary_keys': {},
+    'profiles': DEFAULT_SUBMISSION_PROFILES
 }
 
 
