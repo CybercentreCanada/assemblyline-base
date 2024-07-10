@@ -1,8 +1,10 @@
 from typing import Any, Dict, List
 
 from assemblyline import odm
+from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
+from assemblyline.odm.models.submission import SubmissionParams, DEFAULT_SRV_SEL
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
@@ -15,6 +17,7 @@ DEFAULT_DAILY_SUBMISSION_QUOTA = 0
 DEFAULT_SUBMISSION_QUOTA = 5
 DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
+Classification = get_classification()
 
 @odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
@@ -1941,6 +1944,39 @@ DEFAULT_METADATA_CONFIGURATION = {
     }
 }
 
+@odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
+class SubmissionProfile(odm.Model):
+    name = odm.Text(description="Submission profile name")
+    classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
+                                              description="Submission profile classification")
+    params = odm.Compound(SubmissionParams, description="Submission parameters for profile")
+
+DEFAULT_SUBMISSION_PROFILES = [
+    {
+        # Only perform static analysis
+        "name": "Static Analysis"
+    },
+    {
+        # Perform static analysis along with dynamic analysis
+        "name": "Dynamic Analysis",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
+            }
+        }
+
+    },
+    {
+        # Perform static analysis along with internet connected services
+        "name": "Static Analysis with Internet",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
+            }
+        }
+
+    },
+]
 
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
@@ -1970,6 +2006,8 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    profiles = odm.List(odm.Compound(SubmissionProfile),
+                        description="Submission profiles with preset submission parameters")
 
 
 DEFAULT_SUBMISSION = {
@@ -1986,7 +2024,8 @@ DEFAULT_SUBMISSION = {
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'profiles': DEFAULT_SUBMISSION_PROFILES
 }
 
 
