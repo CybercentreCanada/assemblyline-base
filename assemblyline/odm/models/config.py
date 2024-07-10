@@ -1210,6 +1210,8 @@ class Services(odm.Model):
                                              "Intended for use with local registries.")
     preferred_update_channel: str = odm.Keyword(description="Default update channel to be used for new services")
     allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
+    allow_mi_auth: bool = odm.Optional(odm.Boolean(description="Allow authentication with registry through managed identity"))
+    mi_scope: str = odm.Optional(odm.Keyword(description="Managed Identity authentication scope"))
     preferred_registry_type: str = odm.Enum(
         values=REGISTRY_TYPES,
         default='docker',
