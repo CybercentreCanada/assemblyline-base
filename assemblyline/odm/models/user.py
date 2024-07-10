@@ -12,7 +12,8 @@ TYPES = StringTable('TYPES', [
     ("signature_importer", 3),
     ("viewer", 4),
     ("submitter", 5),
-    ("custom", 6)
+    ("custom", 6),
+    ("poweruser", 7)
 ])
 
 ROLES = StringTable('ROLES', [
@@ -52,12 +53,14 @@ ROLES = StringTable('ROLES', [
     ("badlist_manage", 32),
     ("archive_comment", 33),
     ("assistant_use", 34),
+    ("submission_customize", 35)
 ])
 
 
 SCOPES = {"r", "w", "rw", "c"}
 USER_TYPES = [
     TYPES.admin,               # Perform administartive task and has access to all roles
+    TYPES.poweruser,           # Advanced user of the system
     TYPES.user,                # Normal user of the system
     TYPES.signature_manager,   # Super user that also has access to roles for managing signatures in the system
     TYPES.signature_importer,  # Has access to roles for importing signatures in the system
@@ -99,7 +102,11 @@ USER_ROLES_BASIC = {
     ROLES.badlist_manage,      # Manage (add/delete) badlist items
 }
 
-USER_ROLES = USER_ROLES_BASIC.union({
+USER_ROLES_ADVANCED = USER_ROLES_BASIC.union({
+    ROLES.submission_customize    # Allowed to customize submission properties
+})
+
+USER_ROLES = USER_ROLES_ADVANCED.union({
     ROLES.administration,      # Perform administrative tasks
     ROLES.file_purge,          # Purge files from the filestore
     ROLES.replay_system,       # Manage status of file/submission/alerts during the replay process
@@ -122,6 +129,7 @@ USER_TYPE_DEP = {
         ROLES.signature_manage
     }),
     TYPES.user: USER_ROLES_BASIC,
+    TYPES.poweruser: USER_ROLES_ADVANCED,
     TYPES.viewer: {
         ROLES.alert_view,
         ROLES.apikey_access,
@@ -173,6 +181,7 @@ ACL_MAP = {
         ROLES.submission_create,
         ROLES.submission_delete,
         ROLES.submission_manage,
+        ROLES.submission_customize,
         ROLES.retrohunt_run,
     ],
     "E": [
