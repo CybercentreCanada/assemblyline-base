@@ -1216,12 +1216,6 @@ class Services(odm.Model):
     preferred_update_channel: str = odm.Keyword(description="Default update channel to be used for new services")
     allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
 
-    use_acr_mi_auth: bool = odm.Optional(odm.Boolean(default=False,
-        description="Allow authentication with registry through managed identity"))
-    acr_mi_scope: str = odm.Optional(odm.Keyword(description="Workload Identity scope"))
-    acr_mi_client_id: str = odm.Optional(odm.Keyword(description="Workload Identity client id"))
-    acr_mi_tenant_id: str = odm.Optional(odm.Keyword(description="Workload Identity tenant id"))
-
     preferred_registry_type: str = odm.Enum(
         values=REGISTRY_TYPES,
         default='docker',
