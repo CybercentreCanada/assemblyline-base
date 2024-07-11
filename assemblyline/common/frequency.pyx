@@ -6,12 +6,12 @@ from libc.string cimport memset
 def counts(b, c, d=None):
     if d is None:
         d = {}
-    cdef long t[256]
+    cdef long long t[256]
     cdef unsigned char* s = b
     cdef int l = c
     cdef int i = 0
 
-    memset(t, 0, 256 * sizeof(long))
+    memset(t, 0, 256 * sizeof(long long))
 
     for k, v in d.iteritems():
         t[k] = v
