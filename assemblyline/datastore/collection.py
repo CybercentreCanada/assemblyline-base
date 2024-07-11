@@ -1109,8 +1109,9 @@ class ESCollection(Generic[ModelType]):
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
-                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
-                         f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
+                script = f"for(int i = ctx._source.{doc_key}.length - 1; i >= 0; i--) " \
+                         f"if(ctx._source.{doc_key}[i].equals(params.value{val_id})) " \
+                         f"ctx._source.{doc_key}.remove(i)"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_INC:
@@ -1219,7 +1220,7 @@ class ESCollection(Generic[ModelType]):
 
         return ret_ops
 
-    def update(self, key, operations, index_type=Index.HOT):
+    def update(self, key, operations, index_type=Index.HOT, retry_on_conflict=None):
         """
         This function performs an atomic update on some fields from the
         underlying documents referenced by the id using a list of operations.
@@ -1240,7 +1241,8 @@ class ESCollection(Generic[ModelType]):
 
         for index in index_list:
             try:
-                res = self.with_retries(self.datastore.client.update, index=index, id=key, script=script)
+                res = self.with_retries(self.datastore.client.update, index=index, id=key,
+                                        script=script, retry_on_conflict=retry_on_conflict)
                 return res['result'] == "updated"
             except elasticsearch.NotFoundError:
                 pass
