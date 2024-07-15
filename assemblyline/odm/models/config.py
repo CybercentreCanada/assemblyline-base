@@ -209,7 +209,7 @@ class OAuthProvider(odm.Model):
                                       description="Password to your application to authenticate to the OAuth provider")
     auto_no_secret: bool = odm.Boolean(default=False, description="Should we use the client secret for the OAuth?")
     client_scope: str = odm.Optional(odm.Keyword(),
-                                    description="Managed Identity scope to authenticate to the OAuth provider")
+                                     description="Managed Identity scope to authenticate to the OAuth provider")
     redirect_uri: str = odm.Optional(odm.Keyword(),
                                      description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
@@ -242,6 +242,15 @@ class OAuthProvider(odm.Model):
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
+    aad_wic_tenant_id: str = odm.Optional(
+        odm.Keyword(),
+        description="Tenant ID for authentication using Azure AD Workflow Identity Credentials")
+    aad_wic_token_file_path: str = odm.Optional(
+        odm.Keyword(),
+        description="Path to the token file for authentication using Azure AD Workflow Identity Credentials")
+    aad_wic_additionally_allowed_tenants: str = odm.Optional(
+        odm.List(odm.Keyword()),
+        description="List or other tenant IDs allowed to use the Azure AD Workflow Identity Credentials token")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
