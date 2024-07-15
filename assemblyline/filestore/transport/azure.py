@@ -17,7 +17,7 @@ from azure.core.exceptions import (
     ServiceRequestError,
     TooManyRedirectsError,
 )
-from azure.identity import ClientSecretCredential, DefaultAzureCredential
+from azure.identity import ClientSecretCredential, DefaultAzureCredential, WorkloadIdentityCredential
 from azure.storage.blob import BlobServiceClient
 
 """
@@ -49,7 +49,12 @@ class TransportAzure(Transport):
 
         # Get credentials
         if use_default_credentials:
-            self.credential = DefaultAzureCredential()
+            if (tenant_id and client_id) and (not client_secret):
+                self.credential = WorkloadIdentityCredential(tenant_id=tenant_id,
+                                                            client_id=client_id)
+            else:
+                # Service accounts will by default create the enviromental variables, and use them as params
+                self.credential = DefaultAzureCredential()
         elif access_key:
             self.credential = access_key
         elif tenant_id and client_id and client_secret:
