@@ -239,6 +239,9 @@ class OAuthProvider(odm.Model):
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
+    aad_credentials_scope: str = odm.Optional(
+        odm.Keyword(),
+        description="Scope used for authentication using Azure AD Credentials")
     aad_wic_tenant_id: str = odm.Optional(
         odm.Keyword(),
         description="Tenant ID for authentication using Azure AD Workflow Identity Credentials")
