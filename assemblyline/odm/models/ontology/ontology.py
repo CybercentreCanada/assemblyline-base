@@ -12,7 +12,7 @@ from assemblyline.odm.models.ontology.results import (
 from assemblyline.odm.models.ontology.file import File
 
 Classification = forge.get_classification()
-ODM_VERSION = "1.9"
+ODM_VERSION = "1.10"
 
 
 @odm.model(index=False, store=False, description="Heuristics raised")
