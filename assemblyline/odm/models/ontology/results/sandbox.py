@@ -2,7 +2,9 @@ from assemblyline import odm
 from assemblyline.common.dict_utils import get_dict_fingerprint_hash, flatten
 from assemblyline.odm.models.ontology.results.process import ObjectID
 
-OID_PARTS = ['sandbox_name', 'sandbox_version', 'analysis_metadata.start_time', 'analysis_metadata.end_time', 'analysis_metadata.task_id']
+OID_PARTS = ['sandbox_name', 'sandbox_version', 'analysis_metadata.start_time',
+             'analysis_metadata.end_time', 'analysis_metadata.task_id']
+
 
 @odm.model(description="Sandbox Ontology Model")
 class Sandbox(odm.Model):
@@ -25,6 +27,7 @@ class Sandbox(odm.Model):
         routing = odm.Optional(odm.Keyword(),
                                description="The routing used in the sandbox setup (Spoofed, Internet, Tor, VPN)")
         machine_metadata = odm.Optional(odm.Compound(MachineMetadata), description="The metadata of the analysis")
+        window_size = odm.Optional(odm.Keyword(), description="The resolution used for the analysis")
 
     objectid = odm.Compound(ObjectID, description="The object ID of the sandbox object")
 
