@@ -1,12 +1,11 @@
 
 import concurrent.futures
-import elasticapm
 import json
 import os
-
 from datetime import datetime
-from typing import List, Union, Optional, Any, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
+import elasticapm
 from assemblyline.common import forge
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.dict_utils import flatten, recursive_update
@@ -17,7 +16,7 @@ from assemblyline.datastore.collection import ESCollection, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
-from assemblyline.odm import DATEFORMAT, Model, Date
+from assemblyline.odm import DATEFORMAT, Date, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
@@ -1185,8 +1184,20 @@ class AssemblylineDatastore(object):
             self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(),
             redis=None, is_section_image=False, is_supplementary=False):
         # Remove control fields from new file info
-        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']:
-            fileinfo.pop(x, None)
+        fileinfo = {
+            k: v for k, v in fileinfo.items()
+            if k not in
+            ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']}
+
+        # Reset archive_ts field
+        fileinfo['archive_ts'] = None
+
+        # Update section image status
+        fileinfo['is_section_image'] = fileinfo.get('is_section_image', False) or is_section_image
+
+        # Update section image status
+        fileinfo['is_supplementary'] = fileinfo.get('is_supplementary', False) or is_supplementary
+
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):
             expiry = expiry.strftime(DATEFORMAT)
@@ -1202,7 +1213,8 @@ class AssemblylineDatastore(object):
                     str(current_fileinfo.get('classification', classification)),
                     str(classification)
                 )
-                if classification == current_fileinfo.get('classification', None):
+                if classification == cl_engine.normalize_classification(
+                        current_fileinfo.get('classification', classification)):
                     operations = [
                         (self.file.UPDATE_SET, key, value)
                         for key, value in fileinfo.items()
@@ -1213,12 +1225,11 @@ class AssemblylineDatastore(object):
                     ])
                     if expiry:
                         operations.append((self.file.UPDATE_MAX, 'expiry_ts', expiry))
-                    if self.file.update(sha256, operations):
+                    if self.file.update(sha256, operations, retry_on_conflict=8):
                         return
 
             # Add new fileinfo to current from database
             current_fileinfo.update(fileinfo)
-            current_fileinfo['archive_ts'] = None
 
             # Update expiry time
             current_expiry = current_fileinfo.get('expiry_ts', expiry)
@@ -1236,12 +1247,6 @@ class AssemblylineDatastore(object):
 
             # Update Classification
             current_fileinfo['classification'] = classification
-
-            # Update section image status
-            current_fileinfo['is_section_image'] = current_fileinfo.get('is_section_image', False) or is_section_image
-
-            # Update section image status
-            current_fileinfo['is_supplementary'] = current_fileinfo.get('is_supplementary', False) or is_supplementary
 
             try:
                 self.file.save(sha256, current_fileinfo, version=version)
@@ -1475,7 +1480,10 @@ class MetadataValidator:
             missing_metadata = []
             for field_name, field_config in validation_scheme.items():
                 if field_name not in metadata and field_config.required:
-                    missing_metadata.append(field_name)
+                    if field_config.default:
+                        metadata[field_name] = field_config.default
+                    else:
+                        missing_metadata.append(field_name)
 
             if missing_metadata:
                 return (None, f"Required metadata is missing from submission: {missing_metadata}")

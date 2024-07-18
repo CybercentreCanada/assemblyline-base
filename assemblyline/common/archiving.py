@@ -1,19 +1,17 @@
 
 import json
 import logging
-import requests
 import tempfile
 import time
-
 from typing import Union
 
-
+import requests
 from assemblyline.common import forge
 from assemblyline.common.identify import Identify
 from assemblyline.datastore.collection import ESCollection
 from assemblyline.datastore.helper import AssemblylineDatastore
 from assemblyline.filestore import FileStore
-from assemblyline.odm.messages.submission import SubmissionMessage, Submission
+from assemblyline.odm.messages.submission import Submission, SubmissionMessage
 from assemblyline.odm.models.config import Config
 from assemblyline.remote.datatypes import get_client
 from assemblyline.remote.datatypes.queues.comms import CommsQueue

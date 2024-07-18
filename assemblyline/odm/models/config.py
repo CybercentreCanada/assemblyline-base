@@ -4,15 +4,16 @@ from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
-
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
-                      'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota', 'submission_daily_quota']
+                      'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
+                      'submission_async_quota', 'submission_daily_quota']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 DEFAULT_DAILY_API_QUOTA = 0
 DEFAULT_API_QUOTA = 10
 DEFAULT_DAILY_SUBMISSION_QUOTA = 0
 DEFAULT_SUBMISSION_QUOTA = 5
+DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -202,6 +203,7 @@ class OAuthProvider(odm.Model):
         description="Regex used to parse an email address and capture parts to create a user ID out of it")
     uid_format: str = odm.Optional(odm.Keyword(),
                                    description="Format of the user ID based on the captured parts from the regex")
+
     client_id: str = odm.Optional(odm.Keyword(),
                                   description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
@@ -236,6 +238,8 @@ class OAuthProvider(odm.Model):
     email_fields: List[str] = odm.List(odm.Keyword(), default=DEFAULT_EMAIL_FIELDS,
                                        description="List of fields in the claim to get the email from")
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
+    validate_token_with_secret: bool = odm.Boolean(
+        default=False, description="Should we send the client secret while validating the access token?")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -1204,6 +1208,7 @@ class Services(odm.Model):
                                              "Intended for use with local registries.")
     preferred_update_channel: str = odm.Keyword(description="Default update channel to be used for new services")
     allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
+
     preferred_registry_type: str = odm.Enum(
         values=REGISTRY_TYPES,
         default='docker',
@@ -1624,8 +1629,11 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 
 @odm.model(index=False, store=False, description="Default API and submission quota values for the system")
 class Quotas(odm.Model):
-    concurrent_api_calls: int = odm.Integer(description="Maximum concurrent API Calls can be running for a user.")
-    concurrent_submissions: int = odm.Integer(description="Maximum concurrent Submission can be running for a user.")
+    concurrent_api_calls: int = odm.Integer(description="Maximum concurrent API Calls that can be running for a user.")
+    concurrent_submissions: int = odm.Integer(
+        description="Maximum concurrent Submission that can be running for a user.")
+    concurrent_async_submissions: int = odm.Integer(
+        description="Maximum concurrent asynchroneous Submission that can be running for a user.")
     daily_api_calls: int = odm.Integer(description="Maximum daily API calls a user can issue.")
     daily_submissions: int = odm.Integer(description="Maximum daily submission a user can do.")
 
@@ -1633,6 +1641,7 @@ class Quotas(odm.Model):
 DEFAULT_QUOTAS = {
     'concurrent_api_calls': DEFAULT_API_QUOTA,
     'concurrent_submissions': DEFAULT_SUBMISSION_QUOTA,
+    'concurrent_async_submissions': DEFAULT_ASYNC_SUBMISSION_QUOTA,
     'daily_api_calls': DEFAULT_DAILY_API_QUOTA,
     'daily_submissions': DEFAULT_DAILY_SUBMISSION_QUOTA
 }

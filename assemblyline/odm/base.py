@@ -1305,7 +1305,7 @@ class Model:
             raise ValueError(f"'{self.__class__.__name__}' object was created with invalid parameters: "
                              f"{', '.join(unused_keys)}")
         if unused_keys and ignore_extra_values and mask is None:
-            logger.warning(
+            logger.info(
                 f"The following parameters were ignored from object "
                 f"'{self.__class__.__name__}': {', '.join(unused_keys)}")
 
