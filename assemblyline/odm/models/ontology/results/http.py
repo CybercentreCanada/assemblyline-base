@@ -15,4 +15,3 @@ class HTTP(odm.Model):
     redirects = odm.Optional(odm.List(odm.Compound(HTTPRedirect)), description="List of Redirects")
     favicon = odm.Optional(odm.Compound(File), description="The file information of the main favicon")
     title = odm.Optional(odm.Keyword(), description="The title of the main page after any redirection")
-    captcha_solved = odm.Optional(odm.Boolean(), description="If the captcha was solved")
