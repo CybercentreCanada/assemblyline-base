@@ -1,6 +1,7 @@
 from datetime import datetime
 from time import time
 from typing import Optional
+from dateutil.tz import tzutc
 
 EPOCH = datetime.utcfromtimestamp(0)
 ISO_FMT = '%Y-%m-%dT%H:%M:%S'
@@ -126,6 +127,8 @@ def now_as_local(offset: float = 0.0) -> str:
 def now_as_db(offset: float = 0.0, date_format: str = DB_FMT) -> str:
     return format_time(datetime.fromtimestamp(now(offset)), date_format)
 
+def now_as_utc_datetime(offset: float = 0.0) -> datetime:
+    return datetime.fromtimestamp(now(offset), tzutc());
 
 def utc_offset_from_local(cur_time: Optional[float] = None) -> float:
     if not cur_time:
