@@ -209,6 +209,8 @@ class OAuthProvider(odm.Model):
                                   description="Scope for Federated Credentials authentication.")
     client_id: str = odm.Optional(odm.Keyword(),
                                   description="ID of your application to authenticate to the OAuth provider")
+    tenant_id: str = odm.Optional(odm.Keyword(),
+                                  description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
                                       description="Password to your application to authenticate to the OAuth provider")
     redirect_uri: str = odm.Optional(odm.Keyword(),
