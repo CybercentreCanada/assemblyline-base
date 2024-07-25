@@ -77,3 +77,5 @@ PRIORITY_THRESHOLDS = {
 
 MAGIC_RULE_PATH = os.path.join(modulepath(__name__), 'custom.magic')
 YARA_RULE_PATH = os.path.join(modulepath(__name__), 'custom.yara')
+
+MAX_INT = 2_147_483_647
