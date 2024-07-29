@@ -124,3 +124,5 @@ class ServiceDelta(odm.Model):
 
     update_channel = odm.Optional(odm.Enum(values=["stable", "rc", "beta", "dev"]), description=REF_SERVICE)
     update_config: UpdateConfigDelta = odm.Optional(odm.Compound(UpdateConfigDelta), description=REF_SERVICE)
+
+    recursion_prevention = odm.Optional(odm.sequence(odm.Keyword()), description=REF_SERVICE)
