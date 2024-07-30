@@ -2024,7 +2024,12 @@ class SubmissionProfile(odm.Model):
 DEFAULT_SUBMISSION_PROFILES = [
     {
         # Only perform static analysis
-        "name": "Static Analysis"
+        "name": "Static Analysis",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL
+            }
+        }
     },
     {
         # Perform static analysis along with dynamic analysis
