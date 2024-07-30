@@ -26,8 +26,6 @@ class ServiceSelection(odm.Model):
         description="List of services to rescan when initial run scores as malicious")
     resubmit = odm.List(odm.Keyword(), default=DEFAULT_RESUBMIT,
                         description="Add to service selection when resubmitting")
-    runtime_excluded = odm.List(odm.Keyword(), default=[], description="List of runtime excluded services")
-
 
 # Fields in the parameters used to calculate hashes used for result caching
 _KEY_HASHED_FIELDS = {
