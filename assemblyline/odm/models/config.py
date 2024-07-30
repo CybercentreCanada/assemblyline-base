@@ -4,7 +4,7 @@ from assemblyline import odm
 from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
-from assemblyline.odm.models.submission import SubmissionParams, DEFAULT_SRV_SEL
+from assemblyline.odm.models.submission import ServiceSelection, DEFAULT_SRV_SEL
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
@@ -1944,12 +1944,34 @@ DEFAULT_METADATA_CONFIGURATION = {
     }
 }
 
+@odm.model(index=True, store=False, description="Submission Parameters for profile")
+class SubmissionProfileParams(odm.Model):
+    deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
+    ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
+    ignore_dynamic_recursion_prevention = odm.Boolean(default=False,
+                                                      description="Should we ignore dynamic recursion prevention?")
+    ignore_filtering = odm.Boolean(default=False, description="Should we ignore filtering services?")
+    ignore_size = odm.Boolean(default=False, description="Ignore the file size limits?")
+    max_extracted = odm.Integer(default=500, description="Max number of extracted files")
+    max_supplementary = odm.Integer(default=500, description="Max number of supplementary files")
+    priority = odm.Integer(default=1000, description="Priority of the scan")
+    services = odm.Compound(ServiceSelection, default={}, description="Service selection")
+    service_spec = odm.Mapping(odm.Mapping(odm.Any()), default={}, index=False, store=False,
+                               description="Service-specific parameters")
+    auto_archive = odm.Boolean(default=False,
+                               description="Does the submission automatically goes into the archive when completed?")
+    delete_after_archive = odm.Boolean(
+        default=False,
+        description="When the submission is archived, should we delete it from hot storage right away?")
+    use_archive_alternate_dtl = odm.Boolean(default=False,
+                                            description="Should we use the alternate dtl while archiving?")
+
 @odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
 class SubmissionProfile(odm.Model):
     name = odm.Text(description="Submission profile name")
     classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
                                               description="Submission profile classification")
-    params = odm.Compound(SubmissionParams, description="Submission parameters for profile")
+    params = odm.Compound(SubmissionProfileParams, description="Submission parameters for profile")
 
 DEFAULT_SUBMISSION_PROFILES = [
     {
