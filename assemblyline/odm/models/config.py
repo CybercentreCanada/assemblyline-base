@@ -1995,6 +1995,7 @@ DEFAULT_METADATA_CONFIGURATION = {
 @odm.model(index=True, store=False, description="Submission Parameters for profile")
 class SubmissionProfileParams(odm.Model):
     deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
+    generate_alert = odm.Boolean(default=False, description="Should this submission generate an alert?")
     ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False,
                                                       description="Should we ignore dynamic recursion prevention?")
@@ -2011,6 +2012,7 @@ class SubmissionProfileParams(odm.Model):
     delete_after_archive = odm.Boolean(
         default=False,
         description="When the submission is archived, should we delete it from hot storage right away?")
+    ttl = odm.Integer(default=0, description="Time, in days, to live for this submission")
     use_archive_alternate_dtl = odm.Boolean(default=False,
                                             description="Should we use the alternate dtl while archiving?")
 
