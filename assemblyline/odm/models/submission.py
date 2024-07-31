@@ -58,7 +58,6 @@ class SubmissionParams(odm.Model):
     max_extracted = odm.Integer(default=500, description="Max number of extracted files")
     max_supplementary = odm.Integer(default=500, description="Max number of supplementary files")
     priority = odm.Integer(default=1000, description="Priority of the scan")
-    profile = odm.Boolean(default=False, description="Should the submission do extra profiling?")
     psid = odm.Optional(odm.UUID(), description="Parent submission ID")
     quota_item = odm.Boolean(default=False, description="Does this submission count against quota?")
     services = odm.Compound(ServiceSelection, default={}, description="Service selection")
