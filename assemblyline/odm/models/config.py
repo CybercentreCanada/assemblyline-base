@@ -1,8 +1,10 @@
 from typing import Any, Dict, List
 
 from assemblyline import odm
+from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
+from assemblyline.odm.models.submission import ServiceSelection, DEFAULT_SRV_SEL
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
@@ -15,6 +17,7 @@ DEFAULT_DAILY_SUBMISSION_QUOTA = 0
 DEFAULT_SUBMISSION_QUOTA = 5
 DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
+Classification = get_classification()
 
 @odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
@@ -1940,6 +1943,68 @@ DEFAULT_METADATA_CONFIGURATION = {
     }
 }
 
+@odm.model(index=True, store=False, description="Submission Parameters for profile")
+class SubmissionProfileParams(odm.Model):
+    deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
+    generate_alert = odm.Boolean(default=False, description="Should this submission generate an alert?")
+    ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
+    ignore_dynamic_recursion_prevention = odm.Boolean(default=False,
+                                                      description="Should we ignore dynamic recursion prevention?")
+    ignore_filtering = odm.Boolean(default=False, description="Should we ignore filtering services?")
+    ignore_size = odm.Boolean(default=False, description="Ignore the file size limits?")
+    max_extracted = odm.Integer(default=500, description="Max number of extracted files")
+    max_supplementary = odm.Integer(default=500, description="Max number of supplementary files")
+    priority = odm.Integer(default=1000, description="Priority of the scan")
+    services = odm.Compound(ServiceSelection, default={}, description="Service selection")
+    service_spec = odm.Mapping(odm.Mapping(odm.Any()), default={}, index=False, store=False,
+                               description="Service-specific parameters")
+    auto_archive = odm.Boolean(default=False,
+                               description="Does the submission automatically goes into the archive when completed?")
+    delete_after_archive = odm.Boolean(
+        default=False,
+        description="When the submission is archived, should we delete it from hot storage right away?")
+    ttl = odm.Integer(default=0, description="Time, in days, to live for this submission")
+    use_archive_alternate_dtl = odm.Boolean(default=False,
+                                            description="Should we use the alternate dtl while archiving?")
+
+@odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
+class SubmissionProfile(odm.Model):
+    name = odm.Text(description="Submission profile name")
+    classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
+                                              description="Submission profile classification")
+    params = odm.Compound(SubmissionProfileParams, description="Submission parameters for profile")
+
+DEFAULT_SUBMISSION_PROFILES = [
+    {
+        # Only perform static analysis
+        "name": "Static Analysis",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL
+            }
+        }
+    },
+    {
+        # Perform static analysis along with dynamic analysis
+        "name": "Dynamic Analysis",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
+            }
+        }
+
+    },
+    {
+        # Perform static analysis along with internet connected services
+        "name": "Static Analysis with Internet",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
+            }
+        }
+
+    },
+]
 
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
@@ -1969,6 +2034,8 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    profiles = odm.List(odm.Compound(SubmissionProfile),
+                        description="Submission profiles with preset submission parameters")
 
 
 DEFAULT_SUBMISSION = {
@@ -1985,7 +2052,8 @@ DEFAULT_SUBMISSION = {
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'profiles': DEFAULT_SUBMISSION_PROFILES
 }
 
 
