@@ -92,7 +92,7 @@ class NetworkConnection(odm.Model):
             }
         elif connection_type == "smtp":
             # Include the mail_to, mail_from, and attachement details as part of the hash
-            oid_prefix = "network_dns"
+            oid_prefix = "network_smtp"
             hash_dict['smtp_details'] = data.get('smtp_details', {})
 
         return f"{oid_prefix}_{get_dict_fingerprint_hash(hash_dict)}"
