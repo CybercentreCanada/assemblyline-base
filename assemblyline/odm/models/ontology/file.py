@@ -5,11 +5,11 @@ from assemblyline.odm.models.ontology.filetypes import PE
 @odm.model(description="File Characteristics")
 class File(odm.Model):
     # Common information
-    md5 = odm.Optional(odm.MD5(), description="MD5 of file")
-    sha1 = odm.Optional(odm.SHA1(), description="SHA1 of file")
-    sha256 = odm.Optional(odm.SHA256(), description="SHA256 of file")
-    type = odm.Optional(odm.Keyword(), description="Type of file as identified by Assemblyline")
-    size = odm.Optional(odm.Integer(), description="Size of the file in bytes")
+    md5 = odm.MD5(description="MD5 of file")
+    sha1 = odm.SHA1(description="SHA1 of file")
+    sha256 = odm.SHA256(description="SHA256 of file")
+    type = odm.Optional(odm.Keyword(description="Type of file as identified by Assemblyline"))
+    size = odm.Integer(description="Size of the file in bytes")
     names = odm.Optional(odm.List(odm.Text()), description="Known filenames associated to file")
     parent = odm.Optional(odm.SHA256(), description="Absolute parent of file relative to submission")
 
