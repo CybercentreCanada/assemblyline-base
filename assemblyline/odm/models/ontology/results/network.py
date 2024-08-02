@@ -50,7 +50,7 @@ class NetworkHTTP(odm.Model):
 class NetworkSMTP(odm.Model):
     mail_from = odm.Email(description="Sender of the email")
     mail_to = odm.List(odm.Email(), description="Recipients of the email")
-    attachments = odm.List(odm.Compound(File), default=[], description="Name of attachments, if any")
+    attachments = odm.Optional(odm.List(odm.Compound(File)), description="The file information about the attachments")
 
 @odm.model(description="Details for a low-level network connection by IP")
 class NetworkConnection(odm.Model):
