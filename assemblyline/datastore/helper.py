@@ -1489,6 +1489,7 @@ class MetadataValidator:
                     # Map value of aliased field to the actual field that are part of the scheme
                     if alias in metadata:
                         metadata[field_name] = metadata[alias]
+                        break
 
 
             for field_name, field_config in validation_scheme.items():
