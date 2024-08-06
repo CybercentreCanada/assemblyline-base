@@ -1481,6 +1481,10 @@ class MetadataValidator:
 
             # Check to see if metadata provided contains any alias field names
             for field_name, field_config in validation_scheme.items():
+                if field_name in metadata:
+                    # Field already exists in metadata
+                    continue
+
                 for alias in field_config.aliases:
                     # Map value of aliased field to the actual field that are part of the scheme
                     if alias in metadata:
