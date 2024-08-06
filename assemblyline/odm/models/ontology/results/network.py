@@ -46,6 +46,12 @@ class NetworkHTTP(odm.Model):
         odm.Text(), description="The response content mimetype returned by the server")
 
 
+@odm.model(description="Details for an SMTP request")
+class NetworkSMTP(odm.Model):
+    mail_from = odm.Email(description="Sender of the email")
+    mail_to = odm.List(odm.Email(), description="Recipients of the email")
+    attachments = odm.Optional(odm.List(odm.Compound(File)), description="The file information about the attachments")
+
 @odm.model(description="Details for a low-level network connection by IP")
 class NetworkConnection(odm.Model):
     objectid = odm.Compound(ObjectID, description="The object ID of the network object")
@@ -60,7 +66,9 @@ class NetworkConnection(odm.Model):
     source_port = odm.Optional(odm.Integer(), description="The source port of the connection")
     http_details = odm.Optional(odm.Compound(NetworkHTTP), description="HTTP-specific details of request")
     dns_details = odm.Optional(odm.Compound(NetworkDNS), description="DNS-specific details of request")
-    connection_type = odm.Optional(odm.Enum(values=['http', 'dns', 'tls'], description="Type of connection being made"))
+    smtp_details = odm.Optional(odm.Compound(NetworkSMTP), description="SMTP-specific details of request")
+    connection_type = odm.Optional(odm.Enum(values=['http', 'dns', 'tls', 'smtp'],
+                                            description="Type of connection being made"))
 
     def get_oid(data: dict):
         connection_type = data.get('connection_type')
@@ -82,6 +90,10 @@ class NetworkConnection(odm.Model):
                 'domain': data.get('dns_details', {}).get('domain', None),
                 'lookup_type': data.get('dns_details', {}).get('lookup_type', None)
             }
+        elif connection_type == "smtp":
+            # Include the mail_to, mail_from, and attachement details as part of the hash
+            oid_prefix = "network_smtp"
+            hash_dict['smtp_details'] = data.get('smtp_details', {})
 
         return f"{oid_prefix}_{get_dict_fingerprint_hash(hash_dict)}"
 
