@@ -506,6 +506,16 @@ def test_metadata_validation(ds: AssemblylineDatastore):
         })
     })
 
+    # Run validation on field that's an alias to an actual field in the validation scheme
+    # Based on this configuration 'blah' maps to 'bloo' so there is no validation error returned
+    assert not validator.check_metadata({'blah': 'blee'}, validation_scheme={
+        'bloo': Metadata({
+            'validator_type': 'text',
+            'aliases': ['blah']
+
+        })
+    })
+
 def test_save_or_freshen_file(ds: AssemblylineDatastore):
     classification = forge.get_classification()
 

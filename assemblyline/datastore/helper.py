@@ -1478,6 +1478,15 @@ class MetadataValidator:
         if validation_scheme:
             # Check to see if there's any required metadata that's missing
             missing_metadata = []
+
+            # Check to see if metadata provided contains any alias field names
+            for field_name, field_config in validation_scheme.items():
+                for alias in field_config.aliases:
+                    # Map value of aliased field to the actual field that are part of the scheme
+                    if alias in metadata:
+                        metadata[field_name] = metadata[alias]
+
+
             for field_name, field_config in validation_scheme.items():
                 if field_name not in metadata and field_config.required:
                     if field_config.default:
