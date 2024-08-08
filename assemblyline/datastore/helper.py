@@ -2,6 +2,7 @@
 import concurrent.futures
 import json
 import os
+from copy import deepcopy
 from datetime import datetime
 from typing import Any, List, Optional, Tuple, Union
 
@@ -1504,7 +1505,14 @@ class MetadataValidator:
 
             for field_name, field_config in validation_scheme.items():
                 # Validate the format of the data given based on the configuration
-                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(field_config.validator_params or {}))
+                validator_params = field_config.validator_params
+                if field_config.validator_type == 'list':
+                    # We'll need to make a copy of validation parameters and manipulate them as necessary for validation of typed lists
+                    validator_params = deepcopy(validator_params)
+                    child_type = validator_params.pop('child_type', 'text')
+                    validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**(validator_params))}
+
+                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(validator_params))
                 meta_value = metadata.get(field_name)
 
                 # Skip over validation of metadata that's missing and not required

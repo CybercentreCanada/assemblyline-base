@@ -1906,7 +1906,8 @@ METADATA_FIELDTYPE_MAP = {
     'uri': odm.URI,
     'integer': odm.Integer,
     'regex': odm.ValidatedKeyword,
-    'enum': odm.Enum
+    'enum': odm.Enum,
+    'list': odm.List
 }
 
 
