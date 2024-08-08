@@ -506,6 +506,39 @@ def test_metadata_validation(ds: AssemblylineDatastore):
         })
     })
 
+    # Run validation on field that's an alias to an actual field in the validation scheme
+    # Based on this configuration 'blah' maps to 'bloo' so there is no validation error returned
+    assert not validator.check_metadata({'blah': 'blee'}, validation_scheme={
+        'bloo': Metadata({
+            'validator_type': 'text',
+            'aliases': ['blah']
+
+        })
+    })
+
+    # Run validation on a list of recognized types
+    assert not validator.check_metadata({'blah': ['abc.com']}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'domain',
+            }
+
+        })
+    })
+
+
+    # Run validation on a list of custom types
+    assert not validator.check_metadata({'blah': ['blee']}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'regex',
+                'validation_regex': 'blee',
+            }
+        })
+    })
+
 def test_save_or_freshen_file(ds: AssemblylineDatastore):
     classification = forge.get_classification()
 

@@ -1906,7 +1906,8 @@ METADATA_FIELDTYPE_MAP = {
     'uri': odm.URI,
     'integer': odm.Integer,
     'regex': odm.ValidatedKeyword,
-    'enum': odm.Enum
+    'enum': odm.Enum,
+    'list': odm.List
 }
 
 
@@ -1919,6 +1920,8 @@ class Metadata(odm.Model):
     suggestions: List[str] = odm.List(odm.Keyword(), default=[], description="List of suggestions for this field")
     default: Any = odm.Optional(odm.Keyword(description="Default value for the field"))
     required: bool = odm.Boolean(default=False, description="Is this field required?")
+    aliases: List[str] = odm.List(odm.Keyword(), default=[],
+                                  description="Field name aliases that map over to the field.")
 
 
 @odm.model(index=False, store=False, description="Configuration for metadata compliance with APIs")
