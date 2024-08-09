@@ -1946,26 +1946,25 @@ DEFAULT_METADATA_CONFIGURATION = {
 
 @odm.model(index=True, store=False, description="Submission Parameters for profile")
 class SubmissionProfileParams(odm.Model):
-    deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
-    generate_alert = odm.Boolean(default=False, description="Should this submission generate an alert?")
-    ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
-    ignore_dynamic_recursion_prevention = odm.Boolean(default=False,
+    deep_scan = odm.Optional(odm.Boolean(), description="Should a deep scan be performed?")
+    generate_alert = odm.Optional(odm.Boolean(), description="Should this submission generate an alert?")
+    ignore_cache = odm.Optional(odm.Boolean(), description="Ignore the cached service results?")
+    ignore_dynamic_recursion_prevention = odm.Optional(odm.Boolean(),
                                                       description="Should we ignore dynamic recursion prevention?")
-    ignore_filtering = odm.Boolean(default=False, description="Should we ignore filtering services?")
-    ignore_size = odm.Boolean(default=False, description="Ignore the file size limits?")
-    max_extracted = odm.Integer(default=500, description="Max number of extracted files")
-    max_supplementary = odm.Integer(default=500, description="Max number of supplementary files")
-    priority = odm.Integer(default=1000, description="Priority of the scan")
-    services = odm.Compound(ServiceSelection, default={}, description="Service selection")
-    service_spec = odm.Mapping(odm.Mapping(odm.Any()), default={}, index=False, store=False,
+    ignore_filtering = odm.Optional(odm.Boolean(), description="Should we ignore filtering services?")
+    ignore_size = odm.Optional(odm.Boolean(), description="Ignore the file size limits?")
+    max_extracted = odm.Optional(odm.Integer(), description="Max number of extracted files")
+    max_supplementary = odm.Optional(odm.Integer(), description="Max number of supplementary files")
+    priority = odm.Optional(odm.Integer(), description="Priority of the scan")
+    services = odm.Optional(odm.Compound(ServiceSelection), description="Service selection")
+    service_spec = odm.Optional(odm.Mapping(odm.Mapping(odm.Any())), index=False, store=False,
                                description="Service-specific parameters")
-    auto_archive = odm.Boolean(default=False,
+    auto_archive = odm.Optional(odm.Boolean(),
                                description="Does the submission automatically goes into the archive when completed?")
-    delete_after_archive = odm.Boolean(
-        default=False,
+    delete_after_archive = odm.Optional(odm.Boolean(),
         description="When the submission is archived, should we delete it from hot storage right away?")
-    ttl = odm.Integer(default=0, description="Time, in days, to live for this submission")
-    use_archive_alternate_dtl = odm.Boolean(default=False,
+    ttl = odm.Optional(odm.Integer(), description="Time, in days, to live for this submission")
+    use_archive_alternate_dtl = odm.Optional(odm.Boolean(),
                                             description="Should we use the alternate dtl while archiving?")
 
 @odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
