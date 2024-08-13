@@ -1520,9 +1520,9 @@ class MetadataValidator:
                     # We'll need to make a copy of validation parameters and manipulate them as necessary for validation of typed lists
                     validator_params = deepcopy(validator_params)
                     child_type = validator_params.pop('child_type', 'text')
-                    validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**(validator_params))}
+                    validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**validator_params)}
 
-                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(validator_params))
+                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**validator_params)
                 meta_value = metadata.get(field_name)
 
                 # Skip over validation of metadata that's missing and not required
