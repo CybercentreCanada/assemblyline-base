@@ -1486,11 +1486,17 @@ class MetadataValidator:
                     # Field already exists in metadata
                     continue
 
+                aliased_value = None
                 for alias in field_config.aliases:
                     # Map value of aliased field to the actual field that are part of the scheme
-                    if alias in metadata:
-                        metadata[field_name] = metadata[alias]
-                        break
+                    if not aliased_value:
+                        aliased_value = metadata.pop(alias, None)
+                    else:
+                        metadata.pop(alias, None)
+
+                if aliased_value:
+                    # Field value retrieved from aliases
+                    metadata[field_name] = aliased_value
 
 
             for field_name, field_config in validation_scheme.items():
@@ -1500,8 +1506,12 @@ class MetadataValidator:
                     else:
                         missing_metadata.append(field_name)
 
+            # Determine if there's extra metadata being set that isn't validated/known to the system
+            extra_metadata = list(set(metadata.keys()) - set(validation_scheme.keys()))
             if missing_metadata:
                 return (None, f"Required metadata is missing from submission: {missing_metadata}")
+            elif extra_metadata:
+                return (None, f"Extra metadata found from submission: {extra_metadata}")
 
             for field_name, field_config in validation_scheme.items():
                 # Validate the format of the data given based on the configuration
@@ -1510,9 +1520,9 @@ class MetadataValidator:
                     # We'll need to make a copy of validation parameters and manipulate them as necessary for validation of typed lists
                     validator_params = deepcopy(validator_params)
                     child_type = validator_params.pop('child_type', 'text')
-                    validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**(validator_params))}
+                    validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**validator_params)}
 
-                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(validator_params))
+                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**validator_params)
                 meta_value = metadata.get(field_name)
 
                 # Skip over validation of metadata that's missing and not required
