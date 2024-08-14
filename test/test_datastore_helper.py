@@ -542,6 +542,17 @@ def test_metadata_validation(ds: AssemblylineDatastore):
         })
     })
 
+
+    # Run validation on a list with a string value given
+    assert not validator.check_metadata({'blah': 'abc.com'}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'domain',
+            }
+        })
+    })
+
 def test_save_or_freshen_file(ds: AssemblylineDatastore):
     classification = forge.get_classification()
 
