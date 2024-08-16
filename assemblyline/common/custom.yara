@@ -910,6 +910,7 @@ rule code_css {
 
     condition:
         mime startswith "text"
+        mime != "text/html"
         and for all of ($css) : ( # > 2 )
 }
 
