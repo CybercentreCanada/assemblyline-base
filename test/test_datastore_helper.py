@@ -491,6 +491,9 @@ def test_metadata_validation(ds: AssemblylineDatastore):
     # Run validator with validation configured but is missing metadata
     assert validator.check_metadata({'bloo': 'blee'}, validation_scheme=meta_config)
 
+    # Run validator with validation configured but contains extra metadata
+    assert validator.check_metadata({'bloo': 'blee', 'blah': 'blah'}, validation_scheme=meta_config)
+
     # Run validation using invalid metadata
     assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
         'blah': Metadata({
@@ -503,6 +506,50 @@ def test_metadata_validation(ds: AssemblylineDatastore):
     assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
         'blah': Metadata({
             'validator_type': 'integer',
+        })
+    })
+
+    # Run validation on field that's an alias to an actual field in the validation scheme
+    # Based on this configuration 'blah' maps to 'bloo' so there is no validation error returned
+    assert not validator.check_metadata({'blah': 'blee'}, validation_scheme={
+        'bloo': Metadata({
+            'validator_type': 'text',
+            'aliases': ['blah']
+
+        })
+    })
+
+    # Run validation on a list of recognized types
+    assert not validator.check_metadata({'blah': ['abc.com']}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'domain',
+            }
+
+        })
+    })
+
+
+    # Run validation on a list of custom types
+    assert not validator.check_metadata({'blah': ['blee']}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'regex',
+                'validation_regex': 'blee',
+            }
+        })
+    })
+
+
+    # Run validation on a list with a string value given
+    assert not validator.check_metadata({'blah': 'abc.com'}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'domain',
+            }
         })
     })
 

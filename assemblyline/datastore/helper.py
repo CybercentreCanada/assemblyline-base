@@ -2,6 +2,7 @@
 import concurrent.futures
 import json
 import os
+from copy import deepcopy
 from datetime import datetime
 from typing import Any, List, Optional, Tuple, Union
 
@@ -1478,6 +1479,26 @@ class MetadataValidator:
         if validation_scheme:
             # Check to see if there's any required metadata that's missing
             missing_metadata = []
+
+            # Check to see if metadata provided contains any alias field names
+            for field_name, field_config in validation_scheme.items():
+                if field_name in metadata:
+                    # Field already exists in metadata
+                    continue
+
+                aliased_value = None
+                for alias in field_config.aliases:
+                    # Map value of aliased field to the actual field that are part of the scheme
+                    if not aliased_value:
+                        aliased_value = metadata.pop(alias, None)
+                    else:
+                        metadata.pop(alias, None)
+
+                if aliased_value:
+                    # Field value retrieved from aliases
+                    metadata[field_name] = aliased_value
+
+
             for field_name, field_config in validation_scheme.items():
                 if field_name not in metadata and field_config.required:
                     if field_config.default:
@@ -1485,12 +1506,25 @@ class MetadataValidator:
                     else:
                         missing_metadata.append(field_name)
 
+            # Determine if there's extra metadata being set that isn't validated/known to the system
+            extra_metadata = list(set(metadata.keys()) - set(validation_scheme.keys()))
             if missing_metadata:
                 return (None, f"Required metadata is missing from submission: {missing_metadata}")
+            elif extra_metadata:
+                return (None, f"Extra metadata found from submission: {extra_metadata}")
 
             for field_name, field_config in validation_scheme.items():
                 # Validate the format of the data given based on the configuration
-                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(field_config.validator_params or {}))
+                validator_params = field_config.validator_params
+                if field_config.validator_type == 'list':
+                    # We'll need to make a copy of validation parameters and manipulate them as necessary for validation of typed lists
+                    validator_params = deepcopy(validator_params)
+                    child_type = validator_params.pop('child_type', 'text')
+                    auto = validator_params.pop('auto', True)
+                    validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**validator_params),
+                                        'auto': auto}
+
+                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**validator_params)
                 meta_value = metadata.get(field_name)
 
                 # Skip over validation of metadata that's missing and not required
