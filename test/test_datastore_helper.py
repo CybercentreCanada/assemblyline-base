@@ -492,7 +492,11 @@ def test_metadata_validation(ds: AssemblylineDatastore):
     assert validator.check_metadata({'bloo': 'blee'}, validation_scheme=meta_config)
 
     # Run validator with validation configured but contains extra metadata
-    assert validator.check_metadata({'bloo': 'blee', 'blah': 'blah'}, validation_scheme=meta_config)
+    assert not validator.check_metadata({'blah': 'blee', 'bloo': 'blah'}, validation_scheme=meta_config)
+
+    # Run validator with validation configured but contains extra metadata (strict validation enabled)
+    assert validator.check_metadata({'bloo': 'blee', 'blah': 'blah'}, validation_scheme=meta_config,
+                                    strict=True)
 
     # Run validation using invalid metadata
     assert validator.check_metadata({'blah': 'blee'}, validation_scheme={

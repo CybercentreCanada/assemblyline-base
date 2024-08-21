@@ -1466,6 +1466,7 @@ class MetadataValidator:
 
     def check_metadata(self, metadata: dict[str, Any],
                        validation_scheme: dict[str, Metadata] = None,
+                       strict: bool = False,
                        skip_elastic_fields: bool = False) -> Optional[Tuple[str, str]]:
         """
         Check if the type of every metedata field for obvious errors.
@@ -1507,10 +1508,12 @@ class MetadataValidator:
                         missing_metadata.append(field_name)
 
             # Determine if there's extra metadata being set that isn't validated/known to the system
-            extra_metadata = list(set(metadata.keys()) - set(validation_scheme.keys()))
+            # Ignore metadata fields that have been set by the system
+            system_configured_metadata = set(['ingest_id', 'ts', 'type'])
+            extra_metadata = list(set(metadata.keys()) - set(validation_scheme.keys()) - system_configured_metadata)
             if missing_metadata:
                 return (None, f"Required metadata is missing from submission: {missing_metadata}")
-            elif extra_metadata:
+            elif strict and extra_metadata:
                 return (None, f"Extra metadata found from submission: {extra_metadata}")
 
             for field_name, field_config in validation_scheme.items():

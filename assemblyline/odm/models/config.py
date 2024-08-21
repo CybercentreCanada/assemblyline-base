@@ -1970,6 +1970,8 @@ class MetadataConfig(odm.Model):
                                               description="Metadata specification for submission")
     ingest: Dict[str, Dict[str, Metadata]] = odm.Mapping(odm.Mapping(odm.Compound(
         Metadata)), description="Metadata specification for certain ingestion based on ingest_type")
+    strict_schemes: List[str] = odm.List(odm.Keyword(), default=[],
+                                         description="A list of metadata schemes with strict rules (ie. no extra/unknown metadata). Values can be: `archive`, `submit`, or one of the schemes under `ingest`.")
 
 
 DEFAULT_METADATA_CONFIGURATION = {
