@@ -655,13 +655,17 @@ def test_named_item_access():
 
     assert test['a'] == {'a': -1, 'b': 100}
 
-def test_url():
+def test_uri():
     @model()
     class Test(Model):
         uri = URI()
 
     with pytest.raises(ValueError):
         Test()
+
+    # URI
+    a = Test({"uri": "https://www.google.com"})
+    assert a.uri == "https://www.google.com"
 
     # URI with a trailing '/' but no meaningful path
     a = Test({"uri": "https://www.google.com/"})
