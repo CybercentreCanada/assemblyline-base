@@ -671,6 +671,10 @@ def test_uri():
     a = Test({"uri": "https://www.google.com/"})
     assert a.uri == "https://www.google.com"
 
+    # URI with a trailing '/' and a port but no meaningful path
+    a = Test({"uri": "https://www.google.com:443/"})
+    assert a.uri == "https://www.google.com:443"
+
     # URI with a meaningful path
     a = Test({"uri": "https://www.google.com/path/to/somewhere"})
     assert a.uri == "https://www.google.com/path/to/somewhere"
