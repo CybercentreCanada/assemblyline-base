@@ -509,7 +509,13 @@ class URI(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{match.group(2)}' in URI '{value}'"
                              " is not a valid Domain or IP.")
 
-        return match.group(0).replace(match.group(2), match.group(2).lower())
+        validated_url = match.group(0).replace(match.group(2), match.group(2).lower())
+
+        # Check if there's a trailing forward slash with no meaningful path and strip it
+        if len(match.groups()) == 3 and '/' == match.group(3):
+            validated_url = validated_url[:-1]
+
+        return validated_url
 
 
 class UNCPath(ValidatedKeyword):

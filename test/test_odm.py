@@ -17,6 +17,7 @@ from assemblyline.odm import (
     List,
     Mapping,
     Model,
+    URI,
     construct_safe,
     flat_to_nested,
     model,
@@ -654,6 +655,25 @@ def test_named_item_access():
 
     assert test['a'] == {'a': -1, 'b': 100}
 
+def test_url():
+    @model()
+    class Test(Model):
+        uri = URI()
+
+    with pytest.raises(ValueError):
+        Test()
+
+    # URI with a trailing '/' but no meaningful path
+    a = Test({"uri": "https://www.google.com/"})
+    assert a.uri == "https://www.google.com"
+
+    # URI with a meaningful path
+    a = Test({"uri": "https://www.google.com/path/to/somewhere"})
+    assert a.uri == "https://www.google.com/path/to/somewhere"
+
+    # URI with a meaningful path but with a trailing '/'
+    a = Test({"uri": "https://www.google.com/path/to/somewhere/"})
+    assert a.uri == "https://www.google.com/path/to/somewhere/"
 
 def test_ip():
     @model()
