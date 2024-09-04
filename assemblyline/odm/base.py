@@ -1223,7 +1223,7 @@ class Model:
 
                 values = [f'"{v}"' if v else str(v) for v in sorted(values)]
                 values.append("None") if none_value else None
-                description = f'{description}<br>Values:<br>`{", ".join(values)}`'
+                description = f'{description}<br>Supported values are:<br>`{", ".join(values)}`'
 
             # Is this a required field?
             if info.__class__ != Optional:
