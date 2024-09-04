@@ -1172,7 +1172,7 @@ class Model:
             "SHOULD BE DONE THROUGH ASSEMBLYLINE-BASE REPO!)\n"
 
         # Header
-        markdown_content += f"{'#'*toc_depth} {cls.__name__}\n> {cls.__description}\n\n"
+        markdown_content += f"{'#'*toc_depth} {cls.__name__}\n{cls.__description}\n\n"
 
         # Table
         table = "| Field | Type | Description | Required | Default |\n| :--- | :--- | :--- | :--- | :--- |\n"
