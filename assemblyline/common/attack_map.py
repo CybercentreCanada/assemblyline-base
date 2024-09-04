@@ -1,6 +1,6 @@
 # This file is generated using generate_attack_map.py script
 # DO NOT EDIT! Re-run the script instead...
-Last ran: 2024-09-04 16:41:21.134829
+# Last ran: 2024-09-04 16:41:21.134829
 
 attack_map = {
  'T1001': {'attack_id': 'T1001',
