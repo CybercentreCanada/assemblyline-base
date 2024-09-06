@@ -1,7 +1,9 @@
 from __future__ import annotations
+
+from typing import List, Optional
+
 from assemblyline import odm
 from assemblyline.odm.models.workflow import PRIORITIES, STATUSES
-from typing import List, Optional
 
 ES_SUBMITTED = "submitted"
 ES_SKIPPED = "skipped"
@@ -197,18 +199,18 @@ class Alert(odm.Model):
     expiry_ts = odm.Optional(odm.Date(store=False), description="Timestamp indicating when the alert is scheduled to expire from the system.")
     extended_scan = odm.Enum(values=EXTENDED_SCAN_VALUES, description="Indicates the status of an extended scan, if applicable. Extended scans are additional analyses performed after the initial analysis.")
     file = odm.Compound(File, description="Information about the file associated with the alert.")
-    filtered = odm.Boolean(default=False, description="Indicates whether the alert results are filtered out based on system or user configurations.")
+    filtered = odm.Boolean(default=False, description="Indicates whether portions of the submission's analysis results have been omitted due to the user's classification level not meeting the required threshold for viewing certain data.")
     heuristic = odm.Compound(Heuristic, description="Data regarding the heuristics that triggered the alert.")
     label = odm.List(odm.Keyword(), copyto="__text__", default=[], description="Labels assigned to the alert for categorization and filtering.")
     metadata = odm.FlattenedObject(default={}, store=False, description="Additional metadata provided with the file at the time of submission.")
-    owner = odm.Optional(odm.Keyword(), description="The username or system component that owns or is responsible for the alert.")
+    owner = odm.Optional(odm.Keyword(), description="Specifies the user or system component that has taken ownership of the alert. If no user has claimed the alert, it remains under system ownership with no specific user associated, indicated by a value of `None`.")
     priority = odm.Optional(odm.Enum(values=PRIORITIES), description="Indicates the importance level assigned to the alert.")
     reporting_ts = odm.Date(description="Timestamp when the alert was created.")
     submission_relations = odm.sequence(odm.compound(Relationship), description="Describes the hierarchical relationships between submissions that contributed to this alert.")
     sid = odm.UUID(description="Identifier for the submission associated with this alert.")
     status = odm.Optional(odm.Enum(values=STATUSES), description="Reflects the current state of the alert throughout its lifecycle. This status is subject to change as a result of user actions, automated processes, or the execution of workflows within Assemblyline. The status provides insight into the current phase of analysis or response.")
     ts = odm.Date(description="Timestamp of when the file submission occurred that led to the generation of this alert.")
-    type = odm.Keyword(description="The type or category of the alert.")
+    type = odm.Keyword(description="The type or category of the alert as specified at submission time by the user.")
     verdict = odm.Compound(Verdict, default={}, description="Consolidates user assessments of the submission's nature. It records the user identifiers of those who have evaluated the submission, categorizing it as either malicious or non-malicious.")
     events = odm.sequence(odm.compound(Event), default=[], description="An audit trail of events and actions taken on the alert.")
     workflows_completed = odm.Boolean(default=False, description="Flag indicating whether all configured workflows have been executed for this alert.")
