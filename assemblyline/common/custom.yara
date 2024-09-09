@@ -821,8 +821,9 @@ rule code_python {
 
         // High confidence one-liner used to execute base64 blobs
         // reference: https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/exec-base64.yml
-        $executor1 = /((exec|eval|check_output|run|call|[Pp]open|os\.system)\(|lambda\s+\w{1,100}\s*:\s*)((zlib|__import__\(['"]zlib['"]\))\.decompress\()?(base64|__import__\(['"]base64['"]\))\.b64decode\(/
-        $executor2 = /(marshal|__import__\(['"]marshal['"]\)|pickle|__import__\(['"]pickle['"]\))\.loads\(zlib\.decompress\(/
+        $executor1 = /((exec|eval|check_output|run|call|[Pp]open|os\.system)\(|lambda[ \t]+\w{1,100}[ \t]*:[ \t]*)((zlib|__import__\(['"]zlib['"]\))\.decompress\()?(base64|__import__\(['"]base64['"]\))\.b64decode\(/
+        $executor2 = /(marshal|__import__\(['"]marshal['"]\)|pickle|__import__\(['"]pickle['"]\))\.loads\(/
+        $executor3 = /(^|\n)[ \t]*((exec|eval|check_output|run|call|[Pp]open|os\.system)\(|lambda[ \t]+\w{1,100}[ \t]*:[ \t]*)__import__\(/
 
     condition:
         mime startswith "text"
