@@ -1939,6 +1939,7 @@ class Metadata(odm.Model):
     validator_params: Dict[str, Any] = odm.Mapping(odm.Any(), default={},
                                                    description="Configuration parameters to apply to validator")
     suggestions: List[str] = odm.List(odm.Keyword(), default=[], description="List of suggestions for this field")
+    suggestion_key: str = odm.Optional(odm.Keyword(), description="Key in redis where to get the suggestions from")
     default: Any = odm.Optional(odm.Keyword(description="Default value for the field"))
     required: bool = odm.Boolean(default=False, description="Is this field required?")
     aliases: List[str] = odm.List(odm.Keyword(), default=[],
@@ -1953,8 +1954,11 @@ class MetadataConfig(odm.Model):
                                               description="Metadata specification for submission")
     ingest: Dict[str, Dict[str, Metadata]] = odm.Mapping(odm.Mapping(odm.Compound(
         Metadata)), description="Metadata specification for certain ingestion based on ingest_type")
-    strict_schemes: List[str] = odm.List(odm.Keyword(), default=[],
-                                         description="A list of metadata schemes with strict rules (ie. no extra/unknown metadata). Values can be: `archive`, `submit`, or one of the schemes under `ingest`.")
+    strict_schemes: List[str] = odm.List(
+        odm.Keyword(),
+        default=[],
+        description="A list of metadata schemes with strict rules (ie. no extra/unknown metadata). "
+                    "Values can be: `archive`, `submit`, or one of the schemes under `ingest`.")
 
 
 DEFAULT_METADATA_CONFIGURATION = {
