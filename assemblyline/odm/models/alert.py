@@ -59,7 +59,7 @@ class Screenshot(odm.Model):
 class DetailedResults(odm.Model):
     attack_pattern = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed information on MITRE ATT&CK® framework patterns identified in the analysis.")
     attack_category = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed information on MITRE ATT&CK® framework categories associated with the alert.")
-    attrib = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed attribution information that provide context by suggesting associations with known malware families, suspected threat actors, or ongoing campaigns.")
+    attrib = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed attribution information that provides context by suggesting associations with known malware families, suspected threat actors, or ongoing campaigns.")
     av = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed information on antivirus signature matches.")
     behavior = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed descriptions of the behaviors exhibited by the analyzed file or artifact that led to the alert.")
     domain = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed domain information related to the alert.")
