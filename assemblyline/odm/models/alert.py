@@ -24,7 +24,7 @@ def merge_extended_scan(a: str, b: str) -> str:
 @odm.model(index=True, store=False, description="""Represents a granular element within the detailed analysis results, providing specific insights into the analysis findings.
 """)
 class DetailedItem(odm.Model):
-    type = odm.Keyword(description="Specifies the classification or kind of the detailed item, which categorizes the type of information or attribute it represents.")
+    type = odm.Keyword(description="Defines the specific attribute or aspect of the analysis that this detailed item pertains to.")
     value = odm.Keyword(description="The specific value or identifier for the detail item.")
     verdict = odm.Enum(['safe', 'info', 'suspicious', 'malicious'], description="Represents the security assessment or classification of the detailed item, indicating its potential threat level.")
     subtype = odm.Optional(odm.Enum(['EXP', 'CFG', 'OB', 'IMP', 'CFG', 'TA'], description="Adds further specificity to the detailed item, elaborating on its role or nature within the broader type category.  Supported subtypes include configuration blocks (CFG), exploits (EXP), implants (IMP), obfuscation methods (OB), and threat actors (TA)."))
