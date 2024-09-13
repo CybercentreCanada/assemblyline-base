@@ -15,16 +15,16 @@ class URIInfo(odm.Model):
     # https://www.rfc-editor.org/rfc/rfc1808.html#section-2.1
     scheme: str = odm.Keyword(description="The scheme component of the URI (e.g., \"http\", \"ftp\").")
     netloc: str = odm.Keyword(description="The network location part of the URI, including the domain name and port.")
-    path: str = odm.Optional(odm.Keyword(description="The path component of the URI, specifying the resource within the host."))
-    params: str = odm.Optional(odm.Keyword(description="The parameters component of the URI, often used for session management."))
-    query: str = odm.Optional(odm.Keyword(description="The query string of the URI, containing data for server-side processing."))
-    fragment: str = odm.Optional(odm.Keyword(description="The fragment identifier of the URI, used to navigate to a specific part of the resource."))
+    path: str = odm.Optional(odm.Keyword(),description="The path component of the URI, specifying the resource within the host.")
+    params: str = odm.Optional(odm.Keyword(), description="The parameters component of the URI, often used for session management.")
+    query: str = odm.Optional(odm.Keyword(), description="The query string of the URI, containing data for server-side processing.")
+    fragment: str = odm.Optional(odm.Keyword(), description="The fragment identifier of the URI, used to navigate to a specific part of the resource.")
 
     # Ease-of-use elements
-    username: str = odm.Optional(odm.Keyword(description="The username specified in the URI, if any."))
-    password: str = odm.Optional(odm.Keyword(description="The password specified in the URI, if any."))
+    username: str = odm.Optional(odm.Keyword(), description="The username specified in the URI, if any.")
+    password: str = odm.Optional(odm.Keyword(), description="The password specified in the URI, if any.")
     hostname: str = odm.Keyword(description="The hostname extracted from the netloc, representing the domain of the URI.")
-    port: int = odm.Optional(odm.Integer(description="The port number extracted from the netloc, representing the communication endpoint."))
+    port: int = odm.Optional(odm.Integer(), description="The port number extracted from the netloc, representing the communication endpoint.")
 
 
 @odm.model(index=True, store=True, description="""Tracking model for the occurrence and frequency of a file within the system.
@@ -83,7 +83,7 @@ Understanding this schema is crucial for constructing effective and precise Luce
 Utilize this schema as a reference to enhance your search capabilities within the Assemblyline system, allowing for more targeted and refined data retrieval that aligns with your cybersecurity analysis needs.
 """)
 class File(odm.Model):
-    archive_ts = odm.Optional(odm.Date(description="Timestamp indicating when the file was archived.", ai=False))
+    archive_ts = odm.Optional(odm.Date(ai=False), description="Timestamp indicating when the file was archived.")
     ascii = odm.Keyword(index=False, store=False,
                         description="Provides a dotted ASCII representation of the first 64 bytes of the file.", ai=False)
     classification = odm.Classification(description="Security classification assigned to the file based on its contents and context.")
@@ -105,7 +105,7 @@ class File(odm.Model):
     size = odm.Integer(description="Size of the file in bytes.")
     ssdeep = odm.SSDeepHash(store=False, description="The fuzzy hash of the file using SSDEEP, which is useful for identifying similar files.", ai=False)
     type = odm.Keyword(copyto="__text__", description="The file type as determined by the AssemblyLine file type identification service.")
-    tlsh = odm.Optional(odm.Keyword(copyto="__text__", description="A locality-sensitive hash (TLSH) of the file's content, useful for similarity comparisons.", ai=False))
+    tlsh = odm.Optional(odm.Keyword(copyto="__text__"), description="A locality-sensitive hash (TLSH) of the file's content, useful for similarity comparisons.", ai=False)
     from_archive = odm.Boolean(index=False, store=False, default=False,
                                description="Indicates whether the file was retrieved from Assemblyline's archive during processing.", ai=False)
     uri_info = odm.Optional(odm.Compound(URIInfo), description="Detailed components of the file's URI for advanced search functionality.")

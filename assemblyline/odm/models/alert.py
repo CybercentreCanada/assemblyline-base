@@ -27,7 +27,7 @@ class DetailedItem(odm.Model):
     type = odm.Keyword(description="Defines the specific attribute or aspect of the analysis that this detailed item pertains to.")
     value = odm.Keyword(description="The specific value or identifier for the detail item.")
     verdict = odm.Enum(['safe', 'info', 'suspicious', 'malicious'], description="Represents the security assessment or classification of the detailed item, indicating its potential threat level.")
-    subtype = odm.Optional(odm.Enum(['EXP', 'CFG', 'OB', 'IMP', 'CFG', 'TA'], description="Adds further specificity to the detailed item, elaborating on its role or nature within the broader type category.  Supported subtypes include configuration blocks (CFG), exploits (EXP), implants (IMP), obfuscation methods (OB), and threat actors (TA)."))
+    subtype = odm.Optional(odm.Enum(['EXP', 'CFG', 'OB', 'IMP', 'CFG', 'TA']), description="Adds further specificity to the detailed item, elaborating on its role or nature within the broader type category.  Supported subtypes include configuration blocks (CFG), exploits (EXP), implants (IMP), obfuscation methods (OB), and threat actors (TA).")
 
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.as_primitives().items())))
@@ -193,7 +193,7 @@ This schema serves as a technical blueprint for cybersecurity professionals to n
 class Alert(odm.Model):
     alert_id = odm.Keyword(copyto="__text__", description="Unique identifier for the alert.")
     al = odm.compound(ALResults, description="Contains the results of the Assemblyline analysis for the alert.")
-    archive_ts = odm.Optional(odm.Date(description="Timestamp indicating when the alert was archived in the system."))
+    archive_ts = odm.Optional(odm.Date(), description="Timestamp indicating when the alert was archived in the system.")
     attack = odm.Compound(Attack, description="Structured data representing MITRE ATT&CK information associated with the alert.")
     classification = odm.Classification(description="Security classification level of the alert.")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Timestamp indicating when the alert is scheduled to expire from the system.")
