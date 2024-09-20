@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 import hashlib
+
 from assemblyline import odm
 from assemblyline.common import forge
+
 Classification = forge.get_classification()
 
 SUBMISSION_STATES = ['failed', 'submitted', 'completed']
@@ -9,24 +12,26 @@ DEFAULT_SRV_SEL = ["Filtering", "Antivirus", "Static Analysis", "Extraction", "N
 DEFAULT_RESUBMIT = []
 
 
-@odm.model(index=True, store=False, description="File Model of Submission")
+@odm.model(index=True, store=False, description="""Contains details about the individual files included in the submission, including their names, sizes, and SHA256 hashes.
+""")
 class File(odm.Model):
-    name = odm.Keyword(copyto="__text__", description="Name of the file")
-    size = odm.Optional(odm.Integer(), description="Size of the file in bytes")
-    sha256 = odm.SHA256(copyto="__text__", description="SHA256 hash of the file")
+    name = odm.Keyword(copyto="__text__", description="The original name of the file as it was submitted.")
+    size = odm.Optional(odm.Integer(), description="The file's size in bytes.")
+    sha256 = odm.SHA256(copyto="__text__", description="The SHA256 cryptographic hash of the file, serving as a unique identifier for the file's content.")
 
 
-@odm.model(index=False, store=False, description="Service Selection Scheme")
+@odm.model(index=False, store=False, description="""Outlines the services selected for analysis, any excluded services, and any additional services that should be used in the case of rescan or resubmit actions.
+""")
 class ServiceSelection(odm.Model):
-    selected = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL, description="List of selected services")
-    excluded = odm.List(odm.Keyword(), default=[], description="List of excluded services")
+    selected = odm.List(odm.Keyword(), default=DEFAULT_SRV_SEL, description="Services selected to process the submission, which determine the scope of analysis.")
+    excluded = odm.List(odm.Keyword(), default=[], description="Services explicitly excluded from processing the submission, bypassing their analysis.")
     rescan = odm.List(
         odm.Keyword(),
         default=[],
-        description="List of services to rescan when initial run scores as malicious")
+        description="Services to be used for a rescan if the submission's initial results are deemed malicious.")
     resubmit = odm.List(odm.Keyword(), default=DEFAULT_RESUBMIT,
-                        description="Add to service selection when resubmitting")
-    runtime_excluded = odm.List(odm.Keyword(), default=[], description="List of runtime excluded services")
+                        description="Additional services that are added to the selection when a submission is resubmitted.")
+    runtime_excluded = odm.List(odm.Keyword(), default=[], description="**TODO**: **Original**:List of runtime excluded services  **Generated**:Services that are excluded during the submission's runtime, possibly due to dynamic decision-making.")
 
 
 # Fields in the parameters used to calculate hashes used for result caching
@@ -44,46 +49,47 @@ _KEY_HASHED_FIELDS = {
 }
 
 
-@odm.model(index=True, store=False, description="Submission Parameters")
+@odm.model(index=True, store=False, description="""Specifies the parameters set at the time of submission, such as whether to perform a deep scan, if the submission should generate an alert, and any specific service selections or settings.
+""")
 class SubmissionParams(odm.Model):
     classification = odm.Classification(default=Classification.UNRESTRICTED,
-                                        description="Original classification of the submission")
-    deep_scan = odm.Boolean(default=False, description="Should a deep scan be performed?")
-    description = odm.Text(store=True, copyto="__text__", description="Description of the submission")
-    generate_alert = odm.Boolean(default=False, description="Should this submission generate an alert?")
-    groups = odm.List(odm.Keyword(), default=[], description="List of groups related to this scan")
-    ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
+                                        description="The initial security classification for the submission, indicating its confidentiality.")
+    deep_scan = odm.Boolean(default=False, description="**TODO**: **Original**:Should a deep scan be performed?  **Generated**:Specifies whether a more intensive scan should be conducted on the submission.")
+    description = odm.Text(store=True, copyto="__text__", description="A user-provided description or notes regarding the submission.")
+    generate_alert = odm.Boolean(default=False, description="**TODO**: **Original**:Should this submission generate an alert?  **Generated**:Determines if an alert should be generated upon analysis completion.")
+    groups = odm.List(odm.Keyword(), default=[], description="**TODO**: **Original**:List of groups related to this scan  **Generated**:A list of group identifiers relevant to this submission, often used for access control.")
+    ignore_cache = odm.Boolean(default=False, description="Bypasses any cached results for services, forcing all services to process the submission anew.")
     ignore_recursion_prevention = odm.Boolean(
-        default=False, description="Should we ignore recursion prevention?")
+        default=False, description="Overrides the default mechanism that prevents recursive scanning of extracted files.")
 
     # TODO: The following three lines can be removed after assemblyline upgrade to 4.6+
     ignore_dynamic_recursion_prevention = odm.Boolean(
-        default=False, description="Should we ignore dynamic recursion prevention?")
+        default=False, description="Disables dynamic recursion prevention for this submission.")
 
-    ignore_filtering = odm.Boolean(default=False, description="Should we ignore filtering services?")
-    ignore_size = odm.Boolean(default=False, description="Ignore the file size limits?")
-    never_drop = odm.Boolean(default=False, description="Exempt from being dropped by ingester?")
-    malicious = odm.Boolean(default=False, description="Is the file submitted already known to be malicious?")
-    max_extracted = odm.Integer(default=500, description="Max number of extracted files")
-    max_supplementary = odm.Integer(default=500, description="Max number of supplementary files")
-    priority = odm.Integer(default=1000, description="Priority of the scan")
-    profile = odm.Boolean(default=False, description="Should the submission do extra profiling?")
-    psid = odm.Optional(odm.UUID(), description="Parent submission ID")
-    quota_item = odm.Boolean(default=False, description="Does this submission count against quota?")
-    services = odm.Compound(ServiceSelection, default={}, description="Service selection")
+    ignore_filtering = odm.Boolean(default=False, description="**TODO**: **Original**:Should we ignore filtering services? **Generated**:Indicates if filtering services should be skipped, allowing all files to be processed.")
+    ignore_size = odm.Boolean(default=False, description="Allows the submission to bypass any file size restrictions set by the system.")
+    never_drop = odm.Boolean(default=False, description="**TODO**: **Original**:Exempt from being dropped by ingester? **Generated**:Ensures the submission will not be dropped by the ingestion service, regardless of system load.")
+    malicious = odm.Boolean(default=False, description="**TODO**: **Original**:Is the file submitted already known to be malicious? **Generated**:Flags the submission as known to be malicious, possibly altering its handling.")
+    max_extracted = odm.Integer(default=500, description="The maximum number of files that can be extracted from the submission for separate analysis.")
+    max_supplementary = odm.Integer(default=500, description="**TODO**: **Original**:Max number of supplementary files **Generated**:The maximum number of supplementary files that can be generated from the submission.")
+    priority = odm.Integer(default=1000, description="**TODO**: **Original**:Priority of the scan  **Generated**:The processing priority of the submission, with lower numbers indicating higher priority.")
+    profile = odm.Boolean(default=False, description="**TODO**: **Original**:Should the submission do extra profiling?  **Generated**:Triggers additional profiling of the submission for performance and analysis metrics.")
+    psid = odm.Optional(odm.UUID(), description="The ID of a parent submission, if this submission is related to or derived from another.")
+    quota_item = odm.Boolean(default=False, description="Indicates if this submission should count against the submitter's quota.")
+    services = odm.Compound(ServiceSelection, default={}, description="Details which services are selected or excluded from processing this submission.")
     service_spec = odm.Mapping(odm.Mapping(odm.Any()), default={}, index=False, store=False,
-                               description="Service-specific parameters")
-    submitter = odm.Keyword(store=True, copyto="__text__", description="User who submitted the file")
-    ttl = odm.Integer(default=0, description="Time, in days, to live for this submission")
-    type = odm.Keyword(default="USER", description="Type of submission")
-    initial_data = odm.Optional(odm.Text(index=False), description="Initialization for temporary submission data")
+                               description="A dictionary specifying service-specific parameters that may alter service behavior for this submission.")
+    submitter = odm.Keyword(store=True, copyto="__text__", description="The username of the individual who submitted the file for analysis.")
+    ttl = odm.Integer(default=0, description="**TODO**: **Original**:Time, in days, to live for this submission  **Generated**:The time-to-live for the submission, defining how many days it will be retained before expiry.")
+    type = odm.Keyword(default="USER", description="The type of submission (e.g., `USER` for user-submitted), indicating its origin or purpose.")
+    initial_data = odm.Optional(odm.Text(index=False), description="Initial temporary data provided at the time of submission, which may be used during analysis.")
     auto_archive = odm.Boolean(default=False,
-                               description="Does the submission automatically goes into the archive when completed?")
+                               description="Determines whether the submission should automatically be archived upon completion.")
     delete_after_archive = odm.Boolean(
         default=False,
-        description="When the submission is archived, should we delete it from hot storage right away?")
+        description="Specifies if the submission data should be deleted from active storage immediately after archiving.")
     use_archive_alternate_dtl = odm.Boolean(default=False,
-                                            description="Should we use the alternate dtl while archiving?")
+                                            description="**TODO**: **Original**:Should we use the alternate dtl while archiving?  **Generated**:Indicates if an alternate data lifetime should be applied to the submission once archived.")
 
     def get_hashing_keys(self):
         """Get the sections of the submission parameters that should be used in result hashes."""
@@ -114,46 +120,49 @@ class SubmissionParams(odm.Model):
         return 'v'.join([str(hashlib.md5(s.encode()).hexdigest()), str(version)])
 
 
-@odm.model(index=True, store=True, description="Submission-Relevant Times")
+@odm.model(index=True, store=True, description="""Captures important timestamps related to the submission's lifecycle, such as when it was submitted and when the analysis was completed.
+""")
 class Times(odm.Model):
-    completed = odm.Optional(odm.Date(store=False), description="Date at which the submission finished scanning")
-    submitted = odm.Date(default="NOW", description="Date at which the submission started scanning")
+    completed = odm.Optional(odm.Date(store=False), description="Timestamp recording when the analysis of the submission was completed.")
+    submitted = odm.Date(default="NOW", description="Timestamp marking when the submission was initiated and began the analysis process.")
 
 
-@odm.model(index=True, store=False, description="Submission Verdict")
+@odm.model(index=True, store=False, description="""Reflects the consensus on whether the submission is deemed malicious or non-malicious based on user input.
+""")
 class Verdict(odm.Model):
-    malicious = odm.List(odm.Keyword(), default=[], description="List of user that thinks this submission is malicious")
+    malicious = odm.List(odm.Keyword(), default=[], description="A list of usernames representing users who have judged the submission to be malicious.")
     non_malicious = odm.List(
         odm.Keyword(),
         default=[],
-        description="List of user that thinks this submission is non-malicious")
+        description="A list of usernames representing users who have judged the submission to be non-malicious.")
 
 
-@odm.model(index=True, store=True, description="Model of Submission")
+@odm.model(index=True, store=True, description="""A Submission in Assemblyline represents the process and associated data for analyzing a file or set of files to determine if they contain malware. When a user submits a file for analysis, this submission is encapsulated within a Submission object, which includes various attributes detailing the file data, analysis parameters, and the results of the scan.
+""")
 class Submission(odm.Model):
-    archive_ts = odm.Optional(odm.Date(description="Time at which the submission was archived", ai=False))
-    archived = odm.Boolean(default=False, description="Document is present in the malware archive", ai=False)
-    classification = odm.Classification(description="Classification of the submission")
-    error_count = odm.Integer(description="Total number of errors in the submission", ai=False)
-    errors: list[str] = odm.List(odm.Keyword(), store=False, description="List of error keys", ai=False)
-    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp", ai=False)
-    file_count = odm.Integer(description="Total number of files in the submission", ai=False)
-    files: list[File] = odm.List(odm.Compound(File), description="List of files that were originally submitted")
-    max_score = odm.Integer(description="Maximum score of all the files in the scan")
-    metadata = odm.FlattenedObject(store=False, description="Metadata associated to the submission")
-    params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details", ai=False)
-    results: list[str] = odm.List(odm.Keyword(), store=False, description="List of result keys", ai=False)
-    sid: str = odm.UUID(copyto="__text__", description="Submission ID")
-    state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission", ai=False)
+    archive_ts = odm.Optional(odm.Date(ai=False), description="An optional timestamp indicating when the submission was archived.")
+    archived = odm.Boolean(default=False, description="A boolean indicating whether the submission, including the file(s), has been stored in the malware archive.", ai=False)
+    classification = odm.Classification(description="Security classification level of the submission.")
+    error_count = odm.Integer(description="The total number of errors encountered during the analysis process.", ai=False)
+    errors: list[str] = odm.List(odm.Keyword(), store=False, description="A list of error identifiers that were triggered throughout the processing of the submission.", ai=False)
+    expiry_ts = odm.Optional(odm.Date(store=False), description="An optional timestamp specifying when the submission will expire and be purged from the system.", ai=False)
+    file_count = odm.Integer(description="The total number of files included in the submission.", ai=False)
+    files: list[File] = odm.List(odm.Compound(File), description="An array of File objects representing the files submitted for analysis, including their names, sizes, and SHA256 hashes.")
+    max_score = odm.Integer(description="The highest score assigned to any file within the submission, used to indicate the potential threat level.  The score is defined as the following: -1000: safe, [0, 299]: informative, [300 - 699]: suspicious, [700, 999]: highly suspicious, [1000, +inf): malicious.")
+    metadata = odm.FlattenedObject(store=False, description="A flattened object containing additional metadata associated with the submission.")
+    params: SubmissionParams = odm.Compound(SubmissionParams, description="Encapsulates the configuration settings and preferences for how the submission is to be processed.", ai=False)
+    results: list[str] = odm.List(odm.Keyword(), store=False, description="A list of identifiers for the results generated by the analysis services.", ai=False)
+    sid: str = odm.UUID(copyto="__text__", description="The unique identifier (UUID) for the submission, used to track and reference it within the system.")
+    state = odm.Enum(values=SUBMISSION_STATES, description="The current status of the submission.", ai=False)
     to_be_deleted = odm.Boolean(
-        default=False, description="This document is going to be deleted as soon as it finishes", ai=False)
-    times = odm.Compound(Times, default={}, description="Submission-specific times")
-    verdict = odm.Compound(Verdict, default={}, description="Malicious verdict details", ai=False)
-    from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive", ai=False)
+        default=False, description="A boolean flag indicating whether the file(s) associated with the submission are scheduled to be deleted from the system once the analysis is complete.", ai=False)
+    times = odm.Compound(Times, default={}, description="An object of type Times that includes timestamps for when the submission was submitted and completed.")
+    verdict = odm.Compound(Verdict, default={}, description="Captures user judgments on whether the submission is considered malicious or non-malicious.", ai=False)
+    from_archive = odm.Boolean(index=False, default=False, description="A boolean indicating if the submission was loaded from the archive for reanalysis.", ai=False)
 
     # the filescore key, used in deduplication. This is a non-unique key, that is
     # shared by submissions that may be processed as duplicates.
-    scan_key = odm.Optional(odm.Keyword(store=False, index=False, ai=False))
+    scan_key = odm.Optional(odm.Keyword(store=False, index=False, ai=False), description="An optional non-unique identifier known as the filescore key, which is used in the deduplication process. This key may be shared among multiple submissions that contain similar or identical files, thereby allowing Assemblyline to recognize and process them as potential duplicates efficiently.")
 
     def is_submit(self):
         return self.state == 'submitted'
