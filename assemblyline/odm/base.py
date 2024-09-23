@@ -1172,7 +1172,7 @@ class Model:
             "SHOULD BE DONE THROUGH ASSEMBLYLINE-BASE REPO!)\n"
 
         # Header
-        markdown_content += f"{'#'*toc_depth} {cls.__name__}\n> {cls.__description}\n\n"
+        markdown_content += f"{'#'*toc_depth} {cls.__name__}\n{cls.__description}\n\n"
 
         # Table
         table = "| Field | Type | Description | Required | Default |\n| :--- | :--- | :--- | :--- | :--- |\n"
@@ -1223,7 +1223,7 @@ class Model:
 
                 values = [f'"{v}"' if v else str(v) for v in sorted(values)]
                 values.append("None") if none_value else None
-                description = f'{description}<br>Values:<br>`{", ".join(values)}`'
+                description = f'{description}<br>Supported values are:<br>`{", ".join(values)}`'
 
             # Is this a required field?
             if info.__class__ != Optional:
