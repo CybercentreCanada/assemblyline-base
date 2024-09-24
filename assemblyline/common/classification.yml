@@ -39,6 +39,8 @@ levels:
     name: TLP:CLEAR
     # Short name of the classification item
     short_name: TLP:C
+    # Hidden for display, The classification picker on the frontend will not show as a possible pick
+    is_hidden: false
   - aliases: []
     css:
       color: success
@@ -85,6 +87,9 @@ required:
     # This is a token that is required but will display in the groups part
     #   of the classification string. (optional)
     # is_required_group: true
+    # Hidden for display:
+    #   The classification picker on the frontend will not show as a possible pick
+    # is_hidden: false
 
 # List of groups:
 #   A user requesting access to an item must be part of a least
@@ -101,6 +106,9 @@ groups:
     #   that will be used in the classification (that values has to be in the aliases
     #   of this group and only this group) (optional)
     # solitary_display_name: ANY
+    # Hidden for display:
+    #   The classification picker on the frontend will not show as a possible pick
+    # is_hidden: false
 
 # List of subgroups:
 #   A user requesting access to an item must be part of a least
@@ -120,6 +128,9 @@ subgroups:
     # This is a special flag that makes sure that none other then the
     #   corresponding group is selected when this subgroup is selected (optional)
     # limited_to_group: CSE
+    # Hidden for display:
+    #   The classification picker on the frontend will not show as a possible pick
+    # is_hidden: false
 
 # Default restricted classification
 restricted: TLP:A+S//CMR

@@ -151,3 +151,8 @@
 # Apple Disk Image
 -512 string koly\x00\x00\x00\x04\x00\x00\x02\x00 custom: archive/dmg
 !:mime	application/x-apple-diskimage
+# Python interpreters
+0 string \#\!\/bin\/python custom: code/python
+0 string \#\!\/usr\/bin\/python custom: code/python
+0 string \#\!\/usr\/local\/bin\/python custom: code/python
+0 string \#\!\/usr\/bin\/env\ python custom: code/python

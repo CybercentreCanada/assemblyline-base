@@ -38,6 +38,8 @@ class Results(odm.Model):
                         description="Tags raised during analysis. Refer to [Tagging](../../tagging/)")
     heuristics = odm.Optional(odm.List(odm.Compound(Heuristics)), description="Heuristics raised during analysis")
     score = odm.Optional(odm.Integer(description="The score assigned to the file"))
+    other = odm.Optional(odm.Mapping(odm.Text()),
+                         description="Miscellaneous unstructured data recorded during analysis")
 
 
 @odm.model(index=False, store=False, description="Service Details")

@@ -210,7 +210,7 @@ if __name__ == "__main__":
     with open(attack_map_location, "w") as attack_map_fh:
         attack_map_fh.write("# This file is generated using generate_attack_map.py script\n"
                             "# DO NOT EDIT! Re-run the script instead...\n"
-                            f"Last ran: {datetime.now()}\n\n"
+                            f"# Last ran: {datetime.now()}\n\n"
                             f"attack_map = {{\n {pformat(att_map, width=120)[1:-1]}\n}}\n\n"
                             f"software_map = {{\n {pformat(soft_map, width=120)[1:-1]}\n}}\n\n"
                             f"group_map = {{\n {pformat(grp_map, width=120)[1:-1]}\n}}\n\n"

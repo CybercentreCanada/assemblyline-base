@@ -1647,6 +1647,23 @@ DEFAULT_QUOTAS = {
 }
 
 
+@odm.model(index=False, store=False, description="Header value")
+class HeaderValue(odm.Model):
+    name = odm.Keyword(description="Name of the header")
+    value = odm.Optional(odm.Keyword(description="Explicit value to put in the header"))
+    key = odm.Optional(odm.Keyword(description="Key to lookup in the currently logged in user"))
+
+
+@odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
+class APIProxies(odm.Model):
+    url = odm.Keyword(description="URL to redirect to")
+    verify = odm.Boolean(default=True, description="Should we verify the cert or not")
+    headers = odm.List(odm.Compound(HeaderValue), default=[], description="Headers to add to the request")
+
+
+DEFAULT_API_PROXIES = {}
+
+
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
@@ -1660,6 +1677,9 @@ class UI(odm.Model):
     allow_zip_downloads: bool = odm.Boolean(description="Allow user to download files as password protected ZIPs?")
     allow_replay: bool = odm.Boolean(description="Allow users to request replay on another server?")
     allow_url_submissions: bool = odm.Boolean(description="Allow file submissions via url?")
+    api_proxies: APIProxies = odm.Mapping(
+        odm.Compound(APIProxies),
+        default=DEFAULT_API_PROXIES, description="Proxy requests to the configured API target and add headers")
     audit: bool = odm.Boolean(description="Should API calls be audited and saved to a separate log file?")
     banner: Dict[str, str] = odm.Optional(odm.Mapping(
         odm.Keyword()), description="Banner message display on the main page (format: {<language_code>: message})")
@@ -1716,6 +1736,7 @@ DEFAULT_UI = {
     "allow_zip_downloads": True,
     "allow_replay": False,
     "allow_url_submissions": True,
+    "api_proxies": DEFAULT_API_PROXIES,
     "audit": True,
     "banner": None,
     "banner_level": 'info',
@@ -1918,6 +1939,7 @@ class Metadata(odm.Model):
     validator_params: Dict[str, Any] = odm.Mapping(odm.Any(), default={},
                                                    description="Configuration parameters to apply to validator")
     suggestions: List[str] = odm.List(odm.Keyword(), default=[], description="List of suggestions for this field")
+    suggestion_key: str = odm.Optional(odm.Keyword(), description="Key in redis where to get the suggestions from")
     default: Any = odm.Optional(odm.Keyword(description="Default value for the field"))
     required: bool = odm.Boolean(default=False, description="Is this field required?")
     aliases: List[str] = odm.List(odm.Keyword(), default=[],
@@ -1932,8 +1954,11 @@ class MetadataConfig(odm.Model):
                                               description="Metadata specification for submission")
     ingest: Dict[str, Dict[str, Metadata]] = odm.Mapping(odm.Mapping(odm.Compound(
         Metadata)), description="Metadata specification for certain ingestion based on ingest_type")
-    strict_schemes: List[str] = odm.List(odm.Keyword(), default=[],
-                                         description="A list of metadata schemes with strict rules (ie. no extra/unknown metadata). Values can be: `archive`, `submit`, or one of the schemes under `ingest`.")
+    strict_schemes: List[str] = odm.List(
+        odm.Keyword(),
+        default=[],
+        description="A list of metadata schemes with strict rules (ie. no extra/unknown metadata). "
+                    "Values can be: `archive`, `submit`, or one of the schemes under `ingest`.")
 
 
 DEFAULT_METADATA_CONFIGURATION = {
@@ -2026,10 +2051,10 @@ class Config(odm.Model):
     retrohunt: Retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
                                         description="Retrohunt configuration for the frontend and server.")
     services: Services = odm.compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
-    system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
-    ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
+    system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
+    ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
 
 
 DEFAULT_CONFIG = {
@@ -2041,9 +2066,9 @@ DEFAULT_CONFIG = {
     "logging": DEFAULT_LOGGING,
     "retrohunt": DEFAULT_RETROHUNT,
     "services": DEFAULT_SERVICES,
+    "submission": DEFAULT_SUBMISSION,
     "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI,
-    "submission": DEFAULT_SUBMISSION,
 }
 
 
