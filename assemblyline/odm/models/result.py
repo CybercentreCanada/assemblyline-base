@@ -43,7 +43,7 @@ class Attack(odm.Model):
 class Signature(odm.Model):
     name = odm.Keyword(copyto="__text__", description="Name of the detection signature that triggered the heuristic.")
     frequency = odm.Integer(default=1, description="The count of how many times this particular signature has triggered the heuristic during analysis.")
-    safe = odm.Boolean(default=False, description="	A boolean indicating whether the signature is considered safe and has been safelisted, thus not contributing to the score.  **TODO**:Is the last part about not contributing to the score true?")
+    safe = odm.Boolean(default=False, description="A boolean indicating whether the signature is considered safe and has been safelisted, thus not contributing to the score.  **TODO**:Is the last part about not contributing to the score true?")
 
 
 @odm.model(index=True, store=False, description="Heuristic associated to the Section")
