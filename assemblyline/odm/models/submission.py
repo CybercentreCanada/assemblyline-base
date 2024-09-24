@@ -137,7 +137,7 @@ class Verdict(odm.Model):
         description="A list of usernames representing users who have judged the submission to be non-malicious.")
 
 
-@odm.model(index=True, store=True, description="""A Submission in Assemblyline represents the process and associated data for analyzing a file or set of files to determine if they contain malware. When a user submits a file for analysis, this submission is encapsulated within a Submission object, which includes various attributes detailing the file data, analysis parameters, and the results of the scan.
+@odm.model(index=True, store=True, description="""A Submission in Assemblyline is a critical entity that encapsulates the analysis process and data for a file or collection of files submitted to determine the presence of malware. It contains a wealth of attributes such as file details, parameters for analysis, and the outcome of the scan. Familiarity with the Submission model is essential for users who need to construct precise Lucene search queries. This understanding enables them to effectively navigate and query the Assemblyline system to obtain detailed information on submissions, streamline their search efforts, and efficiently access the desired analysis results.
 """)
 class Submission(odm.Model):
     archive_ts = odm.Optional(odm.Date(ai=False), description="An optional timestamp indicating when the submission was archived.")
