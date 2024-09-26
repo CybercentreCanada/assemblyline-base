@@ -13,7 +13,7 @@ from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.tagging import tag_dict_to_ai_list
 from assemblyline.common.uid import get_id_from_data
-from assemblyline.datastore.collection import ESCollection, log
+from assemblyline.datastore.collection import ESCollection, log, Index
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
@@ -40,6 +40,7 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
+
 
 config = forge.get_config()
 
@@ -1204,7 +1205,8 @@ class AssemblylineDatastore(object):
             expiry = expiry.strftime(DATEFORMAT)
 
         while True:
-            current_fileinfo, version = self.file.get_if_exists(sha256, as_obj=False, version=True)
+            current_fileinfo, version = self.file.get_if_exists(sha256, as_obj=False, version=True,
+                                                                index_type=Index.HOT)
 
             if current_fileinfo is None:
                 current_fileinfo = {}
