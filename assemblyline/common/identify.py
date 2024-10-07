@@ -1,3 +1,4 @@
+import csv
 import json
 import logging
 import os
@@ -9,6 +10,7 @@ import threading
 import uuid
 import zipfile
 from binascii import hexlify
+from itertools import islice
 from tempfile import NamedTemporaryFile
 from typing import Dict, Optional, Tuple, Union
 from urllib.parse import unquote, urlparse
@@ -290,7 +292,7 @@ class Identify:
                     # Get root entry's GUID and try to guess document type
                     clsid_offset = root_entry_property_offset + 0x50
                     if len(buf) >= clsid_offset + 16:
-                        clsid = buf[clsid_offset : clsid_offset + 16]
+                        clsid = buf[clsid_offset: clsid_offset + 16]
                         if len(clsid) == 16 and clsid != b"\0" * len(clsid):
                             clsid_str = uuid.UUID(bytes_le=clsid)
                             clsid_str = clsid_str.urn.rsplit(":", 1)[-1].upper()
@@ -365,12 +367,25 @@ class Identify:
         elif "unknown" in data["type"]:
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
         elif data["type"] == "text/plain":
-            # Check if the file is a misidentified json first before running the yara rules
-            try:
-                json.load(open(path))
-                data["type"] = "text/json"
-            except Exception:
-                data["type"] = self.yara_ident(path, data, fallback=data["type"])
+            # We do not trust magic/mimetype's CSV identification, so we test it first
+            if data["magic"] == "CSV text" or data["mime"] == "text/csv":
+                try:
+                    with open(path, newline='') as csvfile:
+                        dialect = csv.Sniffer().sniff(csvfile.read(1024))
+                        csvfile.seek(0)
+                        complete_data = [x for x in islice(csv.reader(csvfile, dialect), 100)]
+                        if len(complete_data) > 2 and len(set([len(x) for x in complete_data])) == 1:
+                            data["type"] = "text/csv"
+                except Exception:
+                    pass
+
+            if data["type"] == "text/plain":
+                # Check if the file is a misidentified json first before running the yara rules
+                try:
+                    json.load(open(path))
+                    data["type"] = "text/json"
+                except Exception:
+                    data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
         # Extra checks for office documents
         #  - Check for encryption
