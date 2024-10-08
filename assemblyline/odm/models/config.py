@@ -1225,6 +1225,10 @@ class Services(odm.Model):
     safelist = odm.Compound(ServiceSafelist)
     registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
                               description="Global set of registries for services")
+    use_fic = odm.Optional(odm.Boolean(description="Use Federated Identity Credentials", default=False))
+    acr_scope = odm.Optional(odm.Keyword(description="Scope to be use with DefaultAzureCredential"))
+    acr_client_id = odm.Optional(odm.Keyword(description="Client Id to be use with DefaultAzureCredential"))
+    acr_tenant_id = odm.Optional(odm.Keyword(description="Tenant Id to be use with DefaultAzureCredential"))
     service_account = odm.optional(odm.keyword(),
                                    description="Service account to use for pods in kubernete"
                                    "where the service does not have one configured.",
