@@ -144,7 +144,7 @@ class Submission(odm.Model):
     archived = odm.Boolean(default=False, description="A boolean indicating whether the submission, including the file(s), has been stored in the malware archive.", ai=False)
     classification = odm.Classification(description="Security classification level of the submission.")
     error_count = odm.Integer(description="The total number of errors encountered during the analysis process.", ai=False)
-    errors: list[str] = odm.List(odm.Keyword(), store=False, description="A list of error identifiers that were triggered throughout the processing of the submission.", ai=False)
+    errors: list[str] = odm.List(odm.Keyword(), store=False, description="A list of error identifiers that were encountered during the analysis process.", ai=False)
     expiry_ts = odm.Optional(odm.Date(store=False), description="An optional timestamp specifying when the submission will expire and be purged from the system.", ai=False)
     file_count = odm.Integer(description="The total number of files included in the submission.", ai=False)
     files: list[File] = odm.List(odm.Compound(File), description="An array of File objects representing the files submitted for analysis, including their names, sizes, and SHA256 hashes.")
