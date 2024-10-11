@@ -1,5 +1,6 @@
 from assemblyline import odm
 from assemblyline.common import forge, constants
+from assemblyline.odm.models.config import SubmissionProfileParams
 from assemblyline.odm.models.submission import ServiceSelection
 
 Classification = forge.get_classification()
@@ -35,6 +36,9 @@ class UserSettings(odm.Model):
     priority = odm.Integer(default=1000, description="Default priority for the submissions",
                            min=1, max=constants.MAX_PRIORITY)
     profile = odm.Boolean(default=False, description="Should the submission do extra profiling?")
+    preferred_submission_profile = odm.Optional(odm.Text(), description="Preferred submission profile")
+    submission_profiles = odm.Mapping(odm.Compound(SubmissionProfileParams), default={},
+                                      description="Default submission profile settings")
     service_spec = odm.Mapping(odm.Mapping(odm.Any()), default={}, description="Default service specific settings")
     services = odm.Compound(ServiceSelection, default={}, description="Default service selection")
     submission_view = odm.Enum(values=VIEWS, default="report", description="Default view for completed submissions")

@@ -2020,7 +2020,9 @@ class SubmissionProfile(odm.Model):
     name = odm.Text(description="Submission profile name")
     classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
                                               description="Submission profile classification")
-    params = odm.Compound(SubmissionProfileParams, description="Submission parameters for profile")
+    params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
+    editable_params = odm.Mapping(odm.List(odm.Text()), default={},
+                                  description="A list of service-specific parameters that can be configured")
 
 DEFAULT_SUBMISSION_PROFILES = [
     {
