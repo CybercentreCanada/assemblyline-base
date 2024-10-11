@@ -82,7 +82,7 @@ class SubmissionParams(odm.Model):
     submitter = odm.Keyword(store=True, copyto="__text__", description="The username of the individual who submitted the file for analysis.")
     ttl = odm.Integer(default=0, description="**TODO**: **Original**:Time, in days, to live for this submission  **Generated**:The time-to-live for the submission, defining how many days it will be retained before expiry.")
     type = odm.Keyword(default="USER", description="The type of submission (e.g., `USER` for user-submitted), indicating its origin or purpose.")
-    initial_data = odm.Optional(odm.Text(index=False), description="Initial temporary data provided at the time of submission, which may be used during analysis.")
+    initial_data = odm.Optional(odm.Text(index=False), description="Content provided at the time of submission to initialize the temporary submission data, which may be used during analysis.")
     auto_archive = odm.Boolean(default=False,
                                description="Determines whether the submission should automatically be archived upon completion.")
     delete_after_archive = odm.Boolean(
