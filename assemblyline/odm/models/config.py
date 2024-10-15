@@ -210,11 +210,11 @@ class OAuthProvider(odm.Model):
     redirect_uri: str = odm.Optional(odm.Keyword(),
                                      description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
-    request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
+    request_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
-    access_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to get access token")
+    access_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), description="Parameters to get access token")
     authorize_url: str = odm.Optional(odm.Keyword(), description="URL used to authorize access to a resource")
-    authorize_params: str = odm.Optional(odm.Keyword(), description="Parameters used to authorize access to a resource")
+    authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters used to authorize access to a resource")
     api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
