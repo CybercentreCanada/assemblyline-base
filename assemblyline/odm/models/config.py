@@ -203,13 +203,7 @@ class OAuthProvider(odm.Model):
         description="Regex used to parse an email address and capture parts to create a user ID out of it")
     uid_format: str = odm.Optional(odm.Keyword(),
                                    description="Format of the user ID based on the captured parts from the regex")
-    use_federated_credentials: bool = odm.Optional(odm.Boolean(default=False,
-                                                                            description="Authenticate using Federated Credentials"))
-    federated_credential_scope: str = odm.Optional(odm.Keyword(),
-                                  description="Scope for Federated Credentials authentication.")
     client_id: str = odm.Optional(odm.Keyword(),
-                                  description="ID of your application to authenticate to the OAuth provider")
-    tenant_id: str = odm.Optional(odm.Keyword(),
                                   description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
                                       description="Password to your application to authenticate to the OAuth provider")
