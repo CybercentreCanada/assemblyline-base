@@ -10,6 +10,22 @@ class DailyQuotaTracker(object):
     def _counter_name(self, user, type):
         return f"DAILY-QUOTA-{now_as_iso()[:10]}-{user}-{type}"
 
+    def _decrement(self, user, type):
+        counter = self._counter_name(user, type)
+        with self.c.pipeline() as pipe:
+            pipe.decr(counter)
+            pipe.expire(counter, self.ttl, nx=True)
+
+            val, _ = retry_call(pipe.execute)
+
+        return val
+
+    def decrement_api(self, user):
+        return self._decrement(user, 'api')
+
+    def decrement_submission(self, user):
+        return self._decrement(user, 'submission')
+
     def _increment(self, user, type):
         counter = self._counter_name(user, type)
         with self.c.pipeline() as pipe:

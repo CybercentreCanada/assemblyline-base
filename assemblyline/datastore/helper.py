@@ -2,6 +2,7 @@
 import concurrent.futures
 import json
 import os
+from copy import deepcopy
 from datetime import datetime
 from typing import Any, List, Optional, Tuple, Union
 
@@ -12,7 +13,7 @@ from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.tagging import tag_dict_to_ai_list
 from assemblyline.common.uid import get_id_from_data
-from assemblyline.datastore.collection import ESCollection, log
+from assemblyline.datastore.collection import ESCollection, log, Index
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
@@ -39,6 +40,7 @@ from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
+
 
 config = forge.get_config()
 
@@ -1184,14 +1186,27 @@ class AssemblylineDatastore(object):
             self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(),
             redis=None, is_section_image=False, is_supplementary=False):
         # Remove control fields from new file info
-        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']:
-            fileinfo.pop(x, None)
+        fileinfo = {
+            k: v for k, v in fileinfo.items()
+            if k not in
+            ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']}
+
+        # Reset archive_ts field
+        fileinfo['archive_ts'] = None
+
+        # Update section image status
+        fileinfo['is_section_image'] = fileinfo.get('is_section_image', False) or is_section_image
+
+        # Update section image status
+        fileinfo['is_supplementary'] = fileinfo.get('is_supplementary', False) or is_supplementary
+
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):
             expiry = expiry.strftime(DATEFORMAT)
 
         while True:
-            current_fileinfo, version = self.file.get_if_exists(sha256, as_obj=False, version=True)
+            current_fileinfo, version = self.file.get_if_exists(sha256, as_obj=False, version=True,
+                                                                index_type=Index.HOT)
 
             if current_fileinfo is None:
                 current_fileinfo = {}
@@ -1201,7 +1216,8 @@ class AssemblylineDatastore(object):
                     str(current_fileinfo.get('classification', classification)),
                     str(classification)
                 )
-                if classification == current_fileinfo.get('classification', None):
+                if classification == cl_engine.normalize_classification(
+                        current_fileinfo.get('classification', classification)):
                     operations = [
                         (self.file.UPDATE_SET, key, value)
                         for key, value in fileinfo.items()
@@ -1212,12 +1228,11 @@ class AssemblylineDatastore(object):
                     ])
                     if expiry:
                         operations.append((self.file.UPDATE_MAX, 'expiry_ts', expiry))
-                    if self.file.update(sha256, operations):
+                    if self.file.update(sha256, operations, retry_on_conflict=8):
                         return
 
             # Add new fileinfo to current from database
             current_fileinfo.update(fileinfo)
-            current_fileinfo['archive_ts'] = None
 
             # Update expiry time
             current_expiry = current_fileinfo.get('expiry_ts', expiry)
@@ -1235,12 +1250,6 @@ class AssemblylineDatastore(object):
 
             # Update Classification
             current_fileinfo['classification'] = classification
-
-            # Update section image status
-            current_fileinfo['is_section_image'] = current_fileinfo.get('is_section_image', False) or is_section_image
-
-            # Update section image status
-            current_fileinfo['is_supplementary'] = current_fileinfo.get('is_supplementary', False) or is_supplementary
 
             try:
                 self.file.save(sha256, current_fileinfo, version=version)
@@ -1459,6 +1468,7 @@ class MetadataValidator:
 
     def check_metadata(self, metadata: dict[str, Any],
                        validation_scheme: dict[str, Metadata] = None,
+                       strict: bool = False,
                        skip_elastic_fields: bool = False) -> Optional[Tuple[str, str]]:
         """
         Check if the type of every metedata field for obvious errors.
@@ -1472,6 +1482,26 @@ class MetadataValidator:
         if validation_scheme:
             # Check to see if there's any required metadata that's missing
             missing_metadata = []
+
+            # Check to see if metadata provided contains any alias field names
+            for field_name, field_config in validation_scheme.items():
+                if field_name in metadata:
+                    # Field already exists in metadata
+                    continue
+
+                aliased_value = None
+                for alias in field_config.aliases:
+                    # Map value of aliased field to the actual field that are part of the scheme
+                    if not aliased_value:
+                        aliased_value = metadata.pop(alias, None)
+                    else:
+                        metadata.pop(alias, None)
+
+                if aliased_value:
+                    # Field value retrieved from aliases
+                    metadata[field_name] = aliased_value
+
+
             for field_name, field_config in validation_scheme.items():
                 if field_name not in metadata and field_config.required:
                     if field_config.default:
@@ -1479,12 +1509,27 @@ class MetadataValidator:
                     else:
                         missing_metadata.append(field_name)
 
+            # Determine if there's extra metadata being set that isn't validated/known to the system
+            # Ignore metadata fields that have been set by the system
+            system_configured_metadata = set(['ingest_id', 'ts', 'type'])
+            extra_metadata = list(set(metadata.keys()) - set(validation_scheme.keys()) - system_configured_metadata)
             if missing_metadata:
                 return (None, f"Required metadata is missing from submission: {missing_metadata}")
+            elif strict and extra_metadata:
+                return (None, f"Extra metadata found from submission: {extra_metadata}")
 
             for field_name, field_config in validation_scheme.items():
                 # Validate the format of the data given based on the configuration
-                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**(field_config.validator_params or {}))
+                validator_params = field_config.validator_params
+                if field_config.validator_type == 'list':
+                    # We'll need to make a copy of validation parameters and manipulate them as necessary for validation of typed lists
+                    validator_params = deepcopy(validator_params)
+                    child_type = validator_params.pop('child_type', 'text')
+                    auto = validator_params.pop('auto', True)
+                    validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**validator_params),
+                                        'auto': auto}
+
+                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**validator_params)
                 meta_value = metadata.get(field_name)
 
                 # Skip over validation of metadata that's missing and not required
