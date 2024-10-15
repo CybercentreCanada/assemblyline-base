@@ -43,7 +43,7 @@ class Attack(odm.Model):
 class Signature(odm.Model):
     name = odm.Keyword(copyto="__text__", description="Name of the detection signature that triggered the heuristic.")
     frequency = odm.Integer(default=1, description="The count of how many times this particular signature has triggered the heuristic during analysis.")
-    safe = odm.Boolean(default=False, description="A boolean indicating whether the signature is considered safe and has been safelisted, thus not contributing to the score.  **TODO**:Is the last part about not contributing to the score true?")
+    safe = odm.Boolean(default=False, description="A boolean indicating whether the signature is considered safe and has been safelisted, thus not contributing to the score.")
 
 
 @odm.model(index=True, store=False, description="Heuristic associated to the Section")
@@ -61,16 +61,16 @@ class Section(odm.Model):
     auto_collapse = odm.Boolean(default=False, description="Indicates whether the section should be initially displayed as collapsed in the user interface.", ai=False)
     body = odm.Optional(odm.Text(copyto="__text__"), description="The main content of the result section, which may include detailed analysis findings or descriptions.")
     classification = odm.Classification(description="The classification level assigned to the information within the section, dictating who can view it.", ai=False)
-    body_format = odm.Enum(values=BODY_FORMAT, index=False, description="**TODO**: **Original**:Type of body in this section  **Generated**:The format of the body content, such as text, JSON, or image, which determines how it is displayed.")
+    body_format = odm.Enum(values=BODY_FORMAT, index=False, description="The format of the body content, such as text, JSON, or image, which determines how it is displayed.")
     body_config = odm.Optional(odm.Mapping(odm.Any(), index=False),
-                               description="**TODO**: **Original**:Configurations for the body of this section  **Generated**:Additional configurations that specify how the body content should be rendered or processed.", ai=False)
-    depth = odm.Integer(index=False, description="**TODO**: **Original**:Depth of the section  **Generated**:The nesting level of the section within the overall result hierarchy, used for organizing complex results.", ai=False)
+                               description="Additional configurations that specify how the body content should be rendered or processed.", ai=False)
+    depth = odm.Integer(index=False, description="The nesting level of the section within the overall result hierarchy, used for organizing complex results.", ai=False)
     heuristic = odm.Optional(odm.Compound(Heuristic), description="The heuristic analysis that contributed to the scoring of this section, if applicable.")
     tags = odm.Compound(Tagging, default={}, description="A collection of tags that categorize or label the section based on the analysis findings.")
     safelisted_tags = odm.FlattenedListObject(store=False, default={}, description="Tags that have been deemed safe and are excluded from contributing to the overall threat score.", ai=False)
     title_text = odm.Text(copyto="__text__", description="The title of the section, summarizing its content or purpose.")
     promote_to = odm.Optional(odm.Enum(
-        values=PROMOTE_TO, ai=False), description="**TODO**:  **Original**:This is the type of data that the current section should be promoted to.  *Generated**:The category of data that this section's content should be elevated to for reporting or further analysis.")
+        values=PROMOTE_TO, ai=False), description="The category of data that this section's content should be elevated to for reporting or further analysis.")
 
 
 @odm.model(index=True, store=True, description="Result Body")
@@ -131,10 +131,10 @@ class Result(odm.Model):
     response: ResponseBody = odm.compound(ResponseBody, description="The container for all the response data provided by the service after analyzing the file.")
     result: ResultBody = odm.compound(ResultBody, default={}, description="The container for the detailed results of the analysis, including sections and scores.")
     sha256 = odm.SHA256(store=False, description="The SHA256 hash of the file that was analyzed, linking the result to the specific artifact.")
-    type = odm.Optional(odm.Keyword(), description="**TODO**")
-    size = odm.Optional(odm.Integer(), description="**TODO**")
+    type = odm.Optional(odm.Keyword(), description="The MIME type or other file classification identified by Assemblyline that is linked to the result, providing insight into the file's content or format.")
+    size = odm.Optional(odm.Integer(), description="The size (in bytes) of the analyzed file pertinent to the result.")
     drop_file = odm.Boolean(default=False, description="A flag indicating whether the file should be excluded from subsequent analysis stages.", ai=False)
-    from_archive = odm.Boolean(index=False, default=False, description="**TODO**:  **Original**:Was loaded from the archive  **Generated**:Indicates whether the result was retrieved from an archive rather than produced from a recent analysis.", ai=False)
+    from_archive = odm.Boolean(index=False, default=False, description="Indicates whether the result was retrieved from an archive rather than produced from a recent analysis.", ai=False)
 
     def build_key(self, service_tool_version=None, task=None):
         return self.help_build_key(
