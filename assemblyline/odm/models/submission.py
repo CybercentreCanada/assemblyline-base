@@ -81,7 +81,7 @@ class SubmissionParams(odm.Model):
     submitter = odm.Keyword(store=True, copyto="__text__", description="Name of the account that submitted the file for analysis.")
     ttl = odm.Integer(default=0, description="The time-to-live for the submission, defining how many days it will be retained before expiry.")
     type = odm.Keyword(default="USER", description="The type of submission (e.g., `USER` for user-submitted), indicating its origin or purpose.")
-    initial_data = odm.Optional(odm.Text(index=False), description="Initial temporary data provided at the time of submission, which may be used during analysis.")
+    initial_data = odm.Optional(odm.Text(index=False), description="Content provided at the time of submission to initialize the temporary submission data, which may be used during analysis.")
     auto_archive = odm.Boolean(default=False,
                                description="Determines whether the submission should automatically be archived upon completion.")
     delete_after_archive = odm.Boolean(
@@ -143,7 +143,7 @@ class Submission(odm.Model):
     archived = odm.Boolean(default=False, description="A boolean indicating whether the submission, including the file(s), has been stored in the malware archive.", ai=False)
     classification = odm.Classification(description="Security classification level of the submission.")
     error_count = odm.Integer(description="The total number of errors encountered during the analysis process.", ai=False)
-    errors: list[str] = odm.List(odm.Keyword(), store=False, description="A list of error identifiers that were triggered throughout the processing of the submission.", ai=False)
+    errors: list[str] = odm.List(odm.Keyword(), store=False, description="A list of error identifiers that were encountered during the analysis process.", ai=False)
     expiry_ts = odm.Optional(odm.Date(store=False), description="An optional timestamp specifying when the submission will expire and be purged from the system.", ai=False)
     file_count = odm.Integer(description="The total number of files included in the submission.", ai=False)
     files: list[File] = odm.List(odm.Compound(File), description="An array of File objects representing the files submitted for analysis, including their names, sizes, and SHA256 hashes.")
