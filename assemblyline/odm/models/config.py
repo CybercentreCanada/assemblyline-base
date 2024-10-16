@@ -1664,7 +1664,7 @@ class APIProxies(odm.Model):
 
 
 DEFAULT_API_PROXIES = {}
-
+DOWNLOAD_ENCODINGS = ["cart", "raw", "zip"]
 
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
@@ -1692,7 +1692,8 @@ class UI(odm.Model):
     default_quotas: Quotas = odm.Compound(Quotas, default=DEFAULT_QUOTAS,
                                           description="Default API quotas values")
     discover_url: str = odm.Optional(odm.Keyword(), description="Discover URL")
-    download_encoding = odm.Enum(values=["raw", "cart"], description="Which encoding will be used for downloads?")
+    download_encoding = odm.Enum(values=DOWNLOAD_ENCODINGS, description="Which encoding will be used for downloads?")
+    default_zip_password = odm.Optional(odm.Text(), description="Default user-defined password for creating password protected ZIPs when downloading files")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
     external_links: List[ExternalLinks] = odm.List(
@@ -1746,6 +1747,7 @@ DEFAULT_UI = {
     "default_quotas": DEFAULT_QUOTAS,
     "discover_url": None,
     "download_encoding": "cart",
+    "default_zip_password": "zippy",
     "email": None,
     "enforce_quota": True,
     "external_links": [],

@@ -407,7 +407,8 @@ def create_users(ds, log=None):
         "uname": "admin",
         "type": [TYPES.admin]})
     ds.user.save('admin', user_data)
-    ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True}))
+    ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True,
+                                                 "default_zip_password": "zippy", "default_download_encoding": "cart"}))
     if log:
         log.info(f"\tU:{user_data.uname}   P:{admin_pass}")
 
@@ -419,7 +420,7 @@ def create_users(ds, log=None):
         "uname": "user",
         "type": [TYPES.user]})
     ds.user.save('user', user_data)
-    ds.user_settings.save('user', UserSettings())
+    ds.user_settings.save('user', UserSettings({"default_zip_password": "zippy", "default_download_encoding": "cart"}))
     if log:
         log.info(f"\tU:{user_data.uname}   P:{user_pass}")
 
