@@ -935,6 +935,7 @@ DEFAULT_SCALER = {
     'cpu_overallocation': 1,
     'memory_overallocation': 1,
     'overallocation_node_limit': None,
+    'privileged_services_additional_labels': None,
     'service_defaults': {
         'growth': 60,
         'shrink': 30,
