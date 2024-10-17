@@ -1745,7 +1745,7 @@ DEFAULT_UI = {
     "default_quotas": DEFAULT_QUOTAS,
     "discover_url": None,
     "download_encoding": "cart",
-    "default_zip_password": "zippy",
+    "default_zip_password": "infected",
     "email": None,
     "enforce_quota": True,
     "external_links": [],
