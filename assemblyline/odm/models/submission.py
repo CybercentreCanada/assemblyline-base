@@ -68,7 +68,7 @@ class SubmissionParams(odm.Model):
     ignore_filtering = odm.Boolean(default=False, description="**TODO**: **Original**:Should we ignore filtering services? **Generated**:Indicates if filtering services should be skipped, allowing all files to be processed.")
     ignore_size = odm.Boolean(default=False, description="Allows the submission to bypass any file size restrictions set by the system.")
     never_drop = odm.Boolean(default=False, description="Ensures the submission will not be dropped by the ingestion service, regardless of system load.")
-    malicious = odm.Boolean(default=False, description="**TODO**: **Original**:Is the file submitted already known to be malicious? **Generated**:Flags the submission as known to be malicious, possibly altering its handling.")
+    malicious = odm.Boolean(default=False, description="If set to true, the system acknowledges the user's assertion that the file is malicious by automatically casting a malicious vote for the submission.")
     max_extracted = odm.Integer(default=500, description="The maximum number of files that can be extracted from the submission for separate analysis.")
     max_supplementary = odm.Integer(default=500, description="**TODO**: **Original**:Max number of supplementary files **Generated**:The maximum number of supplementary files that can be generated from the submission.")
     priority = odm.Integer(default=1000, description="**TODO**: **Original**:Priority of the scan  **Generated**:The processing priority of the submission, with lower numbers indicating higher priority.")
