@@ -52,7 +52,7 @@ _KEY_HASHED_FIELDS = {
 """)
 class SubmissionParams(odm.Model):
     classification = odm.Classification(default=Classification.UNRESTRICTED,
-                                        description="The initial security classification for the submission, indicating its confidentiality.")
+                                        description="The classification level assigned to the submission, signifying its sensitivity and dictating access controls.")
     deep_scan = odm.Boolean(default=False, description="Enables a comprehensive examination of the submission by lifting standard safeguards and constraints, utilizing experimental methods and allowing for the exploration of potentially ambiguous findings to maximize the extraction of information.")
     description = odm.Text(store=True, copyto="__text__", description="A narrative that outlines the content and purpose of the submission.")
     generate_alert = odm.Boolean(default=False, description="Determines if an alert should be generated upon analysis completion.")
@@ -126,7 +126,7 @@ class Times(odm.Model):
     submitted = odm.Date(default="NOW", description="Timestamp recording when the submission was initiated and began the analysis process.")
 
 
-@odm.model(index=True, store=False, description="""Reflects the consensus on whether the submission is deemed malicious or non-malicious based on user input.
+@odm.model(index=True, store=False, description="""Records user feedback regarding the perceived maliciousness of a submission, serving as an aggregation of user opinions rather than the definitive verdict of the system.
 """)
 class Verdict(odm.Model):
     malicious = odm.List(odm.Keyword(), default=[], description="A list of usernames representing users who have judged the submission to be malicious.")
