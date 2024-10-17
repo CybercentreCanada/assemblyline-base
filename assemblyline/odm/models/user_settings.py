@@ -19,7 +19,7 @@ class UserSettings(odm.Model):
     default_external_sources = odm.List(odm.Keyword(), default=[],
                                         description="List of sha256 sources to check by default")
     default_zip_password = odm.Text(
-        default="zippy",
+        default="infected",
         description="Default user-defined password for creating password protected ZIPs when downloading files"
     )
     executive_summary = odm.Boolean(default=True, description="Should executive summary sections be shown?")
