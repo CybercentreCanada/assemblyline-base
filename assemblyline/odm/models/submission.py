@@ -73,7 +73,7 @@ class SubmissionParams(odm.Model):
     max_supplementary = odm.Integer(default=500, description="**TODO**: **Original**:Max number of supplementary files **Generated**:The maximum number of supplementary files that can be generated from the submission.")
     priority = odm.Integer(default=1000, description="**TODO**: **Original**:Priority of the scan  **Generated**:The processing priority of the submission, with lower numbers indicating higher priority.")
     profile = odm.Boolean(default=False, description="Triggers additional profiling of the submission for performance and analysis metrics.")
-    psid = odm.Optional(odm.UUID(), description="The ID of a parent submission, if this submission is related to an extension of another.")
+    psid = odm.Optional(odm.UUID(), description="The ID of a parent submission when the current submission is a follow-up or an extension of the parent submission.")
     quota_item = odm.Boolean(default=False, description="Indicates if this submission should count against the submitter's quota.")
     services = odm.Compound(ServiceSelection, default={}, description="Details which services are selected or excluded from processing this submission.")
     service_spec = odm.Mapping(odm.Mapping(odm.Any()), default={}, index=False, store=False,
