@@ -921,6 +921,8 @@ class Scaler(odm.Model):
                                                                      "more overallocation is ignored"))
     additional_labels: List[str] = odm.Optional(
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
+    privileged_services_additional_labels: List[str] = odm.Optional(
+        odm.List(odm.Text()), description="Additional labels to be applied to privileged services only('=' delimited)")
     linux_node_selector = odm.compound(Selector, description="Selector for linux nodes under kubernetes")
     # windows_node_selector = odm.compound(Selector, description="Selector for windows nodes under kubernetes")
     cluster_pod_list = odm.boolean(default=True, description="Sets if scaler list pods for all namespaces. "
@@ -933,6 +935,7 @@ DEFAULT_SCALER = {
     'cpu_overallocation': 1,
     'memory_overallocation': 1,
     'overallocation_node_limit': None,
+    'privileged_services_additional_labels': None,
     'service_defaults': {
         'growth': 60,
         'shrink': 30,
