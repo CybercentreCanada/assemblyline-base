@@ -172,7 +172,7 @@ rule code_vbs {
         $strong_vbs12 = "Execute(" nocase ascii wide
         $strong_vbs13 = "\nMsgBox \"" nocase ascii wide
         // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
-        $strong_vbs14 = "Array(" nocase ascii wide
+        $strong_vbs14 = /[ \t(=]Array\(/i ascii wide
         $weak_vbs1 = "\"Scripting.FileSystemObject\"" nocase ascii wide
         $weak_vbs2 = ".OpenAsTextStream(" nocase ascii wide
         $weak_vbs3 = ".CreateTextFile" nocase ascii wide
@@ -957,9 +957,9 @@ rule code_batch {
         $cmd6 = /(^|\n|@|&)%comspec%/i
         $cmd7 = /(^|\n|@|&)timeout[ \t](\/\w+|[-]?\d{1,5})/i
         $cmd8 = /(^|\n|@|&)for[ \t]\/f[ \t]/i
-        $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
+        $rem1 = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\^?\w+/i
         $rem2 = /(^|\n)::/
-        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?%?\^?\w+/i
+        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?["']?\w+\^?=\^?%?\^?\w+/i
         $exp = /setlocal[ \t](enableDelayedExpansion|disableDelayedExpansion|enableExtensions|disableExtensions)/i
 
     condition:
@@ -1028,8 +1028,8 @@ rule code_batch_small {
         $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\\n]+|\.?\/[^\/\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
         $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ \n]+"?)+ *($|\n)/i
         $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
-        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\w+/i
-        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?\w+\^?=\^?\w+/i
+        $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\^?\w+/i
+        $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?["']?\w+\^?=\^?\w+/i
 
     condition:
         (
