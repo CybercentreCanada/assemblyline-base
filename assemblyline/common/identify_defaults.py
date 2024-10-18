@@ -220,7 +220,7 @@ magic_patterns = [
     {"al_type": "shortcut/windows", "regex": r"^MS Windows shortcut"},
     {"al_type": "document/email", "regex": r"Mime entity text"},
     {"al_type": "document/email", "regex": r"MIME entity, ASCII text"},
-    {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
+    {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista(-8.1)? Event Log"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows 10-11 Event Log"},
     {"al_type": "metadata/minidump", "regex": r"Mini DuMP crash report"},
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L165
@@ -311,7 +311,7 @@ trusted_mimes = {
     # Registry file
     "text/x-ms-regedit": "text/windows/registry",
     # Sysmon EVTX file
-    "metadata/sysmon/evt": "application/x-ms-evtx",
+    "application/x-ms-evtx": "metadata/sysmon/evt",
     # JSON file
     "application/json": "text/json",
     # Autorun files
