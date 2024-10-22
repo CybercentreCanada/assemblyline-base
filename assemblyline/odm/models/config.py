@@ -206,7 +206,6 @@ class OAuthProvider(odm.Model):
         description="Regex used to parse an email address and capture parts to create a user ID out of it")
     uid_format: str = odm.Optional(odm.Keyword(),
                                    description="Format of the user ID based on the captured parts from the regex")
-
     client_id: str = odm.Optional(odm.Keyword(),
                                   description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
@@ -214,11 +213,11 @@ class OAuthProvider(odm.Model):
     redirect_uri: str = odm.Optional(odm.Keyword(),
                                      description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
-    request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
+    request_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
-    access_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to get access token")
+    access_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), description="Parameters to get access token")
     authorize_url: str = odm.Optional(odm.Keyword(), description="URL used to authorize access to a resource")
-    authorize_params: str = odm.Optional(odm.Keyword(), description="Parameters used to authorize access to a resource")
+    authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters used to authorize access to a resource")
     api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
@@ -243,6 +242,9 @@ class OAuthProvider(odm.Model):
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
+    aad_fic_token_file_path: str = odm.Optional(
+        odm.Keyword(),
+        description="Path to the token file for authentication using Azure AD Federated Identity Credentials")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -924,6 +926,8 @@ class Scaler(odm.Model):
                                                                      "more overallocation is ignored"))
     additional_labels: List[str] = odm.Optional(
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
+    privileged_services_additional_labels: List[str] = odm.Optional(
+        odm.List(odm.Text()), description="Additional labels to be applied to privileged services only('=' delimited)")
     linux_node_selector = odm.compound(Selector, description="Selector for linux nodes under kubernetes")
     # windows_node_selector = odm.compound(Selector, description="Selector for windows nodes under kubernetes")
     cluster_pod_list = odm.boolean(default=True, description="Sets if scaler list pods for all namespaces. "
@@ -936,6 +940,7 @@ DEFAULT_SCALER = {
     'cpu_overallocation': 1,
     'memory_overallocation': 1,
     'overallocation_node_limit': None,
+    'privileged_services_additional_labels': None,
     'service_defaults': {
         'growth': 60,
         'shrink': 30,
