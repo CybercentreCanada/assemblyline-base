@@ -1324,6 +1324,7 @@ rule code_au3 {
     condition:
         // First off, we want at least one strong keyword
         #strong_keywords >= 1
+        and mime startswith "text"
         and (
             // Next we are looking for a high-confidence amount of functions
             // If we have 5 or more strong functions, great
