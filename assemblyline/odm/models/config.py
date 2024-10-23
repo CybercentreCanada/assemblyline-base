@@ -2008,7 +2008,7 @@ class SubmissionProfile(odm.Model):
                                               description="Submission profile classification")
     params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
     editable_params = odm.Mapping(odm.List(odm.Text()), default={},
-                                  description="A list of service-specific parameters that can be configured")
+                                  description="A list of specific parameters that can be configured. The format of this configuration is `(core|<service_name>).<parameter>`.")
 
 DEFAULT_SUBMISSION_PROFILES = [
     {
