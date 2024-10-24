@@ -239,9 +239,6 @@ class OAuthProvider(odm.Model):
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
-    aad_fic_token_file_path: str = odm.Optional(
-        odm.Keyword(),
-        description="Path to the token file for authentication using Azure AD Federated Identity Credentials")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -1755,7 +1752,7 @@ DEFAULT_UI = {
     "default_quotas": DEFAULT_QUOTAS,
     "discover_url": None,
     "download_encoding": "cart",
-    "default_zip_password": "zippy",
+    "default_zip_password": "infected",
     "email": None,
     "enforce_quota": True,
     "external_links": [],
