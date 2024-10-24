@@ -242,9 +242,6 @@ class OAuthProvider(odm.Model):
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
-    aad_fic_token_file_path: str = odm.Optional(
-        odm.Keyword(),
-        description="Path to the token file for authentication using Azure AD Federated Identity Credentials")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -1199,8 +1196,11 @@ class ServiceSafelist(odm.Model):
 class ServiceRegistry(odm.Model):
     name: str = odm.Keyword(description="Name of container registry")
     type: str = odm.Enum(values=REGISTRY_TYPES, default='docker', description="Type of container registry")
-    username: str = odm.Keyword(description="Username for container registry")
-    password: str = odm.Keyword(description="Password for container registry")
+    username: str = odm.Optional(odm.Keyword(description="Username for container registry"))
+    password: str = odm.Optional(odm.Keyword(description="Password for container registry"))
+    use_fic: bool = odm.Boolean(
+        default=False,
+        description="Use federated identity credential token instead of user/passwords combinaison (ACR Only)")
 
 
 @odm.model(index=False, store=False, description="Services Configuration")
@@ -1455,6 +1455,7 @@ class AIConnection(odm.Model):
     model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
     proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                            description="Proxies used by the _call_ai_backend method")
+    use_fic: bool = odm.Boolean(default=False, description="Use Federated Identity Credentials to login")
     verify: bool = odm.Boolean(default=True, description="Should the SSL connection to the AI API be verified.")
 
 
@@ -1670,7 +1671,7 @@ class APIProxies(odm.Model):
 
 
 DEFAULT_API_PROXIES = {}
-
+DOWNLOAD_ENCODINGS = ["cart", "raw", "zip"]
 
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
@@ -1698,7 +1699,8 @@ class UI(odm.Model):
     default_quotas: Quotas = odm.Compound(Quotas, default=DEFAULT_QUOTAS,
                                           description="Default API quotas values")
     discover_url: str = odm.Optional(odm.Keyword(), description="Discover URL")
-    download_encoding = odm.Enum(values=["raw", "cart"], description="Which encoding will be used for downloads?")
+    download_encoding = odm.Enum(values=DOWNLOAD_ENCODINGS, description="Which encoding will be used for downloads?")
+    default_zip_password = odm.Optional(odm.Text(), description="Default user-defined password for creating password protected ZIPs when downloading files")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
     external_links: List[ExternalLinks] = odm.List(
@@ -1752,6 +1754,7 @@ DEFAULT_UI = {
     "default_quotas": DEFAULT_QUOTAS,
     "discover_url": None,
     "download_encoding": "cart",
+    "default_zip_password": "infected",
     "email": None,
     "enforce_quota": True,
     "external_links": [],
