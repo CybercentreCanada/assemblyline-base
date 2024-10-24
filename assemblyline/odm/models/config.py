@@ -1455,6 +1455,7 @@ class AIConnection(odm.Model):
     model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
     proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                            description="Proxies used by the _call_ai_backend method")
+    use_fic: bool = odm.Boolean(default=False, description="Use Federated Identity Credentials to login")
     verify: bool = odm.Boolean(default=True, description="Should the SSL connection to the AI API be verified.")
 
 
