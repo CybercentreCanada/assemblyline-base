@@ -1193,8 +1193,14 @@ class ServiceSafelist(odm.Model):
 class ServiceRegistry(odm.Model):
     name: str = odm.Keyword(description="Name of container registry")
     type: str = odm.Enum(values=REGISTRY_TYPES, default='docker', description="Type of container registry")
-    username: str = odm.Keyword(description="Username for container registry")
-    password: str = odm.Keyword(description="Password for container registry")
+    username: str = odm.Optional(odm.Keyword(description="Username for container registry"))
+    password: str = odm.Optional(odm.Keyword(description="Password for container registry"))
+    use_fic: bool = odm.Boolean(
+        default=False,
+        description="Use federated identity credential token instead of user/passwords combinaison (ACR Only)")
+    fic_token_path: str = odm.Optional(odm.Keyword(
+        description="Path to the federated identity credential token file "
+                    "(default: AZURE_FEDERATED_TOKEN_FILE environment variable"))
 
 
 @odm.model(index=False, store=False, description="Services Configuration")
@@ -1449,6 +1455,10 @@ class AIConnection(odm.Model):
     model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
     proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                            description="Proxies used by the _call_ai_backend method")
+    use_fic: bool = odm.Boolean(default=False, description="Use Federated Identity Credentials to login")
+    fic_token_path: str = odm.Optional(odm.Keyword(
+        description="Path to the federated identity credential token file "
+                    "(default: AZURE_FEDERATED_TOKEN_FILE environment variable"))
     verify: bool = odm.Boolean(default=True, description="Should the SSL connection to the AI API be verified.")
 
 
@@ -1661,6 +1671,7 @@ class APIProxies(odm.Model):
     url = odm.Keyword(description="URL to redirect to")
     verify = odm.Boolean(default=True, description="Should we verify the cert or not")
     headers = odm.List(odm.Compound(HeaderValue), default=[], description="Headers to add to the request")
+    public: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()), description="Parameters to be sent to the Frontend.")
 
 
 DEFAULT_API_PROXIES = {}
@@ -1721,8 +1732,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
@@ -1975,6 +1986,13 @@ DEFAULT_METADATA_CONFIGURATION = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    'union',
+    'overwrite',
+    'ignore',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -2003,7 +2021,15 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'ancestry': 'ignore',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -2019,7 +2045,8 @@ DEFAULT_SUBMISSION = {
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
 }
 
 
