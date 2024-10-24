@@ -1,6 +1,9 @@
 from assemblyline import odm
 from assemblyline.odm.models.service import SIGNATURE_DELIMITERS
 
+REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
+REF_ENVVAR = "Refer to:<br>[Service - Enviroment Variable](../service/#environmentvariable)"
+
 
 REF_DEPENDENCY_CONFIG = "Refer to:<br>[Service - DependencyConfig](../service/#dependencyconfig)"
 REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
@@ -106,6 +109,7 @@ class ServiceDelta(odm.Model):
     uses_tag_scores: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     uses_temp_submission_data: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     uses_metadata: bool = odm.Optional(odm.Boolean(), description=REF_SERVICE)
+    monitored_keys = odm.optional(odm.sequence(odm.keyword()))
 
     name = odm.Optional(odm.Keyword(), store=True, copyto="__text__", description=REF_SERVICE)
     version = odm.Keyword(store=True, description=REF_SERVICE)
