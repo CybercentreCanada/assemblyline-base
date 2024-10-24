@@ -1196,8 +1196,11 @@ class ServiceSafelist(odm.Model):
 class ServiceRegistry(odm.Model):
     name: str = odm.Keyword(description="Name of container registry")
     type: str = odm.Enum(values=REGISTRY_TYPES, default='docker', description="Type of container registry")
-    username: str = odm.Keyword(description="Username for container registry")
-    password: str = odm.Keyword(description="Password for container registry")
+    username: str = odm.Optional(odm.Keyword(description="Username for container registry"))
+    password: str = odm.Optional(odm.Keyword(description="Password for container registry"))
+    use_fic: bool = odm.Boolean(
+        default=False,
+        description="Use federated identity credential token instead of user/passwords combinaison (ACR Only)")
 
 
 @odm.model(index=False, store=False, description="Services Configuration")
