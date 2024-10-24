@@ -1196,9 +1196,6 @@ class ServiceRegistry(odm.Model):
     use_fic: bool = odm.Boolean(
         default=False,
         description="Use federated identity credential token instead of user/passwords combinaison (ACR Only)")
-    fic_token_path: str = odm.Optional(odm.Keyword(
-        description="Path to the federated identity credential token file "
-                    "(default: AZURE_FEDERATED_TOKEN_FILE environment variable"))
 
 
 @odm.model(index=False, store=False, description="Services Configuration")
