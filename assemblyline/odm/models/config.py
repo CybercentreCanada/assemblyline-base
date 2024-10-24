@@ -1459,9 +1459,6 @@ class AIConnection(odm.Model):
     proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                            description="Proxies used by the _call_ai_backend method")
     use_fic: bool = odm.Boolean(default=False, description="Use Federated Identity Credentials to login")
-    fic_token_path: str = odm.Optional(odm.Keyword(
-        description="Path to the federated identity credential token file "
-                    "(default: AZURE_FEDERATED_TOKEN_FILE environment variable"))
     verify: bool = odm.Boolean(default=True, description="Should the SSL connection to the AI API be verified.")
 
 
