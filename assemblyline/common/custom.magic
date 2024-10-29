@@ -156,3 +156,12 @@
 0 string \#\!\/usr\/bin\/python custom: code/python
 0 string \#\!\/usr\/local\/bin\/python custom: code/python
 0 string \#\!\/usr\/bin\/env\ python custom: code/python
+# Pickle files: Starts with specific bytes, and end with a STOP (period ".")
+0 beshort 0x8002
+>-1 byte 0x2e custom: resource/pickle/v2
+0 beshort 0x8003
+>-1 byte 0x2e custom: resource/pickle/v3
+0 string \x80\x04\x95
+>-1 byte 0x2e custom: resource/pickle/v4
+0 string \x80\x05\x95
+>-1 byte 0x2e custom: resource/pickle/v5
