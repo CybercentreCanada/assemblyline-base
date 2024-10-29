@@ -364,9 +364,7 @@ class Identify:
             data["type"] = uri_ident(path, data)
 
         # If we're so far failed to identified the file, lets run the yara rules
-        elif "unknown" in data["type"]:
-            data["type"] = self.yara_ident(path, data, fallback=data["type"])
-        elif data["type"] == "text/plain":
+        elif "unknown" in data["type"] or data["type"] == "text/plain":
             # We do not trust magic/mimetype's CSV identification, so we test it first
             if data["magic"] == "CSV text" or data["mime"] == "text/csv":
                 try:
@@ -376,6 +374,8 @@ class Identify:
                         complete_data = [x for x in islice(csv.reader(csvfile, dialect), 100)]
                         if len(complete_data) > 2 and len(set([len(x) for x in complete_data])) == 1:
                             data["type"] = "text/csv"
+                            # Final type identified, shortcut further processing
+                            return data
                 except Exception:
                     pass
 
@@ -384,8 +384,13 @@ class Identify:
                 try:
                     json.load(open(path))
                     data["type"] = "text/json"
+                    # Final type identified, shortcut further processing
+                    return data
                 except Exception:
-                    data["type"] = self.yara_ident(path, data, fallback=data["type"])
+                    pass
+
+            # Only if the file was not identified as a csv or a json
+            data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
         # Extra checks for office documents
         #  - Check for encryption
