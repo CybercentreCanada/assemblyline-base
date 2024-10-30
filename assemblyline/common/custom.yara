@@ -1336,3 +1336,79 @@ rule code_au3 {
             )
         )
 }
+
+rule text_rdp {
+
+    meta:
+        type = "text/rdp"
+        score = -2
+
+    strings:
+        // Documentation: https://learn.microsoft.com/en-us/azure/virtual-desktop/rdp-properties
+        // Connections
+        $optional1  = "alternate full address:s:" ascii wide
+        $optional2  = "alternate shell:s:" ascii wide
+        $optional3  = "authentication level:i:" ascii wide
+        $optional4  = "disableconnectionsharing:i:" ascii wide
+        $optional5  = "domain:s:" ascii wide
+        $optional6  = "enablecredsspsupport:i:" ascii wide
+        $optional7  = "enablerdsaadauth:i:" ascii wide
+        $mandatory  = "full address:s:" ascii wide // The only mandatory property
+        $optional8  = "gatewaycredentialssource:i:" ascii wide
+        $optional9  = "gatewayhostname:s:" ascii wide
+        $optional10 = "gatewayprofileusagemethod:i:" ascii wide
+        $optional11 = "gatewayusagemethod:i:" ascii wide
+        $optional12 = "kdcproxyname:s:" ascii wide
+        $optional13 = "promptcredentialonce:i:" ascii wide
+        $optional14 = "targetisaadjoined:i:" ascii wide
+        $optional15 = "username:s:" ascii wide
+        // Session behavior
+        $optional16 = "autoreconnection enabled:i:" ascii wide
+        $optional17 = "bandwidthautodetect:i:" ascii wide
+        $optional18 = "compression:i:" ascii wide
+        $optional19 = "networkautodetect:i:" ascii wide
+        $optional20 = "videoplaybackmode:i:" ascii wide
+        // Device redirection
+        $optional21 = "audiocapturemode:i:" ascii wide
+        $optional22 = "audiomode:i:" ascii wide
+        $optional23 = "camerastoredirect:s:" ascii wide
+        $optional24 = "devicestoredirect:s:" ascii wide
+        $optional25 = "drivestoredirect:s:" ascii wide
+        $optional26 = "encode redirected video capture:i:" ascii wide
+        $optional27 = "keyboardhook:i:" ascii wide
+        $optional28 = "redirectclipboard:i:" ascii wide
+        $optional29 = "redirectcomports:i:" ascii wide
+        $optional30 = "redirected video capture encoding quality:i:" ascii wide
+        $optional31 = "redirectlocation:i:" ascii wide
+        $optional32 = "redirectprinters:i:" ascii wide
+        $optional33 = "redirectsmartcards:i:" ascii wide
+        $optional34 = "redirectwebauthn:i:" ascii wide
+        $optional35 = "usbdevicestoredirect:s:" ascii wide
+        // Display settings
+        $optional36 = "desktop size id:i:" ascii wide
+        $optional37 = "desktopheight:i:" ascii wide
+        $optional38 = "desktopscalefactor:i:" ascii wide
+        $optional39 = "desktopwidth:i:" ascii wide
+        $optional40 = "dynamic resolution:i:" ascii wide
+        $optional41 = "maximizetocurrentdisplays:i:" ascii wide
+        $optional42 = "screen mode id:i:" ascii wide
+        $optional43 = "selectedmonitors:s:" ascii wide
+        $optional44 = "singlemoninwindowedmode:i:" ascii wide
+        $optional45 = "smart sizing:i:" ascii wide
+        $optional46 = "use multimon:i:" ascii wide
+        // RemoteApp
+        $optional47 = "remoteapplicationcmdline:s:" ascii wide
+        $optional48 = "remoteapplicationexpandcmdline:i:" ascii wide
+        $optional49 = "remoteapplicationexpandworkingdir:i:" ascii wide
+        $optional50 = "remoteapplicationfile:s:" ascii wide
+        $optional51 = "remoteapplicationicon:s:" ascii wide
+        $optional52 = "remoteapplicationmode:i:" ascii wide
+        $optional53 = "remoteapplicationname:s:" ascii wide
+        $optional54 = "remoteapplicationprogram:s:" ascii wide
+
+    condition:
+        mime startswith "text"
+        and $mandatory
+        // Add two optionals, to reduce false positives.
+        and 2 of ($optional*)
+}
