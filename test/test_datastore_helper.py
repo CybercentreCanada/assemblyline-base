@@ -567,6 +567,13 @@ def test_metadata_validation(ds: AssemblylineDatastore):
         })
     })
 
+    # Run validation on a float
+    assert not validator.check_metadata({'blah': 0.11}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'float',
+        })
+    })
+
 def test_save_or_freshen_file(ds: AssemblylineDatastore):
     classification = forge.get_classification()
 
