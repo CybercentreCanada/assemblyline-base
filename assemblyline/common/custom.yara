@@ -8,7 +8,7 @@ rule code_javascript {
         score = 1
 
     strings:
-        $not_html = /^\s*<\w/
+        $not_html = /^\s*<(\w|!--)/
 
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $strong_js2  = /\beval[ \t]*\(['"]/ ascii wide
@@ -287,9 +287,18 @@ rule code_html_2 {
 
     strings:
         $html_tag = /(^|\n)\s*<(div|script|body|head|img|iframe|pre|span|style|table|title|strong|link|input|form)[ \t>]/i
+        $html_comment_start = "<!--"
+        $html_comment_end = "-->"
 
     condition:
-        code_xml_tags
+        (
+            code_xml_start_tag
+            or $html_comment_start in (0..64)
+        )
+        and (
+            code_xml_end_tag
+            or $html_comment_end in (filesize-64..filesize)
+        )
         and $html_tag
 }
 
