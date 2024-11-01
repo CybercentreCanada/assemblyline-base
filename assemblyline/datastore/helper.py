@@ -17,6 +17,7 @@ from assemblyline.datastore.collection import ESCollection, log, Index
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
+from assemblyline.remote.datatypes.hash import Hash
 from assemblyline.odm import DATEFORMAT, Date, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
@@ -1452,8 +1453,9 @@ class MetadataValidator:
     at the time of the API call, letting the user get a reasonable error instead.
     """
 
-    def __init__(self, datastore: AssemblylineDatastore) -> None:
+    def __init__(self, datastore: AssemblylineDatastore, meta_suggestions: Hash) -> None:
         self.datastore = datastore
+        self.meta_suggestions = meta_suggestions
         self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
 
     def get_metadata(self) -> dict[str, dict[str, Any]]:
@@ -1521,6 +1523,8 @@ class MetadataValidator:
             for field_name, field_config in validation_scheme.items():
                 # Validate the format of the data given based on the configuration
                 validator_params = field_config.validator_params
+                meta_value = metadata.get(field_name)
+                allow_empty = validator_params.pop('allow_empty', False)
                 if field_config.validator_type == 'list':
                     # We'll need to make a copy of validation parameters and manipulate them as necessary for validation of typed lists
                     validator_params = deepcopy(validator_params)
@@ -1528,9 +1532,18 @@ class MetadataValidator:
                     auto = validator_params.pop('auto', True)
                     validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**validator_params),
                                         'auto': auto}
+                if field_config.validator_type == "enum" and field_config.suggestion_key:
+                    # Merge the set of suggested values from Redis with the ones configured based on the configured suggestion_key.
+                    values = field_config.validator_params.get("values", [])
+                    values = list(set(values + self.meta_suggestions.get(field_config.suggestion_key)))
+                    field_config.validator_params["values"] = values
+
+
+                if allow_empty and (meta_value == '[""]' or meta_value == [""] or not meta_value):
+                    # Skip ODM validation of empty content
+                    continue
 
                 validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**validator_params)
-                meta_value = metadata.get(field_name)
 
                 # Skip over validation of metadata that's missing and not required
                 if meta_value is None and not field_config.required:
