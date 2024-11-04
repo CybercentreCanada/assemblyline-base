@@ -880,7 +880,14 @@ class List(_Field):
             return TypedList(self.child_type, *[dict(zip(value, t)) for t in zip(*value.values())], **kwargs)
 
         if self.auto and not isinstance(value, list):
-            value = [value]
+            if isinstance(value, str) and value.startswith('[') and value.endswith(']'):
+                # Account for the possibility of JSON-encoded list of values
+                try:
+                    value = json.loads(value)
+                except json.JSONDecodeError:
+                    value = [value]
+            else:
+                value = [value]
 
         return TypedList(self.child_type, *value, **kwargs)
 
