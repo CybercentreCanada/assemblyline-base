@@ -43,7 +43,7 @@ BANNED_FIELDS = {"id", "__access_grp1__", "__access_lvl__", "__access_req__", "_
 DATEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 FIELD_SANITIZER = re.compile("^[a-z][a-z0-9_]*$")
 FLATTENED_OBJECT_SANITIZER = re.compile("^[a-z][a-z0-9_.]*$")
-NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -]*$")
+NOT_INDEXED_SANITIZER = re.compile("^[A-Za-z0-9_ -.]*$")
 UTC_TZ = tzutc()
 
 DOMAIN_REGEX = r"(?:(?:[A-Za-z0-9\u00a1-\U0010ffff][A-Za-z0-9\u00a1-\U0010ffff_-]{0,62})?" \
@@ -77,7 +77,7 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
-URI_REGEX = f"((?:(?:[A-Za-z0-9+.-]{{1,}}:)//)(?:\\S+(?::\\S*)?@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
+URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
             f"{URI_PATH}?)"
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
@@ -86,6 +86,7 @@ UNC_PATH_REGEX = r"^(?:\\\\(?:[a-zA-Z0-9-_\s]{1,15}){1}(?:\.[a-zA-Z0-9-_\s]{1,64
                  r'(?:\\[^\\\/\:\*\?\\"\<\>\|\r\n]{1,64}){1,}\\{0,}$'
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
+JA4_REGEX = r"(t|q)([sd]|[0-3]){2}(d|i)\d{2}\d{2}\w{2}_[a-f0-9]{12}_[a-f0-9]{12}"
 
 logger = logging.getLogger('assemblyline.odm')
 
@@ -115,9 +116,11 @@ class KeyMaskException(KeyError):
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None, default=None, description=None, deprecation=None):
+    def __init__(self, name=None, index=None, store=None, copyto=None,
+                 default=None, description=None, deprecation=None, ai=True):
         self.index = index
         self.store = store
+        self.ai = ai
         self.multivalued = False
         self.copyto = []
         if isinstance(copyto, str):
@@ -154,8 +157,8 @@ class _Field:
             logger.warning(f"FIELD DEPRECATION ('{self.name}' of {str(obj.__class__)[8:-2]}): {self.deprecation}")
         return value
 
-
     # noinspection PyProtectedMember
+
     def __set__(self, obj, value):
         """Set the value of this field, calling a setter method if available."""
         if self.name in obj._odm_removed:
@@ -637,27 +640,94 @@ class IndexText(_Field):
 class Integer(_Field):
     """A field storing an integer value."""
 
+    def __init__(self, max: int = None, min: int = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max = max
+        self.min = min
+
     def check(self, value, **kwargs):
         if self.optional and value is None:
             return None
 
         if value is None or value == "":
             if self.default_set:
-                return self.default
-        return int(value)
+                ret_val = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] No value provided and no default value set.")
+        else:
+            ret_val = int(value)
+
+        # Test min/max
+        if self.max is not None and ret_val > self.max:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value bigger then the max value. ({value} > {self.max})")
+        if self.min is not None and ret_val < self.min:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value smaller then the min value. ({value} < {self.max})")
+
+        return ret_val
 
 
-class Float(_Field):
-    """A field storing a floating point value."""
+class Long(_Field):
+    """A field storing an integer value."""
+
+    def __init__(self, max: int = None, min: int = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max = max
+        self.min = min
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
             return None
 
-        if not value:
+        if value is None or value == "":
             if self.default_set:
-                return self.default
-        return float(value)
+                ret_val = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] No value provided and no default value set.")
+        else:
+            ret_val = int(value)
+
+        # Test min/max
+        if self.max is not None and ret_val > self.max:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value bigger then the max value. ({value} > {self.max})")
+        if self.min is not None and ret_val < self.min:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value smaller then the min value. ({value} < {self.max})")
+
+        return ret_val
+
+
+class Float(_Field):
+    """A field storing a floating point value."""
+
+    def __init__(self, max: float = None, min: float = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max = max
+        self.min = min
+
+    def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
+        if value is None or value == "":
+            if self.default_set:
+                ret_val = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] No value provided and no default value set.")
+        else:
+            ret_val = float(value)
+
+        # Test min/max
+        if self.max is not None and ret_val > self.max:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value bigger then the max value. ({value} > {self.max})")
+        if self.min is not None and ret_val < self.min:
+            raise ValueError(
+                f"[{self.name or self.parent_name}] Value smaller then the min value. ({value} < {self.max})")
+
+        return ret_val
 
 
 class ClassificationObject(object):
@@ -786,6 +856,9 @@ class List(_Field):
     def __init__(self, child_type, auto=False, **kwargs):
         if isinstance(child_type, Optional):
             raise ValueError("List does not support Optional child type")
+
+        if isinstance(child_type, List):
+            raise ValueError("List of Lists are not supported")
 
         super().__init__(**kwargs)
         self.child_type = child_type
@@ -971,6 +1044,7 @@ class Optional(_Field):
 
         if child_type.default_set:
             kwargs['default'] = child_type.default
+        kwargs['ai'] = kwargs.get('ai', child_type.ai)
         super().__init__(**kwargs)
         self.default_set = True
         child_type.optional = True
@@ -1020,10 +1094,39 @@ class Model:
         return out
 
     @staticmethod
-    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False):
+    def _recurse_fields(name, field, show_compound, skip_mappings, multivalued=False, optional=False, description=None):
         out = dict()
+
+        # Optionals and Lists do not need to be parsed, we can just analyse their inner type
+        if isinstance(field, (Optional, List)):
+            out.update(Model._recurse_fields(name, field.child_type, show_compound, skip_mappings,
+                                             multivalued=multivalued or isinstance(field, List),
+                                             optional=optional or isinstance(field, Optional),
+                                             description=field.description or description))
+            return out
+
+        # If field is a Compound and were asked to show it, add it to the field list
+        if show_compound and isinstance(field, Compound):
+            # Set the multivalued and optional flag on the field
+            field.multivalued = multivalued
+            field.optional = optional
+            field.description = field.description or description
+
+            # Compound when showed will absorb multivalue and optional flag
+            multivalued = False
+            optional = False
+
+            out[name] = field
+
         for sub_name, sub_field in field.fields().items():
-            sub_field.multivalued = multivalued or isinstance(field, List)
+            # Set the multivalued and optional flag on the field
+            sub_field.multivalued = multivalued
+            sub_field.optional = optional
+            sub_field.description = sub_field.description or description
+
+            # Make sure the Compound name is propagated as the parent_name
+            if isinstance(field, Compound):
+                sub_field.parent_name = name
 
             if skip_mappings and isinstance(sub_field, Mapping):
                 continue
@@ -1031,21 +1134,15 @@ class Model:
             elif isinstance(sub_field, (List, Optional, Compound)) and sub_name != "":
                 out.update(Model._recurse_fields(".".join([name, sub_name]), sub_field.child_type,
                                                  show_compound, skip_mappings,
-                                                 multivalued=multivalued or isinstance(sub_field, List)))
+                                                 multivalued=multivalued or isinstance(sub_field, List),
+                                                 optional=optional or isinstance(sub_field, Optional),
+                                                 description=sub_field.description or field.description))
 
             elif sub_name:
                 out[".".join([name, sub_name])] = sub_field
 
             else:
                 out[name] = sub_field
-
-        if (isinstance(field, Compound) and show_compound):
-            out[name] = field
-
-        # If we're dealing with a list of Compounds or an optional Compound,
-        # we need to validate against the Compound object
-        if isinstance(field, (List, Optional)) and isinstance(field.child_type, Compound) and show_compound:
-            out[name] = field.child_type
 
         return out
 
@@ -1075,7 +1172,7 @@ class Model:
             "SHOULD BE DONE THROUGH ASSEMBLYLINE-BASE REPO!)\n"
 
         # Header
-        markdown_content += f"{'#'*toc_depth} {cls.__name__}\n> {cls.__description}\n\n"
+        markdown_content += f"{'#'*toc_depth} {cls.__name__}\n{cls.__description}\n\n"
 
         # Table
         table = "| Field | Type | Description | Required | Default |\n| :--- | :--- | :--- | :--- | :--- |\n"
@@ -1126,7 +1223,7 @@ class Model:
 
                 values = [f'"{v}"' if v else str(v) for v in sorted(values)]
                 values.append("None") if none_value else None
-                description = f'{description}<br>Values:<br>`{", ".join(values)}`'
+                description = f'{description}<br>Supported values are:<br>`{", ".join(values)}`'
 
             # Is this a required field?
             if info.__class__ != Optional:
@@ -1154,7 +1251,8 @@ class Model:
                     description = f':material-alert-outline: {info.deprecation}'
                 else:
                     description += f'<br>:material-alert-outline: {info.deprecation}'
-            row = f'| {field} | {field_type} | {description} | <div style="width:100px">{required}</div> | {default} |\n'
+            row = f'| {field} | {field_type} | {description} | ' \
+                f'<div style="width:100px">{required}</div> | {default} |\n'
             table += row
 
         markdown_content += table + "\n\n"
@@ -1207,7 +1305,7 @@ class Model:
             raise ValueError(f"'{self.__class__.__name__}' object was created with invalid parameters: "
                              f"{', '.join(unused_keys)}")
         if unused_keys and ignore_extra_values and mask is None:
-            logger.warning(
+            logger.info(
                 f"The following parameters were ignored from object "
                 f"'{self.__class__.__name__}': {', '.join(unused_keys)}")
 
@@ -1236,27 +1334,64 @@ class Model:
         # attribute assignment
         self.__frozen = True
 
-    def as_primitives(self, hidden_fields=False, strip_null=False):
+    def as_camel_case(self):
+        """Returns the object keys as camelCase"""
+        def snake_to_camel(snake_str):
+            """Converts a snake_case string to camelCase."""
+            if snake_str == "name_id_format":
+                # SAML Pascal exception to CamelCase
+                return "NameIDFormat"
+
+            # Locale/country code exception (e.g., "en_us" to "en-US")
+            if "_" in snake_str and len(snake_str) == 5 and snake_str[2] == "_":
+                return snake_str[:2] + "-" + snake_str[3:].upper()
+
+            components = snake_str.split('_')
+            return components[0] + ''.join(x.title() for x in components[1:])
+
+        def to_camel_case(data):
+            """Recursively converts all dictionary keys from snake_case to camelCase."""
+            if isinstance(data, dict):
+                return {snake_to_camel(key): to_camel_case(value) for key, value in data.items() if value is not None}
+            elif isinstance(data, list):
+                return [to_camel_case(item) for item in data]
+            else:
+                return data
+        return to_camel_case(self.as_primitives())
+
+    def as_primitives(self, hidden_fields=False, strip_null=False, strip_non_ai_fields=False):
         """Convert the object back into primitives that can be json serialized."""
         out = {}
 
         fields = self.fields()
         for key, value in self._odm_py_obj.items():
             field_type = fields.get(key, Any)
+            if strip_non_ai_fields and not field_type.ai:
+                continue
+
             if value is not None or (value is None and field_type.default_set):
                 if strip_null and value is None:
                     continue
 
                 if isinstance(value, Model):
-                    out[key] = value.as_primitives(strip_null=strip_null)
+                    data = value.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, datetime):
                     out[key] = value.strftime(DATEFORMAT)
                 elif isinstance(value, TypedMapping):
-                    out[key] = {k: v.as_primitives(strip_null=strip_null)
-                                if isinstance(v, Model) else v for k, v in value.items()}
+                    data = {k: v.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                            if isinstance(v, Model) else v for k, v in value.items()}
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, TypedList):
-                    out[key] = [v.as_primitives(strip_null=strip_null)
-                                if isinstance(v, Model) else v for v in value]
+                    data = [v.as_primitives(strip_null=strip_null, strip_non_ai_fields=strip_non_ai_fields)
+                            if isinstance(v, Model) else v for v in value]
+                    if strip_non_ai_fields and not data:
+                        continue
+                    out[key] = data
                 elif isinstance(value, ClassificationObject):
                     out[key] = str(value)
                     if hidden_fields:

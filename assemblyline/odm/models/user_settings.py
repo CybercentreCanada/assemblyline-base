@@ -19,13 +19,17 @@ class UserSettings(odm.Model):
     default_external_sources = odm.List(odm.Keyword(), default=[],
                                         description="List of sha256 sources to check by default")
     default_zip_password = odm.Text(
-        default="zippy",
+        default="infected",
         description="Default user-defined password for creating password protected ZIPs when downloading files"
     )
+    executive_summary = odm.Boolean(default=True, description="Should executive summary sections be shown?")
     expand_min_score = odm.Integer(default=500, description="Auto-expand section when score bigger then this")
     generate_alert = odm.Boolean(default=False, description="Generate an alert?")
     ignore_cache = odm.Boolean(default=False, description="Ignore service caching?")
+
+    #the following 1 line can be removed after assemblyline 4.6+
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False, description="Ignore dynamic recursion prevention?")
+    ignore_recursion_prevention = odm.Boolean(default=False, description="Ignore all service recursion prevention?")
     ignore_filtering = odm.Boolean(default=False, description="Ignore filtering services?")
     malicious = odm.Boolean(default=False, description="Is the file submitted already known to be malicious?")
     priority = odm.Integer(default=1000, description="Default priority for the submissions")

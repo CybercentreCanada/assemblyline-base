@@ -32,6 +32,7 @@ class DockerConfigDelta(odm.Model):
     ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     ram_mb_min = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     service_account = odm.optional(odm.keyword(description=REF_DOCKER_CONFIG))
+    labels = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)), description=REF_DOCKER_CONFIG)
 
 
 @odm.model(index=False, store=False)
@@ -124,3 +125,5 @@ class ServiceDelta(odm.Model):
 
     update_channel = odm.Optional(odm.Enum(values=["stable", "rc", "beta", "dev"]), description=REF_SERVICE)
     update_config: UpdateConfigDelta = odm.Optional(odm.Compound(UpdateConfigDelta), description=REF_SERVICE)
+
+    recursion_prevention = odm.Optional(odm.sequence(odm.Keyword()), description=REF_SERVICE)

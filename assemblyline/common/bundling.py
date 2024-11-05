@@ -155,7 +155,7 @@ def recursive_flatten_tree(tree):
 
 # noinspection PyBroadException
 def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
-    with forge.get_datastore() as datastore:
+    with forge.get_datastore(archive_access=True) as datastore:
         temp_bundle_file = f"bundle_{get_random_id()}"
         current_working_dir = os.path.join(working_dir, temp_bundle_file)
         target_file = os.path.join(working_dir, f"{temp_bundle_file}.cart")

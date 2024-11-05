@@ -1,6 +1,5 @@
 from assemblyline import odm
 
-
 @odm.model(index=True, store=False, description="Tagging Model")
 class Tagging(odm.Model):
     @odm.model(index=True, store=False, description="Attribution Tag Model")
@@ -164,6 +163,7 @@ class Tagging(odm.Model):
         class FileJAR(odm.Model):
             main_class = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Main Class")
             main_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Main Package")
+            imported_package = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Imported package")
 
         @odm.model(index=True, store=False, description="File Name Model")
         class FileName(odm.Model):
@@ -268,7 +268,16 @@ class Tagging(odm.Model):
                 description = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Description")
                 filename = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Filename")
 
+            @odm.model(index=True, store=False, description="PE Authenticode Model")
+            class FilePEAuthenticode(odm.Model):
+                @odm.model(index=True, store=False, description="PE SpcSpOpusInfo Attribute Model")
+                class FilePEAuthenticodeSpcSpOpusInfo(odm.Model):
+                    program_name = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Program Name")
+
+                spc_sp_opus_info = odm.Optional(odm.Compound(FilePEAuthenticodeSpcSpOpusInfo), description="AAA")
+
             api_vector = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="API Vector")
+            authenticode = odm.Optional(odm.Compound(FilePEAuthenticode), description="PE Authenticode Information")
             debug = odm.Optional(odm.Compound(FilePEDebug), description="PE Debug Information")
             exports = odm.Optional(odm.Compound(FilePEExports), description="PE Exports Information")
             imports = odm.Optional(odm.Compound(FilePEImports), description="PE Imports Information")
@@ -438,6 +447,10 @@ class Tagging(odm.Model):
         class NetworkTLS(odm.Model):
             ja3_hash = odm.Optional(odm.List(odm.MD5(copyto="__text__")), description="JA3 Hash")
             ja3_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="JA3 String")
+            ja3s_hash = odm.Optional(odm.List(odm.MD5(copyto="__text__")), description="JA3S Hash")
+            ja3s_string = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="JA3S String")
+            ja4_hash = odm.Optional(odm.List(odm.ValidatedKeyword(validation_regex=odm.JA4_REGEX, copyto="__text__")), description="JA4 Hash")
+            ja4s_hash = odm.Optional(odm.List(odm.ValidatedKeyword(validation_regex=odm.JA4_REGEX, copyto="__text__")), description="JA4S Hash")
             sni = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="SNI")
 
         attack = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Attack")

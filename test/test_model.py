@@ -204,6 +204,25 @@ def test_workflow_model():
 def test_update_alert():
     import time
     import assemblyline.odm.models.alert
+    from assemblyline.odm.models.alert import Event
+
+    ea = Event(dict(
+        entity_type='user',
+        entity_id='abc123',
+        entity_name='abc123',
+        labels=['1', '2'],
+        status='MALICIOUS',
+        priority='LOW',
+    ))
+
+    eb = Event(dict(
+        entity_type='user',
+        entity_id='abc123',
+        entity_name='abc123',
+        labels=[],
+        status='MALICIOUS',
+        priority='LOW',
+    ))
 
     a1 = Alert(dict(
         alert_id='abc',
@@ -230,6 +249,7 @@ def test_update_alert():
         sid='abc123',
         ts=100,
         type='big',
+        events=[ea],
     ))
 
     a2 = Alert(dict(
@@ -261,6 +281,7 @@ def test_update_alert():
         sid='abc1234',
         ts=100,
         type='big',
+        events=[ea, eb],
     ))
 
     o1 = Alert(a1.as_primitives())
@@ -277,7 +298,16 @@ def test_update_alert():
     assert sorted(a1.al.yara) == ['yara-1', 'yara-2']
     assert sorted(a1.al.detailed.yara) == [dict(type='tests', value='yara-1', verdict='safe'), dict(type='tests', value='yara-2', verdict='safe')]
     assert a1.sid == 'abc1234'
+    assert a1.events == [ea, eb]
 
     o2.update(o1)
 
+    # Submission relations might be out of order after update, so test them independently
+    a1, o2 = a1.as_primitives(), o2.as_primitives()
+    a1_sub_rel, o2_sub_rel = a1.pop('submission_relations'), o2.pop('submission_relations')
+    assert len(a1_sub_rel) == len(o2_sub_rel)
+    for rel in a1_sub_rel:
+        assert rel in o2_sub_rel
+
+    # Compare the rest of the alert properties
     assert a1 == o2

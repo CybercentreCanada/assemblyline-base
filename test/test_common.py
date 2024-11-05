@@ -334,7 +334,7 @@ def test_identify():
             assert meta.get("sha256", None) == sha256
 
             # Validate identify file detection
-            info = identify.fileinfo(output_path, skip_fuzzy_hashes=True)
+            info = identify.fileinfo(output_path, skip_fuzzy_hashes=True, calculate_entropy=False)
             assert info.get("type", None) == "archive/cart"
 
             # Validate identify hashing

@@ -16,7 +16,7 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.ontology import ResultOntology
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.service import Service, UpdateSource
+from assemblyline.odm.models.service import Service, UpdateSource, SubmissionParams
 from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.user import TYPES, User
 from assemblyline.odm.models.user_settings import UserSettings
@@ -53,6 +53,7 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflows=
     for _ in range(alert_count):
         a: Alert = random_model_obj(Alert)
         a.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
+        a.label = list(set(a.label))
         if isinstance(submission_list, list):
             submission = random.choice(submission_list)
             a.file.sha256 = submission.files[0].sha256
@@ -71,7 +72,7 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflows=
                     # Overwrite with user information
                     event.entity_type = 'user'
                     event.entity_id = get_random_word()
-                event.labels = [get_random_word() for _ in range(random.randint(0, 20))]
+                event.labels = list(set([get_random_word() for _ in range(random.randint(0, 20))]))
                 event.status = random.choice(list(STATUSES) + [None])
                 event.priority = random.choice(list(PRIORITIES) + [None])
                 return event
@@ -151,7 +152,12 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
             "docker_config": {
                 "image": f"cccs/alsvc_{svc_name.lower()}:latest",
             },
+            "submission_params": [],
+            "is_external": random.choice([True, False]),
         }
+
+        if random.choice([True, False]):
+            service_data['description'] = get_random_phrase(10, 20)
 
         if random.choice([True, False]):
             service_data['update_config'] = {
@@ -159,6 +165,19 @@ def create_services(ds: AssemblylineDatastore, log=None, limit=None):
                 "update_interval_seconds": 600,
                 "generates_signatures": True
             }
+
+        if random.choice([True, False]):
+            for _ in range(random.randrange(6, 10)):
+                param = random_model_obj(SubmissionParams)
+                if param.type == "list":
+                    param.list = [get_random_word() for __ in range(random.randrange(2, 5))]
+                else:
+                    param.list = None
+
+                if param.type == "bool":
+                    param.value = random.choice([True, False])
+
+                service_data['submission_params'].append(param)
 
         service_data = Service(service_data)
         for x in range(4):
@@ -385,7 +404,8 @@ def create_users(ds, log=None):
         "uname": "admin",
         "type": [TYPES.admin]})
     ds.user.save('admin', user_data)
-    ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True}))
+    ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True,
+                                                 "default_zip_password": "infected", "default_download_encoding": "cart"}))
     if log:
         log.info(f"\tU:{user_data.uname}   P:{admin_pass}")
 
@@ -397,31 +417,33 @@ def create_users(ds, log=None):
         "uname": "user",
         "type": [TYPES.user]})
     ds.user.save('user', user_data)
-    ds.user_settings.save('user', UserSettings())
+    ds.user_settings.save('user', UserSettings({"default_zip_password": "infected", "default_download_encoding": "cart"}))
     if log:
         log.info(f"\tU:{user_data.uname}   P:{user_pass}")
 
     ds.user.commit()
 
 
-def create_badlists(ds, log=None):
-    for _ in range(20):
-        sl = random_model_obj(Badlist, as_json=True)
-        if sl['type'] == 'file':
-            sl.pop('tag', None)
-        elif sl['type'] == 'tag':
-            sl.pop('file', None)
-        sl['hashes']['sha256'] = "0" + get_random_hash(63)
-        ds.badlist.save(sl['hashes']['sha256'], sl)
+def create_badlists(ds, count=20, log=None):
+    for _ in range(count):
+        bl = random_model_obj(Badlist, as_json=True)
+        bl['expiry_ts'] = now_as_iso(60 * 60 * 24 * 14)
+        if bl['type'] == 'file':
+            bl.pop('tag', None)
+        elif bl['type'] == 'tag':
+            bl.pop('file', None)
+        bl['hashes']['sha256'] = "0" + get_random_hash(63)
+        ds.badlist.save(bl['hashes']['sha256'], bl)
         if log:
-            log.info(f"\t{sl['hashes']['sha256']}")
+            log.info(f"\t{bl['hashes']['sha256']}")
 
     ds.badlist.commit()
 
 
-def create_safelists(ds, log=None):
-    for _ in range(20):
+def create_safelists(ds, count=20, log=None):
+    for _ in range(count):
         sl = random_model_obj(Safelist, as_json=True)
+        sl['expiry_ts'] = now_as_iso(60 * 60 * 24 * 14)
         if sl['type'] == 'file':
             sl.pop('tag', None)
         elif sl['type'] == 'tag':
@@ -434,9 +456,9 @@ def create_safelists(ds, log=None):
     ds.safelist.commit()
 
 
-def create_workflows(ds, log=None):
+def create_workflows(ds, count=20, log=None):
     workflows = []
-    for _ in range(20):
+    for _ in range(count):
         w_id = get_random_id()
         workflow = random_model_obj(Workflow)
         workflow.workflow_id = w_id

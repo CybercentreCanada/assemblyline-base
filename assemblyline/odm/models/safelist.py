@@ -47,6 +47,7 @@ class Safelist(odm.Model):
     added = odm.Date(default="NOW", description="Date when the safelisted hash was added")
     classification = odm.Classification(description="Computed max classification for the safe hash")
     enabled = odm.Boolean(default=True, description="Is safe hash enabled or not?")
+    expiry_ts = odm.Optional(odm.Date(), description="When does this item expire from the list?")
     hashes = odm.Compound(Hashes, default={}, description="List of hashes related to the safe hash")
     file = odm.Optional(odm.Compound(File), description="Information about the file")
     sources = odm.List(odm.Compound(Source), description="List of reasons why hash is safelisted")

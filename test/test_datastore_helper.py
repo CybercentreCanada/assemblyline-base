@@ -8,9 +8,9 @@ import random
 from retrying import retry
 
 from assemblyline.common import forge
-from assemblyline.datastore.helper import AssemblylineDatastore
+from assemblyline.datastore.helper import AssemblylineDatastore, MetadataValidator
 from assemblyline.odm.base import DATEFORMAT, KeyMaskException
-from assemblyline.odm.models.config import Config
+from assemblyline.odm.models.config import Config, Metadata
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
@@ -219,12 +219,18 @@ def test_get_file_list_from_keys(ds: AssemblylineDatastore):
     submission: Submission = ds.submission.search("id:*", rows=1, fl="*")['items'][0]
 
     # Get related file list
-    file_list = ds.get_file_list_from_keys(submission.results)
+    file_list = [sha256 for sha256, supplementary, in ds.get_file_list_from_keys(submission.results)]
 
     # Check if all files that are obvious from the results are there
     for f in submission.files:
+        if not [r for r in submission.results if r.startswith(f.sha256) and not r.endswith('.e')]:
+            # If this file has no actual results, we can't this file to show up in the file list
+            continue
         assert f.sha256 in file_list
     for r in submission.results:
+        if r.endswith('.e'):
+            # We can't expect a file tied to be in the file list
+            continue
         assert r[:64] in file_list
 
 
@@ -237,8 +243,14 @@ def test_get_file_scores_from_keys(ds: AssemblylineDatastore):
 
     # Check if all files that are obvious from the results are there
     for f in submission.files:
+        if not [r for r in submission.results if r.startswith(f.sha256) and not r.endswith('.e')]:
+            # If this file has no actual results, we can't expect there to be a file score
+            continue
         assert f.sha256 in file_scores
     for r in submission.results:
+        if r.endswith('.e'):
+            # We can't expect a file tied to an empty_result to have a file score
+            continue
         assert r[:64] in file_scores
 
     for s in file_scores.values():
@@ -458,6 +470,92 @@ def test_list_all_heuristics(ds: AssemblylineDatastore):
     for heur in heuristics:
         assert heur.heur_id.split(".")[0] in all_services
 
+def test_metadata_validation(ds: AssemblylineDatastore):
+    validator = MetadataValidator(ds)
+
+    # Run validator with no submission metadata validation configured
+    assert not validator.check_metadata({'blah': 'blee'}, validation_scheme={})
+
+    # Run validation using validator parameters
+    meta_config = {
+        'blah': Metadata({
+            'required': True,
+            'validator_type': 'regex',
+            'validator_params': {
+                'validation_regex': 'blee'
+            }
+        })
+    }
+    assert not validator.check_metadata({'blah': 'blee'}, validation_scheme=meta_config)
+
+    # Run validator with validation configured but is missing metadata
+    assert validator.check_metadata({'bloo': 'blee'}, validation_scheme=meta_config)
+
+    # Run validator with validation configured but contains extra metadata
+    assert not validator.check_metadata({'blah': 'blee', 'bloo': 'blah'}, validation_scheme=meta_config)
+
+    # Run validator with validation configured but contains extra metadata (strict validation enabled)
+    assert validator.check_metadata({'bloo': 'blee', 'blah': 'blah'}, validation_scheme=meta_config,
+                                    strict=True)
+
+    # Run validation using invalid metadata
+    assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
+        'blah': Metadata({
+            'required': True,
+            'validator_type': 'integer',
+        })
+    })
+
+    # Run validation on field that's not required (but still provided and is invalid)
+    assert validator.check_metadata({'blah': 'blee'}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'integer',
+        })
+    })
+
+    # Run validation on field that's an alias to an actual field in the validation scheme
+    # Based on this configuration 'blah' maps to 'bloo' so there is no validation error returned
+    assert not validator.check_metadata({'blah': 'blee'}, validation_scheme={
+        'bloo': Metadata({
+            'validator_type': 'text',
+            'aliases': ['blah']
+
+        })
+    })
+
+    # Run validation on a list of recognized types
+    assert not validator.check_metadata({'blah': ['abc.com']}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'domain',
+            }
+
+        })
+    })
+
+
+    # Run validation on a list of custom types
+    assert not validator.check_metadata({'blah': ['blee']}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'regex',
+                'validation_regex': 'blee',
+            }
+        })
+    })
+
+
+    # Run validation on a list with a string value given
+    assert not validator.check_metadata({'blah': 'abc.com'}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'domain',
+            }
+        })
+    })
 
 def test_save_or_freshen_file(ds: AssemblylineDatastore):
     classification = forge.get_classification()

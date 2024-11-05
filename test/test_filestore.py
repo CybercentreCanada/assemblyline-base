@@ -70,6 +70,7 @@ def test_azure():
     Azure filestore by downloading a file from our public storage blob
     """
     fs = FileStore("azure://alpytest.blob.core.windows.net/pytest/", connection_attempts=2)
+    assert fs.get('__missing_file__') is None
     assert fs.exists('test') != []
     assert fs.get('test') is not None
     with pytest.raises(TransportException):
@@ -99,6 +100,7 @@ def test_https():
 
 
 def httpx_tests(fs):
+    assert fs.get('__missing_file__') is None
     assert fs.exists('assemblyline-base') != []
     assert fs.get('assemblyline-base') is not None
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -106,14 +108,14 @@ def httpx_tests(fs):
         fs.download('assemblyline-base', local_base)
         assert os.path.exists(local_base)
 
-# def test_sftp():
-#     """
-#     Test SFTP FileStore by fetching the readme.txt file from
-#     Rebex test server.
-#     """
-#     fs = FileStore('sftp://demo:password@test.rebex.net')
-#     assert fs.exists('readme.txt') != []
-#     assert fs.get('readme.txt') is not None
+
+def test_sftp():
+    """
+    Test SFTP FileStore by fetching the readme.txt file from
+    Rebex test server.
+    """
+    fs = FileStore('sftp://user:password@localhost:2222')
+    common_actions(fs, check_listing=False)
 
 
 def test_ftp(temp_ftp_server):
@@ -162,6 +164,7 @@ def test_s3():
     assert fs.get('al4_s3_pytest.txt') is not None
     assert set(fs.transports[0].list()) >= {'al4_s3_pytest.txt'}
     assert list(fs.transports[0].list('abc')) == []
+    assert fs.get('__missing_file__') is None
 
 
 def test_minio():
@@ -179,7 +182,10 @@ def test_minio():
     common_actions(fs)
 
 
-def common_actions(fs):
+def common_actions(fs, check_listing=True):
+    # Make sure a missing file returns None
+    assert fs.get('__missing_file__') is None
+
     # Write and read file body directly
     fs.put('put', _temp_body_a)
     assert fs.get('put') == _temp_body_a
@@ -220,8 +226,9 @@ def common_actions(fs):
     fs.put('0123-file', 'hello')
     fs.put('01234-file', 'hello')
 
-    assert len(set(fs.transports[0].list('0'))) == 9
-    assert len(set(fs.transports[0].list('01'))) == 8
-    assert len(set(fs.transports[0].list('012'))) == 6
-    assert len(set(fs.transports[0].list('0123'))) == 4
-    assert set(fs.transports[0].list('01234')) == {'01234-file', '0123' + '4' * 60}
+    if check_listing:
+        assert len(set(fs.transports[0].list('0'))) == 9
+        assert len(set(fs.transports[0].list('01'))) == 8
+        assert len(set(fs.transports[0].list('012'))) == 6
+        assert len(set(fs.transports[0].list('0123'))) == 4
+        assert set(fs.transports[0].list('01234')) == {'01234-file', '0123' + '4' * 60}

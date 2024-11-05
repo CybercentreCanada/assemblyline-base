@@ -1,18 +1,18 @@
 # This file contains the loaders for the different components of the system
 from __future__ import annotations
 
-import elasticapm
 import importlib
 import os
 import time
-import yaml
-
 from string import Template
 from typing import TYPE_CHECKING, Optional
 
+import elasticapm
+import yaml
 from assemblyline.common.constants import service_queue_name
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
+from hauntedhouse import Client
 
 if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config
@@ -129,7 +129,10 @@ def get_datastore(config=None, archive_access=False):
     if not config:
         config = get_config()
 
-    return AssemblylineDatastore(ESStore(config.datastore.hosts, archive_access=archive_access))
+    return AssemblylineDatastore(
+        ESStore(
+            config.datastore.hosts, archive_access=archive_access,
+            archive_alernate_dtl=config.core.archiver.alternate_dtl))
 
 
 def get_cachestore(component, config=None, datastore=None):
@@ -188,7 +191,7 @@ def get_tag_safelist_data(yml_config=None):
 
 
 def get_tag_safelister(log=None, yml_config=None, config=None, datastore=None):
-    from assemblyline.common.tagging import TagSafelister, InvalidSafelist
+    from assemblyline.common.tagging import InvalidSafelist, TagSafelister
 
     with get_cachestore('system', config=config, datastore=datastore) as cache:
         tag_safelist_yml = cache.get('tag_safelist_yml')
@@ -201,6 +204,20 @@ def get_tag_safelister(log=None, yml_config=None, config=None, datastore=None):
         raise InvalidSafelist('Could not find any tag_safelist file to load.')
 
     return TagSafelister(tag_safelist_data, log=log)
+
+
+def get_hauntedhouse_client(config: Config) -> Optional[Client]:
+    if config.retrohunt.enabled:
+        ca_path = None
+        if config.retrohunt.tls_verify:
+            ca_path = '/etc/assemblyline/ssl/al_root-ca.crt'
+
+        return Client(
+            address=config.retrohunt.url,
+            api_key=config.retrohunt.api_key,
+            verify=ca_path
+        )
+    return None
 
 
 class CachedObject:

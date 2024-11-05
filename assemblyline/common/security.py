@@ -1,4 +1,5 @@
 import base64
+import bcrypt
 import hashlib
 import hmac
 import os
@@ -6,8 +7,6 @@ import re
 import struct
 import time
 from typing import List, Optional
-
-from passlib.hash import bcrypt
 
 UPPERCASE = r'[A-Z]'
 LOWERCASE = r'[a-z]'
@@ -36,16 +35,25 @@ def generate_random_secret():
     return base64.b32encode(os.urandom(25)).decode("UTF-8")
 
 
-def get_password_hash(password):
+def get_password_hash(password) -> str:
     if password is None or len(password) == 0:
         return None
 
-    return bcrypt.hash(password)
+    if isinstance(password, str):
+        password = password.encode()
+
+    return bcrypt.hashpw(password, bcrypt.gensalt()).decode()
 
 
 def verify_password(password, pw_hash):
+    if isinstance(password, str):
+        password = password.encode()
+
+    if isinstance(pw_hash, str):
+        pw_hash = pw_hash.encode()
+
     try:
-        return bcrypt.verify(password, pw_hash)
+        return bcrypt.checkpw(password, pw_hash)
     except ValueError:
         return False
     except TypeError:

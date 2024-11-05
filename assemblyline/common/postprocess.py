@@ -381,16 +381,16 @@ class ExpressionTransformer(lark.Transformer):
                 '>=': operator.ge,
             }[args[0]]
 
-            try:
-                datemath.dm(args[1])
-                return DatePrefixOperation(op, args[1])
-            except (arrow.ParserError, datemath.DateMathException):
-                pass
-
             # Try to detect a number
             try:
                 return NumberPrefixOperation(op, float(args[1]))
             except (ValueError, TypeError):
+                pass
+
+            try:
+                datemath.dm(args[1])
+                return DatePrefixOperation(op, args[1])
+            except (arrow.ParserError, datemath.DateMathException):
                 pass
 
             return StringPrefixOperation(op, str(args[1]))
@@ -707,6 +707,7 @@ class ActionWorker:
         Return bool indicating if a resubmission action has happened.
         """
         archive_submission = submission.params.auto_archive
+        use_archive_alternate_dtl = submission.params.use_archive_alternate_dtl
         create_alert = False
         resubmit: Optional[set[str]] = None
         webhooks = []
@@ -720,6 +721,7 @@ class ActionWorker:
 
             # Check if we need to archive the submission
             archive_submission |= action.archive_submission
+            use_archive_alternate_dtl |= action.use_archive_alternate_dtl
 
             # Accumulate resubmit services
             if action.resubmit is not None:
@@ -797,7 +799,8 @@ class ActionWorker:
 
                 if self.archive_manager.archive_submission(
                         submission_msg.as_primitives(),
-                        submission_msg.params.delete_after_archive)['action'] == "archive":
+                        submission_msg.params.delete_after_archive,
+                        use_alternate_dtl=use_archive_alternate_dtl)['action'] == "archive":
                     logger.info(f"[{submission_msg.sid} :: {submission_msg.files[0].sha256}] Archiver was notified "
                                 "to copy the file in the malware archive")
                 else:

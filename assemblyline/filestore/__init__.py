@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import AnyStr, TYPE_CHECKING, Optional, Tuple
-from urllib.parse import urlparse, parse_qs, unquote
+from typing import TYPE_CHECKING, AnyStr, Optional, Tuple
+from urllib.parse import parse_qs, unquote, urlparse
 
 import elasticapm
-
 from assemblyline.common.exceptions import get_stacktrace_info
 from assemblyline.filestore.transport.azure import TransportAzure
+from assemblyline.filestore.transport.base import TransportException
 from assemblyline.filestore.transport.ftp import TransportFTP
 from assemblyline.filestore.transport.http import TransportHTTP
 from assemblyline.filestore.transport.local import TransportLocal
@@ -48,7 +48,7 @@ def _get_extras(parsed_dict, valid_str_keys=None, valid_bool_keys=None):
 
 def create_transport(url, connection_attempts=None):
     """
-    Transport are being initiated using an URL. They follow the normal url format:
+    Transports are being initiated using a URL. They follow the normal URL format:
     scheme://user:pass@host:port/path/to/file
 
     In this example, it will extract the following parameters:
@@ -59,7 +59,7 @@ def create_transport(url, connection_attempts=None):
     port: port
     base: /path/to/file
 
-    Certain transports can have extra parameters, those parameters need to be specified in the query part of the url.
+    Certain transports can have extra parameters, those parameters need to be specified in the query part of the URL.
     e.g.: sftp://host.com/path/to/file?private_key=/etc/ssl/pkey&private_key_pass=pass&validate_host=true
     scheme: sftp
     host: host.com
@@ -69,14 +69,15 @@ def create_transport(url, connection_attempts=None):
     private_key_pass: pass
     validate_host: True
 
-    NOTE: For transport with extra parameters, only specific extra parameters are allow. This is the list of extra
-          parameter allowed:
+    NOTE: For transports with extra parameters, only specific extra parameters are allowed. This is the list of extra
+    parameters allowed:
 
-          ftp: use_tls (bool)
-          http: pki (string)
-          sftp: private_key (string), private_key_pass (string), validate_host (bool)
-          s3: aws_region (string), s3_bucket(string), use_ssl (bool), verify (bool)
-          file: normalize (bool)
+        ftp: use_tls (bool)
+        http: pki (string)
+        sftp: private_key (string), private_key_pass (string), validate_host (bool)
+        s3: aws_region (string), s3_bucket (string), use_ssl (bool), verify (bool)
+        file: normalize (bool)
+        azure: access_key (string), tenant_id (string), client_id (string), client_secret (string), allow_directory_access (bool), use_default_credentials (bool)
 
     """
 
@@ -107,7 +108,7 @@ def create_transport(url, connection_attempts=None):
         valid_bool_keys = ['validate_host']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
-        t = TransportSFTP(base=base, host=host, password=password, user=user, **extras)
+        t = TransportSFTP(base=base, host=host, password=password, user=user, port=port, **extras)
 
     elif scheme == 'http' or scheme == 'https':
         valid_str_keys = ['pki']
@@ -124,7 +125,7 @@ def create_transport(url, connection_attempts=None):
 
     elif scheme == 's3':
         valid_str_keys = ['aws_region', 's3_bucket']
-        valid_bool_keys = ['use_ssl', 'verify']
+        valid_bool_keys = ['use_ssl', 'verify', 'boto_defaults']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         # If user/password not specified, access might be dictated by IAM roles
@@ -136,7 +137,7 @@ def create_transport(url, connection_attempts=None):
 
     elif scheme == 'azure':
         valid_str_keys = ['access_key', 'tenant_id', 'client_id', 'client_secret']
-        valid_bool_keys = ['allow_directory_access']
+        valid_bool_keys = ['allow_directory_access', 'use_default_credentials']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, **extras)
@@ -222,8 +223,13 @@ class FileStore(object):
     def get(self, path: str, location='any') -> Optional[bytes]:
         for t in self.slice(location):
             try:
-                if t.exists(path):
-                    return t.get(path)
+                return t.get(path)
+            except TransportException as ex:
+                if isinstance(ex.cause, FileNotFoundError):
+                    pass
+                else:
+                    trace = get_stacktrace_info(ex)
+                    self.log.warning('Transport problem: %s', trace)
             except Exception as ex:
                 trace = get_stacktrace_info(ex)
                 self.log.warning('Transport problem: %s', trace)
@@ -250,7 +256,7 @@ class FileStore(object):
         }[location]
 
         transports = self.transports[start:end]
-        assert(len(transports) >= 1)
+        assert (len(transports) >= 1)
         return transports
 
     @elasticapm.capture_span(span_type='filestore')

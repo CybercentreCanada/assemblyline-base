@@ -1,4 +1,3 @@
-
 # GUID Used to further identify office documents
 OLE_CLSID_GUIDs = {
     # GUID v0 (0)
@@ -94,27 +93,38 @@ type_to_extension = {
 }
 
 # Regex patterns used to find Assemblyline type in the reported magic labels
+# Magic bytes translated to possible libmagic labels: https://en.wikipedia.org/wiki/List_of_file_signatures
 magic_patterns = [
     {"al_type": "network/tnef", "regex": r"Transport Neutral Encapsulation Format"},
     {"al_type": "archive/chm", "regex": r"MS Windows HtmlHelp Data"},
     {"al_type": "executable/web/wasm", "regex": r"WebAssembly \(wasm\) binary module"},
     {"al_type": "executable/windows/dll64", "regex": r"pe32\+[^\|]+dll[^\|]+x86\-64"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L159
+    {"al_type": "executable/windows/dll64", "regex": r"pe32\+[^\|]+dll[^\|]+windows"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L157
+    {"al_type": "executable/windows/dll32", "regex": r"pe32[^\|]+dll"},
     {"al_type": "executable/windows/pe64", "regex": r"pe32\+[^\|]+x86\-64[^\|]+windows"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L155
+    {"al_type": "executable/windows/pe64", "regex": r"pe32\+[^\|]+windows"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L153
+    {"al_type": "executable/windows/pe32", "regex": r"pe32[^\|]+windows"},
     {"al_type": "executable/windows/ia/dll64", "regex": r"pe32\+?[^\|]+dll[^\|]+Intel Itanium[^\|]+windows"},
     {"al_type": "executable/windows/ia/pe64", "regex": r"pe32\+?[^\|]+Intel Itanium[^\|]+windows"},
     {"al_type": "executable/windows/arm/dll64", "regex": r"pe32\+?[^\|]+dll[^\|]+Aarch64[^\|]+windows"},
     {"al_type": "executable/windows/arm/pe64", "regex": r"pe32\+?[^\|]+Aarch64[^\|]+windows"},
-    {"al_type": "executable/windows/dll64", "regex": r"pe32\+[^\|]+dll[^\|]+windows"},
-    {"al_type": "executable/windows/pe64", "regex": r"pe32\+[^\|]+windows"},
-    {"al_type": "executable/windows/dll32", "regex": r"pe32[^\|]+dll"},
-    {"al_type": "executable/windows/pe32", "regex": r"pe32[^\|]+windows"},
     {"al_type": "executable/windows/pe", "regex": r"pe unknown[^\|]+windows"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L183
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L185
     {"al_type": "executable/windows/dos", "regex": r"(ms-)?dos executable"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L187
     {"al_type": "executable/windows/com", "regex": r"^com executable"},
     {"al_type": "executable/windows/dos", "regex": r"^8086 relocatable"},
     {"al_type": "executable/windows/coff", "regex": r"^MS Windows COFF"},
-    {"al_type": "executable/linux/elf32", "regex": r"^elf 32-bit (l|m)sb +(pie )?executable"},
-    {"al_type": "executable/linux/elf64", "regex": r"^elf 64-bit (l|m)sb +(pie )?executable"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_elf.yara
+    {"al_type": "executable/linux/elf32", "regex": r"^elf 32-bit (l|m)sb executable"},
+    {"al_type": "executable/linux/elf64", "regex": r"^elf 64-bit (l|m)sb executable"},
+    {"al_type": "executable/linux/pie32", "regex": r"^elf 32-bit (l|m)sb pie executable"},
+    {"al_type": "executable/linux/pie64", "regex": r"^elf 64-bit (l|m)sb pie executable"},
     {"al_type": "executable/linux/so32", "regex": r"^elf 32-bit (l|m)sb +shared object"},
     {"al_type": "executable/linux/so64", "regex": r"^elf 64-bit (l|m)sb +shared object"},
     {"al_type": "executable/linux/coff32", "regex": r"^(Intel 80386|i386|80386) COFF"},
@@ -122,63 +132,108 @@ magic_patterns = [
     {"al_type": "executable/linux/ia/coff64", "regex": r"^Intel ia64 COFF"},
     {"al_type": "executable/linux/misp/ecoff", "regex": r"^MIPS[^\|]+ ECOFF"},
     {"al_type": "executable/linux/a.out", "regex": r"^a.out"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_macho.yara
     {"al_type": "executable/mach-o", "regex": r"^Mach-O"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L171
     {"al_type": "archive/7-zip", "regex": r"^7-zip archive data"},
     {"al_type": "archive/ace", "regex": r"^ACE archive data"},
+    {"al_type": "archive/asar", "regex": r"^Electron ASAR archive"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L173
     {"al_type": "archive/bzip2", "regex": r"^bzip2 compressed data"},
     {"al_type": "archive/cabinet", "regex": r"^installshield cab"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_cab.yara
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L199
     {"al_type": "archive/cabinet", "regex": r"^microsoft cabinet archive data"},
     {"al_type": "archive/cpio", "regex": r"cpio archive"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L175
     {"al_type": "archive/gzip", "regex": r"^gzip compressed data"},
     {"al_type": "archive/iso", "regex": r"ISO 9660"},
     {"al_type": "archive/lzma", "regex": r"^LZMA compressed data"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_rar.yara
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L179
     {"al_type": "archive/rar", "regex": r"^rar archive data"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_tar.yara
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L177
     {"al_type": "archive/tar", "regex": r"^(GNU|POSIX) tar archive"},
-    {"al_type": "archive/ar", "regex": r"ar archive"},
+    {"al_type": "archive/ar", "regex": r"^current ar archive"},
     {"al_type": "archive/vhd", "regex": r"^Microsoft Disk Image"},
+    {"al_type": "archive/vmdk", "regex": r"^VMware4? disk image"},
     {"al_type": "archive/xz", "regex": r"^XZ compressed data"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_zip.yara
     {"al_type": "archive/zip", "regex": r"^zip archive data"},
     {"al_type": "archive/zstd", "regex": r"^Zstandard compressed data"},
+    {"al_type": "archive/zpaq", "regex": r"^ZPAQ file"},
     {"al_type": "network/tcpdump", "regex": r"^(tcpdump|pcap)"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_pdf.yara
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L149
     {"al_type": "document/pdf", "regex": r"^pdf document"},
+    {"al_type": "document/epub", "regex": r"^EPUB document"},
+    {"al_type": "document/mobi", "regex": r"^Mobipocket E-book"},
+    {"al_type": "resource/map/warcraft3", "regex": r"^Warcraft III map file$"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L169
     {"al_type": "image/bmp", "regex": r"^pc bitmap"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L145
     {"al_type": "image/gif", "regex": r"^gif image data"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L147
     {"al_type": "image/jpg", "regex": r"^jpeg image data"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L151
     {"al_type": "image/png", "regex": r"^png image data"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L167
     {"al_type": "image/tiff", "regex": r"^TIFF image data"},
     {"al_type": "image/webp", "regex": r"Web/P image"},
     {"al_type": "document/installer/windows", "regex": r"(Installation Database|Windows Installer)"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L141
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L143
     {"al_type": "document/office/excel", "regex": r"Microsoft[^\|]+Excel"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L135
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L137
     {"al_type": "document/office/powerpoint", "regex": r"Microsoft.*PowerPoint"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L131
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L133
     {"al_type": "document/office/word", "regex": r"Microsoft[^\|]+Word"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_rtf.yara
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L139
     {"al_type": "document/office/rtf", "regex": r"Rich Text Format"},
     {"al_type": "document/office/ole", "regex": r"OLE 2"},
     {"al_type": "document/office/hwp", "regex": r"Hangul \(Korean\) Word Processor File"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_ole_cf.yara
     {"al_type": "document/office/unknown", "regex": r"Composite Document File|CDFV2"},
     {"al_type": "document/office/unknown", "regex": r"Microsoft[^\|]+(OOXML|Document)"},
     {"al_type": "document/office/unknown", "regex": r"Number of (Characters|Pages|Words)"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_swf.yara
     {"al_type": "audiovisual/flash", "regex": r"Macromedia Flash"},
     {"al_type": "code/autorun", "regex": r"microsoft windows autorun"},
     {"al_type": "code/batch", "regex": r"dos batch file"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L181
     {"al_type": "java/jar", "regex": r"[ (]Jar[) ]"},
+    # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_java_class.yara
     {"al_type": "java/class", "regex": r"java class data"},
     {"al_type": "resource/pyc", "regex": r"python [^\|]+byte"},
+    {"al_type": "resource/pyc", "regex": r"^Byte-compiled Python module"},
     {"al_type": "android/apk", "regex": r"Android package \(APK\)"},
     {"al_type": "code/xml", "regex": r"OpenGIS KML"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L161
     {"al_type": "code/xml", "regex": r"xml"},
     {"al_type": "image/tim", "regex": r"TIM image"},
     {"al_type": "network/sff", "regex": r"Frame Format"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L197
     {"al_type": "shortcut/windows", "regex": r"^MS Windows shortcut"},
     {"al_type": "document/email", "regex": r"Mime entity text"},
     {"al_type": "document/email", "regex": r"MIME entity, ASCII text"},
-    {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista Event Log"},
+    {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista(-8.1)? Event Log"},
+    {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows 10-11 Event Log"},
+    {"al_type": "metadata/minidump", "regex": r"Mini DuMP crash report"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L165
     {"al_type": "image/emf", "regex": r"Windows Enhanced Metafile"},
     {"al_type": "resource/msvc", "regex": r"MSVC \.res"},
     {"al_type": "pgp/pubkey", "regex": r"^PGP public key"},
     {"al_type": "pgp/privkey", "regex": r"^PGP private key block"},
     {"al_type": "pgp/encrypted", "regex": r"^PGP RSA encrypted session key"},
+    {"al_type": "pgp/message", "regex": r"^PGP message Public-Key Encrypted Session Key"},
     {"al_type": "gpg/symmetric", "regex": r"^GPG symmetrically encrypted data"},
     {"al_type": "video/asf", "regex": r"^Microsoft ASF"},
+    # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L201
+    {"al_type": "code/php", "regex": r"^PHP script"},
 ]
 
 # LibMagic mimetypes that we blindly trust to assign an Assemblyline type
@@ -230,6 +285,8 @@ trusted_mimes = {
     # Python
     "text/x-python": "code/python",
     "text/x-script.python": "code/python",
+    "application/x-bytecode.python": "resource/pyc",
+    "text/x-bytecode.python": "resource/pyc",
     # PHP
     "text/x-php": "code/php",
     # XML file
@@ -253,9 +310,10 @@ trusted_mimes = {
     "text/x-msdos-batch": "code/batch",
     # Registry file
     "text/x-ms-regedit": "text/windows/registry",
+    # Sysmon EVTX file
+    "application/x-ms-evtx": "metadata/sysmon/evt",
     # JSON file
     "application/json": "text/json",
-
     # Autorun files
     "application/x-setupscript": "code/autorun",
     # Bittorrent files
@@ -267,7 +325,6 @@ trusted_mimes = {
     # Font
     "application/vnd.ms-opentype": "resource/font/opentype",
     "application/x-font-sfn": "resource/font/x11",
-
     # Image Icon
     "image/vnd.microsoft.icon": "image/icon",
     "application/ico": "image/icon",
@@ -302,7 +359,6 @@ trusted_mimes = {
     "image/tiff": "image/tiff",
     # Image Cursor
     "image/x-win-bitmap": "image/cursor",
-
     # Office Outlook email
     "application/vnd.ms-outlook": "document/office/email",
     # Office Powerpoint
@@ -344,7 +400,6 @@ trusted_mimes = {
     "application/vnd.oasis.opendocument.text-master": "document/odt/text",
     "application/vnd.oasis.opendocument.text-master-template": "document/odt/text",
     "application/vnd.oasis.opendocument.web": "document/odt/web",
-
     # Archives
     "application/x-7z-compressed": "archive/7-zip",
     "application/x-tar": "archive/tar",
@@ -367,13 +422,16 @@ trusted_mimes = {
     "application/vnd.ms-cab-compressed": "archive/cabinet",
     "application/zstd": "archive/zstd",
     "application/x-zstd": "archive/zstd",
-
+    # Inspired by https://github.com/CAPESandbox/sflock/blob/1fe3cf32d01d66c4ad38696c609b13d4f4bc9ea3/sflock/ident.py#L116
+    "application/x-7z-compressed": "archive/7-zip",
+    "application/x-bzip2": "archive/bzip2",
+    "application/java-archive": "java/jar",
     # JAVA Class
     "application/x-java-applet": "java/class",
-
+    # EPUB
+    "application/epub+zip": "document/epub",
     # Packet capture
     "application/vnd.tcpdump.pcap": "network/tcpdump",
-
     "message/rfc822": "document/email",
     "text/calendar": "text/calendar",
     "application/x-mach-binary": "executable/mach-o",
@@ -382,12 +440,10 @@ trusted_mimes = {
     "application/x-hwp": "document/office/hwp",
     "application/vnd.iccprofile": "metadata/iccprofile",
     "application/vnd.lotus-1-2-3": "document/lotus/spreadsheet",
-
     # Firefox modules
     "application/x-xpinstall": "application/mozilla/extension",
     # Chrome extensions
     "application/x-chrome-extension": "application/chrome/extension",
-
     # Android
     "application/vnd.android.package-archive": "android/apk",
 }

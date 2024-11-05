@@ -3,7 +3,7 @@ version: "2.4"
 services:
   # Service server
   al_service_server:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     ports:
@@ -19,7 +19,7 @@ services:
 
   # Create test data
   create_test_data:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     environment:
@@ -45,7 +45,7 @@ services:
 
   # UI
   al_ui:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     ports:
@@ -56,21 +56,9 @@ services:
     working_dir: /opt/alv4/assemblyline-ui/assemblyline_ui/
     command: python3 app.py
 
-  # # internal UI
-  # al_internal_ui:
-  #   container_name: internal-ui
-  #   image: cccs/assemblyline_dev:4.4.0
-  #   volumes:
-  #     - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-  #     - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
-  #   environment:
-  #     AL_UNSECURED_UI: "true"
-  #   working_dir: /opt/alv4/assemblyline-ui/assemblyline_ui/
-  #   command: python3 app.py
-
   # SocketIO Server
   al_socketio:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     ports:
@@ -83,7 +71,7 @@ services:
 
   # Alerter
   al_alerter:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -99,9 +87,27 @@ services:
           "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi",
         ]
 
+  # Alerter
+  al_archiver:
+    image: cccs/assemblyline_dev:4.5.2
+    env_file:
+      - .env
+    volumes:
+      - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
+      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
+    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/archiver/run_archiver.py
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi",
+        ]
+
   # Expiry
   al_expiry:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -119,7 +125,7 @@ services:
 
   # Elasticsearch Metrics
   al_elastic_metrics:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -137,7 +143,7 @@ services:
 
   # Metrics aggregator
   al_metrics:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -147,7 +153,7 @@ services:
 
   # Hearbeat manager
   al_heartbeat:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -165,7 +171,7 @@ services:
 
   # Stats aggregator
   al_stats:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -175,7 +181,7 @@ services:
 
   # Workflow
   al_workflow:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -192,7 +198,7 @@ services:
         ]
 
   al_plumber:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -210,7 +216,7 @@ services:
 
   # Dispatcher processes
   al_dispatcher:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:
@@ -230,7 +236,7 @@ services:
 
   # Ingester Processes
   al_ingester:
-    image: cccs/assemblyline_dev:4.4.0
+    image: cccs/assemblyline_dev:4.5.2
     env_file:
       - .env
     volumes:

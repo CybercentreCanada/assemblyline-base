@@ -20,6 +20,8 @@ from packaging import version
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
 DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
+DATASTORE_VERIFY_CERTS = environ.get('DATASTORE_VERIFY_CERTS', 'true').lower() == 'true'
+
 log = logging.getLogger('assemblyline.datastore')
 ALT_ELASTICSEARCH_USERS = ["plumber"]
 
@@ -57,7 +59,7 @@ class ESStore(object):
     ID = 'id'
     MIN_ELASTIC_VERSION = '7.10'
 
-    def __init__(self, hosts, archive_access=True):
+    def __init__(self, hosts, archive_access=True, archive_alernate_dtl=0):
         config = forge.get_config()
         self._hosts = hosts
         self._closed = False
@@ -65,6 +67,7 @@ class ESStore(object):
         self._models = {}
         self.archive_indices = config.datastore.archive.indices if config.datastore.archive.enabled else []
         self.validate = True
+        self.archive_alernate_dtl = archive_alernate_dtl
 
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
@@ -72,7 +75,7 @@ class ESStore(object):
         self.ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
 
         self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs)
+                                                  ca_certs=self.ca_certs, verify_certs=DATASTORE_VERIFY_CERTS)
         self.es_version = version.parse(self.with_retries(self.client.info)['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
@@ -89,11 +92,14 @@ class ESStore(object):
 
     def __getattr__(self, name) -> ESCollection:
         if not self.validate:
-            return ESCollection(self, name, model_class=self._models[name], validate=self.validate)
+            return ESCollection(
+                self, name, model_class=self._models[name],
+                validate=self.validate, archive_alernate_dtl=self.archive_alernate_dtl)
 
         if name not in self._collections:
             self._collections[name] = ESCollection(
-                self, name, model_class=self._models[name], validate=self.validate)
+                self, name, model_class=self._models[name],
+                validate=self.validate, archive_alernate_dtl=self.archive_alernate_dtl)
 
         return self._collections[name]
 
@@ -184,7 +190,9 @@ class ESStore(object):
         self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
                                                   max_retries=0,
                                                   request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs)
+                                                  ca_certs=self.ca_certs,
+                                                  verify_certs=DATASTORE_VERIFY_CERTS)
+        log.info("Reconnected to Elasticsearch")
 
     def close(self):
         self._closed = True
@@ -306,7 +314,7 @@ class ESStore(object):
                 ret_val = func(*args, **kwargs)
 
                 if retries:
-                    log.info('Reconnected to elasticsearch!')
+                    log.info(f"Retrying datastore operation: {func.__name__}")
 
                 if updated:
                     ret_val['updated'] += updated
@@ -326,7 +334,6 @@ class ESStore(object):
 
                 log.warning(f"Index {index_name} was removed while a query was running, retrying...")
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.exceptions.ConflictError as ce:
@@ -338,7 +345,6 @@ class ESStore(object):
                 deleted += ce.info.get('deleted', 0)
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.exceptions.ConnectionTimeout:
@@ -382,7 +388,6 @@ class ESStore(object):
 
                 # Loop and retry
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             # Elastic client 8.x retries
@@ -395,7 +400,6 @@ class ESStore(object):
                             f"on index {index_name}, retrying...")
 
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1
 
             except elasticsearch.ApiError as err:
@@ -420,5 +424,4 @@ class ESStore(object):
 
                 # Loop and retry
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
-                self.connection_reset()
                 retries += 1

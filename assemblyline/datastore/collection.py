@@ -9,6 +9,7 @@ import typing
 import warnings
 
 from copy import deepcopy
+from assemblyline.common.isotime import now_as_iso
 from datemath import dm
 from datemath.helpers import DateMathException
 from datetime import datetime
@@ -22,7 +23,8 @@ import elasticsearch.helpers
 from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
-from assemblyline.datastore.exceptions import (DataStoreException, MultiKeyError, SearchException, ArchiveDisabled)
+from assemblyline.datastore.exceptions import (
+    DataStoreException, MultiKeyError, SearchException, ArchiveDisabled, VersionConflictException)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
 from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
                                                     default_index, default_mapping)
@@ -143,6 +145,8 @@ class ESCollection(Generic[ModelType]):
     UPDATE_MIN = "MIN"
     UPDATE_APPEND = "APPEND"
     UPDATE_APPEND_IF_MISSING = "APPEND_IF_MISSING"
+    UPDATE_PREPEND = "PREPEND"
+    UPDATE_PREPEND_IF_MISSING = "PREPEND_IF_MISSING"
     UPDATE_REMOVE = "REMOVE"
     UPDATE_DELETE = "DELETE"
     UPDATE_OPERATIONS = [
@@ -152,6 +156,8 @@ class ESCollection(Generic[ModelType]):
         UPDATE_INC,
         UPDATE_MAX,
         UPDATE_MIN,
+        UPDATE_PREPEND,
+        UPDATE_PREPEND_IF_MISSING,
         UPDATE_REMOVE,
         UPDATE_SET,
         UPDATE_DELETE,
@@ -187,7 +193,7 @@ class ESCollection(Generic[ModelType]):
         'script_fields': []
     }
 
-    def __init__(self, datastore: ESStore, name, model_class=None, validate=True):
+    def __init__(self, datastore: ESStore, name, model_class=None, validate=True, archive_alernate_dtl=0):
         self.replicas = environ.get(f"ELASTIC_{name.upper()}_REPLICAS", environ.get('ELASTIC_DEFAULT_REPLICAS', 0))
         self.shards = environ.get(f"ELASTIC_{name.upper()}_SHARDS", environ.get('ELASTIC_DEFAULT_SHARDS', 1))
         self.archive_replicas = environ.get(f"ELASTIC_{name.upper()}_ARCHIVE_REPLICAS", self.replicas)
@@ -206,6 +212,7 @@ class ESCollection(Generic[ModelType]):
 
         self.model_class = model_class
         self.validate = validate
+        self.archive_alernate_dtl = archive_alernate_dtl
 
         self._ensure_collection()
 
@@ -433,7 +440,7 @@ class ESCollection(Generic[ModelType]):
 
         return total_restaured
 
-    def archive(self, key, delete_after=False, allow_missing=False):
+    def archive(self, key, delete_after=False, allow_missing=False, use_alternate_dtl=False):
         """
         Copy/Move a single document into the archive and return the document that was archived.
 
@@ -444,70 +451,64 @@ class ESCollection(Generic[ModelType]):
         if not self.archive_name:
             raise ArchiveDisabled("This datastore object does not have archive access.")
 
-        # Check if already in archive
-        if not self.exists(key, index_type=Index.ARCHIVE):
-            # Get the document from hot index
-            doc = self.get_if_exists(key, index_type=Index.HOT)
-            if doc:
-                # Reset Expiry if present
-                try:
-                    doc.expiry_ts = None
-                except (AttributeError, KeyError, ValueError):
-                    pass
+        # Compute new expiry
+        if use_alternate_dtl and self.archive_alernate_dtl != 0:
+            new_expiry = now_as_iso(self.archive_alernate_dtl * 24 * 60 * 60)
+        else:
+            new_expiry = None
+
+        while True:
+            try:
+                doc, version = self.get_if_exists(key, index_type=Index.ARCHIVE, version=True)
+                # Check if already in archive
+                if not doc:
+                    # File is not in archive
+                    # Get the document from hot index
+                    doc = self.get_if_exists(key, index_type=Index.HOT)
+                    if doc:
+                        # Set the time at which the file was archived
+                        try:
+                            doc.archive_ts = now_as_iso()
+                        except (AttributeError, KeyError, ValueError):
+                            pass
+
+                        # Set new document expiry determined earlier
+                        try:
+                            doc.expiry_ts = new_expiry
+                        except (AttributeError, KeyError, ValueError):
+                            pass
+
+                    elif not allow_missing:
+                        raise DataStoreException(
+                            f"{key} does not exists in {self.name} hot index therefor cannot be archived.")
+                else:
+                    # Set the time at which the file was archived if it was not set already
+                    try:
+                        if doc.archive_ts is None:
+                            doc.archive_ts = now_as_iso()
+                    except (AttributeError, KeyError, ValueError):
+                        pass
+
+                    # Set new document expiry if the document already has one
+                    #   ** This will either prolong the expiry time as its a fix values based of now
+                    #      or it will reset it to null
+                    try:
+                        if doc.expiry_ts is not None:
+                            doc.expiry_ts = new_expiry
+                    except (AttributeError, KeyError, ValueError):
+                        pass
 
                 # Save the document to the archive
-                self.save(key, doc, index_type=Index.ARCHIVE)
-            elif not allow_missing:
-                raise DataStoreException(f"{key} does not exists in {self.name} hot index therefor cannot be archived.")
+                self.save(key, doc, index_type=Index.ARCHIVE, version=version)
+                break
+            except VersionConflictException:
+                # Retry due to version conflict
+                pass
 
         if delete_after:
             self.delete(key, index_type=Index.HOT)
 
         return True
-
-    def archive_by_query(self, query, max_docs=None, sort=None, delete_after=False):
-        """
-        This function should archive to document that are matching to query to an time splitted index
-
-        :param query: query to run to archive documents
-        :return: Number of archived documents
-        """
-        if not self.archive_name:
-            raise ArchiveDisabled("This datastore object does not have archive access.")
-
-        source = {
-            "index": self.name,
-            "query": {
-                "bool": {
-                    "must": {
-                        "query_string": {
-                            "query": query
-                        }
-                    }
-                }
-            }
-        }
-        dest = {
-            "index": self.archive_name
-        }
-        if max_docs:
-            source['size'] = max_docs
-
-        if sort:
-            source['sort'] = parse_sort(sort)
-
-        r_task = self.with_retries(self.datastore.client.reindex, source=source, dest=dest, wait_for_completion=False)
-        res = self.datastore._get_task_results(r_task, retry_function=self.with_retries)
-        total_archived = res['updated'] + res['created']
-        if res['total'] == total_archived or max_docs == total_archived:
-            if total_archived != 0 and delete_after:
-                info = self._delete_async(self.name, query={"bool": {"must": {"query_string": {"query": query}}}},
-                                          max_docs=max_docs, sort=sort_str(parse_sort(sort)))
-                return info.get('deleted', 0) == total_archived
-            else:
-                return True
-        else:
-            return False
 
     def bulk(self, operations):
         """
@@ -666,9 +667,11 @@ class ESCollection(Generic[ModelType]):
 
                 # Make the original index the new alias
                 logger.info(f"Make {index.upper()} the current alias for {name.upper()} "
-                            f"and delete {temp_name.upper()}.")
-                actions = [{"add":  {"index": index, "alias": name}}, {
-                    "remove_index": {"index": temp_name}}]
+                            f"but {temp_name.upper()} is not part of the alias anymore.")
+                actions = [
+                    {"add":  {"index": index, "alias": name, "is_write_index": True}},
+                    {"remove":  {"index": temp_name, "alias": name}}
+                ]
                 self.with_retries(self.datastore.client.indices.update_aliases, actions=actions)
 
             # Restore writes
@@ -679,6 +682,15 @@ class ESCollection(Generic[ModelType]):
             logger.info(f"Restore original routing table for {name.upper()}.")
             self.with_retries(self.datastore.client.indices.put_settings, index=name,
                               settings=clone_finish_settings)
+
+            # Make 100% sure new fixed index is ready
+            logger.info(f"Waiting for {index.upper()} status to be GREEN.")
+            self._wait_for_status(index, 'green')
+
+            # Make sure the temporary index is deleted
+            if self.with_retries(self.datastore.client.indices.exists, index=temp_name):
+                logger.info(f"Delete extra {temp_name.upper()} index.")
+                self.with_retries(self.datastore.client.indices.delete, index=temp_name)
 
     def reindex(self, index_type=None):
         """
@@ -815,6 +827,8 @@ class ESCollection(Generic[ModelType]):
                     add_to_output(row['_source'], row['_id'])
                 except ValueError:
                     log.error(f'MGet returned multiple documents for id: {row["_id"]}')
+                except KeyError:
+                    log.error(f'MGet returned a document without any data {row["_id"]}')
 
         if key_list and error_on_missing:
             raise MultiKeyError(key_list, out)
@@ -1086,6 +1100,14 @@ class ESCollection(Generic[ModelType]):
                          f"{{ctx._source.{doc_key}.add(params.value{val_id})}}"
                 op_sources.append(script)
                 op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_PREPEND:
+                op_sources.append(f"ctx._source.{doc_key}.add(0, params.value{val_id})")
+                op_params[f'value{val_id}'] = value
+            elif op == self.UPDATE_PREPEND_IF_MISSING:
+                script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) == -1) " \
+                         f"{{ctx._source.{doc_key}.add(0, params.value{val_id})}}"
+                op_sources.append(script)
+                op_params[f'value{val_id}'] = value
             elif op == self.UPDATE_REMOVE:
                 script = f"if (ctx._source.{doc_key}.indexOf(params.value{val_id}) != -1) " \
                          f"{{ctx._source.{doc_key}.remove(ctx._source.{doc_key}.indexOf(params.value{val_id}))}}"
@@ -1161,15 +1183,28 @@ class ESCollection(Generic[ModelType]):
                 else:
                     field = fields[doc_key]
 
-                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                if op in [self.UPDATE_APPEND, self.UPDATE_APPEND_IF_MISSING, self.UPDATE_PREPEND,
+                          self.UPDATE_PREPEND_IF_MISSING, self.UPDATE_REMOVE]:
+                    if not field.multivalued:
+                        raise DataStoreException(f"Invalid operation for field {doc_key}: {op}")
+
                     try:
                         value = field.check(value)
                     except (ValueError, TypeError, AttributeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
-                elif op in [self.UPDATE_SET, self.UPDATE_DEC, self.UPDATE_INC]:
+                elif op in [self.UPDATE_DEC, self.UPDATE_INC]:
                     try:
                         value = field.check(value)
+                    except (ValueError, TypeError):
+                        raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
+
+                elif op in [self.UPDATE_SET]:
+                    try:
+                        if field.multivalued and isinstance(value, list):
+                            value = [field.check(v) for v in value]
+                        else:
+                            value = field.check(value)
                     except (ValueError, TypeError):
                         raise DataStoreException(f"Invalid value for field {doc_key}: {value}")
 
@@ -1184,7 +1219,7 @@ class ESCollection(Generic[ModelType]):
 
         return ret_ops
 
-    def update(self, key, operations, index_type=Index.HOT):
+    def update(self, key, operations, index_type=Index.HOT, retry_on_conflict=None):
         """
         This function performs an atomic update on some fields from the
         underlying documents referenced by the id using a list of operations.
@@ -1205,7 +1240,8 @@ class ESCollection(Generic[ModelType]):
 
         for index in index_list:
             try:
-                res = self.with_retries(self.datastore.client.update, index=index, id=key, script=script)
+                res = self.with_retries(self.datastore.client.update, index=index, id=key,
+                                        script=script, retry_on_conflict=retry_on_conflict)
                 return res['result'] == "updated"
             except elasticsearch.NotFoundError:
                 pass
@@ -1722,7 +1758,7 @@ class ESCollection(Generic[ModelType]):
             return ret_type
 
     def histogram(self, field, start, end, gap, query="id:*", mincount=1, filters=None, access_control=None,
-                  index_type=Index.HOT, key_space=None):
+                  index_type=Index.HOT, key_space=None, timeout=None):
         type_modifier = self._validate_steps_count(start, end, gap)
         start = type_modifier(start)
         end = type_modifier(end)
@@ -1742,7 +1778,8 @@ class ESCollection(Generic[ModelType]):
             ('histogram_gap', gap.strip('+').strip('-') if isinstance(gap, str) else gap),
             ('histogram_mincount', mincount),
             ('histogram_start', start),
-            ('histogram_end', end)
+            ('histogram_end', end),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1751,6 +1788,9 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
+
         result = self._search(args, index_type=index_type, key_space=key_space)
 
         # Convert the histogram into a dictionary
@@ -1758,7 +1798,7 @@ class ESCollection(Generic[ModelType]):
                 for row in result['aggregations']['histogram']['buckets']}
 
     def facet(self, field, query="id:*", mincount=1, filters=None, access_control=None, index_type=Index.HOT,
-              field_script=None, key_space=None, size=10, include=None):
+              field_script=None, key_space=None, size=10, include=None, timeout=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1776,7 +1816,8 @@ class ESCollection(Generic[ModelType]):
             ('facet_mincount', mincount),
             ('facet_size', min(size, self.MAX_FACET_SIZE)),
             ('facet_include', include),
-            ('rows', 0)
+            ('rows', 0),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1784,6 +1825,9 @@ class ESCollection(Generic[ModelType]):
 
         if filters:
             args.append(('filters', filters))
+
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
 
         if field_script:
             args.append(('field_script', field_script))
@@ -1798,7 +1842,8 @@ class ESCollection(Generic[ModelType]):
             return {f: {row.get('key_as_string', row['key']): row['doc_count']
                         for row in result['aggregations'][f]['buckets']} for f in field}
 
-    def stats(self, field, query="id:*", filters=None, access_control=None, index_type=Index.HOT, field_script=None):
+    def stats(self, field, query="id:*", filters=None, access_control=None,
+              index_type=Index.HOT, field_script=None, timeout=None):
         if filters is None:
             filters = []
         elif isinstance(filters, str):
@@ -1808,7 +1853,8 @@ class ESCollection(Generic[ModelType]):
             ('query', query),
             ('stats_active', True),
             ('stats_fields', [field]),
-            ('rows', 0)
+            ('rows', 0),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         if access_control:
@@ -1816,6 +1862,9 @@ class ESCollection(Generic[ModelType]):
 
         if filters:
             args.append(('filters', filters))
+
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
 
         if field_script:
             args.append(('field_script', field_script))
@@ -1825,7 +1874,7 @@ class ESCollection(Generic[ModelType]):
 
     def grouped_search(self, group_field, query="id:*", offset=0, sort=None, group_sort=None, fl=None, limit=1,
                        rows=None, filters=None, access_control=None, as_obj=True, index_type=Index.HOT,
-                       track_total_hits=None):
+                       track_total_hits=None, timeout=None):
         if rows is None:
             rows = self.DEFAULT_ROW_SIZE
 
@@ -1848,7 +1897,8 @@ class ESCollection(Generic[ModelType]):
             ('group_sort', group_sort),
             ('start', offset),
             ('rows', rows),
-            ('sort', sort)
+            ('sort', sort),
+            ('df', self.DEFAULT_SEARCH_FIELD)
         ]
 
         filters.append("%s:*" % group_field)
@@ -1865,6 +1915,9 @@ class ESCollection(Generic[ModelType]):
         if filters:
             args.append(('filters', filters))
 
+        if timeout:
+            args.append(('timeout', "%sms" % timeout))
+
         result = self._search(args, index_type=index_type, track_total_hits=track_total_hits)
 
         return {
@@ -1880,13 +1933,13 @@ class ESCollection(Generic[ModelType]):
         }
 
     @staticmethod
-    def _get_odm_type(ds_type):
+    def _get_odm_type(ds_type: str):
         try:
             return back_mapping[ds_type].__name__.lower()
         except KeyError:
             return ds_type.lower()
 
-    def fields(self):
+    def fields(self, include_description=False) -> dict[str, dict[str, Any]]:
         """
         This function should return all the fields in the index with their types
 
@@ -1931,6 +1984,8 @@ class ESCollection(Generic[ModelType]):
                 "stored": field_model.store if field_model else False,
                 "type": f_type
             }
+            if include_description:
+                collection_data[p_name]['description'] = field_model.description if field_model else ''
 
         return collection_data
 

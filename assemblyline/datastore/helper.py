@@ -2,29 +2,33 @@
 import concurrent.futures
 import json
 import os
+from copy import deepcopy
 from datetime import datetime
-from typing import List, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import elasticapm
 from assemblyline.common import forge
+from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.tagging import tag_dict_to_ai_list
 from assemblyline.common.uid import get_id_from_data
-from assemblyline.datastore.collection import ESCollection, log
+from assemblyline.datastore.collection import ESCollection, log, Index
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
-from assemblyline.odm import DATEFORMAT, Model
+from assemblyline.odm import DATEFORMAT, Date, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
+from assemblyline.odm.models.config import METADATA_FIELDTYPE_MAP, Metadata
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
-from assemblyline.odm.models.retrohunt import Retrohunt
+from assemblyline.odm.models.retrohunt import Retrohunt, RetrohuntHit
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
@@ -37,9 +41,13 @@ from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
 
+
 config = forge.get_config()
 
 THREAD_POOL_SIZE = int(os.environ.get("POOL_SIZE", 20))
+
+JSON_SECTIONS = ["GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "PROCESS_TREE",
+                 "TABLE", "IMAGE", "MULTI", "ORDERED_KEY_VALUE", "TIMELINE"]
 
 
 class AssemblylineDatastore(object):
@@ -56,6 +64,7 @@ class AssemblylineDatastore(object):
         self.ds.register('heuristic', Heuristic)
         self.ds.register('result', Result)
         self.ds.register('retrohunt', Retrohunt)
+        self.ds.register('retrohunt_hit', RetrohuntHit)
         self.ds.register('safelist', Safelist)
         self.ds.register('service', Service)
         self.ds.register('service_delta', ServiceDelta)
@@ -126,6 +135,10 @@ class AssemblylineDatastore(object):
     @property
     def retrohunt(self) -> ESCollection[Retrohunt]:
         return self.ds.retrohunt
+
+    @property
+    def retrohunt_hit(self) -> ESCollection[RetrohuntHit]:
+        return self.ds.retrohunt_hit
 
     @property
     def safelist(self) -> ESCollection[Safelist]:
@@ -264,16 +277,17 @@ class AssemblylineDatastore(object):
         f_plan = self.file.get_bulk_plan()
 
         # Add delete operation for submission and cache
+        # NOTE: we will use the search operation because there should not be a lot of submission_tree or summary
         s_plan.add_delete_operation(sid)
-        for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id,_index", as_obj=False):
+        for x in self.submission_tree.search(f"id:{sid}*", fl="id,_index", rows=1000, as_obj=False)['items']:
             st_plan.add_delete_operation(x['id'], index=x['_index'])
-        for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id,_index", as_obj=False):
+        for x in self.submission_summary.search(f"id:{sid}*", fl="id,_index", rows=1000, as_obj=False)['items']:
             ss_plan.add_delete_operation(x['id'], index=x['_index'])
 
         # Gather file list
         errors = submission['errors']
         results = submission["results"]
-        files = set()
+        files_to_delete = set()
         fix_classification_files = set()
         supp_map = {}
 
@@ -281,28 +295,27 @@ class AssemblylineDatastore(object):
         temp_files.extend([x[:64] for x in results])
         temp_files = set(temp_files)
 
+        # Gather all supplementary files
+        for result in self.result.search("response.supplementary.sha256:*",
+                                         fl="*", rows=len(results), as_obj=False, key_space=results)['items']:
+            sha256 = result['sha256']
+            supp_map.setdefault(sha256, set())
+            for supp in result['response']['supplementary']:
+                supp_map[sha256].add(supp['sha256'])
+
         # Inspect each files to see if they are reused
         for temp in temp_files:
-            # Hunt for supplementary files
-            supp_list = set()
-            for res in self.result.stream_search(f"id:{temp}* AND response.supplementary.sha256:*",
-                                                 fl="id", as_obj=False):
-                if res['id'] in results:
-                    result = self.result.get(res['id'], as_obj=False)
-                    for supp in result['response']['supplementary']:
-                        supp_list.add(supp['sha256'])
-
-            # Check if we delete or update classification
+            # Check if we delete the file or update the classification
             if self.submission.search(f"errors:{temp}* OR results:{temp}*", rows=0, as_obj=False)["total"] < 2:
-                files.add(temp)
-                files = files.union(supp_list)
+                files_to_delete.add(temp)
+                supp_list = supp_map.pop(temp, set())
+                files_to_delete = files_to_delete.union(supp_list)
             else:
                 fix_classification_files.add(temp)
-                supp_map[temp] = supp_list
 
         # Filter results and errors
-        errors = [x for x in errors if x[:64] in files]
-        results = [x for x in results if x[:64] in files]
+        errors = [x for x in errors if x[:64] in files_to_delete]
+        results = [x for x in results if x[:64] in files_to_delete]
 
         # Delete files, errors, results that were only used once
         for e in errors:
@@ -312,7 +325,7 @@ class AssemblylineDatastore(object):
                 er_plan.add_delete_operation(r)
             else:
                 r_plan.add_delete_operation(r)
-        for f in files:
+        for f in files_to_delete:
             f_plan.add_delete_operation(f)
             if transport:
                 transport.delete(f)
@@ -324,7 +337,7 @@ class AssemblylineDatastore(object):
                 if cur_file:
                     # Find possible classification for the file in the system
                     query = f"NOT id:{sid} AND (files.sha256:{f} OR results:{f}* OR errors:{f}*)"
-                    classifications = list(self.submission.facet('classification', query=query).keys())
+                    classifications = list(self.submission.facet('classification', query=query, size=100).keys())
 
                     if len(classifications) > 0:
                         new_file_class = classifications[0]
@@ -336,8 +349,13 @@ class AssemblylineDatastore(object):
 
                     # Find the results for that classification and alter them if the new classification does not match
                     for item in self.result.stream_search(f"id:{f}*", fl="classification,id,_index", as_obj=False):
-                        new_class = cl_engine.max_classification(
-                            item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        try:
+                            new_class = cl_engine.max_classification(
+                                item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        except InvalidClassification:
+                            # If we can't find common grounds for reclassifying the results... we simply wont.
+                            continue
+
                         if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
                             data = cl_engine.get_access_control_parts(new_class)
                             data['classification'] = new_class
@@ -371,7 +389,7 @@ class AssemblylineDatastore(object):
         # Gather file list
         errors = submission['errors']
         results = submission["results"]
-        files = set()
+        files_to_delete = set()
         fix_classification_files = set()
         supp_map = {}
 
@@ -379,28 +397,27 @@ class AssemblylineDatastore(object):
         temp_files.extend([x[:64] for x in results])
         temp_files = set(temp_files)
 
+        # Gather all supplementary files
+        for result in self.result.search("response.supplementary.sha256:*",
+                                         fl="*", rows=len(results), as_obj=False, key_space=results)['items']:
+            sha256 = result['sha256']
+            supp_map.setdefault(sha256, set())
+            for supp in result['response']['supplementary']:
+                supp_map[sha256].add(supp['sha256'])
+
         # Inspect each files to see if they are reused
         for temp in temp_files:
-            # Hunt for supplementary files
-            supp_list = set()
-            for res in self.result.stream_search(f"id:{temp}* AND response.supplementary.sha256:*",
-                                                 fl="id", as_obj=False):
-                if res['id'] in results:
-                    result = self.result.get(res['id'], as_obj=False)
-                    for supp in result['response']['supplementary']:
-                        supp_list.add(supp['sha256'])
-
-            # Check if we delete or update classification
+            # Check if we delete the file or update the classification
             if self.submission.search(f"errors:{temp}* OR results:{temp}*", rows=0, as_obj=False)["total"] < 2:
-                files.add(temp)
-                files = files.union(supp_list)
+                files_to_delete.add(temp)
+                supp_list = supp_map.pop(temp, set())
+                files_to_delete = files_to_delete.union(supp_list)
             else:
                 fix_classification_files.add(temp)
-                supp_map[temp] = supp_list
 
         # Filter results and errors
-        errors = [x for x in errors if x[:64] in files]
-        results = [x for x in results if x[:64] in files]
+        errors = [x for x in errors if x[:64] in files_to_delete]
+        results = [x for x in results if x[:64] in files_to_delete]
 
         # Delete files, errors, results that were only used once
         for e in errors:
@@ -410,7 +427,7 @@ class AssemblylineDatastore(object):
                 self.emptyresult.delete(r)
             else:
                 self.result.delete(r)
-        for f in files:
+        for f in files_to_delete:
             self.file.delete(f)
             if transport:
                 transport.delete(f)
@@ -422,7 +439,7 @@ class AssemblylineDatastore(object):
                 if cur_file:
                     # Find possible classification for the file in the system
                     query = f"NOT id:{sid} AND (files.sha256:{f} OR results:{f}* OR errors:{f}*)"
-                    classifications = list(self.submission.facet('classification', query=query).keys())
+                    classifications = list(self.submission.facet('classification', query=query, size=100).keys())
 
                     if len(classifications) > 0:
                         new_file_class = classifications[0]
@@ -434,8 +451,13 @@ class AssemblylineDatastore(object):
 
                     # Find the results for that classification and alter them if the new classification does not match
                     for item in self.result.stream_search(f"id:{f}*", fl="classification,id", as_obj=False):
-                        new_class = cl_engine.max_classification(
-                            item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        try:
+                            new_class = cl_engine.max_classification(
+                                item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
+                        except InvalidClassification:
+                            # If we can't find common grounds for reclassifying the results... we simply wont.
+                            continue
+
                         if item.get('classification', cl_engine.UNRESTRICTED) != new_class:
                             parts = cl_engine.get_access_control_parts(new_class)
                             update_params = [(ESCollection.UPDATE_SET, 'classification', new_class)]
@@ -460,11 +482,12 @@ class AssemblylineDatastore(object):
                                 self.file.update(supp, update_params)
 
         # Delete the submission and cached trees and summaries
+        # NOTE: we will use the search operation because there should not be a lot of submission_tree or summary
         self.submission.delete(sid)
-        for t in [x['id'] for x in self.submission_tree.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
-            self.submission_tree.delete(t)
-        for s in [x['id'] for x in self.submission_summary.stream_search(f"id:{sid}*", fl="id", as_obj=False)]:
-            self.submission_summary.delete(s)
+        for t in self.submission_tree.search(f"id:{sid}*", fl="id", rows=1000, as_obj=False)['items']:
+            self.submission_tree.delete(t['id'])
+        for s in self.submission_summary.search(f"id:{sid}*", fl="id", rows=1000, as_obj=False)['items']:
+            self.submission_summary.delete(s['id'])
 
     @elasticapm.capture_span(span_type='datastore')
     def get_all_heuristics(self):
@@ -504,7 +527,7 @@ class AssemblylineDatastore(object):
         return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
     @elasticapm.capture_span(span_type='datastore')
-    def get_file_list_from_keys(self, keys, supplementary=False):
+    def get_file_list_from_keys(self, keys):
         if len(keys) == 0:
             return {}
         keys = [x for x in list(keys) if not x.endswith(".e")]
@@ -512,12 +535,11 @@ class AssemblylineDatastore(object):
 
         out = set()
         for key, item in items.items():
-            out.add(key[:64])
+            out.add((key[:64], False))
             for extracted in item['response']['extracted']:
-                out.add(extracted['sha256'])
-            if supplementary:
+                out.add((extracted['sha256'], False))
                 for supplementary in item['response']['supplementary']:
-                    out.add(supplementary['sha256'])
+                    out.add((supplementary['sha256'], True))
 
         return list(out)
 
@@ -1160,17 +1182,31 @@ class AssemblylineDatastore(object):
         return heuristics
 
     @elasticapm.capture_span(span_type='datastore')
-    def save_or_freshen_file(self, sha256, fileinfo, expiry, classification,
-                             cl_engine=forge.get_classification(), redis=None, is_section_image=False):
+    def save_or_freshen_file(
+            self, sha256, fileinfo, expiry, classification, cl_engine=forge.get_classification(),
+            redis=None, is_section_image=False, is_supplementary=False):
         # Remove control fields from new file info
-        for x in ['classification', 'expiry_ts', 'seen', 'archive_ts']:
-            fileinfo.pop(x, None)
+        fileinfo = {
+            k: v for k, v in fileinfo.items()
+            if k not in
+            ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']}
+
+        # Reset archive_ts field
+        fileinfo['archive_ts'] = None
+
+        # Update section image status
+        fileinfo['is_section_image'] = fileinfo.get('is_section_image', False) or is_section_image
+
+        # Update section image status
+        fileinfo['is_supplementary'] = fileinfo.get('is_supplementary', False) or is_supplementary
+
         # Clean up and prepare timestamps
         if isinstance(expiry, datetime):
             expiry = expiry.strftime(DATEFORMAT)
 
         while True:
-            current_fileinfo, version = self.file.get_if_exists(sha256, as_obj=False, version=True)
+            current_fileinfo, version = self.file.get_if_exists(sha256, as_obj=False, version=True,
+                                                                index_type=Index.HOT)
 
             if current_fileinfo is None:
                 current_fileinfo = {}
@@ -1180,7 +1216,8 @@ class AssemblylineDatastore(object):
                     str(current_fileinfo.get('classification', classification)),
                     str(classification)
                 )
-                if classification == current_fileinfo.get('classification', None):
+                if classification == cl_engine.normalize_classification(
+                        current_fileinfo.get('classification', classification)):
                     operations = [
                         (self.file.UPDATE_SET, key, value)
                         for key, value in fileinfo.items()
@@ -1191,12 +1228,11 @@ class AssemblylineDatastore(object):
                     ])
                     if expiry:
                         operations.append((self.file.UPDATE_MAX, 'expiry_ts', expiry))
-                    if self.file.update(sha256, operations):
+                    if self.file.update(sha256, operations, retry_on_conflict=8):
                         return
 
             # Add new fileinfo to current from database
             current_fileinfo.update(fileinfo)
-            current_fileinfo['archive_ts'] = None
 
             # Update expiry time
             current_expiry = current_fileinfo.get('expiry_ts', expiry)
@@ -1215,11 +1251,326 @@ class AssemblylineDatastore(object):
             # Update Classification
             current_fileinfo['classification'] = classification
 
-            # Update section image status
-            current_fileinfo['is_section_image'] = current_fileinfo.get('is_section_image', False) or is_section_image
-
             try:
                 self.file.save(sha256, current_fileinfo, version=version)
                 return
             except VersionConflictException as vce:
                 log.info(f"Retrying save or freshen due to version conflict: {str(vce)}")
+
+    def _get_verdict_from_score(self, score):
+        if score >= config.submission.verdicts.malicious:
+            return "malicious"
+        elif score >= config.submission.verdicts.highly_suspicious:
+            return "highly suspicious"
+        elif score >= config.submission.verdicts.suspicious:
+            return "suspicious"
+        elif score >= config.submission.verdicts.info:
+            return "informative"
+        else:
+            return "safe"
+
+    @elasticapm.capture_span(span_type='datastore')
+    def _fix_section_data(self, result, min_score):
+        new_sections = []
+        for section in result['result'].get('sections', []):
+            # Skip section with a small score
+            if section.get('heuristic', {}).get('score', -1) < min_score:
+                continue
+
+            # Rewrite heuristic score as a verdict
+            if 'heuristic' in section:
+                heur_score = section['heuristic'].pop('score', 0)
+                section['heuristic']['verdict'] = self._get_verdict_from_score(heur_score)
+
+            # Loading JSON formatted sections
+            body_format = section['body_format']
+            if body_format in JSON_SECTIONS and isinstance(section['body'], str):
+                try:
+                    section['body'] = json.loads(section['body'])
+                except ValueError:
+                    pass
+
+            # Changing tags to a list
+            section['tags'] = tag_dict_to_ai_list(flatten(section.get('tags', {})))
+            if not section['tags']:
+                section.pop('tags')
+
+            # Add the section to the new section array
+            new_sections.append(section)
+
+        # Update result sections
+        result['result']['sections'] = new_sections
+
+        # Rewrite score as verdict
+        result_score = result['result'].pop('score', 0)
+        result['result']['verdict'] = self._get_verdict_from_score(result_score)
+
+        return result
+
+    @elasticapm.capture_span(span_type='datastore')
+    def get_ai_formatted_submission_data(self, sid, user_classification=None,
+                                         cl_engine=forge.get_classification(),
+                                         index_type=None):
+        # Get the submission data
+        submission = self.submission.get(sid, index_type=index_type)
+        if not submission or (user_classification and not cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=submission.classification.value)):
+            return None
+
+        # Auto adjust min_score
+        if submission.max_score < 0:
+            min_score = -1000000
+        else:
+            min_score = 300
+
+        # Parse results
+        results = [
+            self._fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True), min_score)
+            for r in self.result.multiget(
+                submission.results, as_dictionary=False, error_on_missing=False, index_type=index_type)
+            if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=r.classification.value))]
+
+        # Create output
+        output = submission.as_primitives(strip_non_ai_fields=True, strip_null=True)
+        output['verdict'] = self._get_verdict_from_score(output.pop('max_score', 0))
+        output['results'] = results
+        return output
+
+    @elasticapm.capture_span(span_type='datastore')
+    def get_ai_formatted_file_results_data(self, sha256, user_classification=None, user_access_control=None,
+                                           cl_engine=forge.get_classification(),
+                                           index_type=None):
+        # Get the submission data
+        file_obj = self.file.get(sha256, index_type=index_type)
+        if not file_obj or (user_classification and not cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=file_obj.classification.value)):
+            return None
+
+        # Check for the max service score
+        items = self.result.search(f"id:{sha256}*", fl="result.score", access_control=user_access_control,
+                                   as_obj=False, rows=1, sort="result.score desc", index_type=index_type)['items']
+        if items:
+            max_score = items[0]['result']['score']
+        else:
+            max_score = 0
+
+        # Auto adjust min_score
+        if max_score < 0:
+            min_score = -1000000
+        else:
+            min_score = 300
+
+        # Get the list of active result keys
+        active_keys, _ = self.list_file_active_keys(
+            sha256, user_access_control, min_score=min_score, index_type=index_type)
+
+        # Parse results
+        results = [
+            self._fix_section_data(r.as_primitives(strip_non_ai_fields=True, strip_null=True), min_score)
+            for r in self.result.multiget(active_keys, as_dictionary=False,
+                                          error_on_missing=False, index_type=index_type)
+            if min_score <= r.result.score and (not user_classification or cl_engine.is_accessible(
+                user_c12n=user_classification, c12n=r.classification.value))]
+
+        # Create output
+        output = file_obj.as_primitives(strip_non_ai_fields=True, strip_null=True)
+        output['verdict'] = self._get_verdict_from_score(max_score)
+        output['results'] = results
+        return output
+
+    @elasticapm.capture_span(span_type='datastore')
+    def list_file_active_keys(self, sha256, access_control=None, min_score=None, index_type=None):
+        query = f"id:{sha256}*"
+        if min_score:
+            query += f" AND result.score:>={min_score}"
+
+        item_list = [x for x in self.result.stream_search(query, fl="id,created,response.service_name,result.score",
+                                                          access_control=access_control, as_obj=False,
+                                                          index_type=index_type)]
+
+        item_list.sort(key=lambda k: k["created"], reverse=True)
+
+        active_found = set()
+        active_keys = []
+        alternates = []
+        for item in item_list:
+            if item['response']['service_name'] not in active_found:
+                active_keys.append(item['id'])
+                active_found.add(item['response']['service_name'])
+            else:
+                alternates.append(item)
+
+        return active_keys, alternates
+
+    @elasticapm.capture_span(span_type='datastore')
+    def list_file_childrens(self, sha256, access_control=None):
+        query = f'id:{sha256}* AND response.extracted.sha256:*'
+        service_resp = self.result.grouped_search("response.service_name", query=query, fl='*',
+                                                  sort="created desc", access_control=access_control,
+                                                  as_obj=False)
+
+        output = []
+        processed_sha256 = []
+        for r in service_resp['items']:
+            for extracted in r['items'][0]['response']['extracted']:
+                if extracted['sha256'] not in processed_sha256:
+                    processed_sha256.append(extracted['sha256'])
+                    output.append({
+                        'name': extracted['name'],
+                        'sha256': extracted['sha256']
+                    })
+        return output
+
+    @elasticapm.capture_span(span_type='datastore')
+    def list_file_parents(self, sha256, access_control=None):
+        query = f"response.extracted.sha256:{sha256}"
+        processed_sha256 = []
+        output = []
+
+        response = self.result.search(query, fl='id', sort="created desc",
+                                      access_control=access_control, as_obj=False)
+        for p in response['items']:
+            key = p['id']
+            sha256 = key[:64]
+            if sha256 not in processed_sha256:
+                output.append(key)
+                processed_sha256.append(sha256)
+
+            if len(processed_sha256) >= 10:
+                break
+
+        return output
+
+
+class MetadataValidator:
+    """
+    Type mismatched metadata recived by ingestion can cause us to suffer
+    errors in ingester when it goes to save the submission.
+
+    This class aims to limit those errors by offering limited validation
+    at the time of the API call, letting the user get a reasonable error instead.
+    """
+
+    def __init__(self, datastore: AssemblylineDatastore) -> None:
+        self.datastore = datastore
+        self.metadata = forge.CachedObject(self.get_metadata, refresh=60 * 20)
+
+    def get_metadata(self) -> dict[str, dict[str, Any]]:
+        """Fetch the type mapping for submission metadata."""
+        fields = self.datastore.submission.fields()
+        selected = {}
+        for key, value in fields.items():
+            prefix, _, key = key.partition('.')
+            if prefix == 'metadata':
+                selected[key] = value
+        return selected
+
+    def check_metadata(self, metadata: dict[str, Any],
+                       validation_scheme: dict[str, Metadata] = None,
+                       strict: bool = False,
+                       skip_elastic_fields: bool = False) -> Optional[Tuple[str, str]]:
+        """
+        Check if the type of every metedata field for obvious errors.
+
+        This isn't meant to be comprehensive, just to cover the types that most frequently
+        cause issues for us.
+
+        Return a tuple of (key name, error message) if any problems are detected.
+        """
+
+        if validation_scheme:
+            # Check to see if there's any required metadata that's missing
+            missing_metadata = []
+
+            # Check to see if metadata provided contains any alias field names
+            for field_name, field_config in validation_scheme.items():
+                if field_name in metadata:
+                    # Field already exists in metadata
+                    continue
+
+                aliased_value = None
+                for alias in field_config.aliases:
+                    # Map value of aliased field to the actual field that are part of the scheme
+                    if not aliased_value:
+                        aliased_value = metadata.pop(alias, None)
+                    else:
+                        metadata.pop(alias, None)
+
+                if aliased_value:
+                    # Field value retrieved from aliases
+                    metadata[field_name] = aliased_value
+
+
+            for field_name, field_config in validation_scheme.items():
+                if field_name not in metadata and field_config.required:
+                    if field_config.default:
+                        metadata[field_name] = field_config.default
+                    else:
+                        missing_metadata.append(field_name)
+
+            # Determine if there's extra metadata being set that isn't validated/known to the system
+            # Ignore metadata fields that have been set by the system
+            system_configured_metadata = set(['ingest_id', 'ts', 'type'])
+            extra_metadata = list(set(metadata.keys()) - set(validation_scheme.keys()) - system_configured_metadata)
+            if missing_metadata:
+                return (None, f"Required metadata is missing from submission: {missing_metadata}")
+            elif strict and extra_metadata:
+                return (None, f"Extra metadata found from submission: {extra_metadata}")
+
+            for field_name, field_config in validation_scheme.items():
+                # Validate the format of the data given based on the configuration
+                validator_params = field_config.validator_params
+                if field_config.validator_type == 'list':
+                    # We'll need to make a copy of validation parameters and manipulate them as necessary for validation of typed lists
+                    validator_params = deepcopy(validator_params)
+                    child_type = validator_params.pop('child_type', 'text')
+                    auto = validator_params.pop('auto', True)
+                    validator_params = {'child_type': METADATA_FIELDTYPE_MAP[child_type](**validator_params),
+                                        'auto': auto}
+
+                validator = METADATA_FIELDTYPE_MAP[field_config.validator_type](**validator_params)
+                meta_value = metadata.get(field_name)
+
+                # Skip over validation of metadata that's missing and not required
+                if meta_value is None and not field_config.required:
+                    continue
+
+                try:
+                    validator.check(meta_value)
+                except ValueError as e:
+                    return (field_name, f"Validation of '{field_name}' of type {validator} failed: {e}")
+
+        if not skip_elastic_fields:
+            # Check to see if any other metadata causes a conflict with Elasticsearch
+            for key, value in metadata.items():
+                try:
+                    type_name = self.metadata[key]["type"]
+                    if type_name == 'integer':
+                        try:
+                            number = int(value)
+                            if number < -(2 ** 31) or number > (2 ** 31 - 1):
+                                return (key, f'Metadata field {key} only supports signed 32 bit values')
+                        except ValueError:
+                            return (key, f'Metadata field {key} expected a number, received "{value}" instead')
+                    elif type_name == 'date':
+                        try:
+                            int(value)
+                            return (key, f'Metadata field {key} expected a date, refusing to coerce a number')
+                        except Exception:
+                            pass
+                        try:
+                            value = Date().check(value)
+                            if value is None:
+                                raise ValueError()
+                            metadata[key] = value.strftime(DATEFORMAT)
+                        except Exception:
+                            return (key, f'Metadata field {key} expected a date, received "{value}" instead')
+                    else:
+                        # Everything else seems fine so far
+                        pass
+                except KeyError:
+                    pass
+
+        # No problems encountered
+        return None

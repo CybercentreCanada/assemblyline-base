@@ -1,4 +1,7 @@
+import csv
+import json
 import logging
+import os
 import re
 import struct
 import subprocess
@@ -7,14 +10,17 @@ import threading
 import uuid
 import zipfile
 from binascii import hexlify
+from itertools import islice
+from tempfile import NamedTemporaryFile
 from typing import Dict, Optional, Tuple, Union
+from urllib.parse import unquote, urlparse
 
-import os
 import magic
 import msoffcrypto
 import yaml
 import yara
-from assemblyline.common.digests import get_digests_for_file, DEFAULT_BLOCKSIZE
+
+from assemblyline.common.digests import DEFAULT_BLOCKSIZE, get_digests_for_file
 from assemblyline.common.forge import get_cachestore, get_config, get_constants, get_datastore
 from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs
 from assemblyline.common.identify_defaults import magic_patterns as default_magic_patterns
@@ -22,8 +28,7 @@ from assemblyline.common.identify_defaults import trusted_mimes as default_trust
 from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
 from assemblyline.remote.datatypes.events import EventWatcher
-from cart import get_metadata_only
-from urllib.parse import unquote, urlparse
+from cart import get_metadata_only, unpack_file
 
 constants = get_constants()
 
@@ -35,15 +40,15 @@ CUSTOM_BATCH_ID = b"REM Batch extracted by Assemblyline\n"
 CUSTOM_URI_ID = "# Assemblyline URI file\n"
 
 
-class Identify():
+class Identify:
     def __init__(self, use_cache: bool = True, config=None, datastore=None, log=None) -> None:
-        self.log = log or logging.getLogger('assemblyline.identify')
+        self.log = log or logging.getLogger("assemblyline.identify")
         self.config = None
         self.datastore = None
         self.use_cache = use_cache
         self.custom = re.compile(r"^custom: ", re.IGNORECASE)
         self.lock = threading.Lock()
-        self.yara_default_externals = {'mime': '', 'magic': '', 'type': ''}
+        self.yara_default_externals = {"mime": "", "magic": "", "type": ""}
 
         # If cache is use, load the config and datastore objects to load potential items from cache
         if self.use_cache:
@@ -60,13 +65,13 @@ class Identify():
         # Register hot reloader
         if self.use_cache:
             self.reload_map = {
-                'magic': self._load_magic_file,
-                'mimes': self._load_trusted_mimes,
-                'patterns': self._load_magic_patterns,
-                'yara': self._load_yara_file
+                "magic": self._load_magic_file,
+                "mimes": self._load_trusted_mimes,
+                "patterns": self._load_magic_patterns,
+                "yara": self._load_yara_file,
             }
             self.reload_watcher: Optional[EventWatcher[str]] = EventWatcher()
-            self.reload_watcher.register('system.identify', self._handle_reload_event)
+            self.reload_watcher.register("system.identify", self._handle_reload_event)
             self.reload_watcher.start()
         else:
             self.reload_watcher = None
@@ -90,9 +95,9 @@ class Identify():
 
         if self.use_cache:
             self.log.info("Checking for custom magic patterns...")
-            with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
+            with get_cachestore("system", config=self.config, datastore=self.datastore) as cache:
                 try:
-                    patterns = cache.get('custom_patterns')
+                    patterns = cache.get("custom_patterns")
                     if patterns:
                         self.magic_patterns = yaml.safe_load(patterns)
                         self.log.info("Custom magic patterns loaded!")
@@ -101,7 +106,7 @@ class Identify():
                 except FileStoreException:
                     self.log.info("No custom magic patterns found.")
 
-        compiled_patterns = [[x['al_type'], re.compile(x['regex'], re.IGNORECASE)] for x in self.magic_patterns]
+        compiled_patterns = [[x["al_type"], re.compile(x["regex"], re.IGNORECASE)] for x in self.magic_patterns]
         with self.lock:
             self.compiled_magic_patterns = compiled_patterns
 
@@ -110,9 +115,9 @@ class Identify():
 
         if self.use_cache:
             self.log.info("Checking for custom trusted mimes...")
-            with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
+            with get_cachestore("system", config=self.config, datastore=self.datastore) as cache:
                 try:
-                    mimes = cache.get('custom_mimes')
+                    mimes = cache.get("custom_mimes")
                     if mimes:
                         trusted_mimes = yaml.safe_load(mimes)
                         self.log.info("Custom trusted mimes loaded!")
@@ -125,15 +130,15 @@ class Identify():
             self.trusted_mimes = trusted_mimes
 
     def _load_magic_file(self):
-        self.magic_file = ':'.join((constants.MAGIC_RULE_PATH, '/usr/share/file/magic.mgc'))
+        self.magic_file = ":".join((constants.MAGIC_RULE_PATH, "/usr/share/file/magic.mgc"))
 
         if self.use_cache:
             self.log.info("Checking for custom magic file...")
-            with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
+            with get_cachestore("system", config=self.config, datastore=self.datastore) as cache:
                 try:
                     custom_magic = "/tmp/custom.magic"
-                    cache.download('custom_magic', custom_magic)
-                    self.magic_file = ':'.join((custom_magic, '/usr/share/file/magic.mgc'))
+                    cache.download("custom_magic", custom_magic)
+                    self.magic_file = ":".join((custom_magic, "/usr/share/file/magic.mgc"))
                     self.log.info("Custom magic file loaded!")
                 except FileStoreException:
                     self.log.info("No custom magic file found.")
@@ -150,10 +155,10 @@ class Identify():
 
         if self.use_cache:
             self.log.info("Checking for custom yara file...")
-            with get_cachestore('system', config=self.config, datastore=self.datastore) as cache:
+            with get_cachestore("system", config=self.config, datastore=self.datastore) as cache:
                 try:
                     custom_yara = "/tmp/custom.yara"
-                    cache.download('custom_yara', custom_yara)
+                    cache.download("custom_yara", custom_yara)
                     self.yara_file = custom_yara
                     self.log.info("Custom yara file loaded!")
                 except FileStoreException:
@@ -263,7 +268,7 @@ class Identify():
                 for label in labels:
                     for entry in compiled_magic_patterns:
                         if entry[1].search(dotdump(label)):  # pylint: disable=E1101
-                            data['type'] = entry[0]
+                            data["type"] = entry[0]
                             found = True
                             break
                     if found:
@@ -275,14 +280,14 @@ class Identify():
 
         # If mime is text/* and type is unknown, set text/plain to trigger
         # language detection later.
-        if data["type"] == "unknown" and data['mime'] is not None and data['mime'].startswith("text/"):
+        if data["type"] == "unknown" and data["mime"] is not None and data["mime"].startswith("text/"):
             data["type"] = "text/plain"
 
         # Lookup office documents by GUID if we're still not sure what they are
         if data["type"] == "document/office/unknown":
             # noinspection PyBroadException
             try:
-                root_entry_property_offset = buf.find(u"Root Entry".encode("utf-16-le"))
+                root_entry_property_offset = buf.find("Root Entry".encode("utf-16-le"))
                 if -1 != root_entry_property_offset:
                     # Get root entry's GUID and try to guess document type
                     clsid_offset = root_entry_property_offset + 0x50
@@ -294,9 +299,9 @@ class Identify():
                             if clsid_str in OLE_CLSID_GUIDs:
                                 data["type"] = OLE_CLSID_GUIDs[clsid_str]
                         else:
-                            bup_details_offset = buf[
-                                : root_entry_property_offset + 0x100
-                            ].find(u"Details".encode("utf-16-le"))
+                            bup_details_offset = buf[: root_entry_property_offset + 0x100].find(
+                                "Details".encode("utf-16-le")
+                            )
                             if -1 != bup_details_offset:
                                 data["type"] = "quarantine/mcafee"
             except Exception:
@@ -310,7 +315,7 @@ class Identify():
             with self.lock:
                 yara_rules = self.yara_rules
             matches = yara_rules.match(path, externals=externals, fast=True)
-            matches.sort(key=lambda x: x.meta.get('score', 0), reverse=True)
+            matches.sort(key=lambda x: x.meta.get("score", 0), reverse=True)
             for match in matches:
                 ftype = match.meta.get("type", None)
                 if ftype:
@@ -321,12 +326,19 @@ class Identify():
 
         return fallback
 
-    def fileinfo(self, path: str, generate_hashes: bool = True, skip_fuzzy_hashes: bool = False) -> Dict:
+    def fileinfo(
+        self, path: str, generate_hashes: bool = True, skip_fuzzy_hashes: bool = False, calculate_entropy: bool = True
+    ) -> Dict:
         path = safe_str(path)
         if generate_hashes:
-            data = get_digests_for_file(path, on_first_block=self.ident, skip_fuzzy_hashes=skip_fuzzy_hashes)
+            data = get_digests_for_file(
+                path,
+                on_first_block=self.ident,
+                skip_fuzzy_hashes=skip_fuzzy_hashes,
+                calculate_entropy=calculate_entropy,
+            )
         else:
-            with open(path, 'rb') as f:
+            with open(path, "rb") as f:
                 first_block = f.read(DEFAULT_BLOCKSIZE)
             data = self.ident(first_block, len(first_block), path)
             data["size"] = os.path.getsize(path)
@@ -353,6 +365,31 @@ class Identify():
 
         # If we're so far failed to identified the file, lets run the yara rules
         elif "unknown" in data["type"] or data["type"] == "text/plain":
+            # We do not trust magic/mimetype's CSV identification, so we test it first
+            if data["magic"] == "CSV text" or data["mime"] == "text/csv":
+                try:
+                    with open(path, newline='') as csvfile:
+                        dialect = csv.Sniffer().sniff(csvfile.read(1024))
+                        csvfile.seek(0)
+                        complete_data = [x for x in islice(csv.reader(csvfile, dialect), 100)]
+                        if len(complete_data) > 2 and len(set([len(x) for x in complete_data])) == 1:
+                            data["type"] = "text/csv"
+                            # Final type identified, shortcut further processing
+                            return data
+                except Exception:
+                    pass
+
+            if data["type"] == "text/plain":
+                # Check if the file is a misidentified json first before running the yara rules
+                try:
+                    json.load(open(path))
+                    data["type"] = "text/json"
+                    # Final type identified, shortcut further processing
+                    return data
+                except Exception:
+                    pass
+
+            # Only if the file was not identified as a csv or a json
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
         # Extra checks for office documents
@@ -419,8 +456,11 @@ def zip_ident(path: str, fallback: str) -> str:
     doc_types = False
     android_manifest = False
     android_dex = False
+    nuspec = False
+    psmdcp = False
 
     for file_name in file_list:
+        # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_jar.yara#L11
         if file_name.startswith("META-INF/"):
             is_jar = True
         elif file_name == "AndroidManifest.xml":
@@ -429,6 +469,10 @@ def zip_ident(path: str, fallback: str) -> str:
             android_dex = True
         elif file_name.startswith("Payload/") and file_name.endswith(".app/Info.plist"):
             is_ipa = True
+        elif file_name.endswith(".nuspec"):
+            nuspec = True
+        elif file_name.startswith("package/services/metadata/core-properties/") and file_name.endswith(".psmdcp"):
+            psmdcp = True
         elif file_name.endswith(".class"):
             tot_class += 1
         elif file_name.endswith(".jar"):
@@ -443,6 +487,7 @@ def zip_ident(path: str, fallback: str) -> str:
             doc_props = True
         elif file_name.startswith("_rels/"):
             doc_rels = True
+        # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_office_open_xml.yara
         elif file_name == "[Content_Types].xml":
             doc_types = True
 
@@ -464,6 +509,9 @@ def zip_ident(path: str, fallback: str) -> str:
             return "document/office/excel"
         elif is_ppt:
             return "document/office/powerpoint"
+        elif nuspec and psmdcp:
+            # It is a nupkg file. Identify as archive/zip for now.
+            return "archive/zip"
         else:
             return "document/office/unknown"
     else:
@@ -513,7 +561,7 @@ def dos_ident(path: str) -> str:
 
 def uri_ident(path: str, info: Dict) -> str:
     try:
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             data = yaml.safe_load(f)
     except Exception:
         return "text/plain"
@@ -557,15 +605,26 @@ if __name__ == "__main__":
     from pprint import pprint
 
     use_cache = True
+    uncart = False
     args = sys.argv[1:]
     if "--no-cache" in args:
         args.remove("--no-cache")
         use_cache = False
+    if "--uncart" in args:
+        args.remove("--uncart")
+        uncart = True
 
     identify = Identify(use_cache=use_cache)
 
     if len(args) > 0:
-        pprint(identify.fileinfo(args[0]))
+        fileinfo_data = identify.fileinfo(args[0])
+
+        if fileinfo_data["type"] == "archive/cart" and uncart:
+            with NamedTemporaryFile("w") as f:
+                unpack_file(args[0], f.name)
+                fileinfo_data = identify.fileinfo(f.name)
+
+        pprint(fileinfo_data)
     else:
         name = sys.stdin.readline().strip()
         while name:

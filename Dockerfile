@@ -1,13 +1,10 @@
-FROM python:3.9-slim-buster AS base
+FROM python:3.11-slim-bookworm AS base
 
 # Upgrade packages
 RUN apt-get update && apt-get -yy upgrade && rm -rf /var/lib/apt/lists/*
 
-# Patch Python 3.9 for FIPS - https://github.com/python/cpython/issues/95231 (Not necessary for Python 3.10+)
-RUN sed -i -e 's/if e.errno == errno.EINVAL:/if e.errno in {errno.EINVAL, errno.EPERM, errno.ENOSYS}:/g' /usr/local/lib/python3.9/crypt.py
-
 # Get required apt packages
-RUN apt-get update && apt-get install -yy libffi6 libfuzzy2 libmagic1 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -yy libffi8 libfuzzy2 libmagic1 && rm -rf /var/lib/apt/lists/*
 
 # Make sure root account is locked so 'su' commands fail all the time
 RUN passwd -l root
@@ -25,7 +22,7 @@ RUN apt-get update \
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
 COPY setup.py dist* dist/
 RUN pip install --no-cache-dir --no-warn-script-location -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
-RUN chmod 750 /root/.local/lib/python3.9/site-packages
+RUN chmod 750 /root/.local/lib/python3.11/site-packages
 
 FROM base
 
@@ -55,7 +52,7 @@ RUN chown assemblyline:assemblyline /var/log/assemblyline
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
-ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.9/site-packages
+ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.11/site-packages
 ENV ASSEMBLYLINE_VERSION=${version}
 ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
 

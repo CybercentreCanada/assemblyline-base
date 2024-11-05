@@ -43,7 +43,7 @@ def test_alert_bundle(datastore_connection, filestore, config):
 
     # Remove alert and submission from DB
     datastore_connection.alert.delete(alert.alert_id)
-    datastore_connection.delete_submission_tree(sid, transport=filestore)
+    datastore_connection.delete_submission_tree_bulk(sid, transport=filestore)
     assert datastore_connection.alert.get_if_exists(alert.alert_id) is None
     assert datastore_connection.submission.get_if_exists(sid) is None
 
@@ -63,7 +63,7 @@ def test_alert_bundle(datastore_connection, filestore, config):
     # Cleanup
     assert not os.path.exists(path)
     datastore_connection.alert.delete(alert.alert_id)
-    datastore_connection.delete_submission_tree(sid, transport=filestore)
+    datastore_connection.delete_submission_tree_bulk(sid, transport=filestore)
     assert datastore_connection.alert.get_if_exists(alert.alert_id) is None
     assert datastore_connection.submission.get_if_exists(sid) is None
 
@@ -129,7 +129,7 @@ def test_submission_bundle(datastore_connection, filestore, config):
         assert is_cart(fh.read(256))
 
     # Remove submission from DB
-    datastore_connection.delete_submission_tree(sid, transport=filestore)
+    datastore_connection.delete_submission_tree_bulk(sid, transport=filestore)
     assert datastore_connection.submission.get_if_exists(sid) is None
 
     # Restore bundle
@@ -152,5 +152,5 @@ def test_submission_bundle(datastore_connection, filestore, config):
 
     # Cleanup
     assert not os.path.exists(path)
-    datastore_connection.delete_submission_tree(sid, transport=filestore)
+    datastore_connection.delete_submission_tree_bulk(sid, transport=filestore)
     assert datastore_connection.submission.get_if_exists(sid) is None

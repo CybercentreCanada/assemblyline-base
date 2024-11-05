@@ -21,8 +21,8 @@ SIGNATURE_DELIMITERS = {
 
 @odm.model(index=False, store=False, description="Environment Variable Model")
 class EnvironmentVariable(odm.Model):
-    name: str = odm.Keyword(description="Name of Environment Variable")
-    value: str = odm.Keyword(description="Value of Environment Variable")
+    name: str = odm.keyword(description="Name of Environment Variable")
+    value: str = odm.keyword(description="Value of Environment Variable")
 
 
 @odm.model(index=False, store=False, description="Docker Container Configuration")
@@ -44,6 +44,7 @@ class DockerConfig(odm.Model):
     ram_mb: int = odm.Integer(default=512, description="Container RAM limit")
     ram_mb_min: int = odm.Integer(default=256, description="Container RAM request")
     service_account = odm.optional(odm.keyword(description="Service account to use for pods in kubernetes"))
+    labels = odm.sequence(odm.compound(EnvironmentVariable), default=[], description="Additional container labels.")
 
 
 @ odm.model(index=False, store=False, description="Container's Persistent Volume Configuration")
@@ -168,3 +169,5 @@ class Service(odm.Model):
     update_config: UpdateConfig = odm.Optional(
         odm.Compound(UpdateConfig),
         description="Update configuration for fetching external resources")
+
+    recursion_prevention: list[str] = odm.sequence(odm.Keyword(), default=[], description="List of service names/categories where recursion is prevented.")

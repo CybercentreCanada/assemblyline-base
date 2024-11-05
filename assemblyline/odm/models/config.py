@@ -1,12 +1,19 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from assemblyline import odm
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
-
-AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group']
+AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
+                      'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
+                      'submission_async_quota', 'submission_daily_quota']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
+
+DEFAULT_DAILY_API_QUOTA = 0
+DEFAULT_API_QUOTA = 10
+DEFAULT_DAILY_SUBMISSION_QUOTA = 0
+DEFAULT_SUBMISSION_QUOTA = 5
+DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -108,6 +115,7 @@ class LDAP(odm.Model):
     classification_mappings: Dict[str, str] = odm.Any(description="Classification mapping")
     email_field: str = odm.Keyword(description="Name of the field containing the email address")
     group_lookup_query: str = odm.Keyword(description="How the group lookup is queried")
+    group_lookup_with_uid: bool = odm.Boolean(description="Use username/uid instead of dn for group lookup")
     image_field: str = odm.Keyword(description="Name of the field containing the user's avatar")
     image_format: str = odm.Keyword(description="Type of image used to store the avatar")
     name_field: str = odm.Keyword(description="Name of the field containing the user's name")
@@ -131,6 +139,7 @@ DEFAULT_LDAP = {
     "base": "ou=people,dc=assemblyline,dc=local",
     "email_field": "mail",
     "group_lookup_query": "(&(objectClass=Group)(member=%s))",
+    "group_lookup_with_uid": False,
     "image_field": "jpegPhoto",
     "image_format": "jpeg",
     "name_field": "cn",
@@ -198,16 +207,19 @@ class OAuthProvider(odm.Model):
                                   description="ID of your application to authenticate to the OAuth provider")
     client_secret: str = odm.Optional(odm.Keyword(),
                                       description="Password to your application to authenticate to the OAuth provider")
+    redirect_uri: str = odm.Optional(odm.Keyword(),
+                                     description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
-    request_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to request token")
+    request_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
-    access_token_params: str = odm.Optional(odm.Keyword(), description="Parameters to get access token")
+    access_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), description="Parameters to get access token")
     authorize_url: str = odm.Optional(odm.Keyword(), description="URL used to authorize access to a resource")
-    authorize_params: str = odm.Optional(odm.Keyword(), description="Parameters used to authorize access to a resource")
+    authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters used to authorize access to a resource")
     api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
     jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
+    jwt_token_alg: str = odm.Keyword(default="RS256", description="Algorythm use the validate JWT OBO tokens")
     uid_field: str = odm.Optional(odm.Keyword(), description="Name of the field that will contain the user ID")
     user_get: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the user info")
     user_groups: str = odm.Optional(odm.Keyword(), description="Path from the base_url to fetch the group info")
@@ -225,6 +237,8 @@ class OAuthProvider(odm.Model):
     email_fields: List[str] = odm.List(odm.Keyword(), default=DEFAULT_EMAIL_FIELDS,
                                        description="List of fields in the claim to get the email from")
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
+    validate_token_with_secret: bool = odm.Boolean(
+        default=False, description="Should we send the client secret while validating the access token?")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -271,7 +285,8 @@ DEFAULT_OAUTH_PROVIDERS = {
 class OAuth(odm.Model):
     enabled: bool = odm.Boolean(description="Enable use of OAuth?")
     gravatar_enabled: bool = odm.Boolean(description="Enable gravatar?")
-    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider), default=DEFAULT_OAUTH_PROVIDERS,
+    providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider),
+                                                      default=DEFAULT_OAUTH_PROVIDERS,
                                                       description="OAuth provider configuration")
 
 
@@ -279,6 +294,181 @@ DEFAULT_OAUTH = {
     "enabled": False,
     "gravatar_enabled": True,
     "providers": DEFAULT_OAUTH_PROVIDERS
+}
+
+
+DEFAULT_SAML_SETTINGS = {
+    "strict": False,
+    "debug": False,
+    "sp": {
+        "entity_id": "https://assemblyline/sp",
+        "assertion_consumer_service": {
+            "url": "https://localhost/api/v4/auth/saml/acs/",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+        },
+        "name_id_format": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+    },
+    "idp": {
+        "entity_id": "https://mocksaml.com/api/saml/metadata",
+        "single_sign_on_service": {
+            "url": "https://mocksaml.com/api/saml/sso",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+        },
+    },
+}
+
+DEFAULT_SAML_ATTRIBUTES = {
+    "email_attribute": "email",
+    "fullname_attribute": "name",
+    "groups_attribute": "groups",
+    "roles_attribute": "roles",
+    "group_type_mapping": {},
+}
+
+
+@odm.model(index=False, store=False, description="SAML Assertion Consumer Service")
+class SAMLAssertionConsumerService(odm.Model):
+    url: str = odm.Keyword(description="URL")
+    binding: str = odm.Keyword(description="Binding", default="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST")
+
+
+@odm.model(index=False, store=False, description="SAML Single Sign On Service")
+class SAMLSingleSignOnService(odm.Model):
+    url: str = odm.Keyword(description="URL")
+    binding: str = odm.Keyword(description="Binding", default="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect")
+
+
+@odm.model(index=False, store=False, description="SAML Attribute")
+class SAMLRequestedAttribute(odm.Model):
+    name: str = odm.Keyword(description="Name")
+    is_required: bool = odm.Boolean(description="Is required?", default=False)
+    name_format: str = odm.Keyword(description="Name Format",
+                                   default="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified")
+    friendly_name: str = odm.Keyword(description="Friendly Name", default="")
+    attribute_value: List[str] = odm.List(odm.Keyword(), description="Attribute Value", default=[])
+
+
+@odm.model(index=False, store=False, description="SAML Attribute Consuming Service")
+class SAMLAttributeConsumingService(odm.Model):
+    service_name: str = odm.Keyword(description="Service Name")
+    service_description: str = odm.Keyword(description="Service Description")
+    requested_attributes: List[SAMLRequestedAttribute] = odm.List(
+        odm.Compound(SAMLRequestedAttribute),
+        description="Requested Attributes", default=[])
+
+
+@odm.model(index=False, store=False, description="SAML Service Provider")
+class SAMLServiceProvider(odm.Model):
+    entity_id: str = odm.Keyword(description="Entity ID")
+    assertion_consumer_service: SAMLAssertionConsumerService = odm.Compound(
+        SAMLAssertionConsumerService, description="Assertion Consumer Service")
+    attribute_consuming_service: SAMLAttributeConsumingService = odm.Optional(
+        odm.Compound(SAMLAttributeConsumingService), description="Attribute Consuming Service")
+    name_id_format: str = odm.Keyword(description="Name ID Format",
+                                      default="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")
+    x509cert: str = odm.Optional(odm.Keyword(), description="X509 Certificate")
+    private_key: str = odm.Optional(odm.Keyword(), description="Private Key")
+
+
+@odm.model(index=False, store=False, description="SAML Identity Provider")
+class SAMLIdentityProvider(odm.Model):
+    entity_id: str = odm.Keyword(description="Entity ID")
+    single_sign_on_service: SAMLSingleSignOnService = odm.Compound(
+        SAMLSingleSignOnService, description="Single Sign On Service")
+    x509cert: str = odm.Optional(odm.Keyword(), description="X509 Certificate")
+
+
+@odm.model(index=False, store=False, description="SAML Contact Entry")
+class SAMLContactPerson(odm.Model):
+    given_name: str = odm.Keyword(description="Given Name")
+    email_address: str = odm.Keyword(description="Email Address")
+
+
+@odm.model(index=False, store=False, description="SAML Contacts")
+class SAMLContacts(odm.Model):
+    technical: SAMLContactPerson = odm.Compound(SAMLContactPerson, description="Technical Contact")
+    support: SAMLContactPerson = odm.Compound(SAMLContactPerson, description="Support Contact")
+
+
+@odm.model(index=False, store=False, description="SAML Organization")
+class SAMLOrganization(odm.Model):
+    name: str = odm.Keyword(description="Name")
+    display_name: str = odm.Keyword(description="Display Name")
+    url: str = odm.Keyword(description="URL")
+
+
+@odm.model(index=False, store=False, description="SAML Security")
+class SAMLSecurity(odm.Model):
+    name_id_encrypted: bool = odm.Optional(odm.Boolean(), description="Name ID Encrypted")
+    authn_requests_signed: bool = odm.Optional(odm.Boolean(), description="Authn Requests Signed")
+    logout_request_signed: bool = odm.Optional(odm.Boolean(), description="Logout Request Signed")
+    logout_response_signed: bool = odm.Optional(odm.Boolean(), description="Logout Response Signed")
+    sign_metadata: bool = odm.Optional(odm.Boolean(), description="Sign Metadata")
+    want_messages_signed: bool = odm.Optional(odm.Boolean(), description="Want Messages Signed")
+    want_assertions_signed: bool = odm.Optional(odm.Boolean(), description="Want Assertions Signed")
+    want_assertions_encrypted: bool = odm.Optional(odm.Boolean(), description="Want Assertions Encrypted")
+    want_name_id: bool = odm.Optional(odm.Boolean(), description="Want Name ID")
+    want_name_id_encrypted: bool = odm.Optional(odm.Boolean(), description="Want Name ID Encrypted")
+    want_attribute_statement: bool = odm.Optional(odm.Boolean(), description="Want Attribute Statement")
+    requested_authn_context: bool = odm.Optional(odm.Boolean(), description="Requested Authn Context")
+    requested_authn_context_comparison: str = odm.Optional(
+        odm.Keyword(), description="Requested Authn Context Comparison")
+    fail_on_authn_context_mismatch: bool = odm.Optional(odm.Boolean(), description="Fail On Authn Context Mismatch")
+    metadata_valid_until: str = odm.Optional(odm.Keyword(), description="Metadata Valid Until")
+    metadata_cache_duration: str = odm.Optional(odm.Keyword(), description="Metadata Cache Duration")
+    allow_single_label_domains: bool = odm.Optional(odm.Boolean(), description="Allow Single Label Domains")
+    signature_algorithm: str = odm.Optional(odm.Keyword(), description="Signature Algorithm")
+    digest_algorithm: str = odm.Optional(odm.Keyword(), description="Digest Algorithm")
+    allow_repeat_attribute_name: bool = odm.Optional(odm.Boolean(), description="Allow Repeat Attribute Name")
+    reject_deprecated_algorithm: bool = odm.Optional(odm.Boolean(), description="Reject Deprecated Algorithm")
+
+
+@odm.model(index=False, store=False, description="SAML Settings")
+class SAMLSettings(odm.Model):
+    strict: bool = odm.Boolean(description="Should we be strict in our SAML checks?", default=True)
+    debug: bool = odm.Boolean(description="Should we be in debug mode?", default=False)
+    sp: SAMLServiceProvider = odm.Compound(SAMLServiceProvider, description="SP settings")
+    idp: SAMLIdentityProvider = odm.Compound(SAMLIdentityProvider, description="IDP settings")
+    security: SAMLSecurity = odm.Optional(odm.Compound(SAMLSecurity), description="Security settings")
+    contact_person: SAMLContacts = odm.Optional(odm.Compound(SAMLContacts), description="Contact settings")
+    organization: Dict[str, SAMLOrganization] = odm.Optional(odm.Mapping(
+        odm.Compound(SAMLOrganization)), description="Organization settings")
+
+
+@odm.model(index=False, store=False, description="SAML Attributes")
+class SAMLAttributes(odm.Model):
+    username_attribute: str = odm.Optional(
+        odm.Keyword(default="uid"),
+        description="SAML attribute name for AL username")
+    email_attribute: str = odm.Keyword(description="SAML attribute name for a user's email address ", default="email")
+    fullname_attribute: str = odm.Keyword(description="SAML attribute name for a user's first name", default="name")
+    groups_attribute: str = odm.Keyword(description="SAML attribute name for the groups", default="groups")
+    roles_attribute: str = odm.Keyword(description="SAML attribute name for the roles", default="roles")
+    group_type_mapping: Dict[str, str] = odm.Mapping(
+        odm.Keyword(), description="SAML group to role mapping", default={})
+
+
+@odm.model(index=False, store=False, description="SAML Configuration")
+class SAML(odm.Model):
+    enabled: bool = odm.Boolean(description="Enable use of SAML?")
+    auto_create: bool = odm.Boolean(description="Auto-create users if they are missing", default=True)
+    auto_sync: bool = odm.Boolean(
+        description="Should we automatically sync with SAML server on each login?", default=True)
+    lowercase_urlencoding: bool = odm.Boolean(
+        description="Enable lowercase encoding if using ADFS as IdP", default=False)
+    attributes: SAMLAttributes = odm.Compound(
+        SAMLAttributes, default=DEFAULT_SAML_ATTRIBUTES, description="SAML attributes")
+    settings: SAMLSettings = odm.Compound(SAMLSettings, default=DEFAULT_SAML_SETTINGS,
+                                          description="SAML settings method")
+
+
+DEFAULT_SAML = {
+    "enabled": False,
+    "auto_create": True,
+    "auto_sync": True,
+    "lowercase_urlencoding": False,
+    "attributes": DEFAULT_SAML_ATTRIBUTES,
+    "settings": DEFAULT_SAML_SETTINGS
 }
 
 
@@ -292,6 +482,7 @@ class Auth(odm.Model):
                                       description="Internal authentication settings")
     ldap: LDAP = odm.Compound(LDAP, default=DEFAULT_LDAP, description="LDAP settings")
     oauth: OAuth = odm.Compound(OAuth, default=DEFAULT_OAUTH, description="OAuth settings")
+    saml: SAML = odm.Compound(SAML, default=DEFAULT_SAML, description="SAML settings")
 
 
 DEFAULT_AUTH = {
@@ -301,7 +492,8 @@ DEFAULT_AUTH = {
     "allow_security_tokens": True,
     "internal": DEFAULT_INTERNAL,
     "ldap": DEFAULT_LDAP,
-    "oauth": DEFAULT_OAUTH
+    "oauth": DEFAULT_OAUTH,
+    "saml": DEFAULT_SAML
 }
 
 
@@ -378,7 +570,9 @@ class Expiry(odm.Model):
     workers = odm.Integer(description="Number of concurrent workers")
     delete_workers = odm.Integer(description="Worker processes for file storage deletes.")
     iteration_max_tasks = odm.Integer(description="How many query chunks get run per iteration.")
-    delete_batch_size = odm.Integer(description="How large a batch get deleted per iteration.")
+    delete_batch_size = odm.Integer(max=10000, description="How large a batch get deleted per iteration.")
+    safelisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Safelist")
+    badlisted_tag_dtl = odm.Integer(min=0, description="The default period, in days, before tags expire from Badlist")
 
 
 DEFAULT_EXPIRY = {
@@ -388,13 +582,17 @@ DEFAULT_EXPIRY = {
     'sleep_time': 15,
     'workers': 20,
     'delete_workers': 2,
-    'iteration_max_tasks': 20,
+    'iteration_max_tasks': 50,
     'delete_batch_size': 2000,
+    'safelisted_tag_dtl': 0,
+    'badlisted_tag_dtl': 0
 }
 
 
 @odm.model(index=False, store=False, description="Ingester Configuration")
 class Ingester(odm.Model):
+    always_create_submission: bool = odm.Boolean(default=False,
+                                                 description="Always create submissions even on cache hit?")
     default_user: str = odm.Keyword(description="Default user for bulk ingestion and unattended submissions")
     default_services: List[str] = odm.List(odm.Keyword(), description="Default service selection")
     default_resubmit_services: List[str] = odm.List(odm.Keyword(),
@@ -418,7 +616,7 @@ class Ingester(odm.Model):
     sampling_at: Dict[str, int] = odm.Mapping(odm.Integer(),
                                               description="Thresholds at certain buckets before sampling")
     max_inflight = odm.Integer(description="How long can a queue get before we start dropping files")
-    cache_dtl: int = odm.Integer(description="How long are files results cached")
+    cache_dtl: int = odm.Integer(min=0, description="How long are files results cached")
 
 
 DEFAULT_INGESTER = {
@@ -513,15 +711,82 @@ DEFAULT_METRICS = {
 
 
 @odm.model(index=False, store=False, description="Malware Archive Configuration")
+class ArchiverMetadata(odm.Model):
+    default = odm.Optional(odm.Keyword(description="Default value for the metadata"))
+    editable = odm.Boolean(default=False, description="Can the user provide a custom value")
+    values = odm.List(odm.Keyword(), default=[], description="List of possible values to pick from")
+
+
+EXEMPLE_ARCHIVER_METADATA = {
+    'rationale': {
+        'default': "File is malicious",
+        'editable': True,
+        'values': ["File is malicious", "File is interesting", "I just feel like keeping this..."]
+    }
+}
+
+
+@odm.model(index=False, store=False, description="Named Value")
+class NamedValue(odm.Model):
+    name = odm.Keyword(description="Name")
+    value = odm.Keyword(description="Value")
+
+
+@odm.model(index=False, store=False, description="Webhook Configuration")
+class Webhook(odm.Model):
+    password = odm.Optional(odm.Keyword(default=""), description="Password used to authenticate with source")
+    ca_cert = odm.Optional(odm.Keyword(default=""), description="CA cert for source")
+    ssl_ignore_errors = odm.Boolean(default=False, description="Ignore SSL errors when reaching out to source?")
+    proxy = odm.Optional(odm.Keyword(default=""), description="Proxy server for source")
+    method = odm.Keyword(default='POST', description="HTTP method used to access webhook")
+    uri = odm.Keyword(description="URI to source")
+    username = odm.Optional(odm.Keyword(default=""), description="Username used to authenticate with source")
+    headers = odm.List(odm.Compound(NamedValue), default=[], description="Headers")
+    retries = odm.Integer(default=3)
+
+
+DEFAULT_ARCHIVER_WEBHOOK = {
+    'password': None,
+    'ca_cert': None,
+    'ssl_ignore_errors': False,
+    'proxy': None,
+    'method': "POST",
+    'uri': "https://archiving-hook",
+    'username': None,
+    'headers': [],
+    'retries': 3
+}
+
+
+@odm.model(index=False, store=False, description="Malware Archive Configuration")
 class Archiver(odm.Model):
+    alternate_dtl: int = odm.Integer(description="Alternate number of days to keep the data in the "
+                                                 "malware archive. (0: Disabled, will keep data forever)")
+    metadata: Dict = odm.Mapping(
+        odm.Compound(ArchiverMetadata),
+        description="Proxy configuration that is passed to Python Requests",
+        deprecation="The configuration for the archive metadata validation and requirements has moved to"
+                    "`submission.metadata.archive`.")
     minimum_required_services: List[str] = odm.List(
         odm.keyword(),
         default=[],
         description="List of minimum required service before archiving takes place")
+    webhook = odm.Optional(odm.Compound(Webhook), description="Webhook to call before triggering the archiving process")
+    use_metadata: bool = odm.Boolean(
+        default=False, description="Should the UI ask form metadata to be filed out when archiving",
+        deprecation="This field is no longer required...")
+    use_webhook: bool = odm.Optional(odm.Boolean(
+        default=False,
+        description="Should the archiving go through the webhook prior to actually trigger the archiving function"))
 
 
 DEFAULT_ARCHIVER = {
-    'minimum_required_services': []
+    'alternate_dtl': 0,
+    'metadata': {},
+    'minimum_required_services': [],
+    'use_webhook': False,
+    'use_metadata': False,
+    'webhook': DEFAULT_ARCHIVER_WEBHOOK
 }
 
 
@@ -580,6 +845,21 @@ class Mount(odm.Model):
         "& `resource_key` fields to mount ConfigMaps")
 
 
+KUBERNETES_TOLERATION_OPS = ['Exists', 'Equal']
+KUBERNETES_TOLERATION_EFFECTS = ['NoSchedule', 'PreferNoSchedule', 'NoExecute']
+
+
+@odm.model(index=False, store=False, description="Limit a set of kubernetes objects based on a label query.")
+class Toleration(odm.Model):
+    key = odm.Optional(odm.Keyword(), description="The taint key that the toleration applies to")
+    operator = odm.Enum(values=KUBERNETES_TOLERATION_OPS,
+                        default="Equal", description="Relationship between taint key and value")
+    value = odm.Optional(odm.Keyword(), description="Taint value the toleration matches to")
+    effect = odm.Optional(odm.Enum(KUBERNETES_TOLERATION_EFFECTS), description="The taint effect to match.")
+    toleration_seconds = odm.Optional(odm.Integer(min=0),
+                                      description="The period of time the toleration tolerates the taint")
+
+
 @odm.model(index=False, store=False,
            description="A set of default values to be used running a service when no other value is set")
 class ScalerServiceDefaults(odm.Model):
@@ -591,6 +871,11 @@ class ScalerServiceDefaults(odm.Model):
                                                       description="Environment variables to pass onto services")
     mounts: List[Mount] = odm.List(odm.Compound(Mount), default=[],
                                    description="A list of volume mounts for every service")
+    tolerations: List[Toleration] = odm.List(
+        odm.Compound(Toleration),
+        default=[],
+        description="Toleration to apply to service pods.\n"
+        "Reference: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/")
 
 
 # The operations we support for label and field selectors are based on the common subset of
@@ -635,6 +920,8 @@ class Scaler(odm.Model):
                                                                      "more overallocation is ignored"))
     additional_labels: List[str] = odm.Optional(
         odm.List(odm.Text()), description="Additional labels to be applied to services('=' delimited)")
+    privileged_services_additional_labels: List[str] = odm.Optional(
+        odm.List(odm.Text()), description="Additional labels to be applied to privileged services only('=' delimited)")
     linux_node_selector = odm.compound(Selector, description="Selector for linux nodes under kubernetes")
     # windows_node_selector = odm.compound(Selector, description="Selector for windows nodes under kubernetes")
     cluster_pod_list = odm.boolean(default=True, description="Sets if scaler list pods for all namespaces. "
@@ -647,6 +934,7 @@ DEFAULT_SCALER = {
     'cpu_overallocation': 1,
     'memory_overallocation': 1,
     'overallocation_node_limit': None,
+    'privileged_services_additional_labels': None,
     'service_defaults': {
         'growth': 60,
         'shrink': 30,
@@ -673,6 +961,8 @@ class RegistryConfiguration(odm.Model):
     name: str = odm.Text(description="Name of container registry")
     proxies: Dict = odm.Optional(odm.Mapping(odm.Text()),
                                  description="Proxy configuration that is passed to Python Requests")
+    token_server: str = odm.Optional(odm.Text(),
+                                     description="Token server name to facilitate anonymous pull access")
 
 
 @odm.model(index=False, store=False)
@@ -788,6 +1078,7 @@ class Datastore(odm.Model):
     hosts: List[str] = odm.List(odm.Keyword(), description="List of hosts used for the datastore")
     archive = odm.Compound(Archive, default=DEFAULT_ARCHIVE, description="Datastore Archive feature configuration")
     cache_dtl = odm.Integer(
+        min=0,
         default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
     type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
 
@@ -902,8 +1193,11 @@ class ServiceSafelist(odm.Model):
 class ServiceRegistry(odm.Model):
     name: str = odm.Keyword(description="Name of container registry")
     type: str = odm.Enum(values=REGISTRY_TYPES, default='docker', description="Type of container registry")
-    username: str = odm.Keyword(description="Username for container registry")
-    password: str = odm.Keyword(description="Password for container registry")
+    username: str = odm.Optional(odm.Keyword(description="Username for container registry"))
+    password: str = odm.Optional(odm.Keyword(description="Password for container registry"))
+    use_fic: bool = odm.Boolean(
+        default=False,
+        description="Use federated identity credential token instead of user/passwords combinaison (ACR Only)")
 
 
 @odm.model(index=False, store=False, description="Services Configuration")
@@ -919,6 +1213,7 @@ class Services(odm.Model):
                                              "Intended for use with local registries.")
     preferred_update_channel: str = odm.Keyword(description="Default update channel to be used for new services")
     allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
+
     preferred_registry_type: str = odm.Enum(
         values=REGISTRY_TYPES,
         default='docker',
@@ -998,6 +1293,219 @@ DEFAULT_STATISTICS = {
     "submission": [
         'params.submitter'
     ]
+}
+
+
+@odm.model(index=False, store=False, description="Parameters used during a AI query")
+class AIQueryParams(odm.Model):
+    system_message: str = odm.Keyword(
+        description="System message used for the query.")
+    task: str = odm.Keyword(default="", description="Task description sent to the AI")
+    max_tokens: int = odm.Integer(description="Maximum ammount of token used for the response.")
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()),
+                                           description="Other kwargs options directly passed to the API.")
+
+
+@odm.model(index=False, store=False, description="AI support configuration block")
+class AI(odm.Model):
+    chat_url: str = odm.Keyword(description="URL to the AI API")
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
+    assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
+    code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
+    detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
+    executive_summary: AIQueryParams = odm.Compound(
+        AIQueryParams, description="Parameters used for executive summaries")
+    enabled: bool = odm.Boolean(description="Is AI support enabled?")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Headers used by the _call_ai_backend method")
+    model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
+    verify: bool = odm.Boolean(description="Should the SSL connection to the AI API be verified.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
+
+
+DEFAULT_AI_ASSISTANT = {
+    'system_message': """## Context
+
+You are the Assemblyline (AL) AI Assistant. You help people answer their questions and other requests interactively
+regarding Assemblyline. $(EXTRA_CONTEXT)
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+
+DEFAULT_AI_CODE = {
+    'system_message': """## Context
+
+You are an assistant that provides explanation of code snippets found in AssemblyLine (AL),
+a malware detection and analysis tool. $(EXTRA_CONTEXT)
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+""",
+    'task': """Take the code file below and give me a two part result:
+
+- The first part is a short summary of the intent behind the code titled "## Summary"
+- The second part is a detailed explanation of what the code is doing titled "## Detailed Analysis"
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+
+DEFAULT_AI_DETAILED_REPORT = {
+    'system_message': """## Context
+
+You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool.
+Your role is to extract information of importance and discard what is not. $(EXTRA_CONTEXT)
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+""",
+    'task': """Take the Assemblyline report below in yaml format and create a two part result:
+
+- The first part is a one or two paragraph executive summary titled "## Executive Summary" which
+  provides some high level highlights of the results
+- The second part is a detailed description of the observations found in the report, this section
+  is titled "## Detailed Analysis"
+""",
+    'max_tokens': 2048,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+
+DEFAULT_AI_EXECUTIVE_SUMMARY = {
+    "system_message": """## Context
+
+You are an assistant that summarizes the output of AssemblyLine (AL), a malware detection and analysis tool. Your role
+is to extract information of importance and discard what is not. $(EXTRA_CONTEXT)
+
+## Style Guide
+
+- Your output must be formatted in standard Markdown syntax
+- Highlight important information using backticks
+- Your answer must be written in plain $(LANG).
+""",
+    'task': """Take the Assemblyline report below in yaml format and summarize the information found in the
+report into a one or two paragraph executive summary. DO NOT write any headers in your output.
+""",
+    'max_tokens': 1024,
+    'options': {
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "temperature": 0,
+        "top_p": 0
+    }
+}
+
+
+DEFAULT_AI = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'assistant': DEFAULT_AI_ASSISTANT,
+    'code': DEFAULT_AI_CODE,
+    'detailed_report': DEFAULT_AI_DETAILED_REPORT,
+    'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
+    'enabled': False,
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-3.5-turbo",
+    'verify': True
+}
+
+
+@odm.model(index=False, store=False, description="Connection information to an AI backend")
+class AIConnection(odm.Model):
+    api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
+    chat_url: str = odm.Keyword(description="URL to the AI API")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), default={},
+                                           description="Headers used by the _call_ai_backend method")
+    model_name: str = odm.Keyword(description="Name of the model to be used for the AI analysis.")
+    proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
+                                           description="Proxies used by the _call_ai_backend method")
+    use_fic: bool = odm.Boolean(default=False, description="Use Federated Identity Credentials to login")
+    verify: bool = odm.Boolean(default=True, description="Should the SSL connection to the AI API be verified.")
+
+
+@odm.model(index=False, store=False, description="Definition of each parameters used in the different AI functions")
+class AIFunctionParameters(odm.Model):
+    assistant: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for Assamblyline Assistant")
+    code: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for code analysis")
+    detailed_report: AIQueryParams = odm.Compound(AIQueryParams, description="Parameters used for detailed reports")
+    executive_summary: AIQueryParams = odm.Compound(
+        AIQueryParams, description="Parameters used for executive summaries")
+
+
+@odm.model(index=False, store=False, description="AI Multi-Backend support configuration block")
+class AIBackends(odm.Model):
+    enabled: bool = odm.Boolean(description="Is AI support enabled?")
+    api_connections: List[Dict] = odm.List(odm.Compound(AIConnection),
+                                           description="List of API definitions use in the API Pool")
+    function_params: AIFunctionParameters = odm.Compound(
+        AIFunctionParameters, description="Definition of each parameters used in the different AI functions")
+
+
+DEFAULT_MAIN_CONNECTION = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-3.5-turbo",
+    'proxies': None,
+    'verify': True
+}
+
+
+DEFAULT_FALLBACK_CONNECTION = {
+    'chat_url': "https://api.openai.com/v1/chat/completions",
+    'api_type': "openai",
+    'headers': {
+        "Content-Type": "application/json"
+    },
+    'model_name': "gpt-4",
+    'proxies': None,
+    'verify': True
+}
+
+DEFAULT_AI_BACKENDS = {
+    'enabled': False,
+    'api_connections': [DEFAULT_MAIN_CONNECTION, DEFAULT_FALLBACK_CONNECTION],
+    'function_params': {
+        'assistant': DEFAULT_AI_ASSISTANT,
+        'code': DEFAULT_AI_CODE,
+        'detailed_report': DEFAULT_AI_DETAILED_REPORT,
+        'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
+    }
 }
 
 
@@ -1125,8 +1633,48 @@ EXAMPLE_EXTERNAL_SOURCE_MB = {
 }
 
 
+@odm.model(index=False, store=False, description="Default API and submission quota values for the system")
+class Quotas(odm.Model):
+    concurrent_api_calls: int = odm.Integer(description="Maximum concurrent API Calls that can be running for a user.")
+    concurrent_submissions: int = odm.Integer(
+        description="Maximum concurrent Submission that can be running for a user.")
+    concurrent_async_submissions: int = odm.Integer(
+        description="Maximum concurrent asynchroneous Submission that can be running for a user.")
+    daily_api_calls: int = odm.Integer(description="Maximum daily API calls a user can issue.")
+    daily_submissions: int = odm.Integer(description="Maximum daily submission a user can do.")
+
+
+DEFAULT_QUOTAS = {
+    'concurrent_api_calls': DEFAULT_API_QUOTA,
+    'concurrent_submissions': DEFAULT_SUBMISSION_QUOTA,
+    'concurrent_async_submissions': DEFAULT_ASYNC_SUBMISSION_QUOTA,
+    'daily_api_calls': DEFAULT_DAILY_API_QUOTA,
+    'daily_submissions': DEFAULT_DAILY_SUBMISSION_QUOTA
+}
+
+
+@odm.model(index=False, store=False, description="Header value")
+class HeaderValue(odm.Model):
+    name = odm.Keyword(description="Name of the header")
+    value = odm.Optional(odm.Keyword(description="Explicit value to put in the header"))
+    key = odm.Optional(odm.Keyword(description="Key to lookup in the currently logged in user"))
+
+
+@odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
+class APIProxies(odm.Model):
+    url = odm.Keyword(description="URL to redirect to")
+    verify = odm.Boolean(default=True, description="Should we verify the cert or not")
+    headers = odm.List(odm.Compound(HeaderValue), default=[], description="Headers to add to the request")
+
+
+DEFAULT_API_PROXIES = {}
+DOWNLOAD_ENCODINGS = ["cart", "raw", "zip"]
+
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
+    ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
+    ai_backends: AIBackends = odm.Compound(AIBackends, default=DEFAULT_AI_BACKENDS,
+                                           description="AI Multi-backends support for the UI")
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
                                                description="Alerting metadata fields")
     allow_malicious_hinting: bool = odm.Boolean(
@@ -1135,6 +1683,9 @@ class UI(odm.Model):
     allow_zip_downloads: bool = odm.Boolean(description="Allow user to download files as password protected ZIPs?")
     allow_replay: bool = odm.Boolean(description="Allow users to request replay on another server?")
     allow_url_submissions: bool = odm.Boolean(description="Allow file submissions via url?")
+    api_proxies: APIProxies = odm.Mapping(
+        odm.Compound(APIProxies),
+        default=DEFAULT_API_PROXIES, description="Proxy requests to the configured API target and add headers")
     audit: bool = odm.Boolean(description="Should API calls be audited and saved to a separate log file?")
     banner: Dict[str, str] = odm.Optional(odm.Mapping(
         odm.Keyword()), description="Banner message display on the main page (format: {<language_code>: message})")
@@ -1142,8 +1693,11 @@ class UI(odm.Model):
         values=["info", "warning", "success", "error"],
         description="Banner message level")
     debug: bool = odm.Boolean(description="Enable debugging?")
+    default_quotas: Quotas = odm.Compound(Quotas, default=DEFAULT_QUOTAS,
+                                          description="Default API quotas values")
     discover_url: str = odm.Optional(odm.Keyword(), description="Discover URL")
-    download_encoding = odm.Enum(values=["raw", "cart"], description="Which encoding will be used for downloads?")
+    download_encoding = odm.Enum(values=DOWNLOAD_ENCODINGS, description="Which encoding will be used for downloads?")
+    default_zip_password = odm.Optional(odm.Text(), description="Default user-defined password for creating password protected ZIPs when downloading files")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
     external_links: List[ExternalLinks] = odm.List(
@@ -1157,7 +1711,8 @@ class UI(odm.Model):
     read_only_offset: str = odm.Keyword(
         default="", description="Offset of the read only mode for all paging and searches")
     rss_feeds: List[str] = odm.List(odm.Keyword(), default=[], description="List of RSS feeds to display on the UI")
-    services_feed: str = odm.Keyword(description="Feed of all the services available on AL")
+    services_feed: str = odm.Keyword(description="Feed of all the services built by the Assemblyline Team")
+    community_feed: str = odm.Keyword(description="Feed of all the services built by the Assemblyline community.")
     secret_key: str = odm.Keyword(description="Flask secret key to store cookies, etc.")
     session_duration: int = odm.Integer(description="Duration of the user session before the user has to login again")
     statistics: Statistics = odm.Compound(Statistics, default=DEFAULT_STATISTICS,
@@ -1180,18 +1735,23 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
+    "ai": DEFAULT_AI,
+    "ai_backends": DEFAULT_AI_BACKENDS,
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
     "allow_raw_downloads": True,
     "allow_zip_downloads": True,
     "allow_replay": False,
     "allow_url_submissions": True,
+    "api_proxies": DEFAULT_API_PROXIES,
     "audit": True,
     "banner": None,
     "banner_level": 'info',
     "debug": False,
+    "default_quotas": DEFAULT_QUOTAS,
     "discover_url": None,
     "download_encoding": "cart",
+    "default_zip_password": "infected",
     "email": None,
     "enforce_quota": True,
     "external_links": [],
@@ -1203,9 +1763,11 @@ DEFAULT_UI = {
     "rss_feeds": [
         "https://alpytest.blob.core.windows.net/pytest/stable.json",
         "https://alpytest.blob.core.windows.net/pytest/services.json",
+        "https://alpytest.blob.core.windows.net/pytest/community.json",
         "https://alpytest.blob.core.windows.net/pytest/blog.json"
     ],
     "services_feed": "https://alpytest.blob.core.windows.net/pytest/services.json",
+    "community_feed": "https://alpytest.blob.core.windows.net/pytest/community.json",
     "secret_key": "This is the default flask secret key... you should change this!",
     "session_duration": 3600,
     "statistics": DEFAULT_STATISTICS,
@@ -1279,6 +1841,53 @@ class Sha256Source(odm.Model):
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
 
+HASH_PATTERN_MAP = {
+    "sha256": odm.SHA256_REGEX,
+    "sha1": odm.SHA1_REGEX,
+    "md5": odm.MD5_REGEX,
+    "tlsh": odm.TLSH_REGEX,
+    "ssdeep": odm.SSDEEP_REGEX,
+}
+
+
+@odm.model(index=False, store=False, description="A file source entry for remote fetching via string")
+class FileSource(odm.Model):
+    name: str = odm.Keyword(description="Name of the sha256 source")
+    auto_select: bool = odm.boolean(
+        default=False, description="Should we force the source to be auto-selected for the user ?")
+    hash_types: List[str] = odm.List(odm.Keyword(), default=["sha256"],
+                                     description="Method(s) of fetching file from source by string input"
+                                     f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
+                                     )
+    hash_patterns: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Text()), description="Custom types to regex pattern definition for input detection/validation")
+    classification = odm.Optional(
+        odm.ClassificationString(
+            description="Minimum classification applied to the downloaded "
+                        "files and required to know the existance of the source."))
+    data: str = odm.Optional(odm.Keyword(description="Data block sent during the URL call (Uses replace pattern)"))
+    failure_pattern: str = odm.Optional(odm.Keyword(
+        description="Pattern to find as a failure case when API return 200 OK on failures..."))
+    method: str = odm.Enum(values=['GET', 'POST'], default="GET", description="Method used to call the URL")
+    url: str = odm.Keyword(description="Url to fetch the file via SHA256 from (Uses replace pattern)")
+    replace_pattern: str = odm.Keyword(description="Pattern to replace in the URL with the SHA256")
+    headers: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Headers used to connect to the URL")
+    proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
+                                          description="Proxy used to connect to the URL")
+    verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
+
+
+EXAMPLE_FILE_SOURCE_VT = {
+    # This is an example on how this would work with VirusTotal as a file source
+    # Note: This supports downloading using multiple hash types in a single source configuration
+    "name": "VirusTotal",
+    "hash_types": ["sha256", "sha1", "md5"],
+    "url": r"https://www.virustotal.com/api/v3/files/{HASH}/download",
+    "replace_pattern": r"{HASH}",
+    "headers": {"x-apikey": "YOUR_KEY"},
+}
+
 EXAMPLE_SHA256_SOURCE_VT = {
     # This is an example on how this would work with VirusTotal
     "name": "VirusTotal",
@@ -1315,6 +1924,60 @@ DEFAULT_VERDICTS = {
     'malicious': 1000
 }
 
+METADATA_FIELDTYPE_MAP = {
+    'date': odm.Date,
+    'boolean': odm.Boolean,
+    'keyword': odm.Keyword,
+    'text': odm.Text,
+    'ip': odm.IP,
+    'domain': odm.Domain,
+    'email': odm.Email,
+    'uri': odm.URI,
+    'integer': odm.Integer,
+    'regex': odm.ValidatedKeyword,
+    'enum': odm.Enum,
+    'list': odm.List
+}
+
+
+@odm.model(index=False, store=False, description="Metadata configuration")
+class Metadata(odm.Model):
+    validator_type: str = odm.Enum(values=METADATA_FIELDTYPE_MAP.keys(), default="str",
+                                   description="Type of validation to apply to metadata value")
+    validator_params: Dict[str, Any] = odm.Mapping(odm.Any(), default={},
+                                                   description="Configuration parameters to apply to validator")
+    suggestions: List[str] = odm.List(odm.Keyword(), default=[], description="List of suggestions for this field")
+    suggestion_key: str = odm.Optional(odm.Keyword(), description="Key in redis where to get the suggestions from")
+    default: Any = odm.Optional(odm.Keyword(description="Default value for the field"))
+    required: bool = odm.Boolean(default=False, description="Is this field required?")
+    aliases: List[str] = odm.List(odm.Keyword(), default=[],
+                                  description="Field name aliases that map over to the field.")
+
+
+@odm.model(index=False, store=False, description="Configuration for metadata compliance with APIs")
+class MetadataConfig(odm.Model):
+    archive: Dict[str, Metadata] = odm.Mapping(odm.Compound(Metadata),
+                                               description="Metadata specification for archiving")
+    submit: Dict[str, Metadata] = odm.Mapping(odm.Compound(Metadata),
+                                              description="Metadata specification for submission")
+    ingest: Dict[str, Dict[str, Metadata]] = odm.Mapping(odm.Mapping(odm.Compound(
+        Metadata)), description="Metadata specification for certain ingestion based on ingest_type")
+    strict_schemes: List[str] = odm.List(
+        odm.Keyword(),
+        default=[],
+        description="A list of metadata schemes with strict rules (ie. no extra/unknown metadata). "
+                    "Values can be: `archive`, `submit`, or one of the schemes under `ingest`.")
+
+
+DEFAULT_METADATA_CONFIGURATION = {
+    'archive': {},
+    'submit': {},
+    'ingest': {
+        # Metadata rule for when: ingest_type: "INGEST", by default there are no rules set.
+        "INGEST": {}
+    }
+}
+
 
 TEMPORARY_KEY_TYPE = [
     'union',
@@ -1329,16 +1992,24 @@ class Submission(odm.Model):
     default_max_extracted: int = odm.Integer(description="How many extracted files may be added to a submission?")
     default_max_supplementary: int = odm.Integer(
         description="How many supplementary files may be added to a submission?")
-    dtl: int = odm.Integer(description="Number of days submissions will remain in the system by default")
-    emptyresult_dtl:  int = odm.Integer(description="Number of days emptyresult will remain in the system")
-    max_dtl: int = odm.Integer(description="Maximum number of days submissions will remain in the system")
+    dtl: int = odm.Integer(min=0, description="Number of days submissions will remain in the system by default")
+    emptyresult_dtl:  int = odm.Integer(min=0, description="Number of days emptyresult will remain in the system")
+    max_dtl: int = odm.Integer(min=0, description="Maximum number of days submissions will remain in the system")
     max_extraction_depth: int = odm.Integer(description="Maximum files extraction depth")
     max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
+    metadata: MetadataConfig = odm.Compound(MetadataConfig, default=DEFAULT_METADATA_CONFIGURATION,
+                                            description="Metadata compliance rules")
     sha256_sources: List[Sha256Source] = odm.List(
         odm.Compound(Sha256Source),
-        default=[], description="List of external source to fetch file via their SHA256 hashes")
+        default=[],
+        description="List of external source to fetch file via their SHA256 hashes",
+        deprecation="Use submission.file_sources which is an extension of this configuration")
+    file_sources: List[FileSource] = odm.List(
+        odm.Compound(FileSource),
+        default=[],
+        description="List of external source to fetch file")
     tag_types = odm.Compound(TagTypes, default=DEFAULT_TAG_TYPES,
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
@@ -1363,7 +2034,9 @@ DEFAULT_SUBMISSION = {
     'max_file_size': 104857600,
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
+    'metadata': DEFAULT_METADATA_CONFIGURATION,
     'sha256_sources': [],
+    'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
     'verdicts': DEFAULT_VERDICTS,
     'temporary_keys': DEFAULT_TEMPORARY_KEYS,
@@ -1373,8 +2046,8 @@ DEFAULT_SUBMISSION = {
 @odm.model(index=False, store=False, description="Configuration for connecting to a retrohunt service.")
 class Retrohunt(odm.Model):
     enabled = odm.Boolean(default=False, description="Is the Retrohunt functionnality enabled on the frontend")
-    dtl: int = odm.Integer(description="Number of days retrohunt jobs will remain in the system by default")
-    max_dtl: int = odm.Integer(description="Maximum number of days retrohunt jobs will remain in the system")
+    dtl: int = odm.Integer(min=0, description="Number of days retrohunt jobs will remain in the system by default")
+    max_dtl: int = odm.Integer(min=0, description="Maximum number of days retrohunt jobs will remain in the system")
     url = odm.Keyword(description="Base URL for service API")
     api_key = odm.Keyword(description="Service API Key")
     tls_verify = odm.Boolean(default=True, description="Should tls certificates be verified")
@@ -1384,7 +2057,7 @@ DEFAULT_RETROHUNT = {
     'enabled': False,
     'dtl': 30,
     'max_dtl': 0,
-    'url': 'https://hauntedhouse.hauntedhouse.svc.cluster.local:4443',
+    'url': 'https://hauntedhouse:4443',
     'api_key': "ChangeThisDefaultRetroHuntAPIKey!",
     'tls_verify': True
 }
@@ -1402,10 +2075,10 @@ class Config(odm.Model):
     retrohunt: Retrohunt = odm.Compound(Retrohunt, default=DEFAULT_RETROHUNT,
                                         description="Retrohunt configuration for the frontend and server.")
     services: Services = odm.compound(Services, default=DEFAULT_SERVICES, description="Service configuration")
-    system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
-    ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
     submission: Submission = odm.compound(Submission, default=DEFAULT_SUBMISSION,
                                           description="Options for how submissions will be processed")
+    system: System = odm.compound(System, default=DEFAULT_SYSTEM, description="System configuration")
+    ui: UI = odm.compound(UI, default=DEFAULT_UI, description="UI configuration parameters")
 
 
 DEFAULT_CONFIG = {
@@ -1417,9 +2090,9 @@ DEFAULT_CONFIG = {
     "logging": DEFAULT_LOGGING,
     "retrohunt": DEFAULT_RETROHUNT,
     "services": DEFAULT_SERVICES,
+    "submission": DEFAULT_SUBMISSION,
     "system": DEFAULT_SYSTEM,
     "ui": DEFAULT_UI,
-    "submission": DEFAULT_SUBMISSION,
 }
 
 

@@ -111,7 +111,7 @@ class TransportLocal(Transport):
         temppath = _join(dirname, tempname)
 
         finalpath = _join(dirname, filename)
-        assert(finalpath == path)
+        assert (finalpath == path)
 
         self.makedirs(dirname)
         fh = None
@@ -129,7 +129,7 @@ class TransportLocal(Transport):
                 shutil.move(temppath, finalpath)
             except shutil.Error:
                 pass
-            assert(self.exists(path))
+            assert (self.exists(path))
 
     def __str__(self):
         return 'file://{}'.format(self.base)
