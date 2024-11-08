@@ -1980,9 +1980,10 @@ DEFAULT_METADATA_CONFIGURATION = {
 
 
 TEMPORARY_KEY_TYPE = [
+    # Keep this key as submission wide list merging equal items
     'union',
+    # Keep this key submission wide on a "las write wins" basis
     'overwrite',
-    'ignore',
 ]
 
 
@@ -2021,7 +2022,6 @@ class Submission(odm.Model):
 
 DEFAULT_TEMPORARY_KEYS = {
     'passwords': 'union',
-    'ancestry': 'ignore',
 }
 
 DEFAULT_SUBMISSION = {
