@@ -137,7 +137,7 @@ class Result(odm.Model):
     type = odm.Optional(odm.Keyword())
     size = odm.Optional(odm.Integer())
     drop_file = odm.Boolean(default=False, description="Use to not pass to other stages after this run", ai=False)
-    partial = odm.Boolean(default=False, description="Invalidate the current result cache creation")
+    partial = odm.Boolean(default=False, description="Invalidate the current result cache creation", ai=False)
     from_archive = odm.Boolean(index=False, default=False, description="Was loaded from the archive", ai=False)
 
     def build_key(self, service_tool_version=None, task=None):
