@@ -834,9 +834,9 @@ rule code_python {
         $strong_py152 = "os.rename("
 
 
-        // High confidence one-liner used to execute base64 blobs
+        // High confidence one-liner used to execute encoded blobs
         // reference: https://github.com/DataDog/guarddog/blob/main/guarddog/analyzer/sourcecode/exec-base64.yml
-        $executor1 = /((exec|eval|check_output|run|call|[Pp]open|os\.system)\(|lambda[ \t]+\w{1,100}[ \t]*:[ \t]*)((zlib|__import__\((['"]zlib['"]|['"]\\x0*7a\\x0*6c\\x0*69\\x0*62['"]|['"]\\0*172\\0*154\\0*151\\0*142['"])\)|lzma|__import__\((['"]lzma['"]|['"]\\x0*6c\\x0*7a\\x0*6d\\x0*61['"]|['"]\\0*154\\0*172\\0*155\\0*141['"])\))\.decompress\()?(base64|__import__\((['"]base64['"]|['"]\\x0*62\\x0*61\\x0*73\\x0*65\\x0*36\\x0*34['"]|['"]\\0*142\\0*141\\0*163\\0*145\\0*66\\0*64['"])\))\.b64decode\(/
+        $executor1 = /((exec|eval|check_output|run|call|[Pp]open|os\.system)\(|lambda[ \t]+\w{1,100}[ \t]*:)\s*(((zlib|__import__\((['"]zlib['"]|['"]\\x0*7a\\x0*6c\\x0*69\\x0*62['"]|['"]\\0*172\\0*154\\0*151\\0*142['"])\)|lzma|__import__\((['"]lzma['"]|['"]\\x0*6c\\x0*7a\\x0*6d\\x0*61['"]|['"]\\0*154\\0*172\\0*155\\0*141['"])\))\.decompress\()|(base64|__import__\((['"]base64['"]|['"]\\x0*62\\x0*61\\x0*73\\x0*65\\x0*36\\x0*34['"]|['"]\\0*142\\0*141\\0*163\\0*145\\0*66\\0*64['"])\))\.b64decode\()/
         $executor2 = /(marshal|__import__\((['"]marshal['"]|['"]\\x0*6d\\x0*61\\x0*72\\x0*73\\x0*68\\x0*61\\x0*6c['"]|['"]\\0*155\\0*141\\0*162\\0*163\\0*150\\0*141\\0*154['"])\)|pickle|__import__\((['"]pickle['"]|['"]\\x0*70\\x0*69\\x0*63\\x0*6b\\x0*6c\\x0*65['"]|['"]\\0*160\\0*151\\0*143\\0*153\\0*154\\0*145['"])\))\.loads\(/
 
     condition:
