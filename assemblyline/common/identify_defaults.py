@@ -447,3 +447,12 @@ trusted_mimes = {
     # Android
     "application/vnd.android.package-archive": "android/apk",
 }
+
+# LibMagic mimetypes that we will fallback to when we can't determine a type
+untrusted_mimes = {
+    "application/javascript": "code/javascript",
+    "text/x-java": "code/java",
+    "text/html": "code/html",
+    "text/x-c++": "code/c++",
+    "text/x-c": "code/c",
+}

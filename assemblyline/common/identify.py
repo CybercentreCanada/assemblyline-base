@@ -22,7 +22,7 @@ import yara
 
 from assemblyline.common.digests import DEFAULT_BLOCKSIZE, get_digests_for_file
 from assemblyline.common.forge import get_cachestore, get_config, get_constants, get_datastore
-from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs
+from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs, untrusted_mimes
 from assemblyline.common.identify_defaults import magic_patterns as default_magic_patterns
 from assemblyline.common.identify_defaults import trusted_mimes as default_trusted_mimes
 from assemblyline.common.str_utils import dotdump, safe_str
@@ -391,6 +391,10 @@ class Identify:
 
             # Only if the file was not identified as a csv or a json
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
+
+            if ("unknown" in data["type"] or data["type"] == "text/plain") and data["mime"] in untrusted_mimes:
+                # Rely on untrusted mimes
+                data["type"] = untrusted_mimes[data["mime"]]
 
         # Extra checks for office documents
         #  - Check for encryption
