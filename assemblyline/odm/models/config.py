@@ -1857,7 +1857,7 @@ class FileSource(odm.Model):
         default=False, description="Should we force the source to be auto-selected for the user ?")
     download_from_url: bool = odm.boolean(
         default=True,
-        description="Should we download from the URL created or  leave it as an Assemblyline URL file ?")
+        description="Should we download from the resulting URL or create an Assemblyline URI file for it ?")
     hash_types: List[str] = odm.List(odm.Keyword(), default=["sha256"],
                                      description="Method(s) of fetching file from source by string input"
                                      f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
@@ -1879,7 +1879,7 @@ class FileSource(odm.Model):
     proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
                                           description="Proxy used to connect to the URL")
     select_as_service: bool = odm.boolean(
-        default=False, description="Should the file source be also selected in the services ?")
+        default=False, description="Should the file source name be added to the selected services ?")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
 
