@@ -1878,8 +1878,8 @@ class FileSource(odm.Model):
                                           description="Headers used to connect to the URL")
     proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
                                           description="Proxy used to connect to the URL")
-    select_as_service: bool = odm.boolean(
-        default=False, description="Should the file source name be added to the selected services ?")
+    select_services: bool = odm.List(odm.keyword(),
+        default=[], description="List of services that will be auto-selected when using this source.")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
 
