@@ -1858,6 +1858,9 @@ class FileSource(odm.Model):
     name: str = odm.Keyword(description="Name of the sha256 source")
     auto_select: bool = odm.boolean(
         default=False, description="Should we force the source to be auto-selected for the user ?")
+    download_from_url: bool = odm.boolean(
+        default=True,
+        description="Should we download from the resulting URL or create an Assemblyline URI file for it ?")
     hash_types: List[str] = odm.List(odm.Keyword(), default=["sha256"],
                                      description="Method(s) of fetching file from source by string input"
                                      f"(ie. {list(HASH_PATTERN_MAP.keys())}). This also supports custom types."
@@ -1878,6 +1881,8 @@ class FileSource(odm.Model):
                                           description="Headers used to connect to the URL")
     proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
                                           description="Proxy used to connect to the URL")
+    select_services: bool = odm.List(odm.keyword(),
+        default=[], description="List of services that will be auto-selected when using this source.")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
 
