@@ -1687,6 +1687,7 @@ class UI(odm.Model):
         odm.Compound(APIProxies),
         default=DEFAULT_API_PROXIES, description="Proxy requests to the configured API target and add headers")
     audit: bool = odm.Boolean(description="Should API calls be audited and saved to a separate log file?")
+    audit_login: bool = odm.Boolean(description="Should login successes and failures be part of the audit log as well?")
     banner: Dict[str, str] = odm.Optional(odm.Mapping(
         odm.Keyword()), description="Banner message display on the main page (format: {<language_code>: message})")
     banner_level: str = odm.Enum(
@@ -1745,6 +1746,7 @@ DEFAULT_UI = {
     "allow_url_submissions": True,
     "api_proxies": DEFAULT_API_PROXIES,
     "audit": True,
+    "audit_login": False,
     "banner": None,
     "banner_level": 'info',
     "debug": False,
