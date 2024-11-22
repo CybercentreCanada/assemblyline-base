@@ -92,7 +92,7 @@ class PubSubWorkerThread(threading.Thread):
 class EventWatcher(Generic[MessageType]):
     def __init__(self, host=None, port=None, deserializer: Callable[[str], MessageType] = json.loads):
         self.client: Redis[Any] = get_client(host, port, False)
-        self.pubsub = retry_call(self.client.pubsub)
+        self.pubsub: PubSub = retry_call(self.client.pubsub)
         self.pubsub.ignore_subscribe_messages = False
         self.thread: Optional[PubSubWorkerThread] = None
         self.deserializer = deserializer
@@ -105,7 +105,7 @@ class EventWatcher(Generic[MessageType]):
             elif message['type'] == 'pmessage':
                 data = self.deserializer(message.get('data', ''))
                 callback(data)
-        self.pubsub.psubscribe(**{path.lower(): _callback})
+        retry_call(self.pubsub.psubscribe, **{path.lower(): _callback})
 
     def start(self):
         self.thread = PubSubWorkerThread(self, skip_first_refresh=self.skip_first_refresh)
