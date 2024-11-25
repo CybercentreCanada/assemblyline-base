@@ -1426,6 +1426,56 @@ rule text_rdp {
         $optional53 = "remoteapplicationname:s:" ascii wide
         $optional54 = "remoteapplicationprogram:s:" ascii wide
 
+        // https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-r2-and-2008/ff393699(v=ws.10)
+        $optional55 = "administrative session:i:" ascii wide
+        $optional56 = "autoreconnect max retries:i:" ascii wide
+        $optional57 = "bitmapcachepersistenable:i:" ascii wide
+        $optional58 = "connection type:i:" ascii wide
+        $optional59 = "disable ctrl+alt+del:i:" ascii wide
+        $optional60 = "disableprinterredirection:i:" ascii wide
+        $optional61 = "disableclipboardredirection:i:" ascii wide
+        $optional62 = "displayconnectionbar:i:" ascii wide
+        $optional63 = "loadbalanceinfo:s:" ascii wide
+        $optional64 = "negotiate security layer:i:" ascii wide
+        $optional65 = "pinconnectionbar:i:" ascii wide
+        $optional66 = "prompt for credentials on client:i:" ascii wide
+        $optional67 = "redirectdrives:i:" ascii wide
+        $optional68 = "server port:i:" ascii wide
+        $optional69 = "session bpp:i:" ascii wide
+        $optional70 = "span monitors:i:" ascii wide
+        $optional71 = "winposstr:s:" ascii wide
+        $optional72 = "workspaceid:s:" ascii wide
+
+        // https://www.donkz.nl/overview-rdp-file-settings/
+        $optional73 = "allow desktop composition:i:" ascii wide
+        $optional74 = "allow font smoothing:i:" ascii wide
+        $optional75 = "audioqualitymode:i:" ascii wide
+        $optional76 = "bitmapcachesize:i:" ascii wide
+        $optional77 = "connect to console:i:" ascii wide
+        $optional78 = "disable full window drag:i:" ascii wide
+        $optional79 = "disable menu anims:i:" ascii wide
+        $optional80 = "disable themes:i:" ascii wide
+        $optional81 = "disable wallpaper:i:" ascii wide
+        $optional82 = "disableremoteappcapscheck:i:" ascii wide
+        $optional83 = "enablesuperpan:i:" ascii wide
+        $optional84 = "password 51:b:" ascii wide
+        $optional85 = "prompt for credentials:i:" ascii wide
+        $optional86 = "public mode:i:" ascii wide
+        $optional87 = "redirectdirectx:i:" ascii wide
+        $optional88 = "redirectposdevices:i:" ascii wide
+        $optional89 = "shell working directory:s:" ascii wide
+        $optional90 = "signature:s:" ascii wide
+        $optional91 = "signscope:s:" ascii wide
+        $optional92 = "superpanaccelerationfactor:i:" ascii wide
+
+        // Others
+        $optional93 = "rdgiskdcproxy:i:" ascii wide
+        $optional94 = "use redirection server name:i:" ascii wide
+        $optional95 = "gatewaybrokeringtype:i:" ascii wide
+        $optional96 = "disable cursor setting:i:" ascii wide
+        $optional97 = "enableworkspacereconnect:i:" ascii wide
+        $optional98 = "bitmapcachesize:i:" ascii wide
+
     condition:
         mime startswith "text"
         and $mandatory
