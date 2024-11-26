@@ -1982,7 +1982,7 @@ DEFAULT_METADATA_CONFIGURATION = {
 TEMPORARY_KEY_TYPE = [
     # Keep this key as submission wide list merging equal items
     'union',
-    # Keep this key submission wide on a "las write wins" basis
+    # Keep this key submission wide on a "last write wins" basis
     'overwrite',
 ]
 
