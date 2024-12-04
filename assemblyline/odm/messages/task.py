@@ -1,5 +1,5 @@
 from assemblyline import odm
-from assemblyline.common import forge
+from assemblyline.common import forge, constants
 from assemblyline.odm.models.config import ServiceSafelist
 from assemblyline.odm.models.file import URIInfo
 Classification = forge.get_classification()
@@ -68,7 +68,8 @@ class Task(odm.Model):
 
     ignore_filtering = odm.Boolean(default=False, description="Should the service filter it's output?")
 
-    priority = odm.Integer(default=0, description="Priority for processing order")
+    priority = odm.Integer(default=1, description="Priority for processing order",
+                           min=constants.DROP_PRIORITY, max=constants.MAX_PRIORITY)
     safelist_config = odm.Compound(ServiceSafelist,
                                    description="Safelisting configuration (as defined in global configuration)",
                                    default={'enabled': False})

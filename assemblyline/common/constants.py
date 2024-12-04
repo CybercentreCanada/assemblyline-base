@@ -46,21 +46,27 @@ SERVICE_STATE_HASH = 'service-stasis-table'
 DEFAULT_SERVICE_ACCEPTS = ".*"
 DEFAULT_SERVICE_REJECTS = "empty|metadata/.*"
 
+# Priority used to drop tasks in the ingester
+DROP_PRIORITY = 0
+
+# Maximum priority that can be assigned to a submission
+MAX_PRIORITY = 1500
+
 # Queue priority values for each bucket in the ingester
 PRIORITIES = {
-    'low': 100,  # 0 -> 100
-    'medium': 200,  # 101 -> 200
-    'high': 300,
-    'critical': 400,
-    'user-low': 500,
-    'user-medium': 1000,
-    'user-high': 1500
+    'low': 100,                 # 1 -> 100
+    'medium': 200,              # 101 -> 200
+    'high': 300,                # 201 -> 300
+    'critical': 400,            # 301 -> 400
+    'user-low': 500,            # 401 -> 500
+    'user-medium': 1000,        # 501 -> 1000
+    'user-high': MAX_PRIORITY   # 1001 -> 1500
 }
-MAX_PRIORITY = 2000
+
 
 # The above priority values presented as a range for consistency
 PRIORITY_RANGES = {}
-_start = -1
+_start = 0
 for _end, _level in sorted((val, key) for key, val in PRIORITIES.items()):
     PRIORITY_RANGES[_level] = (_start + 1, _end)
     _start = _end
