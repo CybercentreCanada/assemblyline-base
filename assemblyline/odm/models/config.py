@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from assemblyline import odm
+from assemblyline.common.constants import PRIORITIES
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 
@@ -1707,7 +1708,7 @@ class UI(odm.Model):
     external_sources: List[ExternalSource] = odm.List(
         odm.Compound(ExternalSource), description="List of external sources to query")
     fqdn: str = odm.Text(description="Fully qualified domain name to use for the 2-factor authentication validation")
-    ingest_max_priority: int = odm.Integer(description="Maximum priority for ingest API")
+    ingest_max_priority: int = odm.Integer(description="Maximum priority for ingest API", max=PRIORITIES['critical'])
     read_only: bool = odm.Boolean(description="Turn on read only mode in the UI")
     read_only_offset: str = odm.Keyword(
         default="", description="Offset of the read only mode for all paging and searches")
