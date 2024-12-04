@@ -68,7 +68,8 @@ class Task(odm.Model):
 
     ignore_filtering = odm.Boolean(default=False, description="Should the service filter it's output?")
 
-    priority = odm.Integer(default=1, description="Priority for processing order", min=0, max=constants.MAX_PRIORITY)
+    priority = odm.Integer(default=1, description="Priority for processing order",
+                           min=constants.DROP_PRIORITY, max=constants.MAX_PRIORITY)
     safelist_config = odm.Compound(ServiceSafelist,
                                    description="Safelisting configuration (as defined in global configuration)",
                                    default={'enabled': False})
