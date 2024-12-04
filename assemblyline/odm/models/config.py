@@ -2015,6 +2015,8 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    default_temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                         description="temporary_keys values for well known services.")
     temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
                                                  description="Set the operation that will be used to update values "
                                                              "using this key in the temporary submission data.")
@@ -2039,7 +2041,8 @@ DEFAULT_SUBMISSION = {
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
     'verdicts': DEFAULT_VERDICTS,
-    'temporary_keys': DEFAULT_TEMPORARY_KEYS,
+    'default_temporary_keys': DEFAULT_TEMPORARY_KEYS,
+    'temporary_keys': {},
 }
 
 
