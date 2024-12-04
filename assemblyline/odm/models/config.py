@@ -2024,6 +2024,7 @@ class Submission(odm.Model):
 
 DEFAULT_TEMPORARY_KEYS = {
     'passwords': 'union',
+    'email_body': 'union',
 }
 
 DEFAULT_SUBMISSION = {
