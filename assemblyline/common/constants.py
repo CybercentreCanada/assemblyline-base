@@ -66,7 +66,7 @@ PRIORITIES = {
 
 # The above priority values presented as a range for consistency
 PRIORITY_RANGES = {}
-_start = 0
+_start = DROP_PRIORITY
 for _end, _level in sorted((val, key) for key, val in PRIORITIES.items()):
     PRIORITY_RANGES[_level] = (_start + 1, _end)
     _start = _end
