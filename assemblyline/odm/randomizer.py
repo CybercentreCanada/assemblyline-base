@@ -318,7 +318,7 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
     elif isinstance(field, (Integer, Long)):
         if name == 'depth':
             return random.randint(1, 3)
-        return random.randint(128, 4096)
+        return random.randint(field.min or 128, field.max or 4096)
     elif isinstance(field, Float):
         return random.randint(12800, 409600) / 100.0
     elif isinstance(field, MD5):

@@ -1,5 +1,5 @@
 from assemblyline import odm
-from assemblyline.common import forge
+from assemblyline.common import forge, constants
 from assemblyline.odm.models.submission import ServiceSelection
 
 Classification = forge.get_classification()
@@ -32,7 +32,8 @@ class UserSettings(odm.Model):
     ignore_recursion_prevention = odm.Boolean(default=False, description="Ignore all service recursion prevention?")
     ignore_filtering = odm.Boolean(default=False, description="Ignore filtering services?")
     malicious = odm.Boolean(default=False, description="Is the file submitted already known to be malicious?")
-    priority = odm.Integer(default=1000, description="Default priority for the submissions")
+    priority = odm.Integer(default=1000, description="Default priority for the submissions",
+                           min=1, max=constants.MAX_PRIORITY)
     profile = odm.Boolean(default=False, description="Should the submission do extra profiling?")
     service_spec = odm.Mapping(odm.Mapping(odm.Any()), default={}, description="Default service specific settings")
     services = odm.Compound(ServiceSelection, default={}, description="Default service selection")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import hashlib
 from assemblyline import odm
-from assemblyline.common import forge
+from assemblyline.common import forge, constants
 Classification = forge.get_classification()
 
 SUBMISSION_STATES = ['failed', 'submitted', 'completed']
@@ -66,7 +66,7 @@ class SubmissionParams(odm.Model):
     malicious = odm.Boolean(default=False, description="Is the file submitted already known to be malicious?")
     max_extracted = odm.Integer(default=500, description="Max number of extracted files")
     max_supplementary = odm.Integer(default=500, description="Max number of supplementary files")
-    priority = odm.Integer(default=1000, description="Priority of the scan")
+    priority = odm.Integer(default=1000, description="Priority of the scan", min=1, max=constants.MAX_PRIORITY)
     profile = odm.Boolean(default=False, description="Should the submission do extra profiling?")
     psid = odm.Optional(odm.UUID(), description="Parent submission ID")
     quota_item = odm.Boolean(default=False, description="Does this submission count against quota?")
