@@ -7,6 +7,8 @@ from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVI
 
 Classification = forge.get_classification()
 
+FETCH_METHODS = ["GET", "POST", "GIT"]
+
 SIGNATURE_DELIMITERS = {
     'new_line': '\n',
     'double_new_line': '\n\n',
@@ -82,6 +84,14 @@ class UpdateSource(odm.Model):
         description="Default classification used in absence of one defined in files from source")
     git_branch: str = odm.Optional(odm.Keyword(default=""), description="Branch to checkout from Git repository.")
     sync: bool = odm.Boolean(default=False, description="Synchronize signatures with remote source. Allows system to auto-disable signatures no longer found in source.")
+    fetch_method: str = odm.Enum(values=FETCH_METHODS, default="GET", description="Fetch method to be used with source")
+    data: Opt[dict] = odm.Optional(odm.Mapping(odm.Any()), description="Data to be sent in a POST request")
+    enabled: bool = odm.Boolean(default=True, description="Is this source active for periodic fetching?")
+    override_classification: bool = odm.Boolean(default=False,
+                                                description="Should the source's classfication override the signature's self-defined classification, if any?")
+    configuration: dict = odm.Mapping(odm.Any(), default={}, description="Additional configuration logic for source")
+    update_interval: Opt[int] = odm.Optional(odm.Integer(min=1),
+                                             description="Update check interval, in seconds, for this source")
 
 
 @ odm.model(index=False, store=False, description="Update Configuration for Signatures")
