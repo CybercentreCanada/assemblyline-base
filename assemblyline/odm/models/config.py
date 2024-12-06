@@ -1943,7 +1943,8 @@ METADATA_FIELDTYPE_MAP = {
     'integer': odm.Integer,
     'regex': odm.ValidatedKeyword,
     'enum': odm.Enum,
-    'list': odm.List
+    'list': odm.List,
+    'float': odm.Float
 }
 
 

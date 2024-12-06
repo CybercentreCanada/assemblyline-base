@@ -5,6 +5,7 @@ from assemblyline.odm.models.file import File
 import pytest
 import random
 
+from redis import Redis
 from retrying import retry
 
 from assemblyline.common import forge
@@ -14,6 +15,7 @@ from assemblyline.odm.models.config import Config, Metadata
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
+from assemblyline.remote.datatypes.hash import Hash
 from assemblyline.odm.randomizer import SERVICES, random_minimal_obj
 from assemblyline.odm.random_data import create_signatures, create_submission, create_heuristics, create_services
 
@@ -470,8 +472,9 @@ def test_list_all_heuristics(ds: AssemblylineDatastore):
     for heur in heuristics:
         assert heur.heur_id.split(".")[0] in all_services
 
-def test_metadata_validation(ds: AssemblylineDatastore):
-    validator = MetadataValidator(ds)
+def test_metadata_validation(ds: AssemblylineDatastore, redis_connection: Redis):
+    metadata_suggestions = Hash("metadata_suggestions", redis_connection)
+    validator = MetadataValidator(ds, metadata_suggestions)
 
     # Run validator with no submission metadata validation configured
     assert not validator.check_metadata({'blah': 'blee'}, validation_scheme={})
@@ -557,6 +560,42 @@ def test_metadata_validation(ds: AssemblylineDatastore):
         })
     })
 
+    # Run validation on a JSON-encoded list
+    assert not validator.check_metadata({'blah': '["abc.com"]'}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'domain',
+            }
+        })
+    })
+
+    # Run validation on a list with a null value
+    assert not validator.check_metadata({'blah': [""]}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'list',
+            'validator_params': {
+                'child_type': 'domain',
+                'allow_empty': True
+            }
+        })
+    })
+
+    # Run validation on a float
+    assert not validator.check_metadata({'blah': 0.11}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'float',
+        })
+    })
+
+    # Run validation on enum that was a suggestion
+    metadata_suggestions.add("possible_values", ['bloo'])
+    assert not validator.check_metadata({'blah': 'bloo'}, validation_scheme={
+        'blah': Metadata({
+            'validator_type': 'enum',
+            'suggestion_key': 'possible_values'
+        })
+    })
 def test_save_or_freshen_file(ds: AssemblylineDatastore):
     classification = forge.get_classification()
 
