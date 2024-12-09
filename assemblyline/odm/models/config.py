@@ -1666,6 +1666,7 @@ class APIProxies(odm.Model):
     url = odm.Keyword(description="URL to redirect to")
     verify = odm.Boolean(default=True, description="Should we verify the cert or not")
     headers = odm.List(odm.Compound(HeaderValue), default=[], description="Headers to add to the request")
+    public: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()), description="Parameters to be sent to the Frontend.")
 
 
 DEFAULT_API_PROXIES = {}
