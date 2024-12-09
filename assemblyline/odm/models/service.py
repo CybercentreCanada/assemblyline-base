@@ -140,6 +140,9 @@ class Service(odm.Model):
         default=False, description="Does this service use temp data from other services for analysis?")
     uses_metadata: bool = odm.Boolean(
         default=False, description="Does this service use submission metadata for analysis?")
+    monitored_keys: list[str] = odm.sequence(
+        odm.keyword(), default=[],
+        description="This service watches these temporary keys for changes when partial results are produced.")
 
     name: str = odm.Keyword(store=True, copyto="__text__", description="Name of service")
     version = odm.Keyword(store=True, description="Version of service")
@@ -151,9 +154,8 @@ class Service(odm.Model):
 
     stage = odm.Keyword(store=True, default="CORE", copyto="__text__",
                         description="Which execution stage does this service run in?")
-    submission_params: SubmissionParams = odm.List(
-        odm.Compound(SubmissionParams),
-        index=False, default=[],
+    submission_params: list[SubmissionParams] = odm.sequence(
+        odm.compound(SubmissionParams), index=False, default=[],
         description="Submission parameters of service")
     timeout: int = odm.Integer(default=60, description="Service task timeout, in seconds")
 
