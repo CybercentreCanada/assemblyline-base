@@ -1989,6 +1989,14 @@ DEFAULT_METADATA_CONFIGURATION = {
 }
 
 
+TEMPORARY_KEY_TYPE = [
+    # Keep this key as submission wide list merging equal items
+    'union',
+    # Keep this key submission wide on a "last write wins" basis
+    'overwrite',
+]
+
+
 @odm.model(index=False, store=False,
            description="Default values for parameters for submissions that may be overridden on a per submission basis")
 class Submission(odm.Model):
@@ -2017,7 +2025,17 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+    default_temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                         description="temporary_keys values for well known services.")
+    temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
+                                                 description="Set the operation that will be used to update values "
+                                                             "using this key in the temporary submission data.")
 
+
+DEFAULT_TEMPORARY_KEYS = {
+    'passwords': 'union',
+    'email_body': 'union',
+}
 
 DEFAULT_SUBMISSION = {
     'default_max_extracted': 500,
@@ -2033,7 +2051,9 @@ DEFAULT_SUBMISSION = {
     'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
-    'verdicts': DEFAULT_VERDICTS
+    'verdicts': DEFAULT_VERDICTS,
+    'default_temporary_keys': DEFAULT_TEMPORARY_KEYS,
+    'temporary_keys': {},
 }
 
 
