@@ -240,6 +240,7 @@ class OAuthProvider(odm.Model):
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
+    identity_id_field: str = odm.Keyword(default='oid', description="Field to fetch the managed identity ID from.")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
