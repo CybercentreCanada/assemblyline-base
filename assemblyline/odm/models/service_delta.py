@@ -1,5 +1,5 @@
 from assemblyline import odm
-from assemblyline.odm.models.service import SIGNATURE_DELIMITERS
+from assemblyline.odm.models.service import SIGNATURE_DELIMITERS, FETCH_METHODS
 
 REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
 REF_ENVVAR = "Refer to:<br>[Service - Enviroment Variable](../service/#environmentvariable)"
@@ -53,7 +53,12 @@ class UpdateSourceDelta(odm.Model):
     default_classification = odm.Optional(odm.Classification(), description=REF_UPDATE_SOURCE)
     git_branch = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
     sync = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
-
+    fetch_method = odm.Optional(odm.Enum(values=FETCH_METHODS, default="GET"), description=REF_UPDATE_SOURCE)
+    enabled = odm.Optional(odm.Boolean(default=True), description=REF_UPDATE_SOURCE)
+    override_classification = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
+    configuration = odm.Optional(odm.Mapping(odm.Any(), default={}), description=REF_UPDATE_SOURCE)
+    update_interval = odm.Optional(odm.Integer(min=0), description=REF_UPDATE_SOURCE)
+    ignore_cache = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
 
 @ odm.model(index=False, store=False)
 class PersistentVolumeDelta(odm.Model):
