@@ -28,7 +28,7 @@ class UserSettings(odm.Model):
     generate_alert = odm.Boolean(default=False, description="Generate an alert?")
     ignore_cache = odm.Boolean(default=False, description="Ignore service caching?")
 
-    #the following 1 line can be removed after assemblyline 4.6+
+    # the following 1 line can be removed after assemblyline 4.6+
     ignore_dynamic_recursion_prevention = odm.Boolean(default=False, description="Ignore dynamic recursion prevention?")
     ignore_recursion_prevention = odm.Boolean(default=False, description="Ignore all service recursion prevention?")
     ignore_filtering = odm.Boolean(default=False, description="Ignore filtering services?")

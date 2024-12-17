@@ -4,7 +4,7 @@ from assemblyline import odm
 from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
-from assemblyline.odm.models.submission import ServiceSelection, DEFAULT_SRV_SEL
+from assemblyline.odm.models.submission import DEFAULT_SRV_SEL, ServiceSelection
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
@@ -18,6 +18,7 @@ DEFAULT_SUBMISSION_QUOTA = 5
 DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
 Classification = get_classification()
+
 
 @odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
@@ -213,11 +214,14 @@ class OAuthProvider(odm.Model):
     redirect_uri: str = odm.Optional(odm.Keyword(),
                                      description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
-    request_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters to request token")
+    request_token_params: Dict[str, str] = odm.Optional(
+        odm.Mapping(odm.Keyword()), description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
-    access_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), description="Parameters to get access token")
+    access_token_params: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Parameters to get access token")
     authorize_url: str = odm.Optional(odm.Keyword(), description="URL used to authorize access to a resource")
-    authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters used to authorize access to a resource")
+    authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Parameters used to authorize access to a resource")
     api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
@@ -1673,6 +1677,7 @@ class APIProxies(odm.Model):
 DEFAULT_API_PROXIES = {}
 DOWNLOAD_ENCODINGS = ["cart", "raw", "zip"]
 
+
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
@@ -1700,7 +1705,8 @@ class UI(odm.Model):
                                           description="Default API quotas values")
     discover_url: str = odm.Optional(odm.Keyword(), description="Discover URL")
     download_encoding = odm.Enum(values=DOWNLOAD_ENCODINGS, description="Which encoding will be used for downloads?")
-    default_zip_password = odm.Optional(odm.Text(), description="Default user-defined password for creating password protected ZIPs when downloading files")
+    default_zip_password = odm.Optional(
+        odm.Text(), description="Default user-defined password for creating password protected ZIPs when downloading files")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
     external_links: List[ExternalLinks] = odm.List(
@@ -1981,13 +1987,14 @@ DEFAULT_METADATA_CONFIGURATION = {
     }
 }
 
+
 @odm.model(index=True, store=False, description="Submission Parameters for profile")
 class SubmissionProfileParams(odm.Model):
     deep_scan = odm.Optional(odm.Boolean(), description="Should a deep scan be performed?")
     generate_alert = odm.Optional(odm.Boolean(), description="Should this submission generate an alert?")
     ignore_cache = odm.Optional(odm.Boolean(), description="Ignore the cached service results?")
     ignore_dynamic_recursion_prevention = odm.Optional(odm.Boolean(),
-                                                      description="Should we ignore dynamic recursion prevention?")
+                                                       description="Should we ignore dynamic recursion prevention?")
     ignore_filtering = odm.Optional(odm.Boolean(), description="Should we ignore filtering services?")
     ignore_size = odm.Optional(odm.Boolean(), description="Ignore the file size limits?")
     max_extracted = odm.Optional(odm.Integer(), description="Max number of extracted files")
@@ -1995,14 +2002,15 @@ class SubmissionProfileParams(odm.Model):
     priority = odm.Optional(odm.Integer(), description="Priority of the scan")
     services = odm.Optional(odm.Compound(ServiceSelection), description="Service selection")
     service_spec = odm.Optional(odm.Mapping(odm.Mapping(odm.Any())), index=False, store=False,
-                               description="Service-specific parameters")
+                                description="Service-specific parameters")
     auto_archive = odm.Optional(odm.Boolean(),
-                               description="Does the submission automatically goes into the archive when completed?")
+                                description="Does the submission automatically goes into the archive when completed?")
     delete_after_archive = odm.Optional(odm.Boolean(),
-        description="When the submission is archived, should we delete it from hot storage right away?")
+                                        description="When the submission is archived, should we delete it from hot storage right away?")
     ttl = odm.Optional(odm.Integer(), description="Time, in days, to live for this submission")
     use_archive_alternate_dtl = odm.Optional(odm.Boolean(),
-                                            description="Should we use the alternate dtl while archiving?")
+                                             description="Should we use the alternate dtl while archiving?")
+
 
 @odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
 class SubmissionProfile(odm.Model):
@@ -2013,10 +2021,11 @@ class SubmissionProfile(odm.Model):
     editable_params = odm.Mapping(odm.List(odm.Text()), default={},
                                   description="A list of specific parameters that can be configured. The format of this configuration is `(core|<service_name>).<parameter>`.")
 
+
 DEFAULT_SUBMISSION_PROFILES = [
     {
         # Only perform static analysis
-        "name": "Static Analysis",
+        "name": "static",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL
@@ -2025,7 +2034,7 @@ DEFAULT_SUBMISSION_PROFILES = [
     },
     {
         # Perform static analysis along with dynamic analysis
-        "name": "Dynamic Analysis",
+        "name": "dynamic",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
@@ -2035,7 +2044,7 @@ DEFAULT_SUBMISSION_PROFILES = [
     },
     {
         # Perform static analysis along with internet connected services
-        "name": "Static Analysis with Internet",
+        "name": "static_with_internet",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
