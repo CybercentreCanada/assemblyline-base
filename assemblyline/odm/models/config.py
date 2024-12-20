@@ -240,6 +240,7 @@ class OAuthProvider(odm.Model):
     username_field: str = odm.Keyword(default='uname', description="Name of the field that will contain the username")
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
+    identity_id_field: str = odm.Keyword(default='oid', description="Field to fetch the managed identity ID from.")
 
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
@@ -1728,8 +1729,8 @@ class UI(odm.Model):
         odm.Keyword(), description="List of services auto-selected by the UI when submitting URLs")
     url_submission_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                           description="Headers used by the url_download method")
-    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
-                                                          description="Proxy used by the url_download method")
+    url_submission_proxies: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Proxy used by the url_download method by default")
     url_submission_timeout: int = odm.Integer(default=15, description="Request timeout for fetching URLs")
     validate_session_ip: bool = \
         odm.Boolean(description="Validate if the session IP matches the IP the session was created from")
