@@ -478,6 +478,7 @@ DEFAULT_SAML = {
 class Auth(odm.Model):
     allow_2fa: bool = odm.Boolean(description="Allow 2FA?")
     allow_apikeys: bool = odm.Boolean(description="Allow API keys?")
+    apikey_max_dtl: int = odm.Optional(odm.Integer(description="Number of days apikey can live for."))
     allow_extended_apikeys: bool = odm.Boolean(description="Allow extended API keys?")
     allow_security_tokens: bool = odm.Boolean(description="Allow security tokens?")
     internal: Internal = odm.Compound(Internal, default=DEFAULT_INTERNAL,
@@ -490,6 +491,7 @@ class Auth(odm.Model):
 DEFAULT_AUTH = {
     "allow_2fa": True,
     "allow_apikeys": True,
+    "apikey_max_dtl": None,
     "allow_extended_apikeys": True,
     "allow_security_tokens": True,
     "internal": DEFAULT_INTERNAL,
