@@ -1112,11 +1112,15 @@ rule code_sql {
         type = "code/sql"
 
     strings:
-        $ = /(^|\n)(create|drop|select|returns|declare)[ \t]+(view|table)[ \t]+/i
+        $create_or_replace = "CREATE OR REPLACE"
+        $table = /(^|\n)(create|drop|select|returns|declare)[ \t]+(view|table)[ \t]+/i
 
     condition:
         mime startswith "text"
-        and for all of them : ( # > 2 )
+        and (
+            #table > 2
+            or $create_or_replace
+        )
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
