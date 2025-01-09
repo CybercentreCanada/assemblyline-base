@@ -47,6 +47,12 @@ rule code_javascript {
         // This method of function declaration is shared with PowerShell, so it should be considered weak-ish
         $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/ ascii wide
 
+        // In javascript empty parentheses are mandatory for a function without parameters.
+        // In powershell empty parentheses are legal but optional and so are usually omitted.
+        $empty_function_param = /\bfunction\s+\w+\s*\(\)\s*{/ ascii wide
+        // In powershell function calls can have arguments in parentheses or no parentheses, but not empty parentheses.
+        $empty_function_call = /\w\(\);/ ascii wide
+
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/ ascii wide
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/ ascii wide
@@ -80,6 +86,10 @@ rule code_javascript {
                                 1 of ($strong_js*)
                                 or 2 of ($weak_js*)
                             )
+                        )
+                        or (
+                            $empty_function_param
+                            and $empty_function_call
                         )
                     )
                 )
