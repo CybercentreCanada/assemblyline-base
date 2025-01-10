@@ -179,7 +179,7 @@ rule code_vbs {
         $strong_vbs10 = "GetObject(" nocase ascii wide
         $strong_vbs11 = "\nEval(" nocase ascii wide
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
-        $strong_vbs12 = "Execute(" nocase ascii wide
+        $strong_vbs12 = "Execute(" nocase ascii wide fullword
         $strong_vbs13 = "\nMsgBox \"" nocase ascii wide
         // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
         $strong_vbs14 = /[ \t(=]Array\(/i ascii wide
