@@ -47,6 +47,12 @@ rule code_javascript {
         // This method of function declaration is shared with PowerShell, so it should be considered weak-ish
         $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/ ascii wide
 
+        // In javascript empty parentheses are mandatory for a function without parameters.
+        // In powershell empty parentheses are legal but optional and so are usually omitted.
+        $empty_function_param = /\bfunction\s+\w+\s*\(\)\s*{/ ascii wide
+        // In powershell function calls can have arguments in parentheses or no parentheses, but not empty parentheses.
+        $empty_function_call = /\w\(\);/ ascii wide
+
         $weak_js2 = /String(\[['"]|\.)(fromCharCode|raw)(['"]\])?\(/ ascii wide
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         $weak_js3 = /Math\.(round|pow|sin|cos)\(/ ascii wide
@@ -80,6 +86,10 @@ rule code_javascript {
                                 1 of ($strong_js*)
                                 or 2 of ($weak_js*)
                             )
+                        )
+                        or (
+                            $empty_function_param
+                            and $empty_function_call
                         )
                     )
                 )
@@ -157,7 +167,7 @@ rule code_vbs {
         $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\r]/i ascii wide
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
-        $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)/i ascii wide
+        $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)($|\s)/i ascii wide
         $strong_vbs4 = "\nExecuteGlobal" ascii wide
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
         $strong_vbs6 = /(^|\n|:)(Attribute|Set|const)[ \t]+\w+[ \t]+=/i ascii wide
@@ -169,7 +179,7 @@ rule code_vbs {
         $strong_vbs10 = "GetObject(" nocase ascii wide
         $strong_vbs11 = "\nEval(" nocase ascii wide
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
-        $strong_vbs12 = "Execute(" nocase ascii wide
+        $strong_vbs12 = "Execute(" nocase ascii wide fullword
         $strong_vbs13 = "\nMsgBox \"" nocase ascii wide
         // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
         $strong_vbs14 = /[ \t(=]Array\(/i ascii wide
@@ -1046,7 +1056,7 @@ rule code_batch_small {
         $batch3 = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/i
         $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\\n]+|\.?\/[^\/\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
         $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ \n]+"?)+ *($|\n)/i
-        $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
+        $batch6 = /(^|\n|@|&| )(timeout|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\^?\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?["']?\w+\^?=\^?\w+/i
 
@@ -1112,11 +1122,15 @@ rule code_sql {
         type = "code/sql"
 
     strings:
-        $ = /(^|\n)(create|drop|select|returns|declare)[ \t]+(view|table)[ \t]+/i
+        $create_or_replace = "CREATE OR REPLACE"
+        $table = /(^|\n)(create|drop|select|returns|declare)[ \t]+(view|table)[ \t]+/i
 
     condition:
         mime startswith "text"
-        and for all of them : ( # > 2 )
+        and (
+            #table > 2
+            or $create_or_replace
+        )
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
