@@ -1056,7 +1056,7 @@ rule code_batch_small {
         $batch3 = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/i
         $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\\n]+|\.?\/[^\/\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
         $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ \n]+"?)+ *($|\n)/i
-        $batch6 = /(^|\n|@|&| )(timeout|copy|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
+        $batch6 = /(^|\n|@|&| )(timeout|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
         $rem = /(^|\n|@|&)\^?r\^?e\^?m\^?[ \t]\^?\w+/i
         $set = /(^|\n|@|&)\^?s\^?e\^?t\^?[ \t]\^?["']?\w+\^?=\^?\w+/i
 
