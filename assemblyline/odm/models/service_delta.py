@@ -95,6 +95,7 @@ class SubmissionParamsDelta(odm.Model):
 @ odm.model(index=True, store=False, description="Service Delta relative to Initial Service Configuration")
 class ServiceDelta(odm.Model):
     accepts = odm.Optional(odm.Keyword(), store=True, description=REF_SERVICE)
+    auto_update: bool | None = odm.Optional(odm.Boolean(), description=REF_SERVICE)
     rejects = odm.Optional(odm.Keyword(), store=True, description=REF_SERVICE)
     category = odm.Optional(odm.Keyword(), store=True, copyto="__text__", description=REF_SERVICE)
     classification = odm.Optional(odm.ClassificationString(), description=REF_SERVICE)
