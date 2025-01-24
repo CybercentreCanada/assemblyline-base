@@ -59,7 +59,7 @@ class JsonFormatter(logging.Formatter):
         return ''.join(format_exception(*exc_info))
 
 
-def init_logging(name: str, config: Config = None, log_level: int = None):
+def init_logging(name: str, config: Config = None, log_level: str = os.environ.get("LOG_LEVEL")):
     logger = logging.getLogger('assemblyline')
 
     # Test if we've initialized the log handler already.
