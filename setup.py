@@ -95,7 +95,7 @@ setup(
         'azure-identity',
         'msoffcrypto-tool',
         'chardet',
-        'yara-python',
+        'yara-x',
         'python-tlsh',
         'hauntedhouse==0.1.10',
     ],

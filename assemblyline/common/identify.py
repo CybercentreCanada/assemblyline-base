@@ -18,7 +18,7 @@ from urllib.parse import unquote, urlparse
 import magic
 import msoffcrypto
 import yaml
-import yara
+import yara_x
 
 from assemblyline.common.digests import DEFAULT_BLOCKSIZE, get_digests_for_file
 from assemblyline.common.forge import get_cachestore, get_config, get_constants, get_datastore
@@ -49,6 +49,12 @@ class Identify:
         self.custom = re.compile(r"^custom: ", re.IGNORECASE)
         self.lock = threading.Lock()
         self.yara_default_externals = {"mime": "", "magic": "", "type": ""}
+        self.yara_compiler = yara_x.Compiler()
+        self.yara_rules: yara_x.Scanner = None
+
+        # Define globals/externals for yara rules
+        [self.yara_compiler.define_global(k, v) for k, v in self.yara_default_externals.items()]
+
 
         # If cache is use, load the config and datastore objects to load potential items from cache
         if self.use_cache:
@@ -164,7 +170,10 @@ class Identify:
                 except FileStoreException:
                     self.log.info("No custom magic file found.")
 
-        yara_rules = yara.compile(filepaths={"default": self.yara_file}, externals=self.yara_default_externals)
+        with open(self.yara_file, "r") as f:
+            self.yara_compiler.add_source(f.read())
+            yara_rules = yara_x.Scanner(self.yara_compiler.build())
+
         with self.lock:
             self.yara_rules = yara_rules
 
@@ -314,10 +323,12 @@ class Identify:
         try:
             with self.lock:
                 yara_rules = self.yara_rules
-            matches = yara_rules.match(path, externals=externals, fast=True)
-            matches.sort(key=lambda x: x.meta.get("score", 0), reverse=True)
-            for match in matches:
-                ftype = match.meta.get("type", None)
+            [yara_rules.set_global(k, v) for k, v in externals.items()]
+            matches = yara_rules.scan_file(path).matching_rules
+            matches_meta = [{k: v for k, v in m.metadata } for m in matches]
+            matches_meta.sort(key=lambda x: x.get("score", 0), reverse=True)
+            for match in matches_meta:
+                ftype = match.get("type")
                 if ftype:
                     return ftype
         except Exception as e:
