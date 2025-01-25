@@ -45,11 +45,11 @@ rule code_javascript {
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L431
         // This method of function declaration is shared with PowerShell, so it should be considered weak-ish
-        $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/ ascii wide
+        $function_declaration  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*\{/ ascii wide
 
         // In javascript empty parentheses are mandatory for a function without parameters.
         // In powershell empty parentheses are legal but optional and so are usually omitted.
-        $empty_function_param = /\bfunction\s+\w+\s*\(\)\s*{/ ascii wide
+        $empty_function_param = /\bfunction\s+\w+\s*\(\)\s*\{/ ascii wide
         // In powershell function calls can have arguments in parentheses or no parentheses, but not empty parentheses.
         $empty_function_call = /\w\(\);/ ascii wide
 
@@ -510,7 +510,7 @@ rule code_php {
     strings:
         $php = /(^|\n)<\?php/
         $rec1 = /namespace[ \t]+[\w.]+/
-        $rec2 = /function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*{/
+        $rec2 = /function[ \t]+\w+[ \t]*\([ \t]*\$[^)]+\)[ \t\n]*\{/
         $rec3 = /\beval[ \t]*\(/
         $rec4 = "$this->"
         $rec5 = /require[ \t]+([\w\.]+)?('[^']+\.php'|"[^"]+\.php")[ \t]*;/
@@ -626,7 +626,7 @@ rule code_ps1 {
         $strong_pwsh107 = /\[(System\.)?String]::Join\(/i ascii wide
         $strong_pwsh108 = /\[byte\[\]\][ \t]*\$\w+[ \t]*=/i ascii wide
         $strong_pwsh109 = /\[Microsoft\.VisualBasic\.(Interaction|CallType)\]/i ascii wide
-        $strong_pwsh110 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*{/i ascii wide
+        $strong_pwsh110 = /[ \t;\n]foreach[ \t]*\([ \t]*\$\w+[ \t]+in[ \t]+[^)]+\)[ \t;\n]*\{/i ascii wide
         $strong_pwsh111 = /\[char\][ \t]*(\d\d|0x[0-9a-f]{1,2})/i ascii wide
         // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L671
         $strong_pwsh112 = /\|[ \t]*iex\b/i ascii wide
@@ -652,7 +652,7 @@ rule code_ps1 {
 
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L659
         // This method of function declaration is shared with JavaScript, so it should be considered weak
-        $weak_pwsh9  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*{/
+        $weak_pwsh9  = /(^|;|\s|\(|\*\/)function([ \t]*|[ \t]+[\w|_]+[ \t]*)\([\w_ \t,]*\)[ \t\n\r]*\{/
 
     condition:
         (
@@ -872,9 +872,9 @@ rule code_java {
         score = 2
 
     strings:
-        $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+((abstract|final)[ \t]+)?class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?{/
+        $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+((abstract|final)[ \t]+)?class[ \t]+\w+[ \t]*([ \t]+extends[ \t]+\w+[ \t]*)?\{/
         $ = /(^|\n)[ \t]*(public|private|protected)[ \t]+(static[ \t]+)?((abstract|final)[ \t]+)?(\w+[ \t]+){2}=/
-        $ = /(^|\n)[\w \t]+\([^)]*\)[ \t]+throws[ \t]+\w+[ \t]*(,[ \t]*\w+[ \t]*)*{/
+        $ = /(^|\n)[\w \t]+\([^)]*\)[ \t]+throws[ \t]+\w+[ \t]*(,[ \t]*\w+[ \t]*)*\{/
         $ = ".hasNext("
         $ = /[ \t\n]*final[ \t]+\w/
         $ = /(ArrayList|Class|Stack|Map|Set|HashSet|PrivilegedAction|Vector)<(\w|\?)/
@@ -935,7 +935,7 @@ rule code_css {
         type = "code/css"
 
     strings:
-        $css = /(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+{[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}/
+        $css = /(^|\n|\})(html|body|footer|span\.|img\.|a\.|\.[a-zA-Z\-.]+)[^{]+\{[ \t]*(padding|color|width|margin|background|font|text)[^}]+\}/
 
     condition:
         mime startswith "text"
@@ -1053,7 +1053,7 @@ rule code_batch_small {
     strings:
         $batch1 = /(^|\n|@|&| )\^?s\^?t\^?a\^?r\^?t\^?[ \t]+(\/(min|b|wait|belownormal|abovenormal|realtime|high|normal|low|shared|seperate|max|i)[ \t]+|"\w*"[ \t]+)*["']?([A-Z]:)?([\\|\/]?[\w.]+)+/i
         $batch2 = /%[^:\n\r%]+:~[ \t]*[\-+]?\d{1,3},[ \t]*[\-+]?\d{1,3}%/
-        $batch3 = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|[^[ \t]+)[ \t]+>[ \t]+[^[ \t\n]+/i
+        $batch3 = /(^|\n|@|&| )\^?f\^?i\^?n\^?d\^?s\^?t\^?r\^?[ \t]+["][^"]+["][ \t]+(["][^"]+["]|\[^[ \t]+)[ \t]+>[ \t]+\[^[ \t\n]+/i
         $batch4 = /(^|\n| )[ "]*([a-zA-Z]:)?(\.?\\[^\\\n]+|\.?\/[^\/\n]+)+\.(exe|bat|cmd|ps1)[ "]*(([\/\-]?\w+[ "]*|&)[ \t]*)*($|\n)/i
         $batch5 = /(^|\n| ) *[\w\.]+\.(exe|bat|cmd|ps1)( [\-\/"]?[^ \n]+"?)+ *($|\n)/i
         $batch6 = /(^|\n|@|&| )(timeout|taskkill|tasklist|vssadmin|schtasks)( ([\/"]?[\w\.:\\\/]"?|&)+)+/i
@@ -1184,7 +1184,7 @@ rule code_perl {
 
     strings:
         $ = /(^|\n)[ \t]*my[ \t]+\$\w+[ \t]*=/
-        $ = /(^|\n)[ \t]*sub[ \t]+\w+[ \t]*{/
+        $ = /(^|\n)[ \t]*sub[ \t]+\w+[ \t]*\{/
         $ = /(^|\n)[ \t]*package[ \t]+[\w\.]+;", b"@_/
 
     condition:
