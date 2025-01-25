@@ -57,7 +57,7 @@ def sample(request):
 
 
 if SAMPLES_LOCATION:
+    identify = forge.get_identify(use_cache=False)
     @pytest.mark.parametrize("sample", Path(SAMPLES_LOCATION).rglob("*.cart"), ids=get_ids, indirect=True)
     def test_identify_samples(sample):
-        with forge.get_identify(use_cache=False) as identify:
-            assert identify.fileinfo(sample[0], generate_hashes=False)["type"] == sample[1]
+        assert identify.fileinfo(sample[0], generate_hashes=False)["type"] == sample[1]
