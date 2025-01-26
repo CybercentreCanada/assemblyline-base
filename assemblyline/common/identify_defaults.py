@@ -32,6 +32,9 @@ OLE_CLSID_GUIDs = {
     "BDD1F04B-858B-11D1-B16A-00C0F0283628": "document/office/word",  # Doc (see CVE2012-0158)
 }
 
+# Default externals/global variables for Yara
+YARA_DEFAULT_EXTERNALS = {'mime': '', 'magic': '', 'type': ''}
+
 # Assemblyline type to file extension mapping
 type_to_extension = {
     "archive/chm": ".chm",

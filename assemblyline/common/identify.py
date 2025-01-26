@@ -22,7 +22,7 @@ import yara_x
 
 from assemblyline.common.digests import DEFAULT_BLOCKSIZE, get_digests_for_file
 from assemblyline.common.forge import get_cachestore, get_config, get_constants, get_datastore
-from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs, untrusted_mimes
+from assemblyline.common.identify_defaults import OLE_CLSID_GUIDs, untrusted_mimes, YARA_DEFAULT_EXTERNALS
 from assemblyline.common.identify_defaults import magic_patterns as default_magic_patterns
 from assemblyline.common.identify_defaults import trusted_mimes as default_trusted_mimes
 from assemblyline.common.str_utils import dotdump, safe_str
@@ -48,12 +48,11 @@ class Identify:
         self.use_cache = use_cache
         self.custom = re.compile(r"^custom: ", re.IGNORECASE)
         self.lock = threading.Lock()
-        self.yara_default_externals = {"mime": "", "magic": "", "type": ""}
         self.yara_compiler = yara_x.Compiler()
         self.yara_rules: yara_x.Scanner = None
 
         # Define globals/externals for yara rules
-        [self.yara_compiler.define_global(k, v) for k, v in self.yara_default_externals.items()]
+        [self.yara_compiler.define_global(k, v) for k, v in YARA_DEFAULT_EXTERNALS.items()]
 
 
         # If cache is use, load the config and datastore objects to load potential items from cache
@@ -319,7 +318,7 @@ class Identify:
         return data
 
     def yara_ident(self, path: str, info: Dict, fallback="unknown") -> Tuple[str, Union[str, int]]:
-        externals = {k: v or "" for k, v in info.items() if k in self.yara_default_externals}
+        externals = {k: v or "" for k, v in info.items() if k in YARA_DEFAULT_EXTERNALS}
         try:
             with self.lock:
                 yara_rules = self.yara_rules
