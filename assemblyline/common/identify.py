@@ -377,6 +377,7 @@ class Identify:
                             return data
                     except Exception:
                         pass
+                    csvfile.seek(0)
                     try:
                         # Normal CSV didin't work, try sniffing the csv to see how we could parse it
                         dialect = csv.Sniffer().sniff(csvfile.read(1024))
