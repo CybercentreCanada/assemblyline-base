@@ -366,9 +366,20 @@ class Identify:
         # If we're so far failed to identified the file, lets run the yara rules
         elif "unknown" in data["type"] or data["type"] == "text/plain":
             # We do not trust magic/mimetype's CSV identification, so we test it first
-            if data["magic"] == "CSV text" or data["mime"] == "text/csv":
-                try:
-                    with open(path, newline='') as csvfile:
+            if data["magic"] == "CSV text" or data["mime"] in ["text/csv", "application/csv"]:
+                with open(path, newline='') as csvfile:
+                    try:
+                        # Try to read the file as a normal csv without special sniffed dialect
+                        complete_data = [x for x in islice(csv.reader(csvfile), 100)]
+                        if len(complete_data) > 2 and len(set([len(x) for x in complete_data])) == 1:
+                            data["type"] = "text/csv"
+                            # Final type identified, shortcut further processing
+                            return data
+                    except Exception:
+                        pass
+                    csvfile.seek(0)
+                    try:
+                        # Normal CSV didn't work, try sniffing the csv to see how we could parse it
                         dialect = csv.Sniffer().sniff(csvfile.read(1024))
                         csvfile.seek(0)
                         complete_data = [x for x in islice(csv.reader(csvfile, dialect), 100)]
@@ -376,8 +387,8 @@ class Identify:
                             data["type"] = "text/csv"
                             # Final type identified, shortcut further processing
                             return data
-                except Exception:
-                    pass
+                    except Exception:
+                        pass
 
             if data["type"] == "text/plain":
                 # Check if the file is a misidentified json first before running the yara rules
