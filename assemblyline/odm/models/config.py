@@ -2019,6 +2019,7 @@ class SubmissionProfileParams(odm.Model):
     delete_after_archive = odm.Optional(odm.Boolean(),
                                         description="When the submission is archived, should we delete it from hot storage right away?")
     ttl = odm.Optional(odm.Integer(), description="Time, in days, to live for this submission")
+    type = odm.Optional(odm.Keyword(), description="Type of submission")
     use_archive_alternate_dtl = odm.Optional(odm.Boolean(),
                                              description="Should we use the alternate dtl while archiving?")
 
@@ -2026,40 +2027,60 @@ class SubmissionProfileParams(odm.Model):
 @odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
 class SubmissionProfile(odm.Model):
     name = odm.Text(description="Submission profile name")
+    display_name = odm.Text(description="Submission profile display name")
     classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
                                               description="Submission profile classification")
     params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
     editable_params = odm.Mapping(odm.List(odm.Text()), default={},
-                                  description="A list of specific parameters that can be configured. The format of this configuration is `(core|<service_name>).<parameter>`.")
+                                  description="A list of parameters that can be configured for this profile. The keys are the service names or \"core\" and the values are the parameters that can be configured.")
 
+
+DEFAULT_EDITABLE_PARAMS = {
+    # Default editable params that are used in all bundled profiles
+    "core": ["priority", "type", "ttl"],
+    "CAPA": ["renderer"],
+    "CAPE": ["password", "analysis_timeout_in_seconds"],
+    "DocumentPreview": ["analyze_render", "max_pages_rendered", "run_ocr_on_first_n_pages"],
+    "Extract": ["password"],
+    "Intezer": ["dynamic_submit"],
+    "URLDownloader": ["proxy"],
+    "URLCreator": ["minimum_maliciousness"],
+    "XLMMacroDeobfuscator": ["password"]
+}
 
 DEFAULT_SUBMISSION_PROFILES = [
     {
         # Only perform static analysis
         "name": "static",
+        "display_name": "Static Analysis",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL
             }
-        }
+        },
+        "editable_params": DEFAULT_EDITABLE_PARAMS
     },
     {
         # Perform static analysis along with dynamic analysis
         "name": "dynamic",
+        "display_name": "Static Analysis with Dynamic Analysis",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
             }
-        }
+        },
+        "editable_params": DEFAULT_EDITABLE_PARAMS
 
     },
     {
         # Perform static analysis along with internet connected services
         "name": "static_with_internet",
+        "display_name": "Static Analysis with Internet Connected Services",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
-            }
+            },
+        "editable_params": DEFAULT_EDITABLE_PARAMS
         }
 
     },
