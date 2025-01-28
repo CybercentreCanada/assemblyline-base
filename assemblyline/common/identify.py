@@ -379,7 +379,7 @@ class Identify:
                         pass
                     csvfile.seek(0)
                     try:
-                        # Normal CSV didin't work, try sniffing the csv to see how we could parse it
+                        # Normal CSV didn't work, try sniffing the csv to see how we could parse it
                         dialect = csv.Sniffer().sniff(csvfile.read(1024))
                         csvfile.seek(0)
                         complete_data = [x for x in islice(csv.reader(csvfile, dialect), 100)]
