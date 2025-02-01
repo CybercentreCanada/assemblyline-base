@@ -1,7 +1,10 @@
 from typing import Any, Dict, List
 
 from assemblyline import odm
+<<<<<<< HEAD
 from assemblyline.common.constants import PRIORITIES
+=======
+>>>>>>> refs/remotes/origin/AL-2646
 from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
@@ -2124,11 +2127,14 @@ class Submission(odm.Model):
                              description="Tag types that show up in the submission summary")
     verdicts = odm.Compound(Verdicts, default=DEFAULT_VERDICTS,
                             description="Minimum score value to get the specified verdict.")
+<<<<<<< HEAD
     default_temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
                                                          description="temporary_keys values for well known services.")
     temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
                                                  description="Set the operation that will be used to update values "
                                                              "using this key in the temporary submission data.")
+=======
+>>>>>>> refs/remotes/origin/AL-2646
     profiles = odm.List(odm.Compound(SubmissionProfile),
                         description="Submission profiles with preset submission parameters")
 
@@ -2153,8 +2159,11 @@ DEFAULT_SUBMISSION = {
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
     'verdicts': DEFAULT_VERDICTS,
+<<<<<<< HEAD
     'default_temporary_keys': DEFAULT_TEMPORARY_KEYS,
     'temporary_keys': {},
+=======
+>>>>>>> refs/remotes/origin/AL-2646
     'profiles': DEFAULT_SUBMISSION_PROFILES
 }
 

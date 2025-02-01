@@ -1,5 +1,9 @@
 from assemblyline import odm
+<<<<<<< HEAD
 from assemblyline.common import forge, constants
+=======
+from assemblyline.common import forge
+>>>>>>> refs/remotes/origin/AL-2646
 from assemblyline.odm.models.config import SubmissionProfileParams
 from assemblyline.odm.models.submission import ServiceSelection
 
