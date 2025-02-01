@@ -2001,11 +2001,13 @@ DEFAULT_METADATA_CONFIGURATION = {
 
 @odm.model(index=True, store=False, description="Submission Parameters for profile")
 class SubmissionProfileParams(odm.Model):
+    classification = odm.Optional(odm.Classification(),
+                                        description="Original classification of the submission")
     deep_scan = odm.Optional(odm.Boolean(), description="Should a deep scan be performed?")
     generate_alert = odm.Optional(odm.Boolean(), description="Should this submission generate an alert?")
     ignore_cache = odm.Optional(odm.Boolean(), description="Ignore the cached service results?")
-    ignore_dynamic_recursion_prevention = odm.Optional(odm.Boolean(),
-                                                       description="Should we ignore dynamic recursion prevention?")
+    ignore_recursion_prevention = odm.Optional(odm.Boolean(),
+                                               description="Should we ignore recursion prevention?")
     ignore_filtering = odm.Optional(odm.Boolean(), description="Should we ignore filtering services?")
     ignore_size = odm.Optional(odm.Boolean(), description="Ignore the file size limits?")
     max_extracted = odm.Optional(odm.Integer(), description="Max number of extracted files")
@@ -2032,12 +2034,12 @@ class SubmissionProfile(odm.Model):
                                               description="Submission profile classification")
     params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
     editable_params = odm.Mapping(odm.List(odm.Text()), default={},
-                                  description="A list of parameters that can be configured for this profile. The keys are the service names or \"core\" and the values are the parameters that can be configured.")
+                                  description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that can be configured.")
 
 
 DEFAULT_EDITABLE_PARAMS = {
     # Default editable params that are used in all bundled profiles
-    "core": ["priority", "type", "ttl"],
+    "submission": ["classification", "deep_scan", "generate_alert", "ignore_filtering", "priority", "type", "ttl"],
     "CAPA": ["renderer"],
     "CAPE": ["password", "analysis_timeout_in_seconds"],
     "DocumentPreview": ["analyze_render", "max_pages_rendered", "run_ocr_on_first_n_pages"],
