@@ -123,6 +123,7 @@ class Service(odm.Model):
     # Regexes applied to assemblyline style file type string
     accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS,
                           description="Regex to accept files as identified by Assemblyline")
+    auto_update: bool | None = odm.Optional(odm.Boolean(), description="Should the service be auto-updated?")
     rejects = odm.Optional(odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS),
                            description="Regex to reject files as identified by Assemblyline")
 

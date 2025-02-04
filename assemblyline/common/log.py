@@ -1,7 +1,9 @@
 import logging
 import logging.config
 import logging.handlers
+
 from traceback import format_exception
+from typing import Optional
 
 import json
 import os
@@ -9,6 +11,10 @@ import os
 from assemblyline.common import forge
 from assemblyline.common.logformat import AL_LOG_FORMAT, AL_SYSLOG_FORMAT, AL_JSON_FORMAT
 from assemblyline.odm.models.config import Config
+
+# Check to see if a log level override is set in the environment.
+# This is useful for debugging purposes.
+LOG_LEVEL_OVERRIDE = os.environ.get("LOG_LEVEL")
 
 log_level_map = {
     "DEBUG": logging.DEBUG,
@@ -59,8 +65,12 @@ class JsonFormatter(logging.Formatter):
         return ''.join(format_exception(*exc_info))
 
 
-def init_logging(name: str, config: Config = None, log_level: int = None):
+def init_logging(name: str, config: Config = None, log_level: Optional[str] = None):
     logger = logging.getLogger('assemblyline')
+
+    # If the environment has a log level override, use it.
+    if not log_level and LOG_LEVEL_OVERRIDE:
+        log_level = LOG_LEVEL_OVERRIDE
 
     # Test if we've initialized the log handler already.
     if len(logger.handlers) != 0:

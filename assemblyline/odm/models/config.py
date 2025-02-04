@@ -1212,6 +1212,7 @@ class ServiceRegistry(odm.Model):
 @odm.model(index=False, store=False, description="Services Configuration")
 class Services(odm.Model):
     categories: List[str] = odm.List(odm.Keyword(), description="List of categories a service can be assigned to")
+    default_auto_update: bool = odm.Boolean(default=False, description="Should services be auto-updated?")
     default_timeout: int = odm.Integer(description="Default service timeout time in seconds")
     stages: List[str] = odm.List(odm.Keyword(), description="List of execution stages a service can be assigned to")
     image_variables: Dict[str, str] = odm.Mapping(odm.Keyword(default=''),
@@ -1249,6 +1250,7 @@ class Services(odm.Model):
 
 DEFAULT_SERVICES = {
     "categories": SERVICE_CATEGORIES,
+    "default_auto_update": False,
     "default_timeout": 60,
     "stages": SERVICE_STAGES,
     "image_variables": {},
