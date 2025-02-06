@@ -929,6 +929,10 @@ class Scaler(odm.Model):
     cluster_pod_list = odm.boolean(default=True, description="Sets if scaler list pods for all namespaces. "
                                    "Disabling this lets you use stricter cluster roles but will make cluster resource "
                                    "usage less accurate, setting a namespace resource quota might be needed.")
+    enable_pod_security = odm.boolean(
+        default=False,
+        description="Launch all containers in compliance with the 'Restricted' pod security standard.",
+    )
 
 
 DEFAULT_SCALER = {
