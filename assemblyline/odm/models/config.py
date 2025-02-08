@@ -2028,20 +2028,9 @@ class SubmissionProfileParams(odm.Model):
                                              description="Should we use the alternate dtl while archiving?")
 
 
-@odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
-class SubmissionProfile(odm.Model):
-    name = odm.Text(description="Submission profile name")
-    display_name = odm.Text(description="Submission profile display name")
-    classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
-                                              description="Submission profile classification")
-    params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
-    editable_params = odm.Mapping(odm.List(odm.Text()), default={},
-                                  description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that can be configured.")
-
-
 DEFAULT_EDITABLE_PARAMS = {
-    # Default editable params that are used in all bundled profiles
-    "submission": ["classification", "deep_scan", "generate_alert", "ignore_filtering", "priority", "type", "ttl"],
+    # Default editable params that are used in all profiles
+    "submission": ["classification", "deep_scan", "ignore_cache", "generate_alert", "ignore_filtering", "priority", "type", "ttl"],
     "CAPA": ["renderer"],
     "CAPE": ["password", "analysis_timeout_in_seconds"],
     "DocumentPreview": ["analyze_render", "max_pages_rendered", "run_ocr_on_first_n_pages"],
@@ -2051,6 +2040,17 @@ DEFAULT_EDITABLE_PARAMS = {
     "URLCreator": ["minimum_maliciousness"],
     "XLMMacroDeobfuscator": ["password"]
 }
+
+@odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
+class SubmissionProfile(odm.Model):
+    name = odm.Text(description="Submission profile name")
+    display_name = odm.Text(description="Submission profile display name")
+    classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
+                                              description="Submission profile classification")
+    params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
+    editable_params = odm.Mapping(odm.List(odm.Text()), default=DEFAULT_EDITABLE_PARAMS,
+                                  description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that can be configured.")
+
 
 DEFAULT_SUBMISSION_PROFILES = [
     {
@@ -2062,7 +2062,6 @@ DEFAULT_SUBMISSION_PROFILES = [
                 "selected": DEFAULT_SRV_SEL
             }
         },
-        "editable_params": DEFAULT_EDITABLE_PARAMS
     },
     {
         # Perform static analysis along with dynamic analysis
@@ -2073,8 +2072,6 @@ DEFAULT_SUBMISSION_PROFILES = [
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
             }
         },
-        "editable_params": DEFAULT_EDITABLE_PARAMS
-
     },
     {
         # Perform static analysis along with internet connected services
@@ -2084,9 +2081,7 @@ DEFAULT_SUBMISSION_PROFILES = [
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
             },
-        "editable_params": DEFAULT_EDITABLE_PARAMS
-        }
-
+        },
     },
 ]
 
