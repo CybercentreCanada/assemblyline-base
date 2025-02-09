@@ -58,6 +58,7 @@ class UpdateSourceDelta(odm.Model):
     configuration = odm.Optional(odm.Mapping(odm.Any(), default={}), description=REF_UPDATE_SOURCE)
     update_interval = odm.Optional(odm.Integer(min=0), description=REF_UPDATE_SOURCE)
     ignore_cache = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
+    post_data = odm.Optional(odm.Mapping(odm.Any(), default={}), description=REF_UPDATE_SOURCE)
 
 
 @ odm.model(index=False, store=False)
