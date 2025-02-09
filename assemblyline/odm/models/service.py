@@ -94,6 +94,9 @@ class UpdateSource(odm.Model):
                                              description="Update check interval, in seconds, for this source")
     ignore_cache: bool = odm.Boolean(default=False,
                                      description="Ignore source caching and forcefully fetch from source")
+    post_data: dict = odm.Mapping(odm.Any(), default={}, index=False, store=False,
+                                  description="Data that's sent in a POST request (`fetch_method=\"POST\"`)")
+
 
 
 @ odm.model(index=False, store=False, description="Update Configuration for Signatures")
