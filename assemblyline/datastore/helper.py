@@ -1251,10 +1251,6 @@ class AssemblylineDatastore(object):
             else:
                 current_fileinfo['expiry_ts'] = None
 
-            # Update file usage flags
-            fileinfo['oseutno'] |= current_fileinfo['oeuho']
-            fileinfo['oseutno'] |= current_fileinfo['oeuho']
-
             # Update seen counters
             now = now_as_iso()
             current_fileinfo['seen'] = seen = current_fileinfo.get('seen', {})
