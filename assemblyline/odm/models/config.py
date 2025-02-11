@@ -2065,8 +2065,8 @@ DEFAULT_SUBMISSION_PROFILES = [
     },
     {
         # Perform static analysis along with dynamic analysis
-        "name": "dynamic",
-        "display_name": "Static Analysis with Dynamic Analysis",
+        "name": "static_with_dynamic",
+        "display_name": "Static + Dynamic Analysis",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
@@ -2076,7 +2076,7 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Perform static analysis along with internet connected services
         "name": "static_with_internet",
-        "display_name": "Static Analysis with Internet Connected Services",
+        "display_name": "Static Analysis with Internet Access",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
