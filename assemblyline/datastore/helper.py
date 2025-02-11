@@ -1219,6 +1219,11 @@ class AssemblylineDatastore(object):
                 )
                 if classification == cl_engine.normalize_classification(
                         current_fileinfo.get('classification', classification)):
+
+                    # Before we build the UPDATE_SET commands, make sure the flags are merged with OR
+                    fileinfo['is_section_image'] |= current_fileinfo.get('is_section_image', False)
+                    fileinfo['is_supplementary'] |= current_fileinfo.get('is_supplementary', False)
+
                     operations = [
                         (self.file.UPDATE_SET, key, value)
                         for key, value in fileinfo.items()
@@ -1231,6 +1236,13 @@ class AssemblylineDatastore(object):
                         operations.append((self.file.UPDATE_MAX, 'expiry_ts', expiry))
                     if self.file.update(sha256, operations, retry_on_conflict=8):
                         return
+
+            # Before we overwrite current_fileinfo make sure to OR the flags together.
+            # This is done here and above to ensure that once a file is marked by a service 
+            # as safe for a display as a section image (or use as supplementary file) further 
+            # handling of this file, such as extraction or resubmission, won't remove this marking.
+            fileinfo['is_section_image'] |= current_fileinfo.get('is_section_image', False)
+            fileinfo['is_supplementary'] |= current_fileinfo.get('is_supplementary', False)
 
             # Add new fileinfo to current from database
             current_fileinfo.update(fileinfo)
