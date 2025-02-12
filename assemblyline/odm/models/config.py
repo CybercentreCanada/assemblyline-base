@@ -2050,6 +2050,7 @@ class SubmissionProfile(odm.Model):
     params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
     editable_params = odm.Mapping(odm.List(odm.Text()), default=DEFAULT_EDITABLE_PARAMS,
                                   description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that can be configured.")
+    description = odm.Optional(odm.Text(), description="A description of what the profile does")
 
 
 DEFAULT_SUBMISSION_PROFILES = [
@@ -2062,6 +2063,7 @@ DEFAULT_SUBMISSION_PROFILES = [
                 "selected": DEFAULT_SRV_SEL
             }
         },
+        "description": "Analyze files using static analysis techniques and extract information from the file without executing it, such as metadata, strings, and structural information."
     },
     {
         # Perform static analysis along with dynamic analysis
@@ -2072,16 +2074,18 @@ DEFAULT_SUBMISSION_PROFILES = [
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
             }
         },
+        "description": "Analyze files using static analysis techniques along with executing them in a controlled environment to observe their behavior and capture runtime activities, interactions with the system, network communications, and any malicious behavior exhibited by the file during execution."
     },
     {
         # Perform static analysis along with internet connected services
         "name": "static_with_internet",
-        "display_name": "Static Analysis with Internet Access",
+        "display_name": "Internet-Connected Static Analysis",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
             },
         },
+        "description": "Combine traditional static analysis techniques with internet-connected services to gather additional information and context about the file being analyzed."
     },
 ]
 
