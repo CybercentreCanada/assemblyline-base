@@ -12,7 +12,7 @@ TYPES = StringTable('TYPES', [
     ("signature_importer", 3),
     ("viewer", 4),
     ("submitter", 5),
-    ("custom", 6)
+    ("custom", 6),
 ])
 
 ROLES = StringTable('ROLES', [
@@ -52,6 +52,7 @@ ROLES = StringTable('ROLES', [
     ("badlist_manage", 32),
     ("archive_comment", 33),
     ("assistant_use", 34),
+    ("submission_customize", 35)
 ])
 
 
@@ -97,6 +98,7 @@ USER_ROLES_BASIC = {
     ROLES.retrohunt_run,       # Run yara searches
     ROLES.badlist_view,        # View badlist items
     ROLES.badlist_manage,      # Manage (add/delete) badlist items
+    ROLES.submission_customize # Allowed to customize submission properties
 }
 
 USER_ROLES = USER_ROLES_BASIC.union({
@@ -173,6 +175,7 @@ ACL_MAP = {
         ROLES.submission_create,
         ROLES.submission_delete,
         ROLES.submission_manage,
+        ROLES.submission_customize,
         ROLES.retrohunt_run,
     ],
     "E": [
