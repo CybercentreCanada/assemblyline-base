@@ -41,6 +41,8 @@ resources:
         ES_JAVA_OPTS: "-Xms256m -Xmx512m"
         DISCOVERY_TYPE: "single-node"
         ELASTIC_PASSWORD: "devpass"
+        node.name: master
+        cluster.initial_master_nodes: master
       ports:
         - 9200:9200
     - container: es8
@@ -49,6 +51,8 @@ resources:
         ES_JAVA_OPTS: "-Xms256m -Xmx512m"
         DISCOVERY_TYPE: "single-node"
         ELASTIC_PASSWORD: "devpass"
+        node.name: master
+        cluster.initial_master_nodes: master
       ports:
         - 9200:9200
     - container: minio
