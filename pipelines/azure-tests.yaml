@@ -36,7 +36,7 @@ resources:
       ports:
         - 2222:2222
     - container: es7
-      image: cccs/elasticsearch:7.17.4
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.17.4
       env:
         ES_JAVA_OPTS: "-Xms256m -Xmx512m"
         DISCOVERY_TYPE: "single-node"
@@ -44,7 +44,7 @@ resources:
       ports:
         - 9200:9200
     - container: es8
-      image: cccs/elasticsearch:8.10.2
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
       env:
         ES_JAVA_OPTS: "-Xms256m -Xmx512m"
         DISCOVERY_TYPE: "single-node"
@@ -52,7 +52,7 @@ resources:
       ports:
         - 9200:9200
     - container: minio
-      image: cccs/minio
+      image: minio/minio
       env:
         MINIO_ROOT_USER: al_storage_key
         MINIO_ROOT_PASSWORD: Ch@ngeTh!sPa33w0rd
