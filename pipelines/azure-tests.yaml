@@ -54,7 +54,7 @@ resources:
       ports:
         - 9200:9200
     - container: minio
-      image: minio/minio
+      image: cccs/minio
       env:
         MINIO_ROOT_USER: al_storage_key
         MINIO_ROOT_PASSWORD: Ch@ngeTh!sPa33w0rd
@@ -86,10 +86,6 @@ jobs:
       minio: minio
 
     steps:
-      - script: minio server /data
-        displayName: Start Minio for S3 testing
-        target:
-          container: minio
       - checkout: self
         fetchDepth: 1
       - task: UsePythonVersion@0
