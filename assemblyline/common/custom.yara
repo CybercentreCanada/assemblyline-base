@@ -699,6 +699,20 @@ rule code_ps1_in_ps1 {
         code_ps1 and $power
 }
 
+rule code_ps1_small {
+
+    meta:
+        type = "code/ps1"
+        score = 1
+
+    strings:
+        $power = "powershell" nocase fullword
+
+    condition:
+        filesize < 8192
+        and $power at 0
+}
+
 /*
 code/c
 */
