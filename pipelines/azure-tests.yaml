@@ -60,7 +60,6 @@ resources:
         MINIO_ROOT_PASSWORD: Ch@ngeTh!sPa33w0rd
       ports:
         - 9000:9000
-      options: --entrypoint "server /data"
 
 jobs:
   - job: run_test
@@ -87,6 +86,10 @@ jobs:
       minio: minio
 
     steps:
+      - script: server /data
+        displayName: Start Minio for S3 testing
+        target:
+          container: minio
       - checkout: self
         fetchDepth: 1
       - task: UsePythonVersion@0
