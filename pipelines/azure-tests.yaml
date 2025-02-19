@@ -86,7 +86,7 @@ jobs:
       minio: minio
 
     steps:
-      - script: server /data
+      - script: minio server /data
         displayName: Start Minio for S3 testing
         target:
           container: minio
