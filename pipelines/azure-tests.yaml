@@ -60,6 +60,7 @@ resources:
         MINIO_ROOT_PASSWORD: Ch@ngeTh!sPa33w0rd
       ports:
         - 9000:9000
+      options: --entrypoint "server /data"
 
 jobs:
   - job: run_test
