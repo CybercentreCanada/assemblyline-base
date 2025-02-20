@@ -197,7 +197,7 @@ rule code_vbs {
             or (
                 1 of ($strong_vbs*)
                 and (
-                    (#dim_declaration) > 3
+                    (#dim_declaration) > 1
                     or 2 of ($weak_vbs*)
                 )
             )
