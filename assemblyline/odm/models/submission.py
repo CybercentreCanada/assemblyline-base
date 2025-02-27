@@ -12,7 +12,7 @@ DEFAULT_RESUBMIT = []
 @odm.model(index=True, store=False, description="File Model of Submission")
 class File(odm.Model):
     name = odm.Keyword(copyto="__text__", description="Name of the file")
-    size = odm.Optional(odm.Integer(), description="Size of the file in bytes")
+    size = odm.Optional(odm.long(), description="Size of the file in bytes")
     sha256 = odm.SHA256(copyto="__text__", description="SHA256 hash of the file")
 
 
@@ -139,7 +139,7 @@ class Submission(odm.Model):
     max_score = odm.Integer(description="Maximum score of all the files in the scan")
     metadata = odm.FlattenedObject(store=False, description="Metadata associated to the submission")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details", ai=False)
-    results: list[str] = odm.List(odm.Keyword(), store=False, description="List of result keys", ai=False)
+    results: list[str] = odm.List(odm.wildcard(), store=False, description="List of result keys", ai=False)
     sid: str = odm.UUID(copyto="__text__", description="Submission ID")
     state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission", ai=False)
     to_be_deleted = odm.Boolean(
