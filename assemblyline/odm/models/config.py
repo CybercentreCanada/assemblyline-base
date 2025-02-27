@@ -2111,7 +2111,7 @@ class Submission(odm.Model):
     emptyresult_dtl:  int = odm.Integer(min=0, description="Number of days emptyresult will remain in the system")
     max_dtl: int = odm.Integer(min=0, description="Maximum number of days submissions will remain in the system")
     max_extraction_depth: int = odm.Integer(description="Maximum files extraction depth")
-    max_file_size: int = odm.Integer(description="Maximum size for files submitted in the system")
+    max_file_size: int = odm.long(description="Maximum size for files submitted in the system")
     max_metadata_length: int = odm.Integer(description="Maximum length for each metadata values")
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
     metadata: MetadataConfig = odm.Compound(MetadataConfig, default=DEFAULT_METADATA_CONFIGURATION,
