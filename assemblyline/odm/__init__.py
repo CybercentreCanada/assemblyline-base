@@ -5,7 +5,8 @@ from assemblyline.odm.base import *
 
 # Imports that have the same effect as some part of the one above so that
 # type checking can use this file properly.
-from assemblyline.odm.base import Keyword, Optional, Boolean, Integer, List, Compound, Mapping, Date, Long, Enum
+from assemblyline.odm.base import Keyword, Optional, Boolean, Integer, List, Compound, Mapping, \
+    Date, Long, Enum, Wildcard
 from datetime import datetime
 
 _InnerType = typing.TypeVar("_InnerType")
@@ -25,6 +26,10 @@ def description(text):
 
 def keyword(*args, **kwargs) -> str:
     return typing.cast(str, Keyword(*args, **kwargs))
+
+
+def wildcard(*args, **kwargs) -> str:
+    return typing.cast(str, Wildcard(*args, **kwargs))
 
 
 def date(*args, **kwargs) -> datetime:
