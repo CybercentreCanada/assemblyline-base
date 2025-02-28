@@ -102,7 +102,7 @@ class File(odm.Model):
     seen = odm.Compound(Seen, default={}, description="Records the frequency and timestamps of when the file was encountered.", ai=False)
     sha1 = odm.SHA1(copyto="__text__", description="The SHA1 hash of the file, providing a more secure alternative to MD5 for integrity checks.", ai=False)
     sha256 = odm.SHA256(copyto="__text__", description="The SHA256 hash of the file, offering a high level of security for integrity verification.")
-    size = odm.long(description="Size of the file in bytes.")
+    size = odm.Integer(description="Size of the file in bytes.")
     ssdeep = odm.SSDeepHash(store=False, description="The fuzzy hash of the file using SSDEEP, which is useful for identifying similar files.", ai=False)
     type = odm.Keyword(copyto="__text__", description="The file type as determined by the AssemblyLine file type identification service.")
     tlsh = odm.Optional(odm.Keyword(copyto="__text__"), description="A locality-sensitive hash (TLSH) of the file's content, useful for similarity comparisons.", ai=False)

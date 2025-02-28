@@ -15,7 +15,7 @@ class FileInfo(odm.Model):
     mime = odm.Optional(odm.Keyword(), description="The libmagic mime type")
     sha1 = odm.SHA1(description="SHA1 hash of the file")
     sha256 = odm.SHA256(description="SHA256 hash of the file")
-    size = odm.long(description="Size of the file in bytes")
+    size = odm.Integer(description="Size of the file in bytes")
     ssdeep = odm.Optional(odm.SSDeepHash(description="SSDEEP hash of the file"))
     tlsh = odm.Optional(odm.Keyword(description="TLSH hash of the file"))
     type = odm.Keyword(description="Type of file as identified by Assemblyline")
