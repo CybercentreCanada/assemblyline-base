@@ -8,19 +8,19 @@ import time
 import typing
 import warnings
 
-from copy import deepcopy
-from assemblyline.common.isotime import now_as_iso
-from datemath import dm
-from datemath.helpers import DateMathException
 from datetime import datetime
 from enum import Enum
 from os import environ
 from typing import Dict, Any, Union, TypeVar, Generic, Optional
+from copy import deepcopy
 
+from datemath import dm
+from datemath.helpers import DateMathException
 import elasticsearch
 import elasticsearch.helpers
 
 from assemblyline import odm
+from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
 from assemblyline.datastore.exceptions import (

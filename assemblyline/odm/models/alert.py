@@ -115,7 +115,7 @@ class File(odm.Model):
     name = odm.Keyword(copyto="__text__", description="The original name of the file as submitted.")
     sha1 = odm.SHA1(copyto="__text__", description="The SHA1 hash of the file.")
     sha256 = odm.SHA256(copyto="__text__", description="The SHA256 hash of the file.")
-    size = odm.long(store=False, description="The size of the file in bytes.")
+    size = odm.Integer(store=False, description="The size of the file in bytes.")
     type = odm.Keyword(copyto="__text__", description="	The file type as identified by Assemblyline's analysis.")
     screenshots = odm.List(odm.Compound(Screenshot), default=[], description="Screenshots taken of the file during analysis, if applicable.")
 
