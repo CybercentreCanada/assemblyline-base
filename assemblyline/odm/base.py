@@ -19,6 +19,7 @@ import re
 import sys
 import unicodedata
 from datetime import datetime
+import typing
 from typing import Any as _Any
 from typing import Dict, Tuple, Union
 
@@ -289,6 +290,31 @@ class Keyword(_Field):
 
         return str(value)
 
+
+class Wildcard(Keyword):
+    """
+    A keyword with enhanced indexing to support more complex queries.
+    """
+
+    def check(self, value, **kwargs):
+        if self.optional and value is None:
+            return None
+
+        # We have a special case for bytes here due to how often strings and bytes
+        # get mixed up in python apis
+        if isinstance(value, bytes):
+            raise ValueError(f"[{self.name or self.parent_name}] Keyword doesn't accept bytes values")
+
+        if value == '' or value is None:
+            if self.default_set:
+                value = self.default
+            else:
+                raise ValueError(f"[{self.name or self.parent_name}] Empty strings are not allowed without defaults")
+
+        if value is None:
+            return None
+
+        return str(value)
 
 class EmptyableKeyword(_Field):
     """
@@ -638,9 +664,9 @@ class IndexText(_Field):
 
 
 class Integer(_Field):
-    """A field storing an integer value."""
+    """A field storing a signed 32 bit integer value."""
 
-    def __init__(self, max: int = None, min: int = None, *args, **kwargs):
+    def __init__(self, max: typing.Optional[int] = None, min: typing.Optional[int] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.max = max
         self.min = min
@@ -668,35 +694,8 @@ class Integer(_Field):
         return ret_val
 
 
-class Long(_Field):
-    """A field storing an integer value."""
-
-    def __init__(self, max: int = None, min: int = None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.max = max
-        self.min = min
-
-    def check(self, value, **kwargs):
-        if self.optional and value is None:
-            return None
-
-        if value is None or value == "":
-            if self.default_set:
-                ret_val = self.default
-            else:
-                raise ValueError(f"[{self.name or self.parent_name}] No value provided and no default value set.")
-        else:
-            ret_val = int(value)
-
-        # Test min/max
-        if self.max is not None and ret_val > self.max:
-            raise ValueError(
-                f"[{self.name or self.parent_name}] Value bigger then the max value. ({value} > {self.max})")
-        if self.min is not None and ret_val < self.min:
-            raise ValueError(
-                f"[{self.name or self.parent_name}] Value smaller then the min value. ({value} < {self.max})")
-
-        return ret_val
+class Long(Integer):
+    """A field storing a signed 64 bit integer value."""
 
 
 class Float(_Field):
