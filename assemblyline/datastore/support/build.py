@@ -204,14 +204,18 @@ def build_templates(name, field, nested_template=False, index=True) -> list:
 
             return [{f"nested_{name}": main_template}]
         else:
+            mapping = __type_mapping[field.__class__]
             field_template = {
                 "path_match": name,
                 "mapping": {
-                    "type": __type_mapping[field.__class__],
+                    "type": mapping,
                 }
             }
 
-            field_template['mapping']['index'] = field.index
+            # Wildcard doesn't suport setting index, its _always_ indexed
+            if mapping != 'wildcard':
+                field_template['mapping']['index'] = field.index
+    
             if field.copyto:
                 assert len(field.copyto) == 1
                 field_template['mapping']['copy_to'] = field.copyto[0]
