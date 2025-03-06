@@ -1,5 +1,5 @@
 from assemblyline.odm.base import _Field
-from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, Long, \
+from assemblyline.odm import Keyword, Wildcard, Text, List, Compound, Date, Integer, Long, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
     SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword, \
     Json, ValidatedKeyword, UNCPath
@@ -7,6 +7,7 @@ from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, Long,
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
     Keyword: 'keyword',
+    Wildcard: 'wildcard',
     Boolean: 'boolean',
     Integer: 'integer',
     Long: 'long',
@@ -110,6 +111,11 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 'type': __type_mapping[field.__class__],
                 "analyzer": __analyzer_mapping[field.__class__]
             })
+
+        elif isinstance(field, Wildcard):
+            es_data_type = __type_mapping[field.__class__]
+            data = {'type': es_data_type}
+            mappings[name.strip(".")] = data
 
         elif isinstance(field, Keyword):
             es_data_type = __type_mapping[field.__class__]
