@@ -14,7 +14,7 @@ RULE_STATUSES = DEPLOYED_STATUSES + DRAFT_STATUSES + STALE_STATUSES
 @odm.model(index=True, store=True)
 class Signature(odm.Model):
     classification = odm.Classification(store=True, default=Classification.UNRESTRICTED)
-    data = odm.Text(index=False, store=False)
+    data = odm.Text(copyto="__text__", store=False)
     last_modified = odm.Date(default="NOW")
     name = odm.Keyword(copyto="__text__")
     order = odm.Integer(default=1, store=False)
