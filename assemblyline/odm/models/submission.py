@@ -140,7 +140,7 @@ class Submission(odm.Model):
     file_count = odm.Integer(description="Total number of files in the submission", ai=False)
     files: list[File] = odm.List(odm.Compound(File), description="List of files that were originally submitted")
     max_score = odm.Integer(description="Maximum score of all the files in the scan")
-    metadata = odm.FlattenedObject(store=False, description="Metadata associated to the submission")
+    metadata = odm.Mapping(odm.wildcard(), copyto="__text__", store=False, description="Metadata associated to the submission")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details", ai=False)
     results: list[str] = odm.List(odm.wildcard(), store=False, description="List of result keys", ai=False)
     sid: str = odm.UUID(copyto="__text__", description="Submission ID")
