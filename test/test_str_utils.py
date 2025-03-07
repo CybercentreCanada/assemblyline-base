@@ -83,11 +83,11 @@ def test_remove_bidir_unicode_controls():
 
 def test_wrap_bidir_unicode_string():
     from assemblyline.common.str_utils import DirectionalFormattingCharacter as DFC
-    test_str = 'a'.join(str_utils.EO_CONTROL_CHARS) + 'a'.join(str_utils.I_CONTROL_CHARS)
+    test_str = 'a'.join(str_utils.EO_CONTROL_CHARS) + DFC.PDF.value + 'a'.join(str_utils.I_CONTROL_CHARS)
     a = str_utils.wrap_bidir_unicode_string(test_str)
     assert a == DFC.LRE.value + \
                 test_str + \
-                len(str_utils.EO_CONTROL_CHARS) * DFC.PDF.value + \
+                (len(str_utils.EO_CONTROL_CHARS) - 1) * DFC.PDF.value + \
                 len(str_utils.I_CONTROL_CHARS) * DFC.PDI.value + \
                 DFC.PDF.value
 
