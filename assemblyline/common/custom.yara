@@ -710,7 +710,7 @@ rule code_ps1_small {
         $power = "powershell" nocase fullword
 
     condition:
-        filesize < 8192
+        filesize < 12288
         and $power at 0
 }
 
