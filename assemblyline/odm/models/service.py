@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 from typing import Optional as Opt
 
-from assemblyline import odm
 from assemblyline.common import forge
 from assemblyline.common.constants import DEFAULT_SERVICE_ACCEPTS, DEFAULT_SERVICE_REJECTS
+
+from assemblyline import odm
 
 Classification = forge.get_classification()
 
@@ -94,8 +96,8 @@ class UpdateSource(odm.Model):
                                              description="Update check interval, in seconds, for this source")
     ignore_cache: bool = odm.Boolean(default=False,
                                      description="Ignore source caching and forcefully fetch from source")
-    post_data: dict = odm.Mapping(odm.Any(), default={}, index=False, store=False,
-                                  description="Data that's sent in a POST request (`fetch_method=\"POST\"`)")
+    post_data: str = odm.Text(default="", index=False, store=False,
+                              description="Data that's sent in a POST request (`fetch_method=\"POST\"`)")
 
 
 

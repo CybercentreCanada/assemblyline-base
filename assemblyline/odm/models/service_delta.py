@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from assemblyline import odm
-from assemblyline.odm.models.service import SIGNATURE_DELIMITERS, FETCH_METHODS
+from assemblyline.odm.models.service import FETCH_METHODS, SIGNATURE_DELIMITERS
 
+from assemblyline import odm
 
 REF_DEPENDENCY_CONFIG = "Refer to:<br>[Service - DependencyConfig](../service/#dependencyconfig)"
 REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
@@ -58,7 +58,7 @@ class UpdateSourceDelta(odm.Model):
     configuration = odm.Optional(odm.Mapping(odm.Any(), default={}), description=REF_UPDATE_SOURCE)
     update_interval = odm.Optional(odm.Integer(min=0), description=REF_UPDATE_SOURCE)
     ignore_cache = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
-    post_data = odm.Optional(odm.Mapping(odm.Any(), default={}), description=REF_UPDATE_SOURCE)
+    post_data = odm.Optional(odm.Text(), description=REF_UPDATE_SOURCE)
 
 
 @ odm.model(index=False, store=False)
