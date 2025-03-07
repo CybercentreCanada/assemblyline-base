@@ -83,7 +83,7 @@ def wrap_bidir_unicode_string(uni_str: Union[str, bytes]) -> Union[str, bytes]:
     if idf_count > 0:
         uni_str += (DirectionalFormattingCharacter.PDI.value * idf_count)
 
-    # Final wrapper (LTR block) to neutralize any Marks (u+200E and u+200F)
+    # Final wrapper (LTR block) to neutralize any Marks (u+200E, u+200F and u+061C)
     uni_str = DirectionalFormattingCharacter.LRE.value + uni_str + DirectionalFormattingCharacter.PDF.value
 
     return uni_str
