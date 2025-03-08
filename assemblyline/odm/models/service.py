@@ -98,8 +98,8 @@ class UpdateSource(odm.Model):
                                              description="Update check interval, in seconds, for this source")
     ignore_cache: bool = odm.Boolean(default=False,
                                      description="Ignore source caching and forcefully fetch from source")
-    post_data: str = odm.Optional(odm.Text(), index=False, store=False,
-                                  description="Data that's sent in a POST request (`fetch_method=\"POST\"`)")
+    data: str = odm.Optional(odm.Text(), index=False, store=False,
+                             description="Data that's sent in a POST request (`fetch_method=\"POST\"`)")
 
 
 
