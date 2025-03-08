@@ -113,7 +113,7 @@ class UpdateConfig(odm.Model):
                                    default="double_new_line",
                                    description="Delimiter used when given a list of signatures")
     custom_delimiter = odm.Optional(odm.Keyword(), description="Custom delimiter definition")
-    default_pattern = odm.Text(description="Default pattern used for matching files")
+    default_pattern = odm.Text(default=".*", description="Default pattern used for matching files")
 
 
 @ odm.model(index=False, store=False, description="Submission Parameters for Service")
