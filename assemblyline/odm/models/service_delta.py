@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from assemblyline import odm
-from assemblyline.odm.models.service import SIGNATURE_DELIMITERS, FETCH_METHODS
-
+from assemblyline.odm.models.service import FETCH_METHODS, SIGNATURE_DELIMITERS
 
 REF_DEPENDENCY_CONFIG = "Refer to:<br>[Service - DependencyConfig](../service/#dependencyconfig)"
 REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
@@ -84,6 +83,7 @@ class UpdateConfigDelta(odm.Model):
     wait_for_update = odm.Optional(odm.Boolean(), description=REF_UPDATE_CONFIG)
     signature_delimiter = odm.Optional(odm.Enum(values=SIGNATURE_DELIMITERS.keys()), description=REF_UPDATE_CONFIG)
     custom_delimiter = odm.Optional(odm.Keyword(), description=REF_UPDATE_CONFIG)
+    default_pattern = odm.Optional(odm.Text(), description=REF_UPDATE_CONFIG)
 
 
 @ odm.model(index=False, store=False)
