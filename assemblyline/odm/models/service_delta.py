@@ -83,6 +83,7 @@ class UpdateConfigDelta(odm.Model):
     wait_for_update = odm.Optional(odm.Boolean(), description=REF_UPDATE_CONFIG)
     signature_delimiter = odm.Optional(odm.Enum(values=SIGNATURE_DELIMITERS.keys()), description=REF_UPDATE_CONFIG)
     custom_delimiter = odm.Optional(odm.Keyword(), description=REF_UPDATE_CONFIG)
+    default_pattern = odm.Optional(odm.Text(), description=REF_UPDATE_CONFIG)
 
 
 @ odm.model(index=False, store=False)
