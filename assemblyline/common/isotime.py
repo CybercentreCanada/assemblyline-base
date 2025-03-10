@@ -9,6 +9,8 @@ LOCAL_FMT = '%Y-%m-%d %H:%M:%S'
 LOCAL_FMT_WITH_MS = f"{LOCAL_FMT}.%f"
 DB_FMT = '%Y%m%d'
 
+DAY_IN_SECONDS =  (24 * 60 * 60)
+
 MAX_TIME = datetime.max
 MIN_TIME = datetime.min
 

@@ -9,6 +9,7 @@ from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION, BUILD_MINOR
 from assemblyline.odm.models.alert import Alert, Event, STATUSES, PRIORITIES
+from assemblyline.odm.models.apikey import Apikey, get_apikey_id
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
@@ -396,14 +397,26 @@ def create_users(ds, log=None):
     user_pass = os.getenv("DEV_USER_PASS", 'user') or 'user'
     user_data = User({
         "agrees_with_tos": "NOW",
-        "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(admin_pass)}},
         "classification": classification.RESTRICTED,
         "name": "Administrator",
         "email": "admin@assemblyline.cyber.gc.ca",
         "password": get_password_hash(admin_pass),
         "uname": "admin",
-        "type": [TYPES.admin]})
+        "type": [TYPES.admin],
+        "api_quota": 1000,
+        "api_daily_quota": 1000})
+
+    apikey_id = get_apikey_id("devkey", "admin")
+    apikey = Apikey({
+        "acl": ["R", "W"],
+        "password": get_password_hash(admin_pass),
+        "uname": "admin",
+        "key_name": "devkey",
+        "id": apikey_id
+    })
+
     ds.user.save('admin', user_data)
+    ds.apikey.save(apikey_id, apikey)
     ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True,
                                                  "default_zip_password": "infected", "default_download_encoding": "cart"}))
     if log:
@@ -412,10 +425,19 @@ def create_users(ds, log=None):
     user_data = User({
         "name": "User",
         "email": "user@assemblyline.cyber.gc.ca",
-        "apikeys": {'devkey': {'acl': ["R", "W"], "password": get_password_hash(user_pass)}},
         "password": get_password_hash(user_pass),
         "uname": "user",
         "type": [TYPES.user]})
+
+    apikey_id = get_apikey_id("devkey", "user")
+    apikey = Apikey({
+        "acl": ["R", "W"],
+        "password": get_password_hash(admin_pass),
+        "uname": "user",
+        "key_name": "devkey",
+        "id": apikey_id
+    })
+    ds.apikey.save(apikey_id, apikey)
     ds.user.save('user', user_data)
     ds.user_settings.save('user', UserSettings({"default_zip_password": "infected", "default_download_encoding": "cart"}))
     if log:
