@@ -2140,7 +2140,7 @@ class ESCollection(Generic[ModelType]):
 
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
-            log.debug("Wipe operation started for collection: %s" % name.upper())
+            log.debug("Wipe operation started for collection: %s", name.upper())
             if self.with_retries(self.datastore.client.indices.exists, index=index):
                 self.with_retries(self.datastore.client.indices.delete, index=index)
 
