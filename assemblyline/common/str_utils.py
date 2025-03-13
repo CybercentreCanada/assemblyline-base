@@ -1,26 +1,49 @@
 import re
 from copy import copy
+from enum import Enum
 from typing import Literal, Union, overload
 
 import chardet
 
+# Reference: https://unicode.org/reports/tr9/#Directional_Formatting_Characters
+class DirectionalFormattingCharacter(Enum):
+    LRE = u'\u202A' # Left-to-Right Embedding
+    RLE = u'\u202B' # Right-to-Left Embedding
+    PDF = u'\u202C' # Pop Directional Formatting
+    LRO = u'\u202D' # Left-to-Right Override
+    RLO = u'\u202E' # Right-to-Left Override
+    LRI = u'\u2066' # Left-to-Right Isolate
+    RLI = u'\u2067' # Right-to-Left Isolate
+    FSI = u'\u2068' # First Strong Isolate
+    PDI = u'\u2069' # Pop Directional Isolate
+    LRM = u'\u200E' # Left-to-Right Mark
+    RLM = u'\u200F' # Right-to-Left Mark
+    ALM = u'\u061C' # Arabic Letter Mark
 
-def remove_bidir_unicode_controls(in_str):
+CONTROL_CHARS = []
+EO_CONTROL_CHARS = []
+I_CONTROL_CHARS = []
+
+for c in DirectionalFormattingCharacter:
+    CONTROL_CHARS.append(c.value)
+    if c in [DirectionalFormattingCharacter.LRE, DirectionalFormattingCharacter.RLE,
+             DirectionalFormattingCharacter.LRO, DirectionalFormattingCharacter.RLO]:
+        EO_CONTROL_CHARS.append(c.value)
+    elif c in [DirectionalFormattingCharacter.LRI, DirectionalFormattingCharacter.RLI,
+               DirectionalFormattingCharacter.FSI]:
+        I_CONTROL_CHARS.append(c.value)
+
+def remove_bidir_unicode_controls(in_str: str):
     # noinspection PyBroadException
     try:
-        no_controls_str = ''.join(
-            c for c in in_str if c not in [
-                u'\u202E', u'\u202B', u'\u202D',
-                u'\u202A', u'\u200E', u'\u200F',
-            ]
-        )
+        no_controls_str = ''.join(c for c in in_str if c not in CONTROL_CHARS)
     except Exception:
         no_controls_str = in_str
 
     return no_controls_str
 
 
-def wrap_bidir_unicode_string(uni_str):
+def wrap_bidir_unicode_string(uni_str: Union[str, bytes]) -> Union[str, bytes]:
     """
     Wraps str in a LRE (Left-to-Right Embed) unicode control
     Guarantees that str can be concatenated to other strings without
@@ -30,25 +53,38 @@ def wrap_bidir_unicode_string(uni_str):
     if len(uni_str) == 0 or isinstance(uni_str, bytes):  # Not str, return it unchanged
         return uni_str
 
-    re_obj = re.search(r'[\u202E\u202B\u202D\u202A\u200E\u200F]', uni_str)
+    re_obj = re.search(rf"[{''.join(CONTROL_CHARS)}]", uni_str)
     if re_obj is None or len(re_obj.group()) == 0:  # No unicode bidir controls found, return string unchanged
         return uni_str
 
     # Parse str for unclosed bidir blocks
-    count = 0
+    idf_count = 0   # Isolate Directional Formatting Count
+    eodf_count = 0  # Embedding and Override Directional Formatting Count
+
     for letter in uni_str:
-        if letter in [u'\u202A', u'\u202B', u'\u202D', u'\u202E']:  # bidir block open?
-            count += 1
-        elif letter == u'\u202c':
-            if count > 0:
-                count -= 1
+        # Look for block open with embedded or override characters
+        if letter in EO_CONTROL_CHARS:
+            eodf_count += 1
+        # Look for block close with embedded or override characters
+        elif letter == DirectionalFormattingCharacter.PDF.value:
+            if eodf_count > 0:
+                eodf_count -= 1
+        # Look for block open with isolate characters
+        elif letter in I_CONTROL_CHARS:
+            idf_count += 1
+        # Look for block close with isolate characters
+        elif letter == DirectionalFormattingCharacter.PDI.value:
+            if idf_count > 0:
+                idf_count -= 1
 
     # close all bidir blocks
-    if count > 0:
-        uni_str += (u'\u202c' * count)
+    if eodf_count > 0:
+        uni_str += (DirectionalFormattingCharacter.PDF.value * eodf_count)
+    if idf_count > 0:
+        uni_str += (DirectionalFormattingCharacter.PDI.value * idf_count)
 
-        # Final wrapper (LTR block) to neutralize any Marks (u+200E and u+200F)
-    uni_str = u'\u202A' + uni_str + u'\u202C'
+    # Final wrapper (LTR block) to neutralize any Marks (u+200E, u+200F and u+061C)
+    uni_str = DirectionalFormattingCharacter.LRE.value + uni_str + DirectionalFormattingCharacter.PDF.value
 
     return uni_str
 
