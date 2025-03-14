@@ -1932,7 +1932,7 @@ EXAMPLE_SHA256_SOURCE_VS = {
 
 EXAMPLE_SHA256_SOURCE_MWDB = {
     # This is an example on how this would work with MWDB
-    "name": "VirusShare",
+    "name": "MWDB",
     "url": r"https://mwdb.cert.pl/api/file/{HASH}/download",
     "replace_pattern": r"{HASH}",
     "headers": {
@@ -1942,7 +1942,7 @@ EXAMPLE_SHA256_SOURCE_MWDB = {
 
 EXAMPLE_SHA256_SOURCE_FSIO = {
     # This is an example on how this would work with FileScanIO
-    "name": "VirusShare",
+    "name": "FileScanIO",
     "url": r"https://filescan.io/api/files/{HASH}?type=raw",
     "replace_pattern": r"{HASH}",
     "headers": {
@@ -1952,7 +1952,7 @@ EXAMPLE_SHA256_SOURCE_FSIO = {
 
 EXAMPLE_SHA256_SOURCE_MS = {
     # This is an example on how this would work with MalShare
-    "name": "VirusShare",
+    "name": "MalShare",
     "url": r"https://malshare.com/api.php?api_key=$MS_APIKEY&action=getfile&hash=${HASH}",
     "replace_pattern": r"{HASH}",
 }
