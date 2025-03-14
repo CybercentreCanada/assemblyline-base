@@ -1932,6 +1932,39 @@ EXAMPLE_SHA256_SOURCE_MB = {
     "failure_pattern": '"query_status": "file_not_found"'
 }
 
+EXAMPLE_SHA256_SOURCE_VS = {
+    # This is an example on how this would work with VirusShare
+    "name": "VirusShare",
+    "url": r"https://virusshare.com/apiv2/download?apikey=$VS_APIKEY&hash={HASH}",
+    "replace_pattern": r"{HASH}"
+}
+
+EXAMPLE_SHA256_SOURCE_MWDB = {
+    # This is an example on how this would work with MWDB
+    "name": "MWDB",
+    "url": r"https://mwdb.cert.pl/api/file/{HASH}/download",
+    "replace_pattern": r"{HASH}",
+    "headers": {
+        "Authorization": "Bearer $MWDB_APIKEY"
+    }
+}
+
+EXAMPLE_SHA256_SOURCE_FSIO = {
+    # This is an example on how this would work with FileScanIO
+    "name": "FileScanIO",
+    "url": r"https://filescan.io/api/files/{HASH}?type=raw",
+    "replace_pattern": r"{HASH}",
+    "headers": {
+        "X-Api-Key": "$FSIO_APIKEY"
+    }
+}
+
+EXAMPLE_SHA256_SOURCE_MS = {
+    # This is an example on how this would work with MalShare
+    "name": "MalShare",
+    "url": r"https://malshare.com/api.php?api_key=$MS_APIKEY&action=getfile&hash=${HASH}",
+    "replace_pattern": r"{HASH}",
+}
 
 @odm.model(index=False, store=False,
            description="Minimum score value to get the specified verdict, otherwise the file is considered safe.")
