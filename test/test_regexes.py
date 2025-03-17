@@ -70,6 +70,8 @@ def test_tlsh_regex(value, ismatch):
 
 @pytest.mark.parametrize(("value", "is_match"), [
     (R"\\domain-segment-that-is-long.trycloudflare.com@SSL\DavWWWRoot\4ABCDEFGI", True),
+    (R"\\127.0.0.1\c$\temp\test-file.txt", True),
+    (R"\temp\test-file.txt", False),
 ])
 def test_unc_path_regex(value, is_match):
     assert is_match == bool(UNC_PATH_COMP.match(value))
