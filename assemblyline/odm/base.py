@@ -82,7 +82,7 @@ URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]+@)?({IP_REGEX}|{DO
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
 UNC_PATH_REGEX = r"^(?:\\\\(?:[a-zA-Z0-9-_\s]{1,15}){1}(?:\.[a-zA-Z0-9-_\s]{1,64}){0,3}){1}" \
-                 f"(?:@{PORT_REGEX})?" \
+                 f"(?:@SSL)?(?:@{PORT_REGEX})?" \
                  r'(?:\\[^\\\/\:\*\?\\"\<\>\|\r\n]{1,64}){1,}\\{0,}$'
 PLATFORM_REGEX = r"^(Windows|Linux|MacOS|Android|iOS)$"
 PROCESSOR_REGEX = r"^x(64|86)$"
