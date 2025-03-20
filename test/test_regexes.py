@@ -1,10 +1,11 @@
 import re
 
 import pytest
-from assemblyline.odm.base import FULL_URI, TLSH_REGEX
+from assemblyline.odm.base import FULL_URI, TLSH_REGEX, UNC_PATH_REGEX
 
 FULL_URI_COMP = re.compile(FULL_URI)
 TLSH_REGEX_COMP = re.compile(TLSH_REGEX)
+UNC_PATH_COMP = re.compile(UNC_PATH_REGEX)
 
 
 @pytest.mark.parametrize("value, ismatch", [
@@ -65,3 +66,13 @@ def test_tlsh_regex(value, ismatch):
         assert TLSH_REGEX_COMP.match(value) is not None
     else:
         assert TLSH_REGEX_COMP.match(value) is None
+
+
+@pytest.mark.parametrize(("value", "is_match"), [
+    (R"\\domain-segment-that-is-long.trycloudflare.com@SSL\DavWWWRoot\4ABCDEFGI", True),
+    (R"\\127.0.0.1\c$\temp\test-file.txt", True),
+    (R"\temp\test-file.txt", False),
+])
+def test_unc_path_regex(value, is_match):
+    assert is_match == bool(UNC_PATH_COMP.match(value))
+
