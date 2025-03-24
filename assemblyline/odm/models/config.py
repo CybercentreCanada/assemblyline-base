@@ -1895,7 +1895,7 @@ class FileSource(odm.Model):
     proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
                                           description="Proxy used to connect to the URL")
     select_services: bool = odm.List(odm.keyword(),
-        default=[], description="List of services that will be auto-selected when using this source.")
+                                     default=[], description="List of services that will be auto-selected when using this source.")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
 
@@ -2004,7 +2004,7 @@ DEFAULT_METADATA_CONFIGURATION = {
 @odm.model(index=True, store=False, description="Submission Parameters for profile")
 class SubmissionProfileParams(odm.Model):
     classification = odm.Optional(odm.Classification(),
-                                        description="Original classification of the submission")
+                                  description="Original classification of the submission")
     deep_scan = odm.Optional(odm.Boolean(), description="Should a deep scan be performed?")
     generate_alert = odm.Optional(odm.Boolean(), description="Should this submission generate an alert?")
     ignore_cache = odm.Optional(odm.Boolean(), description="Ignore the cached service results?")
@@ -2028,18 +2028,27 @@ class SubmissionProfileParams(odm.Model):
                                              description="Should we use the alternate dtl while archiving?")
 
 
-DEFAULT_EDITABLE_PARAMS = {
-    # Default editable params that are used in all profiles
-    "submission": ["classification", "deep_scan", "ignore_cache", "generate_alert", "ignore_filtering", "priority", "type", "ttl"],
-    "CAPA": ["renderer"],
-    "CAPE": ["password", "analysis_timeout_in_seconds"],
-    "DocumentPreview": ["analyze_render", "max_pages_rendered", "run_ocr_on_first_n_pages"],
-    "Extract": ["password"],
-    "Intezer": ["dynamic_submit"],
-    "URLDownloader": ["proxy"],
-    "URLCreator": ["minimum_maliciousness"],
-    "XLMMacroDeobfuscator": ["password"]
+DEFAULT_RESTRICTED_PARAMS = {
+    # Default privilege params that are used in all profiles
+    "submission": ["ignore_recursion_prevention"],
+    "APKaye": ["resubmit_apk_as_jar"],
+    "AVClass": ["include_malpedia_dataset"],
+    "CAPE": ["specific_image", "dll_function", "dump_memory", "force_sleepskip", "no_monitor", "simulate_user", "reboot", "arguments", "custom_options", "clock", "package", "specific_machine", "platform", "routing", "ignore_cape_cache", "hh_args", "monitored_and_unmonitored"],
+    "ConfigExtractor": ["include_empty_config"],
+    "DeobfuScripter": ["extract_original_iocs", "max_file_size"],
+    "DocumentPreview": ["load_email_images", "save_ocr_output"],
+    "EmlParser": ["extract_body_text", "save_emlparser_output"],
+    "Extract": ["extract_executable_sections", "continue_after_extract", "use_custom_safelisting", "score_failed_password"],
+    "FrankenStrings": ["max_file_size", "max_string_length"],
+    "JsJaws": ["tool_timeout", "add_supplementary", "static_signatures", "display_iocs", "static_analysis_only", "ignore_stdout_limit", "no_shell_error", "browser", "wscript_only", "throw_http_exc", "download_payload", "extract_function_calls", "extract_eval_calls", "log_errors", "override_eval", "file_always_exists", "enable_synchrony"],
+    "Overpower": ["tool_timeout", "add_supplementary", "fake_web_download"],
+    "PDFId": ["carved_obj_size_limit"],
+    "Pixaxe": ["save_ocr_output", "extract_ocr_uri"],
+    "Suricata": ["extract_files"],
+    "URLDownloader": ["regex_extract_filetype", "regex_supplementary_filetype", "extract_unmatched_filetype"],
+    "XLMMacroDeobfuscator": ["start point"],
 }
+
 
 @odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
 class SubmissionProfile(odm.Model):
@@ -2048,8 +2057,8 @@ class SubmissionProfile(odm.Model):
     classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
                                               description="Submission profile classification")
     params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
-    editable_params = odm.Mapping(odm.List(odm.Text()), default=DEFAULT_EDITABLE_PARAMS,
-                                  description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that can be configured.")
+    restricted_params = odm.Mapping(odm.List(odm.Text()), default=DEFAULT_RESTRICTED_PARAMS,
+                                    description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that cannot be configured by limited users.")
     description = odm.Optional(odm.Text(), description="A description of what the profile does")
 
 
@@ -2060,6 +2069,7 @@ DEFAULT_SUBMISSION_PROFILES = [
         "display_name": "Static Analysis",
         "params": {
             "services": {
+                "excluded": ["Dynamic Analysis", "Internet Connected"],
                 "selected": DEFAULT_SRV_SEL
             }
         },
@@ -2071,6 +2081,7 @@ DEFAULT_SUBMISSION_PROFILES = [
         "display_name": "Static + Dynamic Analysis",
         "params": {
             "services": {
+                "excluded": ["Internet Connected"],
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
             }
         },
@@ -2082,6 +2093,7 @@ DEFAULT_SUBMISSION_PROFILES = [
         "display_name": "Internet-Connected Static Analysis",
         "params": {
             "services": {
+                "excluded": ["Dynamic Analysis"],
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
             },
         },
