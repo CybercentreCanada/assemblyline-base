@@ -4,7 +4,7 @@ import os
 import random
 
 from assemblyline.common import forge
-from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.isotime import DAY_IN_SECONDS, now_as_iso
 from assemblyline.common.security import get_password_hash
 from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION, BUILD_MINOR
@@ -19,7 +19,7 @@ from assemblyline.odm.models.ontology import ResultOntology
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service, UpdateSource, SubmissionParams
 from assemblyline.odm.models.submission import Submission
-from assemblyline.odm.models.user import TYPES, User
+from assemblyline.odm.models.user import TYPES, User, load_roles_form_acls
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
@@ -392,27 +392,42 @@ def create_submission(ds, fs, log=None):
     return s
 
 
+
+DEV_APIKEY_NAME = "devkey"
+
 def create_users(ds, log=None):
     admin_pass = os.getenv("DEV_ADMIN_PASS", 'admin') or 'admin'
     user_pass = os.getenv("DEV_USER_PASS", 'user') or 'user'
+
+    acl = ["R", "W"]
+    roles = [r for r in load_roles_form_acls(acl, [])]
+
     user_data = User({
         "agrees_with_tos": "NOW",
         "classification": classification.RESTRICTED,
         "name": "Administrator",
         "email": "admin@assemblyline.cyber.gc.ca",
         "password": get_password_hash(admin_pass),
+        "apikeys": {"testingmove": {
+            "password": get_password_hash("testing"),
+            "acl": acl,
+            "roles": roles
+        }},
         "uname": "admin",
         "type": [TYPES.admin],
         "api_quota": 1000,
         "api_daily_quota": 1000})
 
-    apikey_id = get_apikey_id("devkey", "admin")
+    apikey_id = get_apikey_id(DEV_APIKEY_NAME, "admin")
+
     apikey = Apikey({
-        "acl": ["R", "W"],
+        "acl": acl,
         "password": get_password_hash(admin_pass),
         "uname": "admin",
-        "key_name": "devkey",
-        "id": apikey_id
+        "key_name": DEV_APIKEY_NAME,
+        "id": apikey_id,
+        "expiry_ts": now_as_iso(5 * DAY_IN_SECONDS),
+        "roles": roles
     })
 
     ds.user.save('admin', user_data)
@@ -425,17 +440,24 @@ def create_users(ds, log=None):
     user_data = User({
         "name": "User",
         "email": "user@assemblyline.cyber.gc.ca",
+        "apikeys": {"testingmove": {
+            "password": get_password_hash("testing2"),
+            "acl": acl,
+            "roles": roles
+        }},
         "password": get_password_hash(user_pass),
         "uname": "user",
         "type": [TYPES.user]})
 
-    apikey_id = get_apikey_id("devkey", "user")
+    apikey_id = get_apikey_id(DEV_APIKEY_NAME, "user")
     apikey = Apikey({
-        "acl": ["R", "W"],
+        "acl": acl,
         "password": get_password_hash(admin_pass),
         "uname": "user",
-        "key_name": "devkey",
-        "id": apikey_id
+        "key_name": DEV_APIKEY_NAME,
+        "id": apikey_id,
+        "expiry_ts": now_as_iso(5 * DAY_IN_SECONDS),
+        "roles": roles
     })
     ds.apikey.save(apikey_id, apikey)
     ds.user.save('user', user_data)
@@ -546,6 +568,7 @@ def wipe_users(ds):
     ds.user_settings.wipe()
     ds.user_avatar.wipe()
     ds.user_favorites.wipe()
+    ds.apikey.wipe()
 
 
 def wipe_safelist(ds):

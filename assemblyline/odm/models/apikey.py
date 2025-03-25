@@ -4,8 +4,9 @@ from assemblyline.common.str_utils import StringTable
 from assemblyline.odm.models.user import ACL_MAP, USER_ROLES
 
 
-APIKEY_ID_FORMAT = "{}+{}"
-
+APIKEY_ID_DELIMETER = "+"
+APIKEY_ID_FORMAT = "{}"+ APIKEY_ID_DELIMETER + "{}"
+FORBIDDEN_APIKEY_CHARACTERS = '[+@!#$%^&*()<>?/\|}{~:]'
 
 
 
@@ -20,5 +21,12 @@ class Apikey(odm.Model):
     expiry_ts = odm.Optional(odm.Date(), description="Expiry timestamp.")
     last_used =odm.Optional(odm.Date(), description="The last time this API key was used.")
 
-def get_apikey_id(keyname, uname):
+def get_apikey_id(keyname:str , uname:str):
     return APIKEY_ID_FORMAT.format(keyname, uname)
+
+def split_apikey_id(key_id: str):
+    data = key_id.split(APIKEY_ID_DELIMETER)
+    username = data[1]
+    keyname = data[0]
+
+    return keyname, username
