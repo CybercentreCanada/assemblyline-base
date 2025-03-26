@@ -167,7 +167,7 @@ rule code_vbs {
         $strong_vbs2 = /(^|\n|\()(Private|Public)?[ \t]*(Sub|Function)[ \t]+\w+\([ \t]*((ByVal[ \t]+)?\w+([ \t]+As[ \t]+\w+)?,?)*\)[ \t]*[\)\r]/i ascii wide
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
-        $strong_vbs3 = /(^|\n)[ \t]*End[ \t]+(Module|Function|Sub|If)($|\s)/i ascii wide
+        $strong_vbs3 = /(^|\n|:)[ \t]*End[ \t]+(Module|Function|Sub|If)($|\s)/i ascii wide
         $strong_vbs4 = "\nExecuteGlobal" ascii wide
         // Supported by https://github.com/CAPESandbox/sflock/blob/1e0ed7e18ddfe723c2d2603875ca26d63887c189/sflock/ident.py#L485
         $strong_vbs6 = /(^|\n|:)(Attribute|Set|const)[ \t]+\w+[ \t]+=/i ascii wide
@@ -179,10 +179,11 @@ rule code_vbs {
         $strong_vbs10 = "GetObject(" nocase ascii wide
         $strong_vbs11 = "\nEval(" nocase ascii wide
         // Supported by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
-        $strong_vbs12 = "Execute(" nocase ascii wide fullword
+        $strong_vbs12 = /(^|\n|:)[ \t]*Execute[( \t]/ nocase ascii wide
         $strong_vbs13 = "\nMsgBox \"" nocase ascii wide
         // Inspired by https://github.com/CERT-Polska/karton-classifier/blob/4cf125296e3a0c1d6c1cb8c16f97d608054c7f19/karton/classifier/classifier.py#L650
         $strong_vbs14 = /[ \t(=]Array\(/i ascii wide
+        $strong_vbs15 = "& Chr(" nocase ascii wide
         $weak_vbs1 = "\"Scripting.FileSystemObject\"" nocase ascii wide
         $weak_vbs2 = ".OpenAsTextStream(" nocase ascii wide
         $weak_vbs3 = ".CreateTextFile" nocase ascii wide
@@ -197,7 +198,7 @@ rule code_vbs {
             or (
                 1 of ($strong_vbs*)
                 and (
-                    (#dim_declaration) > 3
+                    (#dim_declaration) > 1
                     or 2 of ($weak_vbs*)
                 )
             )
@@ -697,6 +698,20 @@ rule code_ps1_in_ps1 {
 
     condition:
         code_ps1 and $power
+}
+
+rule code_ps1_small {
+
+    meta:
+        type = "code/ps1"
+        score = 1
+
+    strings:
+        $power = "powershell" nocase fullword
+
+    condition:
+        filesize < 12288
+        and $power at 0
 }
 
 /*
