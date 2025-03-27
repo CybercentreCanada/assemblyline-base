@@ -223,6 +223,7 @@ def load_roles(types, curRoles):
     return list(roles)
 
 
+# This APIKey model can be removed after Assemblyline v4.6
 @odm.model(index=False, store=False, description="Model for API keys")
 class ApiKey(odm.Model):
     acl = odm.List(odm.Enum(values=ACL_MAP.keys()), description="Access Control List for the API key")
@@ -281,3 +282,6 @@ class User(odm.Model):
     security_tokens = odm.Mapping(odm.Keyword(), index=False, store=False, default={},
                                   description="Map of security tokens")
     uname = odm.Keyword(copyto="__text__", description="Username")
+    # can be removed after Assemblyline v4.6
+    apikeys = odm.Mapping(odm.Compound(ApiKey), default={},
+                        index=False, store=False)
