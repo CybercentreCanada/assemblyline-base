@@ -1,5 +1,6 @@
 from assemblyline import odm
 
+
 @odm.model(index=True, store=False, description="Tagging Model")
 class Tagging(odm.Model):
     @odm.model(index=True, store=False, description="Attribution Tag Model")
@@ -469,6 +470,7 @@ class Tagging(odm.Model):
         comms_routine = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Communication Routine")
         config = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Configuration")
         crypto = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Cryptography")
+        exploit = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Exploit")
         keylogger = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Keylogger")
         macro = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Macro")
         masking_algo = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Masking Algorithm")
