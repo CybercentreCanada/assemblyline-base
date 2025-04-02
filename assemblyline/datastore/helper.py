@@ -294,7 +294,8 @@ class AssemblylineDatastore(object):
         fix_classification_files = set()
         supp_map = {}
 
-        temp_files = [x[:64] for x in errors]
+        temp_files = [x['sha256'] for x in submission['files']]
+        temp_files.extend([x[:64] for x in errors])
         temp_files.extend([x[:64] for x in results])
         temp_files = set(temp_files)
 
