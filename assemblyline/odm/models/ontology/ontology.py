@@ -1,18 +1,19 @@
 from assemblyline import odm
 from assemblyline.common import forge
+from assemblyline.odm.models.ontology.file import File
 from assemblyline.odm.models.ontology.results import (
-    Antivirus,
     HTTP,
+    Antivirus,
     MalwareConfig,
     NetworkConnection,
     Process,
     Sandbox,
     Signature,
+    SupplementaryFile,
 )
-from assemblyline.odm.models.ontology.file import File
 
 Classification = forge.get_classification()
-ODM_VERSION = "1.10"
+ODM_VERSION = "1.11"
 
 
 @odm.model(index=False, store=False, description="Heuristics raised")
@@ -23,7 +24,6 @@ class Heuristics(odm.Model):
     name = odm.Text(description="Name of the heuristic raised")
     tags = odm.Mapping(odm.List(odm.Any()),
                        description="Tags associated to heuristic. Refer to [Tagging](../../tagging/)")
-
 
 @odm.model(index=False, store=False, description="Ontological Results")
 class Results(odm.Model):
@@ -38,6 +38,8 @@ class Results(odm.Model):
                         description="Tags raised during analysis. Refer to [Tagging](../../tagging/)")
     heuristics = odm.Optional(odm.List(odm.Compound(Heuristics)), description="Heuristics raised during analysis")
     score = odm.Optional(odm.Integer(description="The score assigned to the file"))
+    supplementary_files = odm.Optional(odm.List(odm.Compound(SupplementaryFile)),
+                                       description="Supplementary files associated to the analysis")
     other = odm.Optional(odm.Mapping(odm.Text()),
                          description="Miscellaneous unstructured data recorded during analysis")
 
