@@ -2066,7 +2066,7 @@ class SubmissionProfileParams(odm.Model):
 
 
 DEFAULT_RESTRICTED_PARAMS = {
-    # Default privilege params that are used in all profiles
+    # Default restricted params that are used in all profiles
     "submission": ["ignore_recursion_prevention"],
     "APKaye": ["resubmit_apk_as_jar"],
     "AVClass": ["include_malpedia_dataset"],
