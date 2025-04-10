@@ -1,8 +1,8 @@
 from assemblyline.odm.base import _Field
 from assemblyline.odm import Keyword, Wildcard, Text, List, Compound, Date, Integer, Long, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
-    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword, \
-    Json, ValidatedKeyword, UNCPath
+    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, FlatMapping, \
+    Email, UpperKeyword, Json, ValidatedKeyword, UNCPath
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
@@ -134,7 +134,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True, default_c
                 'format': 'date_optional_time||epoch_millis',
             })
 
-        elif isinstance(field, FlattenedObject):
+        elif isinstance(field, (FlattenedObject, FlatMapping)):
             if not any_indexed_part(field) or isinstance(field.child_type, Any):
                 mappings[name.strip(".")] = {"type": "object", "enabled": False}
             else:
@@ -197,7 +197,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True, default_c
 
 def any_indexed_part(field) -> bool:
     """Figure out if any component of this field is indexed."""
-    if isinstance(field, (FlattenedObject, List, Optional, Mapping)):
+    if isinstance(field, (FlattenedObject, FlatMapping, List, Optional, Mapping)):
         if field.index is not None:
             return field.index
         return any_indexed_part(field.child_type)

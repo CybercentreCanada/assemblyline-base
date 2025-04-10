@@ -202,7 +202,7 @@ class Alert(odm.Model):
     filtered = odm.Boolean(default=False, description="Indicates whether portions of the submission's analysis results have been omitted due to the user's classification level not meeting the required threshold for viewing certain data.")
     heuristic = odm.Compound(Heuristic, description="Data regarding the heuristics that triggered the alert.")
     label = odm.List(odm.Keyword(), copyto="__text__", default=[], description="Labels assigned to the alert for categorization and filtering.")
-    metadata = odm.Mapping(odm.wildcard(), copyto="__text__", default={}, store=False, description="Additional metadata provided with the file at the time of submission.")
+    metadata = odm.FlatMapping(odm.wildcard(), copyto="__text__", default={}, store=False, description="Additional metadata provided with the file at the time of submission.")
     owner = odm.Optional(odm.Keyword(), description="Specifies the user or system component that has taken ownership of the alert. If no user has claimed the alert, it remains under system ownership with no specific user associated, indicated by a value of `None`.")
     priority = odm.Optional(odm.Enum(values=PRIORITIES), description="Indicates the importance level assigned to the alert.")
     reporting_ts = odm.Date(description="Timestamp when the alert was created.")
