@@ -2015,7 +2015,8 @@ class ESCollection(Generic[ModelType]):
         mappings['properties']['id'] = {
             "store": True,
             "doc_values": True,
-            "type": 'keyword'
+            "type": 'keyword',
+            "copy_to": "__text__",
         }
 
         mappings['properties']['__text__'] = {
