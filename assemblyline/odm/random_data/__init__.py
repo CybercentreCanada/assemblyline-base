@@ -433,7 +433,7 @@ def create_users(ds, log=None):
     ds.user.save('admin', user_data)
     ds.apikey.save(apikey_id, apikey)
     ds.user_settings.save('admin', UserSettings({"ignore_cache": True, "deep_scan": True,
-                                                 "default_zip_password": "infected", "default_download_encoding": "cart"}))
+                                                 "default_zip_password": "infected", "default_download_encoding": "cart", "submission_profiles": {}}))
     if log:
         log.info(f"\tU:{user_data.uname}   P:{admin_pass}")
 

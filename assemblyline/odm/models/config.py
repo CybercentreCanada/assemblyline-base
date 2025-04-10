@@ -2,8 +2,10 @@ from typing import Any, Dict, List
 
 from assemblyline import odm
 from assemblyline.common.constants import PRIORITIES
+from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
+from assemblyline.odm.models.submission import DEFAULT_SRV_SEL, ServiceSelection
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
@@ -15,6 +17,8 @@ DEFAULT_API_QUOTA = 10
 DEFAULT_DAILY_SUBMISSION_QUOTA = 0
 DEFAULT_SUBMISSION_QUOTA = 5
 DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
+
+Classification = get_classification()
 
 
 @odm.model(index=False, store=False, description="Password Requirement")
@@ -211,11 +215,14 @@ class OAuthProvider(odm.Model):
     redirect_uri: str = odm.Optional(odm.Keyword(),
                                      description="URI to redirect to after authentication with OAuth provider")
     request_token_url: str = odm.Optional(odm.Keyword(), description="URL to request token")
-    request_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters to request token")
+    request_token_params: Dict[str, str] = odm.Optional(
+        odm.Mapping(odm.Keyword()), description="Parameters to request token")
     access_token_url: str = odm.Optional(odm.Keyword(), description="URL to get access token")
-    access_token_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), description="Parameters to get access token")
+    access_token_params: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Parameters to get access token")
     authorize_url: str = odm.Optional(odm.Keyword(), description="URL used to authorize access to a resource")
-    authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),description="Parameters used to authorize access to a resource")
+    authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(
+        odm.Keyword()), description="Parameters used to authorize access to a resource")
     api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
@@ -1681,6 +1688,7 @@ class APIProxies(odm.Model):
 DEFAULT_API_PROXIES = {}
 DOWNLOAD_ENCODINGS = ["cart", "raw", "zip"]
 
+
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
     ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
@@ -1709,7 +1717,8 @@ class UI(odm.Model):
                                           description="Default API quotas values")
     discover_url: str = odm.Optional(odm.Keyword(), description="Discover URL")
     download_encoding = odm.Enum(values=DOWNLOAD_ENCODINGS, description="Which encoding will be used for downloads?")
-    default_zip_password = odm.Optional(odm.Text(), description="Default user-defined password for creating password protected ZIPs when downloading files")
+    default_zip_password = odm.Optional(
+        odm.Text(), description="Default user-defined password for creating password protected ZIPs when downloading files")
     email: str = odm.Optional(odm.Email(), description="Assemblyline admins email address")
     enforce_quota: bool = odm.Boolean(description="Enforce the user's quotas?")
     external_links: List[ExternalLinks] = odm.List(
@@ -1892,7 +1901,7 @@ class FileSource(odm.Model):
     proxies: Dict[str, str] = odm.Mapping(odm.Keyword(), default={},
                                           description="Proxy used to connect to the URL")
     select_services: bool = odm.List(odm.keyword(),
-        default=[], description="List of services that will be auto-selected when using this source.")
+                                     default=[], description="List of services that will be auto-selected when using this source.")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
 
 
@@ -2031,6 +2040,106 @@ DEFAULT_METADATA_CONFIGURATION = {
 }
 
 
+@odm.model(index=True, store=False, description="Submission Parameters for profile")
+class SubmissionProfileParams(odm.Model):
+    classification = odm.Optional(odm.Classification(),
+                                  description="Original classification of the submission")
+    deep_scan = odm.Optional(odm.Boolean(), description="Should a deep scan be performed?")
+    generate_alert = odm.Optional(odm.Boolean(), description="Should this submission generate an alert?")
+    ignore_cache = odm.Optional(odm.Boolean(), description="Ignore the cached service results?")
+    ignore_recursion_prevention = odm.Optional(odm.Boolean(),
+                                               description="Should we ignore recursion prevention?")
+    ignore_filtering = odm.Optional(odm.Boolean(), description="Should we ignore filtering services?")
+    ignore_size = odm.Optional(odm.Boolean(), description="Ignore the file size limits?")
+    max_extracted = odm.Optional(odm.Integer(), description="Max number of extracted files")
+    max_supplementary = odm.Optional(odm.Integer(), description="Max number of supplementary files")
+    priority = odm.Optional(odm.Integer(), description="Priority of the scan")
+    services = odm.Optional(odm.Compound(ServiceSelection), description="Service selection")
+    service_spec = odm.Optional(odm.Mapping(odm.Mapping(odm.Any())), index=False, store=False,
+                                description="Service-specific parameters")
+    auto_archive = odm.Optional(odm.Boolean(),
+                                description="Does the submission automatically goes into the archive when completed?")
+    delete_after_archive = odm.Optional(odm.Boolean(),
+                                        description="When the submission is archived, should we delete it from hot storage right away?")
+    ttl = odm.Optional(odm.Integer(), description="Time, in days, to live for this submission")
+    type = odm.Optional(odm.Keyword(), description="Type of submission")
+    use_archive_alternate_dtl = odm.Optional(odm.Boolean(),
+                                             description="Should we use the alternate dtl while archiving?")
+
+
+DEFAULT_RESTRICTED_PARAMS = {
+    # Default restricted params that are used in all profiles
+    "submission": ["ignore_recursion_prevention"],
+    "APKaye": ["resubmit_apk_as_jar"],
+    "AVClass": ["include_malpedia_dataset"],
+    "CAPE": ["specific_image", "dll_function", "dump_memory", "force_sleepskip", "no_monitor", "simulate_user", "reboot", "arguments", "custom_options", "clock", "package", "specific_machine", "platform", "routing", "ignore_cape_cache", "hh_args", "monitored_and_unmonitored"],
+    "ConfigExtractor": ["include_empty_config"],
+    "DeobfuScripter": ["extract_original_iocs", "max_file_size"],
+    "DocumentPreview": ["load_email_images", "save_ocr_output"],
+    "EmlParser": ["extract_body_text", "save_emlparser_output"],
+    "Extract": ["extract_executable_sections", "continue_after_extract", "use_custom_safelisting", "score_failed_password"],
+    "FrankenStrings": ["max_file_size", "max_string_length"],
+    "JsJaws": ["tool_timeout", "add_supplementary", "static_signatures", "display_iocs", "static_analysis_only", "ignore_stdout_limit", "no_shell_error", "browser", "wscript_only", "throw_http_exc", "download_payload", "extract_function_calls", "extract_eval_calls", "log_errors", "override_eval", "file_always_exists", "enable_synchrony"],
+    "Overpower": ["tool_timeout", "add_supplementary", "fake_web_download"],
+    "PDFId": ["carved_obj_size_limit"],
+    "Pixaxe": ["save_ocr_output", "extract_ocr_uri"],
+    "Suricata": ["extract_files"],
+    "URLDownloader": ["regex_extract_filetype", "regex_supplementary_filetype", "extract_unmatched_filetype"],
+    "XLMMacroDeobfuscator": ["start point"],
+}
+
+
+@odm.model(index=False, store=False, description="Configuration for defining submission profiles for basic users")
+class SubmissionProfile(odm.Model):
+    name = odm.Text(description="Submission profile name")
+    display_name = odm.Text(description="Submission profile display name")
+    classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
+                                              description="Submission profile classification")
+    params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
+    restricted_params = odm.Mapping(odm.List(odm.Text()), default=DEFAULT_RESTRICTED_PARAMS,
+                                    description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that cannot be configured by limited users.")
+    description = odm.Optional(odm.Text(), description="A description of what the profile does")
+
+
+DEFAULT_SUBMISSION_PROFILES = [
+    {
+        # Only perform static analysis
+        "name": "static",
+        "display_name": "Static Analysis",
+        "params": {
+            "services": {
+                "excluded": ["Dynamic Analysis", "Internet Connected"],
+                "selected": DEFAULT_SRV_SEL
+            }
+        },
+        "description": "Analyze files using static analysis techniques and extract information from the file without executing it, such as metadata, strings, and structural information."
+    },
+    {
+        # Perform static analysis along with dynamic analysis
+        "name": "static_with_dynamic",
+        "display_name": "Static + Dynamic Analysis",
+        "params": {
+            "services": {
+                "excluded": ["Internet Connected"],
+                "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
+            }
+        },
+        "description": "Analyze files using static analysis techniques along with executing them in a controlled environment to observe their behavior and capture runtime activities, interactions with the system, network communications, and any malicious behavior exhibited by the file during execution."
+    },
+    {
+        # Perform static analysis along with internet connected services
+        "name": "static_with_internet",
+        "display_name": "Internet-Connected Static Analysis",
+        "params": {
+            "services": {
+                "excluded": ["Dynamic Analysis"],
+                "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
+            },
+        },
+        "description": "Combine traditional static analysis techniques with internet-connected services to gather additional information and context about the file being analyzed."
+    },
+]
+
 TEMPORARY_KEY_TYPE = [
     # Keep this key as submission wide list merging equal items
     'union',
@@ -2072,6 +2181,8 @@ class Submission(odm.Model):
     temporary_keys: dict[str, str] = odm.mapping(odm.enum(TEMPORARY_KEY_TYPE),
                                                  description="Set the operation that will be used to update values "
                                                              "using this key in the temporary submission data.")
+    profiles = odm.List(odm.Compound(SubmissionProfile),
+                        description="Submission profiles with preset submission parameters")
 
 
 DEFAULT_TEMPORARY_KEYS = {
@@ -2096,6 +2207,7 @@ DEFAULT_SUBMISSION = {
     'verdicts': DEFAULT_VERDICTS,
     'default_temporary_keys': DEFAULT_TEMPORARY_KEYS,
     'temporary_keys': {},
+    'profiles': DEFAULT_SUBMISSION_PROFILES
 }
 
 
