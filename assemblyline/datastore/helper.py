@@ -6,6 +6,7 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Any, List, Optional, Tuple, Union
 
+from assemblyline.odm.models.apikey import Apikey
 import elasticapm
 
 from assemblyline.common import forge
@@ -74,6 +75,7 @@ class AssemblylineDatastore(object):
         self.ds.register('submission_tree', SubmissionTree)
         self.ds.register('submission_summary', SubmissionSummary)
         self.ds.register('user', User)
+        self.ds.register('apikey', Apikey)
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_settings', UserSettings)
@@ -100,6 +102,10 @@ class AssemblylineDatastore(object):
     @property
     def alert(self) -> ESCollection[Alert]:
         return self.ds.alert
+
+    @property
+    def apikey(self) -> ESCollection[Apikey]:
+        return self.ds.apikey
 
     @property
     def badlist(self) -> ESCollection[Badlist]:
