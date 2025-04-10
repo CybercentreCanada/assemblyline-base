@@ -999,11 +999,11 @@ class FlattenedListObject(Mapping):
         self.child_type.apply_defaults(self.index, self.store)
 
 
-class FlattenedObject(Mapping):
+class FlatMapping(Mapping):
     """A field storing a flattened object"""
 
-    def __init__(self, **kwargs):
-        super().__init__(Json(), **kwargs)
+    def __init__(self, inner, **kwargs):
+        super().__init__(inner, **kwargs)
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -1017,6 +1017,13 @@ class FlattenedObject(Mapping):
         super().apply_defaults(index, store)
         # Then pass through the initialized values on the list to the child type
         self.child_type.apply_defaults(self.index, self.store)
+
+
+class FlattenedObject(FlatMapping):
+    """A field storing a flattened object"""
+
+    def __init__(self, **kwargs):
+        super().__init__(Json(), **kwargs)
 
 
 class Compound(_Field):
