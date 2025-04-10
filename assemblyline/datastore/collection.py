@@ -2052,7 +2052,7 @@ class ESCollection(Generic[ModelType]):
         matching = set(fields.keys()) & set(model.keys())
         for field_name in matching:
             if fields[field_name]['indexed'] != model[field_name].index and model[field_name].index:
-                raise RuntimeError(f"Field {field_name} should be indexed but is not.")
+                log.warning("Field %s should be indexed but is not.", field_name)
 
             possible_field_types = self.__get_possible_fields(model[field_name].__class__)
 
