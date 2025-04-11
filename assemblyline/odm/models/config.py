@@ -511,14 +511,6 @@ DEFAULT_AUTH = {
 @odm.model(index=False, store=False, description="Alerter Configuration")
 class Alerter(odm.Model):
     alert_ttl: int = odm.integer(description="Time to live (days) for an alert in the system")
-    constant_alert_fields: List[str] = odm.sequence(
-        odm.keyword(), default=[],
-        description="List of fields that should not change during an alert update",
-        deprecation="This behavior is no longer configurable")
-    constant_ignore_keys: List[str] = odm.sequence(
-        odm.keyword(), default=[],
-        description="List of keys to ignore in the constant alert fields.",
-        deprecation="This behavior is no longer configurable")
     default_group_field: str = odm.keyword(description="Default field used for alert grouping view")
     delay: int = odm.integer(
         description="Time in seconds that we give extended scans and workflow to complete their work "
@@ -535,8 +527,6 @@ class Alerter(odm.Model):
 
 DEFAULT_ALERTER = {
     "alert_ttl": 90,
-    "constant_alert_fields": [],
-    "constant_ignore_keys": [],
     "default_group_field": "file.sha256",
     "delay": 300,
     "filtering_group_fields": [
@@ -773,19 +763,11 @@ DEFAULT_ARCHIVER_WEBHOOK = {
 class Archiver(odm.Model):
     alternate_dtl: int = odm.Integer(description="Alternate number of days to keep the data in the "
                                                  "malware archive. (0: Disabled, will keep data forever)")
-    metadata: Dict = odm.Mapping(
-        odm.Compound(ArchiverMetadata),
-        description="Proxy configuration that is passed to Python Requests",
-        deprecation="The configuration for the archive metadata validation and requirements has moved to"
-                    "`submission.metadata.archive`.")
     minimum_required_services: List[str] = odm.List(
         odm.keyword(),
         default=[],
         description="List of minimum required service before archiving takes place")
     webhook = odm.Optional(odm.Compound(Webhook), description="Webhook to call before triggering the archiving process")
-    use_metadata: bool = odm.Boolean(
-        default=False, description="Should the UI ask form metadata to be filed out when archiving",
-        deprecation="This field is no longer required...")
     use_webhook: bool = odm.Optional(odm.Boolean(
         default=False,
         description="Should the archiving go through the webhook prior to actually trigger the archiving function"))
@@ -793,10 +775,8 @@ class Archiver(odm.Model):
 
 DEFAULT_ARCHIVER = {
     'alternate_dtl': 0,
-    'metadata': {},
     'minimum_required_services': [],
     'use_webhook': False,
-    'use_metadata': False,
     'webhook': DEFAULT_ARCHIVER_WEBHOOK
 }
 
@@ -842,18 +822,6 @@ class Mount(odm.Model):
                                   description="Type of mountable Kubernetes resource")
     resource_name: str = odm.Optional(odm.Keyword(), description="Name of resource (Kubernetes only)")
     resource_key: str = odm.Optional(odm.Keyword(), description="Key of ConfigMap/Secret (Kubernetes only)")
-
-    # TODO: Deprecate in next major change in favour of general configuration above for mounting Kubernetes resources
-    config_map: str = odm.Optional(
-        odm.Keyword(),
-        description="Name of ConfigMap (Kubernetes only)",
-        deprecation="Use `resource_type: configmap` and fill in the `resource_name` "
-        "& `resource_key` fields to mount ConfigMaps")
-    key: str = odm.Optional(
-        odm.Keyword(),
-        description="Key of ConfigMap (Kubernetes only)",
-        deprecation="Use `resource_type: configmap` and fill in the `resource_name` "
-        "& `resource_key` fields to mount ConfigMaps")
 
 
 KUBERNETES_TOLERATION_OPS = ['Exists', 'Equal']
@@ -1246,12 +1214,6 @@ class Services(odm.Model):
     safelist = odm.Compound(ServiceSafelist)
     registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
                               description="Global set of registries for services")
-    service_account = odm.optional(odm.keyword(),
-                                   description="Service account to use for pods in kubernete"
-                                   "where the service does not have one configured.",
-                                   deprecation="Use helm values to specify service accounts settings for "
-                                   "(non-)privileged services: "
-                                   "`privilegedServiceAccountName`, `unprivilegedServiceAccountName`")
 
 
 DEFAULT_SERVICES = {
@@ -2068,7 +2030,7 @@ class SubmissionProfileParams(odm.Model):
 
 
 DEFAULT_RESTRICTED_PARAMS = {
-    # Default privilege params that are used in all profiles
+    # Default restricted params that are used in all profiles
     "submission": ["ignore_recursion_prevention"],
     "APKaye": ["resubmit_apk_as_jar"],
     "AVClass": ["include_malpedia_dataset"],
