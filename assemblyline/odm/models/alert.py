@@ -115,7 +115,7 @@ class File(odm.Model):
     name = odm.Keyword(copyto="__text__", description="The original name of the file as submitted.")
     sha1 = odm.SHA1(copyto="__text__", description="The SHA1 hash of the file.")
     sha256 = odm.SHA256(copyto="__text__", description="The SHA256 hash of the file.")
-    size = odm.Integer(store=False, description="The size of the file in bytes.")
+    size = odm.long(store=False, description="The size of the file in bytes.")
     type = odm.Keyword(copyto="__text__", description="	The file type as identified by Assemblyline's analysis.")
     screenshots = odm.List(odm.Compound(Screenshot), default=[], description="Screenshots taken of the file during analysis, if applicable.")
 
@@ -202,7 +202,7 @@ class Alert(odm.Model):
     filtered = odm.Boolean(default=False, description="Indicates whether portions of the submission's analysis results have been omitted due to the user's classification level not meeting the required threshold for viewing certain data.")
     heuristic = odm.Compound(Heuristic, description="Data regarding the heuristics that triggered the alert.")
     label = odm.List(odm.Keyword(), copyto="__text__", default=[], description="Labels assigned to the alert for categorization and filtering.")
-    metadata = odm.FlattenedObject(default={}, store=False, description="Additional metadata provided with the file at the time of submission.")
+    metadata = odm.FlatMapping(odm.wildcard(), copyto="__text__", default={}, store=False, description="Additional metadata provided with the file at the time of submission.")
     owner = odm.Optional(odm.Keyword(), description="Specifies the user or system component that has taken ownership of the alert. If no user has claimed the alert, it remains under system ownership with no specific user associated, indicated by a value of `None`.")
     priority = odm.Optional(odm.Enum(values=PRIORITIES), description="Indicates the importance level assigned to the alert.")
     reporting_ts = odm.Date(description="Timestamp when the alert was created.")

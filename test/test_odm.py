@@ -899,3 +899,5 @@ def test_flat_fields():
 
     assert {k: v.multivalued for k, v in Outer.flat_fields(show_compound=True, skip_mappings=True).items()} == {
         "c": True, "c.a": False, "c.b": False}
+
+

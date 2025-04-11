@@ -1,12 +1,13 @@
 from assemblyline.odm.base import _Field
-from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, Long, \
+from assemblyline.odm import Keyword, Wildcard, Text, List, Compound, Date, Integer, Long, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
-    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword, \
-    Json, ValidatedKeyword, UNCPath
+    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, FlatMapping, \
+    Email, UpperKeyword, Json, ValidatedKeyword, UNCPath
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
     Keyword: 'keyword',
+    Wildcard: 'wildcard',
     Boolean: 'boolean',
     Integer: 'integer',
     Long: 'long',
@@ -54,7 +55,7 @@ back_mapping = {v: k for k, v in __type_mapping.items() if k not in [Enum, Class
 back_mapping.update({x: Keyword for x in set(__analyzer_mapping.values())})
 
 
-def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
+def build_mapping(field_data, prefix=None, allow_refuse_implicit=True, default_copyto=None):
     """
     The mapping for Elasticsearch based on a python model object.
     """
@@ -72,6 +73,8 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
         if temp_field.copyto:
             assert len(temp_field.copyto) == 1
             body['copy_to'] = temp_field.copyto[0]
+        elif default_copyto is not None and default_copyto:
+            body['copy_to'] = default_copyto[0]
 
         return body
 
@@ -111,6 +114,11 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 "analyzer": __analyzer_mapping[field.__class__]
             })
 
+        elif isinstance(field, Wildcard):
+            es_data_type = __type_mapping[field.__class__]
+            data = {'type': es_data_type}
+            mappings[name.strip(".")] = data
+
         elif isinstance(field, Keyword):
             es_data_type = __type_mapping[field.__class__]
             data = {'type': es_data_type}
@@ -126,14 +134,15 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 'format': 'date_optional_time||epoch_millis',
             })
 
-        elif isinstance(field, FlattenedObject):
-            if not field.index or isinstance(field.child_type, Any):
+        elif isinstance(field, (FlattenedObject, FlatMapping)):
+            if not any_indexed_part(field) or isinstance(field.child_type, Any):
                 mappings[name.strip(".")] = {"type": "object", "enabled": False}
             else:
                 dynamic.extend(build_templates(f'{name}.*', field.child_type, nested_template=True, index=field.index))
 
         elif isinstance(field, List):
             temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=path,
+                                                        default_copyto=field.copyto,
                                                         allow_refuse_implicit=False)
             mappings.update(temp_mappings)
             dynamic.extend(temp_dynamic)
@@ -151,7 +160,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
             dynamic.extend(temp_dynamic)
 
         elif isinstance(field, Mapping):
-            if not field.index or isinstance(field.child_type, Any):
+            if not any_indexed_part(field) or isinstance(field.child_type, Any):
                 mappings[name.strip(".")] = {"type": "object", "enabled": False}
             else:
                 dynamic.extend(build_templates(f'{name}.*', field.child_type, index=field.index))
@@ -186,6 +195,25 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
     return mappings, dynamic
 
 
+def any_indexed_part(field) -> bool:
+    """Figure out if any component of this field is indexed."""
+    if isinstance(field, (FlattenedObject, FlatMapping, List, Optional, Mapping)):
+        if field.index is not None:
+            return field.index
+        return any_indexed_part(field.child_type)
+
+    elif isinstance(field, Compound):
+        if field.index is not None:
+            return field.index
+        for subfield in field.fields().values():
+            if any_indexed_part(subfield):
+                return True
+        return False
+
+    else:
+        return field.index
+
+
 def build_templates(name, field, nested_template=False, index=True) -> list:
     if isinstance(field, (Keyword, Boolean, Integer, Float, Text, Json)):
         if nested_template:
@@ -212,6 +240,27 @@ def build_templates(name, field, nested_template=False, index=True) -> list:
 
             return [{f"{name}_tpl": field_template}]
 
+    elif isinstance(field, (Mapping, List)):
+        temp_name = name
+        # if field.name:
+        #     temp_name = f"{name}.{field.name}"
+        return build_templates(temp_name, field.child_type, nested_template=True)
+
+    elif isinstance(field, Compound):
+        temp_name = name
+        # if field.name:
+        #     temp_name = f"{name}.{field.name}"
+
+        out = []
+        for sub_name, sub_field in field.fields().items():
+            sub_name = f"{temp_name}.{sub_name}"
+            out.extend(build_templates(sub_name, sub_field))
+
+        return out
+
+    elif isinstance(field, Optional):
+        return build_templates(name, field.child_type, nested_template=nested_template)
+
     elif isinstance(field, Any) or not index:
         field_template = {
             "path_match": name,
@@ -224,27 +273,6 @@ def build_templates(name, field, nested_template=False, index=True) -> list:
         if field.index:
             raise ValueError(f"Mapping to Any may not be indexed: {name}")
         return [{f"{name}_tpl": field_template}]
-
-    elif isinstance(field, (Mapping, List)):
-        temp_name = name
-        if field.name:
-            temp_name = f"{name}.{field.name}"
-        return build_templates(temp_name, field.child_type, nested_template=True)
-
-    elif isinstance(field, Compound):
-        temp_name = name
-        if field.name:
-            temp_name = f"{name}.{field.name}"
-
-        out = []
-        for sub_name, sub_field in field.fields().items():
-            sub_name = f"{temp_name}.{sub_name}"
-            out.extend(build_templates(sub_name, sub_field))
-
-        return out
-
-    elif isinstance(field, Optional):
-        return build_templates(name, field.child_type, nested_template=nested_template)
 
     else:
         raise NotImplementedError(f"Unknown type for elasticsearch dynamic mapping: {field.__class__}")
