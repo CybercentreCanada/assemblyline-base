@@ -1,5 +1,5 @@
 from assemblyline import odm
-from assemblyline.common import forge, constants
+from assemblyline.common import constants, forge
 from assemblyline.odm.models.config import SubmissionProfileParams
 from assemblyline.odm.models.submission import ServiceSelection
 
@@ -30,10 +30,6 @@ class UserSettings(odm.Model):
                               deprecation="This will be moved to the \"default\" submission profile")
     ignore_cache = odm.Boolean(default=False, description="Ignore service caching?",
                               deprecation="This will be moved to the \"default\" submission profile")
-
-    # the following 1 line can be removed after assemblyline 4.6+
-    ignore_dynamic_recursion_prevention = odm.Boolean(default=False, description="Ignore dynamic recursion prevention?",
-                              deprecation="This is replaced by `ignore_recursion_prevention`")
     ignore_recursion_prevention = odm.Boolean(default=False, description="Ignore all service recursion prevention?",
                               deprecation="This will be moved to the \"default\" submission profile")
     ignore_filtering = odm.Boolean(default=False, description="Ignore filtering services?",
@@ -63,7 +59,6 @@ DEFAULT_USER_PROFILE_SETTINGS = {
     "expand_min_score": 500,
     "generate_alert": False,
     "ignore_cache": False,
-    "ignore_dynamic_recursion_prevention": False,
     "ignore_recursion_prevention": False,
     "ignore_filtering": False,
     "priority": 1000,

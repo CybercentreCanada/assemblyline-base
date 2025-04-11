@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 import hashlib
+
 from assemblyline import odm
-from assemblyline.common import forge, constants
+from assemblyline.common import constants, forge
+
 Classification = forge.get_classification()
 
 SUBMISSION_STATES = ['failed', 'submitted', 'completed']
@@ -33,8 +36,6 @@ _KEY_HASHED_FIELDS = {
     'deep_scan',
     'ignore_cache',
     'ignore_recursion_prevention',
-    # TODO: This one line can be removed after assemblyline upgrade to version 4.6+
-    'ignore_dynamic_recursion_prevention',
     'ignore_filtering',
     'ignore_size',
     'max_extracted',
@@ -51,13 +52,7 @@ class SubmissionParams(odm.Model):
     generate_alert = odm.Boolean(default=False, description="Should this submission generate an alert?")
     groups = odm.List(odm.Keyword(), default=[], description="List of groups related to this scan")
     ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
-    ignore_recursion_prevention = odm.Boolean(
-        default=False, description="Should we ignore recursion prevention?")
-
-    # TODO: The following three lines can be removed after assemblyline upgrade to 4.6+
-    ignore_dynamic_recursion_prevention = odm.Boolean(
-        default=False, description="Should we ignore dynamic recursion prevention?")
-
+    ignore_recursion_prevention = odm.Boolean(default=False, description="Should we ignore recursion prevention?")
     ignore_filtering = odm.Boolean(default=False, description="Should we ignore filtering services?")
     ignore_size = odm.Boolean(default=False, description="Ignore the file size limits?")
     never_drop = odm.Boolean(default=False, description="Exempt from being dropped by ingester?")

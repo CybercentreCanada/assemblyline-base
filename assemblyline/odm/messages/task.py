@@ -1,7 +1,8 @@
 from assemblyline import odm
-from assemblyline.common import forge, constants
+from assemblyline.common import constants, forge
 from assemblyline.odm.models.config import ServiceSafelist
 from assemblyline.odm.models.file import URIInfo
+
 Classification = forge.get_classification()
 
 MSG_TYPES = {"Task"}
@@ -60,11 +61,6 @@ class Task(odm.Model):
     ignore_recursion_prevention = odm.Boolean(
         default=False,
         description="Whether the service should ignore recursion prevention or not")
-
-    # TODO: The following three lines can be removed after assemblyline upgrade to version 4.6+
-    ignore_dynamic_recursion_prevention = odm.Boolean(
-        default=False,
-        description="Whether the service should ignore dynamic recursion prevention or not")
 
     ignore_filtering = odm.Boolean(default=False, description="Should the service filter it's output?")
 
