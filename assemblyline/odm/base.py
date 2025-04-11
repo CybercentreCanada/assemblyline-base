@@ -1186,7 +1186,7 @@ class Model:
 
         # Determine the type of Field we're dealing with
         # if possible return the Model class if wrapped in Compound
-        def get_type(field_class: _Field) -> Tuple(str, Model):
+        def get_type(field_class: _Field) -> Tuple[str, Model]:
             if field_class.__class__ == Optional:
                 return get_type(field_class.child_type)
             elif field_class.__class__ == Compound:
