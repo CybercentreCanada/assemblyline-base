@@ -201,6 +201,16 @@ class _Field:
         if self.store is None:
             self.store = store
 
+    def inherit_parameters(self, other):
+        if self.index is None:
+            self.index = other.index
+        if self.store is None:
+            self.store = other.store
+        if self.ai is None:
+            self.ai = other.ai
+        if len(self.copyto) == 0:
+            self.copyto = other.copyto
+
     def fields(self):
         """
         Return the subfields/modified field data.
@@ -862,6 +872,7 @@ class List(_Field):
         super().__init__(**kwargs)
         self.child_type = child_type
         self.auto = auto
+        self.inherit_parameters(self.child_type)
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -956,6 +967,7 @@ class Mapping(_Field):
 
         super().__init__(**kwargs)
         self.child_type = child_type
+        self.inherit_parameters(child_type)
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
@@ -1062,6 +1074,7 @@ class Optional(_Field):
         self.default_set = True
         child_type.optional = True
         self.child_type = child_type
+        self.inherit_parameters(child_type)
 
     def check(self, value, *args, **kwargs):
         if value is None:
