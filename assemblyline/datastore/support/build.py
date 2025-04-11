@@ -1,12 +1,13 @@
 from assemblyline.odm.base import _Field
-from assemblyline.odm import Keyword, Text, List, Compound, Date, Integer, Long, \
+from assemblyline.odm import Keyword, Wildcard, Text, List, Compound, Date, Integer, Long, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
-    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, Email, UpperKeyword, \
-    Json, ValidatedKeyword, UNCPath
+    SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, FlatMapping, \
+    Email, UpperKeyword, Json, ValidatedKeyword, UNCPath
 
 # Simple types can be resolved by a direct mapping
 __type_mapping = {
     Keyword: 'keyword',
+    Wildcard: 'wildcard',
     Boolean: 'boolean',
     Integer: 'integer',
     Long: 'long',
@@ -111,6 +112,11 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 "analyzer": __analyzer_mapping[field.__class__]
             })
 
+        elif isinstance(field, Wildcard):
+            es_data_type = __type_mapping[field.__class__]
+            data = {'type': es_data_type}
+            mappings[name.strip(".")] = data
+
         elif isinstance(field, Keyword):
             es_data_type = __type_mapping[field.__class__]
             data = {'type': es_data_type}
@@ -126,8 +132,8 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
                 'format': 'date_optional_time||epoch_millis',
             })
 
-        elif isinstance(field, FlattenedObject):
-            if not field.index or isinstance(field.child_type, Any):
+        elif isinstance(field, (FlattenedObject, FlatMapping)):
+            if not any_indexed_part(field) or isinstance(field.child_type, Any):
                 mappings[name.strip(".")] = {"type": "object", "enabled": False}
             else:
                 dynamic.extend(build_templates(f'{name}.*', field.child_type, nested_template=True, index=field.index))
@@ -184,6 +190,25 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True):
         }})
 
     return mappings, dynamic
+
+
+def any_indexed_part(field) -> bool:
+    """Figure out if any component of this field is indexed."""
+    if isinstance(field, (FlattenedObject, FlatMapping, List, Optional, Mapping)):
+        if field.index is not None:
+            return field.index
+        return any_indexed_part(field.child_type)
+
+    elif isinstance(field, Compound):
+        if field.index is not None:
+            return field.index
+        for subfield in field.fields().values():
+            if any_indexed_part(subfield):
+                return True
+        return False
+
+    else:
+        return field.index
 
 
 def build_templates(name, field, nested_template=False, index=True) -> list:

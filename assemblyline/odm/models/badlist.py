@@ -30,7 +30,7 @@ class Hashes(odm.Model):
 class File(odm.Model):
     name = odm.List(odm.Keyword(store=True, copyto="__text__"), default=[],
                     description="List of names seen for that file")
-    size = odm.Optional(odm.Integer(), description="Size of the file in bytes")
+    size = odm.Optional(odm.long(), description="Size of the file in bytes")
     type = odm.Optional(odm.Keyword(), description="Type of file as identified by Assemblyline")
 
 
