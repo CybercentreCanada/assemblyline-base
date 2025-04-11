@@ -1406,22 +1406,6 @@ report into a one or two paragraph executive summary. DO NOT write any headers i
 }
 
 
-DEFAULT_AI = {
-    'chat_url': "https://api.openai.com/v1/chat/completions",
-    'api_type': "openai",
-    'assistant': DEFAULT_AI_ASSISTANT,
-    'code': DEFAULT_AI_CODE,
-    'detailed_report': DEFAULT_AI_DETAILED_REPORT,
-    'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
-    'enabled': False,
-    'headers': {
-        "Content-Type": "application/json"
-    },
-    'model_name': "gpt-3.5-turbo",
-    'verify': True
-}
-
-
 @odm.model(index=False, store=False, description="Connection information to an AI backend")
 class AIConnection(odm.Model):
     api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
@@ -1653,7 +1637,6 @@ DOWNLOAD_ENCODINGS = ["cart", "raw", "zip"]
 
 @odm.model(index=False, store=False, description="UI Configuration")
 class UI(odm.Model):
-    ai: AI = odm.Compound(AI, default=DEFAULT_AI, description="AI support for the UI")
     ai_backends: AIBackends = odm.Compound(AIBackends, default=DEFAULT_AI_BACKENDS,
                                            description="AI Multi-backends support for the UI")
     alerting_meta: AlertingMeta = odm.Compound(AlertingMeta, default=DEFAULT_ALERTING_META,
@@ -1718,7 +1701,6 @@ class UI(odm.Model):
 
 
 DEFAULT_UI = {
-    "ai": DEFAULT_AI,
     "ai_backends": DEFAULT_AI_BACKENDS,
     "alerting_meta": DEFAULT_ALERTING_META,
     "allow_malicious_hinting": False,
