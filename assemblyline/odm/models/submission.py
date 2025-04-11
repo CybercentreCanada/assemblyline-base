@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 import hashlib
+
 from assemblyline import odm
-from assemblyline.common import forge, constants
+from assemblyline.common import constants, forge
+
 Classification = forge.get_classification()
 
 SUBMISSION_STATES = ['failed', 'submitted', 'completed']
@@ -12,7 +15,7 @@ DEFAULT_RESUBMIT = []
 @odm.model(index=True, store=False, description="File Model of Submission")
 class File(odm.Model):
     name = odm.Keyword(copyto="__text__", description="Name of the file")
-    size = odm.Optional(odm.Integer(), description="Size of the file in bytes")
+    size = odm.Optional(odm.long(), description="Size of the file in bytes")
     sha256 = odm.SHA256(copyto="__text__", description="SHA256 hash of the file")
 
 
@@ -26,8 +29,6 @@ class ServiceSelection(odm.Model):
         description="List of services to rescan when initial run scores as malicious")
     resubmit = odm.List(odm.Keyword(), default=DEFAULT_RESUBMIT,
                         description="Add to service selection when resubmitting")
-    runtime_excluded = odm.List(odm.Keyword(), default=[], description="List of runtime excluded services")
-
 
 # Fields in the parameters used to calculate hashes used for result caching
 _KEY_HASHED_FIELDS = {
@@ -35,8 +36,6 @@ _KEY_HASHED_FIELDS = {
     'deep_scan',
     'ignore_cache',
     'ignore_recursion_prevention',
-    # TODO: This one line can be removed after assemblyline upgrade to version 4.6+
-    'ignore_dynamic_recursion_prevention',
     'ignore_filtering',
     'ignore_size',
     'max_extracted',
@@ -53,13 +52,7 @@ class SubmissionParams(odm.Model):
     generate_alert = odm.Boolean(default=False, description="Should this submission generate an alert?")
     groups = odm.List(odm.Keyword(), default=[], description="List of groups related to this scan")
     ignore_cache = odm.Boolean(default=False, description="Ignore the cached service results?")
-    ignore_recursion_prevention = odm.Boolean(
-        default=False, description="Should we ignore recursion prevention?")
-
-    # TODO: The following three lines can be removed after assemblyline upgrade to 4.6+
-    ignore_dynamic_recursion_prevention = odm.Boolean(
-        default=False, description="Should we ignore dynamic recursion prevention?")
-
+    ignore_recursion_prevention = odm.Boolean(default=False, description="Should we ignore recursion prevention?")
     ignore_filtering = odm.Boolean(default=False, description="Should we ignore filtering services?")
     ignore_size = odm.Boolean(default=False, description="Ignore the file size limits?")
     never_drop = odm.Boolean(default=False, description="Exempt from being dropped by ingester?")
@@ -67,7 +60,6 @@ class SubmissionParams(odm.Model):
     max_extracted = odm.Integer(default=500, description="Max number of extracted files")
     max_supplementary = odm.Integer(default=500, description="Max number of supplementary files")
     priority = odm.Integer(default=1000, description="Priority of the scan", min=1, max=constants.MAX_PRIORITY)
-    profile = odm.Boolean(default=False, description="Should the submission do extra profiling?")
     psid = odm.Optional(odm.UUID(), description="Parent submission ID")
     quota_item = odm.Boolean(default=False, description="Does this submission count against quota?")
     services = odm.Compound(ServiceSelection, default={}, description="Service selection")
@@ -140,9 +132,9 @@ class Submission(odm.Model):
     file_count = odm.Integer(description="Total number of files in the submission", ai=False)
     files: list[File] = odm.List(odm.Compound(File), description="List of files that were originally submitted")
     max_score = odm.Integer(description="Maximum score of all the files in the scan")
-    metadata = odm.FlattenedObject(store=False, description="Metadata associated to the submission")
+    metadata = odm.FlatMapping(odm.wildcard(), copyto="__text__", store=False, description="Metadata associated to the submission")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details", ai=False)
-    results: list[str] = odm.List(odm.Keyword(), store=False, description="List of result keys", ai=False)
+    results: list[str] = odm.List(odm.wildcard(), store=False, description="List of result keys", ai=False)
     sid: str = odm.UUID(copyto="__text__", description="Submission ID")
     state = odm.Enum(values=SUBMISSION_STATES, description="Status of the submission", ai=False)
     to_be_deleted = odm.Boolean(

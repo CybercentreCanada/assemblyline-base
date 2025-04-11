@@ -74,17 +74,22 @@ def test_truncate():
 
 
 def test_remove_bidir_unicode_controls():
-    test_str = 'a\u202Db\u202Ac\u200Ed\u200Fe\u202Efg\u202B'
-    assert str_utils.remove_bidir_unicode_controls(test_str) == 'abcdefg'
+    test_str = 'a'.join(str_utils.CONTROL_CHARS)
+    assert str_utils.remove_bidir_unicode_controls(test_str) == 'a' * (len(str_utils.CONTROL_CHARS) - 1)
 
     other_test_str = 'abcdéfg'
     assert str_utils.remove_bidir_unicode_controls(other_test_str) == 'abcdéfg'
 
 
 def test_wrap_bidir_unicode_string():
-    test_str = 'a\u202Db\u202Acde\u202Efg\u202B'
+    from assemblyline.common.str_utils import DirectionalFormattingCharacter as DFC
+    test_str = 'a'.join(str_utils.EO_CONTROL_CHARS) + DFC.PDF.value + 'a'.join(str_utils.I_CONTROL_CHARS)
     a = str_utils.wrap_bidir_unicode_string(test_str)
-    assert a == '\u202aa\u202db\u202Acde\u202efg\u202b\u202c\u202c\u202c\u202c\u202c'
+    assert a == DFC.LRE.value + \
+                test_str + \
+                (len(str_utils.EO_CONTROL_CHARS) - 1) * DFC.PDF.value + \
+                len(str_utils.I_CONTROL_CHARS) * DFC.PDI.value + \
+                DFC.PDF.value
 
     byte_str = b'\u202Dabcdefg'
     assert str_utils.wrap_bidir_unicode_string(byte_str) == b'\u202Dabcdefg'

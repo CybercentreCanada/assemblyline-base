@@ -8,19 +8,19 @@ import time
 import typing
 import warnings
 
-from copy import deepcopy
-from assemblyline.common.isotime import now_as_iso
-from datemath import dm
-from datemath.helpers import DateMathException
 from datetime import datetime
 from enum import Enum
 from os import environ
-from typing import Dict, Any, Union, TypeVar, Generic
+from typing import Dict, Any, Union, TypeVar, Generic, Optional
+from copy import deepcopy
 
+from datemath import dm
+from datemath.helpers import DateMathException
 import elasticsearch
 import elasticsearch.helpers
 
 from assemblyline import odm
+from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.datastore.bulk import ElasticBulkPlan
 from assemblyline.datastore.exceptions import (
@@ -222,8 +222,8 @@ class ESCollection(Generic[ModelType]):
                 if field.store:
                     self.stored_fields[name] = field
 
-    def is_archive_index(self, index):
-        return self.archive_name and index.startswith(self.archive_name)
+    def is_archive_index(self, index) -> bool:
+        return bool(self.archive_name and index.startswith(self.archive_name))
 
     def get_index_list(self, index_type):
         # Default value
@@ -2015,7 +2015,8 @@ class ESCollection(Generic[ModelType]):
         mappings['properties']['id'] = {
             "store": True,
             "doc_values": True,
-            "type": 'keyword'
+            "type": 'keyword',
+            "copy_to": "__text__",
         }
 
         mappings['properties']['__text__'] = {
@@ -2032,17 +2033,17 @@ class ESCollection(Generic[ModelType]):
 
         return field_types
 
-    def _check_fields(self, model=None):
+    def _check_fields(self, target_model: Optional[odm.Model] = None):
         if not self.validate:
             return
 
-        if model is None:
+        if target_model is None:
             if self.model_class:
                 return self._check_fields(self.model_class)
             return
 
         fields = self.fields()
-        model = self.model_class.flat_fields(skip_mappings=True)
+        model = target_model.flat_fields(skip_mappings=True)
 
         missing = set(model.keys()) - set(fields.keys())
         if missing:
@@ -2051,7 +2052,7 @@ class ESCollection(Generic[ModelType]):
         matching = set(fields.keys()) & set(model.keys())
         for field_name in matching:
             if fields[field_name]['indexed'] != model[field_name].index and model[field_name].index:
-                raise RuntimeError(f"Field {field_name} should be indexed but is not.")
+                log.warning("Field %s should be indexed but is not.", field_name)
 
             possible_field_types = self.__get_possible_fields(model[field_name].__class__)
 
@@ -2071,7 +2072,7 @@ class ESCollection(Generic[ModelType]):
             index = f"{alias}_hot"
             # Create HOT index
             if not self.with_retries(self.datastore.client.indices.exists, index=alias):
-                log.debug(f"Index {alias.upper()} does not exists. Creating it now...")
+                log.debug("Index %s does not exists. Creating it now...", alias.upper())
                 try:
                     self.with_retries(self.datastore.client.indices.create, index=index,
                                       mappings=self._get_index_mappings(),
@@ -2079,7 +2080,7 @@ class ESCollection(Generic[ModelType]):
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise
-                    log.warning(f"Tried to create an index template that already exists: {alias.upper()}")
+                    log.warning("Tried to create an index template that already exists: %s", alias.upper())
 
                 self.with_retries(self.datastore.client.indices.put_alias, index=index, name=alias)
             elif not self.with_retries(self.datastore.client.indices.exists, index=index) and \

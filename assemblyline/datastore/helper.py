@@ -6,18 +6,19 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Any, List, Optional, Tuple, Union
 
+from assemblyline.odm.models.apikey import Apikey
 import elasticapm
+
 from assemblyline.common import forge
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.dict_utils import flatten, recursive_update
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.tagging import tag_dict_to_ai_list
 from assemblyline.common.uid import get_id_from_data
-from assemblyline.datastore.collection import ESCollection, log, Index
+from assemblyline.datastore.collection import ESCollection, Index, log
 from assemblyline.datastore.exceptions import MultiKeyError, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
-from assemblyline.remote.datatypes.hash import Hash
 from assemblyline.odm import DATEFORMAT, Date, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
@@ -34,14 +35,14 @@ from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
-from assemblyline.odm.models.submission import Submission
+from assemblyline.odm.models.submission import Submission, SubmissionParams
 from assemblyline.odm.models.submission_summary import SubmissionSummary
 from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
 from assemblyline.odm.models.workflow import Workflow
-
+from assemblyline.remote.datatypes.hash import Hash
 
 config = forge.get_config()
 
@@ -74,6 +75,7 @@ class AssemblylineDatastore(object):
         self.ds.register('submission_tree', SubmissionTree)
         self.ds.register('submission_summary', SubmissionSummary)
         self.ds.register('user', User)
+        self.ds.register('apikey', Apikey)
         self.ds.register('user_avatar')
         self.ds.register('user_favorites', UserFavorites)
         self.ds.register('user_settings', UserSettings)
@@ -100,6 +102,10 @@ class AssemblylineDatastore(object):
     @property
     def alert(self) -> ESCollection[Alert]:
         return self.ds.alert
+
+    @property
+    def apikey(self) -> ESCollection[Apikey]:
+        return self.ds.apikey
 
     @property
     def badlist(self) -> ESCollection[Badlist]:
@@ -265,6 +271,7 @@ class AssemblylineDatastore(object):
     @elasticapm.capture_span(span_type='datastore')
     def delete_submission_tree_bulk(self, sid, cl_engine=forge.get_classification(), cleanup=True, transport=None):
         submission = self.submission.get(sid, as_obj=False)
+        params = SubmissionParams(submission['params'])
         if not submission:
             return
 
@@ -276,6 +283,7 @@ class AssemblylineDatastore(object):
         er_plan = self.emptyresult.get_bulk_plan()
         r_plan = self.result.get_bulk_plan()
         f_plan = self.file.get_bulk_plan()
+        fscore_plan = self.filescore.get_bulk_plan()
 
         # Add delete operation for submission and cache
         # NOTE: we will use the search operation because there should not be a lot of submission_tree or summary
@@ -292,7 +300,8 @@ class AssemblylineDatastore(object):
         fix_classification_files = set()
         supp_map = {}
 
-        temp_files = [x[:64] for x in errors]
+        temp_files = [x['sha256'] for x in submission['files']]
+        temp_files.extend([x[:64] for x in errors])
         temp_files.extend([x[:64] for x in results])
         temp_files = set(temp_files)
 
@@ -318,7 +327,7 @@ class AssemblylineDatastore(object):
         errors = [x for x in errors if x[:64] in files_to_delete]
         results = [x for x in results if x[:64] in files_to_delete]
 
-        # Delete files, errors, results that were only used once
+        # Delete files, filescores, errors, results that were only used once
         for e in errors:
             e_plan.add_delete_operation(e)
         for r in results:
@@ -328,6 +337,7 @@ class AssemblylineDatastore(object):
                 r_plan.add_delete_operation(r)
         for f in files_to_delete:
             f_plan.add_delete_operation(f)
+            fscore_plan.add_delete_operation(params.create_filescore_key(f))
             if transport:
                 transport.delete(f)
 
@@ -377,7 +387,7 @@ class AssemblylineDatastore(object):
                                 f_plan.add_update_operation(supp, data)
 
         # Proceed with plan
-        self.multi_index_bulk([s_plan, st_plan, ss_plan, e_plan, er_plan, r_plan, f_plan])
+        self.multi_index_bulk([s_plan, st_plan, ss_plan, e_plan, er_plan, r_plan, f_plan, fscore_plan])
 
     @elasticapm.capture_span(span_type='datastore')
     def delete_submission_tree(
@@ -1219,6 +1229,11 @@ class AssemblylineDatastore(object):
                 )
                 if classification == cl_engine.normalize_classification(
                         current_fileinfo.get('classification', classification)):
+
+                    # Before we build the UPDATE_SET commands, make sure the flags are merged with OR
+                    fileinfo['is_section_image'] |= current_fileinfo.get('is_section_image', False)
+                    fileinfo['is_supplementary'] |= current_fileinfo.get('is_supplementary', False)
+
                     operations = [
                         (self.file.UPDATE_SET, key, value)
                         for key, value in fileinfo.items()
@@ -1231,6 +1246,13 @@ class AssemblylineDatastore(object):
                         operations.append((self.file.UPDATE_MAX, 'expiry_ts', expiry))
                     if self.file.update(sha256, operations, retry_on_conflict=8):
                         return
+
+            # Before we overwrite current_fileinfo make sure to OR the flags together.
+            # This is done here and above to ensure that once a file is marked by a service
+            # as safe for a display as a section image (or use as supplementary file) further
+            # handling of this file, such as extraction or resubmission, won't remove this marking.
+            fileinfo['is_section_image'] |= current_fileinfo.get('is_section_image', False)
+            fileinfo['is_supplementary'] |= current_fileinfo.get('is_supplementary', False)
 
             # Add new fileinfo to current from database
             current_fileinfo.update(fileinfo)
