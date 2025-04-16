@@ -51,6 +51,7 @@ class Identify:
         self.custom = re.compile(r"^custom: ", re.IGNORECASE)
         self.lock = threading.Lock()
         self.yara_default_externals = {"mime": "", "magic": "", "type": ""}
+        self.magika = Magika()
 
         # If cache is use, load the config and datastore objects to load potential items from cache
         if self.use_cache:
