@@ -96,6 +96,7 @@ setup(
         'yara-python',
         'python-tlsh',
         'hauntedhouse==0.1.10',
+        'magika',
     ],
     extras_require={
         'test': [
