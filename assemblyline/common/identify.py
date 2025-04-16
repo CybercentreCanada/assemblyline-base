@@ -17,6 +17,7 @@ from urllib.parse import unquote, urlparse
 
 import magic
 import msoffcrypto
+from pathlib import Path
 import yaml
 import yara
 
@@ -29,6 +30,7 @@ from assemblyline.common.str_utils import dotdump, safe_str
 from assemblyline.filestore import FileStoreException
 from assemblyline.remote.datatypes.events import EventWatcher
 from cart import get_metadata_only, unpack_file
+from magika import Magika
 
 constants = get_constants()
 
@@ -49,6 +51,7 @@ class Identify:
         self.custom = re.compile(r"^custom: ", re.IGNORECASE)
         self.lock = threading.Lock()
         self.yara_default_externals = {"mime": "", "magic": "", "type": ""}
+        self.magika = Magika()
 
         # If cache is use, load the config and datastore objects to load potential items from cache
         if self.use_cache:
@@ -403,9 +406,16 @@ class Identify:
             # Only if the file was not identified as a csv or a json
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
-            if ("unknown" in data["type"] or data["type"] == "text/plain") and data["mime"] in untrusted_mimes:
-                # Rely on untrusted mimes
-                data["type"] = untrusted_mimes[data["mime"]]
+            if ("unknown" in data["type"] or data["type"] == "text/plain"):
+                magika_result = self.magika.identify_path(Path(path))
+                with self.lock:
+                    trusted_mimes = self.trusted_mimes
+
+                if magika_result.output.mime_type in trusted_mimes:
+                    data["type"] = trusted_mimes[magika_result.output.mime_type]
+                elif data["mime"] in untrusted_mimes:
+                    # Rely on untrusted mimes
+                    data["type"] = untrusted_mimes[data["mime"]]
 
         # Extra checks for office documents
         #  - Check for encryption
