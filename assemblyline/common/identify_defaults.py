@@ -451,6 +451,7 @@ trusted_mimes = {
 # LibMagic mimetypes that we will fallback to when we can't determine a type
 untrusted_mimes = {
     "application/javascript": "code/javascript",
+    "application/x-powershell": "code/ps1",
     "text/x-java": "code/java",
     "text/html": "code/html",
     "text/x-c++": "code/c++",
