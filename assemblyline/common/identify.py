@@ -414,8 +414,11 @@ class Identify:
                 if magika_result.output.mime_type in trusted_mimes:
                     data["type"] = trusted_mimes[magika_result.output.mime_type]
                 elif data["mime"] in untrusted_mimes:
-                    # Rely on untrusted mimes
+                    # Rely on untrusted mimes with magic
                     data["type"] = untrusted_mimes[data["mime"]]
+                elif magika_result.output.mime_type in untrusted_mimes:
+                    # Rely on untrusted mimes with Magika
+                    data["type"] = untrusted_mimes[magika_result.output.mime_type]
 
         # Extra checks for office documents
         #  - Check for encryption
