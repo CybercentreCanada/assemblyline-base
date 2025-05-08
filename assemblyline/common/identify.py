@@ -407,18 +407,22 @@ class Identify:
             data["type"] = self.yara_ident(path, data, fallback=data["type"])
 
             if ("unknown" in data["type"] or data["type"] == "text/plain"):
-                magika_result = self.magika.identify_path(Path(path))
-                with self.lock:
-                    trusted_mimes = self.trusted_mimes
+                magika_mime_type = None
+                if data["size"] >= 100:
+                    magika_mime_type = self.magika.identify_path(Path(path)).output.mime_type
+                    with self.lock:
+                        trusted_mimes = self.trusted_mimes
 
-                if magika_result.output.mime_type in trusted_mimes:
-                    data["type"] = trusted_mimes[magika_result.output.mime_type]
-                elif data["mime"] in untrusted_mimes:
+                    if magika_mime_type in trusted_mimes:
+                        data["type"] = trusted_mimes[magika_mime_type]
+                        return data
+
+                if data["mime"] in untrusted_mimes:
                     # Rely on untrusted mimes with magic
                     data["type"] = untrusted_mimes[data["mime"]]
-                elif magika_result.output.mime_type in untrusted_mimes:
+                elif magika_mime_type in untrusted_mimes:
                     # Rely on untrusted mimes with Magika
-                    data["type"] = untrusted_mimes[magika_result.output.mime_type]
+                    data["type"] = untrusted_mimes[magika_mime_type]
 
         # Extra checks for office documents
         #  - Check for encryption
