@@ -408,7 +408,7 @@ class Identify:
 
             if ("unknown" in data["type"] or data["type"] == "text/plain"):
                 magika_mime_type = None
-                if data["size"] >= 100:
+                if data["size"] >= 200:
                     magika_mime_type = self.magika.identify_path(Path(path)).output.mime_type
                     with self.lock:
                         trusted_mimes = self.trusted_mimes
