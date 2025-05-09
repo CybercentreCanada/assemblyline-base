@@ -413,7 +413,9 @@ class Identify:
                     with self.lock:
                         trusted_mimes = self.trusted_mimes
 
-                    if magika_mime_type in trusted_mimes:
+                    # Some entries in trusted_mimes are forcing text/plain to force yara identification
+                    # They are redefined in untrusted_mimes with more precision
+                    if magika_mime_type in trusted_mimes and magika_mime_type not in untrusted_mimes:
                         data["type"] = trusted_mimes[magika_mime_type]
                         return data
 
