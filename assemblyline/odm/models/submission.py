@@ -66,6 +66,7 @@ class SubmissionParams(odm.Model):
     service_spec = odm.Mapping(odm.Mapping(odm.Any()), default={}, index=False, store=False,
                                description="Service-specific parameters")
     submitter = odm.Keyword(store=True, copyto="__text__", description="User who submitted the file")
+    trace = odm.boolean(default=False, description="Collect debug information about the processing of a submission")
     ttl = odm.Integer(default=0, description="Time, in days, to live for this submission")
     type = odm.Keyword(default="USER", description="Type of submission")
     initial_data = odm.Optional(odm.Text(index=False), description="Initialization for temporary submission data")
@@ -121,11 +122,21 @@ class Verdict(odm.Model):
         description="List of user that thinks this submission is non-malicious")
 
 
+@odm.model(index=False, store=False, description="A logging event describing the processing of a submission")
+class TraceEvent(odm.Model):
+    timestamp = odm.Date(default="NOW")
+    event_type = odm.keyword()
+    service = odm.optional(odm.keyword())
+    file = odm.optional(odm.SHA256())
+    message = odm.optional(odm.keyword())
+
+
 @odm.model(index=True, store=True, description="Model of Submission")
 class Submission(odm.Model):
     archive_ts = odm.Optional(odm.Date(description="Time at which the submission was archived", ai=False))
     archived = odm.Boolean(default=False, description="Document is present in the malware archive", ai=False)
     classification = odm.Classification(description="Classification of the submission")
+    tracing_events = odm.sequence(odm.compound(TraceEvent), default=[], index=False, store=False)
     error_count = odm.Integer(description="Total number of errors in the submission", ai=False)
     errors: list[str] = odm.List(odm.Keyword(), store=False, description="List of error keys", ai=False)
     expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp", ai=False)
