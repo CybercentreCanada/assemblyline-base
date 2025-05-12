@@ -86,6 +86,7 @@ class UpdateSource(odm.Model):
     default_classification = odm.Classification(
         default=Classification.UNRESTRICTED,
         description="Default classification used in absence of one defined in files from source")
+    use_managed_identity: bool = odm.Boolean(default=False, description="Use managed identity for authentication with Azure DevOps")
     git_branch: str = odm.Optional(odm.Keyword(default=""), description="Branch to checkout from Git repository.")
     sync: bool = odm.Boolean(default=False, description="Synchronize signatures with remote source. Allows system to auto-disable signatures no longer found in source.")
     fetch_method: str = odm.Enum(values=FETCH_METHODS, default="GET", description="Fetch method to be used with source")
