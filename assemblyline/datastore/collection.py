@@ -989,7 +989,7 @@ class ESCollection(Generic[ModelType]):
             return self.normalize(data, as_obj=as_obj), version
         return self.normalize(data, as_obj=as_obj)
 
-    def save(self, key, data, version=None, index_type=Index.HOT):
+    def save(self, key, data, version=None, index_type=Index.HOT, refresh=None):
         """
         Save a to document to the datastore using the key as its document id.
 
@@ -1034,7 +1034,8 @@ class ESCollection(Generic[ModelType]):
                 op_type=operation,
                 if_seq_no=seq_no,
                 if_primary_term=primary_term,
-                raise_conflicts=True
+                raise_conflicts=True,
+                refresh=refresh,
             )
 
         return True
