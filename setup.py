@@ -96,7 +96,6 @@ setup(
         'yara-python',
         'python-tlsh',
         'hauntedhouse==0.1.10',
-        'pycparser'
     ],
     extras_require={
         'test': [
