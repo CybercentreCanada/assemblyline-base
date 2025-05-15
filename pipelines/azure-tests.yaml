@@ -99,9 +99,9 @@ jobs:
           sudo chmod a+rw /var/cache/assemblyline/
           sudo apt-get update
           sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
-          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools==80.4.0 wheel
-          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e .
-          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -r test/requirements.txt
+          sudo env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -U pip cython setuptools wheel
+          sudo env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -e .
+          sudo env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -r test/requirements.txt
         displayName: Setup environment
       - script: python -m pytest --durations=10 -rsx -vv --ignore=test/test_identify.py
         displayName: Test
@@ -116,9 +116,9 @@ jobs:
       - checkout: unittest-samples
       - script: |
           set -exv
-          env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools==80.4.0 wheel
-          env "PATH=$PATH" python -m pip install --no-cache-dir -e assemblyline-base
-          env "PATH=$PATH" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
+          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -U pip cython setuptools wheel
+          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -e assemblyline-base
+          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
         displayName: Setup environment
       - script: |
           set -exv
@@ -142,9 +142,9 @@ jobs:
         fetchDepth: 1
       - script: |
           set -exv
-          env "PATH=$PATH" python -m pip install --no-cache-dir -U pip cython setuptools==80.4.0 wheel
-          env "PATH=$PATH" python -m pip install --no-cache-dir -e assemblyline-base
-          env "PATH=$PATH" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
+          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -U pip cython setuptools wheel
+          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -e assemblyline-base
+          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
         displayName: Setup environment
       - script: |
           set -exv
