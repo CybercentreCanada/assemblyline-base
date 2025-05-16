@@ -2,17 +2,6 @@ import os
 
 from setuptools import Extension, find_packages, setup
 
-try:
-    # noinspection PyUnresolvedReferences,PyPackageRequirements
-    from Cython.Build import cythonize
-    USE_CYTHON = True
-    extension = '.pyx'
-except ImportError:
-    # If we don't have cython, its fine as long as we are installing from an sdist that already
-    # has the pyx files cythonized into c files
-    USE_CYTHON = False
-    extension = '.c'
-
 # Try to load the version from a datafile in the package
 package_version = "4.0.0.dev0"
 package_version_path = os.path.join(os.path.dirname(__file__), 'assemblyline', 'VERSION')
@@ -23,11 +12,8 @@ if os.path.exists(package_version_path):
 
 # Mark all the modules that need to be compiled here
 extensions = [
-    Extension('assemblyline.common.frequency', [os.path.join('assemblyline', 'common', 'frequency' + extension)])
+    Extension('assemblyline.common.frequency', [os.path.join('assemblyline', 'common', 'frequency.pyx')])
 ]
-
-if USE_CYTHON:
-    extensions = cythonize(extensions)
 
 # read the contents of your README file
 this_directory = os.path.abspath(os.path.dirname(__file__))
