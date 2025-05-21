@@ -2040,7 +2040,7 @@ class SubmissionProfile(odm.Model):
     classification = odm.ClassificationString(default=Classification.UNRESTRICTED,
                                               description="Submission profile classification")
     params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
-    restricted_params = odm.Mapping(odm.List(odm.Text()), default=DEFAULT_RESTRICTED_PARAMS,
+    restricted_params = odm.Mapping(odm.List(odm.Text()), default={},
                                     description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that cannot be configured by limited users.")
     description = odm.Optional(odm.Text(), description="A description of what the profile does")
 
