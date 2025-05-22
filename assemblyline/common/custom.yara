@@ -876,6 +876,26 @@ rule code_python {
         )
 }
 
+
+rule code_python_os_system {
+
+    meta:
+        type = "code/python"
+        score = -2
+
+    strings:
+        $import_os_system1 = "__import__('os').system("
+        $import_os_system2 = "__import__(\"os\").system("
+
+    condition:
+        mime startswith "text"
+        and (
+            $import_os_system1 at 0 or $import_os_system2 at 0
+            or #import_os_system1 + #import_os_system2 >= 2
+        )
+
+}
+
 /*
 code/java
 */
@@ -1393,7 +1413,7 @@ rule text_rdp {
         score = -2
 
     strings:
-        // Documentation: https://learn.microsoft.com/en-us/azure/virtual-desktop/rdp-properties
+        // https://learn.microsoft.com/en-us/azure/virtual-desktop/rdp-properties
         // Connections
         $optional1  = "alternate full address:s:" ascii wide
         $optional2  = "alternate shell:s:" ascii wide
