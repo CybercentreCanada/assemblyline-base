@@ -2049,10 +2049,9 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Only perform static analysis
         "name": "static",
-        "display_name": "Static Analysis",
+        "display_name": "[OFFLINE] Static Analysis",
         "params": {
             "services": {
-                "excluded": ["Dynamic Analysis", "Internet Connected"],
                 "selected": DEFAULT_SRV_SEL
             }
         },
@@ -2061,10 +2060,9 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Perform static analysis along with dynamic analysis
         "name": "static_with_dynamic",
-        "display_name": "Static + Dynamic Analysis",
+        "display_name": "[OFFLINE] Static + Dynamic Analysis",
         "params": {
             "services": {
-                "excluded": ["Internet Connected"],
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
             }
         },
@@ -2073,14 +2071,32 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Perform static analysis along with internet connected services
         "name": "static_with_internet",
-        "display_name": "Internet-Connected Static Analysis",
+        "display_name": "[ONLINE] Static Analysis",
         "params": {
             "services": {
-                "excluded": ["Dynamic Analysis"],
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
             },
         },
         "description": "Combine traditional static analysis techniques with internet-connected services to gather additional information and context about the file being analyzed."
+    },
+    {
+        # Perform static + dynamic analysis with internet connectivity
+        "name": "static_and_dynamic_with_internet",
+        "display_name": "[ONLINE] Static + Dynamic Analysis",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL + ["Internet Connected", "Dynamic Analysis"]
+            },
+            "service_spec": {
+                "CAPE": {
+                    "routing": "internet"
+                },
+                "URLDownloader": {
+                    "proxy": "localhost_proxy"
+                }
+            }
+        },
+        "description": "Perform comprehensive file analysis using traditional static and dynamic analysis techniques with internet access."
     },
 ]
 
