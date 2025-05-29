@@ -2007,7 +2007,7 @@ class ESCollection(Generic[ModelType]):
         if self.model_class:
             mappings['properties'], mappings['dynamic_templates'] = \
                 build_mapping(self.model_class.fields().values())
-            mappings['dynamic_templates'].insert(0, default_dynamic_strings)
+            mappings['dynamic_templates'].append(default_dynamic_strings)
         else:
             mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
