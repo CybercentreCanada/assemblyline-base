@@ -1,3 +1,5 @@
+import typing
+
 from assemblyline.odm.base import _Field
 from assemblyline.odm import Keyword, Wildcard, Text, List, Compound, Date, Integer, Long, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \

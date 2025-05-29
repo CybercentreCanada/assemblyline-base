@@ -117,7 +117,7 @@ class KeyMaskException(KeyError):
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None,
+    def __init__(self, name=None, index: typing.Optional[bool] = None, store=None, copyto=None,
                  default=None, description=None, deprecation=None, ai=True):
         self.index = index
         self.store = store
@@ -194,14 +194,14 @@ class _Field:
         out.setter_function = method
         return out
 
-    def apply_defaults(self, index, store):
+    def apply_defaults(self, index: bool, store: bool):
         """Used by the model decorator to pass through default parameters."""
         if self.index is None:
             self.index = index
         if self.store is None:
             self.store = store
 
-    def inherit_parameters(self, other):
+    def inherit_parameters(self, other: _Field):
         if self.index is None:
             self.index = other.index
         if self.store is None:
