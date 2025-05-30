@@ -7,4 +7,4 @@
 
 # Build default dev containers
 (cd ../.. && docker build --no-cache -f assemblyline-base/docker/al_dev/Dockerfile -t cccs/assemblyline_dev:latest -t cccs/assemblyline_dev:4.6.0 .)
-(cd ../.. && docker build --no-cache -f assemblyline-base/docker/al_management/Dockerfile -t cccs/assemblyline_management:latest -t cccs/assemblyline_management:4.5.3 .)
+(cd ../.. && docker build --no-cache -f assemblyline-base/docker/al_management/Dockerfile -t cccs/assemblyline_management:latest -t cccs/assemblyline_management:4.6.0 .)
