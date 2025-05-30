@@ -2011,7 +2011,7 @@ class ESCollection(Generic[ModelType]):
         else:
             mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
-        if not mappings['dynamic_templates']:
+        if not mappings['dynamic_templates'] or 'refuse_all_implicit_mappings' in mappings['dynamic_templates'][0]:
             # Setting dynamic to strict prevents any documents with fields not in the properties to be added
             mappings['dynamic'] = "strict"
 
