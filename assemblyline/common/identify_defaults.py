@@ -234,6 +234,7 @@ magic_patterns = [
     {"al_type": "video/asf", "regex": r"^Microsoft ASF"},
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L201
     {"al_type": "code/php", "regex": r"^PHP script"},
+    {"al_type": "archive/squashfs", "regex": r"^Squashfs filesystem"},
 ]
 
 # LibMagic mimetypes that we blindly trust to assign an Assemblyline type
