@@ -970,13 +970,15 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 if index:
                     collection = self.datastore.get_collection(index)
                     self.logger.info(f"Reindexing {index.upper()} ...")
-                    self.logger.info("indexing report:", collection.reindex())
+                    results = collection.reindex()
+                    self.logger.info(f"indexing report: {results}")
                     self.logger.info("    Done!")
                 else:
                     for index in valid_indices:
                         collection = self.datastore.get_collection(index)
                         self.logger.info(f"Reindexing {index} ...")
-                        self.logger.info("indexing report:", collection.reindex())
+                        results = collection.reindex()
+                        self.logger.info(f"indexing report: {results}")
                         self.logger.info("    Done!")
             elif action_type == 'commit':
                 if index:
