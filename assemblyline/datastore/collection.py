@@ -701,6 +701,8 @@ class ESCollection(Generic[ModelType]):
         :param index_type: Type of indices to target
         :return: Should return True of the commit was successful on all hosts
         """
+        results = []
+
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
             archive = self.is_archive_index(index)
@@ -721,7 +723,7 @@ class ESCollection(Generic[ModelType]):
                 # Reindex data into target
                 r_task = self.with_retries(self.datastore.client.reindex, source={"index": index},
                                            dest={"index": new_name}, wait_for_completion=False)
-                self.datastore._get_task_results(r_task, retry_function=self.with_retries)
+                results.append(self.datastore._get_task_results(r_task, retry_function=self.with_retries))
 
                 # Commit reindexed data
                 self.with_retries(self.datastore.client.indices.refresh, index=new_name)
@@ -751,7 +753,7 @@ class ESCollection(Generic[ModelType]):
                     self.with_retries(self.datastore.client.indices.put_settings,
                                       index=name, settings=write_unblock_settings)
 
-        return True
+        return results
 
     def multiexists(self, key_list, index_type=None):
         """
@@ -2005,11 +2007,11 @@ class ESCollection(Generic[ModelType]):
         if self.model_class:
             mappings['properties'], mappings['dynamic_templates'] = \
                 build_mapping(self.model_class.fields().values())
-            mappings['dynamic_templates'].insert(0, default_dynamic_strings)
+            mappings['dynamic_templates'].append(default_dynamic_strings)
         else:
             mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
-        if not mappings['dynamic_templates']:
+        if not mappings['dynamic_templates'] or 'refuse_all_implicit_mappings' in mappings['dynamic_templates'][0]:
             # Setting dynamic to strict prevents any documents with fields not in the properties to be added
             mappings['dynamic'] = "strict"
 
