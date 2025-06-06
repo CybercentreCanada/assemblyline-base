@@ -6,15 +6,17 @@ import shutil
 import subprocess
 import tempfile
 import time
-
 from copy import copy
-from assemblyline.common.isotime import now_as_iso
-from cart import pack_stream, unpack_stream, is_cart
+
+from cart import is_cart, pack_stream, unpack_stream
 
 from assemblyline.common import forge
+from assemblyline.common.classification import InvalidClassification
+from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.uid import get_random_id
 from assemblyline.datastore.exceptions import MultiKeyError
 from assemblyline.filestore import FileStoreException
+
 try:
     from assemblyline_core.submission_client import SubmissionClient
 except ImportError:
@@ -251,7 +253,7 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
 
 # noinspection PyBroadException,PyProtectedMember
 def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False,
-                  rescan_services=None, exist_ok=False, cleanup=True, identify=None):
+                  rescan_services=None, exist_ok=False, cleanup=True, identify=None, reclassification=None):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -288,6 +290,18 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
         alert = data.get('alert', None)
         submission = data.get('submission', None)
 
+        def check_classification(document: dict):
+            try:
+                document['classification'] = Classification.max_classification(document['classification'],
+                                                                               min_classification)
+            except InvalidClassification:
+                if reclassification:
+                    # If the classification is invalid, we try to reclassify it if reclassification is provided
+                    document['classification'] = reclassification
+                else:
+                    # If we cannot reclassify it, we raise an exception
+                    raise
+
         try:
             if submission:
                 sid = submission['sid']
@@ -315,10 +329,12 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                 # Check if the submission does not already exist
                 if not datastore.submission.exists(sid):
                     # Make sure bundle's submission meets minimum classification and save the submission
-                    submission['classification'] = Classification.max_classification(submission['classification'],
-                                                                                     min_classification)
+                    original_classification = submission['classification']
+                    check_classification(submission)
+
                     submission.setdefault('metadata', {})
                     submission['metadata']['bundle.loaded'] = now_as_iso()
+                    submission['metadata']['bundle.classification'] = original_classification
                     submission['metadata'].pop('replay', None)
                     submission.update(Classification.get_access_control_parts(submission['classification']))
 
@@ -329,9 +345,8 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                     # Make sure files meet minimum classification and save the files
                     with forge.get_filestore() as filestore:
                         for f, f_data in files['infos'].items():
-                            f_classification = Classification.max_classification(
-                                f_data['classification'], min_classification)
-                            datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_classification,
+                            check_classification(f_data)
+                            datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_data['classification'],
                                                            cl_engine=Classification)
                             try:
                                 filestore.upload(os.path.join(current_working_dir, f), f)
@@ -344,8 +359,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                                 datastore.emptyresult.save(key, {"expiry_ts": now_as_iso(
                                     config.submission.emptyresult_dtl * 24 * 60 * 60)})
                             else:
-                                res['classification'] = Classification.max_classification(
-                                    res['classification'], min_classification)
+                                check_classification(res)
                                 datastore.result.save(key, res)
 
                         # Make sure errors meet minimum classification and save the errors
@@ -368,11 +382,11 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
 
             # Save alert if present and does not exist
             if alert and not datastore.alert.exists(alert['alert_id']):
-                alert['classification'] = Classification.max_classification(alert['classification'],
-                                                                            min_classification)
+                original_classification = alert['classification']
+                check_classification(alert)
                 alert.setdefault('metadata', {})
                 alert['metadata']['bundle.loaded'] = now_as_iso()
-
+                alert['metadata']['bundle.classification'] = original_classification
                 alert['metadata'].pop('replay', None)
                 alert['workflows_completed'] = False
 

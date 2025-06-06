@@ -21,8 +21,9 @@ DEFAULT_CLIENT_OPTIONS = {
 
 @odm.model(index=False, store=False)
 class Client(odm.Model):
-    type: str = odm.Enum(['api', 'direct'])
-    options = odm.Optional(odm.Compound(ClientOptions, default=DEFAULT_CLIENT_OPTIONS))
+    type: str = odm.Enum(['api', 'direct'], description="Type of client to use for Replay operations")
+    options = odm.Optional(odm.Compound(ClientOptions, default=DEFAULT_CLIENT_OPTIONS),
+                           description="Options for the client")
 
 
 DEFAULT_CLIENT = {
@@ -31,11 +32,11 @@ DEFAULT_CLIENT = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Input module configuration model for Replay creator operations")
 class InputModule(odm.Model):
-    enabled: bool = odm.Boolean()
-    threads: int = odm.Integer()
-    filter_queries = odm.List(odm.Keyword())
+    enabled: bool = odm.Boolean(description="Is this input module enabled?")
+    threads: int = odm.Integer(description="Number of threads to use for this input module",)
+    filter_queries = odm.List(odm.Keyword(), description="List of filter queries to apply to this input module")
 
 
 DEFAULT_INPUT = {
@@ -62,18 +63,19 @@ DEFAULT_SUBMISSION_INPUT = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Replay creator configuration model")
 class Creator(odm.Model):
-    client = odm.Compound(Client, default=DEFAULT_CLIENT)
-    alert_input = odm.Compound(InputModule, default=DEFAULT_ALERT_INPUT)
-    badlist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
-    safelist_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
-    signature_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
-    submission_input = odm.Compound(InputModule, default=DEFAULT_SUBMISSION_INPUT)
-    workflow_input = odm.Compound(InputModule, default=DEFAULT_INPUT)
-    lookback_time: str = odm.Keyword()
-    output_filestore: str = odm.Keyword()
-    working_directory: str = odm.Keyword()
+    client = odm.Compound(Client, default=DEFAULT_CLIENT, description="Client to use for Replay operations")
+    alert_input = odm.Compound(InputModule, default=DEFAULT_ALERT_INPUT, description="Input module for alerts")
+    badlist_input = odm.Compound(InputModule, default=DEFAULT_INPUT, description="Input module for badlist items")
+    safelist_input = odm.Compound(InputModule, default=DEFAULT_INPUT, description="Input module for safelist items")
+    signature_input = odm.Compound(InputModule, default=DEFAULT_INPUT, description="Input module for signatures")
+    submission_input = odm.Compound(InputModule, default=DEFAULT_SUBMISSION_INPUT,
+                                    description="Input module for submissions")
+    workflow_input = odm.Compound(InputModule, default=DEFAULT_INPUT, description="Input module for workflows")
+    lookback_time: str = odm.Keyword(description="Lookback time for the Replay creator, e.g., '1d' for one day")
+    output_filestore: str = odm.Keyword(description="Output filestore URI for the Replay creator, e.g., 'file:///tmp/replay/output'")
+    working_directory: str = odm.Keyword(description="Working directory for the Replay creator, e.g., '/tmp/replay/work'")
 
 
 DEFAULT_CREATOR = {
@@ -89,15 +91,16 @@ DEFAULT_CREATOR = {
 }
 
 
-@odm.model(index=False, store=False)
+@odm.model(index=False, store=False, description="Replay loader configuration model")
 class Loader(odm.Model):
-    client = odm.Compound(Client, default=DEFAULT_CLIENT)
-    failed_directory: str = odm.Keyword()
-    input_threads: int = odm.Integer()
-    input_directory: str = odm.Keyword()
-    min_classification: str = odm.Optional(odm.Keyword())
-    rescan: List[str] = odm.List(odm.Keyword())
-    working_directory: str = odm.Keyword()
+    client = odm.Compound(Client, default=DEFAULT_CLIENT, description="Client to use for Replay loader operations")
+    failed_directory: str = odm.Keyword(description="Directory to store failed Replay bundles")
+    input_threads: int = odm.Integer(description="Number of threads to use for loading input bundles",)
+    input_directory: str = odm.Keyword(description="Directory to load input Replay bundles from")
+    min_classification: str = odm.Optional(odm.ClassificationString(), description="Minimum classification level for Replay bundles to be processed")
+    reclassification: str = odm.Optional(odm.ClassificationString(), description="Classification level to reclassify Replay bundles to after being imported")
+    rescan: List[str] = odm.List(odm.Keyword(), description="List of services to rescan after importing Replay bundles")
+    working_directory: str = odm.Keyword(description="Working directory for the Replay loader, e.g., '/tmp/replay/work'")
     sync_check_interval: int = odm.Integer(default=3600,
                                            description='How often to check on imported Replay bundles (in seconds)?')
 
