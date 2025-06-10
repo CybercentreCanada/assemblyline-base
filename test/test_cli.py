@@ -191,7 +191,7 @@ def test_index(datastore, cli):
 
     reset_logger()
     cli.do_index("reindex")
-    assert len(LOGS['info']) == len(list(datastore.ds.get_models().keys())) * 2
+    assert len(LOGS['info']) == len(list(datastore.ds.get_models().keys())) * 3
 
     reset_logger()
     cli.do_index("commit")

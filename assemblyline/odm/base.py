@@ -117,7 +117,7 @@ class KeyMaskException(KeyError):
 
 
 class _Field:
-    def __init__(self, name=None, index=None, store=None, copyto=None,
+    def __init__(self, name=None, index: typing.Optional[bool] = None, store=None, copyto=None,
                  default=None, description=None, deprecation=None, ai=True):
         self.index = index
         self.store = store
@@ -194,14 +194,14 @@ class _Field:
         out.setter_function = method
         return out
 
-    def apply_defaults(self, index, store):
+    def apply_defaults(self, index: bool, store: bool):
         """Used by the model decorator to pass through default parameters."""
         if self.index is None:
             self.index = index
         if self.store is None:
             self.store = store
 
-    def inherit_parameters(self, other):
+    def inherit_parameters(self, other: _Field):
         if self.index is None:
             self.index = other.index
         if self.store is None:
@@ -260,8 +260,6 @@ class Boolean(_Field):
 class Json(_Field):
     """
     A field storing serializeable structure with their JSON encoded representations.
-
-    Examples: metadata
     """
 
     def check(self, value, **kwargs):
@@ -271,6 +269,13 @@ class Json(_Field):
         if not isinstance(value, str):
             return json.dumps(value)
         return value
+
+
+class MetadataValue(Json):
+    """
+    A special case of Json for handling metadata values that includes some
+    changes to how it is expressed in elasticsearch mappings.
+    """
 
 
 class Keyword(_Field):
@@ -1014,8 +1019,9 @@ class FlattenedListObject(Mapping):
 class FlatMapping(Mapping):
     """A field storing a flattened object"""
 
-    def __init__(self, inner, **kwargs):
+    def __init__(self, inner, legacy_behaviour=False, **kwargs):
         super().__init__(inner, **kwargs)
+        self.legacy_behaviour = legacy_behaviour
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
