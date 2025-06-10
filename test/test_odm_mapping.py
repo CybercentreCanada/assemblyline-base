@@ -117,22 +117,31 @@ def test_metadata_reindex(datastore_connection):
             'cats.number': 1000,
         }
     })
+    collection.clone_index_to('metadatareindex_backup')
 
-    collection.commit()
-    properties = collection.fields()
-    print(properties)
-    assert properties['metadata.red']['type'] == 'keyword'
-    assert not properties['metadata.red']['default']
-    assert properties['metadata.size']['type'] == 'keyword'
-    assert not properties['metadata.size']['default']
-    assert properties['metadata.address']['type'] == 'keyword'
-    assert not properties['metadata.address']['default']
-    assert properties['metadata.bounds']['type'] == 'keyword'
-    assert not properties['metadata.bounds']['default']
-    assert properties['metadata.cats.dogs']['type'] == 'keyword'
-    assert not properties['metadata.cats.dogs']['default']
-    assert properties['metadata.cats.number']['type'] == 'keyword'
-    assert not properties['metadata.cats.number']['default']
+    def test_original_layout(collection: ESCollection):
+        collection.commit()
+        properties = collection.fields()
+        print(properties)
+        assert properties['metadata.red']['type'] == 'keyword'
+        assert not properties['metadata.red']['default']
+        assert properties['metadata.size']['type'] == 'keyword'
+        assert not properties['metadata.size']['default']
+        assert properties['metadata.address']['type'] == 'keyword'
+        assert not properties['metadata.address']['default']
+        assert properties['metadata.bounds']['type'] == 'keyword'
+        assert not properties['metadata.bounds']['default']
+        assert properties['metadata.cats.dogs']['type'] == 'keyword'
+        assert not properties['metadata.cats.dogs']['default']
+        assert properties['metadata.cats.number']['type'] == 'keyword'
+        assert not properties['metadata.cats.number']['default']
+
+        docs = list(collection.stream_search("*:*", fl='id', as_obj=False))
+        doc_ids = [doc['id'] for doc in docs]
+        assert doc_ids == ['a']
+        return properties
+
+    properties = test_original_layout(collection)
     del collection
 
     # Open that same collection using the new mapping
@@ -161,3 +170,13 @@ def test_metadata_reindex(datastore_connection):
     assert properties['metadata.cats.dogs']['default']
     assert properties['metadata.cats.number']['type'] == 'wildcard'
     assert properties['metadata.cats.number']['default']
+
+    collection.delete("a")
+    collection.commit()
+    docs = list(collection.stream_search("*:*", fl='id', as_obj=False))
+    doc_ids = [doc['id'] for doc in docs]
+    assert doc_ids == []
+
+    # Check if we can restore from backup
+    collection.clone_index_from('metadatareindex_backup')
+    test_original_layout(collection)
