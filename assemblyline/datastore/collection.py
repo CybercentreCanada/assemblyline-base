@@ -692,6 +692,59 @@ class ESCollection(Generic[ModelType]):
                 logger.info(f"Delete extra {temp_name.upper()} index.")
                 self.with_retries(self.datastore.client.indices.delete, index=temp_name)
 
+    def clone_index_to(self, destination_name: str, index_type: Optional[Index] = None):
+        """Copy data into an index that does not exist."""
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
+            archive = self.is_archive_index(index)
+            new_index = f'{destination_name}_hot'
+
+            if self.with_retries(self.datastore.client.indices.exists, index=index) and \
+                    not self.with_retries(self.datastore.client.indices.exists, index=new_index):
+
+                # Block write to the index
+                self.with_retries(self.datastore.client.indices.put_settings, index=index,
+                                  settings=write_block_settings)
+
+                # Copy the index to the new location
+                try:
+                    self._safe_index_copy(self.datastore.client.indices.clone, index, new_index,
+                                          settings=self._get_index_settings(archive=archive))
+
+                finally:
+                    # Unblock write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings,
+                                      index=index, settings=write_unblock_settings)
+
+    def clone_index_from(self, backup_name: str, index_type: Optional[Index] = None):
+        """Copy data into an index that does not exist."""
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
+            archive = self.is_archive_index(index)
+            backup_index = f'{backup_name}_hot'
+
+            target_exists = self.with_retries(self.datastore.client.indices.exists, index=index)
+
+            if target_exists and self.with_retries(self.datastore.client.indices.exists, index=backup_index):
+
+                # Block write to the index
+                self.with_retries(self.datastore.client.indices.put_settings, index=backup_index,
+                                  settings=write_block_settings)
+
+                # Delete the target
+                if target_exists:
+                    self.with_retries(self.datastore.client.indices.delete, index=index)
+
+                # copy backup to replace deleted index
+                try:
+                    self._safe_index_copy(self.datastore.client.indices.clone, backup_index, index,
+                                          settings=self._get_index_settings(archive=archive))
+
+                finally:
+                    # Unblock write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings,
+                                      index=backup_index, settings=write_unblock_settings)
+
     def reindex(self, index_type=None):
         """
         This function triggers a reindex of the current index, this should almost never be used because:
@@ -699,7 +752,7 @@ class ESCollection(Generic[ModelType]):
             2. Even if the system is still accessible during that time the data is partially accessible
 
         :param index_type: Type of indices to target
-        :return: Should return True of the commit was successful on all hosts
+        :return: Returns a list of the index process results from elasticsearch
         """
         results = []
 
