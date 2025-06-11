@@ -107,5 +107,8 @@ setup(
             "VERSION",
         ],
         "assemblyline": ["py.typed"]
+    },
+    entry_points= {
+        "console_scripts": ["al_cli=assemblyline.run.cli:shell_main"]
     }
 )
