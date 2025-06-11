@@ -292,6 +292,7 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
 
         def check_classification(document: dict):
             try:
+                document['classification'] = Classification.normalize_classification(document['classification'])
                 document['classification'] = Classification.max_classification(document['classification'],
                                                                                min_classification)
             except InvalidClassification:
