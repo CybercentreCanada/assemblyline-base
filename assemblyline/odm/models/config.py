@@ -1320,7 +1320,7 @@ regarding Assemblyline. $(EXTRA_CONTEXT)
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "temperature": 0,
-        "top_p": 0
+        "top_p": 1
     }
 }
 
@@ -1347,7 +1347,7 @@ a malware detection and analysis tool. $(EXTRA_CONTEXT)
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "temperature": 0,
-        "top_p": 0
+        "top_p": 1
     }
 }
 
@@ -1376,7 +1376,7 @@ Your role is to extract information of importance and discard what is not. $(EXT
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "temperature": 0,
-        "top_p": 0
+        "top_p": 1
     }
 }
 
@@ -1401,7 +1401,7 @@ report into a one or two paragraph executive summary. DO NOT write any headers i
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "temperature": 0,
-        "top_p": 0
+        "top_p": 1
     }
 }
 
