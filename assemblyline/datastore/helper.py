@@ -6,7 +6,6 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Any, List, Optional, Tuple, Union
 
-from assemblyline.odm.models.apikey import Apikey
 import elasticapm
 
 from assemblyline.common import forge
@@ -21,6 +20,7 @@ from assemblyline.datastore.store import ESStore
 from assemblyline.filestore import FileStore
 from assemblyline.odm import DATEFORMAT, Date, Model
 from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.apikey import Apikey
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
 from assemblyline.odm.models.config import METADATA_FIELDTYPE_MAP, Metadata
@@ -1307,9 +1307,10 @@ class AssemblylineDatastore(object):
 
             # Loading JSON formatted sections
             body_format = section['body_format']
-            if body_format in JSON_SECTIONS and isinstance(section['body'], str):
+            section_body = section.get('body')
+            if body_format in JSON_SECTIONS and isinstance(section_body, str):
                 try:
-                    section['body'] = json.loads(section['body'])
+                    section['body'] = json.loads(section_body)
                 except ValueError:
                     pass
 

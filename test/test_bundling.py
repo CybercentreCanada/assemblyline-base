@@ -1,17 +1,26 @@
+import json
 import os
+import tarfile
+from io import BytesIO
 
-from cart import is_cart
+import pytest
+from cart import is_cart, unpack_stream
 
-from assemblyline.common.bundling import SubmissionAlreadyExist, create_bundle, import_bundle, SubmissionNotFound, \
-    AlertNotFound
+from assemblyline.common.bundling import (
+    AlertNotFound,
+    SubmissionAlreadyExist,
+    SubmissionNotFound,
+    create_bundle,
+    import_bundle,
+)
+from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.random_data import create_submission
 from assemblyline.odm.randomizer import random_model_obj
-import pytest
 
 ALERT_ID = "test_alert_id"
 SUBMISSION_ID = "test_submission_id"
-
+CLASSIFICATION = get_classification()
 
 def test_failed_alert_bundle():
     # Test creation failure
@@ -115,13 +124,18 @@ def test_failed_submission_bundle():
         create_bundle("ThisSIDDoesNotExists")
 
 
-def test_submission_bundle(datastore_connection, filestore, config):
+@pytest.mark.parametrize("as_user", [False, True], ids=["system", "user"])
+def test_submission_bundle(datastore_connection, filestore, config, as_user):
     # Create a temporary submission
     submission = create_submission(datastore_connection, filestore)
     sid = submission['sid']
+    user_classification = None
+    if as_user:
+        # Update classification to match the submission's (since they can at the very least view the submission)
+        user_classification = submission['classification'].value
 
     # Create the submission's bundle
-    path = create_bundle(sid)
+    path = create_bundle(sid, user_classification=user_classification)
 
     # Test if the bundle
     assert os.path.exists(path)
@@ -132,8 +146,31 @@ def test_submission_bundle(datastore_connection, filestore, config):
     datastore_connection.delete_submission_tree_bulk(sid, transport=filestore)
     assert datastore_connection.submission.get_if_exists(sid) is None
 
+    # Assert that all data exported as a bundle is accessible to that user
+    if as_user:
+        with BytesIO() as uncarted_bundle:
+            # Un-cart file to get the actual tar file
+            with open(path, 'rb') as carted_fp:
+                unpack_stream(carted_fp, uncarted_bundle)
+
+            uncarted_bundle.seek(0)
+            with tarfile.open(fileobj=uncarted_bundle, mode="r:gz") as tar_file:
+                results = json.load(tar_file.extractfile("results.json"))
+
+                # Ensure the user has access to the submission
+                assert CLASSIFICATION.is_accessible(user_classification, results['submission']['classification'])
+
+                # Ensure the user has access to the files relating to the submission
+                for file in results['files'].get('info', {}).values():
+                    assert CLASSIFICATION.is_accessible(user_classification, file['classification'])
+
+                # Ensure the user has access to the results relating to the submission
+                for result in results['results']['results'].values():
+                    assert CLASSIFICATION.is_accessible(user_classification, result['classification'])
+
+
     # Restore bundle
-    new_submission = import_bundle(path, cleanup=False)
+    new_submission = import_bundle(path, cleanup=False, allow_incomplete=as_user)
 
     # Validate restored submission
     assert new_submission['sid'] == sid
@@ -141,10 +178,10 @@ def test_submission_bundle(datastore_connection, filestore, config):
 
     # Test inserting failure
     with pytest.raises(SubmissionAlreadyExist):
-        import_bundle(path, cleanup=False)
+        import_bundle(path, cleanup=False, allow_incomplete=as_user)
 
     # Test skip failure on exist
-    new_submission = import_bundle(path, exist_ok=True)
+    new_submission = import_bundle(path, exist_ok=True, allow_incomplete=as_user)
 
     # Validate restored submission
     assert new_submission['sid'] == sid

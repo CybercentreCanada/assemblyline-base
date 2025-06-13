@@ -1847,6 +1847,7 @@ class FileSource(odm.Model):
     select_services: bool = odm.List(odm.keyword(),
                                      default=[], description="List of services that will be auto-selected when using this source.")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
+    password: str = odm.Optional(odm.Text(description="Password to use for the downloaded file (ie. password-protected zip)"))
 
 
 EXAMPLE_FILE_SOURCE_VT = {
@@ -1859,14 +1860,6 @@ EXAMPLE_FILE_SOURCE_VT = {
     "headers": {"x-apikey": "YOUR_KEY"},
 }
 
-EXAMPLE_SHA256_SOURCE_VT = {
-    # This is an example on how this would work with VirusTotal
-    "name": "VirusTotal",
-    "url": r"https://www.virustotal.com/api/v3/files/{SHA256}/download",
-    "replace_pattern": r"{SHA256}",
-    "headers": {"x-apikey": "YOUR_KEY"},
-}
-
 EXAMPLE_SHA256_SOURCE_MB = {
     # This is an example on how this would work with Malware Bazaar
     "name": "Malware Bazaar",
@@ -1875,7 +1868,8 @@ EXAMPLE_SHA256_SOURCE_MB = {
     "data": r"query=get_file&sha256_hash={SHA256}",
     "method": "POST",
     "replace_pattern": r"{SHA256}",
-    "failure_pattern": '"query_status": "file_not_found"'
+    "failure_pattern": '"query_status": "file_not_found"',
+    "password": "infected"
 }
 
 EXAMPLE_SHA256_SOURCE_VS = {
@@ -2049,10 +2043,9 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Only perform static analysis
         "name": "static",
-        "display_name": "Static Analysis",
+        "display_name": "[OFFLINE] Static Analysis",
         "params": {
             "services": {
-                "excluded": ["Dynamic Analysis", "Internet Connected"],
                 "selected": DEFAULT_SRV_SEL
             }
         },
@@ -2061,10 +2054,9 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Perform static analysis along with dynamic analysis
         "name": "static_with_dynamic",
-        "display_name": "Static + Dynamic Analysis",
+        "display_name": "[OFFLINE] Static + Dynamic Analysis",
         "params": {
             "services": {
-                "excluded": ["Internet Connected"],
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
             }
         },
@@ -2073,14 +2065,32 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Perform static analysis along with internet connected services
         "name": "static_with_internet",
-        "display_name": "Internet-Connected Static Analysis",
+        "display_name": "[ONLINE] Static Analysis",
         "params": {
             "services": {
-                "excluded": ["Dynamic Analysis"],
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
             },
         },
         "description": "Combine traditional static analysis techniques with internet-connected services to gather additional information and context about the file being analyzed."
+    },
+    {
+        # Perform static + dynamic analysis with internet connectivity
+        "name": "static_and_dynamic_with_internet",
+        "display_name": "[ONLINE] Static + Dynamic Analysis",
+        "params": {
+            "services": {
+                "selected": DEFAULT_SRV_SEL + ["Internet Connected", "Dynamic Analysis"]
+            },
+            "service_spec": {
+                "CAPE": {
+                    "routing": "internet"
+                },
+                "URLDownloader": {
+                    "proxy": "localhost_proxy"
+                }
+            }
+        },
+        "description": "Perform comprehensive file analysis using traditional static and dynamic analysis techniques with internet access."
     },
 ]
 
