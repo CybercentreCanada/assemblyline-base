@@ -68,7 +68,7 @@ def format_result(r):
     return r
 
 
-def get_results(keys, file_infos_p, storage_p):
+def get_results(keys, file_infos_p, storage_p, user_classification):
     out = {}
     res = {}
     missing = []
@@ -88,6 +88,10 @@ def get_results(keys, file_infos_p, storage_p):
 
     results = {}
     for k, v in res.items():
+        if not Classification.is_accessible(user_classification, v['classification']):
+            # Skip results a user doesn't have access to
+            missing.append(k)
+            continue
         file_info = file_infos_p.get(k[:64], None)
         if file_info:
             v = format_result(v)
@@ -156,7 +160,7 @@ def recursive_flatten_tree(tree):
 
 
 # noinspection PyBroadException
-def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
+def create_bundle(sid, working_dir=WORK_DIR, use_alert=False, user_classification=None):
     with forge.get_datastore(archive_access=True) as datastore:
         temp_bundle_file = f"bundle_{get_random_id()}"
         current_working_dir = os.path.join(working_dir, temp_bundle_file)
@@ -187,7 +191,8 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                 if submission:
                     # Create file information data
                     file_tree = datastore.get_or_create_file_tree(submission,
-                                                                  config.submission.max_extraction_depth)['tree']
+                                                                  config.submission.max_extraction_depth,
+                                                                  user_classification=user_classification)['tree']
                     flatten_tree = list(set(recursive_flatten_tree(file_tree) +
                                             [r[:64] for r in submission.get("results", [])]))
                     file_infos, _ = get_file_infos(copy(flatten_tree), datastore)
@@ -200,7 +205,8 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False):
                     if Classification.enforce and 'bundle.classification' not in submission['metadata']:
                         submission['metadata']['bundle.classification'] = submission['classification']
 
-                    results, supplementary = get_results(submission.get("results", []), file_infos, datastore)
+                    results, supplementary = get_results(submission.get("results", []), file_infos, datastore,
+                                                          user_classification)
                     supp_info, _ = get_file_infos(copy(supplementary), datastore)
                     file_infos.update(supp_info)
 
