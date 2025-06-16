@@ -88,7 +88,7 @@ def get_results(keys, file_infos_p, storage_p, user_classification):
 
     results = {}
     for k, v in res.items():
-        if not Classification.is_accessible(user_classification, v['classification']):
+        if user_classification and not Classification.is_accessible(user_classification, v['classification']):
             # Skip results a user doesn't have access to
             missing.append(k)
             continue
