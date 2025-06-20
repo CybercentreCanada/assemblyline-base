@@ -230,8 +230,8 @@ class DistributedBackup(object):
             # Start the workers
             for x in range(self.worker_count):
                 if self.use_threading:
-                    t = threading.Thread(target=backup_worker, args=(x, self.instance_id, self.working_dir))
-                    t.setDaemon(True)
+                    t = threading.Thread(target=backup_worker, daemon=True,
+                                         args=(x, self.instance_id, self.working_dir))
                     t.start()
                 else:
                     p = Process(target=backup_worker, args=(x, self.instance_id, self.working_dir))
@@ -239,8 +239,8 @@ class DistributedBackup(object):
                     self.plist.append(p)
 
             # Start done thread
-            dt = threading.Thread(target=self.done_thread, args=('Backup',), name="Done thread")
-            dt.setDaemon(True)
+            dt = threading.Thread(target=self.done_thread, daemon=True, 
+                                  args=('Backup',), name="Done thread")
             dt.start()
 
             # Process data buckets
@@ -277,9 +277,8 @@ class DistributedBackup(object):
 
             for x in range(self.worker_count):
                 if self.use_threading:
-                    t = threading.Thread(target=restore_worker,
+                    t = threading.Thread(target=restore_worker, daemon=True,
                                          args=(x, self.instance_id, self.working_dir))
-                    t.setDaemon(True)
                     t.start()
                 else:
                     p = Process(target=restore_worker, args=(x, self.instance_id, self.working_dir))
@@ -287,8 +286,7 @@ class DistributedBackup(object):
                     self.plist.append(p)
 
             # Start done thread
-            dt = threading.Thread(target=self.done_thread, args=('Restore',), name="Done thread")
-            dt.setDaemon(True)
+            dt = threading.Thread(target=self.done_thread, args=('Restore',), daemon=True, name="Done thread")
             dt.start()
 
             # Wait for workers to finish
