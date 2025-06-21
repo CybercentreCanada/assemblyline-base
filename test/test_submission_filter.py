@@ -1,14 +1,14 @@
-from copy import deepcopy
 import time
+from copy import deepcopy
 
 import datemath
-from assemblyline.odm.models.actions import Webhook
 
-from assemblyline.odm.randomizer import random_minimal_obj
-from assemblyline.odm.models.submission import Submission, File
+from assemblyline.common.isotime import now_as_iso
+from assemblyline.common.postprocess import ParsingError, SubmissionFilter
 from assemblyline.odm.messages.submission import Submission as MessageSubmission
-
-from assemblyline.common.postprocess import SubmissionFilter, ParsingError
+from assemblyline.odm.models.actions import Webhook
+from assemblyline.odm.models.submission import File, Submission
+from assemblyline.odm.randomizer import random_minimal_obj
 
 
 def test_simple_filters():
@@ -16,7 +16,7 @@ def test_simple_filters():
     sub.max_score = 100
     sub.times.completed = time.time()
 
-    fltr = SubmissionFilter("times.completed: [now-1d TO 2025-06-20T10:10:10.000] AND max_score: [10 TO 100]")
+    fltr = SubmissionFilter(f"times.completed: [now-1d TO {now_as_iso()}] AND max_score: [10 TO 100]")
     assert not fltr.cache_safe
 
     assert fltr.test(sub)
