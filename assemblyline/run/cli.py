@@ -4,31 +4,32 @@
 import cmd
 import inspect
 import io
-import os
 import multiprocessing
+import os
 import re
-import time
-import signal
 import shutil
+import signal
 import sys
+import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tempfile import gettempdir
 
-import yaml
 import datemath
+import yaml
 
-from assemblyline.common import forge, log as al_log
+from assemblyline.common import forge
+from assemblyline.common import log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
 from assemblyline.common.cleanup_filestore import cleanup_filestore
-from assemblyline.common.security import get_totp_token, generate_random_secret
-from assemblyline.common.uid import get_random_id
-from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
 from assemblyline.common.dict_utils import flatten
 from assemblyline.common.isotime import epoch_to_iso
+from assemblyline.common.security import generate_random_secret, get_totp_token
+from assemblyline.common.uid import get_random_id
+from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
 from assemblyline.filestore import create_transport
 from assemblyline.odm.models.signature import RULE_STATUSES
-from assemblyline.remote.datatypes.hash import Hash
+from assemblyline.remote.datatypes.cache import Cache
 
 warnings.filterwarnings("ignore")
 
@@ -1294,20 +1295,24 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             if len(args) == 2:
                 username = args[1]
 
-            flsk_sess = Hash(
-                "flask_sessions",
+
+            flsk_sess = Cache(
+                prefix='flask_session',
+                separator=":",
                 host=config.core.redis.nonpersistent.host,
                 port=config.core.redis.nonpersistent.port
             )
 
             if not username:
-                flsk_sess.delete()
+                # Clear all sessions
+                flsk_sess.clear()
                 self.logger.info("All sessions where cleared.")
             else:
-                for k, v in flsk_sess.items().items():
-                    if v.get('username', None) == username:
-                        self.logger.info(f"Removing session: {v}")
-                        flsk_sess.pop(k)
+                # Clear sessions for a specific user
+                for session in flsk_sess.list():
+                    if session.get('username', None) == username:
+                        self.logger.info(f"Removing session: {session}")
+                        flsk_sess.clear(key=session['session_id'])
 
                 self.logger.info(f"All sessions for user '{username}' removed.")
         if func == 'show_sessions':
@@ -1315,20 +1320,23 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             if len(args) == 2:
                 username = args[1]
 
-            flsk_sess = Hash(
-                "flask_sessions",
+            flsk_sess = Cache(
+                prefix='flask_session',
+                separator=":",
                 host=config.core.redis.nonpersistent.host,
                 port=config.core.redis.nonpersistent.port
             )
 
             if not username:
-                for k, v in flsk_sess.items().items():
-                    self.logger.info(f"{v.get('username', None)} => {v}")
+                # List all sessions
+                for session in flsk_sess.list():
+                    self.logger.info(f"{session.get('username', None)} => {session}")
             else:
+                # Only list sessions for a specific user
                 self.logger.info(f'Showing sessions for user {username}:')
-                for k, v in flsk_sess.items().items():
-                    if v.get('username', None) == username:
-                        self.logger.info(f"    {v}")
+                for session in flsk_sess.list():
+                    if session.get('username', None) == username:
+                        self.logger.info(f"    {session}")
 
     def do_filestore(self, args):
         """
