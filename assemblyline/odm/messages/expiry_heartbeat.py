@@ -14,6 +14,7 @@ class Metrics(odm.Model):
     file = odm.Integer(description="Number of files")
     filescore = odm.Integer(description="Number of filscores")
     result = odm.Integer(description="Number of results")
+    retrohunt_hit = odm.Integer(description="Number of retrohunt hits")
     safelist = odm.Integer(description="Number of safelisted items")
     submission = odm.Integer(description="Number of submissions")
     submission_tree = odm.Integer(description="Number of submission trees")
