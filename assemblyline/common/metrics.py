@@ -1,7 +1,7 @@
 from assemblyline.common import forge
+from assemblyline.odm.messages import PerformanceTimer
 from assemblyline.remote.datatypes import get_client
 from assemblyline.remote.datatypes.exporting_counter import AutoExportingCounters
-from assemblyline.odm.messages import PerformanceTimer
 
 # Which datastore tables have an expiry and we want to monitor how many files are due
 # for expiry but still exist.
@@ -14,6 +14,7 @@ EXPIRY_METRICS = [
     'file',
     'filescore',
     'result',
+    'retrohunt_hit',
     'safelist',
     'submission',
     'submission_tree',
