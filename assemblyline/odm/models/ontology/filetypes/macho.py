@@ -49,6 +49,7 @@ class MachO(odm.Model):
         reserved1 = odm.Optional(odm.Integer())
         reserved2 = odm.Optional(odm.Integer())
         reserved3 = odm.Optional(odm.Integer())
+        hash = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
 
     @odm.model(index=True, store=False)
     class Libraries(odm.Model):
