@@ -247,7 +247,7 @@ class OAuthProvider(odm.Model):
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
     identity_id_field: str = odm.Keyword(default='oid', description="Field to fetch the managed identity ID from.")
-    openid_connect_url: str = odm.Optional(
+    openid_connect_discovery_url: str = odm.Optional(
         odm.Keyword(), description="URL for connecting to the OpenID configuration JSON."
     )
     groups_id_token_field: str = odm.Keyword(
