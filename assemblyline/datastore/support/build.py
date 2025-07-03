@@ -139,6 +139,11 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True, default_c
         elif isinstance(field, FlatMapping):
             if not any_indexed_part(field) or isinstance(field.child_type, Any):
                 mappings[name.strip(".")] = {"type": "object", "enabled": False}
+            elif field.flatten and is_keyword(field.child_type):
+                mapping = mappings[name.strip(".")] = set_mapping(field, {
+                    'type': 'flattened'
+                })
+                mapping.pop('store', None)
             else:
                 dynamic.extend(build_templates(f'{name}.*', field.child_type, nested_template=field.legacy_behaviour,
                                                copyto=field.copyto, index=field.index, store=field.store))
@@ -186,7 +191,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True, default_c
     # we have defined
     if not dynamic and allow_refuse_implicit:
         # We cannot use the dynamic type matching if others are in play because they conflict with each other
-        # TODO: Find a way to make them work together.
+        #  TODO: Find a way to make them work together.
         dynamic.append({'refuse_all_implicit_mappings': {
             "match": "*",
             "mapping": {
@@ -196,6 +201,15 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True, default_c
         }})
 
     return mappings, dynamic
+
+
+def is_keyword(field: _Field) -> bool:
+    if isinstance(field, (List, Optional)):
+        return is_keyword(field.child_type)
+    elif isinstance(field, Keyword):
+        return True
+    else:
+        return False
 
 
 def any_indexed_part(field) -> bool:

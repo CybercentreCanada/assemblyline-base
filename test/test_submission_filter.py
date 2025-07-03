@@ -16,7 +16,7 @@ def test_simple_filters():
     sub.max_score = 100
     sub.times.completed = time.time()
 
-    fltr = SubmissionFilter("times.completed: [now-1d TO 2025-06-20T10:10:10.000] AND max_score: [10 TO 100]")
+    fltr = SubmissionFilter("times.completed: [now-1d TO 2125-06-20T10:10:10.000] AND max_score: [10 TO 100]")
     assert not fltr.cache_safe
 
     assert fltr.test(sub)
