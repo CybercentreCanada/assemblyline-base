@@ -1859,6 +1859,7 @@ class FileSource(odm.Model):
                                      default=[], description="List of services that will be auto-selected when using this source.")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
     password: str = odm.Optional(odm.Text(description="Password to use for the downloaded file (ie. password-protected zip)"))
+    metadata: Dict[str, str] = odm.Optional(odm.Mapping(odm.Text()), description="Metadata to append to submission based on source")
 
 
 EXAMPLE_FILE_SOURCE_VT = {

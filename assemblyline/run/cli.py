@@ -29,7 +29,7 @@ from assemblyline.common.uid import get_random_id
 from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
 from assemblyline.filestore import create_transport
 from assemblyline.odm.models.signature import RULE_STATUSES
-from assemblyline.remote.datatypes.cache import Cache
+from assemblyline.remote.datatypes.hash import ExpiringHash
 
 warnings.filterwarnings("ignore")
 
@@ -1236,24 +1236,24 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             if len(args) == 2:
                 username = args[1]
 
+            flsk_sess = ExpiringHash(
+                "flask_sessions",
 
-            flsk_sess = Cache(
-                prefix='flask_session',
-                separator=":",
+
                 host=config.core.redis.nonpersistent.host,
                 port=config.core.redis.nonpersistent.port
             )
 
             if not username:
-                # Clear all sessions
-                flsk_sess.clear()
+                flsk_sess.delete()
+
                 self.logger.info("All sessions where cleared.")
             else:
-                # Clear sessions for a specific user
-                for session in flsk_sess.list():
-                    if session.get('username', None) == username:
-                        self.logger.info(f"Removing session: {session}")
-                        flsk_sess.clear(key=session['session_id'])
+                for k, v in flsk_sess.items().items():
+                    if v.get('username', None) == username:
+                        self.logger.info(f"Removing session: {v}")
+                        flsk_sess.pop(k)
+
 
                 self.logger.info(f"All sessions for user '{username}' removed.")
         if func == 'show_sessions':
@@ -1261,23 +1261,23 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             if len(args) == 2:
                 username = args[1]
 
-            flsk_sess = Cache(
-                prefix='flask_session',
-                separator=":",
+            flsk_sess = ExpiringHash(
+                "flask_sessions",
+
                 host=config.core.redis.nonpersistent.host,
                 port=config.core.redis.nonpersistent.port
             )
 
             if not username:
-                # List all sessions
-                for session in flsk_sess.list():
-                    self.logger.info(f"{session.get('username', None)} => {session}")
+                for k, v in flsk_sess.items().items():
+                    self.logger.info(f"{v.get('username', None)} => {v}")
+
             else:
-                # Only list sessions for a specific user
+
                 self.logger.info(f'Showing sessions for user {username}:')
-                for session in flsk_sess.list():
-                    if session.get('username', None) == username:
-                        self.logger.info(f"    {session}")
+                for k, v in flsk_sess.items().items():
+                    if v.get('username', None) == username:
+                        self.logger.info(f"    {v}")
 
     def do_filestore(self, args):
         """
