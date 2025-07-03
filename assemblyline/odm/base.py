@@ -1017,11 +1017,12 @@ class FlattenedListObject(Mapping):
 
 
 class FlatMapping(Mapping):
-    """A field storing a flattened object"""
+    """A field storing a flattened object."""
 
-    def __init__(self, inner, legacy_behaviour=False, **kwargs):
+    def __init__(self, inner, legacy_behaviour=False, flatten=False, **kwargs):
         super().__init__(inner, **kwargs)
         self.legacy_behaviour = legacy_behaviour
+        self.flatten = flatten
 
     def check(self, value, **kwargs):
         if self.optional and value is None:
