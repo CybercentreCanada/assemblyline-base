@@ -146,7 +146,7 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True, default_c
                 mapping.pop('store', None)
             else:
                 dynamic.extend(build_templates(f'{name}.*', field.child_type, nested_template=field.legacy_behaviour,
-                                               copyto=field.copyto, index=field.index, store=field.store))
+                                               copyto=field.copyto, index=field.index, store=field.store, flatten=True))
 
         elif isinstance(field, List):
             temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=path,
@@ -232,7 +232,7 @@ def any_indexed_part(field) -> bool:
 
 
 def build_templates(name, field: _Field, nested_template=False, copyto=None, index: bool = True, 
-                    store: typing.Optional[bool] = None) -> list:
+                    store: typing.Optional[bool] = None, flatten=False) -> list:
     if field.index is not None:
         index = field.index
     if field.store is not None:
@@ -249,7 +249,12 @@ def build_templates(name, field: _Field, nested_template=False, copyto=None, ind
                 }
             }
             return [{f"nested_{name}": main_template}]
-        elif isinstance(field, MetadataValue):
+        elif isinstance(field, MetadataValue) or flatten:
+            if isinstance(field, MetadataValue):
+                mapping_type = 'wildcard'
+            else:
+                mapping_type = __type_mapping[field.__class__]
+
             field_object_template = {
                 "path_match": name,
                 "match_mapping_type": "object",
@@ -261,7 +266,7 @@ def build_templates(name, field: _Field, nested_template=False, copyto=None, ind
             field_template = {
                 "path_match": name,
                 "mapping": {
-                    "type": "wildcard",
+                    "type": mapping_type,
                 }
             }
 
@@ -296,10 +301,10 @@ def build_templates(name, field: _Field, nested_template=False, copyto=None, ind
             return [{f"{name}_tpl": field_template}]
 
     elif isinstance(field, Mapping):
-        return build_templates(name, field.child_type, index=index, copyto=copyto, store=store, nested_template=True)
+        return build_templates(name, field.child_type, index=index, copyto=copyto, store=store, nested_template=True, flatten=flatten)
 
     elif isinstance(field, List):
-        return build_templates(name, field.child_type, index=index, copyto=copyto, store=store, nested_template=nested_template)
+        return build_templates(name, field.child_type, index=index, copyto=copyto, store=store, nested_template=nested_template, flatten=flatten)
 
     elif isinstance(field, Compound):
         temp_name = name
@@ -309,12 +314,12 @@ def build_templates(name, field: _Field, nested_template=False, copyto=None, ind
         out = []
         for sub_name, sub_field in field.fields().items():
             sub_name = f"{temp_name}.{sub_name}"
-            out.extend(build_templates(sub_name, sub_field, index=index, copyto=copyto, store=store, nested_template=nested_template))
+            out.extend(build_templates(sub_name, sub_field, index=index, copyto=copyto, store=store, nested_template=nested_template, flatten=flatten))
 
         return out
 
     elif isinstance(field, Optional):
-        return build_templates(name, field.child_type, nested_template=nested_template, copyto=copyto, index=index, store=store)
+        return build_templates(name, field.child_type, nested_template=nested_template, copyto=copyto, index=index, store=store, flatten=flatten)
 
     elif isinstance(field, Any) or not index:
         field_template = {
