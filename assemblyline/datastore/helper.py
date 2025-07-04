@@ -1573,7 +1573,8 @@ class MetadataValidator:
                     continue
 
                 try:
-                    validator.check(meta_value)
+                    # Assign the value returned after a successful check to the metadata
+                    metadata[field_name] = str(validator.check(meta_value))
                 except ValueError as e:
                     return (field_name, f"Validation of '{field_name}' of type {validator} failed: {e}")
 
