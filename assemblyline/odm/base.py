@@ -1017,7 +1017,18 @@ class FlattenedListObject(Mapping):
 
 
 class FlatMapping(Mapping):
-    """A field storing a flattened object."""
+    """
+    A field storing a flattened object.
+    
+    There are two ways this mapping will try to flatten data into elasticsearch:
+
+     - When the flatten parameter is set to true it will use the elasticsearch "flattened" datatype.
+       This scales better to very large keyspaces, but has many limitations.
+     - When the parameter is false it will try to construct dynamic templates that allow the subfields
+       of this mapping to all be detected as the appropriate type with the 'flattening' being a client
+       side effect. This allows full use of various elasticsearch features, but won't scale effectively
+       beyond hundreds to low thousands of keys.
+    """
 
     def __init__(self, inner, legacy_behaviour=False, flatten=False, **kwargs):
         super().__init__(inner, **kwargs)
