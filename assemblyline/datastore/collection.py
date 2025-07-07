@@ -693,7 +693,7 @@ class ESCollection(Generic[ModelType]):
                 self.with_retries(self.datastore.client.indices.delete, index=temp_name)
 
     def clone_index_to(self, destination_name: str, index_type: Optional[Index] = None):
-        """Copy data into an index that does not exist."""
+        """Copy the data from the current index into a backup that does not exist."""
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
             archive = self.is_archive_index(index)
@@ -717,7 +717,7 @@ class ESCollection(Generic[ModelType]):
                                       index=index, settings=write_unblock_settings)
 
     def clone_index_from(self, backup_name: str, index_type: Optional[Index] = None):
-        """Copy data into an index that does not exist."""
+        """Overwrite this index from a backup."""
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
             archive = self.is_archive_index(index)
@@ -726,20 +726,17 @@ class ESCollection(Generic[ModelType]):
             target_exists = self.with_retries(self.datastore.client.indices.exists, index=index)
 
             if target_exists and self.with_retries(self.datastore.client.indices.exists, index=backup_index):
+                try:
+                    # Block write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings, index=backup_index,
+                                      settings=write_block_settings)
 
-                # Block write to the index
-                self.with_retries(self.datastore.client.indices.put_settings, index=backup_index,
-                                  settings=write_block_settings)
-
-                # Delete the target
-                if target_exists:
+                    # Delete the target
                     self.with_retries(self.datastore.client.indices.delete, index=index)
 
-                # copy backup to replace deleted index
-                try:
+                    # copy backup to replace deleted index
                     self._safe_index_copy(self.datastore.client.indices.clone, backup_index, index,
                                           settings=self._get_index_settings(archive=archive))
-
                 finally:
                     # Unblock write to the index
                     self.with_retries(self.datastore.client.indices.put_settings,
