@@ -2053,18 +2053,26 @@ class ESCollection(Generic[ModelType]):
         return settings
 
     def _get_index_mappings(self) -> dict:
+        """Build the mapping for an elasticsearch index representing this collection."""
+
+        # Start with the defaults and overwrite with collection specific details as we can.
         mappings: dict = deepcopy(default_mapping)
+
         if self.model_class:
-            mappings['properties'], mappings['dynamic_templates'] = \
-                build_mapping(self.model_class.fields().values())
+            mappings['properties'], mappings['dynamic_templates'] = build_mapping(self.model_class.fields().values())
+            # Add a rule that adds the elasticsearch "ignore_above" parameter to strings as
+            # the last rule in the dynamic templates so it only applies when no other rules match
             mappings['dynamic_templates'].append(default_dynamic_strings)
         else:
             mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
-        if not mappings['dynamic_templates'] or 'refuse_all_implicit_mappings' in mappings['dynamic_templates'][0]:
-            # Setting dynamic to strict prevents any documents with fields not in the properties to be added
+        # build_mapping adds 'refuse_all_implicit_mappings' when it wants to reject all further dynamic mappings
+        # If this template is first, it means there are no dynamic templates. In that case we want to
+        # set dynamic to strict in order to prevent any documents with fields not in the properties to be added
+        if 'refuse_all_implicit_mappings' in mappings['dynamic_templates'][0]:
             mappings['dynamic'] = "strict"
 
+        # Add the ID field that all documents need to have
         mappings['properties']['id'] = {
             "store": True,
             "doc_values": True,
@@ -2072,6 +2080,7 @@ class ESCollection(Generic[ModelType]):
             "copy_to": "__text__",
         }
 
+        # Add the text field, which acts as our default search field.
         mappings['properties']['__text__'] = {
             "store": False,
             "type": 'text',
