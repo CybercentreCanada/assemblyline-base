@@ -2069,7 +2069,7 @@ class ESCollection(Generic[ModelType]):
         # build_mapping adds 'refuse_all_implicit_mappings' when it wants to reject all further dynamic mappings
         # If this template is first, it means there are no dynamic templates. In that case we want to
         # set dynamic to strict in order to prevent any documents with fields not in the properties to be added
-        if not mappings['dynamic_templates'] or and 'refuse_all_implicit_mappings' in mappings['dynamic_templates'][0]:
+        if not mappings['dynamic_templates'] or 'refuse_all_implicit_mappings' in mappings['dynamic_templates'][0]:
             mappings['dynamic'] = "strict"
 
         # Add the ID field that all documents need to have
