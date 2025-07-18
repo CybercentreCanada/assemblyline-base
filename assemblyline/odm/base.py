@@ -1031,6 +1031,10 @@ class FlatMapping(Mapping):
     """
 
     def __init__(self, inner, legacy_behaviour=False, flatten=False, **kwargs):
+        """
+        legacy_behaviour: forces the elasticsearch mapping to be created with an old behaviour where
+                          flattened objects are always created as 'nested' types in elasticsearch.
+        """
         super().__init__(inner, **kwargs)
         self.legacy_behaviour = legacy_behaviour
         self.flatten = flatten
