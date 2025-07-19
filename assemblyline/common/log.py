@@ -84,6 +84,11 @@ def init_logging(name: str, config: Config = None, log_level: Optional[str] = No
 
     if log_level is None:
         log_level = log_level_map[config.logging.log_level]
+    elif isinstance(log_level, str):
+        # Convert string representation into integer
+        log_level = log_level_map.get(log_level)
+        
+        
 
     logging.root.setLevel(logging.CRITICAL)
     logger.setLevel(log_level)
