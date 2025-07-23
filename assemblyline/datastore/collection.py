@@ -692,6 +692,56 @@ class ESCollection(Generic[ModelType]):
                 logger.info(f"Delete extra {temp_name.upper()} index.")
                 self.with_retries(self.datastore.client.indices.delete, index=temp_name)
 
+    def clone_index_to(self, destination_name: str, index_type: Optional[Index] = None):
+        """Copy the data from the current index into a backup that does not exist."""
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
+            archive = self.is_archive_index(index)
+            new_index = f'{destination_name}_hot'
+
+            if self.with_retries(self.datastore.client.indices.exists, index=index) and \
+                    not self.with_retries(self.datastore.client.indices.exists, index=new_index):
+
+                # Block write to the index
+                self.with_retries(self.datastore.client.indices.put_settings, index=index,
+                                  settings=write_block_settings)
+
+                # Copy the index to the new location
+                try:
+                    self._safe_index_copy(self.datastore.client.indices.clone, index, new_index,
+                                          settings=self._get_index_settings(archive=archive))
+
+                finally:
+                    # Unblock write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings,
+                                      index=index, settings=write_unblock_settings)
+
+    def clone_index_from(self, backup_name: str, index_type: Optional[Index] = None):
+        """Overwrite this index from a backup."""
+        for name in self.get_index_list(index_type):
+            index = f"{name}_hot"
+            archive = self.is_archive_index(index)
+            backup_index = f'{backup_name}_hot'
+
+            target_exists = self.with_retries(self.datastore.client.indices.exists, index=index)
+
+            if target_exists and self.with_retries(self.datastore.client.indices.exists, index=backup_index):
+                try:
+                    # Block write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings, index=backup_index,
+                                      settings=write_block_settings)
+
+                    # Delete the target
+                    self.with_retries(self.datastore.client.indices.delete, index=index)
+
+                    # copy backup to replace deleted index
+                    self._safe_index_copy(self.datastore.client.indices.clone, backup_index, index,
+                                          settings=self._get_index_settings(archive=archive))
+                finally:
+                    # Unblock write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings,
+                                      index=backup_index, settings=write_unblock_settings)
+
     def reindex(self, index_type=None):
         """
         This function triggers a reindex of the current index, this should almost never be used because:
@@ -699,8 +749,10 @@ class ESCollection(Generic[ModelType]):
             2. Even if the system is still accessible during that time the data is partially accessible
 
         :param index_type: Type of indices to target
-        :return: Should return True of the commit was successful on all hosts
+        :return: Returns a list of the index process results from elasticsearch
         """
+        results = []
+
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
             archive = self.is_archive_index(index)
@@ -721,7 +773,7 @@ class ESCollection(Generic[ModelType]):
                 # Reindex data into target
                 r_task = self.with_retries(self.datastore.client.reindex, source={"index": index},
                                            dest={"index": new_name}, wait_for_completion=False)
-                self.datastore._get_task_results(r_task, retry_function=self.with_retries)
+                results.append(self.datastore._get_task_results(r_task, retry_function=self.with_retries))
 
                 # Commit reindexed data
                 self.with_retries(self.datastore.client.indices.refresh, index=new_name)
@@ -751,7 +803,7 @@ class ESCollection(Generic[ModelType]):
                     self.with_retries(self.datastore.client.indices.put_settings,
                                       index=name, settings=write_unblock_settings)
 
-        return True
+        return results
 
     def multiexists(self, key_list, index_type=None):
         """
@@ -2001,18 +2053,26 @@ class ESCollection(Generic[ModelType]):
         return settings
 
     def _get_index_mappings(self) -> dict:
+        """Build the mapping for an elasticsearch index representing this collection."""
+
+        # Start with the defaults and overwrite with collection specific details as we can.
         mappings: dict = deepcopy(default_mapping)
+
         if self.model_class:
-            mappings['properties'], mappings['dynamic_templates'] = \
-                build_mapping(self.model_class.fields().values())
-            mappings['dynamic_templates'].insert(0, default_dynamic_strings)
+            mappings['properties'], mappings['dynamic_templates'] = build_mapping(self.model_class.fields().values())
+            # Add a rule that adds the elasticsearch "ignore_above" parameter to strings as
+            # the last rule in the dynamic templates so it only applies when no other rules match
+            mappings['dynamic_templates'].append(default_dynamic_strings)
         else:
             mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
-        if not mappings['dynamic_templates']:
-            # Setting dynamic to strict prevents any documents with fields not in the properties to be added
+        # build_mapping adds 'refuse_all_implicit_mappings' when it wants to reject all further dynamic mappings
+        # If this template is first, it means there are no dynamic templates. In that case we want to
+        # set dynamic to strict in order to prevent any documents with fields not in the properties to be added
+        if not mappings['dynamic_templates'] or 'refuse_all_implicit_mappings' in mappings['dynamic_templates'][0]:
             mappings['dynamic'] = "strict"
 
+        # Add the ID field that all documents need to have
         mappings['properties']['id'] = {
             "store": True,
             "doc_values": True,
@@ -2020,6 +2080,7 @@ class ESCollection(Generic[ModelType]):
             "copy_to": "__text__",
         }
 
+        # Add the text field, which acts as our default search field.
         mappings['properties']['__text__'] = {
             "store": False,
             "type": 'text',

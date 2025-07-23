@@ -971,13 +971,15 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 if index:
                     collection = self.datastore.get_collection(index)
                     self.logger.info(f"Reindexing {index.upper()} ...")
-                    collection.reindex()
+                    results = collection.reindex()
+                    self.logger.info(f"indexing report: {results}")
                     self.logger.info("    Done!")
                 else:
                     for index in valid_indices:
                         collection = self.datastore.get_collection(index)
                         self.logger.info(f"Reindexing {index} ...")
-                        collection.reindex()
+                        results = collection.reindex()
+                        self.logger.info(f"indexing report: {results}")
                         self.logger.info("    Done!")
             elif action_type == 'commit':
                 if index:
@@ -1052,6 +1054,63 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                 self.logger.info("Completed!")
         finally:
             self.datastore.start_model_validation()
+
+    def do_clone(self, args):
+        """
+        Perform clone operations on the database index. This can be used for 
+        in place backups as an alternative to snapshot based backups.
+
+        ** Be aware that these operations will apply a write lock when cloning from
+           a system index and ENTIRELY ERASE THE CURRENT CONTENT when cloning to.
+
+        Usage:
+            clone <index> to <backup_name>
+                  <index> from <backup_name>
+
+        Actions:
+            <index> to <backup>     Given a name <backup> that doesn't already exist
+                                    clone the system index <index> into a new index with that name.
+            <index> from <backup>   Given a name <backup> of an index created by the `to` varient
+                                    of this command wipe the current <index> and replace it with a
+                                    clone of the data stored at <backup>.
+                                    
+        Parameters:
+            <index>         system index to do the operation on
+            <backup_name>   other index to do the operation on
+
+        """
+
+        valid_indices = list(self.datastore.ds.get_models().keys())
+        valid_actions = ['to', 'from']
+
+        args = self._parse_args(args)
+
+        if len(args) == 3:
+            index, action_type, backup = args
+        else:
+            self._print_error("Wrong number of arguments for clone command.")
+            return
+
+        if action_type not in valid_actions:
+            self._print_error("\nInvalid action specified: {}\n\n"
+                              "Valid actions are:\n{}".format(action_type, "\n".join(valid_actions)))
+            return
+
+        if index and index not in valid_indices:
+            self._print_error("\nInvalid index specified: {}\n\n"
+                              "Valid indices are:\n{}".format(index, "\n".join(valid_indices)))
+            return
+
+        if action_type == 'to':
+            collection = self.datastore.get_collection(index)
+            self.logger.info(f"Cloning {index.upper()} to {backup}...")
+            collection.clone_index_to(backup)
+            self.logger.info("    Done!")
+        elif action_type == 'from':
+            collection = self.datastore.get_collection(index)
+            self.logger.info(f"Cloning {index.upper()} to {backup}...")
+            collection.clone_index_from(backup)
+            self.logger.info("    Done!")
 
     def do_wipe(self, args):
         """

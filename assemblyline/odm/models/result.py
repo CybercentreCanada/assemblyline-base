@@ -67,7 +67,8 @@ class Section(odm.Model):
     depth = odm.Integer(index=False, description="Depth of the section", ai=False)
     heuristic = odm.Optional(odm.Compound(Heuristic), description="Heuristic used to score result section")
     tags = odm.Compound(Tagging, default={}, description="List of tags associated to this section")
-    safelisted_tags = odm.FlattenedListObject(store=False, default={}, description="List of safelisted tags", ai=False)
+    safelisted_tags = odm.FlatMapping(odm.sequence(odm.keyword()), default={},
+                                      description="List of safelisted tags", ai=False)
     title_text = odm.Text(copyto="__text__", description="Title of the section")
     promote_to = odm.Optional(odm.Enum(
         values=PROMOTE_TO,
