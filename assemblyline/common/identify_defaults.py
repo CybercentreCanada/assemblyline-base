@@ -152,6 +152,7 @@ magic_patterns = [
     # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_rar.yara
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L179
     {"al_type": "archive/rar", "regex": r"^rar archive data"},
+    {"al_type": "archive/squashfs", "regex": r"^Squashfs filesystem"},
     # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_tar.yara
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L177
     {"al_type": "archive/tar", "regex": r"^(GNU|POSIX) tar archive"},
@@ -230,6 +231,7 @@ magic_patterns = [
     {"al_type": "pgp/privkey", "regex": r"^PGP private key block"},
     {"al_type": "pgp/encrypted", "regex": r"^PGP RSA encrypted session key"},
     {"al_type": "pgp/message", "regex": r"^PGP message Public-Key Encrypted Session Key"},
+    {"al_type": "pgp/symmetric", "regex": r"^PGP message Symmetric-Key Encrypted Session Key"},
     {"al_type": "gpg/symmetric", "regex": r"^GPG symmetrically encrypted data"},
     {"al_type": "video/asf", "regex": r"^Microsoft ASF"},
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L201

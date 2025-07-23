@@ -4,31 +4,32 @@
 import cmd
 import inspect
 import io
-import os
 import multiprocessing
+import os
 import re
-import time
-import signal
 import shutil
+import signal
 import sys
+import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tempfile import gettempdir
 
-import yaml
 import datemath
+import yaml
 
-from assemblyline.common import forge, log as al_log
+from assemblyline.common import forge
+from assemblyline.common import log as al_log
 from assemblyline.common.backupmanager import DistributedBackup
 from assemblyline.common.cleanup_filestore import cleanup_filestore
-from assemblyline.common.security import get_totp_token, generate_random_secret
-from assemblyline.common.uid import get_random_id
-from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
 from assemblyline.common.dict_utils import flatten
 from assemblyline.common.isotime import epoch_to_iso
+from assemblyline.common.security import generate_random_secret, get_totp_token
+from assemblyline.common.uid import get_random_id
+from assemblyline.common.version import FRAMEWORK_VERSION, SYSTEM_VERSION
 from assemblyline.filestore import create_transport
 from assemblyline.odm.models.signature import RULE_STATUSES
-from assemblyline.remote.datatypes.hash import Hash
+from assemblyline.remote.datatypes.hash import ExpiringHash
 
 warnings.filterwarnings("ignore")
 
@@ -1294,14 +1295,17 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             if len(args) == 2:
                 username = args[1]
 
-            flsk_sess = Hash(
+            flsk_sess = ExpiringHash(
                 "flask_sessions",
+
+
                 host=config.core.redis.nonpersistent.host,
                 port=config.core.redis.nonpersistent.port
             )
 
             if not username:
                 flsk_sess.delete()
+
                 self.logger.info("All sessions where cleared.")
             else:
                 for k, v in flsk_sess.items().items():
@@ -1309,14 +1313,16 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                         self.logger.info(f"Removing session: {v}")
                         flsk_sess.pop(k)
 
+
                 self.logger.info(f"All sessions for user '{username}' removed.")
         if func == 'show_sessions':
             username = None
             if len(args) == 2:
                 username = args[1]
 
-            flsk_sess = Hash(
+            flsk_sess = ExpiringHash(
                 "flask_sessions",
+
                 host=config.core.redis.nonpersistent.host,
                 port=config.core.redis.nonpersistent.port
             )
@@ -1324,7 +1330,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             if not username:
                 for k, v in flsk_sess.items().items():
                     self.logger.info(f"{v.get('username', None)} => {v}")
+
             else:
+
                 self.logger.info(f'Showing sessions for user {username}:')
                 for k, v in flsk_sess.items().items():
                     if v.get('username', None) == username:

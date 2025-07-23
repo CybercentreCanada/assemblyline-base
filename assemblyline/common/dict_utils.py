@@ -1,12 +1,21 @@
 from collections.abc import Mapping
-from typing import Dict, Optional, AnyStr, List, Mapping as _Mapping, Union
+from typing import AnyStr, Dict, List, Optional, Union
+from typing import Mapping as _Mapping
 
 from assemblyline.common.uid import get_id_from_data
 
 
 def strip_nulls(d):
     if isinstance(d, dict):
-        return {k: strip_nulls(v) for k, v in d.items() if v is not None}
+        new_dict = {}
+        for k, v in list(d.items()):
+            v = strip_nulls(v) if v is not None else None
+            # Assess if stripped value is null, if not then add it to the new dictionary returned
+            if v:
+                new_dict[k] = v
+        return new_dict
+    elif isinstance(d, list):
+        return [strip_nulls(v) for v in d if v is not None]
     else:
         return d
 

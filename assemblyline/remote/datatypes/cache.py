@@ -1,17 +1,17 @@
 import json
-from assemblyline.common.uid import get_id_from_data
 
 from redis.exceptions import ConnectionError
 
+from assemblyline.common.uid import get_id_from_data
 from assemblyline.remote.datatypes import get_client, retry_call
 
 DEFAULT_TTL = 60 * 60  # 1 Hour
 
 
 class Cache(object):
-    def __init__(self, prefix="al_cache", host=None, port=None, ttl=DEFAULT_TTL):
+    def __init__(self, prefix="al_cache", separator="-", host=None, port=None, ttl=DEFAULT_TTL):
         self.c = get_client(host, port, False)
-        self.prefix = prefix
+        self.prefix = prefix + separator
         self.ttl = DEFAULT_TTL
 
     def __enter__(self):
@@ -20,10 +20,13 @@ class Cache(object):
     def _get_key(self, name):
         return f"{self.prefix}-{name}"
 
-    def clear(self):
+    def clear(self, key=None):
         # Clear all items belonging to this cahce
-        for queue in retry_call(self.c.keys, "%s-*" % self.prefix):
-            retry_call(self.c.delete, queue)
+        if key:
+            retry_call(self.c.delete, f"{self.prefix}{key}")
+        else:
+            for queue in retry_call(self.c.keys, f"{self.prefix}*"):
+                retry_call(self.c.delete, queue)
 
     def create_key(self, *args):
         key_str = "-".join([str(x) for x in args])
@@ -43,6 +46,10 @@ class Cache(object):
             retry_call(self.c.expire, cache_name, ttl or self.ttl)
 
         return json.loads(item)
+
+    def list(self):
+        for key in retry_call(self.c.keys, f"{self.prefix}*"):
+            yield json.loads(retry_call(self.c.get, key))
 
     def ready(self):
         try:

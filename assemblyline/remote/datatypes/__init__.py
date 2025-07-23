@@ -2,13 +2,12 @@
 
 import json
 import logging
-import redis
 import os
 import time
-
 from datetime import datetime
-from packaging.version import parse
 
+import redis
+from packaging.version import parse
 
 from assemblyline.common import forge
 from assemblyline.common.uid import get_random_id
@@ -68,7 +67,7 @@ def _redis_ssl_kwargs(host: str) -> dict:
     return dict(ssl_ca_certs=os.environ.get(f'{host.upper()}_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt'))
 
 
-def get_client(host, port, private):
+def get_client(host, port, private) -> redis.StrictRedis:
     # In case a structure is passed a client as host
     config = forge.get_config()
     if isinstance(host, (redis.Redis, redis.StrictRedis)):

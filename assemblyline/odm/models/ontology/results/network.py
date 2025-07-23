@@ -26,7 +26,8 @@ LOOKUP_TYPES = ["A", "AAAA", "AFSDB", "APL", "CAA", "CDNSKEY", "CDS", "CERT", "C
 @odm.model(description="Details for a DNS request")
 class NetworkDNS(odm.Model):
     domain = odm.Domain(description="The domain requested")
-    resolved_ips = odm.List(odm.IP(), description="A list of IPs that were resolved")
+    resolved_ips = odm.Optional(odm.List(odm.IP()), description="A list of IPs that were resolved")
+    resolved_domains = odm.Optional(odm.List(odm.Domain()), description="A list of domains that were resolved")
     lookup_type = odm.Enum(values=LOOKUP_TYPES, description="The type of DNS request")
 
 
