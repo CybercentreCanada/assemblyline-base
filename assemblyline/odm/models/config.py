@@ -1533,7 +1533,9 @@ class ExternalLinks(odm.Model):
         description="If the classification of the item is higher than the max_classificaiton, can we let the user "
                     "bypass the check and still query the external link?")
     name: str = odm.Keyword(description="Name of the link")
-    double_encode: bool = odm.boolean(default=False, description="Should the replaced value be double encoded?")
+    encoding: str = odm.Enum(values=["url", "sha256"], default="url",
+                                description="How should the target value be encoded (used when `double_encode: true`)")
+    double_encode: bool = odm.boolean(default=False, description="Should the replaced value be encoded before url encoding?")
     classification = odm.Optional(
         odm.ClassificationString(description="Minimum classification the user must have to see this link"))
     max_classification = odm.Optional(
@@ -1547,7 +1549,7 @@ class ExternalLinks(odm.Model):
     url: str = odm.Keyword(description="URL to redirect to")
 
 
-EXAMPLE_EXTERNAL_LINK_VT = {
+EXAMPLE_EXTERNAL_LINK_VT_URL = {
     # This is an example on how this would work with VirusTotal
     "name": "VirusTotal",
     "replace_pattern": "{REPLACE}",
@@ -1555,11 +1557,52 @@ EXAMPLE_EXTERNAL_LINK_VT = {
         {"type": "tag", "key": "network.static.uri"},
         {"type": "tag", "key": "network.dynamic.uri"},
         {"type": "metadata", "key": "submitted_url"},
+    ],
+    "url": "https://www.virustotal.com/gui/url/{REPLACE}",
+    "double_encode": True,
+    "encoding": "sha256",
+    # "classification": "TLP:CLEAR",
+    # "max_classification": "TLP:CLEAR",
+}
+
+EXAMPLE_EXTERNAL_LINK_VT_FILE = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "replace_pattern": "{REPLACE}",
+    "targets": [
         {"type": "hash", "key": "md5"},
         {"type": "hash", "key": "sha1"},
         {"type": "hash", "key": "sha256"},
     ],
-    "url": "https://www.virustotal.com/gui/search/{REPLACE}",
+    "url": "https://www.virustotal.com/gui/file/{REPLACE}",
+    "double_encode": True,
+    # "classification": "TLP:CLEAR",
+    # "max_classification": "TLP:CLEAR",
+}
+
+EXAMPLE_EXTERNAL_LINK_VT_DOMAIN = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "replace_pattern": "{REPLACE}",
+    "targets": [
+        {"type": "tag", "key": "network.static.domain"},
+        {"type": "tag", "key": "network.dynamic.domain"},
+    ],
+    "url": "https://www.virustotal.com/gui/domain/{REPLACE}",
+    "double_encode": True,
+    # "classification": "TLP:CLEAR",
+    # "max_classification": "TLP:CLEAR",
+}
+
+EXAMPLE_EXTERNAL_LINK_VT_IP = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "replace_pattern": "{REPLACE}",
+    "targets": [
+        {"type": "tag", "key": "network.static.ip"},
+        {"type": "tag", "key": "network.dynamic.ip"},
+    ],
+    "url": "https://www.virustotal.com/gui/ip-address/{REPLACE}",
     "double_encode": True,
     # "classification": "TLP:CLEAR",
     # "max_classification": "TLP:CLEAR",
