@@ -1534,7 +1534,7 @@ class ExternalLinks(odm.Model):
                     "bypass the check and still query the external link?")
     name: str = odm.Keyword(description="Name of the link")
     encoding: str = odm.Enum(values=["url", "sha256"], default="url",
-                                description="How should the target value be encoded (used with double_encode configuration)")
+                                description="Should the replaced value be encoded before url encoding? (used with double_encode configuration)")
     double_encode: bool = odm.boolean(default=False, description="Should the replaced value be double encoded?")
     classification = odm.Optional(
         odm.ClassificationString(description="Minimum classification the user must have to see this link"))
