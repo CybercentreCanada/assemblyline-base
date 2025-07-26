@@ -1,5 +1,5 @@
 from assemblyline import odm
-from assemblyline.odm.models.ontology.filetypes import PE
+from assemblyline.odm.models.ontology.filetypes import PE, MachO
 
 
 @odm.model(description="File Characteristics")
@@ -24,3 +24,4 @@ class File(odm.Model):
     # powershell = odm.Optional(odm.Compound(PowerShell), description="PowerShell File Properties")
     # shortcut = odm.Optional(odm.Compound(Shortcut), description="Shortcut File Properties")
     # swf = odm.Optional(odm.Compound(SWF), description="SWF File Properties")
+    macho = odm.Optional(odm.Compound(MachO), description="Properties related to MachO")
