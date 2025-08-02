@@ -808,6 +808,7 @@ rule code_python {
 
     meta:
         type = "code/python"
+        score = 3
 
     strings:
         $strong_py1 = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*['"]__main__['"][ \t]*:/
