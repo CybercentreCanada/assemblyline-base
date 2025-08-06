@@ -737,6 +737,7 @@ class ESCollection(Generic[ModelType]):
                     # copy backup to replace deleted index
                     self._safe_index_copy(self.datastore.client.indices.clone, backup_index, index,
                                           settings=self._get_index_settings(archive=archive))
+
                 finally:
                     # Unblock write to the index
                     self.with_retries(self.datastore.client.indices.put_settings,
