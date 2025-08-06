@@ -83,6 +83,7 @@ setup(
         'python-tlsh',
         'hauntedhouse==0.1.10',
         'magika',
+        'paramiko<4'
     ],
     extras_require={
         'test': [
