@@ -693,7 +693,7 @@ class ESCollection(Generic[ModelType]):
                 self.with_retries(self.datastore.client.indices.delete, index=temp_name)
 
     def clone_index_to(self, destination_name: str, index_type: Optional[Index] = None):
-        """Copy data into an index that does not exist."""
+        """Copy the data from the current index into a backup that does not exist."""
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
             archive = self.is_archive_index(index)
@@ -717,7 +717,7 @@ class ESCollection(Generic[ModelType]):
                                       index=index, settings=write_unblock_settings)
 
     def clone_index_from(self, backup_name: str, index_type: Optional[Index] = None):
-        """Copy data into an index that does not exist."""
+        """Overwrite this index from a backup."""
         for name in self.get_index_list(index_type):
             index = f"{name}_hot"
             archive = self.is_archive_index(index)
@@ -726,17 +726,15 @@ class ESCollection(Generic[ModelType]):
             target_exists = self.with_retries(self.datastore.client.indices.exists, index=index)
 
             if target_exists and self.with_retries(self.datastore.client.indices.exists, index=backup_index):
+                try:
+                    # Block write to the index
+                    self.with_retries(self.datastore.client.indices.put_settings, index=backup_index,
+                                      settings=write_block_settings)
 
-                # Block write to the index
-                self.with_retries(self.datastore.client.indices.put_settings, index=backup_index,
-                                  settings=write_block_settings)
-
-                # Delete the target
-                if target_exists:
+                    # Delete the target
                     self.with_retries(self.datastore.client.indices.delete, index=index)
 
-                # copy backup to replace deleted index
-                try:
+                    # copy backup to replace deleted index
                     self._safe_index_copy(self.datastore.client.indices.clone, backup_index, index,
                                           settings=self._get_index_settings(archive=archive))
 
@@ -2056,18 +2054,26 @@ class ESCollection(Generic[ModelType]):
         return settings
 
     def _get_index_mappings(self) -> dict:
+        """Build the mapping for an elasticsearch index representing this collection."""
+
+        # Start with the defaults and overwrite with collection specific details as we can.
         mappings: dict = deepcopy(default_mapping)
+
         if self.model_class:
-            mappings['properties'], mappings['dynamic_templates'] = \
-                build_mapping(self.model_class.fields().values())
+            mappings['properties'], mappings['dynamic_templates'] = build_mapping(self.model_class.fields().values())
+            # Add a rule that adds the elasticsearch "ignore_above" parameter to strings as
+            # the last rule in the dynamic templates so it only applies when no other rules match
             mappings['dynamic_templates'].append(default_dynamic_strings)
         else:
             mappings['dynamic_templates'] = deepcopy(default_dynamic_templates)
 
+        # build_mapping adds 'refuse_all_implicit_mappings' when it wants to reject all further dynamic mappings
+        # If this template is first, it means there are no dynamic templates. In that case we want to
+        # set dynamic to strict in order to prevent any documents with fields not in the properties to be added
         if not mappings['dynamic_templates'] or 'refuse_all_implicit_mappings' in mappings['dynamic_templates'][0]:
-            # Setting dynamic to strict prevents any documents with fields not in the properties to be added
             mappings['dynamic'] = "strict"
 
+        # Add the ID field that all documents need to have
         mappings['properties']['id'] = {
             "store": True,
             "doc_values": True,
@@ -2075,6 +2081,7 @@ class ESCollection(Generic[ModelType]):
             "copy_to": "__text__",
         }
 
+        # Add the text field, which acts as our default search field.
         mappings['properties']['__text__'] = {
             "store": False,
             "type": 'text',
