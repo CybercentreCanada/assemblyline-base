@@ -75,3 +75,10 @@ class MachO(odm.Model):
         version = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
         entitlement = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
         requirement = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
+        
+    header = odm.Optional(odm.Compound(Header))
+    segments = odm.Optional(odm.List(odm.Compound(Segments)))
+    sections = odm.Optional(odm.List(odm.Compound(Sections)))
+    libraries = odm.Optional(odm.List(odm.Compound(Libraries)))
+    loadcommands = odm.Optional(odm.List(odm.Compound(LoadCommands)))
+    notarization = odm.Optional(odm.Compound(Notarization))
