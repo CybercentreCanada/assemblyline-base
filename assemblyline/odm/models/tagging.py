@@ -461,6 +461,7 @@ class Tagging(odm.Model):
         img = odm.Optional(odm.Compound(FileIMG), description="Image File Properties")
         ole = odm.Optional(odm.Compound(FileOLE), description="OLE File Properties")
         pe = odm.Optional(odm.Compound(FilePE), description="PE File Properties")
+        macho = odm.Optional(odm.Compound(FileMachO), description="Mach-O File Properties")
         pdf = odm.Optional(odm.Compound(FilePDF), description="PDF File Properties")
         plist = odm.Optional(odm.Compound(FilePList), description="PList File Properties")
         powershell = odm.Optional(odm.Compound(FilePowerShell), description="PowerShell File Properties")
