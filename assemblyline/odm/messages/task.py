@@ -40,7 +40,7 @@ class DataItem(odm.Model):
 @odm.model(description="Service Task Model")
 class Task(odm.Model):
     sid = odm.UUID(description="Submission ID")
-    metadata = odm.FlattenedObject(description="Metadata associated to the submission")
+    metadata: dict[str, str] = odm.FlatMapping(odm.MetadataValue(), default={}, description="Metadata associated to the submission")
     min_classification = odm.Classification(description="Minimum classification of the file being scanned")
     fileinfo: FileInfo = odm.Compound(FileInfo, description="File info block")
     filename = odm.Keyword(description="File name")

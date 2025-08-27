@@ -83,7 +83,7 @@ class SubmissionParams(odm.Model):
         data = self.as_primitives()
         return {k: v for k, v in data.items() if k in _KEY_HASHED_FIELDS}
 
-    def create_filescore_key(self, sha256, services: list = None):
+    def create_filescore_key(self, sha256, services: dict = None):
         """This is the key used to store the final score of a submission for fast lookup.
 
         This lookup is one of the methods used to check for duplication in ingestion process,
@@ -95,12 +95,12 @@ class SubmissionParams(odm.Model):
         version = 0
 
         if services is None:
-            services = self.services.selected
+            services = self.services.as_primitives()
 
         data = self.get_hashing_keys()
         data['service_spec'] = sorted((key, sorted(values.items())) for key, values in self.service_spec.items())
         data['sha256'] = sha256
-        data['services'] = [str(x) for x in services]
+        data['services'] = sorted((key, sorted(values)) for key, values in services.items())
 
         s = ', '.join([f"{k}: {data[k]}" for k in sorted(data.keys())])
 
@@ -143,7 +143,7 @@ class Submission(odm.Model):
     file_count = odm.Integer(description="Total number of files in the submission", ai=False)
     files: list[File] = odm.List(odm.Compound(File), description="List of files that were originally submitted")
     max_score = odm.Integer(description="Maximum score of all the files in the scan")
-    metadata = odm.FlatMapping(odm.wildcard(), copyto="__text__", store=False, description="Metadata associated to the submission")
+    metadata: dict[str, str] = odm.FlatMapping(odm.MetadataValue(), default={}, store=False, copyto="__text__", description="Metadata associated to the submission")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details", ai=False)
     results: list[str] = odm.List(odm.wildcard(), store=False, description="List of result keys", ai=False)
     sid: str = odm.UUID(copyto="__text__", description="Submission ID")

@@ -729,8 +729,7 @@ rule code_c {
         $ = /(^|\n)#include[ \t]*([<"])[\w.\/]+([>"])/
         $ = /(^|\n)#(if !defined|ifndef|define|endif|pragma)[ \t]+/
         $ = /(^|\n)public[ \t]*:/
-        $ = /ULONG|HRESULT|STDMETHOD/
-        $ = "THIS"
+        $ = /ULONG|STDMETHOD/
         $ = /(^|\n)(const[ \t]+char[ \t]+\w+;|extern[ \t]+|uint(8|16|32)_t[ \t]+)/
 
     condition:
@@ -808,6 +807,7 @@ rule code_python {
 
     meta:
         type = "code/python"
+        score = 3
 
     strings:
         $strong_py1 = /(^|\n)[ \t]*if[ \t]+__name__[ \t]*==[ \t]*['"]__main__['"][ \t]*:/

@@ -24,6 +24,10 @@ DATASTORE_VERIFY_CERTS = environ.get('DATASTORE_VERIFY_CERTS', 'true').lower() =
 
 log = logging.getLogger('assemblyline.datastore')
 ALT_ELASTICSEARCH_USERS = ["plumber"]
+TIMEOUT_MESSAGES = {
+    'timeout_exception',
+    'receive_timeout_transport_exception'
+}
 
 
 class ESStore(object):
@@ -283,14 +287,14 @@ class ESStore(object):
             except elasticsearch.ApiError as e:
                 err_code = e.status_code
                 msg = e.message
-                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
+                if (err_code == 500 or err_code == '500') and msg in TIMEOUT_MESSAGES:
                     pass
                 else:
                     raise
 
             except elasticsearch.exceptions.TransportError as e:
                 err_code, msg, _ = e.args
-                if (err_code == 500 or err_code == '500') and msg == 'timeout_exception':
+                if (err_code == 500 or err_code == '500') and msg in TIMEOUT_MESSAGES:
                     pass
                 else:
                     raise

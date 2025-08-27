@@ -178,7 +178,6 @@ DEFAULT_INTERNAL = {
     "signup": DEFAULT_SIGNUP
 }
 
-
 @odm.model(index=False, store=False, description="App provider")
 class AppProvider(odm.Model):
     access_token_url: str = odm.Keyword(description="URL used to get the access token")
@@ -248,7 +247,12 @@ class OAuthProvider(odm.Model):
     validate_token_with_secret: bool = odm.Boolean(
         default=False, description="Should we send the client secret while validating the access token?")
     identity_id_field: str = odm.Keyword(default='oid', description="Field to fetch the managed identity ID from.")
-
+    openid_connect_discovery_url: str = odm.Optional(
+        odm.Keyword(), description="URL for connecting to the OpenID configuration JSON."
+    )
+    groups_id_token_field: str = odm.Keyword(
+        default="groups", description="Name of the field in the id token that contains the list of groups."
+    )
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
     "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
@@ -287,6 +291,13 @@ DEFAULT_OAUTH_PROVIDERS = {
     'auth0': DEFAULT_OAUTH_PROVIDER_AUTH_ZERO,
     'azure_ad': DEFAULT_OAUTH_PROVIDER_AZURE,
     'google': DEFAULT_OAUTH_PROVIDER_GOOGLE,
+}
+
+OPEN_ID_CONFIGURATION_TO_OAUTH_PROVIDER_MAP = {
+    "authorization_endpoint": "authorize_url",
+    "issuer": "api_base_url",
+    "token_endpoint": "access_token_url",
+    "jwks_uri": "jwks_uri",
 }
 
 
@@ -1522,7 +1533,9 @@ class ExternalLinks(odm.Model):
         description="If the classification of the item is higher than the max_classificaiton, can we let the user "
                     "bypass the check and still query the external link?")
     name: str = odm.Keyword(description="Name of the link")
-    double_encode: bool = odm.boolean(default=False, description="Should the replaced value be double encoded?")
+    encoding: str = odm.Enum(values=["url", "sha256"], default="url",
+                                description="How should the target value be encoded (used when `double_encode: true`)")
+    double_encode: bool = odm.boolean(default=False, description="Should the replaced value be encoded before url encoding?")
     classification = odm.Optional(
         odm.ClassificationString(description="Minimum classification the user must have to see this link"))
     max_classification = odm.Optional(
@@ -1536,7 +1549,7 @@ class ExternalLinks(odm.Model):
     url: str = odm.Keyword(description="URL to redirect to")
 
 
-EXAMPLE_EXTERNAL_LINK_VT = {
+EXAMPLE_EXTERNAL_LINK_VT_URL = {
     # This is an example on how this would work with VirusTotal
     "name": "VirusTotal",
     "replace_pattern": "{REPLACE}",
@@ -1544,11 +1557,52 @@ EXAMPLE_EXTERNAL_LINK_VT = {
         {"type": "tag", "key": "network.static.uri"},
         {"type": "tag", "key": "network.dynamic.uri"},
         {"type": "metadata", "key": "submitted_url"},
+    ],
+    "url": "https://www.virustotal.com/gui/url/{REPLACE}",
+    "double_encode": True,
+    "encoding": "sha256",
+    # "classification": "TLP:CLEAR",
+    # "max_classification": "TLP:CLEAR",
+}
+
+EXAMPLE_EXTERNAL_LINK_VT_FILE = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "replace_pattern": "{REPLACE}",
+    "targets": [
         {"type": "hash", "key": "md5"},
         {"type": "hash", "key": "sha1"},
         {"type": "hash", "key": "sha256"},
     ],
-    "url": "https://www.virustotal.com/gui/search/{REPLACE}",
+    "url": "https://www.virustotal.com/gui/file/{REPLACE}",
+    "double_encode": True,
+    # "classification": "TLP:CLEAR",
+    # "max_classification": "TLP:CLEAR",
+}
+
+EXAMPLE_EXTERNAL_LINK_VT_DOMAIN = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "replace_pattern": "{REPLACE}",
+    "targets": [
+        {"type": "tag", "key": "network.static.domain"},
+        {"type": "tag", "key": "network.dynamic.domain"},
+    ],
+    "url": "https://www.virustotal.com/gui/domain/{REPLACE}",
+    "double_encode": True,
+    # "classification": "TLP:CLEAR",
+    # "max_classification": "TLP:CLEAR",
+}
+
+EXAMPLE_EXTERNAL_LINK_VT_IP = {
+    # This is an example on how this would work with VirusTotal
+    "name": "VirusTotal",
+    "replace_pattern": "{REPLACE}",
+    "targets": [
+        {"type": "tag", "key": "network.static.ip"},
+        {"type": "tag", "key": "network.dynamic.ip"},
+    ],
+    "url": "https://www.virustotal.com/gui/ip-address/{REPLACE}",
     "double_encode": True,
     # "classification": "TLP:CLEAR",
     # "max_classification": "TLP:CLEAR",
@@ -1848,6 +1902,7 @@ class FileSource(odm.Model):
                                      default=[], description="List of services that will be auto-selected when using this source.")
     verify: bool = odm.Boolean(default=True, description="Should the download function Verify SSL connections?")
     password: str = odm.Optional(odm.Text(description="Password to use for the downloaded file (ie. password-protected zip)"))
+    metadata: Dict[str, str] = odm.Optional(odm.Mapping(odm.Text()), description="Metadata to append to submission based on source")
 
 
 EXAMPLE_FILE_SOURCE_VT = {

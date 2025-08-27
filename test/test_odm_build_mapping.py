@@ -138,32 +138,34 @@ def test_dynamic_fields():
             assert key not in rules
             rules[key] = config
     assert rules == {
-        'b.*.text_tpl': {'mapping': {'index': True, 'type': 'text'}, 'path_match': 'b.*.text'},
-        'b.*.key_tpl': {'mapping': {'index': True, 'type': 'keyword'}, 'path_match': 'b.*.key'},
-        'b.*.index_key_tpl': {'mapping': {'index': True, 'type': 'keyword'}, 'path_match': 'b.*.index_key'},
+        'b.*.text_tpl': {'mapping': {'type': 'text'}, 'path_match': 'b.*.text'},
+        'b.*.key_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'b.*.key'},
+        'b.*.index_key_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'b.*.index_key'},
         'b.*.no_index_key_tpl': {'mapping': {'index': False, 'type': 'keyword'}, 'path_match': 'b.*.no_index_key'},
-        'f.*_tpl': {'mapping': {'index': True, 'type': 'integer'}, 'path_match': 'f.*'},
+        'f.*_tpl': {'mapping': {'type': 'integer'}, 'path_match': 'f.*'},
     }
 
 
 def test_dynamic_fields_simple():
-    """Simplified version of the above test for checking some more common cases"""
+    """
+    Simplified version of the above test for checking some more common cases.
+    """
     @odm.model()
     class InnerNone(odm.Model):
         a = odm.keyword()
-        b = odm.keyword(index=True)
+        b = odm.keyword(store=False)
 
-    @odm.model(index=True)
-    class InnerTrue(odm.Model):
+    @odm.model(store=False)
+    class InnerFalse(odm.Model):
         a = odm.keyword()
-        b = odm.keyword(index=True)
+        b = odm.keyword(store=False)
 
-    @odm.model()
+    @odm.model(store=True, index=True)
     class Outer(odm.Model):
-        a = odm.mapping(odm.compound(InnerNone), index=True)
-        b = odm.mapping(odm.compound(InnerNone, index=True))
+        a = odm.mapping(odm.compound(InnerNone), store=False)
+        b = odm.mapping(odm.compound(InnerNone, store=False))
         c = odm.mapping(odm.compound(InnerNone))
-        d = odm.mapping(odm.compound(InnerTrue))
+        d = odm.mapping(odm.compound(InnerFalse))
         
     # Build the mappings
     static, dynamic = build_mapping(Outer.fields().values())
@@ -178,13 +180,13 @@ def test_dynamic_fields_simple():
             assert key not in rules
             rules[key] = config
     assert rules == {
-        'a.*.a_tpl': {'mapping': {'type': 'keyword', 'index': True}, 'path_match': 'a.*.a'},
-        'a.*.b_tpl': {'mapping': {'type': 'keyword', 'index': True}, 'path_match': 'a.*.b'},
-        'b.*.a_tpl': {'mapping': {'type': 'keyword', 'index': True}, 'path_match': 'b.*.a'},
-        'b.*.b_tpl': {'mapping': {'type': 'keyword', 'index': True}, 'path_match': 'b.*.b'},
+        'a.*.a_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'a.*.a'},
+        'a.*.b_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'a.*.b'},
+        'b.*.a_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'b.*.a'},
+        'b.*.b_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'b.*.b'},
         # All the same exept this one
-        'c.*.a_tpl': {'mapping': {'type': 'keyword', 'index': None}, 'path_match': 'c.*.a'},
-        'c.*.b_tpl': {'mapping': {'type': 'keyword', 'index': True}, 'path_match': 'c.*.b'},
-        'd.*.a_tpl': {'mapping': {'type': 'keyword', 'index': True}, 'path_match': 'd.*.a'},
-        'd.*.b_tpl': {'mapping': {'type': 'keyword', 'index': True}, 'path_match': 'd.*.b'},
+        'c.*.a_tpl': {'mapping': {'type': 'keyword', 'store': True}, 'path_match': 'c.*.a'},
+        'c.*.b_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'c.*.b'},
+        'd.*.a_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'd.*.a'},
+        'd.*.b_tpl': {'mapping': {'type': 'keyword'}, 'path_match': 'd.*.b'},
     }
