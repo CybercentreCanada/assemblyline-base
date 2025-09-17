@@ -21,6 +21,10 @@ class Submission(odm.Model):
     notification: Notification = odm.Compound(Notification, default={}, description="Notification queue parameters")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Parameters of the submission")
     scan_key: Opt[str] = odm.Optional(odm.Keyword())
+    file_tree = odm.Any(default={}, description="File tree of the files in this submission")
+    file_infos = odm.Mapping(odm.Any(), default={}, description="SHA256 and file information in the file.")
+    errors = odm.List(odm.Keyword(), default=[], description="List of error keys")
+    results = odm.Mapping(odm.Any(), default={}, description="Result key value mapping")
 
 
 def from_datastore_submission(submission: DatabaseSubmission):
@@ -28,19 +32,22 @@ def from_datastore_submission(submission: DatabaseSubmission):
     A helper to convert between database model version of Submission
     and the message version of Submission.
     """
-    return Submission({
-        'sid': submission.sid,
-        'files': submission.files,
-        'metadata': submission.metadata,
-        'params': submission.params,
-        'scan_key': submission.scan_key
-    })
+    return Submission(
+        {
+            "sid": submission.sid,
+            "files": submission.files,
+            "metadata": submission.metadata,
+            "params": submission.params,
+            "scan_key": submission.scan_key,
+        }
+    )
 
 
 @odm.model(description="Model of Submission Message")
 class SubmissionMessage(odm.Model):
     msg = odm.Compound(Submission, description="Body of the message")
-    msg_loader = odm.Enum(values={LOADER_CLASS}, default=LOADER_CLASS,
-                          description="Class to use to load the message as an object")   #
+    msg_loader = odm.Enum(
+        values={LOADER_CLASS}, default=LOADER_CLASS, description="Class to use to load the message as an object"
+    )  #
     msg_type = odm.Enum(values=MSG_TYPES, description="Type of message")
     sender = odm.Keyword(description="Sender of the message")

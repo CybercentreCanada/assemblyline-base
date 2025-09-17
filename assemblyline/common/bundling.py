@@ -1,4 +1,3 @@
-
 import json
 import logging
 import os
@@ -258,8 +257,18 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False, user_classificatio
 
 
 # noinspection PyBroadException,PyProtectedMember
-def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.UNRESTRICTED, allow_incomplete=False,
-                  rescan_services=None, exist_ok=False, cleanup=True, identify=None, reclassification=None):
+def import_bundle(
+    path,
+    working_dir=WORK_DIR,
+    min_classification=Classification.UNRESTRICTED,
+    allow_incomplete=False,
+    rescan_services=None,
+    exist_ok=False,
+    cleanup=True,
+    identify=None,
+    reclassification=None,
+    to_ingest=False,
+):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
         res_file = os.path.join(current_working_dir, "results.json")
@@ -382,8 +391,16 @@ def import_bundle(path, working_dir=WORK_DIR, min_classification=Classification.
                             }
                             with SubmissionClient(datastore=datastore, filestore=filestore,
                                                   config=config, identify=identify) as sc:
-                                sc.rescan(submission, results['results'], extracted_file_infos,
-                                          files['tree'], list(errors['errors'].keys()), rescan_services)
+
+                                sc.rescan(
+                                    submission,
+                                    results["results"],
+                                    extracted_file_infos,
+                                    files["tree"],
+                                    list(errors["errors"].keys()),
+                                    rescan_services,
+                                    to_ingest=to_ingest,
+                                )
                 elif not exist_ok:
                     raise SubmissionAlreadyExist("Submission %s already exists." % sid)
 
