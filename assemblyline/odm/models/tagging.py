@@ -41,6 +41,10 @@ class Tagging(odm.Model):
         valid = odm.Optional(odm.Compound(CertValid), description="Validity Information")
         version = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Version")
 
+    @odm.model(index=True, store=False, description="Code Tag Model")
+    class Code(odm.Model):
+        sha256 = odm.Optional(odm.List(odm.SHA256(copyto="__text__")), description="SHA256 of Code")
+
     @odm.model(index=True, store=False, description="Dynamic Tag Model. Commonly Used by Dynamic Analysis")
     class Dynamic(odm.Model):
         @odm.model(index=True, store=False, description="Dynamic Process")
@@ -483,6 +487,7 @@ class Tagging(odm.Model):
     attribution = odm.Optional(odm.Compound(Attribution), description="Attribution Tagging")
     av = odm.Optional(odm.Compound(AV), description="Antivirus Tagging")
     cert = odm.Optional(odm.Compound(Cert), description="Certificate Tagging")
+    code = odm.Optional(odm.Compound(Code), description="Code Tagging")
     dynamic = odm.Optional(odm.Compound(Dynamic), description="Dynamic Analysis Tagging")
     info = odm.Optional(odm.Compound(Info), description="Informational Tagging")
     file = odm.Optional(odm.Compound(File), description="File Tagging")
