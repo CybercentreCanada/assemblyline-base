@@ -11,7 +11,8 @@ def strip_nulls(d):
         for k, v in list(d.items()):
             v = strip_nulls(v) if v is not None else None
             # Assess if stripped value is null, if not then add it to the new dictionary returned
-            if v:
+            # allow empty value
+            if v is not None:
                 new_dict[k] = v
         return new_dict
     elif isinstance(d, list):
