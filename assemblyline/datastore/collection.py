@@ -1055,7 +1055,7 @@ class ESCollection(Generic[ModelType]):
         :return: True if the document was saved properly
         """
         if " " in key:
-            raise DataStoreException("You are not allowed to use spaces in datastore keys.")
+            raise DataStoreException(f'You are not allowed to use spaces in datastore keys: "{key}"')
 
         data = self.normalize(data)
 
