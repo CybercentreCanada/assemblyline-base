@@ -1017,9 +1017,30 @@ class AssemblylineDatastore(object):
         if svc_version_data is None:
             return None
 
-        svc_version_data = recursive_update(svc_version_data.as_primitives(strip_null=True),
+        raw_svc_version_data = svc_version_data.as_primitives(strip_null=True)
+        svc_version_data = recursive_update(deepcopy(raw_svc_version_data),
                                             svc.as_primitives(strip_null=True),
                                             stop_keys=['config'])
+
+        # For fields that we know are List of Compounds, we need to merge them properly and de-duplicate
+        # Based on the current Service schema, there is a 'name' field that establishes uniqueness
+        for config in [k.rstrip('.name') for k in self.service.fields().keys() if k.endswith('.name')]:
+            s_data = raw_svc_version_data
+            d_data = svc_version_data
+            # Drill down to the list
+            for k in config.split('.'):
+                s_data = s_data.get(k) or []
+                d_data = d_data.get(k) or []
+                if isinstance(s_data, list):
+                    break
+
+            if not s_data and s_data == d_data:
+                continue
+
+            # Compare elements based on 'name' field to determine what's been added by the service
+            d_keys = {x['name'] for x in d_data}
+            d_data.extend([d for d in s_data if d['name'] not in d_keys])
+
         if as_obj:
             return Service(svc_version_data)
         else:

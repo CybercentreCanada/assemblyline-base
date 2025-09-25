@@ -1,23 +1,28 @@
 
 import hashlib
-from assemblyline.common.isotime import now_as_iso
-from assemblyline.odm.models.file import File
-import pytest
 import random
 
+import pytest
 from redis import Redis
 from retrying import retry
 
 from assemblyline.common import forge
+from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore.helper import AssemblylineDatastore, MetadataValidator
 from assemblyline.odm.base import DATEFORMAT, KeyMaskException
 from assemblyline.odm.models.config import Config, Metadata
+from assemblyline.odm.models.file import File
 from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
-from assemblyline.remote.datatypes.hash import Hash
+from assemblyline.odm.random_data import (
+    create_heuristics,
+    create_services,
+    create_signatures,
+    create_submission,
+)
 from assemblyline.odm.randomizer import SERVICES, random_minimal_obj
-from assemblyline.odm.random_data import create_signatures, create_submission, create_heuristics, create_services
+from assemblyline.remote.datatypes.hash import Hash
 
 
 class SetupException(Exception):
@@ -351,6 +356,45 @@ def test_get_service_with_delta(ds: AssemblylineDatastore):
 
     assert full_service.as_primitives() != service.as_primitives()
     assert full_service.category == "TEST"
+
+def test_get_service_with_delta_with_updates(ds: AssemblylineDatastore):
+    # Get a random service delta
+    service_delta: Service = ds.service_delta.search("id:*", rows=1, fl="*")['items'][0]
+    service_key = f"{service_delta.id}_{service_delta.version}"
+
+    # Get the associated service
+    service: Service = ds.service.get(service_key)
+
+    # Test registering a service update where there's a new submission parameter and configuration (user has not modified anything)
+    service['submission_params'].append({"name": 'new_param', 'type': 'str', 'default': 'default_value', 'value': 'default_value'})
+    service['version'] = "new_version"
+    service['config']  = {'new_config': 'value'}
+    assert ds.service.save(f"{service['name']}_{service['version']}", service)
+    assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_SET, 'version', service['version'])])
+
+    # If the user has not modified anything, we expect the full service to be exactly the same as the new version of the service
+    full_service = ds.get_service_with_delta(service_delta.id)
+    assert full_service.as_primitives() == service.as_primitives()
+
+    # Test registering a service update where the user has changed a submission parameter prior to the update and new parameter was added
+    assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_APPEND, 'submission_params', {'name': 'new_param', 'type': 'str', 'default': 'custom_value', 'value': 'custom_value'})])
+    ds.service_delta.commit()
+
+    service['submission_params'].append({"name": 'new_new_param', 'type': 'str', 'default': 'default_value', 'value': 'default_value'})
+    service['version'] = "new_new_version"
+
+    # Add the new version to the service to the database and update the service_delta to simulate a service update
+    assert ds.service.save(f"{service['name']}_{service['version']}", service)
+    assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_SET, 'version', service['version'])])
+
+    full_service = ds.get_service_with_delta(service_delta.id)
+
+    # We expect that mostly everything is the same except for the submission parameters which should contain both the updated parameter and the newly added one (while still keeping the custom value changes)
+    for k, v in service.as_primitives().items():
+        if k != 'submission_params':
+            assert full_service.as_primitives()[k] == service.as_primitives()[k]
+        else:
+            assert v == service_delta.submission_params or [] + service['submission_params']
 
 
 def test_calculate_heuristic_stats(ds: AssemblylineDatastore):
