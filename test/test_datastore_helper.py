@@ -369,7 +369,8 @@ def test_get_service_with_delta_with_updates(ds: AssemblylineDatastore):
     service['submission_params'].append({"name": 'new_param', 'type': 'str', 'default': 'default_value', 'value': 'default_value'})
     service['version'] = "new_version"
     service['config']  = {'new_config': 'value'}
-    assert ds.service.save(f"{service['name']}_{service['version']}", service)
+    service_key = f"{service['name']}_{service['version']}"
+    assert ds.service.save(service_key, service)
     assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_SET, 'version', service['version'])])
 
     # If the user has not modified anything, we expect the full service to be exactly the same as the new version of the service
@@ -377,24 +378,34 @@ def test_get_service_with_delta_with_updates(ds: AssemblylineDatastore):
     assert full_service.as_primitives() == service.as_primitives()
 
     # Test registering a service update where the user has changed a submission parameter prior to the update and new parameter was added
-    assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_APPEND, 'submission_params', {'name': 'new_param', 'type': 'str', 'default': 'custom_value', 'value': 'custom_value'})])
-    ds.service_delta.commit()
+    assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_APPEND, 'submission_params', {'name': 'new_param', 'type': 'str', 'default': 'custom_value', 'value': 'custom_value', 'hide': False, 'list': None})])
 
-    service['submission_params'].append({"name": 'new_new_param', 'type': 'str', 'default': 'default_value', 'value': 'default_value'})
+    service['submission_params'].append({"name": 'new_new_param', 'type': 'str', 'default': 'default_value', 'value': 'default_value', 'hide': False, 'list': None})
     service['version'] = "new_new_version"
+    service_key = f"{service['name']}_{service['version']}"
+
 
     # Add the new version to the service to the database and update the service_delta to simulate a service update
-    assert ds.service.save(f"{service['name']}_{service['version']}", service)
+    assert ds.service.save(service_key, service)
     assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_SET, 'version', service['version'])])
 
-    full_service = ds.get_service_with_delta(service_delta.id)
+    full_service = ds.get_service_with_delta(service_delta.id).as_primitives()
+    service = ds.service.get(service_key).as_primitives()
+    service_delta = ds.service_delta.get(service_delta.id).as_primitives()
 
     # We expect that mostly everything is the same except for the submission parameters which should contain both the updated parameter and the newly added one (while still keeping the custom value changes)
-    for k, v in service.as_primitives().items():
+    for k, v in full_service.items():
         if k != 'submission_params':
-            assert full_service.as_primitives()[k] == service.as_primitives()[k]
+            # The service delta value would take precendence over the service value
+            assert v == service[k] if service_delta.get(k) is None else v == service_delta[k]
         else:
-            assert v == service_delta.submission_params or [] + service['submission_params']
+            # We expect the submission parameters to be a merge of the service delta and the service value
+            merged_params = service_delta.get('submission_params', [])
+            for p in list(merged_params):
+                for s in service['submission_params']:
+                    if p['name'] != s['name']:
+                        merged_params.append(s)
+            assert v == merged_params
 
 
 def test_calculate_heuristic_stats(ds: AssemblylineDatastore):
