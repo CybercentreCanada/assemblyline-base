@@ -359,51 +359,105 @@ def test_get_service_with_delta(ds: AssemblylineDatastore):
 
 def test_get_service_with_delta_with_updates(ds: AssemblylineDatastore):
     # Get a random service delta
-    service_delta: Service = ds.service_delta.search("id:*", rows=1, fl="*")['items'][0]
-    service_key = f"{service_delta.id}_{service_delta.version}"
+    service_delta: Service = ds.service_delta.search("id:*", rows=1, fl="*")["items"][0]
+    service_name = service_delta.id
+    service_key = f"{service_name}_{service_delta.version}"
 
     # Get the associated service
-    service: Service = ds.service.get(service_key)
+    service: Service = ds.service.get(service_key).as_primitives()
 
     # Test registering a service update where there's a new submission parameter and configuration (user has not modified anything)
-    service['submission_params'].append({"name": 'new_param', 'type': 'str', 'default': 'default_value', 'value': 'default_value'})
-    service['version'] = "new_version"
-    service['config']  = {'new_config': 'value'}
-    service_key = f"{service['name']}_{service['version']}"
+    service["submission_params"].append(
+        {
+            "name": "new_param",
+            "type": "str",
+            "default": "default_value",
+            "value": "default_value",
+            "list": None,
+            "hide": False,
+        }
+    )
+    service["version"] = "new_version"
+    service["config"] = {"new_config": "value"}
+    service_key = f"{service_name}_{service['version']}"
     assert ds.service.save(service_key, service)
-    assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_SET, 'version', service['version'])])
+    assert ds.service_delta.update(
+        service_name, [(ds.service_delta.UPDATE_SET, "version", service["version"])]
+    )
 
     # If the user has not modified anything, we expect the full service to be exactly the same as the new version of the service
-    full_service = ds.get_service_with_delta(service_delta.id)
-    assert full_service.as_primitives() == service.as_primitives()
+    service_delta = ds.service_delta.get(service_name).as_primitives()
+    full_service = ds.get_service_with_delta(service_name).as_primitives()
+    for k, v in full_service.items():
+        # The service delta value would take precendence over the service value
+        try:
+            assert (
+                v == service[k]
+                if service_delta.get(k) is None
+                else v == service_delta[k]
+            )
+        except AssertionError:
+            raise Exception(
+                f"Key {k} does not match: {v} != {service[k] if service_delta.get(k) is None else service_delta[k]}"
+            )
 
     # Test registering a service update where the user has changed a submission parameter prior to the update and new parameter was added
-    assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_APPEND, 'submission_params', {'name': 'new_param', 'type': 'str', 'default': 'custom_value', 'value': 'custom_value', 'hide': False, 'list': None})])
+    assert ds.service_delta.update(
+        service_name,
+        [
+            (
+                ds.service_delta.UPDATE_APPEND,
+                "submission_params",
+                {
+                    "name": "new_param",
+                    "type": "str",
+                    "default": "custom_value",
+                    "value": "custom_value",
+                    "hide": False,
+                    "list": None,
+                },
+            )
+        ],
+    )
 
-    service['submission_params'].append({"name": 'new_new_param', 'type': 'str', 'default': 'default_value', 'value': 'default_value', 'hide': False, 'list': None})
-    service['version'] = "new_new_version"
-    service_key = f"{service['name']}_{service['version']}"
-
+    service["submission_params"].append(
+        {
+            "name": "new_new_param",
+            "type": "str",
+            "default": "default_value",
+            "value": "default_value",
+            "hide": False,
+            "list": None,
+        }
+    )
+    service["version"] = "new_new_version"
+    service_key = f"{service_name}_{service['version']}"
 
     # Add the new version to the service to the database and update the service_delta to simulate a service update
     assert ds.service.save(service_key, service)
-    assert ds.service_delta.update(service['name'], [(ds.service_delta.UPDATE_SET, 'version', service['version'])])
+    assert ds.service_delta.update(
+        service_name, [(ds.service_delta.UPDATE_SET, "version", service["version"])]
+    )
 
-    full_service = ds.get_service_with_delta(service_delta.id).as_primitives()
+    full_service = ds.get_service_with_delta(service_name).as_primitives()
     service = ds.service.get(service_key).as_primitives()
-    service_delta = ds.service_delta.get(service_delta.id).as_primitives()
+    service_delta = ds.service_delta.get(service_name).as_primitives()
 
     # We expect that mostly everything is the same except for the submission parameters which should contain both the updated parameter and the newly added one (while still keeping the custom value changes)
     for k, v in full_service.items():
-        if k != 'submission_params':
+        if k != "submission_params":
             # The service delta value would take precendence over the service value
-            assert v == service[k] if service_delta.get(k) is None else v == service_delta[k]
+            assert (
+                v == service[k]
+                if service_delta.get(k) is None
+                else v == service_delta[k]
+            )
         else:
             # We expect the submission parameters to be a merge of the service delta and the service value
-            merged_params = service_delta.get('submission_params', [])
+            merged_params = service_delta.get("submission_params", [])
             for p in list(merged_params):
-                for s in service['submission_params']:
-                    if p['name'] != s['name']:
+                for s in service["submission_params"]:
+                    if p["name"] != s["name"]:
                         merged_params.append(s)
             assert v == merged_params
 
