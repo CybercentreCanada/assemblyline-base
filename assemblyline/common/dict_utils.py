@@ -51,6 +51,10 @@ def recursive_update(d: Union[Dict, List], u: Union[_Mapping, List],
         if u is None:
             return d
 
+        if u == {} and context != "":
+            # An empty dict as an update means we want to clear out this dict but this shouldn't apply to the root
+            return u
+
         for k, v in u.items():
             current_context = f"{context}.{k}" if context else k
             if isinstance(v, Mapping) and allow_recursion:
@@ -82,7 +86,7 @@ def recursive_update(d: Union[Dict, List], u: Union[_Mapping, List],
 
                 d[k] = merged_list
             else:
-                d[k] = v
+                    d[k] = v
 
         return d
     return _recursive_update(d, u, stop_keys=stop_keys, allow_recursion=allow_recursion)
