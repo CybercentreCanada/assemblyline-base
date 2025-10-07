@@ -81,6 +81,18 @@ class AssemblylineDatastore(object):
         self.ds.register('user_settings', UserSettings)
         self.ds.register('workflow', Workflow)
 
+        flatten_fields = Service.flat_fields()
+        self.service_list_keys = {
+            f.rstrip(".name"): "name"
+            for f in flatten_fields.keys()
+            if f.endswith(".name")
+        }
+        self.service_required_keys = [
+            k
+            for k, v in flatten_fields.items()
+            if not v.default_set and not v.optional
+        ]
+
     def __enter__(self):
         return self
 
@@ -1020,27 +1032,8 @@ class AssemblylineDatastore(object):
         raw_svc_version_data = svc_version_data.as_primitives(strip_null=True)
         svc_version_data = recursive_update(deepcopy(raw_svc_version_data),
                                             svc.as_primitives(strip_null=True),
-                                            stop_keys=['config'])
-
-        # For fields that we know are List of Compounds, we need to merge them properly and de-duplicate
-        # Based on the current Service schema, there is a 'name' field that establishes uniqueness
-        for config in [k.rstrip('.name') for k in self.service.fields().keys() if k.endswith('.name')]:
-            s_data = raw_svc_version_data
-            d_data = svc_version_data
-            # Drill down to the list
-            for k in config.split('.'):
-                s_data = s_data.get(k) or []
-                d_data = d_data.get(k) or []
-                if isinstance(s_data, list):
-                    break
-
-            if not s_data and s_data == d_data:
-                continue
-
-            # Compare elements based on 'name' field to determine what's been added by the service
-            d_keys = {x['name'] for x in d_data}
-            d_data.extend([d for d in s_data if d['name'] not in d_keys])
-
+                                            stop_keys=['config'],
+                                            list_group_by=self.service_list_keys)
         if as_obj:
             return Service(svc_version_data)
         else:
@@ -1186,10 +1179,24 @@ class AssemblylineDatastore(object):
                         for s in self.service.multiget([f"{item.id}_{item.version}" for item in service_delta],
                                                        as_obj=False, as_dictionary=False)]
 
+        services = []
         # Recursively update the service data with the service delta while stripping nulls
-        services = [recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True),
-                                     stop_keys=['config'])
-                    for data, delta in zip(service_data, service_delta)]
+        for data, delta in zip(service_data, service_delta):
+            output = recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True),
+            stop_keys=['config'], list_group_by=self.service_list_keys)
+
+            if full:
+                # Ensure that the config is always set based on the selected version
+                for config_key in list(output['config'].keys()):
+                    if config_key not in data.config:
+                        output['config'].pop(config_key, None)
+
+                # Ensure that the submission parameters are always set based on the selected version
+                submission_params = [param.name for param in data.submission_params]
+                output['submission_params'] = [param for param in output['submission_params']
+                                                if param['name'] in submission_params]
+
+            services.append(output)
 
         # Return as an objet if needs be...
         if as_obj:

@@ -3,10 +3,8 @@ import hashlib
 import random
 
 import pytest
-from redis import Redis
-from retrying import retry
-
 from assemblyline.common import forge
+from assemblyline.common.dict_utils import is_equivalent, recursive_update
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore.helper import AssemblylineDatastore, MetadataValidator
 from assemblyline.odm.base import DATEFORMAT, KeyMaskException
@@ -23,6 +21,8 @@ from assemblyline.odm.random_data import (
 )
 from assemblyline.odm.randomizer import SERVICES, random_minimal_obj
 from assemblyline.remote.datatypes.hash import Hash
+from redis import Redis
+from retrying import retry
 
 
 class SetupException(Exception):
@@ -386,20 +386,10 @@ def test_get_service_with_delta_with_updates(ds: AssemblylineDatastore):
     )
 
     # If the user has not modified anything, we expect the full service to be exactly the same as the new version of the service
-    service_delta = ds.service_delta.get(service_name).as_primitives()
+    service_delta = ds.service_delta.get(service_name).as_primitives(strip_null=True)
     full_service = ds.get_service_with_delta(service_name).as_primitives()
-    for k, v in full_service.items():
-        # The service delta value would take precendence over the service value
-        try:
-            assert (
-                v == service[k]
-                if service_delta.get(k) is None
-                else v == service_delta[k]
-            )
-        except AssertionError:
-            raise Exception(
-                f"Key {k} does not match: {v} != {service[k] if service_delta.get(k) is None else service_delta[k]}"
-            )
+    expected_merge = recursive_update(service, service_delta, stop_keys=['config'], list_group_by=ds.service_list_keys)
+    assert is_equivalent(full_service, expected_merge)
 
     # Test registering a service update where the user has changed a submission parameter prior to the update and new parameter was added
     assert ds.service_delta.update(
@@ -441,25 +431,11 @@ def test_get_service_with_delta_with_updates(ds: AssemblylineDatastore):
 
     full_service = ds.get_service_with_delta(service_name).as_primitives()
     service = ds.service.get(service_key).as_primitives()
-    service_delta = ds.service_delta.get(service_name).as_primitives()
+    service_delta = ds.service_delta.get(service_name).as_primitives(strip_null=True)
 
     # We expect that mostly everything is the same except for the submission parameters which should contain both the updated parameter and the newly added one (while still keeping the custom value changes)
-    for k, v in full_service.items():
-        if k != "submission_params":
-            # The service delta value would take precendence over the service value
-            assert (
-                v == service[k]
-                if service_delta.get(k) is None
-                else v == service_delta[k]
-            )
-        else:
-            # We expect the submission parameters to be a merge of the service delta and the service value
-            merged_params = service_delta.get("submission_params", [])
-            for p in list(merged_params):
-                for s in service["submission_params"]:
-                    if p["name"] != s["name"]:
-                        merged_params.append(s)
-            assert v == merged_params
+    expected_merge = recursive_update(service, service_delta, stop_keys=['config'], list_group_by=ds.service_list_keys)
+    assert is_equivalent(full_service, expected_merge)
 
 
 def test_calculate_heuristic_stats(ds: AssemblylineDatastore):

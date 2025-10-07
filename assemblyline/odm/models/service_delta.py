@@ -12,6 +12,7 @@ REF_SUBMISSION_PARAMS = "Refer to:<br>[Service - SubmissionParams](../service/#s
 REF_UPDATE_CONFIG = "Refer to:<br>[Service - UpdateConfig](../service/#updateconfig)"
 REF_UPDATE_SOURCE = "Refer to:<br>[Service - UpdateSource](../service/#updatesource)"
 
+# NOTE: Defaults shouldn't be assigned to delta models as they are used to determine what has changed
 
 @odm.model(index=False, store=False)
 class EnvironmentVariable(odm.Model):
@@ -26,8 +27,8 @@ class DockerConfigDelta(odm.Model):
     cpu_cores = odm.Optional(odm.Float(), description=REF_DOCKER_CONFIG)
     environment = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)), description=REF_DOCKER_CONFIG)
     image = odm.Optional(odm.Keyword(), description=REF_DOCKER_CONFIG)
-    registry_username = odm.Optional(odm.Keyword(default=""), description=REF_DOCKER_CONFIG)
-    registry_password = odm.Optional(odm.Keyword(default=""), description=REF_DOCKER_CONFIG)
+    registry_username = odm.Optional(odm.Keyword(), description=REF_DOCKER_CONFIG)
+    registry_password = odm.Optional(odm.Keyword(), description=REF_DOCKER_CONFIG)
     registry_type = odm.Optional(odm.Enum(values=["docker", "harbor"]), description=REF_DOCKER_CONFIG)
     ports = odm.Optional(odm.List(odm.Keyword()), description=REF_DOCKER_CONFIG)
     ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
@@ -39,25 +40,25 @@ class DockerConfigDelta(odm.Model):
 @odm.model(index=False, store=False)
 class UpdateSourceDelta(odm.Model):
     name = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
-    password = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
-    pattern = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
-    private_key = odm.Keyword(default="", description=REF_UPDATE_SOURCE)
-    ca_cert = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
-    ssl_ignore_errors = odm.Boolean(default=False, description=REF_UPDATE_SOURCE)
-    proxy = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
+    password = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
+    pattern = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
+    private_key = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
+    ca_cert = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
+    ssl_ignore_errors = odm.Optional(odm.Boolean(), description=REF_UPDATE_SOURCE)
+    proxy = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
     uri = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
-    username = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
+    username = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
     headers = odm.Optional(odm.List(odm.Compound(EnvironmentVariable)), description=REF_UPDATE_SOURCE)
     default_classification = odm.Optional(odm.Classification(), description=REF_UPDATE_SOURCE)
-    use_managed_identity = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
-    git_branch = odm.Optional(odm.Keyword(default=""), description=REF_UPDATE_SOURCE)
-    sync = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
-    fetch_method = odm.Optional(odm.Enum(values=FETCH_METHODS, default="GET"), description=REF_UPDATE_SOURCE)
-    enabled = odm.Optional(odm.Boolean(default=True), description=REF_UPDATE_SOURCE)
-    override_classification = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
-    configuration = odm.Optional(odm.Mapping(odm.Any(), default={}), description=REF_UPDATE_SOURCE)
+    use_managed_identity = odm.Optional(odm.Boolean(), description=REF_UPDATE_SOURCE)
+    git_branch = odm.Optional(odm.Keyword(), description=REF_UPDATE_SOURCE)
+    sync = odm.Optional(odm.Boolean(), description=REF_UPDATE_SOURCE)
+    fetch_method = odm.Optional(odm.Enum(values=FETCH_METHODS, ), description=REF_UPDATE_SOURCE)
+    enabled = odm.Optional(odm.Boolean(), description=REF_UPDATE_SOURCE)
+    override_classification = odm.Optional(odm.Boolean(), description=REF_UPDATE_SOURCE)
+    configuration = odm.Optional(odm.Mapping(odm.Any(), ), description=REF_UPDATE_SOURCE)
     update_interval = odm.Optional(odm.Integer(min=0), description=REF_UPDATE_SOURCE)
-    ignore_cache = odm.Optional(odm.Boolean(default=False), description=REF_UPDATE_SOURCE)
+    ignore_cache = odm.Optional(odm.Boolean(), description=REF_UPDATE_SOURCE)
     data = odm.Optional(odm.Text(), description=REF_UPDATE_SOURCE)
 
 
@@ -72,7 +73,7 @@ class PersistentVolumeDelta(odm.Model):
 @ odm.model(index=False, store=False)
 class DependencyConfigDelta(odm.Model):
     container = odm.Optional(odm.Compound(DockerConfigDelta), description=REF_DEPENDENCY_CONFIG)
-    volumes = odm.Mapping(odm.Compound(PersistentVolumeDelta), default={}, description=REF_DEPENDENCY_CONFIG)
+    volumes = odm.Optional(odm.Mapping(odm.Compound(PersistentVolumeDelta), ), description=REF_DEPENDENCY_CONFIG)
     run_as_core: bool = odm.Optional(odm.Boolean(), description=REF_DEPENDENCY_CONFIG)
 
 
@@ -131,7 +132,7 @@ class ServiceDelta(odm.Model):
     timeout = odm.Optional(odm.Integer(), description=REF_SERVICE)
 
     docker_config: DockerConfigDelta = odm.Optional(odm.Compound(DockerConfigDelta), description=REF_SERVICE)
-    dependencies: DependencyConfigDelta = odm.Mapping(odm.Compound(DependencyConfigDelta), default={},
+    dependencies: DependencyConfigDelta = odm.Optional(odm.Mapping(odm.Compound(DependencyConfigDelta), ),
                                                       description=REF_SERVICE)
 
     update_channel = odm.Optional(odm.Enum(values=["stable", "rc", "beta", "dev"]), description=REF_SERVICE)
