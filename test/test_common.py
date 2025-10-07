@@ -11,18 +11,40 @@ from io import BytesIO
 
 import pytest
 from assemblyline.common import forge
-from assemblyline.common.attack_map import attack_map, group_map, revoke_map, software_map
+from assemblyline.common.attack_map import (
+    attack_map,
+    group_map,
+    revoke_map,
+    software_map,
+)
 from assemblyline.common.chunk import chunk, chunked_list
 from assemblyline.common.classification import InvalidClassification
-from assemblyline.common.dict_utils import flatten, get_recursive_delta, recursive_update, unflatten
+from assemblyline.common.dict_utils import (
+    flatten,
+    get_recursive_delta,
+    is_equivalent,
+    recursive_update,
+    unflatten,
+)
 from assemblyline.common.entropy import calculate_partition_entropy
 from assemblyline.common.heuristics import HeuristicHandler, InvalidHeuristicException
 from assemblyline.common.hexdump import hexdump
 from assemblyline.common.iprange import is_ip_private, is_ip_public, is_ip_reserved
 from assemblyline.common.memory_zip import InMemoryZip
-from assemblyline.common.security import get_password_hash, get_random_password, verify_password
-from assemblyline.common.str_utils import safe_str, translate_str, truncate
-from assemblyline.common.uid import LONG, MEDIUM, SHORT, TINY, get_id_from_data, get_random_id
+from assemblyline.common.security import (
+    get_password_hash,
+    get_random_password,
+    verify_password,
+)
+from assemblyline.common.str_utils import safe_str, translate_str
+from assemblyline.common.uid import (
+    LONG,
+    MEDIUM,
+    SHORT,
+    TINY,
+    get_id_from_data,
+    get_random_id,
+)
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.randomizer import get_random_word, random_model_obj
 from baseconv import BASE62_ALPHABET
@@ -181,33 +203,121 @@ def test_dict_flatten():
     assert src == unflatten(flat_src)
     assert list(flat_src.keys()) == ["a.b.c", "b.d"]
 
-
-def test_dict_recursive():
-    src = {
-        "a": {
-            "b": {
-                "c": 1
-            }
-        },
-        "b": {
-            "d": 2
-        }
-    }
-    add = {
-        "a": {
-            "d": 3,
-            "b": {
-                "c": 4
-            }
-        }
-    }
+@pytest.mark.parametrize(
+    "src,add,merge",
+    [
+        # Only add new values
+        (
+            {"a": 1, "b": 2, "c": 3},
+            {"d": 4, "e": 5},
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5},
+        ),
+        # Change an inner value
+        ({"a": {"b": 2}, "c": 3}, {"a": {"b": 5}}, {"a": {"b": 5}, "c": 3}),
+        # Change inner list
+        (
+            {"a": [1, 2, 3], "b": {"c": [4, 5, 6]}},
+            {"d": 4},
+            {"a": [1, 2, 3], "b": {"c": [4, 5, 6]}, "d": 4},
+        ),
+    ],
+    ids=[
+        "Only add new values",
+        "Change an inner value",
+        "Change inner list",
+    ],
+)
+def test_dict_recursive(src, add, merge):
     dest = recursive_update(deepcopy(src), add)
-    assert dest["a"]["b"]["c"] == 4
-    assert dest["a"]["d"] == 3
-    assert dest["b"]["d"] == 2
-
+    assert dest == merge
     delta = get_recursive_delta(src, dest)
-    assert add == delta
+    assert is_equivalent(delta, add)
+
+@pytest.mark.parametrize(
+    "src,add,list_keys,required_keys,merge",
+    [
+        # Change inner list of dicts (without key)
+        (
+            {"a": [{"b": 1}, {"b": 2}, {"b": 3}], "c": 3},
+            {"a": [{"b": 4}, {"b": 5}, {"b": 6}]},
+            {},
+            [],
+            {"a": [{"b": 4}, {"b": 5}, {"b": 6}], "c": 3},
+        ),
+        # Change inner list of dicts (with key)
+        (
+            {"a": [{"b": 1, "c": 2}]},
+            {"a": [{"b": 1, "c": 3}]},
+            {"a": "b"},
+            [],
+            {"a": [{"b": 1, "c": 3}]},
+        ),
+        # Change inner list of dicts (2 layers deep with key)
+        (
+            {"a": [{"b": 1, "c": [{"d": 1, "e": 1}]}]},
+            {"a": [{"b": 1, "c": [{"d": 1, "e": 2, "f": 3}]}]},
+            {"a": "b", "a.c": "d"},
+            [],
+            {"a": [{"b": 1, "c": [{"d": 1, "e": 2, "f": 3}]}]},
+        ),
+        # Change inner list of dicts (with key but preserve fields that are required in the output)
+        (
+            {"a": [{"b": 1, "c": [{"d": 1, "e": 1, "f": 1}]}]},
+            {"a": [{"b": 1, "c": [{"d": 1, "e": 2}]}]},
+            {"a": "b", "a.c": "d"},
+            ["a.c.f"],
+            {"a": [{"b": 1, "c": [{"d": 1, "e": 2, "f": 1}]}]},
+        ),
+    ],
+    ids=[
+        "Change inner list of dicts (without key)",
+        "Change inner list of dicts (with key)",
+        "Change inner list of dicts (2 layers deep with keys)",
+        "Change inner list of dicts (with key but preserve fields that are required in the output)",
+    ],
+)
+def test_dict_recursive_complex(src, add, list_keys, required_keys, merge):
+    dest = recursive_update(deepcopy(src), add, list_group_by=list_keys)
+    assert dest == merge
+    delta = get_recursive_delta(src, dest, list_group_by=list_keys, required_keys=required_keys)
+    assert is_equivalent(delta, add)
+
+def test_dict_delta():
+    old = {"a": 1, "b": {"c": 2}}
+    new = {"a": 2}
+
+    # The delta should only include the changed values
+    assert get_recursive_delta(old, new) == {
+        "a": 2,
+    }
+
+    # If the 'b' key is required, it should be included in the delta
+    assert get_recursive_delta(old, new, required_keys=["b"]) == {
+        "a": 2,
+        "b": {"c": 2}
+    }
+
+    # This should also work for data containing lists of dicts
+    old = {"a": [{"b": 1, 'c': 1, 'd': 0}, {"b": 2, "c": 1, 'd': 0}], "e": 3}
+    new = {"a": [{"b": 1, 'c': 2, 'd': 0}, {"b": 3, "c": 1, 'd': 0}], "e": 4}
+
+    # Without a way of identifying the identity of each dict in the list, the entire list is considered changed
+    assert is_equivalent(get_recursive_delta(old, new), {
+        "a": [{"b": 1, 'c': 2, 'd': 0}, {"b": 3, "c": 1, 'd': 0}],
+        "e": 4
+    })
+
+    # By specifying a key to identify each dict in the list, we can get a more granular delta
+    assert is_equivalent(get_recursive_delta(old, new, list_group_by={"a": "b"}), {
+        "a": [{"b": 1, "c": 2}, {"b": 2, "c": 1, 'd': 0}, {"b": 3, "c": 1, "d": 0}],
+        "e": 4
+    })
+
+    # Required keys should still be preserved in the output even if they haven't changed
+    assert is_equivalent(get_recursive_delta(old, new, list_group_by={"a": "b"}, required_keys=["a.d"]), {
+        "a": [{"b": 1, "c": 2, 'd': 0}, {"b": 2, "c": 1, 'd': 0}, {"b": 3, "c": 1, "d": 0}],
+        "e": 4
+    })
 
 
 def test_entropy():
