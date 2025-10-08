@@ -81,6 +81,18 @@ class AssemblylineDatastore(object):
         self.ds.register('user_settings', UserSettings)
         self.ds.register('workflow', Workflow)
 
+        flatten_fields = Service.flat_fields()
+        self.service_list_keys = {
+            f.rstrip(".name"): "name"
+            for f in flatten_fields.keys()
+            if f.endswith(".name")
+        }
+        self.service_required_keys = [
+            k
+            for k, v in flatten_fields.items()
+            if not v.default_set and not v.optional
+        ]
+
     def __enter__(self):
         return self
 
@@ -1017,9 +1029,11 @@ class AssemblylineDatastore(object):
         if svc_version_data is None:
             return None
 
-        svc_version_data = recursive_update(svc_version_data.as_primitives(strip_null=True),
+        raw_svc_version_data = svc_version_data.as_primitives(strip_null=True)
+        svc_version_data = recursive_update(deepcopy(raw_svc_version_data),
                                             svc.as_primitives(strip_null=True),
-                                            stop_keys=['config'])
+                                            stop_keys=['config'],
+                                            list_group_by=self.service_list_keys)
         if as_obj:
             return Service(svc_version_data)
         else:
@@ -1165,10 +1179,24 @@ class AssemblylineDatastore(object):
                         for s in self.service.multiget([f"{item.id}_{item.version}" for item in service_delta],
                                                        as_obj=False, as_dictionary=False)]
 
+        services = []
         # Recursively update the service data with the service delta while stripping nulls
-        services = [recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True),
-                                     stop_keys=['config'])
-                    for data, delta in zip(service_data, service_delta)]
+        for data, delta in zip(service_data, service_delta):
+            output = recursive_update(data.as_primitives(strip_null=True), delta.as_primitives(strip_null=True),
+            stop_keys=['config'], list_group_by=self.service_list_keys)
+
+            if full:
+                # Ensure that the config is always set based on the selected version
+                for config_key in list(output['config'].keys()):
+                    if config_key not in data.config:
+                        output['config'].pop(config_key, None)
+
+                # Ensure that the submission parameters are always set based on the selected version
+                submission_params = [param.name for param in data.submission_params]
+                output['submission_params'] = [param for param in output['submission_params']
+                                                if param['name'] in submission_params]
+
+            services.append(output)
 
         # Return as an objet if needs be...
         if as_obj:
