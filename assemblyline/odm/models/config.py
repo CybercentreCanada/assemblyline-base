@@ -9,7 +9,7 @@ from assemblyline.odm.models.submission import DEFAULT_SRV_SEL, ServiceSelection
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
-                      'submission_async_quota', 'submission_daily_quota']
+                      'submission_async_quota', 'submission_daily_quota', 'default_metadata', 'organization']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 DEFAULT_DAILY_API_QUOTA = 0
