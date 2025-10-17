@@ -18,6 +18,7 @@ class UserSettings(odm.Model):
         default="infected",
         description="Default user-defined password for creating password protected ZIPs when downloading files"
     )
+    default_metadata = odm.Mapping(odm.Text(), default={}, description="Default metadata to add to submissions")
     executive_summary = odm.Boolean(default=True, description="Should executive summary sections be shown?")
     expand_min_score = odm.Integer(default=500, description="Auto-expand section when score bigger then this")
     preferred_submission_profile = odm.Optional(odm.Text(), description="Preferred submission profile")
@@ -33,6 +34,7 @@ DEFAULT_USER_PROFILE_SETTINGS = {
     "executive_summary": True,
     "expand_min_score": 500,
     "submission_view": "report",
+    "default_metadata": {}
 }
 
 DEFAULT_SUBMISSION_PROFILE_SETTINGS = {

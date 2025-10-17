@@ -259,6 +259,7 @@ class User(odm.Model):
                                         description="Maximum classification for the user")
     dn = odm.Optional(odm.Keyword(store=False, copyto="__text__"), description="User's LDAP DN")
     email = odm.Optional(odm.Email(copyto="__text__"), description="User's email address")
+    organization = odm.Optional(odm.Text(), copyto="__text__", description="Organization the user belongs to")
     groups = odm.List(odm.UpperKeyword(), copyto="__text__", default=[],
                       description="List of groups the user submits to")
     identity_id: str = odm.Optional(odm.Keyword(
