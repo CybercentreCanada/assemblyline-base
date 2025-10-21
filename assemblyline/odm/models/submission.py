@@ -26,7 +26,6 @@ class ServiceSelection(odm.Model):
     rescan = odm.List(
         odm.Keyword(),
         default=[],
-        # TODO update description to be more accurate
         description="List of services to rescan",
     )
     resubmit = odm.List(odm.Keyword(), default=DEFAULT_RESUBMIT,
