@@ -26,7 +26,8 @@ class ServiceSelection(odm.Model):
     rescan = odm.List(
         odm.Keyword(),
         default=[],
-        description="List of services to rescan when initial run scores as malicious")
+        description="List of services to rescan",
+    )
     resubmit = odm.List(odm.Keyword(), default=DEFAULT_RESUBMIT,
                         description="Add to service selection when resubmitting")
 
