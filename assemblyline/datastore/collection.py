@@ -7,29 +7,45 @@ import re
 import time
 import typing
 import warnings
-
+from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from os import environ
-from typing import Dict, Any, Union, TypeVar, Generic, Optional
-from copy import deepcopy
+from typing import Any, Dict, Generic, Optional, TypeVar, Union
 
-from datemath import dm
-from datemath.helpers import DateMathException
 import elasticsearch
 import elasticsearch.helpers
+from datemath import dm
+from datemath.helpers import DateMathException
 
 from assemblyline import odm
-from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.dict_utils import recursive_update
+from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore.bulk import ElasticBulkPlan
 from assemblyline.datastore.exceptions import (
-    DataStoreException, MultiKeyError, SearchException, ArchiveDisabled, VersionConflictException)
+    ArchiveDisabled,
+    DataStoreException,
+    MultiKeyError,
+    SearchException,
+    VersionConflictException,
+)
 from assemblyline.datastore.support.build import back_mapping, build_mapping
-from assemblyline.datastore.support.schemas import (default_dynamic_strings, default_dynamic_templates,
-                                                    default_index, default_mapping)
-from assemblyline.odm.base import BANNED_FIELDS, Keyword, Integer, List, Mapping, Model, ClassificationObject, _Field
-
+from assemblyline.datastore.support.schemas import (
+    default_dynamic_strings,
+    default_dynamic_templates,
+    default_index,
+    default_mapping,
+)
+from assemblyline.odm.base import (
+    BANNED_FIELDS,
+    ClassificationObject,
+    Integer,
+    Keyword,
+    List,
+    Mapping,
+    Model,
+    _Field,
+)
 
 if typing.TYPE_CHECKING:
     from .store import ESStore
@@ -2114,7 +2130,7 @@ class ESCollection(Generic[ModelType]):
         matching = set(fields.keys()) & set(model.keys())
         for field_name in matching:
             if fields[field_name]['indexed'] != model[field_name].index and model[field_name].index:
-                log.warning("Field %s should be indexed but is not.", field_name)
+                log.warning("Field %s of '%s' index should be indexed but is not.", field_name, self.name)
 
             possible_field_types = self.__get_possible_fields(model[field_name].__class__)
 

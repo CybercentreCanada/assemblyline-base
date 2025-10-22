@@ -324,13 +324,15 @@ def _create_results_for_file(ds, fs, f, possible_childs=None, log=None):
     return r_list
 
 
-def create_submission(ds, fs, log=None):
+def create_submission(ds, fs, log=None, metadata={}):
     f_list = []
     r_list = []
     e_list = []
 
     first_level_files = []
     s = random_model_obj(Submission)
+    s.metadata.update(metadata)
+
     s.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
 
     if log:
