@@ -342,9 +342,11 @@ class Classification(object):
 
         # Swap to long format if required
         if long_format:
-            return sorted(
-                [self.groups_map_stl.get(r, r) for r in g1_set]), sorted(
-                [self.subgroups_map_stl[r] for r in g2_set]), list(others)
+            return (
+                sorted([self.groups_map_stl.get(r, r) for r in g1_set]),
+                sorted([self.subgroups_map_stl[r] for r in g2_set]),
+                list(others)
+            )
         return sorted(list(g1_set)), sorted(list(g2_set)), list(others)
 
     @staticmethod
