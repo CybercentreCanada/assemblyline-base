@@ -35,16 +35,7 @@ resources:
         LOG_STDOUT: "true"
       ports:
         - 2222:2222
-    - container: es7
-      image: docker.elastic.co/elasticsearch/elasticsearch:7.17.4
-      env:
-        xpack.security.enabled: true
-        discovery.type: single-node
-        ES_JAVA_OPTS: "-Xms256m -Xmx512m"
-        ELASTIC_PASSWORD: devpass
-      ports:
-        - 9200:9200
-    - container: es8
+    - container: elasticsearch
       image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
       env:
         xpack.security.enabled: true
@@ -65,22 +56,20 @@ jobs:
   - job: run_test
     strategy:
       matrix:
-        python3_11-es7:
+        python3_10:
+          python.version: "3.10"
+        python3_11:
           python.version: "3.11"
-          elasticsearch: es7
-        python3_11-es8:
-          python.version: "3.11"
-          elasticsearch: es8
-        python3_12-es7:
+        python3_12:
           python.version: "3.12"
-          elasticsearch: es7
-        python3_12-es8:
-          python.version: "3.12"
-          elasticsearch: es8
+        python3_13:
+          python.version: "3.13"
+        python3_14:
+          python.version: "3.14"
 
     timeoutInMinutes: 10
     services:
-      elasticsearch: $[ variables['elasticsearch'] ]
+      elasticsearch: elasticsearch
       sftp: sftp
       redis: redis
       minio: minio
