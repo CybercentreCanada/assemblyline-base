@@ -64,8 +64,10 @@ jobs:
           python.version: "3.12"
         python3_13:
           python.version: "3.13"
-        python3_14:
-          python.version: "3.14"
+        # onnxruntime does not yet support python 3.14 which is needed for magika
+        # https://github.com/microsoft/onnxruntime/issues/26309
+        # python3_14:
+        #   python.version: "3.14"
 
     timeoutInMinutes: 10
     services:

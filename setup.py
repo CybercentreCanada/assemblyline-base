@@ -39,7 +39,6 @@ setup(
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
-        'Programming Language :: Python :: 3.14',
     ],
     keywords="assemblyline automated malware analysis gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test', 'test/*']),
