@@ -34,45 +34,45 @@ constants = forge.get_constants()
 
 @odm.model(index=True, store=False)
 class Attack(odm.Model):
-    attack_id = odm.Keyword(copyto="__text__", description="ID", ai=False)
-    pattern = odm.Keyword(copyto="__text__", description="Pattern Name")
-    categories = odm.List(odm.Keyword(), description="Categories")
+    attack_id = odm.Keyword(copyto="__text__", description="Mitre ATT&CK ID", ai=False)
+    pattern = odm.Keyword(copyto="__text__", description="MITRE ATT&CK® framework patterns identified in the analysis.")
+    categories = odm.List(odm.Keyword(), description="MITRE ATT&CK® framework categories associated with the alert.")
 
 
 @odm.model(index=True, store=False, description="Heuristic Signatures")
 class Signature(odm.Model):
-    name = odm.Keyword(copyto="__text__", description="Name of the signature that triggered the heuristic")
-    frequency = odm.Integer(default=1, description="Number of times this signature triggered the heuristic")
+    name = odm.Keyword(copyto="__text__", description="Name of the signature that triggered a heuristic")
+    frequency = odm.Integer(default=1, description="Number of times this signature triggered a heuristic")
     safe = odm.Boolean(default=False, description="Is the signature safelisted or not")
 
 
-@odm.model(index=True, store=False, description="Heuristic associated to the Section")
+@odm.model(index=True, store=False, description="Heuristic associated with the result section")
 class Heuristic(odm.Model):
-    heur_id = odm.Keyword(copyto="__text__", description="ID of the heuristic triggered", ai=False)
+    heur_id = odm.Keyword(copyto="__text__", description="Heuristic ID", ai=False)
     name = odm.Keyword(copyto="__text__", description="Name of the heuristic")
-    attack = odm.List(odm.Compound(Attack), default=[], description="List of Att&ck IDs related to this heuristic")
+    attack = odm.List(odm.Compound(Attack), default=[], description="List of the Mitre Att&ck IDs related to this heuristic")
     signature = odm.List(odm.Compound(Signature), default=[],
                          description="List of signatures that triggered the heuristic", ai=False)
-    score = odm.Integer(description="Calculated Heuristic score")
+    score = odm.Integer(description="Calculated heuristic score")
 
 
 @odm.model(index=True, store=False, description="Result Section")
 class Section(odm.Model):
-    auto_collapse = odm.Boolean(default=False, description="Should the section be collapsed when displayed?", ai=False)
+    auto_collapse = odm.Boolean(default=False, description="Auto-collapse result sections upon loading", ai=False)
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
-    classification = odm.Classification(description="Classification of the section", ai=False)
+    classification = odm.Classification(description="Security classification of the individual result section", ai=False)
     body_format = odm.Enum(values=BODY_FORMAT, index=False, description="Type of body in this section")
     body_config = odm.Optional(odm.Mapping(odm.Any(), index=False,
                                description="Configurations for the body of this section"), ai=False)
     depth = odm.Integer(index=False, description="Depth of the section", ai=False)
-    heuristic = odm.Optional(odm.Compound(Heuristic), description="Heuristic used to score result section")
-    tags = odm.Compound(Tagging, default={}, description="List of tags associated to this section")
+    heuristic = odm.Optional(odm.Compound(Heuristic), description="Heuristic triggered in a result section")
+    tags = odm.Compound(Tagging, default={}, description="List of tags associated with this section")
     safelisted_tags = odm.FlatMapping(odm.sequence(odm.keyword()), default={},
                                       description="List of safelisted tags", ai=False)
     title_text = odm.Text(copyto="__text__", description="Title of the section")
     promote_to = odm.Optional(odm.Enum(
         values=PROMOTE_TO,
-        description="This is the type of data that the current section should be promoted to.", ai=False))
+        description="Promote a specific result section to the top of the user interface rather than inside the results.", ai=False))
 
 
 @odm.model(index=True, store=True, description="Result Body")
@@ -128,10 +128,10 @@ class ResponseBody(odm.Model):
 
 @odm.model(index=True, store=True, description="Result Model")
 class Result(odm.Model):
-    archive_ts = odm.Optional(odm.Date(description="Time at which the result was archived", ai=False))
-    classification = odm.Classification(description="Aggregate classification for the result", ai=False)
+    archive_ts = odm.Optional(odm.Date(description="Timestamp at which the result was archived", ai=False))
+    classification = odm.Classification(description="Aggregate security classification for the result", ai=False)
     created = odm.Date(default="NOW", description="Date at which the result object got created", ai=False)
-    expiry_ts = odm.Optional(odm.Date(store=False), description="Expiry timestamp", ai=False)
+    expiry_ts = odm.Optional(odm.Date(store=False), description="Timestamp for when the result record expires", ai=False)
     response: ResponseBody = odm.compound(ResponseBody, description="The body of the response from the service")
     result: ResultBody = odm.compound(ResultBody, default={}, description="The result body")
     sha256 = odm.SHA256(store=False, description="SHA256 of the file the result object relates to")

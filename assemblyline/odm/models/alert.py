@@ -26,7 +26,7 @@ def merge_extended_scan(a: str, b: str) -> str:
 class DetailedItem(odm.Model):
     type = odm.Keyword(description="Defines the specific attribute or aspect of the analysis that this detailed item pertains to.")
     value = odm.Keyword(description="The specific value or identifier for the detail item.")
-    verdict = odm.Enum(['safe', 'info', 'suspicious', 'malicious'], description="Represents the security assessment or classification of the detailed item, indicating its potential threat level.")
+    verdict = odm.Enum(['safe', 'info', 'suspicious', 'highly suspicious', 'malicious'], description="Represents the security assessment or classification of the detailed item, indicating its potential threat level.")
     subtype = odm.Optional(odm.Enum(['EXP', 'CFG', 'OB', 'IMP', 'CFG', 'TA']), description="Adds further specificity to the detailed item, elaborating on its role or nature within the broader type category.  Supported subtypes include configuration blocks (CFG), exploits (EXP), implants (IMP), obfuscation methods (OB), and threat actors (TA).")
 
     def __hash__(self) -> int:
@@ -57,16 +57,16 @@ class Screenshot(odm.Model):
 @odm.model(index=True, store=False, description="""Provides a comprehensive breakdown of specific attributes and their associated analysis results.
 """)
 class DetailedResults(odm.Model):
-    attack_pattern = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed information on MITRE ATT&CK® framework patterns identified in the analysis.")
-    attack_category = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed information on MITRE ATT&CK® framework categories associated with the alert.")
-    attrib = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed attribution information that provides context by suggesting associations with known malware families, suspected threat actors, or ongoing campaigns.")
-    av = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed information on antivirus signature matches.")
-    behavior = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed descriptions of the behaviors exhibited by the analyzed file or artifact that led to the alert.")
-    domain = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed domain information related to the alert.")
-    heuristic = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed heuristic information that triggered the alert.")
-    ip = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed IP address information related to the alert.")
-    uri = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed URI information related to the alert.")
-    yara = odm.List(odm.Compound(DetailedItem), default=[], description="Detailed information on YARA rule matches that contributed to the alert.")
+    attack_pattern = odm.List(odm.Compound(DetailedItem), default=[], description="MITRE ATT&CK® framework patterns identified in the analysis.")
+    attack_category = odm.List(odm.Compound(DetailedItem), default=[], description="MITRE ATT&CK® framework categories associated with the alert.")
+    attrib = odm.List(odm.Compound(DetailedItem), default=[], description="Attribution information that provides context by suggesting associations with known malware families, suspected threat actors, or ongoing campaigns.")
+    av = odm.List(odm.Compound(DetailedItem), default=[], description="Information on antivirus signature matches.")
+    behavior = odm.List(odm.Compound(DetailedItem), default=[], description="Descriptions of the behaviors exhibited by the analyzed file or artifact that led to the alert.")
+    domain = odm.List(odm.Compound(DetailedItem), default=[], description="Domain information related to the alert.")
+    heuristic = odm.List(odm.Compound(DetailedItem), default=[], description="Heuristic information that triggered the alert.")
+    ip = odm.List(odm.Compound(DetailedItem), default=[], description="IP address information related to the alert.")
+    uri = odm.List(odm.Compound(DetailedItem), default=[], description="URI information related to the alert.")
+    yara = odm.List(odm.Compound(DetailedItem), default=[], description="Information on YARA rule matches that contributed to the alert.")
 
     def update(self, other: DetailedResults) -> None:
         for field in self.fields().keys():
@@ -128,16 +128,16 @@ class File(odm.Model):
 @odm.model(index=True, store=False, description="""The Verdict submodel captures the conclusions drawn by users regarding the nature of a submission. It lists user identifiers for those who have deemed the submission as either malicious or non-malicious, representing a collective assessment of the threat.
 """)
 class Verdict(odm.Model):
-    malicious = odm.List(odm.Keyword(), default=[], description="User identifiers of those who have marked the submission as malicious.")
+    malicious = odm.List(odm.Keyword(), default=[], description="User IDs of those who have marked the alert as malicious.")
     non_malicious = odm.List(odm.Keyword(), default=[],
-                             description="User identifiers of those who have marked the submission as non-malicious.")
+                             description="User IDs of those who have marked the alert as non-malicious.")
 
     def update(self, other: Verdict) -> None:
         self.malicious = list(set(self.malicious + other.malicious))
         self.non_malicious = list(set(self.non_malicious + other.non_malicious))
 
 
-@odm.model(index=True, store=False, description="""Summarizes the heuristic rules triggered during the analysis. These rules are part of the detection logic used by Assemblyline to identify suspicious or malicious behavior in the analyzed file.
+@odm.model(index=True, store=False, description="""Summarizes the heuristics that were triggered during the analysis. These heuristics are part of the detection logic used by Assemblyline to identify suspicious or malicious behavior in the analyzed file.
 """)
 class Heuristic(odm.Model):
     name = odm.List(odm.Keyword(), default=[], description="Names of the heuristics that have been matched in the analysis.")
@@ -195,7 +195,7 @@ class Alert(odm.Model):
     al = odm.compound(ALResults, description="Contains the results of the Assemblyline analysis for the alert.")
     archive_ts = odm.Optional(odm.Date(), description="Timestamp indicating when the alert was archived in the system.")
     attack = odm.Compound(Attack, description="Structured data representing MITRE ATT&CK information associated with the alert.")
-    classification = odm.Classification(description="Security classification level of the alert.")
+    classification = odm.Classification(description="Security classification assigned to the alert based on its contents and context.")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Timestamp indicating when the alert is scheduled to expire from the system.")
     extended_scan = odm.Enum(values=EXTENDED_SCAN_VALUES, description="Indicates the status of an extended scan, if applicable. Extended scans are additional analyses performed after the initial analysis.")
     file = odm.Compound(File, description="Information about the file associated with the alert.")
