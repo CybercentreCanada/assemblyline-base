@@ -58,7 +58,7 @@ class Heuristic(odm.Model):
 
 @odm.model(index=True, store=False, description="Result Section")
 class Section(odm.Model):
-    auto_collapse = odm.Boolean(default=False, description="Auto-collapse result sections upon loading", ai=False)
+    auto_collapse = odm.Boolean(default=False, description="Auto-collapse result sections upon initial load", ai=False)
     body = odm.Optional(odm.Text(copyto="__text__"), description="Text body of the result section")
     classification = odm.Classification(description="Security classification of the individual result section", ai=False)
     body_format = odm.Enum(values=BODY_FORMAT, index=False, description="Type of body in this section")
