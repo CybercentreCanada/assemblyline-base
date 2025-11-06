@@ -47,7 +47,7 @@ _KEY_HASHED_FIELDS = {
 class SubmissionParams(odm.Model):
     classification = odm.Classification(default=Classification.UNRESTRICTED,
                                         description="Original classification of the submission")
-    deep_scan = odm.Boolean(default=False, description="Select to perform a deep scan")
+    deep_scan = odm.Boolean(default=False, description="Allow more in-depth analysis")
     description = odm.Text(store=True, copyto="__text__", description="User-supplied information applied to Submission Details")
     generate_alert = odm.Boolean(default=False, description="Generate alert upon completion of analysis")
     groups = odm.List(odm.Keyword(), default=[], description="List relevant group or organization related to this scan")
