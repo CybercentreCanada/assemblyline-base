@@ -14,7 +14,7 @@ DEFAULT_RESUBMIT = []
 
 @odm.model(index=True, store=False, description="File Model of Submission")
 class File(odm.Model):
-    name = odm.Keyword(copyto="__text__", description="Name of the submission")
+    name = odm.Keyword(copyto="__text__", description="Name of the submitted file")
     size = odm.Optional(odm.long(), description="Size of the submitted file in bytes")
     sha256 = odm.SHA256(copyto="__text__", description="SHA256 hash of the submitted file")
 
