@@ -52,7 +52,7 @@ class SubmissionParams(odm.Model):
     generate_alert = odm.Boolean(default=False, description="Generate alert upon completion of analysis")
     groups = odm.List(odm.Keyword(), default=[], description="List relevant group or organization related to this scan")
     ignore_cache = odm.Boolean(default=False, description="Ignore cached service results")
-    ignore_recursion_prevention = odm.Boolean(default=False, description="Ignore recursions prevention to avoid performance issues")
+    ignore_recursion_prevention = odm.Boolean(default=False, description="Ignore recursion prevention to avoid performance issues")
     ignore_filtering = odm.Boolean(default=False, description="Ignore services in the FILTER category (i.e. Safelist)")
     ignore_size = odm.Boolean(default=False, description="Ignore the file size limits")
     never_drop = odm.Boolean(default=False, description="Ingestion of submission will not be dropped as a result of ingestion queue volume")
