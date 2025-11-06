@@ -135,7 +135,7 @@ class TraceEvent(odm.Model):
 class Submission(odm.Model):
     archive_ts = odm.Optional(odm.Date(description="Timestamp at which the submission was archived", ai=False))
     archived = odm.Boolean(default=False, description="Submission is present in the malware archive", ai=False)
-    classification = odm.Classification(description="Overall security classification of the submission")
+    classification = odm.Classification(description="Submitted security classification of the submission")
     tracing_events = odm.sequence(odm.compound(TraceEvent), default=[], index=False, store=False)
     error_count = odm.Integer(description="Total number of errors in the submission", ai=False)
     errors: list[str] = odm.List(odm.Keyword(), store=False, description="List of error keys present in the submission", ai=False)
