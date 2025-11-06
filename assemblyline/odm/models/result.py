@@ -19,6 +19,7 @@ BODY_FORMAT = {
     "JSON",
     "KEY_VALUE",
     "PROCESS_TREE",
+    "SANDBOX",
     "TABLE",
     "IMAGE",
     "MULTI",
