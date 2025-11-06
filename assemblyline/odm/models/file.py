@@ -15,7 +15,7 @@ class URIInfo(odm.Model):
     # https://www.rfc-editor.org/rfc/rfc1808.html#section-2.1
     scheme: str = odm.Keyword(description="URI scheme (e.g., http, ftp).")
     netloc: str = odm.Keyword(description="Network location including domain and port.")
-    path: str = odm.Optional(odm.Keyword(),description="Path within the host.")
+    path: str = odm.Optional(odm.Keyword(),description="Path component of the URI.")
     params: str = odm.Optional(odm.Keyword(), description="The parameters component of the URI, often used for session management.")
     query: str = odm.Optional(odm.Keyword(), description="The query string of the URI, containing data for server-side processing.")
     fragment: str = odm.Optional(odm.Keyword(), description="The fragment identifier of the URI, used to navigate to a specific part of the resource.")
