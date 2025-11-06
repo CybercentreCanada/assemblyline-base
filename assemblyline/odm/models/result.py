@@ -72,7 +72,7 @@ class Section(odm.Model):
     title_text = odm.Text(copyto="__text__", description="Title of the section")
     promote_to = odm.Optional(odm.Enum(
         values=PROMOTE_TO,
-        description="Promote a specific result section to the top of the user interface rather than inside the results.", ai=False))
+        description="Promote a specific result section to the top of the user interface.", ai=False))
 
 
 @odm.model(index=True, store=True, description="Result Body")
