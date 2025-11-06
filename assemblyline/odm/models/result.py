@@ -36,7 +36,7 @@ constants = forge.get_constants()
 class Attack(odm.Model):
     attack_id = odm.Keyword(copyto="__text__", description="Mitre ATT&CK ID", ai=False)
     pattern = odm.Keyword(copyto="__text__", description="MITRE ATT&CK® framework patterns identified in the analysis.")
-    categories = odm.List(odm.Keyword(), description="MITRE ATT&CK® framework categories associated with the alert.")
+    categories = odm.List(odm.Keyword(), description="MITRE ATT&CK® framework categories associated with the heuristic.")
 
 
 @odm.model(index=True, store=False, description="Heuristic Signatures")
