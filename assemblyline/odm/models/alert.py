@@ -21,14 +21,25 @@ def merge_extended_scan(a: str, b: str) -> str:
     raise ValueError(f"Invalid program state. scan state {a} {b}")
 
 
+DetailedItemSubtype = odm.Enum(
+    [
+        'CFG',  # Configuration blocks
+        'EXP',  # Exploits
+        'IMP',  # Implants
+        'OB',   # Obfuscation methods
+        'TA',   # Threat actors
+    ],
+    description="Specifies the item's subtype (e.g., EXP, CFG, OB, IMP, TA)."
+)
+
 @odm.model(index=True, store=False, description="""Represents a granular element within the detailed analysis results, providing specific insights into the analysis findings.
 """)
 class DetailedItem(odm.Model):
     type = odm.Keyword(description="Defines the specific attribute or aspect of the analysis that this detailed item pertains to.")
     value = odm.Keyword(description="The specific value or identifier for the detail item.")
-    verdict = odm.Enum(['safe', 'info', 'suspicious', 'highly suspicious', 'malicious'], description="Represents the security assessment or classification of the detailed item, indicating its potential threat level.")
-    subtype = odm.Optional(odm.Enum(['EXP', 'CFG', 'OB', 'IMP', 'CFG', 'TA']), description="Adds further specificity to the detailed item, elaborating on its role or nature within the broader type category.  Supported subtypes include configuration blocks (CFG), exploits (EXP), implants (IMP), obfuscation methods (OB), and threat actors (TA).")
-
+    verdict = odm.Enum(['safe', 'info', 'suspicious', 'highly suspicious', 'malicious'], description="Security assessment of the detailed item.")
+    subtype = odm.Optional(DetailedItemSubtype, description="Specifies the item's subtype (e.g., CFG, EXP, IMP, OB, TA).")
+    
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.as_primitives().items())))
 
