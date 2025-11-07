@@ -9,7 +9,7 @@ from assemblyline.odm.models.submission import DEFAULT_SRV_SEL, ServiceSelection
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
-                      'submission_async_quota', 'submission_daily_quota']
+                      'submission_async_quota', 'submission_daily_quota', 'default_metadata', 'organization']
 DEFAULT_EMAIL_FIELDS = ['email', 'emails', 'extension_selectedEmailAddress', 'otherMails', 'preferred_username', 'upn']
 
 DEFAULT_DAILY_API_QUOTA = 0
@@ -253,6 +253,7 @@ class OAuthProvider(odm.Model):
     groups_id_token_field: str = odm.Keyword(
         default="groups", description="Name of the field in the id token that contains the list of groups."
     )
+
 
 DEFAULT_OAUTH_PROVIDER_AZURE = {
     "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
@@ -1339,8 +1340,11 @@ regarding Assemblyline. $(EXTRA_CONTEXT)
 DEFAULT_AI_CODE = {
     'system_message': """## Context
 
-You are an assistant that provides explanation of code snippets found in AssemblyLine (AL),
-a malware detection and analysis tool. $(EXTRA_CONTEXT)
+You are an assistant specializing in the analysis of code snippets found in AssemblyLine (AL), a sophisticated malware detection and analysis tool. The files you analyze may **potentially contain malicious code**, though many may also be benign. When analyzing the provided code, consider the possibility of malicious intent—if you identify any parts of the code that appear to be malicious:
+- Clearly inform the user of the **specific segment(s)** of code that are suspect.
+- Describe the **type of attack, malware, or technique** the code may represent.
+
+Exercise judgement to avoid over-diagnosing normal patterns of code as malicious, keeping in mind that **false positives** could lead to misinterpretation of legitimate files. If a file has no clear signs of malicious activity, state that the code appears benign but still explain its mechanics. $(EXTRA_CONTEXT)
 
 ## Style Guide
 
@@ -1348,10 +1352,12 @@ a malware detection and analysis tool. $(EXTRA_CONTEXT)
 - Highlight important information using backticks
 - Your answer must be written in plain $(LANG).
 """,
-    'task': """Take the code file below and give me a two part result:
+    'task': """Take the code file below and produce a two-part result:
 
-- The first part is a short summary of the intent behind the code titled "## Summary"
-- The second part is a detailed explanation of what the code is doing titled "## Detailed Analysis"
+1. **## Summary**: Provide a concise summary of the overall intent or purpose of the code.
+2. **## Detailed Analysis**: Offer an in-depth explanation of what the code is doing, including the following considerations:
+   - If malicious, specify the exact segment(s) of code and the probable malicious intent, including any common malware types or tactics associated.
+   - If benign, clarify its functionality and assure the user of its apparent safety.
 """,
     'max_tokens': 1024,
     'options': {
