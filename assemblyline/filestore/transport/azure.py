@@ -29,7 +29,8 @@ This class assumes a flat file structure in the Azure storage blob.
 class TransportAzure(Transport):
 
     def __init__(self, base=None, access_key=None, tenant_id=None, client_id=None, client_secret=None,
-                host=None, connection_attempts=None, allow_directory_access=False, use_default_credentials=False):
+                 host=None, connection_attempts=None, allow_directory_access=False, use_default_credentials=False,
+                 initalize_container=True):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
         self.connection_attempts: Optional[int] = connection_attempts
@@ -69,18 +70,19 @@ class TransportAzure(Transport):
         self.container_client = self.service_client.get_container_client(self.blob_container)
 
         # Init
-        try:
-            self.with_retries(self.container_client.get_container_properties)
-        except TransportException as e:
-            if not isinstance(e.cause, ResourceNotFoundError):
-                raise
+        if initalize_container:
             try:
-                self.with_retries(self.container_client.create_container)
-            except TransportException as error:
-                if not isinstance(error.cause, ResourceNotFoundError):
+                self.with_retries(self.container_client.get_container_properties)
+            except TransportException as e:
+                if not isinstance(e.cause, ResourceNotFoundError):
                     raise
-                self.log.info('Failed to create container, we\'re most likely in read only mode')
-                self.read_only = True
+                try:
+                    self.with_retries(self.container_client.create_container)
+                except TransportException as error:
+                    if not isinstance(error.cause, ResourceNotFoundError):
+                        raise
+                    self.log.info('Failed to create container, we\'re most likely in read only mode')
+                    self.read_only = True
 
         def azure_normalize(path):
             # flatten path to just the basename
@@ -115,7 +117,7 @@ class TransportAzure(Transport):
                 raise
 
             except Exception as e:
-                self.log.warning(f"No connection to Azure transport "
+                self.log.warning(f"Could not run {func}, No connection to Azure transport "
                                  f"{os.path.join(self.endpoint_url, self.blob_container)}, retrying... "
                                  f"[{e.__class__.__name__}: {str(e)}]")
                 time.sleep(0.25)
