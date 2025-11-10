@@ -1,4 +1,3 @@
-
 import redis
 from assemblyline.remote.datatypes import get_client, retry_call
 
@@ -52,3 +51,9 @@ class UserQuotaTracker(object):
                 retry_call(self.c.zpopmin, self._queue_name(user))
             else:
                 raise
+
+    def reset(self, user):
+        retry_call(self.c.delete, self._queue_name(user))
+
+    def get_count(self, user):
+        return retry_call(self.c.zcard, self._queue_name(user))

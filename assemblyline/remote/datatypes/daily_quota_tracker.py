@@ -51,3 +51,17 @@ class DailyQuotaTracker(object):
 
     def get_submission(self, user):
         return int(self._get(user, 'submission'))
+
+    def _reset(self, user, type):
+        counter = self._counter_name(user, type)
+        with self.c.pipeline() as pipe:
+            pipe.set(counter, 0)
+            pipe.expire(counter, self.ttl, nx=True)
+
+            val, _ = retry_call(pipe.execute)
+
+    def reset_api(self, user):
+        self._reset(user, "api")
+
+    def reset_submission(self, user):
+        self._reset(user, "submission")
