@@ -396,10 +396,11 @@ rule document_email_1 {
         $subrec2 = "To:"
         $subrec3 = "Date:"
         // This is a common JavaScript key
-        $opt1 = "Subject:"
+        $opt1 = ">Subject:"
         $opt2 = "Received: from"
         $opt3 = "MIME-Version:"
         $opt4 = "Content-Type:"
+        $opt5 = "Sent on:"
 
     condition:
         // This is a relatively* trusted mime for identifying JavaScript that could be mis-identified as emails
