@@ -1252,7 +1252,8 @@ class System(odm.Model):
     constants: str = odm.Keyword(description="Module path to the assemblyline constants")
     organisation: str = odm.Text(description="Organisation acronym used for signatures")
     type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
-
+    support_link: str = odm.URI(default="https://cybercentrecanada.github.io/assemblyline4_docs/",
+                                description="Support link for the system")
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
