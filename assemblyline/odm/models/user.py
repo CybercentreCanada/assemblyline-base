@@ -50,7 +50,7 @@ ROLES = StringTable('ROLES', [
     ("external_query", 30),
     ("badlist_view", 31),
     ("badlist_manage", 32),
-    ("archive_comment", 33),
+    ("archive_comment", 36),
     ("assistant_use", 34),
     ("submission_customize", 35)
 ])
