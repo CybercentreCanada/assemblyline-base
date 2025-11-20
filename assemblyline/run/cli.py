@@ -898,7 +898,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         Usage:
             index commit               [<safe>] [<index>]
                   reindex              [<safe>] [<index>]
-                  fix_ilm              [<safe>] [<index>]
                   fix_replicas         [<safe>] [<index>]
                   fix_shards           [<safe>] [<index>]
                   restore_old_archive  [<cleanup>] [<index>]
@@ -907,9 +906,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             commit               Force datastore to commit the specified index
             reindex              Force a reindex of the sepcified index
                                     ** This operation is really slow because it re-index all documents
-            fix_ilm              Fix ILM on specified indices
-                                    ** This operation can be really slow when going from an ILM setup to a hot
-                                       archive only setup because it will copy the archive to hot index
             fix_replicas         Fix replica count on specified indices
             fix_shards           Fix sharding on specified indices
                                     ** This operation can be slow and will prevent data from being written
@@ -930,7 +926,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         """
 
         valid_indices = list(self.datastore.ds.get_models().keys())
-        valid_actions = ['commit', 'reindex', 'fix_shards', 'fix_ilm', 'fix_replicas', 'restore_old_archive']
+        valid_actions = ['commit', 'reindex', 'fix_shards', 'fix_replicas', 'restore_old_archive']
 
         args = self._parse_args(args)
 
@@ -1009,19 +1005,6 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
                     self.logger.info(f"    Index {index.upper()} shards configuration updated.")
 
                 self.logger.info("Completed!")
-            elif action_type == 'fix_ilm':
-                indices = []
-                if index:
-                    self.logger.info(f"Fixing ILM on index {index.upper()}...")
-                    indices.append(index)
-                else:
-                    self.logger.info("Fixing ILM on all indices...")
-                    indices = valid_indices
-
-                for index in indices:
-                    collection = self.datastore.get_collection(index)
-                    collection.fix_ilm()
-                    self.logger.info(f"    Index {index.upper()} ILM configuration updated.")
             elif action_type == 'fix_replicas':
                 indices = []
                 if index:
@@ -1057,7 +1040,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
     def do_clone(self, args):
         """
-        Perform clone operations on the database index. This can be used for 
+        Perform clone operations on the database index. This can be used for
         in place backups as an alternative to snapshot based backups.
 
         ** Be aware that these operations will apply a write lock when cloning from
@@ -1073,7 +1056,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             <index> from <backup>   Given a name <backup> of an index created by the `to` varient
                                     of this command wipe the current <index> and replace it with a
                                     clone of the data stored at <backup>.
-                                    
+
         Parameters:
             <index>         system index to do the operation on
             <backup_name>   other index to do the operation on
