@@ -394,7 +394,7 @@ class Tagging(odm.Model):
                 @odm.model(index=True, store=False, description="SWF Header Frame")
                 class FileSWFHeaderFrame(odm.Model):
                     count = odm.Optional(odm.List(odm.Integer()), description="Number of Frames")
-                    rate = odm.Optional(odm.List(odm.Keyword()), description="Speed of Animation")
+                    rate = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Speed of Animation")
                     size = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Size of Frame")
 
                 frame = odm.Optional(odm.Compound(FileSWFHeaderFrame), description="Header Frame Information")
@@ -463,11 +463,11 @@ class Tagging(odm.Model):
         email = odm.Optional(odm.Compound(NetworkEmail), description="Email")
         mac_address = odm.Optional(odm.List(odm.MAC(copyto="__text__")), description="MAC Address")
         port = odm.Optional(odm.List(odm.Integer()), description="Port")
-        protocol = odm.Optional(odm.List(odm.Keyword()), description="Protocol")
+        protocol = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Protocol")
         signature = odm.Optional(odm.Compound(NetworkSignature), description="Signatures")
         static = odm.Optional(odm.Compound(NetworkIOCs), description="Static IOCs")
         tls = odm.Optional(odm.Compound(NetworkTLS), description="TLS")
-        user_agent = odm.Optional(odm.List(odm.Keyword()), description="User Agent")
+        user_agent = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="User Agent")
 
     @odm.model(index=True, store=False, description="Technique Tag Model")
     class Technique(odm.Model):

@@ -205,7 +205,7 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False, user_classificatio
                         submission['metadata']['bundle.classification'] = submission['classification']
 
                     results, supplementary = get_results(submission.get("results", []), file_infos, datastore,
-                                                          user_classification)
+                                                         user_classification)
                     supp_info, _ = get_file_infos(copy(supplementary), datastore)
                     file_infos.update(supp_info)
 
