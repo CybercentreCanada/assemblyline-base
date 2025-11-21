@@ -38,6 +38,7 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
     "min_length": 12
 }
 
+CIDR_REGEX = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(?:3[0-2]|[12]?[0-9])$"
 
 @odm.model(index=False, store=False,
            description="Configuration block for [GC Notify](https://notification.canada.ca/) signup and password reset")
@@ -109,6 +110,8 @@ class AutoProperty(odm.Model):
 @odm.model(index=False, store=False, description="LDAP Configuration")
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean(description="Should LDAP be enabled or not?")
+    ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
+                                        description="List of CIDRs allowed to access internal authentication")
     bind_user: str = odm.Optional(odm.Keyword(), description="User use to query the LDAP server")
     bind_pass: str = odm.Optional(odm.Keyword(), description="Password used to query the LDAP server")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
@@ -144,7 +147,6 @@ DEFAULT_LDAP = {
     "uri": "ldap://localhost:389",
 }
 
-
 @odm.model(index=False, store=False, description="Internal Authentication Configuration")
 class Internal(odm.Model):
     enabled: bool = odm.Boolean(description="Internal authentication allowed?")
@@ -154,6 +156,8 @@ class Internal(odm.Model):
                                                               default=DEFAULT_PASSWORD_REQUIREMENTS,
                                                               description="Password requirements")
     signup: Signup = odm.Compound(Signup, default=DEFAULT_SIGNUP, description="Signup method")
+    ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
+                                        description="List of CIDRs allowed to access internal authentication")
 
 
 DEFAULT_INTERNAL = {
@@ -182,6 +186,8 @@ class OAuthProvider(odm.Model):
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
+    ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
+                                        description="List of CIDRs allowed to access internal authentication")
     uid_randomize: bool = odm.Boolean(default=False,
                                       description="Should we generate a random username for the authenticated user?")
     uid_randomize_digits: int = odm.Integer(default=0,
@@ -458,6 +464,8 @@ class SAMLAttributes(odm.Model):
 @odm.model(index=False, store=False, description="SAML Configuration")
 class SAML(odm.Model):
     enabled: bool = odm.Boolean(description="Enable use of SAML?")
+    ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
+                                        description="List of CIDRs allowed to access internal authentication")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing", default=True)
     auto_sync: bool = odm.Boolean(
         description="Should we automatically sync with SAML server on each login?", default=True)
@@ -1238,7 +1246,8 @@ class System(odm.Model):
     constants: str = odm.Keyword(description="Module path to the assemblyline constants")
     organisation: str = odm.Text(description="Organisation acronym used for signatures")
     type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
-
+    support_link: str = odm.URI(default="https://cybercentrecanada.github.io/assemblyline4_docs/",
+                                description="Support link for the system")
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
