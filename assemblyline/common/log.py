@@ -3,7 +3,7 @@ import logging.config
 import logging.handlers
 
 from traceback import format_exception
-from typing import Optional
+from typing import Optional, Union
 
 import json
 import os
@@ -65,7 +65,7 @@ class JsonFormatter(logging.Formatter):
         return ''.join(format_exception(*exc_info))
 
 
-def init_logging(name: str, config: Config = None, log_level: Optional[str] = None):
+def init_logging(name: str, config: Config = None, log_level: Optional[Union[str, int]] = None):
     logger = logging.getLogger('assemblyline')
 
     # If the environment has a log level override, use it.
