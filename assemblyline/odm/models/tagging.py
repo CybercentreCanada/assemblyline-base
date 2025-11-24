@@ -371,6 +371,51 @@ class Tagging(odm.Model):
         class FilePowerShell(odm.Model):
             cmdlet = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Cmdlet")
 
+        @odm.model(index=True, store=False, description="Mach-O File Tag Model")
+        class FileMachO(odm.Model):
+            @odm.model(index=True, store=False, description="Mach-O Sections Model")
+            class FileMachOSections(odm.Model):
+                hash = odm.Optional(
+                    odm.List(odm.Keyword(copyto="__text__")), description="Hash"
+                )
+                name = odm.Optional(
+                    odm.List(odm.Keyword(copyto="__text__")), description="Name"
+                )
+
+            @odm.model(index=True, store=False, description="Mach-O Code Signing Model")
+            class FileMachONotarization(odm.Model):
+                identifier_string = odm.Optional(
+                    odm.List(odm.Keyword(copyto="__text__")),
+                    description="Identifier String",
+                )
+                team_id = odm.Optional(
+                    odm.List(odm.Keyword(copyto="__text__")),
+                    description="Team Identifier",
+                )
+
+            @odm.model(index=True, store=False, description="Mach-O Linker Model")
+            class FileMachoLinker(odm.Model):
+                image_uuid = odm.Optional(
+                    odm.List(odm.Keyword(copyto="__text__")), description="Image UUID"
+                )
+                image_platform = odm.Optional(
+                    odm.List(
+                        odm.Keyword(copyto="__text__"), description="Image Platform"
+                    )
+                )
+
+            sections = odm.Optional(
+                odm.Compound(FileMachOSections),
+                description="Mach-O Sections Information",
+            )
+            notarization = odm.Optional(
+                odm.Compound(FileMachONotarization),
+                description="Mach-O Notarization Information",
+            )
+            linker = odm.Optional(
+                odm.Compound(FileMachoLinker), description="Mach-O Linker Information"
+            )
+
         @odm.model(index=True, store=False, description="Shortcut File Tag Model")
         class FileShortcut(odm.Model):
             command_line = odm.Optional(odm.List(odm.Keyword(copyto="__text__")), description="Command Line")
@@ -420,6 +465,7 @@ class Tagging(odm.Model):
         img = odm.Optional(odm.Compound(FileIMG), description="Image File Properties")
         ole = odm.Optional(odm.Compound(FileOLE), description="OLE File Properties")
         pe = odm.Optional(odm.Compound(FilePE), description="PE File Properties")
+        macho = odm.Optional(odm.Compound(FileMachO), description="Mach-O File Properties")
         pdf = odm.Optional(odm.Compound(FilePDF), description="PDF File Properties")
         plist = odm.Optional(odm.Compound(FilePList), description="PList File Properties")
         powershell = odm.Optional(odm.Compound(FilePowerShell), description="PowerShell File Properties")
