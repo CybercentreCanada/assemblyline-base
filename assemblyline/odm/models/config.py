@@ -20,6 +20,7 @@ DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
 Classification = get_classification()
 
+MAILTO_REGEX = r'^mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(,\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})*(\?[a-zA-Z0-9._%+-]+(=[^&]*)?(&[a-zA-Z0-9._%+-]+(=[^&]*)?)*)?$'
 
 @odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
@@ -1241,18 +1242,30 @@ DEFAULT_SERVICES = {
 }
 
 
+@odm.model(index=False, store=False, description="System Support Configuration")
+class SystemSupport(odm.Model):
+    documentation: str = odm.Optional(odm.URI(),
+                                      default="https://cybercentrecanada.github.io/assemblyline4_docs/",
+                                      description="Documentation link for the system")
+    email: str = odm.Optional(odm.ValidatedKeyword(validation_regex=MAILTO_REGEX),
+                             description="Support email for the system (mailto: URI format)")
+
+
 @odm.model(index=False, store=False, description="System Configuration")
 class System(odm.Model):
     constants: str = odm.Keyword(description="Module path to the assemblyline constants")
     organisation: str = odm.Text(description="Organisation acronym used for signatures")
     type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
-    support_link: str = odm.URI(default="https://cybercentrecanada.github.io/assemblyline4_docs/",
-                                description="Support link for the system")
+    support: SystemSupport = odm.Compound(SystemSupport, description="Support configuration for the system")
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
     "type": 'production',
+    "support": {
+        "documentation": "https://cybercentrecanada.github.io/assemblyline4_docs/",
+        "email": None
+    }
 }
 
 
