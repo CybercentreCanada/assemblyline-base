@@ -13,7 +13,7 @@ class Retrohunt(odm.Model):
     # Metadata
     indices = odm.Enum(INDEX_CATAGORIES, default='hot_and_archive',
                        description="Defines the indices used for this retrohunt job")
-    classification = odm.Classification(description="Classification for the retrohunt job")
+    classification = odm.Classification(description="Classification for this retrohunt job")
     search_classification = odm.ClassificationString(description="Maximum classification of results in the search")
     creator = odm.keyword(copyto="__text__", description="User who created this retrohunt job")
     description = odm.Text(copyto="__text__", description="Human readable description of this retrohunt job")
