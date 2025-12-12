@@ -382,50 +382,37 @@ rule code_html_component {
 document/email
 */
 
-rule document_email_1 {
+rule document_email {
 
     meta:
         type = "document/email"
         score = 15
 
     strings:
-        // This is a common JavaScript key
-        $rec = "From:"
-        $subrec1 = "Bcc:"
-        // This is a common JavaScript key
-        $subrec2 = "To:"
-        $subrec3 = "Date:"
-        // This is a common JavaScript key
-        $opt1 = ">Subject:"
-        $opt2 = "Received: from"
-        $opt3 = "MIME-Version:"
-        $opt4 = "Content-Type:"
-        $opt5 = "Sent on:"
+        $from = /(^|\n)From: /
+        $to = /(^|\n)To: /
+        $subject = /(^|\n)Subject: /
+        $date = /(^|\n)Date: /
+        $mime_version = /(^|\n)MIME-Version: /
+        $multipart_content_type = /(^|\n)Content-Type: multipart\/(alternative|byteranges|digest|form-data|mixed|parallel|related);\s{0,20}boundary=/
+        $html_content_type = /(^|\n)Content-Type: text\/html;\s{0,20}charset=/
+        $html_tag = /<html/i
 
     condition:
-        // This is a relatively* trusted mime for identifying JavaScript that could be mis-identified as emails
-        mime != "application/javascript"
-        and
-        (
-            all of ($rec*)
-            and 1 of ($subrec*)
-            and 1 of ($opt*)
+        $from
+        and (
+            $mime_version
+            or (
+                $to and $subject and $date
+            )
+        ) and (
+            $multipart_content_type
+            or (
+                $html_content_type
+                and $html_tag
+                and @html_content_type[1] < @html_tag[1]
+            )
         )
-}
-
-rule document_email_2 {
-
-    meta:
-        type = "document/email"
-        score = 10
-
-    strings:
-        $ = /(^|\n)From: /
-        $ = /(^|\n)MIME-Version: /
-        $ = /(^|\n)Content-Type: multipart\/mixed;\s*boundary=/
-
-    condition:
-        all of them
 }
 
 
