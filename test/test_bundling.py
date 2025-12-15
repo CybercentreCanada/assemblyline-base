@@ -2,10 +2,9 @@ import json
 import os
 import tarfile
 from io import BytesIO
+from itertools import product
 
 import pytest
-from cart import is_cart, unpack_stream
-
 from assemblyline.common.bundling import (
     AlertNotFound,
     SubmissionAlreadyExist,
@@ -14,9 +13,11 @@ from assemblyline.common.bundling import (
     import_bundle,
 )
 from assemblyline.common.forge import get_classification
+from assemblyline.common.isotime import format_time
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.random_data import create_submission
 from assemblyline.odm.randomizer import random_model_obj
+from cart import is_cart, unpack_stream
 
 ALERT_ID = "test_alert_id"
 SUBMISSION_ID = "test_submission_id"
@@ -124,11 +125,13 @@ def test_failed_submission_bundle():
         create_bundle("ThisSIDDoesNotExists")
 
 
-@pytest.mark.parametrize("as_user", [False, True], ids=["system", "user"])
-def test_submission_bundle(datastore_connection, filestore, config, as_user):
+@pytest.mark.parametrize("as_user,dtl", list(product([False, True], [None, 1])),
+                         ids=[f"as_user:{as_user},dtl:{dtl}" for as_user, dtl in product([False, True], [None, 1])])
+def test_submission_bundle(datastore_connection, filestore, config, as_user, dtl):
     # Create a temporary submission
     submission = create_submission(datastore_connection, filestore)
     sid = submission['sid']
+    original_expiry_ts = submission['expiry_ts']
     user_classification = None
     if as_user:
         # Update classification to match the submission's (since they can at the very least view the submission)
@@ -170,18 +173,24 @@ def test_submission_bundle(datastore_connection, filestore, config, as_user):
 
 
     # Restore bundle
-    new_submission = import_bundle(path, cleanup=False, allow_incomplete=as_user)
+    new_submission = import_bundle(path, cleanup=False, allow_incomplete=as_user, dtl=dtl)
 
     # Validate restored submission
     assert new_submission['sid'] == sid
     assert new_submission['metadata']['bundle.source'] == config.ui.fqdn
+    if dtl is not None:
+        # Expect the expiry time to have extended
+        assert new_submission['expiry_ts'] != format_time(original_expiry_ts)
+    else:
+        # Expect the expiry time to be unchanged
+        assert new_submission['expiry_ts'] == format_time(original_expiry_ts)
 
     # Test inserting failure
     with pytest.raises(SubmissionAlreadyExist):
         import_bundle(path, cleanup=False, allow_incomplete=as_user)
 
     # Test skip failure on exist
-    new_submission = import_bundle(path, exist_ok=True, allow_incomplete=as_user)
+    new_submission = import_bundle(path, exist_ok=True, allow_incomplete=as_user, dtl=dtl)
 
     # Validate restored submission
     assert new_submission['sid'] == sid
