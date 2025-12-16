@@ -109,7 +109,6 @@ class AutoProperty(odm.Model):
 @odm.model(index=False, store=False, description="LDAP Configuration")
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean(description="Should LDAP be enabled or not?")
-    admin_dn: str = odm.Optional(odm.Keyword(), description="DN of the group or the user who will get admin privileges")
     bind_user: str = odm.Optional(odm.Keyword(), description="User use to query the LDAP server")
     bind_pass: str = odm.Optional(odm.Keyword(), description="Password used to query the LDAP server")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
@@ -117,19 +116,12 @@ class LDAP(odm.Model):
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     base: str = odm.Keyword(description="Base DN for the users")
-    classification_mappings: Dict[str, str] = odm.Any(description="Classification mapping")
     email_field: str = odm.Keyword(description="Name of the field containing the email address")
     group_lookup_query: str = odm.Keyword(description="How the group lookup is queried")
     group_lookup_with_uid: bool = odm.Boolean(description="Use username/uid instead of dn for group lookup")
     image_field: str = odm.Keyword(description="Name of the field containing the user's avatar")
     image_format: str = odm.Keyword(description="Type of image used to store the avatar")
     name_field: str = odm.Keyword(description="Name of the field containing the user's name")
-    signature_importer_dn: str = odm.Optional(
-        odm.Keyword(),
-        description="DN of the group or the user who will get signature_importer role")
-    signature_manager_dn: str = odm.Optional(
-        odm.Keyword(),
-        description="DN of the group or the user who will get signature_manager role")
     uid_field: str = odm.Keyword(description="Field name for the UID")
     uri: str = odm.Keyword(description="URI to the LDAP server")
 
@@ -150,12 +142,6 @@ DEFAULT_LDAP = {
     "name_field": "cn",
     "uid_field": "uid",
     "uri": "ldap://localhost:389",
-
-    # Deprecated
-    "admin_dn": None,
-    "classification_mappings": {},
-    "signature_importer_dn": None,
-    "signature_manager_dn": None,
 }
 
 
@@ -2178,11 +2164,6 @@ class Submission(odm.Model):
     max_temp_data_length: int = odm.Integer(description="Maximum length for each temporary data values")
     metadata: MetadataConfig = odm.Compound(MetadataConfig, default=DEFAULT_METADATA_CONFIGURATION,
                                             description="Metadata compliance rules")
-    sha256_sources: List[Sha256Source] = odm.List(
-        odm.Compound(Sha256Source),
-        default=[],
-        description="List of external source to fetch file via their SHA256 hashes",
-        deprecation="Use submission.file_sources which is an extension of this configuration")
     file_sources: List[FileSource] = odm.List(
         odm.Compound(FileSource),
         default=[],
@@ -2216,7 +2197,6 @@ DEFAULT_SUBMISSION = {
     'max_metadata_length': 4096,
     'max_temp_data_length': 4096,
     'metadata': DEFAULT_METADATA_CONFIGURATION,
-    'sha256_sources': [],
     'file_sources': [],
     'tag_types': DEFAULT_TAG_TYPES,
     'verdicts': DEFAULT_VERDICTS,
