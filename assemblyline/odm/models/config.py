@@ -457,6 +457,10 @@ class SAMLAttributes(odm.Model):
     email_attribute: str = odm.Keyword(description="SAML attribute name for a user's email address ", default="email")
     fullname_attribute: str = odm.Keyword(description="SAML attribute name for a user's first name", default="name")
     groups_attribute: str = odm.Keyword(description="SAML attribute name for the groups", default="groups")
+    classification_attribute: str = odm.Keyword(
+        description="SAML attribute name for cliassification", default="classification"
+    )
+    dn_attribute: str = odm.Keyword(description="SAML attribute name for user's LDAP DN", default="dn")
     roles_attribute: str = odm.Keyword(description="SAML attribute name for the roles", default="roles")
     group_type_mapping: Dict[str, str] = odm.Mapping(
         odm.Keyword(), description="SAML group to role mapping", default={})
