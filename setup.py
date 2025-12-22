@@ -47,7 +47,7 @@ setup(
         'arrow',
         'aiohttp',
         'lark',
-        'urllib3',
+        'urllib3>=2.6.0',
         'python-baseconv',
         'boto3',
         'pysftp',
