@@ -247,46 +247,6 @@ class OAuthProvider(odm.Model):
         default="groups", description="Name of the field in the id token that contains the list of groups."
     )
 
-
-DEFAULT_OAUTH_PROVIDER_AZURE = {
-    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
-    "api_base_url": 'https://login.microsoft.com/common/',
-    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
-    "client_id": None,
-    "client_secret": None,
-    "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://login.microsoftonline.com/common/discovery/v2.0/keys",
-    "user_get": "openid/userinfo"
-}
-
-DEFAULT_OAUTH_PROVIDER_GOOGLE = {
-    "access_token_url": 'https://oauth2.googleapis.com/token',
-    "api_base_url": 'https://openidconnect.googleapis.com/',
-    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
-    "client_id": None,
-    "client_secret": None,
-    "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
-    "user_get": "v1/userinfo"
-}
-
-DEFAULT_OAUTH_PROVIDER_AUTH_ZERO = {
-    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
-    "api_base_url": 'https://{TENANT}.auth0.com/',
-    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
-    "client_id": None,
-    "client_secret": None,
-    "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://{TENANT}.auth0.com/.well-known/jwks.json",
-    "user_get": "userinfo"
-}
-
-DEFAULT_OAUTH_PROVIDERS = {
-    'auth0': DEFAULT_OAUTH_PROVIDER_AUTH_ZERO,
-    'azure_ad': DEFAULT_OAUTH_PROVIDER_AZURE,
-    'google': DEFAULT_OAUTH_PROVIDER_GOOGLE,
-}
-
 OPEN_ID_CONFIGURATION_TO_OAUTH_PROVIDER_MAP = {
     "authorization_endpoint": "authorize_url",
     "issuer": "api_base_url",
@@ -300,14 +260,14 @@ class OAuth(odm.Model):
     enabled: bool = odm.Boolean(description="Enable use of OAuth?")
     gravatar_enabled: bool = odm.Boolean(description="Enable gravatar?")
     providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider),
-                                                      default=DEFAULT_OAUTH_PROVIDERS,
+                                                      default={},
                                                       description="OAuth provider configuration")
 
 
 DEFAULT_OAUTH = {
     "enabled": False,
     "gravatar_enabled": True,
-    "providers": DEFAULT_OAUTH_PROVIDERS
+    "providers": {}
 }
 
 
