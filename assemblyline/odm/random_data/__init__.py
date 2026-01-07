@@ -410,11 +410,6 @@ def create_users(ds, log=None):
         "name": "Administrator",
         "email": "admin@assemblyline.cyber.gc.ca",
         "password": get_password_hash(admin_pass),
-        "apikeys": {"testingmove": {
-            "password": get_password_hash("testing"),
-            "acl": acl,
-            "roles": roles
-        }},
         "uname": "admin",
         "type": [TYPES.admin],
         "api_quota": 1000,
