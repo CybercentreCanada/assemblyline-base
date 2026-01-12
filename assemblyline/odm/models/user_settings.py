@@ -10,6 +10,8 @@ VIEWS = {"report", "details"}
 
 @odm.model(index=False, store=False, description="Model of User Settings")
 class UserSettings(odm.Model):
+    default_classification = odm.Classification(default=Classification.UNRESTRICTED,
+                                                description="Default classification for submissions")
     download_encoding = odm.Enum(values=ENCODINGS, default="cart",
                                  description="Default download encoding when downloading files")
     default_external_sources = odm.List(odm.Keyword(), default=[],
@@ -28,6 +30,7 @@ class UserSettings(odm.Model):
 
 
 DEFAULT_USER_PROFILE_SETTINGS = {
+    "default_classification": Classification.UNRESTRICTED,
     "download_encoding": "cart",
     "default_external_sources": [],
     "default_zip_password": "infected",
@@ -38,7 +41,6 @@ DEFAULT_USER_PROFILE_SETTINGS = {
 }
 
 DEFAULT_SUBMISSION_PROFILE_SETTINGS = {
-    "classification": Classification.UNRESTRICTED,
     "deep_scan": False,
     "generate_alert": False,
     "ignore_cache": False,

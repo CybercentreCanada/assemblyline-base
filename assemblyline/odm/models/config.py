@@ -2027,8 +2027,6 @@ DEFAULT_METADATA_CONFIGURATION = {
 
 @odm.model(index=True, store=False, description="Submission Parameters for profile")
 class SubmissionProfileParams(odm.Model):
-    classification = odm.Optional(odm.Classification(),
-                                  description="Original classification of the submission")
     deep_scan = odm.Optional(odm.Boolean(), description="Should a deep scan be performed?")
     generate_alert = odm.Optional(odm.Boolean(), description="Should this submission generate an alert?")
     ignore_cache = odm.Optional(odm.Boolean(), description="Ignore the cached service results?")
