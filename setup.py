@@ -67,7 +67,7 @@ setup(
         'python-magic',
         'pytz',
         'apscheduler',
-        'websocket_client<1.0.0',
+        'websocket_client<2.0.0',
         'elastic-apm[flask]>=6.13.0',
         'cython',
         'docker',
