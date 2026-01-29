@@ -20,6 +20,7 @@ DEFAULT_ASYNC_SUBMISSION_QUOTA = 0
 
 Classification = get_classification()
 
+MAILTO_REGEX = r'^mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(,\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})*(\?[a-zA-Z0-9._%+-]+(=[^&]*)?(&[a-zA-Z0-9._%+-]+(=[^&]*)?)*)?$'
 
 @odm.model(index=False, store=False, description="Password Requirement")
 class PasswordRequirement(odm.Model):
@@ -38,6 +39,7 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
     "min_length": 12
 }
 
+CIDR_REGEX = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(?:3[0-2]|[12]?[0-9])$"
 
 @odm.model(index=False, store=False,
            description="Configuration block for [GC Notify](https://notification.canada.ca/) signup and password reset")
@@ -109,6 +111,9 @@ class AutoProperty(odm.Model):
 @odm.model(index=False, store=False, description="LDAP Configuration")
 class LDAP(odm.Model):
     enabled: bool = odm.Boolean(description="Should LDAP be enabled or not?")
+    ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
+                                        description="List of CIDRs allowed to access internal authentication")
+    admin_dn: str = odm.Optional(odm.Keyword(), description="DN of the group or the user who will get admin privileges")
     bind_user: str = odm.Optional(odm.Keyword(), description="User use to query the LDAP server")
     bind_pass: str = odm.Optional(odm.Keyword(), description="Password used to query the LDAP server")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
@@ -144,7 +149,6 @@ DEFAULT_LDAP = {
     "uri": "ldap://localhost:389",
 }
 
-
 @odm.model(index=False, store=False, description="Internal Authentication Configuration")
 class Internal(odm.Model):
     enabled: bool = odm.Boolean(description="Internal authentication allowed?")
@@ -154,6 +158,8 @@ class Internal(odm.Model):
                                                               default=DEFAULT_PASSWORD_REQUIREMENTS,
                                                               description="Password requirements")
     signup: Signup = odm.Compound(Signup, default=DEFAULT_SIGNUP, description="Signup method")
+    ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
+                                        description="List of CIDRs allowed to access internal authentication")
 
 
 DEFAULT_INTERNAL = {
@@ -182,6 +188,8 @@ class OAuthProvider(odm.Model):
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
+    ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
+                                        description="List of CIDRs allowed to access internal authentication")
     uid_randomize: bool = odm.Boolean(default=False,
                                       description="Should we generate a random username for the authenticated user?")
     uid_randomize_digits: int = odm.Integer(default=0,
@@ -240,46 +248,6 @@ class OAuthProvider(odm.Model):
         default="groups", description="Name of the field in the id token that contains the list of groups."
     )
 
-
-DEFAULT_OAUTH_PROVIDER_AZURE = {
-    "access_token_url": 'https://login.microsoftonline.com/common/oauth2/token',
-    "api_base_url": 'https://login.microsoft.com/common/',
-    "authorize_url": 'https://login.microsoftonline.com/common/oauth2/authorize',
-    "client_id": None,
-    "client_secret": None,
-    "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://login.microsoftonline.com/common/discovery/v2.0/keys",
-    "user_get": "openid/userinfo"
-}
-
-DEFAULT_OAUTH_PROVIDER_GOOGLE = {
-    "access_token_url": 'https://oauth2.googleapis.com/token',
-    "api_base_url": 'https://openidconnect.googleapis.com/',
-    "authorize_url": 'https://accounts.google.com/o/oauth2/v2/auth',
-    "client_id": None,
-    "client_secret": None,
-    "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://www.googleapis.com/oauth2/v3/certs",
-    "user_get": "v1/userinfo"
-}
-
-DEFAULT_OAUTH_PROVIDER_AUTH_ZERO = {
-    "access_token_url": 'https://{TENANT}.auth0.com/oauth/token',
-    "api_base_url": 'https://{TENANT}.auth0.com/',
-    "authorize_url": 'https://{TENANT}.auth0.com/authorize',
-    "client_id": None,
-    "client_secret": None,
-    "client_kwargs": {"scope": "openid email profile"},
-    "jwks_uri": "https://{TENANT}.auth0.com/.well-known/jwks.json",
-    "user_get": "userinfo"
-}
-
-DEFAULT_OAUTH_PROVIDERS = {
-    'auth0': DEFAULT_OAUTH_PROVIDER_AUTH_ZERO,
-    'azure_ad': DEFAULT_OAUTH_PROVIDER_AZURE,
-    'google': DEFAULT_OAUTH_PROVIDER_GOOGLE,
-}
-
 OPEN_ID_CONFIGURATION_TO_OAUTH_PROVIDER_MAP = {
     "authorization_endpoint": "authorize_url",
     "issuer": "api_base_url",
@@ -293,14 +261,14 @@ class OAuth(odm.Model):
     enabled: bool = odm.Boolean(description="Enable use of OAuth?")
     gravatar_enabled: bool = odm.Boolean(description="Enable gravatar?")
     providers: Dict[str, OAuthProvider] = odm.Mapping(odm.Compound(OAuthProvider),
-                                                      default=DEFAULT_OAUTH_PROVIDERS,
+                                                      default={},
                                                       description="OAuth provider configuration")
 
 
 DEFAULT_OAUTH = {
     "enabled": False,
     "gravatar_enabled": True,
-    "providers": DEFAULT_OAUTH_PROVIDERS
+    "providers": {}
 }
 
 
@@ -450,6 +418,10 @@ class SAMLAttributes(odm.Model):
     email_attribute: str = odm.Keyword(description="SAML attribute name for a user's email address ", default="email")
     fullname_attribute: str = odm.Keyword(description="SAML attribute name for a user's first name", default="name")
     groups_attribute: str = odm.Keyword(description="SAML attribute name for the groups", default="groups")
+    classification_attribute: str = odm.Keyword(
+        description="SAML attribute name for cliassification", default="classification"
+    )
+    dn_attribute: str = odm.Keyword(description="SAML attribute name for user's LDAP DN", default="dn")
     roles_attribute: str = odm.Keyword(description="SAML attribute name for the roles", default="roles")
     group_type_mapping: Dict[str, str] = odm.Mapping(
         odm.Keyword(), description="SAML group to role mapping", default={})
@@ -458,6 +430,8 @@ class SAMLAttributes(odm.Model):
 @odm.model(index=False, store=False, description="SAML Configuration")
 class SAML(odm.Model):
     enabled: bool = odm.Boolean(description="Enable use of SAML?")
+    ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
+                                        description="List of CIDRs allowed to access internal authentication")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing", default=True)
     auto_sync: bool = odm.Boolean(
         description="Should we automatically sync with SAML server on each login?", default=True)
@@ -1233,17 +1207,30 @@ DEFAULT_SERVICES = {
 }
 
 
+@odm.model(index=False, store=False, description="System Support Configuration")
+class SystemSupport(odm.Model):
+    documentation: str = odm.Optional(odm.URI(),
+                                      default="https://cybercentrecanada.github.io/assemblyline4_docs/",
+                                      description="Documentation link for the system")
+    email: str = odm.Optional(odm.ValidatedKeyword(validation_regex=MAILTO_REGEX),
+                             description="Support email for the system (mailto: URI format)")
+
+
 @odm.model(index=False, store=False, description="System Configuration")
 class System(odm.Model):
     constants: str = odm.Keyword(description="Module path to the assemblyline constants")
     organisation: str = odm.Text(description="Organisation acronym used for signatures")
     type: str = odm.Enum(values=['production', 'staging', 'development'], description="Type of system")
-
+    support: SystemSupport = odm.Compound(SystemSupport, description="Support configuration for the system")
 
 DEFAULT_SYSTEM = {
     "constants": "assemblyline.common.constants",
     "organisation": "ACME",
     "type": 'production',
+    "support": {
+        "documentation": "https://cybercentrecanada.github.io/assemblyline4_docs/",
+        "email": None
+    }
 }
 
 
@@ -1305,7 +1292,7 @@ DEFAULT_AI_ASSISTANT = {
     'system_message': """## Context
 
 You are the Assemblyline (AL) AI Assistant. You help people answer their questions and other requests interactively
-regarding Assemblyline. $(EXTRA_CONTEXT)
+regarding Assemblyline. Questions that are irrelevant to Assemblyline or has nothing to do with malware analysis should be ignored. $(EXTRA_CONTEXT)
 
 ## Style Guide
 
@@ -2090,7 +2077,7 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Only perform static analysis
         "name": "static",
-        "display_name": "[OFFLINE] Static Analysis",
+        "display_name": "Static Analysis [OFFLINE]",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL
@@ -2101,7 +2088,7 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Perform static analysis along with dynamic analysis
         "name": "static_with_dynamic",
-        "display_name": "[OFFLINE] Static + Dynamic Analysis",
+        "display_name": "Static + Dynamic Analysis [OFFLINE]",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
@@ -2112,7 +2099,7 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Perform static analysis along with internet connected services
         "name": "static_with_internet",
-        "display_name": "[ONLINE] Static Analysis",
+        "display_name": "Static Analysis [ONLINE]",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
@@ -2123,7 +2110,7 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         # Perform static + dynamic analysis with internet connectivity
         "name": "static_and_dynamic_with_internet",
-        "display_name": "[ONLINE] Static + Dynamic Analysis",
+        "display_name": "Static + Dynamic Analysis [ONLINE]",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected", "Dynamic Analysis"]

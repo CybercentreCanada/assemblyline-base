@@ -268,6 +268,7 @@ def import_bundle(
     identify=None,
     reclassification=None,
     to_ingest=False,
+    dtl=None
 ):
     with forge.get_datastore(archive_access=True) as datastore:
         current_working_dir = os.path.join(working_dir, get_random_id())
@@ -352,6 +353,13 @@ def import_bundle(
                     submission['metadata']['bundle.loaded'] = now_as_iso()
                     submission['metadata']['bundle.classification'] = original_classification
                     submission['metadata'].pop('replay', None)
+                    if dtl:
+                        if dtl <= 0:
+                            # Submission should never expire
+                            submission['expiry_ts'] = None
+                        else:
+                            # Otherwise set the new expiry time
+                            submission['expiry_ts'] = now_as_iso(dtl * 24 * 60 * 60)
                     submission.update(Classification.get_access_control_parts(submission['classification']))
 
                     if not rescan_services:
@@ -362,7 +370,15 @@ def import_bundle(
                     with forge.get_filestore() as filestore:
                         for f, f_data in files['infos'].items():
                             check_classification(f_data)
-                            datastore.save_or_freshen_file(f, f_data, f_data['expiry_ts'], f_data['classification'],
+                            expiry_ts = f_data.get('expiry_ts', None)
+                            if dtl is not None:
+                                if dtl <= 0:
+                                    # File should never expire
+                                    expiry_ts = None
+                                else:
+                                    # Otherwise set the new expiry time
+                                    expiry_ts = now_as_iso(dtl * 24 * 60 * 60)
+                            datastore.save_or_freshen_file(f, f_data, expiry_ts, f_data['classification'],
                                                            cl_engine=Classification)
                             try:
                                 filestore.upload(os.path.join(current_working_dir, f), f)
@@ -376,6 +392,13 @@ def import_bundle(
                                     config.submission.emptyresult_dtl * 24 * 60 * 60)})
                             else:
                                 check_classification(res)
+                                if dtl is not None:
+                                    if dtl <= 0:
+                                        # Result should never expire
+                                        res.pop('expiry_ts', None)
+                                    else:
+                                        # Otherwise set the new expiry time
+                                        res['expiry_ts'] = now_as_iso(dtl * 24 * 60 * 60)
                                 datastore.result.save(key, res)
 
                         # Make sure errors meet minimum classification and save the errors

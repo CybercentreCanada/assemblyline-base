@@ -10,21 +10,21 @@ URIInfo dissects a file's URI into its fundamental components, providing granula
 Each of these descriptions aims to provide a clearer understanding of the purpose and utility of the respective models within Assemblyline, highlighting their roles in the broader context of malware analysis and cyber security operations.
 """)
 class URIInfo(odm.Model):
-    uri: str = odm.Keyword(description="The complete Uniform Resource Identifier (URI) of the file.")
+    uri: str = odm.Keyword(description="Full URI of the file.")
 
     # https://www.rfc-editor.org/rfc/rfc1808.html#section-2.1
-    scheme: str = odm.Keyword(description="The scheme component of the URI (e.g., \"http\", \"ftp\").")
-    netloc: str = odm.Keyword(description="The network location part of the URI, including the domain name and port.")
-    path: str = odm.Optional(odm.Keyword(),description="The path component of the URI, specifying the resource within the host.")
+    scheme: str = odm.Keyword(description="URI scheme (e.g., http, ftp).")
+    netloc: str = odm.Keyword(description="Network location including domain and port.")
+    path: str = odm.Optional(odm.Keyword(),description="Path within the host.")
     params: str = odm.Optional(odm.Keyword(), description="The parameters component of the URI, often used for session management.")
     query: str = odm.Optional(odm.Keyword(), description="The query string of the URI, containing data for server-side processing.")
     fragment: str = odm.Optional(odm.Keyword(), description="The fragment identifier of the URI, used to navigate to a specific part of the resource.")
 
     # Ease-of-use elements
-    username: str = odm.Optional(odm.Keyword(), description="The username specified in the URI, if any.")
-    password: str = odm.Optional(odm.Keyword(), description="The password specified in the URI, if any.")
-    hostname: str = odm.Keyword(description="The hostname extracted from the netloc, representing the domain of the URI.")
-    port: int = odm.Optional(odm.Integer(), description="The port number extracted from the netloc, representing the communication endpoint.")
+    username: str = odm.Optional(odm.Keyword(), description="Username in the URI, if present.")
+    password: str = odm.Optional(odm.Keyword(), description="Password in the URI, if present.")
+    hostname: str = odm.Keyword(description="Hostname extracted from the URI.")
+    port: int = odm.Optional(odm.Integer(), description="Port number in the URI.")
 
 
 @odm.model(index=True, store=True, description="""Tracking model for the occurrence and frequency of a file within the system.
@@ -32,7 +32,7 @@ class URIInfo(odm.Model):
 The Seen model is designed to record and quantify the instances in which a file is encountered by Assemblyline. It keeps a count of the file's occurrences and logs the timestamps of the first and most recent sightings. This temporal information is crucial for understanding the prevalence and distribution of a file over time, aiding in threat trend analysis and situational awareness.
 """)
 class Seen(odm.Model):
-    count = odm.Integer(default=1, description="The total number of times the file has been observed by the system.")
+    count = odm.Integer(default=1, description="Number of times the file has been observed.")
     first = odm.Date(default="NOW", description="The timestamp of the file's first sighting.")
     last = odm.Date(default="NOW", description="The timestamp of the file's most recent sighting.")
 
@@ -44,14 +44,14 @@ LabelCategories provide a systematic approach to classifying the characteristics
 class LabelCategories(odm.Model):
     info = odm.List(
         odm.Keyword(),
-        description="Informational labels providing additional context about the file.", default=[])
+        description="Informational labels providing context.", default=[])
     technique = odm.List(
         odm.Keyword(),
-        description="An array of labels identifying the specific tactics, techniques, and procedures (TTPs) as defined by the MITRE ATT&CK® framework that are exhibited by the malware within the file. This field also includes labels for any detection signatures that triggered during analysis, providing insight into the malware's behavior and potential impact. Analysts can use these labels to correlate files with known adversary behavior and to enhance threat hunting and incident response activities.",
+        description="Labels identifying techniques or triggered detections (e.g., MITRE ATT&CK® TTPs).",
         default=[])
     attribution = odm.List(
         odm.Keyword(),
-        description="Labels that relate to the attribution of the file, such as the associated threat actor or campaign.",
+        description="Labels related to threat actors or campaigns.",
         default=[])
 
 
@@ -87,8 +87,8 @@ class File(odm.Model):
     ascii = odm.Keyword(index=False, store=False,
                         description="Provides a dotted ASCII representation of the first 64 bytes of the file.", ai=False)
     classification = odm.Classification(description="Security classification assigned to the file based on its contents and context.")
-    comments = odm.List(odm.Compound(Comment), default=[], description="An array of user-generated comments pertaining to the file. See Comment model for more information.")
-    entropy = odm.Float(description="A numerical value representing the file's entropy, which is defined as the level of randomness in the file's content, typically used to detect compression or encryption. High entropy may indicate obfuscation techniques such as encryption, commonly employed by malware to evade detection. This metric is not exclusive to malicious files, as legitimate files can also exhibit high entropy.")
+    comments = odm.List(odm.Compound(Comment), default=[], description="User comments linked to the file.")
+    entropy = odm.Float(description="Entropy value indicating randomness or potential obfuscation.")
     expiry_ts = odm.Optional(odm.Date(store=False), description="Timestamp indicating when the file is scheduled to expire from the system.", ai=False)
     is_section_image = odm.Boolean(
         default=False, description="Indicates if the file is an image safe for web browser display, often part of analysis results.", ai=False)
@@ -97,8 +97,8 @@ class File(odm.Model):
     labels = odm.List(odm.Keyword(copyto="__text__"), description="Array of descriptive labels applied to the file for categorization and analysis.", default=[])
     label_categories = odm.Compound(LabelCategories, default={}, description="Structured categories for the labels applied to the file.", ai=False)
     md5 = odm.MD5(copyto="__text__", description="The MD5 hash of the file, used for identifying duplicates and verifying integrity.", ai=False)
-    magic = odm.Keyword(store=False, description="Detailed file format information derived from an analysis using the libmagic library, including text descriptions of the file's content type and encoding.")
-    mime = odm.Optional(odm.Keyword(store=False), description="The Multipurpose Internet Mail Extensions (MIME) type of the file as determined by libmagic, which identifies file types by checking their headers according to a predefined list of file types.")
+    magic = odm.Keyword(store=False, description="File type info derived from libmagic.")
+    mime = odm.Optional(odm.Keyword(store=False), description="MIME type of the file from libmagic.")
     seen = odm.Compound(Seen, default={}, description="Records the frequency and timestamps of when the file was encountered.", ai=False)
     sha1 = odm.SHA1(copyto="__text__", description="The SHA1 hash of the file, providing a more secure alternative to MD5 for integrity checks.", ai=False)
     sha256 = odm.SHA256(copyto="__text__", description="The SHA256 hash of the file, offering a high level of security for integrity verification.")

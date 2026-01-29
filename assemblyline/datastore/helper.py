@@ -48,8 +48,19 @@ config = forge.get_config()
 
 THREAD_POOL_SIZE = int(os.environ.get("POOL_SIZE", 20))
 
-JSON_SECTIONS = ["GRAPH_DATA", "URL", "JSON", "KEY_VALUE", "PROCESS_TREE",
-                 "TABLE", "IMAGE", "MULTI", "ORDERED_KEY_VALUE", "TIMELINE"]
+JSON_SECTIONS = [
+    "GRAPH_DATA",
+    "IMAGE",
+    "JSON",
+    "KEY_VALUE",
+    "MULTI",
+    "ORDERED_KEY_VALUE",
+    "PROCESS_TREE",
+    "SANDBOX",
+    "TABLE",
+    "TIMELINE"
+    "URL",
+]
 
 
 class AssemblylineDatastore(object):
