@@ -922,6 +922,11 @@ class List(_Field):
         return out
 
 
+class Nested(List):
+    def __init__(self, child_type, auto=False, **kwargs):
+        super().__init__(Compound(child_type, **kwargs), auto, **kwargs)
+
+
 class TypedMapping(dict):
     def __init__(self, type_p, index, store, sanitizer, ignore_extra_values=False, **items):
         self.index = index

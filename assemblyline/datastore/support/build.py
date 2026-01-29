@@ -1,6 +1,6 @@
 import typing
 
-from assemblyline.odm.base import _Field
+from assemblyline.odm.base import _Field, Nested
 from assemblyline.odm import Keyword, Wildcard, Text, List, Compound, Date, Integer, Long, \
     Float, Boolean, Mapping, Classification, Enum, Any, UUID, Optional, IP, Domain, URI, URIPath, MAC, PhoneNumber, \
     SSDeepHash, SHA1, SHA256, MD5, Platform, Processor, ClassificationString, FlattenedObject, FlatMapping, \
@@ -147,6 +147,24 @@ def build_mapping(field_data, prefix=None, allow_refuse_implicit=True, default_c
             else:
                 dynamic.extend(build_templates(f'{name}.*', field.child_type, nested_template=field.legacy_behaviour,
                                                copyto=field.copyto, index=field.index, store=field.store, flatten=True))
+        elif isinstance(field, Nested):
+            temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=[],
+                                                        default_copyto=field.copyto,
+                                                        allow_refuse_implicit=False)            
+            if temp_dynamic:
+                # print(temp_dynamic)
+                # raise NotImplementedError(name)
+                mappings[name.strip(".")] = {
+                    'dynamic': 'true',
+                    'type': 'nested',
+                    'properties': temp_mappings,
+                }
+            else:
+                mappings[name.strip(".")] = {
+                    'dynamic': 'strict',
+                    'type': 'nested',
+                    'properties': temp_mappings,
+                }
 
         elif isinstance(field, List):
             temp_mappings, temp_dynamic = build_mapping([field.child_type], prefix=path,

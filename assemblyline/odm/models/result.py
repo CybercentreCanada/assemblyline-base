@@ -78,7 +78,7 @@ class Section(odm.Model):
 @odm.model(index=True, store=True, description="Result Body.")
 class ResultBody(odm.Model):
     score = odm.Integer(default=0, description="Aggregate of the score for all heuristics.")
-    sections = odm.List(odm.Compound(Section), default=[], description="List of sections.")
+    sections = odm.sequence(odm.compound(Section), default=[], description="List of sections.")
 
 
 @odm.model(index=False, store=False, description="Service Milestones.")

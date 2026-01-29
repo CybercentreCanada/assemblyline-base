@@ -61,7 +61,7 @@ class UpdateSourceDelta(odm.Model):
     data = odm.Optional(odm.Text(), description=REF_UPDATE_SOURCE)
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class PersistentVolumeDelta(odm.Model):
     mount_path = odm.Optional(odm.Keyword(), description=REF_PV)
     capacity = odm.Optional(odm.Keyword(), description=REF_PV)
@@ -69,14 +69,14 @@ class PersistentVolumeDelta(odm.Model):
     access_mode = odm.Optional(odm.Enum(values=['ReadWriteOnce', 'ReadWriteMany']), description=REF_PV)
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class DependencyConfigDelta(odm.Model):
     container = odm.Optional(odm.Compound(DockerConfigDelta), description=REF_DEPENDENCY_CONFIG)
     volumes = odm.Mapping(odm.Compound(PersistentVolumeDelta), default={}, description=REF_DEPENDENCY_CONFIG)
     run_as_core: bool = odm.Optional(odm.Boolean(), description=REF_DEPENDENCY_CONFIG)
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class UpdateConfigDelta(odm.Model):
     generates_signatures = odm.Optional(odm.Boolean(), index=True, description=REF_UPDATE_CONFIG)
     sources = odm.Optional(odm.List(odm.Compound(UpdateSourceDelta)), description=REF_UPDATE_CONFIG)
@@ -87,7 +87,7 @@ class UpdateConfigDelta(odm.Model):
     default_pattern = odm.Optional(odm.Text(), description=REF_UPDATE_CONFIG)
 
 
-@ odm.model(index=False, store=False)
+@odm.model(index=False, store=False)
 class SubmissionParamsDelta(odm.Model):
     default = odm.Optional(odm.Any(), description=REF_SUBMISSION_PARAMS)
     name = odm.Optional(odm.Keyword(), description=REF_SUBMISSION_PARAMS)
@@ -97,7 +97,7 @@ class SubmissionParamsDelta(odm.Model):
     hide = odm.Optional(odm.Boolean(), description=REF_SUBMISSION_PARAMS)
 
 
-@ odm.model(index=True, store=False, description="Service Delta relative to Initial Service Configuration")
+@odm.model(index=True, store=False, description="Service Delta relative to Initial Service Configuration")
 class ServiceDelta(odm.Model):
     accepts = odm.Optional(odm.Keyword(), store=True, description=REF_SERVICE)
     auto_update: bool | None = odm.Optional(odm.Boolean(), description=REF_SERVICE)
