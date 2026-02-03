@@ -222,6 +222,7 @@ magic_patterns = [
     {"al_type": "shortcut/windows", "regex": r"^MS Windows shortcut"},
     {"al_type": "document/email", "regex": r"Mime entity text"},
     {"al_type": "document/email", "regex": r"MIME entity, ASCII text"},
+    {"al_type": "document/email", "regex": r"^message/rfc822"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista(-8.1)? Event Log"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows 10-11 Event Log"},
     {"al_type": "metadata/minidump", "regex": r"Mini DuMP crash report"},
