@@ -2069,12 +2069,13 @@ class SubmissionProfile(odm.Model):
     params = odm.Compound(SubmissionProfileParams, description="Default submission parameters for profile")
     restricted_params = odm.Mapping(odm.List(odm.Text()), default={},
                                     description="A list of parameters that can be configured for this profile. The keys are the service names or \"submission\" and the values are the parameters that cannot be configured by limited users.")
-    description = odm.Optional(odm.Text(), description="A description of what the profile does")
+    summary = odm.Optional(odm.Text(), description="Short summary of the submission profile")
+    description = odm.Optional(odm.Text(),
+                               description="Detailed description of the submission profile (Markdown supported)")
 
 
 DEFAULT_SUBMISSION_PROFILES = [
     {
-        # Only perform static analysis
         "name": "static",
         "display_name": "Static Analysis [OFFLINE]",
         "params": {
@@ -2082,10 +2083,10 @@ DEFAULT_SUBMISSION_PROFILES = [
                 "selected": DEFAULT_SRV_SEL
             }
         },
+        "summary": "Only perform static analysis",
         "description": "Analyze files using static analysis techniques and extract information from the file without executing it, such as metadata, strings, and structural information."
     },
     {
-        # Perform static analysis along with dynamic analysis
         "name": "static_with_dynamic",
         "display_name": "Static + Dynamic Analysis [OFFLINE]",
         "params": {
@@ -2093,10 +2094,10 @@ DEFAULT_SUBMISSION_PROFILES = [
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
             }
         },
+        "summary": "Perform static analysis along with dynamic analysis",
         "description": "Analyze files using static analysis techniques along with executing them in a controlled environment to observe their behavior and capture runtime activities, interactions with the system, network communications, and any malicious behavior exhibited by the file during execution."
     },
     {
-        # Perform static analysis along with internet connected services
         "name": "static_with_internet",
         "display_name": "Static Analysis [ONLINE]",
         "params": {
@@ -2104,10 +2105,10 @@ DEFAULT_SUBMISSION_PROFILES = [
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
             },
         },
+        "summary": "Perform static analysis along with internet connected services",
         "description": "Combine traditional static analysis techniques with internet-connected services to gather additional information and context about the file being analyzed."
     },
     {
-        # Perform static + dynamic analysis with internet connectivity
         "name": "static_and_dynamic_with_internet",
         "display_name": "Static + Dynamic Analysis [ONLINE]",
         "params": {
@@ -2123,6 +2124,7 @@ DEFAULT_SUBMISSION_PROFILES = [
                 }
             }
         },
+        "summary": "Perform static + dynamic analysis with internet connectivity",
         "description": "Perform comprehensive file analysis using traditional static and dynamic analysis techniques with internet access."
     },
 ]
