@@ -2078,39 +2078,104 @@ DEFAULT_SUBMISSION_PROFILES = [
     {
         "name": "static",
         "display_name": "Static Analysis [OFFLINE]",
-        "params": {
+        "summary": "Quick scan; keep it local",
+        "description": """
+**Summary**
+
+Quick, local-only scan with no execution.
+
+**What it does**
+
+Analyzes files using internal and open-source tools (e.g., YARA, CAPA) to inspect their structure, metadata, and embedded indicators without running any code.
+
+**When to use it**
+- Rapid triage
+- Checking sensitive or proprietary files that must never leave the local network
+
+**Limitations**
+- Low detection rate for packed or heavily obfuscated malware
+- Cannot observe runtime behavior or command-and-control (C2) logic
+""",
+      "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL
             }
         },
-        "summary": "Only perform static analysis",
-        "description": "Analyze files using static analysis techniques and extract information from the file without executing it, such as metadata, strings, and structural information."
     },
     {
         "name": "static_with_dynamic",
         "display_name": "Static + Dynamic Analysis [OFFLINE]",
-        "params": {
+        "summary": "See behavior; keep it local",
+        "description": """
+**Summary**
+
+Local sandbox detonation with behavioral visibility.
+
+**What it does**
+
+Combines static analysis with full dynamic execution in a local sandbox to observe process creation, file system changes, registry activity, and system interactions.
+
+**When to use it**
+- Standard malware investigation
+- Understanding what a file does at runtime without risking data leakage to third-party APIs
+
+**Limitations**
+- Malware may evade or delay execution if it detects the sandbox environment
+- Limited visibility into network-based indicators without internet access
+""",        "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Dynamic Analysis"]
             }
         },
-        "summary": "Perform static analysis along with dynamic analysis",
-        "description": "Analyze files using static analysis techniques along with executing them in a controlled environment to observe their behavior and capture runtime activities, interactions with the system, network communications, and any malicious behavior exhibited by the file during execution."
     },
     {
         "name": "static_with_internet",
         "display_name": "Static Analysis [ONLINE]",
+        "summary": "Is this a known threat? (Quick check)",
+        "description": """
+**Summary**
+
+Quick reputation check using global intelligence sources.
+
+**What it does**
+
+Performs metadata and hash lookups against external services (e.g., VirusTotal, Google Threat Intelligence) without executing the file.
+
+**When to use it**
+- Quickly determining whether a file is already known malicious
+- Prioritizing triage based on global reputation
+
+**Limitations**
+- Potential data leakage via hash or metadata queries
+- Unique samples may alert adversaries that analysis is occurring
+""",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected"]
             },
         },
-        "summary": "Perform static analysis along with internet connected services",
-        "description": "Combine traditional static analysis techniques with internet-connected services to gather additional information and context about the file being analyzed."
     },
     {
         "name": "static_and_dynamic_with_internet",
         "display_name": "Static + Dynamic Analysis [ONLINE]",
+        "summary": "Full deep-dive; allow network traffic",
+        "description": """
+**Summary**
+
+Complete analysis with execution and internet access.
+
+**What it does**
+
+Executes files in a sandbox with live internet connectivity to capture command-and-control traffic, network indicators, and runtime behavior, while also leveraging external reputation services.
+
+**When to use it**
+- Deep investigation of unknown or high-risk samples
+- Identifying network IOCs and full malware lifecycle behavior
+
+**Limitations**
+- Privacy and data exposure risk
+- Sample or metadata may be shared with third-party services
+""",
         "params": {
             "services": {
                 "selected": DEFAULT_SRV_SEL + ["Internet Connected", "Dynamic Analysis"]
@@ -2124,8 +2189,6 @@ DEFAULT_SUBMISSION_PROFILES = [
                 }
             }
         },
-        "summary": "Perform static + dynamic analysis with internet connectivity",
-        "description": "Perform comprehensive file analysis using traditional static and dynamic analysis techniques with internet access."
     },
 ]
 
@@ -2166,6 +2229,7 @@ class Submission(odm.Model):
                                                  description="Set the operation that will be used to update values "
                                                              "using this key in the temporary submission data.")
     profiles = odm.List(odm.Compound(SubmissionProfile),
+                        default=DEFAULT_SUBMISSION_PROFILES,
                         description="Submission profiles with preset submission parameters")
 
 
