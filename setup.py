@@ -63,7 +63,7 @@ setup(
         'easydict',
         'bcrypt',
         'cart',
-        'ssdeep',
+        'ssdeep @ git+https://github.com/cccs-rs/python-ssdeep.git',
         'python-magic',
         'pytz',
         'apscheduler',
