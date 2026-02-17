@@ -63,7 +63,7 @@ setup(
         'easydict',
         'bcrypt',
         'cart',
-        'ssdeep',
+        'cccs-ssdeep',
         'python-magic',
         'pytz',
         'apscheduler',
