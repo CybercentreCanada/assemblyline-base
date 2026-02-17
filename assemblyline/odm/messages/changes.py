@@ -21,7 +21,7 @@ class Operation(enum.IntEnum):
 class ServiceChange:
     name: str
     operation: Operation
-    reason: Optional[str]
+    reason: Optional[str] = None
 
     @staticmethod
     def serialize(obj: ServiceChange) -> str:
