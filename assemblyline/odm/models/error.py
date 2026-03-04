@@ -13,6 +13,7 @@ ERROR_TYPES = {
     "SERVICE DOWN": 21,
     "TASK PRE-EMPTED": 30
 }
+SEVERITY = {'error', 'warning'}
 
 
 @odm.model(index=True, store=True, description="Error Response from a Service")
@@ -33,6 +34,7 @@ class Error(odm.Model):
     response: Response = odm.Compound(Response, description="Response from the service")
     sha256 = odm.SHA256(copyto="__text__", description="SHA256 of file related to service error")
     type = odm.Enum(values=list(ERROR_TYPES.keys()), default="EXCEPTION", description="Type of error")
+    severity = odm.Enum(values=list(SEVERITY), default="error", description="Severity of the error.")
 
     def build_key(self, service_tool_version=None, task=None):
         key_list = [

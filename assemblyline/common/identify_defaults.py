@@ -211,6 +211,7 @@ magic_patterns = [
     {"al_type": "java/class", "regex": r"java class data"},
     {"al_type": "resource/pyc", "regex": r"python [^\|]+byte"},
     {"al_type": "resource/pyc", "regex": r"^Byte-compiled Python module"},
+    {"al_type": "resource/yara/v3", "regex": r"^YARA 3.x compiled rule set"},
     {"al_type": "android/apk", "regex": r"Android package \(APK\)"},
     {"al_type": "code/xml", "regex": r"OpenGIS KML"},
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L161
@@ -221,6 +222,7 @@ magic_patterns = [
     {"al_type": "shortcut/windows", "regex": r"^MS Windows shortcut"},
     {"al_type": "document/email", "regex": r"Mime entity text"},
     {"al_type": "document/email", "regex": r"MIME entity, ASCII text"},
+    {"al_type": "document/email", "regex": r"^message/rfc822"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows Vista(-8.1)? Event Log"},
     {"al_type": "metadata/sysmon/evt", "regex": r"MS Windows 10-11 Event Log"},
     {"al_type": "metadata/minidump", "regex": r"Mini DuMP crash report"},

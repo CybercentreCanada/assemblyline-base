@@ -63,7 +63,7 @@ setup(
         'easydict',
         'bcrypt',
         'cart',
-        'ssdeep',
+        'cccs-ssdeep',
         'python-magic',
         'pytz',
         'apscheduler',
@@ -78,7 +78,7 @@ setup(
         'azure-storage-blob!=12.4.0',
         'azure-identity',
         'msoffcrypto-tool',
-        'chardet',
+        'chardet<6',
         'yara-python',
         'python-tlsh',
         'hauntedhouse==0.1.10',
@@ -109,7 +109,7 @@ setup(
         ],
         "assemblyline": ["py.typed"]
     },
-    entry_points= {
+    entry_points = {
         "console_scripts": ["al_cli=assemblyline.run.cli:shell_main"]
     }
 )

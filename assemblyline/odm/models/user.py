@@ -50,7 +50,7 @@ ROLES = StringTable('ROLES', [
     ("external_query", 30),
     ("badlist_view", 31),
     ("badlist_manage", 32),
-    ("archive_comment", 33),
+    ("archive_comment", 36),
     ("assistant_use", 34),
     ("submission_customize", 35)
 ])
@@ -223,14 +223,6 @@ def load_roles(types, curRoles):
     return list(roles)
 
 
-# This APIKey model can be removed after Assemblyline v4.6
-@odm.model(index=False, store=False, description="Model for API keys")
-class ApiKey(odm.Model):
-    acl = odm.List(odm.Enum(values=ACL_MAP.keys()), description="Access Control List for the API key")
-    password = odm.Keyword(description="BCrypt hash of the password for the apikey")
-    roles = odm.List(odm.Enum(values=USER_ROLES), default=[], description="List of roles tied to the API key")
-
-
 @odm.model(index=False, store=False, description="Model of Apps used of OBO (On Behalf Of)")
 class Apps(odm.Model):
     client_id = odm.Keyword(description="Username allowed to impersonate the current user")
@@ -249,7 +241,6 @@ class User(odm.Model):
         store=False, description="Maximum number of concurrent API requests (0: No Quota)"))
     api_daily_quota = odm.Optional(odm.Integer(
         store=False, description="Maximum number of API calls a user can do daily (0: No Quota)"))
-    apikeys = odm.Mapping(odm.Compound(ApiKey), default={}, index=False, store=False, description="Mapping of API keys")
     apps = odm.Mapping(odm.Compound(Apps), default={}, index=False, store=False,
                        description="Applications with access to the account")
     can_impersonate = odm.Boolean(default=False, index=False, store=False,
@@ -283,6 +274,3 @@ class User(odm.Model):
     security_tokens = odm.Mapping(odm.Keyword(), index=False, store=False, default={},
                                   description="Map of security tokens")
     uname = odm.Keyword(copyto="__text__", description="Username")
-    # can be removed after Assemblyline v4.6
-    apikeys = odm.Mapping(odm.Compound(ApiKey), default={},
-                        index=False, store=False)

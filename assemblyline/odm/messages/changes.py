@@ -7,6 +7,7 @@ from __future__ import annotations
 import enum
 import json
 from dataclasses import asdict, dataclass
+from typing import Optional
 
 
 class Operation(enum.IntEnum):
@@ -20,6 +21,7 @@ class Operation(enum.IntEnum):
 class ServiceChange:
     name: str
     operation: Operation
+    reason: Optional[str] = None
 
     @staticmethod
     def serialize(obj: ServiceChange) -> str:
