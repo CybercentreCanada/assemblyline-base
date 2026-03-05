@@ -1227,7 +1227,7 @@ class AssemblylineDatastore(object):
         fileinfo = {
             k: v for k, v in fileinfo.items()
             if k not in
-            ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments']}
+            ['classification', 'expiry_ts', 'seen', 'archive_ts', 'labels', 'label_categories', 'comments', 'from_json']}
 
         # Reset archive_ts field
         fileinfo['archive_ts'] = None

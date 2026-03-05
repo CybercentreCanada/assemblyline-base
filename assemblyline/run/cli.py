@@ -913,7 +913,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             restore_old_archive  Restaure all documents from the old archiving method into the hot index
 
         Parameters:
-            <safe>       Does not validate the model [optional]
+            <safe>       Does not validate the model. This can incur possible dataloss if used so we recommend creating a backup. [optional]
             <cleanup>    After restoring the data, remove old indices (restore_old_archive only) [optional]
             <index>      index to do the operation on [optional]
 
