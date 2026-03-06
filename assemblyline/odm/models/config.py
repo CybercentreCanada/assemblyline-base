@@ -1183,6 +1183,10 @@ class Services(odm.Model):
         "At `1`, a service's full CPU request will be reserved for them.<br>"
         "At `0` (only for very small appliances/dev boxes), the service's CPU will be limited "
         "but no CPU will be reserved allowing for more flexible scheduling of containers.")
+    cpu_slack: float = odm.Float(
+        description="How far above the specified cpu for a service to raise the limits?<br>"
+        "At `0` a service is limited to its cpu specification.<br>"
+        "At `0.5` a service will be allowed to use up to 50% above its specification.")
     safelist = odm.Compound(ServiceSafelist)
     registries = odm.Optional(odm.List(odm.Compound(ServiceRegistry)),
                               description="Global set of registries for services")
@@ -1198,6 +1202,7 @@ DEFAULT_SERVICES = {
     "preferred_update_channel": "stable",
     "allow_insecure_registry": False,
     "cpu_reservation": 0.25,
+    "cpu_slack": 0.0,
     "safelist": {
         "enabled": True,
         "hash_types": ['sha1', 'sha256'],
