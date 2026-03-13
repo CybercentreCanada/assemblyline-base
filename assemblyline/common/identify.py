@@ -616,8 +616,8 @@ def _guess_language(path: str) -> Tuple[str, Union[str, int]]:
             scores.pop(lang)
 
     max_v = 0
-    if len(scores) > 0:
-        max_v = max(list(scores.values()))
+    if scores:
+        max_v = max(scores.values())
     high_scores = [(k, v) for k, v in scores.items() if v == max_v]
     high_scores = [(_differentiate(k, scores), v) for k, v in high_scores]
 

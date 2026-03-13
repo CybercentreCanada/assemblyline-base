@@ -25,7 +25,7 @@ def wrap_bidir_unicode_string(uni_str):
     affecting their left-to-right direction
     """
 
-    if len(uni_str) == 0 or isinstance(uni_str, bytes):  # Not str, return it unchanged
+    if not uni_str or isinstance(uni_str, bytes):  # Not str, return it unchanged
         return uni_str
 
     re_obj = re.search(r'[\u202E\u202B\u202D\u202A\u200E\u200F]', uni_str)

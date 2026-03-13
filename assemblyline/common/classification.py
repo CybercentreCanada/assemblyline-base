@@ -248,7 +248,7 @@ class Classification(object):
 
         if long_format:
             return sorted([self.access_req_map_stl[r] for r in return_set])
-        return sorted(list(return_set))
+        return sorted(return_set)
 
     def _get_c12n_groups(self, c12n: str, long_format: bool = True) -> Tuple[List, List]:
         # Parse classifications in uppercase mode only
@@ -299,7 +299,7 @@ class Classification(object):
             return sorted(
                 [self.groups_map_stl.get(r, r) for r in g1_set]), sorted(
                 [self.subgroups_map_stl[r] for r in g2_set])
-        return sorted(list(g1_set)), sorted(list(g2_set))
+        return sorted(g1_set), sorted(g2_set)
 
     @staticmethod
     def _can_see_required(user_req: List, req: List) -> bool:
@@ -307,7 +307,7 @@ class Classification(object):
 
     @staticmethod
     def _can_see_groups(user_groups: List, req: List) -> bool:
-        if len(req) == 0:
+        if not req:
             return True
 
         for g in user_groups:

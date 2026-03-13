@@ -184,17 +184,17 @@ class DistributedBackup(object):
         for k, v in self.map_count.items():
             summary += "\t%15s: %s\n" % (k.upper(), v)
 
-        if len(self.missing_map_count.keys()) > 0:
+        if self.missing_map_count:
             summary += "\n\nMissing data:\n\n"
             for k, v in self.missing_map_count.items():
                 summary += "\t%15s: %s\n" % (k.upper(), v)
 
-        if len(self.error_map_count.keys()) > 0:
+        if self.error_map_count:
             summary += "\n\nErrors:\n\n"
             for k, v in self.error_map_count.items():
                 summary += "\t%15s: %s\n" % (k.upper(), v)
 
-        if len(self.bucket_error) > 0:
+        if self.bucket_error:
             summary += f"\nThese buckets failed to {title.lower()} completely: {self.bucket_error}\n"
         if self.logger:
             self.logger.info(summary)
