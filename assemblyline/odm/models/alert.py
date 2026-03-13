@@ -80,7 +80,7 @@ class DetailedResults(odm.Model):
     yara = odm.List(odm.Compound(DetailedItem), default=[], description="Information on YARA rule matches that contributed to the alert.")
 
     def update(self, other: DetailedResults) -> None:
-        for field in self.fields().keys():
+        for field in self.fields():
             setattr(self, field, list(set(getattr(self, field) + getattr(other, field))))
 
 

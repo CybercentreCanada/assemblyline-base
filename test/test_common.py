@@ -226,9 +226,9 @@ def test_heuristics_valid():
     heuristic_list = [random_model_obj(Heuristic) for _ in range(4)]
     heuristics = {x.heur_id: x for x in heuristic_list}
 
-    software_ids = list(set([random.choice(list(software_map.keys())) for _ in range(random.randint(1, 3))]))
-    attack_ids = list(set([random.choice(list(attack_map.keys())) for _ in range(random.randint(1, 3))]))
-    group_ids = list(set([random.choice(list(group_map.keys())) for _ in range(random.randint(1, 3))]))
+    software_ids = list({random.choice(list(software_map.keys())) for _ in range(random.randint(1, 3))})
+    attack_ids = list({random.choice(list(attack_map.keys())) for _ in range(random.randint(1, 3))})
+    group_ids = list({random.choice(list(group_map.keys())) for _ in range(random.randint(1, 3))})
 
     attack_ids_to_fetch_details_for = attack_ids[:]
     for software_id in software_ids:
