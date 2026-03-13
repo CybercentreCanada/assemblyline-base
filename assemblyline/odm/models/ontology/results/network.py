@@ -82,7 +82,7 @@ class NetworkConnection(odm.Model):
             # Include any details involved in the request for hashing
             hash_dict['http_details'] = {
                 field: http_details.get(field)
-                for field in NetworkHTTP.fields().keys() if field.startswith('request_')
+                for field in NetworkHTTP.fields() if field.startswith('request_')
             }
         elif connection_type == "dns":
             # Include the requested domain as part of the hash

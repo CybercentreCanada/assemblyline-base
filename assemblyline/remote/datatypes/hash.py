@@ -142,7 +142,7 @@ class Hash(Generic[T]):
         return retry_call(self.c.hset, self.name, key, json.dumps(value))
 
     def multi_set(self, data: dict[str, T]):
-        if any(isinstance(key, bytes) for key in data.keys()):
+        if any(isinstance(key, bytes) for key in data):
             raise ValueError("Cannot use bytes for hashmap keys")
         encoded = {key: json.dumps(value) for key, value in data.items()}
         return retry_call(self.c.hset, self.name, mapping=encoded)
