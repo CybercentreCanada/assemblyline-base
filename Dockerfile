@@ -17,6 +17,7 @@ ARG version_tag=${version}
 
 # Install assemblyline base (setup.py is just a file we know exists so the command
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
+# This lets us build from local builds in dist, or from a version in pypi where a --mount won't.
 COPY setup.py dist* dist/
 RUN pip install --no-cache-dir --no-warn-script-location -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
 RUN chmod 750 /root/.local/lib/python3.11/site-packages

@@ -1,11 +1,8 @@
 import io
-
-from math import log
-from typing import Tuple, List, BinaryIO, AnyStr
+from typing import Tuple, List, BinaryIO
 
 from assemblyline_toolbox import BufferedCalculator
 
-frequency = None
 
 # The minimum partition size should be 256 bytes as the keyspace
 # for a char is 256 bytes
