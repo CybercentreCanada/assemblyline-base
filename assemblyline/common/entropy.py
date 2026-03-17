@@ -1,9 +1,8 @@
 import io
+from typing import Tuple, List, BinaryIO
 
-from math import log
-from typing import Tuple, List, BinaryIO, AnyStr
+from assemblyline_toolbox import BufferedCalculator
 
-frequency = None
 
 # The minimum partition size should be 256 bytes as the keyspace
 # for a char is 256 bytes
@@ -52,40 +51,3 @@ def calculate_partition_entropy(fin: BinaryIO, num_partitions: int = 50) -> Tupl
         full_entropy_calculator.update(partition)
     return full_entropy_calculator.entropy(), p_entropies
 
-
-class BufferedCalculator(object):
-    def __init__(self):
-        global frequency
-        import pyximport
-        pyximport.install()
-        # noinspection PyUnresolvedReferences
-        from assemblyline.common import frequency
-
-        self.c = {}
-        self.length = 0
-
-    def entropy(self) -> float:
-        if self.length == 0:
-            return 0.0
-
-        length = float(self.length)
-
-        entropy = 0.0
-        for v in self.c.values():
-            prob = float(v) / length
-            entropy += prob * log(prob, 2)
-
-        entropy *= -1
-
-        # Make sure we don't return -0.0.
-        if not entropy:
-            entropy = 0.0
-
-        return entropy
-
-    def update(self, data: AnyStr, length: int = 0):
-        if not length:
-            length = len(data)
-
-        self.length += length
-        self.c = frequency.counts(data, length, self.c)

@@ -1,10 +1,8 @@
 import hashlib
-import ssdeep
-import tlsh
 from typing import Dict
 
 from assemblyline.common import entropy
-
+from assemblyline_toolbox import SsdeepHasher, TlshHasher
 DEFAULT_BLOCKSIZE = 65536
 
 
@@ -14,10 +12,7 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
     """ Generate digests for file reading only 'blocksize bytes at a time."""
     bc = None
     if calculate_entropy:
-        try:
-            bc = entropy.BufferedCalculator()
-        except Exception:
-            pass
+        bc = entropy.BufferedCalculator()
 
     result = {}
 
@@ -25,7 +20,9 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
     sha1 = hashlib.sha1()
     sha256 = hashlib.sha256()
     if not skip_fuzzy_hashes:
-        th = tlsh.Tlsh()
+        th = TlshHasher()
+        ssdeep = SsdeepHasher()
+
     size = 0
 
     with open(path, 'rb') as f:
@@ -37,12 +34,13 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
 
         while length > 0:
             if bc is not None:
-                bc.update(data, length)
+                bc.update(data)
             md5.update(data)
             sha1.update(data)
             sha256.update(data)
             if not skip_fuzzy_hashes:
                 th.update(data)
+                ssdeep.update(data)
             size += length
 
             data = f.read(blocksize)
@@ -58,13 +56,10 @@ def get_digests_for_file(path: str, blocksize: int = DEFAULT_BLOCKSIZE, calculat
     result['size'] = size
 
     if not skip_fuzzy_hashes:
-        result["ssdeep"] = ssdeep.hash_from_file(path)
-        # Try to finalise the TLSH Hash and add it to the results
-        try:
-            th.final()
-            result['tlsh'] = th.hexdigest()
-        except Exception:
-            pass
+        result["ssdeep"] = ssdeep.digest()
+        thash = th.digest()
+        if thash:
+            result['tlsh'] = thash
 
     return result
 
