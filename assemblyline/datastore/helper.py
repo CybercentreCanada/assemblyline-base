@@ -607,7 +607,7 @@ class AssemblylineDatastore(object):
             submission = submission.as_primitives()
 
         # Get number of files and score
-        num_files = len(list({x[:64] for x in submission['results']}))
+        num_files = len(list(set([x[:64] for x in submission['results']])))
         max_score = submission['max_score']
 
         # Load / Validate cache tree if exist
@@ -822,7 +822,7 @@ class AssemblylineDatastore(object):
             return out
 
         keys = [x for x in list(keys) if not x.endswith(".e")]
-        file_keys = list({x[:64] for x in keys})
+        file_keys = list(set([x[:64] for x in keys]))
         try:
             items = self.result.multiget(keys, as_obj=False)
         except MultiKeyError as e:
@@ -1436,9 +1436,9 @@ class AssemblylineDatastore(object):
         if min_score:
             query += f" AND result.score:>={min_score}"
 
-        item_list = list(self.result.stream_search(query, fl="id,created,response.service_name,result.score",
+        item_list = [x for x in self.result.stream_search(query, fl="id,created,response.service_name,result.score",
                                                           access_control=access_control, as_obj=False,
-                                                          index_type=index_type))
+                                                          index_type=index_type)]
 
         item_list.sort(key=lambda k: k["created"], reverse=True)
 
@@ -1563,7 +1563,7 @@ class MetadataValidator:
 
             # Determine if there's extra metadata being set that isn't validated/known to the system
             # Ignore metadata fields that have been set by the system
-            system_configured_metadata = {'ingest_id', 'ts', 'type'}
+            system_configured_metadata = set(['ingest_id', 'ts', 'type'])
             extra_metadata = list(set(metadata.keys()) - set(validation_scheme.keys()) - system_configured_metadata)
             if missing_metadata:
                 return (None, f"Required metadata is missing from submission: {missing_metadata}")

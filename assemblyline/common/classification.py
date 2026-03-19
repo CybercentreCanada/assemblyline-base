@@ -258,7 +258,7 @@ class Classification(object):
 
         if long_format:
             return sorted([self.access_req_map_stl[r] for r in return_set]), unused
-        return sorted(return_set), unused
+        return sorted(list(return_set)), unused
 
     def _get_c12n_groups(self, c12n: list[str], long_format: bool = True, get_dynamic_groups: bool = True,
                          auto_select: bool = False) -> Tuple[List, List, list[str]]:
@@ -276,7 +276,7 @@ class Classification(object):
             if gp.startswith("REL "):
                 gp = gp.replace("REL TO ", "")
                 gp = gp.replace("REL ", "")
-                temp_group = {x.strip() for x in gp.split(",")}
+                temp_group = set([x.strip() for x in gp.split(",")])
                 for t in temp_group:
                     groups.extend(t.split("/"))
             else:
@@ -330,7 +330,7 @@ class Classification(object):
         for subgroup in g2_set:
             limited_to_group = self.params_map.get(subgroup, {}).get("limited_to_group", None)
             if limited_to_group is not None:
-                if len(g1_set) > 1 or (len(g1_set) == 1 and g1_set != {limited_to_group}):
+                if len(g1_set) > 1 or (len(g1_set) == 1 and g1_set != set([limited_to_group])):
                     raise InvalidClassification(f"Subgroup {subgroup} is limited to group "
                                                 f"{limited_to_group} (found: {', '.join(g1_set)})")
 
@@ -347,7 +347,7 @@ class Classification(object):
                 sorted([self.subgroups_map_stl[r] for r in g2_set]),
                 list(others)
             )
-        return sorted(g1_set), sorted(g2_set), list(others)
+        return sorted(list(g1_set)), sorted(list(g2_set)), list(others)
 
     @staticmethod
     def _can_see_required(user_req: List, req: List) -> bool:
@@ -355,10 +355,14 @@ class Classification(object):
 
     @staticmethod
     def _can_see_groups(user_groups: List, req: List) -> bool:
-        if not req:
+        if len(req) == 0:
             return True
 
-        return any(g in req for g in user_groups)
+        for g in user_groups:
+            if g in req:
+                return True
+
+        return False
 
     # noinspection PyTypeChecker
     def _get_normalized_classification_text(self, lvl_idx: int, req: List, groups: List, subgroups: List,
@@ -387,10 +391,10 @@ class Classification(object):
         # 3. Add auto-selected subgroups
         if long_format:
             if len(subgroups) > 0 and len(self.subgroups_auto_select) > 0 and not skip_auto_select:
-                subgroups = sorted(set(subgroups).union(set(self.subgroups_auto_select)))
+                subgroups = sorted(list(set(subgroups).union(set(self.subgroups_auto_select))))
         else:
             if len(subgroups) > 0 and len(self.subgroups_auto_select_short) > 0 and not skip_auto_select:
-                subgroups = sorted(set(subgroups).union(set(self.subgroups_auto_select_short)))
+                subgroups = sorted(list(set(subgroups).union(set(self.subgroups_auto_select_short))))
 
         # 4. For every subgroup, check if the subgroup requires or is limited to a specific group
         temp_groups = []
@@ -416,10 +420,10 @@ class Classification(object):
         # 5. Add auto-selected groups
         if long_format:
             if len(groups) > 0 and len(self.groups_auto_select) > 0 and not skip_auto_select:
-                groups = sorted(set(groups).union(set(self.groups_auto_select)))
+                groups = sorted(list(set(groups).union(set(self.groups_auto_select))))
         else:
             if len(groups) > 0 and len(self.groups_auto_select_short) > 0 and not skip_auto_select:
-                groups = sorted(set(groups).union(set(self.groups_auto_select_short)))
+                groups = sorted(list(set(groups).union(set(self.groups_auto_select_short))))
 
         if groups:
             groups = sorted(groups)
@@ -782,9 +786,9 @@ class Classification(object):
 
         cur_part = parts.pop(0)
         # First parts as to be a classification level part
-        if cur_part not in self.levels_aliases and \
-                cur_part not in self.levels_map_lts and \
-                cur_part not in self.levels_map_stl:
+        if cur_part not in self.levels_aliases.keys() and \
+                cur_part not in self.levels_map_lts.keys() and \
+                cur_part not in self.levels_map_stl.keys():
             return False
 
         check_groups = False
@@ -806,19 +810,19 @@ class Classification(object):
             for i in items:
                 if not check_groups:
                     # If current item not found in access req, we might already be dealing with groups
-                    if i not in self.access_req_aliases and \
-                            i not in self.access_req_map_stl and \
-                            i not in self.access_req_map_lts:
+                    if i not in self.access_req_aliases.keys() and \
+                            i not in self.access_req_map_stl.keys() and \
+                            i not in self.access_req_map_lts.keys():
                         check_groups = True
 
                 if check_groups and not self.dynamic_groups:
                     # If not groups. That stuff does not exists...
-                    if i not in self.groups_aliases and \
-                            i not in self.groups_map_stl and \
-                            i not in self.groups_map_lts and \
-                            i not in self.subgroups_aliases and \
-                            i not in self.subgroups_map_stl and \
-                            i not in self.subgroups_map_lts:
+                    if i not in self.groups_aliases.keys() and \
+                            i not in self.groups_map_stl.keys() and \
+                            i not in self.groups_map_lts.keys() and \
+                            i not in self.subgroups_aliases.keys() and \
+                            i not in self.subgroups_map_stl.keys() and \
+                            i not in self.subgroups_map_lts.keys():
                         return False
 
         return True
