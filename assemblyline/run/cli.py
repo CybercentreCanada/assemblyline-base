@@ -232,9 +232,9 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             collection = self.datastore.get_collection(collection_name)
             if collection:
                 if len(args) == 3:
-                    return [i for i in collection.keys() if i.startswith(text)]
+                    return [i for i in collection if i.startswith(text)]
                 if args[1] in multiple_actions:
-                    return [i for i in collection.keys() if i.startswith(text) and i not in args[2:-1]]
+                    return [i for i in collection if i.startswith(text) and i not in args[2:-1]]
         return []
 
     def _print_error(self, msg):
@@ -580,13 +580,13 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         collection = self.datastore.get_collection('service_delta')
 
         if action_type == 'list':
-            for key in collection.keys():
+            for key in collection:
                 self.logger.info(key)
             return
         elif action_type == 'cleanup':
             self.logger.info("Validating services deltas...")
             versions = set()
-            for key in collection.keys():
+            for key in collection:
                 self.logger.info(f"\t{key}")
                 svc_data = collection.get(key)
                 versions.add(f"{key}_{svc_data.version}")
@@ -596,7 +596,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
             system_version = f"{FRAMEWORK_VERSION}.{SYSTEM_VERSION}."
             to_del = []
             svc_col = self.datastore.get_collection('service')
-            for key in svc_col.keys():
+            for key in svc_col:
                 svc_data = svc_col.get(key)
                 if not svc_data.version.startswith(system_version) and key not in versions:
                     to_del.append(key)
@@ -814,7 +814,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
         users = self.datastore.get_collection('user')
 
         if action_type == 'list':
-            for key in users.keys():
+            for key in users:
                 self.logger.info(key)
             return
         if item_id:

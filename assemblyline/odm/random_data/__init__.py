@@ -73,7 +73,7 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflows=
                     # Overwrite with user information
                     event.entity_type = 'user'
                     event.entity_id = get_random_word()
-                event.labels = list(set([get_random_word() for _ in range(random.randint(0, 20))]))
+                event.labels = list({get_random_word() for _ in range(random.randint(0, 20))})
                 event.status = random.choice(list(STATUSES) + [None])
                 event.priority = random.choice(list(PRIORITIES) + [None])
                 return event
@@ -127,7 +127,7 @@ def create_alerts(ds, alert_count=50, submission_list=None, log=None, workflows=
 
 
 def create_heuristics(ds, log=None):
-    for srv in SERVICES.keys():
+    for srv in SERVICES:
         for x in range(5):
             h = random_model_obj(Heuristic)
             h.heur_id = f"{srv.upper()}.{x + 1}"
@@ -402,7 +402,7 @@ def create_users(ds, log=None):
     user_pass = os.getenv("DEV_USER_PASS", 'user') or 'user'
 
     acl = ["R", "W"]
-    roles = [r for r in load_roles_form_acls(acl, [])]
+    roles = list(load_roles_form_acls(acl, []))
 
     user_data = User({
         "agrees_with_tos": "NOW",
