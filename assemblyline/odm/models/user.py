@@ -200,7 +200,7 @@ def load_roles_form_acls(acls, curRoles):
 
     # Otherwise load the roles from the api_key ACLs
     roles = set({})
-    for acl in ACL_MAP:
+    for acl in ACL_MAP.keys():
         if acl in acls:
             roles = roles.union(ACL_MAP[acl])
 
@@ -215,7 +215,7 @@ def load_roles(types, curRoles):
 
     # Otherwise load the roles from the user type
     roles = set({})
-    for user_type in USER_TYPE_DEP:
+    for user_type in USER_TYPE_DEP.keys():
         if user_type in types:
             roles = roles.union(USER_TYPE_DEP[user_type])
 

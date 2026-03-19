@@ -87,7 +87,7 @@ def select(*queues, **kw):
     timeout = kw.get('timeout', 0)
     if len(queues) < 1:
         raise TypeError('At least one queue must be specified')
-    if any(type(q) != NamedQueue for q in queues):
+    if any([type(q) != NamedQueue for q in queues]):
         raise TypeError('Only NamedQueues supported')
 
     c = queues[0].c

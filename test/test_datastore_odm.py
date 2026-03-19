@@ -122,7 +122,7 @@ def setup_store(docstore, request):
             request.addfinalizer(collection.wipe)
 
             # cleanup
-            for k in test_map:
+            for k in test_map.keys():
                 collection.delete(k)
 
             for k, v in test_map.items():
@@ -230,7 +230,7 @@ def _test_mget(col, as_obj):
 
 def _test_keys(col, _):
     test_keys = list(test_map.keys())
-    for k in col:
+    for k in col.keys():
         test_keys.remove(k)
     assert len(test_keys) == 0
 
@@ -437,5 +437,5 @@ def test_dynamic_fields(es_store):
     for k, v in data.items():
         col.save(k, v)
 
-    for k in data:
+    for k in data.keys():
         assert col.get(k) == data.get(k, None)

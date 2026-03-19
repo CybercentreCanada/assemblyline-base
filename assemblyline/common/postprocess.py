@@ -102,10 +102,16 @@ class AndOperatorNode(NodeInterface):
         return f'({" AND ".join(repr(a) for a in self.args)})'
 
     def test(self, sub: Submission, score=None, tags: Optional[list[dict[str, Any]]] = None) -> bool:
-        return all(arg.test(sub, score, tags) for arg in self.args)
+        for arg in self.args:
+            if not arg.test(sub, score, tags):
+                return False
+        return True
 
     def test_value(self, field, value) -> bool:
-        return all(arg.test_value(field, value) for arg in self.args)
+        for arg in self.args:
+            if not arg.test_value(field, value):
+                return False
+        return True
 
 
 class OrOperatorNode(NodeInterface):
@@ -116,10 +122,16 @@ class OrOperatorNode(NodeInterface):
         return f'({" OR ".join(repr(a) for a in self.args)})'
 
     def test(self, sub: Submission, score=None, tags: Optional[list[dict[str, Any]]] = None) -> bool:
-        return any(arg.test(sub, score, tags) for arg in self.args)
+        for arg in self.args:
+            if arg.test(sub, score, tags):
+                return True
+        return False
 
     def test_value(self, field, value) -> bool:
-        return any(arg.test_value(field, value) for arg in self.args)
+        for arg in self.args:
+            if arg.test_value(field, value):
+                return True
+        return False
 
 
 class NotOperatorNode(NodeInterface):
