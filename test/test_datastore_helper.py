@@ -13,6 +13,7 @@ from assemblyline.datastore.helper import AssemblylineDatastore, MetadataValidat
 from assemblyline.odm.base import DATEFORMAT, KeyMaskException
 from assemblyline.odm.models.config import Config, Metadata
 from assemblyline.odm.models.result import Result
+from assemblyline.odm.models.result import File as ResultFile
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
 from assemblyline.remote.datatypes.hash import Hash
@@ -196,7 +197,6 @@ def test_delete_submission_tree_with_extracted_files(ds: AssemblylineDatastore, 
 
     submission = random_minimal_obj(Submission)
     submission.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
-    submission.files = [random_minimal_obj(File)]
     submission.files[0].sha256 = root_sha256
     ds.submission.save(submission.sid, submission)
 
@@ -204,18 +204,20 @@ def test_delete_submission_tree_with_extracted_files(ds: AssemblylineDatastore, 
     result.sha256 = root_sha256
     result.classification = cl_engine.UNRESTRICTED
     result.response.extracted = [
-        Result.File(
-            sha256=extracted_sha256,
-            name="extracted.bin",
-            description="Test extracted file",
-            classification=cl_engine.UNRESTRICTED
-        )
+        ResultFile({
+            "sha256": extracted_sha256,
+            "name": "extracted.bin",
+            "description": "Test extracted file",
+            "classification": cl_engine.UNRESTRICTED
+        })
     ]
     result_key = result.build_key()
     ds.result.save(result_key, result)
+    ds.result.commit()
 
     submission.results = [result_key]
     ds.submission.save(submission.sid, submission)
+    ds.submission.commit()
 
     assert ds.submission.exists(submission.sid)
     assert ds.file.exists(root_sha256)
