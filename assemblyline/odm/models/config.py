@@ -1687,6 +1687,7 @@ class UI(odm.Model):
     api_proxies: APIProxies = odm.Mapping(
         odm.Compound(APIProxies),
         default=DEFAULT_API_PROXIES, description="Proxy requests to the configured API target and add headers")
+    apikey_cache_seconds = odm.optional(odm.integer(description="Number of seconds to cache apikey validation."))
     audit: bool = odm.Boolean(description="Should API calls be audited and saved to a separate log file?")
     audit_login: bool = odm.Boolean(description="Should login successes and failures be part of the audit log as well?")
     banner: Dict[str, str] = odm.Optional(odm.Mapping(
@@ -1746,6 +1747,7 @@ DEFAULT_UI = {
     "allow_replay": False,
     "allow_url_submissions": True,
     "api_proxies": DEFAULT_API_PROXIES,
+    "apikey_cache_seconds": 5 * 60,
     "audit": True,
     "audit_login": False,
     "banner": None,
