@@ -37,10 +37,7 @@ VALID_UNC_CHARS = [chr(x) for x in ASCII_LOWER_CASE_LETTERS +
 def is_unc_legal(path: str) -> bool:
     """Determine whether or not a given string representing a Windows file path is legal
     or not as per the Unified Naming Convention (UNC) specifications."""
-    if len(path) <= 0:
+    if not path:
         return False
 
-    for char in path:
-        if char not in VALID_UNC_CHARS:
-            return False
-    return True
+    return all(char in VALID_UNC_CHARS for char in path)
