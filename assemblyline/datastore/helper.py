@@ -443,7 +443,7 @@ class AssemblylineDatastore(object):
         # Inspect each files to see if they are reused
         for temp in temp_files:
             # Check if we delete the file or update the classification
-            if self.submission.search(f"errors:{temp}* OR results:{temp}*", rows=0, as_obj=False)["total"] < 2:
+            if self.submission.search(f"NOT sid:{sid} AND (errors:{temp}* OR results:{temp}*)", rows=0, as_obj=False)["total"] == 0:
                 files_to_delete.add(temp)
                 files_to_delete |= supp_map.pop(temp, set())
             else:
