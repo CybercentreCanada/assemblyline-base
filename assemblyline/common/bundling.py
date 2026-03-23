@@ -330,17 +330,17 @@ def import_bundle(
 
                 # Check if we have all the service results
                 for res_key in submission['results']:
-                    if results is None or (res_key not in results['results'].keys() and not allow_incomplete):
+                    if results is None or (res_key not in results['results'] and not allow_incomplete):
                         raise IncompleteBundle("Incomplete results in bundle. Skipping %s..." % sid)
 
                 # Check if we have all files
-                for sha256 in list(set([x[:64] for x in submission['results']])):
-                    if files is None or (sha256 not in files['infos'].keys() and not allow_incomplete):
+                for sha256 in list({x[:64] for x in submission['results']}):
+                    if files is None or (sha256 not in files['infos'] and not allow_incomplete):
                         raise IncompleteBundle("Incomplete files in bundle. Skipping %s..." % sid)
 
                 # Check if we all errors
                 for err_key in submission['errors']:
-                    if errors is None or (err_key not in errors['errors'].keys() and not allow_incomplete):
+                    if errors is None or (err_key not in errors['errors'] and not allow_incomplete):
                         raise IncompleteBundle("Incomplete errors in bundle. Skipping %s..." % sid)
 
                 # Check if the submission does not already exist

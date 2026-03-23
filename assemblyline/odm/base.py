@@ -928,7 +928,7 @@ class TypedMapping(dict):
         self.store = store
         self.sanitizer = sanitizer
 
-        for key in items.keys():
+        for key in items:
             if not self.sanitizer.match(key):
                 raise KeyError(f"Illegal key: {key}")
         super().__init__({key: type_p.check(el, ignore_extra_values=ignore_extra_values) for key, el in items.items()})
@@ -943,7 +943,7 @@ class TypedMapping(dict):
         # Update supports three input layouts:
         # 1. A single dictionary
         if len(args) == 1 and isinstance(args[0], dict):
-            for key in args[0].keys():
+            for key in args[0]:
                 if not self.sanitizer.match(key):
                     raise KeyError(f"Illegal key: {key}")
             return super().update({key: self.type.check(item) for key, item in args[0].items()})
@@ -957,7 +957,7 @@ class TypedMapping(dict):
 
         # 3. Key values as arguments, can be combined with others
         if kwargs:
-            for key in kwargs.keys():
+            for key in kwargs:
                 if not self.sanitizer.match(key):
                     raise KeyError(f"Illegal key: {key}")
             return super().update({key: self.type.check(item) for key, item in kwargs.items()})
