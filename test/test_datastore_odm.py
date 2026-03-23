@@ -230,7 +230,7 @@ def _test_mget(col, as_obj):
 
 def _test_keys(col, _):
     test_keys = list(test_map.keys())
-    for k in col:
+    for k in col.keys():
         test_keys.remove(k)
     assert len(test_keys) == 0
 
