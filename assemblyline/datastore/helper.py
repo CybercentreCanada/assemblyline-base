@@ -317,18 +317,15 @@ class AssemblylineDatastore(object):
         temp_files.update(x[:64] for x in errors)
         temp_files.update(x[:64] for x in results)
 
-        # Gather all supplementary files
-        for result in self.result.search("response.supplementary.sha256:*",
-                                         fl="*", rows=len(results), as_obj=False, key_space=results)['items']:
+        # Gather all supplementary files and extracted files
+        for result in self.result.search("response.supplementary.sha256:* OR response.extracted.sha256:*",
+                                         fl="sha256,response.supplementary.sha256,response.extracted.sha256",
+                                         rows=len(results), as_obj=False, key_space=results)['items']:
             sha256 = result['sha256']
             if sha256 not in supp_map:
                 supp_map[sha256] = set()
             for supp in result['response']['supplementary']:
                 supp_map[sha256].add(supp['sha256'])
-
-        # Gather all extracted files
-        for result in self.result.search("response.extracted.sha256:*",
-                                         fl="*", rows=len(results), as_obj=False, key_space=results)['items']:
             for extracted in result['response']['extracted']:
                 temp_files.add(extracted['sha256'])
 
@@ -425,18 +422,15 @@ class AssemblylineDatastore(object):
         temp_files = {x[:64] for x in errors}
         temp_files.update(x[:64] for x in results)
 
-        # Gather all supplementary files
-        for result in self.result.search("response.supplementary.sha256:*",
-                                         fl="*", rows=len(results), as_obj=False, key_space=results)['items']:
+        # Gather all supplementary files and extracted files
+        for result in self.result.search("response.supplementary.sha256:* OR response.extracted.sha256:*",
+                                         fl="sha256,response.supplementary.sha256,response.extracted.sha256",
+                                         rows=len(results), as_obj=False, key_space=results)['items']:
             sha256 = result['sha256']
             if sha256 not in supp_map:
                 supp_map[sha256] = set()
             for supp in result['response']['supplementary']:
                 supp_map[sha256].add(supp['sha256'])
-
-        # Gather all extracted files
-        for result in self.result.search("response.extracted.sha256:*",
-                                         fl="*", rows=len(results), as_obj=False, key_space=results)['items']:
             for extracted in result['response']['extracted']:
                 temp_files.add(extracted['sha256'])
 
