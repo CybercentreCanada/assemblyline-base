@@ -324,9 +324,9 @@ class AssemblylineDatastore(object):
             sha256 = result['sha256']
             if sha256 not in supp_map:
                 supp_map[sha256] = set()
-            for supp in result['response']['supplementary']:
+            for supp in result['response'].get('supplementary', []):
                 supp_map[sha256].add(supp['sha256'])
-            for extracted in result['response']['extracted']:
+            for extracted in result['response'].get('extracted', []):
                 temp_files.add(extracted['sha256'])
 
         # Inspect each files to see if they are reused
@@ -429,9 +429,9 @@ class AssemblylineDatastore(object):
             sha256 = result['sha256']
             if sha256 not in supp_map:
                 supp_map[sha256] = set()
-            for supp in result['response']['supplementary']:
+            for supp in result['response'].get('supplementary', []):
                 supp_map[sha256].add(supp['sha256'])
-            for extracted in result['response']['extracted']:
+            for extracted in result['response'].get('extracted', []):
                 temp_files.add(extracted['sha256'])
 
         # Inspect each files to see if they are reused
