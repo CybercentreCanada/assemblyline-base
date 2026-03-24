@@ -52,7 +52,7 @@ setup(
         'PyYAML',
         'bcrypt',
         'cart',
-        'assemblyline-toolbox==0.3.0',
+        'assemblyline-toolbox>=0.4.0',
         'python-magic',
         'pytz',
         'apscheduler',
