@@ -31,8 +31,8 @@ def find_top_level_domains() -> set[str]:
     local_tlds = {
         tld.strip().strip('.').upper()
         for tld in SYSTEM_LOCAL_TLD.split(";")
-        if tld.strip().strip('.')
     }
+    local_tlds.discard('')
     return TLDS_ALPHA_BY_DOMAIN | single_label_special | local_tlds
 
 
