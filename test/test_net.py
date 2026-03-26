@@ -31,8 +31,14 @@ def test_port_check():
 
 def test_valid_domain():
     assert is_valid_domain('cyber.gc.ca')
+    assert is_valid_domain('münchen.de')
     assert not is_valid_domain('user@cyber.gc.ca')
     assert not is_valid_domain('user')
+    assert not is_valid_domain('')
+    assert not is_valid_domain('-domain.gc.ca')
+    assert not is_valid_domain('domain-.gc.ca')
+    assert not is_valid_domain('dom_ain.gc.ca')
+    assert not is_valid_domain('gc..ca')
 
 
 def test_valid_ip():
@@ -51,17 +57,22 @@ def test_valid_ip():
 
 
 def test_valid_email():
-    # TODO these tests are correct, but our is_valid_email code is lax
     assert is_valid_email('user@cyber.gc.ca')
-#     assert not is_valid_email('@cyber.gc.ca')
-#     assert not is_valid_email('user@')
-#     assert not is_valid_email('user@cyber')
-#     assert not is_valid_email('user@cy#ber.gc.ca')
     assert is_valid_email('user.name@cyber.gc.ca')
-#     assert not is_valid_email('user..name@cyber.gc.ca')
     assert is_valid_email('u#ser@cyber.gc.ca')
     assert is_valid_email('"u#ser"@cyber.gc.ca')
     assert is_valid_email('"user..name"@cyber.gc.ca')
+    assert is_valid_email('user+tag@cyber.gc.ca')
+    assert not is_valid_email('@cyber.gc.ca')
+    assert not is_valid_email('user@')
+    assert not is_valid_email('user@cyber')
+    assert not is_valid_email('user@cy#ber.gc.ca')
+    assert not is_valid_email('user..name@cyber.gc.ca')
+    assert not is_valid_email('user@domain@evil.ca')
+    assert not is_valid_email('.user@cyber.gc.ca')
+    assert not is_valid_email('user.@cyber.gc.ca')
+    assert not is_valid_email('')
+    assert not is_valid_email('""@cyber.gc.ca')
 
 
 def test_is_ip_in_network():
@@ -72,20 +83,20 @@ def test_is_ip_in_network():
 
 
 def test_custom_domains():
-    # Get the basic list and make sure no empty strings got in
-    assemblyline.common.net.SYSTEM_LOCAL_TLD = ''
-    domains = find_top_level_domains()
-    assert '' not in domains
-    assert None not in domains
-
-    # inject a fake domain a few different ways
-    cd = 'not-real-test-domain'.upper()
-    assert cd not in domains
-
-    for envar in [f'{cd}', f'{cd};', f'{cd};{cd}', f'.{cd};;', f';.{cd}.;']:
-        assemblyline.common.net.SYSTEM_LOCAL_TLD = envar
+    original_tld = assemblyline.common.net.SYSTEM_LOCAL_TLD
+    try:
+        # Get the basic list and make sure no empty strings got in
+        assemblyline.common.net.SYSTEM_LOCAL_TLD = ''
         find_top_level_domains.cache_clear()
         domains = find_top_level_domains()
-        assert cd in domains, envar
         assert '' not in domains
-        assert None not in domains
+
+        # inject a fake domain a few different ways
+        cd = 'NOT-REAL-TEST-DOMAIN'
+        for envar in [cd, f'{cd};', f'{cd};{cd}', f'.{cd};;', f';.{cd}.;']:
+            assemblyline.common.net.SYSTEM_LOCAL_TLD = envar
+            find_top_level_domains.cache_clear()
+            assert cd in find_top_level_domains(), envar
+    finally:
+        assemblyline.common.net.SYSTEM_LOCAL_TLD = original_tld
+        find_top_level_domains.cache_clear()
