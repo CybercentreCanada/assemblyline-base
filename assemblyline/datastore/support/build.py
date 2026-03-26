@@ -222,10 +222,7 @@ def any_indexed_part(field) -> bool:
     elif isinstance(field, Compound):
         if field.index is not None:
             return field.index
-        for subfield in field.fields().values():
-            if any_indexed_part(subfield):
-                return True
-        return False
+        return any(any_indexed_part(subfield) for subfield in field.fields().values())
 
     else:
         return field.index

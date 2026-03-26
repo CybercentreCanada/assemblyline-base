@@ -245,7 +245,7 @@ def test_delete_submission_tree_with_extracted_files(ds: AssemblylineDatastore, 
 
 def test_get_all_heuristics(ds: AssemblylineDatastore):
     # Get a list of all services
-    all_services = set([x.upper() for x in SERVICES.keys()])
+    all_services = {x.upper() for x in SERVICES}
 
     # List all heuristics
     heuristics = ds.get_all_heuristics()
@@ -433,7 +433,7 @@ def test_calculate_heuristic_stats(ds: AssemblylineDatastore):
 
     # Make sure stats did get reset
     heuristics = ds.get_all_heuristics()
-    assert all([heur['stats'] == default_stats for heur in heuristics.values()])
+    assert all(heur['stats'] == default_stats for heur in heuristics.values())
 
     # Do heuristics stat calculation for all
     ds.calculate_heuristic_stats()
@@ -443,7 +443,7 @@ def test_calculate_heuristic_stats(ds: AssemblylineDatastore):
     updated_heuristics = ds.get_all_heuristics()
 
     assert heuristics != updated_heuristics
-    assert any([heur['stats'] != default_stats for heur in updated_heuristics.values()])
+    assert any(heur['stats'] != default_stats for heur in updated_heuristics.values())
 
 
 def test_calculate_signature_stats(ds: AssemblylineDatastore):
@@ -459,7 +459,7 @@ def test_calculate_signature_stats(ds: AssemblylineDatastore):
 
     # Make sure stats did get reset
     signatures = get_all_signatures()
-    assert all([sig['stats'] == default_stats for sig in signatures.values()])
+    assert all(sig['stats'] == default_stats for sig in signatures.values())
 
     # Do signature stat calculation for all
     ds.calculate_signature_stats(lookback_time="now-1y")
@@ -469,7 +469,7 @@ def test_calculate_signature_stats(ds: AssemblylineDatastore):
     updated_signatures = get_all_signatures()
 
     assert signatures != updated_signatures
-    assert any([sig['stats'] != default_stats for sig in updated_signatures.values()])
+    assert any(sig['stats'] != default_stats for sig in updated_signatures.values())
 
 
 def test_task_cleanup(ds: AssemblylineDatastore):
@@ -533,7 +533,7 @@ def test_list_service_heuristics(ds: AssemblylineDatastore):
 
 def test_list_all_heuristics(ds: AssemblylineDatastore):
     # Get a list of all services
-    all_services = set([x.upper() for x in SERVICES.keys()])
+    all_services = {x.upper() for x in SERVICES}
 
     # List all heuristics
     heuristics = ds.list_all_heuristics()

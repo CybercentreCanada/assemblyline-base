@@ -105,7 +105,7 @@ def setup_store(docstore, request):
             request.addfinalizer(cleanup)
 
             # cleanup
-            for k in test_map.keys():
+            for k in test_map:
                 collection.delete(k)
 
             for k, v in test_map.items():

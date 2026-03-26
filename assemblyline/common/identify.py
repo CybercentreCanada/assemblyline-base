@@ -373,8 +373,8 @@ class Identify:
                 with open(path, newline='') as csvfile:
                     try:
                         # Try to read the file as a normal csv without special sniffed dialect
-                        complete_data = [x for x in islice(csv.reader(csvfile), 100)]
-                        if len(complete_data) > 2 and len(set([len(x) for x in complete_data])) == 1:
+                        complete_data = list(islice(csv.reader(csvfile), 100))
+                        if len(complete_data) > 2 and len({len(x) for x in complete_data}) == 1:
                             data["type"] = "text/csv"
                             # Final type identified, shortcut further processing
                             return data
@@ -385,8 +385,8 @@ class Identify:
                         # Normal CSV didn't work, try sniffing the csv to see how we could parse it
                         dialect = csv.Sniffer().sniff(csvfile.read(1024))
                         csvfile.seek(0)
-                        complete_data = [x for x in islice(csv.reader(csvfile, dialect), 100)]
-                        if len(complete_data) > 2 and len(set([len(x) for x in complete_data])) == 1:
+                        complete_data = list(islice(csv.reader(csvfile, dialect), 100))
+                        if len(complete_data) > 2 and len({len(x) for x in complete_data}) == 1:
                             data["type"] = "text/csv"
                             # Final type identified, shortcut further processing
                             return data
@@ -463,7 +463,7 @@ def zip_ident(path: str, fallback: str) -> str:
 
     try:
         with zipfile.ZipFile(path, "r") as zf:
-            file_list = [zfname for zfname in zf.namelist()]
+            file_list = list(zf.namelist())
     except Exception:
         try:
             stdout, _ = subprocess.Popen(
