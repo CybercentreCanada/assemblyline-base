@@ -49,7 +49,7 @@ class SubmissionParams(odm.Model):
                                         description="Original classification of the submission.")
     deep_scan = odm.Boolean(default=False, description="Select to perform a deep scan.")
     description = odm.Text(store=True, copyto="__text__", description="User-supplied information applied to Submission Details.")
-    filetype_override = odm.Optional(odm.Text(),
+    filetype_override = odm.Optional(odm.Keyword(),
                                      description="Override the system's identification of the submitted file")
     generate_alert = odm.Boolean(default=False, description="Generate alert upon completion of analysis.")
     groups = odm.List(odm.Keyword(), default=[], description="List relevant group or organization related to this scan.")
