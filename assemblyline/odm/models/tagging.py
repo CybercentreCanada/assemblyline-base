@@ -154,6 +154,18 @@ class Tagging(odm.Model):
                 odm.List(odm.Keyword(copyto="__text__")),
                 description="Executable or script filenames launched by the sample.",
             )
+            file_path = odm.Optional(
+                odm.List(odm.Keyword(copyto="__text__")),
+                description="Executable or script filepaths launched by the sample.",
+            )
+            module_name = odm.Optional(
+                odm.List(odm.Keyword(copyto="__text__")),
+                description="Loaded module/DLL name",
+            )
+            module_path = odm.Optional(
+                odm.List(odm.Keyword(copyto="__text__")),
+                description="Loaded module/DLL path",
+            )
             shortcut = odm.Optional(
                 odm.List(odm.Keyword(copyto="__text__")),
                 description="Shortcut (.lnk) names or targets created or accessed.",
