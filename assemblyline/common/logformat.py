@@ -10,7 +10,7 @@ except Exception:  # pylint:disable=W0702
 ip = 'x.x.x.x'
 # noinspection PyBroadException
 try:
-    from assemblyline.common.net import get_hostip
+    from assemblyline_toolbox import get_hostip
     ip = get_hostip()
 except Exception:  # pylint:disable=W0702
     pass

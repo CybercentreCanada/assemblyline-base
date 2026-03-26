@@ -113,7 +113,6 @@ class LDAP(odm.Model):
     enabled: bool = odm.Boolean(description="Should LDAP be enabled or not?")
     ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
                                         description="List of CIDRs allowed to access internal authentication")
-    admin_dn: str = odm.Optional(odm.Keyword(), description="DN of the group or the user who will get admin privileges")
     bind_user: str = odm.Optional(odm.Keyword(), description="User use to query the LDAP server")
     bind_pass: str = odm.Optional(odm.Keyword(), description="Password used to query the LDAP server")
     auto_create: bool = odm.Boolean(description="Auto-create users if they are missing")
