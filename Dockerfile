@@ -1,10 +1,12 @@
+ARG version
+ARG version_tag=${version}
 FROM python:3.11-slim-bookworm AS base
 
 # Upgrade packages
 RUN apt-get update && apt-get -yy upgrade && rm -rf /var/lib/apt/lists/*
 
 # Get required apt packages
-RUN apt-get update && apt-get install -yy libffi8 libfuzzy2 libmagic1 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -yy libmagic1 && rm -rf /var/lib/apt/lists/*
 
 # Make sure root account is locked so 'su' commands fail all the time
 RUN passwd -l root
@@ -13,18 +15,16 @@ FROM base AS builder
 ARG version
 ARG version_tag=${version}
 
-# Get required apt packages
-RUN apt-get update \
-  && apt-get install -yy build-essential libffi-dev libfuzzy-dev \
-  && rm -rf /var/lib/apt/lists/*
-
 # Install assemblyline base (setup.py is just a file we know exists so the command
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
+# This lets us build from local builds in dist, or from a version in pypi where a --mount won't.
 COPY setup.py dist* dist/
 RUN pip install --no-cache-dir --no-warn-script-location -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
 RUN chmod 750 /root/.local/lib/python3.11/site-packages
 
 FROM base
+ARG version
+ARG version_tag=${version}
 
 # Add assemblyline user
 RUN useradd -b /var/lib -U -m assemblyline
@@ -53,10 +53,10 @@ RUN chown assemblyline:assemblyline /var/log/assemblyline
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
 ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.11/site-packages
-ENV ASSEMBLYLINE_VERSION=${version}
-ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
+ENV ASSEMBLYLINE_VERSION=$version
+ENV ASSEMBLYLINE_IMAGE_TAG=$version_tag
 
 # Switch to assemblyline user
 USER assemblyline
 WORKDIR /var/lib/assemblyline
-CMD /bin/bash
+CMD ["/bin/bash"]

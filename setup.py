@@ -1,6 +1,6 @@
 import os
 
-from setuptools import Extension, find_packages, setup
+from setuptools import find_packages, setup
 
 # Try to load the version from a datafile in the package
 package_version = "4.0.0.dev0"
@@ -8,12 +8,6 @@ package_version_path = os.path.join(os.path.dirname(__file__), 'assemblyline', '
 if os.path.exists(package_version_path):
     with open(package_version_path) as package_version_file:
         package_version = package_version_file.read().strip()
-
-
-# Mark all the modules that need to be compiled here
-extensions = [
-    Extension('assemblyline.common.frequency', [os.path.join('assemblyline', 'common', 'frequency.pyx')])
-]
 
 # read the contents of your README file
 this_directory = os.path.abspath(os.path.dirname(__file__))
@@ -42,7 +36,6 @@ setup(
     ],
     keywords="assemblyline automated malware analysis gc canada cse-cst cse cst cyber cccs",
     packages=find_packages(exclude=['test', 'test/*']),
-    ext_modules=extensions,
     install_requires=[
         'arrow',
         'aiohttp',
@@ -51,25 +44,20 @@ setup(
         'python-baseconv',
         'boto3',
         'pysftp',
-        'netifaces',
-        'pyroute2.core',
         'redis',
         'requests[socks]',
         'elasticsearch>=8.0.0,<9.0.0',
         'python-datemath!=3.0.2',
         'packaging',
-        'tabulate',
         'PyYAML',
-        'easydict',
         'bcrypt',
         'cart',
-        'cccs-ssdeep',
+        'assemblyline-toolbox>=0.4.0',
         'python-magic',
         'pytz',
         'apscheduler',
         'websocket_client<1.0.0',
         'elastic-apm[flask]>=6.13.0',
-        'cython',
         'docker',
         'kubernetes>18',
         'notifications-python-client',
@@ -80,7 +68,6 @@ setup(
         'msoffcrypto-tool',
         'chardet<6',
         'yara-python',
-        'python-tlsh',
         'hauntedhouse==0.1.10',
         'magika',
         'paramiko<4'
@@ -109,7 +96,7 @@ setup(
         ],
         "assemblyline": ["py.typed"]
     },
-    entry_points = {
+    entry_points={
         "console_scripts": ["al_cli=assemblyline.run.cli:shell_main"]
     }
 )
