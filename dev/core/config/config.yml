@@ -8,9 +8,11 @@ core:
       hosts: [http://elastic:devpass@elasticsearch:9200]
     redis:
       host: redis
+      port: 6379
   redis:
     nonpersistent:
       host: redis
+      port: 6379
     persistent:
       host: redis
       port: 6379
