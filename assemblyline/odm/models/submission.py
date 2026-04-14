@@ -170,3 +170,23 @@ class Submission(odm.Model):
 
     def is_initial(self):
         return self.is_submit() and not self.params.psid
+
+    def build_file_sha256s(self):
+        sha256s = set()
+    
+        # Add original submitted files
+        for f in self.files:
+            if f.sha256:
+                sha256s.add(f.sha256)
+    
+        # Add result SHA256s (first 64 chars of result keys)
+        for r in self.results:
+            if r and len(r) >= 64:
+                sha256s.add(r[:64])
+    
+        # Add error SHA256s
+        for e in self.errors:
+            if e and len(e) >= 64:
+                sha256s.add(e[:64])
+    
+        self.file_sha256s = list(sha256s)
