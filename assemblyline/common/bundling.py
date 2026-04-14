@@ -159,7 +159,7 @@ def recursive_flatten_tree(tree):
 
 
 # noinspection PyBroadException
-def create_bundle(sid, working_dir=WORK_DIR, use_alert=False, user_classification=None, get_full_tree:bool=False):
+def create_bundle(sid, working_dir=WORK_DIR, use_alert=False, user_classification=None):
     with forge.get_datastore(archive_access=True) as datastore:
         temp_bundle_file = f"bundle_{get_random_id()}"
         current_working_dir = os.path.join(working_dir, temp_bundle_file)
@@ -191,7 +191,7 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False, user_classificatio
                     # Create file information data
                     file_tree = datastore.get_or_create_file_tree(submission,
                                                                   config.submission.max_extraction_depth,
-                                                                  user_classification=user_classification, get_full_tree=get_full_tree)['tree']
+                                                                  user_classification=user_classification)['tree']
                     flatten_tree = list(set(recursive_flatten_tree(file_tree) +
                                             [r[:64] for r in submission.get("results", [])]))
                     file_infos, _ = get_file_infos(copy(flatten_tree), datastore)

@@ -138,7 +138,7 @@ def test_submission_bundle(datastore_connection, filestore, config, as_user, dtl
         user_classification = submission['classification'].value
 
     # Create the submission's bundle
-    path = create_bundle(sid, user_classification=user_classification, get_full_tree=True)
+    path = create_bundle(sid, user_classification=user_classification)
 
     # Test if the bundle
     assert os.path.exists(path)
