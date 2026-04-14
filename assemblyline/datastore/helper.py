@@ -544,14 +544,27 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_file_submission_meta(self, sha256, fields, access_control=None):
+        # Try fast lookup first (new optimized field)
         query = f"file_sha256s:{sha256}"
+    
+        result = self.submission.search(query, rows=0, access_control=access_control, as_obj=False)
+    
+        # 🔥 FALLBACK (IMPORTANT for old data)
+        if result["total"] == 0:
+            # fallback to old slow method
+            query = f"files.sha256:{sha256} OR results:{sha256}* OR errors:{sha256}*"
+    
         with concurrent.futures.ThreadPoolExecutor(len(fields)) as executor:
-            res = {field: executor.submit(self.submission.facet,
-                                          field,
-                                          query=query,
-                                          access_control=access_control)
-                   for field in fields}
-
+            res = {
+                field: executor.submit(
+                    self.submission.facet,
+                    field,
+                    query=query,
+                    access_control=access_control
+                )
+                for field in fields
+            }
+    
         return {k.split(".")[-1]: v.result() for k, v in res.items()}
 
     @elasticapm.capture_span(span_type='datastore')
