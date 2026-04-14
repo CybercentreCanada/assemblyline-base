@@ -598,7 +598,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_or_create_file_tree(self, submission, max_depth, cl_engine=forge.get_classification(),
-                                user_classification=None):
+                                user_classification=None, get_full_tree: bool = False):
         # Generate cache key
         if user_classification is not None:
             user_classification = cl_engine.normalize_classification(user_classification, long_format=False)
@@ -616,8 +616,12 @@ class AssemblylineDatastore(object):
         num_files = len(list({x[:64] for x in submission['results']}))
         max_score = submission['max_score']
 
-        # Load / Validate cache tree if exist
-        cached_tree = self.submission_tree.get_if_exists(cache_key, as_obj=False)
+        # bypass cache if the full tree is requested as the cache may hold a non-full version
+        if get_full_tree:
+            cached_tree = None
+        else:
+            # Load / Validate cache tree if exist
+            cached_tree = self.submission_tree.get_if_exists(cache_key, as_obj=False)
         if cached_tree:
             tree = json.loads(cached_tree['tree'])
             if self._is_valid_tree(tree, num_files, max_score):
@@ -704,8 +708,8 @@ class AssemblylineDatastore(object):
             file_sha256 = current_file['sha256']
             file_name = current_file['name']
 
-            # Check if the file not already in the tree and if its allowed to be processed
-            if file_sha256 not in tree_branch \
+            # Check if the file not already in the tree (unless full tree is requested) and if its allowed to be processed
+            if (get_full_tree or file_sha256 not in tree_branch) \
                     and file_sha256 not in forbidden_files \
                     and file_sha256 not in missing_files:
 
@@ -726,7 +730,7 @@ class AssemblylineDatastore(object):
                 # Process each children of the file
                 for new_child in files.get(file_sha256, []):
                     # Check if the file has already been processed elsewhere in the tree
-                    if new_child['sha256'] in tree_cache:
+                    if not get_full_tree and new_child['sha256'] in tree_cache:
                         truncated = True
                     else:
                         # Process file children
