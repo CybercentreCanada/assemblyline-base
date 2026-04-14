@@ -148,6 +148,8 @@ class Submission(odm.Model):
     metadata: dict[str, str] = odm.FlatMapping(odm.MetadataValue(), default={}, store=False, copyto="__text__", description="Metadata associated with the submission.")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details.", ai=False)
     results: list[str] = odm.List(odm.wildcard(), store=False, description="List of result keys from the submission.", ai=False)
+    # NEW FIELD: optimized lookup for file SHA256s (performance fix)
+    file_sha256s: list[str] = odm.List(odm.SHA256(),store=False,description="Denormalized list of all SHA256 hashes (files + results) for fast lookup.")
     sid: str = odm.UUID(copyto="__text__", description="The ID associated with a submission.")
     state = odm.Enum(values=SUBMISSION_STATES, description="State of the submission (ie. completed).", ai=False)
     to_be_deleted = odm.Boolean(
