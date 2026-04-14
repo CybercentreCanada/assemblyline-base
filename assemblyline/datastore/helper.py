@@ -544,7 +544,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def get_file_submission_meta(self, sha256, fields, access_control=None):
-        query = f"files.sha256:{sha256} OR results:{sha256}*"
+        query = f"file_sha256s:{sha256}"
         with concurrent.futures.ThreadPoolExecutor(len(fields)) as executor:
             res = {field: executor.submit(self.submission.facet,
                                           field,
