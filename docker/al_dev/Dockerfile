@@ -17,7 +17,7 @@ RUN apt-get update && \
 RUN pip install --no-warn-script-location --no-cache-dir \
    assemblyline[test] \
    assemblyline-core \
-   assemblyline-ui \
+   assemblyline-ui[socketio] \
    debugpy \
    && pip uninstall -y \
    assemblyline \
