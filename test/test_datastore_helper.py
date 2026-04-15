@@ -117,8 +117,6 @@ def submission_with_duplicate_extracted_files(ds: AssemblylineDatastore) -> Iter
     submission = random_minimal_obj(Submission)
     submission.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
     submission.files[0].sha256 = root_sha256
-    print(type(root_file_2))
-    print(root_file_2)
     submission.files.append(SubmissionFile({"sha256": root_file_2.sha256, "name": "root_2_file_name", "size": root_file_2.size}))
     ds.submission.save(submission.sid, submission)
 
