@@ -1,5 +1,6 @@
 
 import hashlib
+from typing import Iterator
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.odm.models.file import File
 import pytest
@@ -16,6 +17,7 @@ from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.result import File as ResultFile
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.submission import Submission
+from assemblyline.odm.models.submission import File as SubmissionFile
 from assemblyline.remote.datatypes.hash import Hash
 from assemblyline.odm.randomizer import SERVICES, random_minimal_obj
 from assemblyline.odm.random_data import create_signatures, create_submission, create_heuristics, create_services
@@ -69,6 +71,115 @@ def ds(request, config):
 
     return pytest.skip("Connection to the Elasticsearch server failed. This test cannot be performed...")
 
+@pytest.fixture
+def submission_with_duplicate_extracted_files(ds: AssemblylineDatastore) -> Iterator[Submission]:
+    # Create a submission with two root sha256's that have a common extracted file.
+    # This file should appear in both extractions in the full tree case and not if full tree isn't requested.
+    fs = forge.get_filestore()
+    cl_engine = forge.get_classification()
+
+    # Root file creation
+    root_file = random_minimal_obj(File)
+    root_file.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
+    root_data = b"root file content for extracted test"
+    root_sha256 = hashlib.sha256(root_data).hexdigest()
+    root_file.sha256 = root_sha256
+    ds.file.save(root_sha256, root_file)
+    fs.put(root_sha256, root_data)
+
+    # secondary root file creation
+    root_file_2 = random_minimal_obj(File)
+    root_file_2.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
+    root_data_2 = b"root file content for extracted test number 2"
+    root_sha256_2 = hashlib.sha256(root_data_2).hexdigest()
+    root_file_2.sha256 = root_sha256_2
+    ds.file.save(root_sha256_2, root_file_2)
+    fs.put(root_sha256_2, root_data_2)
+
+    # file extracted from first and second root files
+    extracted_file = random_minimal_obj(File)
+    extracted_file.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
+    extracted_data = b"extracted file content"
+    extracted_sha256 = hashlib.sha256(extracted_data).hexdigest()
+    extracted_file.sha256 = extracted_sha256
+    ds.file.save(extracted_sha256, extracted_file)
+    fs.put(extracted_sha256, extracted_data)
+
+    # file extracted only from first root file
+    extracted_file_2 = random_minimal_obj(File)
+    extracted_file_2.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
+    extracted_data_2 = b"extracted file content 2"
+    extracted_sha256_2 = hashlib.sha256(extracted_data_2).hexdigest()
+    extracted_file_2.sha256 = extracted_sha256_2
+    ds.file.save(extracted_sha256_2, extracted_file_2)
+    fs.put(extracted_sha256_2, extracted_data_2)
+
+    submission = random_minimal_obj(Submission)
+    submission.expiry_ts = now_as_iso(60 * 60 * 24 * 14)
+    submission.files[0].sha256 = root_sha256
+    submission.files.append(SubmissionFile({"sha256": root_file_2.sha256, "name": "root_2_file_name", "size": root_file_2.size}))
+    ds.submission.save(submission.sid, submission)
+
+    # First extraction from root sha256
+    result = random_minimal_obj(Result)
+    result.sha256 = root_sha256
+    result.classification = cl_engine.UNRESTRICTED
+    result.response.extracted = [
+        ResultFile({
+            "sha256": extracted_sha256,
+            "name": "extracted.bin",
+            "description": "Test extracted file",
+            "classification": cl_engine.UNRESTRICTED
+        })
+    ]
+    result_key = result.build_key()
+    ds.result.save(result_key, result)
+    ds.result.commit()
+
+    # Second extraction from root sha256
+    result_2 = random_minimal_obj(Result)
+    result_2.sha256 = root_sha256
+    result_2.classification = cl_engine.UNRESTRICTED
+    result_2.response.extracted = [
+        ResultFile({
+            "sha256": extracted_sha256_2,
+            "name": "extracted_2.bin",
+            "description": "Test extracted file 2",
+            "classification": cl_engine.UNRESTRICTED
+        })
+    ]
+    result_key_2 = result_2.build_key()
+    ds.result.save(result_key_2, result_2)
+    ds.result.commit()
+
+    # First extraction from root 2 sha256 - same file extracted as first extraction from root sha256
+    result_3 = random_minimal_obj(Result)
+    result_3.sha256 = root_sha256_2
+    result_3.classification = cl_engine.UNRESTRICTED
+    result_3.response.extracted = [
+        ResultFile({
+            "sha256": extracted_sha256,
+            "name": "extracted.bin",
+            "description": "Test extracted file 2",
+            "classification": cl_engine.UNRESTRICTED
+        })
+    ]
+    result_key_3 = result_3.build_key()
+    ds.result.save(result_key_3, result_3)
+    ds.result.commit()
+
+    # save all results to the submission
+    submission.results = [result_key, result_key_2, result_key_3]
+    ds.submission.save(submission.sid, submission)
+    ds.submission.commit()
+    yield submission
+    # Ensure submission tree is deleted
+    ds.delete_submission_tree(submission.sid, transport=fs)
+    ds.submission.commit()
+    ds.error.commit()
+    ds.emptyresult.commit()
+    ds.result.commit()
+    ds.file.commit()
 
 def test_index_archive_status(ds: AssemblylineDatastore, config: Config):
     """Save a new document atomically, then try to save it again and detect the failure."""
@@ -350,6 +461,60 @@ def test_get_or_create_file_tree(ds: AssemblylineDatastore, config: Config):
 
     for f in submission.files:
         assert f.sha256 in tree['tree']
+
+def test_get_or_create_full_file_tree(ds: AssemblylineDatastore, config: Config):
+    # Get a random submission
+    submission: Submission = ds.submission.search("id:*", rows=1, fl="*")['items'][0]
+
+    # Get file tree
+    tree_normal = ds.get_or_create_file_tree(submission, config.submission.max_extraction_depth, get_full_tree=False)
+    full_tree = ds.get_or_create_file_tree(submission, config.submission.max_extraction_depth, get_full_tree=True)
+
+    # Check if all files that are obvious from the results are there
+    for x in ['tree', 'classification', 'filtered', 'partial', 'supplementary']:
+        assert x in full_tree
+
+    for f in submission.files:
+        assert f.sha256 in full_tree['tree']
+
+    # result should never be truncated
+    for _, res_val in full_tree['tree'].items():
+        truncated = res_val.get("truncated", True)
+        assert truncated is False
+
+    # result for normal tree should always be truncated at the first level.
+    for _, res_val in tree_normal['tree'].items():
+        truncated = res_val.get("truncated", False)
+        assert truncated is True
+
+
+def test_get_or_create_full_file_tree_guaranteed_tree(submission_with_duplicate_extracted_files: Submission , ds: AssemblylineDatastore, config: Config):
+    tree_normal = ds.get_or_create_file_tree(submission_with_duplicate_extracted_files, config.submission.max_extraction_depth, get_full_tree=False)
+    normal_found_sha256s = {}
+    for root_sha256, val in tree_normal['tree'].items():
+        normal_found_sha256s[root_sha256] = []
+        for child_sha256, val in val.get("children", {}).items():
+            normal_found_sha256s[root_sha256].append(child_sha256)
+
+    full_tree = ds.get_or_create_file_tree(submission_with_duplicate_extracted_files, config.submission.max_extraction_depth, get_full_tree=True)
+    full_found_sha256s = {}
+    for root_sha256, val in full_tree['tree'].items():
+        full_found_sha256s[root_sha256] = []
+        for child_sha256, val in val.get("children", {}).items():
+            assert val.get("truncated", True) is False
+            full_found_sha256s[root_sha256].append(child_sha256)
+
+    assert len(normal_found_sha256s) == 2
+    assert len(full_found_sha256s) == 2
+
+    more_found_in_full_result = False
+    for root_sha in full_found_sha256s:
+        assert len(full_found_sha256s[root_sha]) >= len(normal_found_sha256s[root_sha])
+        if len(full_found_sha256s[root_sha]) == len(normal_found_sha256s[root_sha]):
+            assert sorted(full_found_sha256s[root_sha]) == sorted(normal_found_sha256s[root_sha])
+        elif len(full_found_sha256s[root_sha]) > len(normal_found_sha256s[root_sha]):
+            more_found_in_full_result = True
+    assert more_found_in_full_result is True
 
 
 def test_get_summary_from_keys(ds: AssemblylineDatastore):

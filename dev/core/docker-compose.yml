@@ -3,23 +3,21 @@ version: "2.4"
 services:
   # Service server
   al_service_server:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline-rust:4.7.latest
     env_file:
       - .env
     ports:
       - "5003:5003"
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
-    working_dir: /opt/alv4/
-    command: python3 /opt/alv4/assemblyline-service-server/assemblyline_service_server/app.py
+    command: assemblyline-server service-api --allow-http-mode
     networks:
       - default
       - registration
 
   # Create test data
   create_test_data:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     environment:
@@ -45,7 +43,7 @@ services:
 
   # UI
   al_ui:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     ports:
@@ -58,7 +56,7 @@ services:
 
   # SocketIO Server
   al_socketio:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     ports:
@@ -71,7 +69,7 @@ services:
 
   # Alerter
   al_alerter:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     volumes:
@@ -89,7 +87,7 @@ services:
 
   # Alerter
   al_archiver:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     volumes:
@@ -107,7 +105,7 @@ services:
 
   # Expiry
   al_expiry:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     volumes:
@@ -125,7 +123,7 @@ services:
 
   # Elasticsearch Metrics
   al_elastic_metrics:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     volumes:
@@ -143,7 +141,7 @@ services:
 
   # Metrics aggregator
   al_metrics:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     volumes:
@@ -153,7 +151,7 @@ services:
 
   # Hearbeat manager
   al_heartbeat:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     volumes:
@@ -171,7 +169,7 @@ services:
 
   # Stats aggregator
   al_stats:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     volumes:
@@ -181,7 +179,7 @@ services:
 
   # Workflow
   al_workflow:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline_dev:4.7.1
     env_file:
       - .env
     volumes:
@@ -198,59 +196,32 @@ services:
         ]
 
   al_plumber:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline-rust:4.7.latest
     env_file:
       - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
-    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/plumber/run_plumber.py
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "bash",
-          "-c",
-          "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi",
-        ]
+    command: assemblyline-server plumber
 
   # Dispatcher processes
   al_dispatcher:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline-rust:4.7.latest
     env_file:
       - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
     environment:
       SKIP_SERVICE_SETUP: "true"
-    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/dispatching
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "bash",
-          "-c",
-          "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi",
-        ]
+    command: assemblyline-server dispatcher
 
   # Ingester Processes
   al_ingester:
-    image: cccs/assemblyline_dev:4.6.1
+    image: cccs/assemblyline-rust:4.7.latest
     env_file:
       - .env
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../../..}/:/opt/alv4/
-    command: python3 /opt/alv4/assemblyline-core/assemblyline_core/ingester
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "bash",
-          "-c",
-          "if [[ ! `find /tmp/heartbeat -newermt '-30 seconds'` ]]; then false; fi",
-        ]
+    command: assemblyline-server ingester
 
 # You can use this if you want a jupyter notebook to debug something in development
 #  notebook:

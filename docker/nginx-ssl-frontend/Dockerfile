@@ -1,7 +1,7 @@
 FROM nginx AS builder
 
 RUN apt-get update
-RUN apt-get install openssl
+RUN apt-get install -y openssl
 RUN openssl req -nodes -x509 -newkey rsa:4096 -keyout /etc/ssl/nginx.key -out /etc/ssl/nginx.crt -days 3650 -subj "/C=CA/ST=Ontario/L=Ottawa/O=CCCS/CN=assemblyline.local"
 
 FROM nginx
