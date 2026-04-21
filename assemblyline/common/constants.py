@@ -9,6 +9,7 @@ DISPATCH_RUNNING_TASK_HASH = 'dispatch-active-tasks'
 SCALER_TIMEOUT_QUEUE = 'scaler-timeout-queue'
 CONFIG_HASH = 'al-config'
 POST_PROCESS_CONFIG_KEY = 'post-process-actions'
+SERVICE_API_KEY_HASH = "dynamic-service-keys"
 
 
 # Some pure functions for getting queue lengths (effectively for appending/prepending constants to strings)
