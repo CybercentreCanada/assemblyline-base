@@ -2,7 +2,7 @@
 # DO NOT EDIT! Re-run the script instead...
 
 # Top level domains from: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-# Version 2025041003, Last Updated Fri Apr 11 07:07:01 2025 UTC
+# Version 2026042100, Last Updated Tue Apr 21 07:07:01 2026 UTC
 TLDS_ALPHA_BY_DOMAIN = {
     "AAA",
     "AARP",
@@ -123,7 +123,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "BEATS",
     "BEAUTY",
     "BEER",
-    "BENTLEY",
     "BERLIN",
     "BEST",
     "BESTBUY",
@@ -350,7 +349,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "DRIVE",
     "DTV",
     "DUBAI",
-    "DUNLOP",
     "DUPONT",
     "DURBAN",
     "DVAG",
@@ -493,7 +491,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "GOLD",
     "GOLDPOINT",
     "GOLF",
-    "GOO",
     "GOODYEAR",
     "GOOG",
     "GOOGLE",
@@ -663,7 +660,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "LACAIXA",
     "LAMBORGHINI",
     "LAMER",
-    "LANCASTER",
     "LAND",
     "LANDROVER",
     "LANXESS",
@@ -750,6 +746,7 @@ TLDS_ALPHA_BY_DOMAIN = {
     "MEMORIAL",
     "MEN",
     "MENU",
+    "MERCK",
     "MERCKMSD",
     "MG",
     "MH",
@@ -919,7 +916,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "PORN",
     "POST",
     "PR",
-    "PRAMERICA",
     "PRAXI",
     "PRESS",
     "PRIME",
@@ -953,7 +949,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "REALTY",
     "RECIPES",
     "RED",
-    "REDSTONE",
     "REDUMBRELLA",
     "REHAB",
     "REISE",
@@ -1260,7 +1255,6 @@ TLDS_ALPHA_BY_DOMAIN = {
     "WINE",
     "WINNERS",
     "WME",
-    "WOLTERSKLUWER",
     "WOODSIDE",
     "WORK",
     "WORKS",
@@ -1453,6 +1447,7 @@ TLDS_ALPHA_BY_DOMAIN = {
 TLDS_SPECIAL_BY_DOMAIN = {
     "ALT",
     "6TISCH.ARPA",
+    "EAP.ARPA",
     "EAP-NOOB.ARPA",
     "HOME.ARPA",
     "10.IN-ADDR.ARPA",
