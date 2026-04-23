@@ -363,6 +363,20 @@ def import_bundle(
                     submission.update(Classification.get_access_control_parts(submission['classification']))
 
                     if not rescan_services:
+                        # Build file_sha256s (performance optimization)
+                        sha256s = set()
+                        
+                        # From original files
+                        for f in submission.files:
+                            if f.sha256:
+                                sha256s.add(f.sha256)
+                        
+                        # From results (extract first 64 chars = sha256)
+                        for r in submission.results:
+                            if r:
+                                sha256s.add(r[:64])
+                        
+                        submission.file_sha256s = list(sha256s)
                         # Save the submission in the system
                         datastore.submission.save(sid, submission)
 
