@@ -3,7 +3,10 @@ from typing import Any, Dict, List
 from assemblyline import odm
 from assemblyline.common.constants import PRIORITIES
 from assemblyline.common.forge import get_classification
-from assemblyline.odm.models.service import EnvironmentVariable
+from assemblyline.odm.models.service import (
+    SUPPORTED_REGISTRY_TYPES,
+    EnvironmentVariable,
+)
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 from assemblyline.odm.models.submission import DEFAULT_SRV_SEL, ServiceSelection
 
@@ -1130,7 +1133,6 @@ SERVICE_STAGES = [
 ]
 
 SAFELIST_HASH_TYPES = ['sha1', 'sha256', 'md5']
-REGISTRY_TYPES = ['docker', 'harbor']
 
 
 @odm.model(index=False, store=False, description="Service's Safelisting Configuration")
@@ -1147,7 +1149,7 @@ class ServiceSafelist(odm.Model):
 @odm.model(index=False, store=False, description="Pre-Configured Registry Details for Services")
 class ServiceRegistry(odm.Model):
     name: str = odm.Keyword(description="Name of container registry")
-    type: str = odm.Enum(values=REGISTRY_TYPES, default='docker', description="Type of container registry")
+    type: str = odm.Enum(values=SUPPORTED_REGISTRY_TYPES, default='docker', description="Type of container registry")
     username: str = odm.Optional(odm.Keyword(description="Username for container registry"))
     password: str = odm.Optional(odm.Keyword(description="Password for container registry"))
     use_fic: bool = odm.Boolean(
