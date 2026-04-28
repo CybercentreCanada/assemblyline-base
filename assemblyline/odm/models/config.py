@@ -1173,7 +1173,7 @@ class Services(odm.Model):
     allow_insecure_registry: bool = odm.Boolean(description="Allow fetching container images from insecure registries")
 
     preferred_registry_type: str = odm.Enum(
-        values=REGISTRY_TYPES,
+        values=SUPPORTED_REGISTRY_TYPES,
         default='docker',
         description="Global registry type to be used for fetching updates for a service (overridable by a service)")
     prefer_service_privileged: bool = odm.Boolean(
