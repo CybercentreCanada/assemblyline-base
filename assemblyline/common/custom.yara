@@ -1526,7 +1526,7 @@ MSBuild Script Files (Project files for VB, C#, F# etc)
 
 rule code_msbuild {
     meta:
-        type = "code/msbuild"
+        type = "code/xml/msbuild"
 
     strings:
         $msbuild1 = "<Project"
