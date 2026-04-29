@@ -1519,3 +1519,20 @@ rule text_rdp {
         // Add two optionals, to reduce false positives.
         and 2 of ($optional*)
 }
+
+/*
+MSBuild Script Files (Project files for VB, C#, F# etc)
+*/
+
+rule code_msbuild {
+    meta:
+        type = "code/msbuild"
+
+    strings:
+        $msbuild1 = "<Project"
+        $xmlns_url = "http://schemas.microsoft.com/developer/msbuild"
+
+    condition:
+        $msbuild1
+        and $xmlns_url in (0..256)
+}
