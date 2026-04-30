@@ -4,6 +4,8 @@ services:
   # Service server
   al_service_server:
     image: cccs/assemblyline-rust:4.7.latest
+    environment:
+      BIND_ADDRESS: "0.0.0.0:5003"
     env_file:
       - .env
     ports:
