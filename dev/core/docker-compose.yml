@@ -3,7 +3,7 @@ version: "2.4"
 services:
   # Service server
   al_service_server:
-    image: cccs/assemblyline-rust:4.7.latest
+    image: cccs/assemblyline-rust:4.7.stable
     environment:
       BIND_ADDRESS: "0.0.0.0:5003"
     env_file:
@@ -198,7 +198,7 @@ services:
         ]
 
   al_plumber:
-    image: cccs/assemblyline-rust:4.7.latest
+    image: cccs/assemblyline-rust:4.7.stable
     env_file:
       - .env
     volumes:
@@ -207,7 +207,7 @@ services:
 
   # Dispatcher processes
   al_dispatcher:
-    image: cccs/assemblyline-rust:4.7.latest
+    image: cccs/assemblyline-rust:4.7.stable
     env_file:
       - .env
     volumes:
@@ -218,7 +218,7 @@ services:
 
   # Ingester Processes
   al_ingester:
-    image: cccs/assemblyline-rust:4.7.latest
+    image: cccs/assemblyline-rust:4.7.stable
     env_file:
       - .env
     volumes:
