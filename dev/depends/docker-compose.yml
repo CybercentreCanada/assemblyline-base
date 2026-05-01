@@ -120,7 +120,7 @@ services:
       retries: 3
 
   nginx:
-    image: cccs/nginx-ssl-frontend:mui5
+    image: cccs/nginx-ssl-frontend:latest
     ports:
       - "80:80"
       - "443:443"
@@ -130,6 +130,8 @@ services:
       - SOCKET_HOST=172.17.0.1
       - FQDN=localhost
       - MAX_BODY_SIZE=100M
+    volumes:
+      - ${PATH_REWRITE:-.}/config/nginx_full.template:/opt/full.template:ro
     depends_on:
       kibana:
         condition: service_started

@@ -46,7 +46,7 @@ services:
       retries: 3
 
   nginx:
-    image: cccs/nginx-ssl-frontend:mui5
+    image: cccs/nginx-ssl-frontend:latest
     ports:
       - "80:80"
       - "443:443"
@@ -57,6 +57,8 @@ services:
       - FQDN=localhost
       - MAX_BODY_SIZE=100M
       - TEMPLATE=minimal
+    volumes:
+      - ${PATH_REWRITE:-.}/config/nginx_minimal.template:/opt/minimal.template:ro
 
 networks:
   default:
