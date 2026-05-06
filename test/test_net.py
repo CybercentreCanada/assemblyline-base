@@ -74,6 +74,21 @@ def test_valid_email():
     assert not is_valid_email('')
     assert not is_valid_email('""@cyber.gc.ca')
 
+    # Missing structure
+    assert not is_valid_email("admin*")
+    assert not is_valid_email("x || email:*")
+    assert not is_valid_email("x && email:*")
+    assert not is_valid_email("email:* OR uname:admin")
+    assert not is_valid_email("admin@cyber.gc.ca AND password:*")
+    assert not is_valid_email("x}email:{*")
+    assert not is_valid_email('" OR email:*')
+
+    # Space in input (always invalid)
+    assert not is_valid_email("test@example.com OR email:*")
+
+    # Backslash splits into multiple @ contexts
+    assert not is_valid_email("user\\@evil.com@legit.com")
+
 
 def test_is_ip_in_network():
     from ipaddress import ip_network
