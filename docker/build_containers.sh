@@ -2,7 +2,6 @@
 
 # Build core containers
 (cd nginx-ssl-frontend && docker build -t cccs/nginx-ssl-frontend .)
-(cd nginx-ssl-frontend:mui5 && docker build -t cccs/nginx-ssl-frontend:mui5 .)
 (cd minio && docker build -t cccs/minio .)
 
 # Build default dev containers
