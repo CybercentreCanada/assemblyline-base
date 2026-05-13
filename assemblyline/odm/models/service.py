@@ -12,6 +12,7 @@ from assemblyline.common.constants import (
 Classification = forge.get_classification()
 
 FETCH_METHODS = ["GET", "POST", "GIT"]
+SUPPORTED_REGISTRY_TYPES = ["docker", "harbor", "jfrog"]
 
 SIGNATURE_DELIMITERS = {
     'new_line': '\n',
@@ -44,7 +45,7 @@ class DockerConfig(odm.Model):
                                                description="The username to use when pulling the image")
     registry_password: Opt[str] = odm.Optional(odm.Keyword(default=""),
                                                description="The password or token to use when pulling the image")
-    registry_type: str = odm.Enum(values=["docker", "harbor"], default='docker',
+    registry_type: str = odm.Enum(values=SUPPORTED_REGISTRY_TYPES, default='docker',
                                   description="The type of container registry")
     ports: list[str] = odm.List(odm.Keyword(), default=[], description="What ports of container to expose?")
     ram_mb: int = odm.Integer(default=512, description="Container RAM limit")

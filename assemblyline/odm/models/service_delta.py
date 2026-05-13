@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from assemblyline import odm
-from assemblyline.odm.models.service import FETCH_METHODS, SIGNATURE_DELIMITERS
+from assemblyline.odm.models.service import (
+    FETCH_METHODS,
+    SIGNATURE_DELIMITERS,
+    SUPPORTED_REGISTRY_TYPES,
+)
 
 REF_DEPENDENCY_CONFIG = "Refer to:<br>[Service - DependencyConfig](../service/#dependencyconfig)"
 REF_DOCKER_CONFIG = "Refer to:<br>[Service - DockerConfig](../service/#dockerconfig)"
@@ -28,7 +32,7 @@ class DockerConfigDelta(odm.Model):
     image = odm.Optional(odm.Keyword(), description=REF_DOCKER_CONFIG)
     registry_username = odm.Optional(odm.Keyword(default=""), description=REF_DOCKER_CONFIG)
     registry_password = odm.Optional(odm.Keyword(default=""), description=REF_DOCKER_CONFIG)
-    registry_type = odm.Optional(odm.Enum(values=["docker", "harbor"]), description=REF_DOCKER_CONFIG)
+    registry_type = odm.Optional(odm.Enum(values=SUPPORTED_REGISTRY_TYPES), description=REF_DOCKER_CONFIG)
     ports = odm.Optional(odm.List(odm.Keyword()), description=REF_DOCKER_CONFIG)
     ram_mb = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
     ram_mb_min = odm.Optional(odm.Integer(), description=REF_DOCKER_CONFIG)
