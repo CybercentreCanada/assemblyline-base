@@ -144,7 +144,9 @@ def get_filestore(config=None, connection_attempts=None):
     from assemblyline.filestore import FileStore
     if config is None:
         config = get_config()
-    return FileStore(*config.filestore.storage, connection_attempts=connection_attempts)
+    return FileStore(*config.filestore.storage,
+                     readonly_urls=config.filestore.readonly_storage,
+                     connection_attempts=connection_attempts)
 
 
 def get_identify(use_cache=True, config=None, datastore=None, log=None):

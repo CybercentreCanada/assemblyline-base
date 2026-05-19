@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import TYPE_CHECKING, AnyStr, Optional, Tuple
 from urllib.parse import parse_qs, unquote, urlparse
 
@@ -150,13 +151,23 @@ def create_transport(url, connection_attempts=None):
 
 
 class FileStore(object):
-    def __init__(self, *transport_urls, connection_attempts=None):
+    SLOW_OP_THRESHOLD = 5.0  # Log warning when a single filestore operation exceeds this (seconds)
+
+    def __init__(self, *transport_urls, readonly_urls=None, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport')
         self.transport_urls = transport_urls
         self.transports = [create_transport(url, connection_attempts) for url in transport_urls]
+        self.readonly_transports = [create_transport(url, connection_attempts) for url in (readonly_urls or [])]
+        self.all_transports = self.transports + self.readonly_transports
         self.local_transports = [
-            t for t in self.transports if isinstance(t, TransportLocal)
+            t for t in self.all_transports if isinstance(t, TransportLocal)
         ]
+
+        self.log.info("FileStore initialized with %d writable transport(s): %s",
+                      len(self.transports), ', '.join(str(t) for t in self.transports))
+        if self.readonly_transports:
+            self.log.info("FileStore initialized with %d readonly transport(s): %s",
+                          len(self.readonly_transports), ', '.join(str(t) for t in self.readonly_transports))
 
     def __eq__(self, obj: FileStore) -> bool:
         return self.transport_urls == obj.transport_urls
@@ -168,10 +179,13 @@ class FileStore(object):
         self.close()
 
     def __str__(self):
-        return ', '.join(str(t) for t in self.transports)
+        out = ', '.join(str(t) for t in self.transports)
+        if self.readonly_transports:
+            out += ' | readonly: ' + ', '.join(str(t) for t in self.readonly_transports)
+        return out
 
     def close(self):
-        for t in self.transports:
+        for t in self.all_transports:
             try:
                 t.close()
             except Exception as ex:
@@ -193,14 +207,22 @@ class FileStore(object):
         successful = False
         transports = []
         download_errors = []
-        for t in self.slice(location):
+        start = time.monotonic()
+        for t in self.slice(location, include_readonly=True):
             try:
                 t.download(src_path, dest_path)
                 transports.append(t)
                 successful = True
+                if t in self.readonly_transports:
+                    self.log.debug("File %s found on readonly transport %s (not yet migrated to primary)", src_path, t)
                 break
             except Exception as ex:
                 download_errors.append((str(t), str(ex)))
+
+        elapsed = time.monotonic() - start
+        if elapsed > self.SLOW_OP_THRESHOLD:
+            self.log.warning("Slow filestore download: %s took %.2fs (transports tried: %d)",
+                             src_path, elapsed, len(download_errors) + len(transports))
 
         if not successful:
             raise FileStoreException('No transport succeeded => %s' % json.dumps(download_errors))
@@ -209,7 +231,7 @@ class FileStore(object):
     @elasticapm.capture_span(span_type='filestore')
     def exists(self, path, location='any') -> list[Transport]:
         transports = []
-        for t in self.slice(location):
+        for t in self.slice(location, include_readonly=True):
             try:
                 if t.exists(path):
                     transports.append(t)
@@ -222,7 +244,7 @@ class FileStore(object):
 
     @elasticapm.capture_span(span_type='filestore')
     def get(self, path: str, location='any') -> Optional[bytes]:
-        for t in self.slice(location):
+        for t in self.slice(location, include_readonly=True):
             try:
                 return t.get(path)
             except TransportException as ex:
@@ -248,21 +270,23 @@ class FileStore(object):
                                              'exist for %s on %s (%s)' % (dst_path, location, t))
         return transports
 
-    def slice(self, location):
+    def slice(self, location, include_readonly=False):
+        pool = self.all_transports if include_readonly else self.transports
         start, end = {
-            'all': (0, len(self.transports)),
-            'any': (0, len(self.transports)),
-            'far': (-1, len(self.transports)),
+            'all': (0, len(pool)),
+            'any': (0, len(pool)),
+            'far': (-1, len(pool)),
             'near': (0, 1),
         }[location]
 
-        transports = self.transports[start:end]
+        transports = pool[start:end]
         assert (len(transports) >= 1)
         return transports
 
     @elasticapm.capture_span(span_type='filestore')
     def upload(self, src_path: str, dst_path: str, location='all', force=False, verify=False) -> list[Transport]:
         transports = []
+        start = time.monotonic()
         for t in self.slice(location):
             if force or not t.exists(dst_path):
                 transports.append(t)
@@ -270,6 +294,10 @@ class FileStore(object):
                 if verify and not t.exists(dst_path):
                     raise FileStoreException('File transfer failed. Remote file does not '
                                              'exist for %s on %s (%s)' % (dst_path, location, t))
+        elapsed = time.monotonic() - start
+        if elapsed > self.SLOW_OP_THRESHOLD:
+            self.log.warning("Slow filestore upload: %s took %.2fs across %d transport(s)",
+                             dst_path, elapsed, len(transports))
         return transports
 
     @elasticapm.capture_span(span_type='filestore')

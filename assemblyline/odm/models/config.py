@@ -1069,12 +1069,15 @@ class Filestore(odm.Model):
     archive: List[str] = odm.List(odm.Keyword(), description="List of filestores used for malware archive")
     cache: List[str] = odm.List(odm.Keyword(), description="List of filestores used for caching")
     storage: List[str] = odm.List(odm.Keyword(), description="List of filestores used for storage")
+    readonly_storage: List[str] = odm.List(odm.Keyword(), default=[],
+                                           description="List of read-only filestores used as fallback for reads")
 
 
 DEFAULT_FILESTORE = {
     "archive": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-archive&use_ssl=False"],
     "cache": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-cache&use_ssl=False"],
-    "storage": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-storage&use_ssl=False"]
+    "storage": ["s3://al_storage_key:Ch@ngeTh!sPa33w0rd@localhost:9000?s3_bucket=al-storage&use_ssl=False"],
+    "readonly_storage": []
 }
 
 
