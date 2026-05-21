@@ -81,13 +81,15 @@ class TransportAzure(Transport):
             except TransportException as e:
                 if not isinstance(e.cause, ResourceNotFoundError):
                     raise
-                try:
-                    self.with_retries(self.container_client.create_container)
-                except TransportException as error:
-                    if not isinstance(error.cause, ResourceNotFoundError):
-                        raise
-                    self.log.info('Failed to create container, we\'re most likely in read only mode')
-                    self.read_only = True
+                if not read_only:
+                    # Attempt to initialize the container if it doesn't exist if the transport is writable
+                    try:
+                        self.with_retries(self.container_client.create_container)
+                    except TransportException as error:
+                        if not isinstance(error.cause, ResourceNotFoundError):
+                            raise
+                        self.log.info('Failed to create container, we\'re most likely in read only mode')
+                        read_only = True
 
         def azure_normalize(path):
             # flatten path to just the basename

@@ -91,7 +91,8 @@ class TransportS3(Transport):
             else:
                 raise
 
-        if not bucket_exist:
+        if not bucket_exist and not read_only:
+            # Only initialize the bucket if the transport has been deemed writable.
             try:
                 self.with_retries(self.client.create_bucket, Bucket=self.bucket)
             except TransportException as e:
