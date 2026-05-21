@@ -59,7 +59,7 @@ setup(
         'websocket_client<1.0.0',
         'elastic-apm[flask]>=6.13.0',
         'docker',
-        'kubernetes>18',
+        'kubernetes==35.0.0',
         'notifications-python-client',
         'rstr',
         # Blacklist a bad release of the azure library until a release newer than that comes out
