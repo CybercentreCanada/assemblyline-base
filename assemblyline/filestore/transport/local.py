@@ -1,13 +1,17 @@
 import logging
 import os
-import shutil
 import re
+import shutil
 from typing import AnyStr, Iterable, Optional
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.path import strip_path_inclusion
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import (
+    Transport,
+    TransportException,
+    normalize_srl_path,
+)
 
 NORMALIZED = re.compile('[a-z0-9]/[a-z0-9]/[a-z0-9]/[a-z0-9]/[a-z0-9]{64}')
 
@@ -18,7 +22,7 @@ class TransportLocal(Transport):
     Local file system Transport class.
     """
 
-    def __init__(self, base=None, normalize=None):
+    def __init__(self, base=None, normalize=None, read_only=False):
         self.log = logging.getLogger('assemblyline.transport.local')
         self.base = base
         self.host = "localhost"
@@ -38,7 +42,7 @@ class TransportLocal(Transport):
         if not normalize:
             normalize = local_normalize
 
-        super(TransportLocal, self).__init__(normalize=normalize)
+        super(TransportLocal, self).__init__(normalize=normalize, read_only=read_only)
 
     def delete(self, path):
         normal_path = self.normalize(path)

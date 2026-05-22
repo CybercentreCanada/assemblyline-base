@@ -4,8 +4,6 @@ import time
 from io import BytesIO
 from typing import Iterable, Optional
 
-from assemblyline.common.exceptions import ChainAll
-from assemblyline.filestore.transport.base import Transport, TransportException
 from azure.core.exceptions import (
     ClientAuthenticationError,
     DecodeError,
@@ -17,8 +15,15 @@ from azure.core.exceptions import (
     ServiceRequestError,
     TooManyRedirectsError,
 )
-from azure.identity import ClientSecretCredential, DefaultAzureCredential, WorkloadIdentityCredential
+from azure.identity import (
+    ClientSecretCredential,
+    DefaultAzureCredential,
+    WorkloadIdentityCredential,
+)
 from azure.storage.blob import BlobServiceClient
+
+from assemblyline.common.exceptions import ChainAll
+from assemblyline.filestore.transport.base import Transport, TransportException
 
 """
 This class assumes a flat file structure in the Azure storage blob.
@@ -30,7 +35,7 @@ class TransportAzure(Transport):
 
     def __init__(self, base=None, access_key=None, tenant_id=None, client_id=None, client_secret=None,
                  host=None, connection_attempts=None, allow_directory_access=False, use_default_credentials=False,
-                 initalize_container=True):
+                 initalize_container=True, read_only=False):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
         self.connection_attempts: Optional[int] = connection_attempts
@@ -76,13 +81,15 @@ class TransportAzure(Transport):
             except TransportException as e:
                 if not isinstance(e.cause, ResourceNotFoundError):
                     raise
-                try:
-                    self.with_retries(self.container_client.create_container)
-                except TransportException as error:
-                    if not isinstance(error.cause, ResourceNotFoundError):
-                        raise
-                    self.log.info('Failed to create container, we\'re most likely in read only mode')
-                    self.read_only = True
+                if not read_only:
+                    # Attempt to initialize the container if it doesn't exist if the transport is writable
+                    try:
+                        self.with_retries(self.container_client.create_container)
+                    except TransportException as error:
+                        if not isinstance(error.cause, ResourceNotFoundError):
+                            raise
+                        self.log.info('Failed to create container, we\'re most likely in read only mode')
+                        read_only = True
 
         def azure_normalize(path):
             # flatten path to just the basename
@@ -94,7 +101,7 @@ class TransportAzure(Transport):
             else:
                 return path
 
-        super(TransportAzure, self).__init__(normalize=azure_normalize)
+        super(TransportAzure, self).__init__(normalize=azure_normalize, read_only=read_only)
 
     def __str__(self):
         return f"azure://{self.host}/{self.blob_container}/"

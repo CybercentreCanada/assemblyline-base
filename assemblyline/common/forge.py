@@ -9,10 +9,11 @@ from typing import TYPE_CHECKING, Optional
 
 import elasticapm
 import yaml
+from hauntedhouse import Client
+
 from assemblyline.common.constants import service_queue_name
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.importing import load_module_by_path
-from hauntedhouse import Client
 
 if TYPE_CHECKING:
     from assemblyline.odm.models.config import Config

@@ -1,23 +1,27 @@
 from __future__ import annotations
+
+import errno
 import ftplib
 import logging
 import os
 import os.path
 import posixpath
-import threading
-import socket
-import time
-import errno
-import weakref
 import re
-
+import socket
+import threading
+import time
+import weakref
 from io import BytesIO
-from typing import Optional, Union, AnyStr, Iterable
+from typing import AnyStr, Iterable, Optional, Union
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.path import splitpath
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import (
+    Transport,
+    TransportException,
+    normalize_srl_path,
+)
 
 NORMALIZED = re.compile('[a-z0-9]/[a-z0-9]/[a-z0-9]/[a-z0-9]/[a-z0-9]{64}')
 
@@ -105,7 +109,7 @@ class TransportFTP(Transport):
     FTP Transport class.
     """
 
-    def __init__(self, base=None, host=None, password=None, user=None, port=None, use_tls=None):
+    def __init__(self, base=None, host=None, password=None, user=None, port=None, use_tls=None, read_only=False):
         self.log: logging.Logger = logging.getLogger('assemblyline.transport.ftp')
         self.base: str = base
         self.ftp_objects: weakref.WeakKeyDictionary[threading.Thread, ftplib.FTP] = weakref.WeakKeyDictionary()
@@ -127,7 +131,7 @@ class TransportFTP(Transport):
             self.log.debug('ftp normalized: %s -> %s', path, s)
             return s
 
-        super(TransportFTP, self).__init__(normalize=ftp_normalize)
+        super(TransportFTP, self).__init__(normalize=ftp_normalize, read_only=read_only)
 
     @property
     def ftp(self) -> Union[ftplib.FTP, ftplib.FTP_TLS]:

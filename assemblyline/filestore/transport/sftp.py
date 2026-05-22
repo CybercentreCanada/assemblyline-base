@@ -4,7 +4,6 @@ import posixpath
 import tempfile
 import warnings
 
-
 # Stop Blowfish deprecation warning
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -12,11 +11,16 @@ with warnings.catch_warnings():
     import pysftp
 
 from io import BytesIO
+
 from paramiko import SSHException
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.common.uid import get_random_id
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import (
+    Transport,
+    TransportException,
+    normalize_srl_path,
+)
 
 
 def reconnect_retry_on_fail(func):
@@ -63,7 +67,7 @@ class TransportSFTP(Transport):
     """
 
     def __init__(self, base=None, host=None, password=None, user=None, port=None, private_key=None,
-                 private_key_pass=None, validate_host=False):
+                 private_key_pass=None, validate_host=False, read_only=False):
         self.log = logging.getLogger('assemblyline.transport.sftp')
         if base == "/":
             self.base = "./"
@@ -102,7 +106,7 @@ class TransportSFTP(Transport):
             self.log.debug('sftp normalized: %s -> %s', path, s)
             return s
 
-        super(TransportSFTP, self).__init__(normalize=sftp_normalize)
+        super(TransportSFTP, self).__init__(normalize=sftp_normalize, read_only=read_only)
 
     def __str__(self):
         return 'sftp://{}@{}{}'.format(self.user, self.host, self.base)
