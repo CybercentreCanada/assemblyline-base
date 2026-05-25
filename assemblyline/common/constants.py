@@ -10,6 +10,12 @@ SCALER_TIMEOUT_QUEUE = 'scaler-timeout-queue'
 CONFIG_HASH = 'al-config'
 POST_PROCESS_CONFIG_KEY = 'post-process-actions'
 SERVICE_API_KEY_HASH = "dynamic-service-keys"
+NOTIFICATION_QUEUE_PREFIX = 'nq-'
+
+
+def notification_queue_name(user: str, name: str) -> str:
+    """Create a non-colliding queue name for a user's named notification queue."""
+    return NOTIFICATION_QUEUE_PREFIX + user.encode().hex().upper() + '-' + name
 
 
 # Some pure functions for getting queue lengths (effectively for appending/prepending constants to strings)
