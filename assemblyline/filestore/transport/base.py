@@ -33,8 +33,9 @@ class Transport(object):
       TransportExceptions.
     """
 
-    def __init__(self, normalize=normalize_srl_path):
+    def __init__(self, normalize=normalize_srl_path, read_only=False):
         self.normalize = normalize
+        self.read_only = read_only
 
     def close(self):
         pass

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import TYPE_CHECKING, AnyStr, Optional, Tuple
 from urllib.parse import parse_qs, unquote, urlparse
 
 import elasticapm
+
 from assemblyline.common.exceptions import get_stacktrace_info
 from assemblyline.filestore.transport.azure import TransportAzure
 from assemblyline.filestore.transport.base import TransportException
@@ -77,7 +79,7 @@ def create_transport(url, connection_attempts=None):
         sftp: private_key (string), private_key_pass (string), validate_host (bool)
         s3: aws_region (string), s3_bucket (string), use_ssl (bool), verify (bool)
         file: normalize (bool)
-        azure: access_key (string), tenant_id (string), client_id (string), client_secret (string), 
+        azure: access_key (string), tenant_id (string), client_id (string), client_secret (string),
                allow_directory_access (bool), use_default_credentials (bool), initalize_container (bool)
 
     """
@@ -97,7 +99,7 @@ def create_transport(url, connection_attempts=None):
 
     scheme = parsed.scheme.lower()
     if scheme == 'ftp' or scheme == 'ftps':
-        valid_bool_keys = ['use_tls']
+        valid_bool_keys = ['use_tls', 'read_only']
         extras = _get_extras(parse_qs(parsed.query), valid_bool_keys=valid_bool_keys)
         if scheme == 'ftps':
             extras['use_tls'] = True
@@ -106,27 +108,27 @@ def create_transport(url, connection_attempts=None):
 
     elif scheme == "sftp":
         valid_str_keys = ['private_key', 'private_key_pass']
-        valid_bool_keys = ['validate_host']
+        valid_bool_keys = ['validate_host', 'read_only']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         t = TransportSFTP(base=base, host=host, password=password, user=user, port=port, **extras)
 
     elif scheme == 'http' or scheme == 'https':
         valid_str_keys = ['pki']
-        valid_bool_keys = ['verify']
+        valid_bool_keys = ['verify', 'read_only']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         t = TransportHTTP(scheme=scheme, base=base, host=host, password=password, user=user, port=port, **extras)
 
     elif scheme == 'file':
-        valid_bool_keys = ['normalize']
+        valid_bool_keys = ['normalize', 'read_only']
         extras = _get_extras(parse_qs(parsed.query), valid_bool_keys=valid_bool_keys)
 
         t = TransportLocal(base=base, **extras)
 
     elif scheme == 's3':
         valid_str_keys = ['aws_region', 's3_bucket']
-        valid_bool_keys = ['use_ssl', 'verify', 'boto_defaults']
+        valid_bool_keys = ['use_ssl', 'verify', 'boto_defaults', 'read_only']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         # If user/password not specified, access might be dictated by IAM roles
@@ -138,7 +140,7 @@ def create_transport(url, connection_attempts=None):
 
     elif scheme == 'azure':
         valid_str_keys = ['access_key', 'tenant_id', 'client_id', 'client_secret']
-        valid_bool_keys = ['allow_directory_access', 'use_default_credentials', 'initalize_container']
+        valid_bool_keys = ['allow_directory_access', 'use_default_credentials', 'initalize_container', 'read_only']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, **extras)
@@ -150,6 +152,8 @@ def create_transport(url, connection_attempts=None):
 
 
 class FileStore(object):
+    SLOW_OP_THRESHOLD = 5.0  # Log warning when a single filestore operation exceeds this (seconds)
+
     def __init__(self, *transport_urls, connection_attempts=None):
         self.log = logging.getLogger('assemblyline.transport')
         self.transport_urls = transport_urls
@@ -168,7 +172,11 @@ class FileStore(object):
         self.close()
 
     def __str__(self):
-        return ', '.join(str(t) for t in self.transports)
+        out = ', '.join(str(t) for t in self.transports)
+        read_only_transports = [str(t) for t in self.transports if t.read_only]
+        if read_only_transports:
+            out += " | read-only: {}".format(', '.join(read_only_transports))
+        return out
 
     def close(self):
         for t in self.transports:
@@ -182,6 +190,10 @@ class FileStore(object):
     def delete(self, path: str, location='all'):
         with elasticapm.capture_span(name='delete', span_type='filestore', labels={'path': path}):
             for t in self.slice(location):
+                if t.read_only:
+                    # Don't attempt to delete from read only transports
+                    continue
+
                 try:
                     t.delete(path)
                 except Exception as ex:
@@ -193,6 +205,7 @@ class FileStore(object):
         successful = False
         transports = []
         download_errors = []
+        start = time.monotonic()
         for t in self.slice(location):
             try:
                 t.download(src_path, dest_path)
@@ -201,6 +214,11 @@ class FileStore(object):
                 break
             except Exception as ex:
                 download_errors.append((str(t), str(ex)))
+
+        elapsed = time.monotonic() - start
+        if elapsed > self.SLOW_OP_THRESHOLD:
+            self.log.warning("Slow filestore download: %s took %.2fs (transports tried: %d)",
+                             src_path, elapsed, len(download_errors) + len(transports))
 
         if not successful:
             raise FileStoreException('No transport succeeded => %s' % json.dumps(download_errors))
@@ -240,6 +258,10 @@ class FileStore(object):
     def put(self, dst_path: str, content: AnyStr, location='all', force=False) -> list[Transport]:
         transports = []
         for t in self.slice(location):
+            if t.read_only:
+                # Skip saving files to read-only transports
+                continue
+
             if force or not t.exists(dst_path):
                 transports.append(t)
                 t.put(dst_path, content)
@@ -263,13 +285,22 @@ class FileStore(object):
     @elasticapm.capture_span(span_type='filestore')
     def upload(self, src_path: str, dst_path: str, location='all', force=False, verify=False) -> list[Transport]:
         transports = []
+        start = time.monotonic()
         for t in self.slice(location):
+            if t.read_only:
+                # Skip saving files to read-only transports
+                continue
+
             if force or not t.exists(dst_path):
                 transports.append(t)
                 t.upload(src_path, dst_path)
                 if verify and not t.exists(dst_path):
                     raise FileStoreException('File transfer failed. Remote file does not '
                                              'exist for %s on %s (%s)' % (dst_path, location, t))
+        elapsed = time.monotonic() - start
+        if elapsed > self.SLOW_OP_THRESHOLD:
+            self.log.warning("Slow filestore upload: %s took %.2fs across %d transport(s)",
+                             dst_path, elapsed, len(transports))
         return transports
 
     @elasticapm.capture_span(span_type='filestore')

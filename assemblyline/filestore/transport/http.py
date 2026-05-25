@@ -1,10 +1,15 @@
 import logging
 import os
 import posixpath
+
 import requests
 
 from assemblyline.common.exceptions import ChainAll
-from assemblyline.filestore.transport.base import Transport, TransportException, normalize_srl_path
+from assemblyline.filestore.transport.base import (
+    Transport,
+    TransportException,
+    normalize_srl_path,
+)
 
 
 @ChainAll(TransportException)
@@ -13,7 +18,7 @@ class TransportHTTP(Transport):
     HTTP Transport class.
     """
 
-    def __init__(self, scheme='http', base=None, host=None, password=None, user=None, pki=None, port=None, verify=None):
+    def __init__(self, scheme='http', base=None, host=None, password=None, user=None, pki=None, port=None, verify=None, read_only=False):
         self.log = logging.getLogger('assemblyline.transport.http')
         self.base = base
         self.host = host
@@ -45,7 +50,7 @@ class TransportHTTP(Transport):
 
         self._session = None
 
-        super(TransportHTTP, self).__init__(normalize=http_normalize)
+        super(TransportHTTP, self).__init__(normalize=http_normalize, read_only=read_only)
 
     @property
     def session(self):

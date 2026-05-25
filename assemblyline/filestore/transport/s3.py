@@ -1,13 +1,16 @@
-import boto3
 import logging
 import os
 import tempfile
 import threading
-
+from io import BytesIO
 from typing import Iterable, Optional
 
-from botocore.exceptions import ClientError, EndpointConnectionError, ConnectionClosedError
-from io import BytesIO
+import boto3
+from botocore.exceptions import (
+    ClientError,
+    ConnectionClosedError,
+    EndpointConnectionError,
+)
 
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
@@ -32,7 +35,7 @@ class TransportS3(Transport):
     DEFAULT_HOST = "s3.amazonaws.com"
 
     def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket="al-storage",
-                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None, boto_defaults=False):
+                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None, boto_defaults=False, read_only=False):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
@@ -88,7 +91,8 @@ class TransportS3(Transport):
             else:
                 raise
 
-        if not bucket_exist:
+        if not bucket_exist and not read_only:
+            # Only initialize the bucket if the transport has been deemed writable.
             try:
                 self.with_retries(self.client.create_bucket, Bucket=self.bucket)
             except TransportException as e:
@@ -102,7 +106,7 @@ class TransportS3(Transport):
             # flatten path to just the basename
             return os.path.basename(path)
 
-        super(TransportS3, self).__init__(normalize=s3_normalize)
+        super(TransportS3, self).__init__(normalize=s3_normalize, read_only=read_only)
 
     def __str__(self):
         out = "s3://"
