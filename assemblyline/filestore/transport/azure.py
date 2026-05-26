@@ -37,7 +37,6 @@ class TransportAzure(Transport):
                  host=None, connection_attempts=None, allow_directory_access=False, use_default_credentials=False,
                  initalize_container=True, read_only=False):
         self.log = logging.getLogger('assemblyline.transport.azure')
-        self.read_only = False
         self.connection_attempts: Optional[int] = connection_attempts
         self.allow_directory_access = allow_directory_access
 
@@ -90,6 +89,8 @@ class TransportAzure(Transport):
                             raise
                         self.log.info('Failed to create container, we\'re most likely in read only mode')
                         read_only = True
+
+        self.read_only = read_only
 
         def azure_normalize(path):
             # flatten path to just the basename
