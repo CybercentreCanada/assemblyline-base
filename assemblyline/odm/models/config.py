@@ -923,11 +923,19 @@ class RegistryConfiguration(odm.Model):
 
 
 @odm.model(index=False, store=False)
+class InstallRequest(odm.Model):
+    name = odm.keyword()
+    image = odm.keyword()
+
+
+@odm.model(index=False, store=False)
 class Updater(odm.Model):
-    job_dockerconfig: DockerConfigDelta = odm.Compound(
+    job_dockerconfig: DockerConfigDelta = odm.compound(
         DockerConfigDelta, description="Container configuration used for service registration/updates")
-    registry_configs: List = odm.List(odm.Compound(RegistryConfiguration),
-                                      description="Configurations to be used with container registries")
+    registry_configs = odm.sequence(odm.compound(RegistryConfiguration),
+                                    description="Configurations to be used with container registries")
+    auto_install = odm.sequence(odm.compound(InstallRequest),
+                                description="Services to install automatically when the Updater starts.")
 
 
 DEFAULT_UPDATER = {
@@ -939,7 +947,54 @@ DEFAULT_UPDATER = {
     'registry_configs': [{
         'name': 'registry.hub.docker.com',
         'proxies': {}
-    }]
+    }],
+    'auto_install': [
+        {"name": "APIVector", "image": "${REGISTRY}cccs/assemblyline-service-apivector"},
+        {"name": "APKaye", "image": "${REGISTRY}cccs/assemblyline-service-apkaye"},
+        {"name": "AntiVirus", "image": "${REGISTRY}cccs/assemblyline-service-antivirus"},
+        {"name": "Ancestry", "image": "${REGISTRY}cccs/assemblyline-service-ancestry"},
+        {"name": "AVClass", "image": "${REGISTRY}cccs/assemblyline-service-avclass"},
+        {"name": "Badlist", "image": "${REGISTRY}cccs/assemblyline-service-badlist"},
+        {"name": "Batchdeobfuscator", "image": "${REGISTRY}cccs/assemblyline-service-batchdeobfuscator"},
+        {"name": "CAPA", "image": "${REGISTRY}cccs/assemblyline-service-capa"},
+        {"name": "CAPE", "image": "${REGISTRY}cccs/assemblyline-service-cape"},
+        {"name": "Characterize", "image": "${REGISTRY}cccs/assemblyline-service-characterize"},
+        {"name": "ConfigExtractor", "image": "${REGISTRY}cccs/assemblyline-service-configextractor"},
+        {"name": "deobfuscripter", "image": "${REGISTRY}cccs/assemblyline-service-deobfuscripter"},
+        {"name": "DocumentPreview", "image": "${REGISTRY}cccs/assemblyline-service-document-preview"},
+        {"name": "ELF", "image": "${REGISTRY}cccs/assemblyline-service-elf"},
+        {"name": "ELFPARSER", "image": "${REGISTRY}cccs/assemblyline-service-elfparser"},
+        {"name": "EmlParser", "image": "${REGISTRY}cccs/assemblyline-service-emlparser"},
+        {"name": "Espresso", "image": "${REGISTRY}cccs/assemblyline-service-espresso"},
+        {"name": "Extract", "image": "${REGISTRY}cccs/assemblyline-service-extract"},
+        {"name": "Floss", "image": "${REGISTRY}cccs/assemblyline-service-floss"},
+        {"name": "Frankenstrings", "image": "${REGISTRY}cccs/assemblyline-service-frankenstrings"},
+        {"name": "Intezer", "image": "${REGISTRY}cccs/assemblyline-service-intezer"},
+        {"name": "IPArse", "image": "${REGISTRY}cccs/assemblyline-service-iparse"},
+        {"name": "JsJaws", "image": "${REGISTRY}cccs/assemblyline-service-jsjaws"},
+        {"name": "MetaPeek", "image": "${REGISTRY}cccs/assemblyline-service-metapeek"},
+        {"name": "Oletools", "image": "${REGISTRY}cccs/assemblyline-service-oletools"},
+        {"name": "Overpower", "image": "${REGISTRY}cccs/assemblyline-service-overpower"},
+        {"name": "PDFId", "image": "${REGISTRY}cccs/assemblyline-service-pdfid"},
+        {"name": "PE", "image": "${REGISTRY}cccs/assemblyline-service-pe"},
+        {"name": "PeePDF", "image": "${REGISTRY}cccs/assemblyline-service-peepdf"},
+        {"name": "Pixaxe", "image": "${REGISTRY}cccs/assemblyline-service-pixaxe"},
+        {"name": "Safelist", "image": "${REGISTRY}cccs/assemblyline-service-safelist"},
+        {"name": "Sigma", "image": "${REGISTRY}cccs/assemblyline-service-sigma"},
+        {"name": "Suricata", "image": "${REGISTRY}cccs/assemblyline-service-suricata"},
+        {"name": "Swiffer", "image": "${REGISTRY}cccs/assemblyline-service-swiffer"},
+        {"name": "TagCheck", "image": "${REGISTRY}cccs/assemblyline-service-tagcheck"},
+        {"name": "TorrentSlicer", "image": "${REGISTRY}cccs/assemblyline-service-torrentslicer"},
+        {"name": "Unpacker", "image": "${REGISTRY}cccs/assemblyline-service-unpacker"},
+        {"name": "UNPACKME", "image": "${REGISTRY}cccs/assemblyline-service-unpacme"},
+        {"name": "URLCreator", "image": "${REGISTRY}cccs/assemblyline-service-urlcreator"},
+        {"name": "URLDownloader", "image": "${REGISTRY}cccs/assemblyline-service-urldownloader"},
+        {"name": "ViperMonkey", "image": "${REGISTRY}cccs/assemblyline-service-vipermonkey"},
+        {"name": "VirusTotal", "image": "${REGISTRY}cccs/assemblyline-service-virustotal"},
+        {"name": "XLMMacroDeobfuscator", "image": "${REGISTRY}cccs/assemblyline-service-xlmmacrodeobfuscator"},
+        {"name": "Yara", "image": "${REGISTRY}cccs/assemblyline-service-yara"},
+        {"name": "Zeek", "image": "${REGISTRY}cccs/assemblyline-service-zeek"},
+    ]
 }
 
 
