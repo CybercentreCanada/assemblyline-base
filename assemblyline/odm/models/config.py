@@ -1466,6 +1466,8 @@ class AIConnection(odm.Model):
     proxies: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                            description="Proxies used by the _call_ai_backend method")
     use_fic: bool = odm.Boolean(default=False, description="Use Federated Identity Credentials to login")
+    fic_scope: str = odm.Keyword(default="https://cognitiveservices.azure.com/.default",
+                                 description="OAuth scope to request when using FIC")
     verify: bool = odm.Boolean(default=True, description="Should the SSL connection to the AI API be verified.")
 
 
@@ -1478,6 +1480,43 @@ class AIFunctionParameters(odm.Model):
         AIQueryParams, description="Parameters used for executive summaries")
 
 
+@odm.model(index=False, store=False, description="Registration of an MCP server whose tools become available to AI agents")
+class MCPServerRegistration(odm.Model):
+    name: str = odm.Keyword(description="Unique name for this MCP server (e.g. 'assemblyline', 'sandbox')")
+    url: str = odm.Keyword(description="URL of the MCP server (SSE endpoint, e.g. 'http://al-mcp:8080/sse')")
+    transport: str = odm.Enum(values=['sse', 'streamable_http'], default='sse',
+                              description="MCP transport type")
+    headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), default={},
+                                           description="Headers to send when connecting to the MCP server")
+    use_fic: bool = odm.Boolean(default=False,
+                                description="Use Federated Identity Credentials to authenticate")
+    fic_scope: str = odm.Keyword(default="https://cognitiveservices.azure.com/.default",
+                                 description="OAuth scope to request when using FIC")
+    verify: bool = odm.Boolean(default=True,
+                               description="Verify SSL certificates when connecting")
+    timeout: int = odm.Integer(default=120,
+                               description="Timeout in seconds for MCP tool calls")
+
+
+@odm.model(index=False, store=False, description="An agent profile that bundles MCP tools with a system prompt")
+class AIAgentProfile(odm.Model):
+    name: str = odm.Keyword(description="Agent name (e.g. 'analyst', 'triage')")
+    description: str = odm.Text(default="", description="Description of this agent's purpose")
+    system_message: str = odm.Text(description="System prompt for this agent")
+    mcp_servers: List[str] = odm.List(odm.Keyword(), default=[],
+                                      description="List of MCP server names whose tools this agent can use")
+    tools: List[str] = odm.List(odm.Keyword(), default=[],
+                                description="Specific tool names to include (empty = all tools from listed MCP servers)")
+    excluded_tools: List[str] = odm.List(odm.Keyword(), default=[],
+                                         description="Tool names to exclude from this agent's available tools")
+    max_iterations: int = odm.Integer(default=25, description="Maximum agentic loop iterations")
+    max_tokens: int = odm.Integer(default=4096, description="Max tokens for LLM responses")
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()), default={},
+                                           description="Additional LLM options (temperature, etc.)")
+    require_role: str = odm.Optional(odm.Keyword(),
+                                     description="Additional role required to use this agent (beyond assistant_use)")
+
+
 @odm.model(index=False, store=False, description="AI Multi-Backend support configuration block")
 class AIBackends(odm.Model):
     enabled: bool = odm.Boolean(description="Is AI support enabled?")
@@ -1485,6 +1524,10 @@ class AIBackends(odm.Model):
                                            description="List of API definitions use in the API Pool")
     function_params: AIFunctionParameters = odm.Compound(
         AIFunctionParameters, description="Definition of each parameters used in the different AI functions")
+    mcp_servers: List[Dict] = odm.List(odm.Compound(MCPServerRegistration), default=[],
+                                       description="MCP servers to connect to for agentic tool discovery")
+    agent_profiles: List[Dict] = odm.List(odm.Compound(AIAgentProfile), default=[],
+                                          description="Agent profiles that scope tools and system prompts")
 
 
 DEFAULT_MAIN_CONNECTION = {
@@ -1518,7 +1561,9 @@ DEFAULT_AI_BACKENDS = {
         'code': DEFAULT_AI_CODE,
         'detailed_report': DEFAULT_AI_DETAILED_REPORT,
         'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
-    }
+    },
+    'mcp_servers': [],
+    'agent_profiles': [],
 }
 
 
