@@ -1456,6 +1456,54 @@ report into a one or two paragraph executive summary. DO NOT write any headers i
 }
 
 
+@odm.model(index=False, store=False, description="Parameter definition for an AI tool")
+class AIToolParameter(odm.Model):
+    name: str = odm.Keyword(description="Parameter name")
+    type: str = odm.Enum(values=['string', 'integer', 'number', 'boolean', 'array', 'object'],
+                         description="JSON Schema type for this parameter")
+    description: str = odm.Keyword(description="Description of what this parameter does")
+    required: bool = odm.Boolean(default=False, description="Is this parameter required?")
+    enum: List[str] = odm.Optional(odm.List(odm.Keyword()), description="Allowed values for this parameter")
+    default: str = odm.Optional(odm.Keyword(), description="Default value for this parameter")
+
+
+@odm.model(index=False, store=False, description="Definition of a tool available to AI agents")
+class AIToolDefinition(odm.Model):
+    name: str = odm.Keyword(description="Unique tool name (e.g. 'search_index', 'call_external_analyzer')")
+    description: str = odm.Text(description="Description of what this tool does, shown to the LLM")
+    tool_type: str = odm.Enum(values=['builtin', 'external_http'],
+                              description="Type of tool: 'builtin' for AL-native operations, "
+                                          "'external_http' for calling external APIs")
+    parameters: List[Dict] = odm.List(odm.Compound(AIToolParameter), default=[],
+                                      description="Parameter definitions for this tool")
+    # Fields for external_http tools
+    endpoint_url: str = odm.Optional(odm.Keyword(),
+                                     description="URL to call for external_http tools. "
+                                                 "Supports {param} substitution from tool arguments.")
+    http_method: str = odm.Enum(values=['GET', 'POST', 'PUT'], default='POST',
+                                description="HTTP method for external_http tools")
+    endpoint_headers: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()), default={},
+                                                     description="Headers to send with external_http tool calls")
+    use_fic: bool = odm.Boolean(default=False,
+                                description="Use Federated Identity Credentials for external_http tool auth")
+    timeout: int = odm.Integer(default=120, description="Timeout in seconds for external tool calls")
+
+
+@odm.model(index=False, store=False, description="An agent profile that bundles tools with a system prompt")
+class AIAgentProfile(odm.Model):
+    name: str = odm.Keyword(description="Agent name (e.g. 'investigation', 'hunt')")
+    description: str = odm.Text(default="", description="Description of this agent's purpose")
+    system_message: str = odm.Text(description="System prompt for this agent")
+    tools: List[str] = odm.List(odm.Keyword(), default=[],
+                                description="List of tool names available to this agent")
+    max_iterations: int = odm.Integer(default=25, description="Maximum agentic loop iterations")
+    max_tokens: int = odm.Integer(default=4096, description="Max tokens for LLM responses")
+    options: Dict[str, str] = odm.Optional(odm.Mapping(odm.Any()), default={},
+                                           description="Additional LLM options (temperature, etc.)")
+    require_role: str = odm.Optional(odm.Keyword(),
+                                     description="Additional role required to use this agent (beyond assistant_use)")
+
+
 @odm.model(index=False, store=False, description="Connection information to an AI backend")
 class AIConnection(odm.Model):
     api_type: str = odm.Enum(values=['openai', 'cohere'], description="Type of chat API we are communicating with")
@@ -1485,6 +1533,10 @@ class AIBackends(odm.Model):
                                            description="List of API definitions use in the API Pool")
     function_params: AIFunctionParameters = odm.Compound(
         AIFunctionParameters, description="Definition of each parameters used in the different AI functions")
+    tools: List[Dict] = odm.List(odm.Compound(AIToolDefinition), default=[],
+                                 description="Tools available to AI agents for agentic workflows")
+    agent_profiles: List[Dict] = odm.List(odm.Compound(AIAgentProfile), default=[],
+                                          description="Agent profiles that bundle tools with system prompts")
 
 
 DEFAULT_MAIN_CONNECTION = {
@@ -1518,7 +1570,9 @@ DEFAULT_AI_BACKENDS = {
         'code': DEFAULT_AI_CODE,
         'detailed_report': DEFAULT_AI_DETAILED_REPORT,
         'executive_summary': DEFAULT_AI_EXECUTIVE_SUMMARY,
-    }
+    },
+    'tools': [],
+    'agent_profiles': [],
 }
 
 
