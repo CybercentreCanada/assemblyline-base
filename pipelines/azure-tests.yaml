@@ -81,6 +81,7 @@ jobs:
       sftp: sftp
       redis: redis
       minio: minio
+      floci: floci
 
     steps:
       - checkout: self
