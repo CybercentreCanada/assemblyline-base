@@ -4,9 +4,8 @@ import threading
 import traceback
 
 import pytest
-
-from assemblyline.filestore.transport.base import TransportException
 from assemblyline.filestore import FileStore
+from assemblyline.filestore.transport.base import TransportException
 
 _temp_body_a = b'temporary file string'
 
@@ -166,6 +165,54 @@ def test_s3():
     assert fs.get('al4_minio_pytest.txt') == content
     assert fs.delete('al4_minio_pytest.txt') is None
     common_actions(fs)
+
+def test_s3_aws():
+    """
+    Test S3 FileStore using simulated AWS S3 by pushing and fetching back content from it.
+    """
+    from base64 import b64encode
+
+    from boto3.session import Session
+
+    content = b"THIS IS AN AWS S3 TEST"
+
+    # Setup the IAM role policy for the S3 bucket in emulated AWS environment (e.g., floci)
+    os.environ['AWS_ENDPOINT_URL'] = 'http://localhost:4566'
+    s = Session()
+    iam_client = s.client('iam', aws_access_key_id="test", aws_secret_access_key="test", use_ssl=False)
+    try:
+        iam_client.create_role(RoleName="MockedIRSARole", AssumeRolePolicyDocument='{"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Federated": "arn:aws:iam::000000000000:oidc-provider/localhost:4566"}, "Action": "sts:AssumeRoleWithWebIdentity"}]}')
+    except iam_client.exceptions.EntityAlreadyExistsException:
+        pass  # Role already exists, which is fine for our test setup
+    iam_client.put_role_policy(RoleName="MockedIRSARole", PolicyName="S3Access", PolicyDocument='{"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:CreateBucket", "s3:DeleteObject", "s3:GetObject", "s3:PutObject", "s3:ListBucket"], "Resource": ["arn:aws:s3:::al-storage", "arn:aws:s3:::al-storage/*"]}]}')
+
+    # Create a web identity token to cover IRSA authentication flow
+    with tempfile.NamedTemporaryFile(delete=False) as token_file:
+        header = '{"alg": "HS256", "typ": "JWT"}'
+        payload = '{"iss":"http://localhost:4566","sub":"system:serviceaccount:default:assemblyline","aud":["://amazonaws.com"],"exp":2082758400}'
+        token = b64encode(header.encode()) + b'.' + b64encode(payload.encode()) + b'.test_signature'
+        token_file.write(token)
+        token_file_path = token_file.name
+
+    # Set environment variables to simulate IRSA authentication for the AWS S3 FileStore
+    os.environ['AWS_ROLE_ARN'] = 'arn:aws:iam::000000000000:role/MockedIRSARole'
+    os.environ['AWS_WEB_IDENTITY_TOKEN_FILE'] = token_file_path
+
+    fs = FileStore('s3://localhost:4566/?use_ssl=False')
+
+    # Based on the policy, our client should have the necessary permissions to perform the following operations similar to the Minio test, but now against the AWS S3 emulation:
+    assert fs.put('al4_aws_s3_pytest.txt', content) != []
+    assert fs.exists('al4_aws_s3_pytest.txt') != []
+    assert fs.get('al4_aws_s3_pytest.txt') == content
+    assert fs.delete('al4_aws_s3_pytest.txt') is None
+    common_actions(fs)
+
+    # Cleanup the environment variables and temporary token file to ensure they don't interfere with other tests
+    del os.environ['AWS_ENDPOINT_URL']
+    del os.environ['AWS_ROLE_ARN']
+    del os.environ['AWS_WEB_IDENTITY_TOKEN_FILE']
+    os.remove(token_file_path)
+
 
 
 def common_actions(fs, check_listing=True):
