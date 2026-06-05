@@ -178,7 +178,7 @@ def test_s3_aws():
 
     # Setup the IAM role policy for the S3 bucket in emulated AWS environment (e.g., floci)
     os.environ['AWS_ENDPOINT_URL'] = 'http://localhost:4566'
-    os.environ['AWS_REGION'] = 'us-east-1'
+    os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
     s = Session()
     iam_client = s.client('iam', aws_access_key_id="test", aws_secret_access_key="test", use_ssl=False)
     try:
@@ -212,7 +212,7 @@ def test_s3_aws():
     del os.environ['AWS_ENDPOINT_URL']
     del os.environ['AWS_ROLE_ARN']
     del os.environ['AWS_WEB_IDENTITY_TOKEN_FILE']
-    del os.environ['AWS_REGION']
+    del os.environ['AWS_DEFAULT_REGION']
     os.remove(token_file_path)
 
 
