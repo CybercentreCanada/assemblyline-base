@@ -1,3 +1,4 @@
+import glob
 import json
 import logging
 import os
@@ -238,7 +239,11 @@ def create_bundle(sid, working_dir=WORK_DIR, use_alert=False, user_classificatio
                     json.dump(data, fp)
 
                 # Create the bundle
-                subprocess.check_call("tar czf %s *" % tgz_file, shell=True, cwd=current_working_dir)
+                files = glob.glob(os.path.join(current_working_dir, '*'))
+                subprocess.check_call(
+                    ["tar", "czf", tgz_file] + [os.path.basename(f) for f in files],
+                    cwd=current_working_dir
+                )
 
                 with open(target_file, 'wb') as oh:
                     with open(tgz_file, 'rb') as ih:
