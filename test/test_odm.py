@@ -421,7 +421,7 @@ def test_typed_list_membership_cache():
     _ = {'key': 'cat', 'value': 0} in compound_tl  # no error
 
 
-
+def test_defaults():
 
     @model()
     class InnerA(Model):
