@@ -846,22 +846,63 @@ class TypedList(list):
     def __init__(self, type_p, *items, **kwargs):
         super().__init__([type_p.check(el, **kwargs) for el in items])
         self.type = type_p
+        self._set_cache: typing.Optional[frozenset] = None
+
+    def _invalidate_cache(self):
+        self._set_cache = None
+
+    def __contains__(self, item):
+        if self._set_cache is None:
+            try:
+                self._set_cache = frozenset(self)
+            except TypeError:
+                # Elements are not hashable (e.g. compound objects); fall back to list scan
+                return super().__contains__(item)
+        return item in self._set_cache
 
     def append(self, item):
+        self._invalidate_cache()
         super().append(self.type.check(item))
 
     def extend(self, sequence):
+        self._invalidate_cache()
         super().extend(self.type.check(item) for item in sequence)
 
     def insert(self, index, item):
+        self._invalidate_cache()
         super().insert(index, self.type.check(item))
 
     def __setitem__(self, index, item):
+        self._invalidate_cache()
         if isinstance(index, slice):
             item = [self.type.check(val) for val in item]
             super().__setitem__(index, item)
         else:
             super().__setitem__(index, self.type.check(item))
+
+    def __delitem__(self, index):
+        self._invalidate_cache()
+        super().__delitem__(index)
+
+    def remove(self, item):
+        self._invalidate_cache()
+        super().remove(item)
+
+    def pop(self, index=-1):
+        self._invalidate_cache()
+        return super().pop(index)
+
+    def clear(self):
+        self._invalidate_cache()
+        super().clear()
+
+    def __iadd__(self, other):
+        self._invalidate_cache()
+        return super().__iadd__(other)
+
+    def __imul__(self, n):
+        self._invalidate_cache()
+        return super().__imul__(n)
 
 
 class List(_Field):

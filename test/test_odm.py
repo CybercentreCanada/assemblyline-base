@@ -21,7 +21,7 @@ from assemblyline.odm import (
     flat_to_nested,
     model,
 )
-from assemblyline.odm.base import IP
+from assemblyline.odm.base import IP, TypedList
 
 
 class CatError(Exception):
@@ -338,6 +338,87 @@ def test_create_list_compounds():
         test.values[0] = {'key': 'bat', 'value': 50, 'extra': 1000}
 
     test.values[0].key = 'dog'
+
+
+def test_typed_list_membership_cache():
+    """TypedList.__contains__ uses a frozenset cache for O(1) membership tests."""
+    kw = Keyword()
+
+    # Basic membership with cache
+    tl = TypedList(kw, 'a', 'b', 'c')
+    assert 'a' in tl
+    assert 'x' not in tl
+    assert tl._set_cache is not None  # cache was built
+
+    # append invalidates and rebuilds cache
+    tl.append('d')
+    assert tl._set_cache is None
+    assert 'd' in tl
+    assert tl._set_cache is not None
+
+    # extend invalidates cache
+    tl.extend(['e', 'f'])
+    assert tl._set_cache is None
+    assert 'e' in tl
+
+    # insert invalidates cache
+    tl.insert(0, 'z')
+    assert tl._set_cache is None
+    assert 'z' in tl
+
+    # __setitem__ (single) invalidates cache
+    tl[0] = 'aa'
+    assert tl._set_cache is None
+    assert 'aa' in tl
+
+    # __setitem__ (slice) invalidates cache
+    tl[0:2] = ['bb', 'cc']
+    assert tl._set_cache is None
+    assert 'bb' in tl
+
+    # __delitem__ invalidates cache
+    _ = 'bb' in tl  # rebuild cache
+    del tl[0]
+    assert tl._set_cache is None
+
+    # remove invalidates cache
+    _ = 'cc' in tl  # rebuild cache
+    tl.remove('cc')
+    assert tl._set_cache is None
+    assert 'cc' not in tl
+
+    # pop invalidates cache
+    _ = 'a' in tl  # rebuild cache
+    tl.pop()
+    assert tl._set_cache is None
+
+    # __iadd__ invalidates cache
+    _ = 'a' in tl  # rebuild cache
+    tl += ['new1', 'new2']
+    assert tl._set_cache is None
+    assert 'new1' in tl
+
+    # __imul__ invalidates cache
+    short_tl = TypedList(kw, 'x')
+    _ = 'x' in short_tl  # rebuild cache
+    short_tl *= 2
+    assert short_tl._set_cache is None
+
+    # clear invalidates cache
+    _ = 'a' in tl  # rebuild cache
+    tl.clear()
+    assert tl._set_cache is None
+    assert list(tl) == []
+
+    # Unhashable elements fall back to list scan without raising
+    @model()
+    class Entry(Model):
+        value = Integer()
+        key = Keyword()
+
+    compound_tl = TypedList(Compound(Entry), {'key': 'cat', 'value': 0}, {'key': 'rat', 'value': 1})
+    # Should not raise TypeError even though compound objects may not be hashable
+    _ = {'key': 'cat', 'value': 0} in compound_tl  # no error
 
 
 def test_defaults():
