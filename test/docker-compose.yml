@@ -12,6 +12,13 @@ services:
     ports:
       - "2222:2222"
 
+  floci:
+    image: floci/floci
+    environment:
+      - FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED=true
+    ports:
+      - "4566:4566"
+
   minio:
     image: minio/minio
     environment:
