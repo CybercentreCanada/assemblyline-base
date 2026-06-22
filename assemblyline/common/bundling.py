@@ -1,8 +1,10 @@
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
+import tarfile
 import tempfile
 import time
 from copy import copy
@@ -10,6 +12,8 @@ from copy import copy
 from cart import is_cart, pack_stream, unpack_stream
 
 from assemblyline.common import forge
+from assemblyline.common.safe_archive import safe_extract_tar
+from assemblyline.odm.base import SHA256_REGEX
 from assemblyline.common.classification import InvalidClassification
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.common.uid import get_random_id
@@ -27,6 +31,7 @@ MAX_RETRY = 10
 WORK_DIR = "/tmp/bundling"
 BUNDLE_MAGIC = b'\x1f\x8b\x08'
 BUNDLE_TYPE = "archive/bundle/al"
+SHA256_RE = re.compile(SHA256_REGEX)
 
 log = logging.getLogger('assemblyline.bundling')
 
@@ -294,11 +299,11 @@ def import_bundle(
             else:
                 extracted_path = path
 
-        # Extract  the bundle
+        # Extract the bundle without allowing members to escape the workdir.
         try:
-            subprocess.check_call(["tar", "-zxf", extracted_path, "-C", current_working_dir])
-        except subprocess.CalledProcessError:
-            raise BundlingException("Bundle decompression failed. Not a valid bundle...")
+            safe_extract_tar(extracted_path, current_working_dir)
+        except (tarfile.TarError, OSError, ValueError) as e:
+            raise BundlingException(f"Bundle decompression failed. Not a valid bundle: {e}")
 
         with open(res_file, 'rb') as fh:
             data = json.load(fh)
@@ -369,6 +374,8 @@ def import_bundle(
                     # Make sure files meet minimum classification and save the files
                     with forge.get_filestore() as filestore:
                         for f, f_data in files['infos'].items():
+                            if not SHA256_RE.fullmatch(f):
+                                raise BundlingException(f"Invalid file key in bundle: {f!r}")
                             check_classification(f_data)
                             expiry_ts = f_data.get('expiry_ts', None)
                             if dtl is not None:
@@ -380,8 +387,11 @@ def import_bundle(
                                     expiry_ts = now_as_iso(dtl * 24 * 60 * 60)
                             datastore.save_or_freshen_file(f, f_data, expiry_ts, f_data['classification'],
                                                            cl_engine=Classification)
+                            src = os.path.realpath(os.path.join(current_working_dir, f))
+                            if os.path.commonpath([src, current_working_dir]) != current_working_dir:
+                                raise BundlingException(f"Bundle file path escapes working dir: {f!r}")
                             try:
-                                filestore.upload(os.path.join(current_working_dir, f), f)
+                                filestore.upload(src, f)
                             except IOError:
                                 pass
 
