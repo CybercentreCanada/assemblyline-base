@@ -78,7 +78,7 @@ setup(
             'retrying',
             'pytest-mock',
             'pyftpdlib',
-            'pyopenssl==23.3.0',
+            'pyopenssl==24.2.1',
         ]
     },
     package_data={
