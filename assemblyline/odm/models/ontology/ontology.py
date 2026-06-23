@@ -12,11 +12,12 @@ from assemblyline.odm.models.ontology.results import (
 from assemblyline.odm.models.ontology.file import File
 
 Classification = forge.get_classification()
-ODM_VERSION = "1.10"
+ODM_VERSION = "1.11"
 
 
 @odm.model(index=False, store=False, description="Heuristics raised")
 class Heuristics(odm.Model):
+    attack_ids = odm.List(odm.Keyword(), description="ATT&CK IDs associated to heuristic")
     heur_id = odm.Keyword(description="Heuristic ID")
     score = odm.Integer(description="Score associated to heurstic")
     times_raised = odm.Integer(description="The number of times the heuristic was raised")
