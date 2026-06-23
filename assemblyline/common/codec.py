@@ -46,9 +46,6 @@ def decode_file(original_path, fileinfo, identify):
 
 
 def encode_file(input_path, name, metadata=None):
-    if metadata is None:
-        metadata = {}
-
     _, output_path = tempfile.mkstemp()
 
     with open(output_path, 'wb') as oh:
@@ -61,3 +58,18 @@ def encode_file(input_path, name, metadata=None):
                 return output_path, f"{name}.cart"
             else:
                 return input_path, name
+
+
+def encode_file_into(input_path, name, output_handle, metadata=None) -> bool:
+    if metadata is None:
+        metadata = {}
+
+    with open(input_path, 'rb') as ih:
+        data = ih.read(64)
+        if not is_cart(data):
+            ih.seek(0)
+            metadata.update({'name': name})
+            pack_stream(ih, output_handle, metadata)
+            return True
+        else:
+            return False
