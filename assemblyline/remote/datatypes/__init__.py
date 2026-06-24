@@ -31,16 +31,12 @@ def now_as_iso():
 
 
 def validate_reply_queue_name(name: str, prefix=None, suffix=None) -> bool:
-    for prefix_segment in (prefix or []):
-        if name.startswith(prefix_segment + '-'):
-            name = name.removeprefix(prefix_segment + '-')
-        else:
+    if prefix:
+        if not name.startswith(prefix + '-'):
             return False
-
     if suffix:
-        if name.endswith('-' + str(suffix)):
-            return True
-        return False
+        if not name.endswith('-' + str(suffix)):
+            return False
     return True
 
 
