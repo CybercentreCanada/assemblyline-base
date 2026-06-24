@@ -30,6 +30,16 @@ def now_as_iso():
     return ''.join((s, 'Z'))
 
 
+def validate_reply_queue_name(name: str, prefix=None, suffix=None) -> bool:
+    if prefix:
+        if not name.startswith(prefix + '-'):
+            return False
+    if suffix:
+        if not name.endswith('-' + str(suffix)):
+            return False
+    return True
+
+
 def reply_queue_name(prefix=None, suffix=None):
     if prefix:
         components = [prefix]
