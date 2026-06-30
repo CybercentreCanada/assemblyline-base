@@ -962,6 +962,8 @@ class ESCollection(Generic[ModelType]):
                     # If this index has an archive, check is the document was found in it.
                     if self.archive_name:
                         doc['_source']['from_archive'] = self.is_archive_index(index)
+                    elif 'from_archive' in doc['_source']:
+                        doc['_source']['from_archive'] = False
 
                     if version:
                         return self._normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
@@ -1378,6 +1380,8 @@ class ESCollection(Generic[ModelType]):
         # If this index has an archive, check is the document was found in it.
         if self.archive_name:
             source_data['from_archive'] = self.is_archive_index(result['_index'])
+        elif 'from_archive' in source_data:
+            source_data['from_archive'] = False
 
         if self.model_class:
             if not fields:
