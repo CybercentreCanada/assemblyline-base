@@ -1014,13 +1014,24 @@ class ESCollection(Generic[ModelType]):
 
     @typing.overload
     def get_if_exists(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
-                      version=False) -> typing.Optional[ModelType]:
+                      version: typing.Literal[False] = False) -> typing.Optional[ModelType]:
         ...
 
     @typing.overload
     def get_if_exists(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
-                      version=False) -> typing.Optional[dict]:
+                      version: typing.Literal[False] = False) -> typing.Optional[dict]:
         ...
+
+    @typing.overload
+    def get_if_exists(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
+                      version=True) -> tuple[typing.Optional[ModelType], str]:
+        ...
+
+    @typing.overload
+    def get_if_exists(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
+                      version=True) -> tuple[typing.Optional[dict], str]:
+        ...
+
 
     def get_if_exists(self, key, as_obj=True, index_type=None, version=False):
         """
