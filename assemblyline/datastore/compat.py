@@ -187,6 +187,8 @@ class SearchClientAdapter:
             if isinstance(value, dict):
                 if value.get("type") == "wildcard":
                     # OpenSearch 2.x has wildcard queries, but not Elasticsearch's wildcard field mapper.
+                    # Keyword preserves Assemblyline metadata's exact/wildcard/regexp query behavior for
+                    # term-sized values; over-limit values reject instead of being silently ignored.
                     value["type"] = "keyword"
                 for child in value.values():
                     replace_unsupported_types(child)
