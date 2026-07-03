@@ -728,6 +728,23 @@ def test_store_opensearch_rejects_unsupported_version(monkeypatch):
         ESStore(["http://opensearch:9200"], backend=SearchBackend.OPENSEARCH)
 
 
+def test_store_opensearch_switch_user_keeps_service_identity(monkeypatch):
+    client = make_store_client("2.12.0", distribution="opensearch")
+    factory = Mock(return_value=client)
+    monkeypatch.setattr("assemblyline.datastore.store.create_search_client", factory)
+
+    store = ESStore(["http://service:secret@opensearch:9200"], backend=SearchBackend.OPENSEARCH)
+
+    store.switch_user("plumber")
+
+    assert store.client is client
+    assert store.get_hosts() == ["http://service:secret@opensearch:9200"]
+    client.raw_client.security.put_role.assert_not_called()
+    client.raw_client.security.put_user.assert_not_called()
+    client.raw_client.close.assert_not_called()
+    assert factory.call_count == 1
+
+
 def test_forge_get_datastore_defaults_to_elasticsearch(monkeypatch):
     created = []
 

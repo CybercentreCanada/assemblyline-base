@@ -754,3 +754,51 @@ def test_opensearch_update_by_query_task_failure_is_visible(request):
             {"lang": "painless", "source": "ctx._source.count += "},
             {"term": {"group": "bad"}},
         )
+
+
+def test_opensearch_task_cleanup_uses_service_identity(request):
+    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://127.0.0.1:9201')
+    config_data = Config().as_primitives()
+    config_data["datastore"]["type"] = "opensearch"
+    config_data["datastore"]["hosts"] = [host]
+    config_data["datastore"]["archive"]["enabled"] = False
+
+    datastore = forge.get_datastore(config=Config(config_data))
+    datastore.ds.task_wait_timeout = 30
+    collection_name = f"al_os_task_cleanup_{uuid.uuid4().hex}"
+
+    def cleanup():
+        try:
+            if datastore.ds.client:
+                datastore.ds.client.raw_client.indices.delete(index=collection_name, ignore_unavailable=True)
+        finally:
+            if not datastore.ds.is_closed():
+                datastore.ds.close()
+
+    request.addfinalizer(cleanup)
+
+    datastore.ds.register(collection_name)
+    collection = datastore.ds.__getattr__(collection_name)
+    for doc_id in ("delete-1", "delete-2", "keep-1"):
+        assert collection.save(doc_id, {"group": "delete" if doc_id.startswith("delete") else "keep"})
+    assert collection.commit()
+
+    task = datastore.ds.client.delete_by_query(
+        index=collection_name,
+        query={"term": {"group": "delete"}},
+        wait_for_completion=False,
+        conflicts="proceed",
+    )
+    task_response = datastore.ds._get_task_results(task)
+    assert task_response["deleted"] == 2
+
+    datastore.ds.client.indices.refresh(index=".tasks")
+    assert datastore.ds.client.exists(index=".tasks", id=task["task"], _source=False) is True
+
+    datastore.ds.switch_user("plumber")
+    deleted_tasks = datastore.task_cleanup()
+
+    datastore.ds.client.indices.refresh(index=".tasks")
+    assert deleted_tasks >= 1
+    assert datastore.ds.client.exists(index=".tasks", id=task["task"], _source=False) is False
+    assert collection.get("keep-1", as_obj=False)["group"] == "keep"
