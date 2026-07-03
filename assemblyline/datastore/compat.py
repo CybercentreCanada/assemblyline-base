@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Callable, Optional
 
@@ -92,7 +93,7 @@ class _IndicesAdapter:
         if self._adapter.backend == SearchBackend.OPENSEARCH:
             body = {}
             if mappings is not None:
-                body["mappings"] = mappings
+                body["mappings"] = self._adapter.opensearch_compatible_mappings(mappings)
             if settings is not None:
                 body["settings"] = settings
             return self._adapter._call(self._adapter.raw_client.indices.create, index=index, body=body, **kwargs)
@@ -112,6 +113,9 @@ class _IndicesAdapter:
 
     def refresh(self, **kwargs):
         return self._adapter._call(self._adapter.raw_client.indices.refresh, **kwargs)
+
+    def get(self, **kwargs):
+        return self._adapter._call(self._adapter.raw_client.indices.get, **kwargs)
 
     def __getattr__(self, name):
         if self._adapter.backend == SearchBackend.ELASTICSEARCH:
@@ -175,6 +179,32 @@ class SearchClientAdapter:
         message = getattr(err, "message", None) or str(err)
         return SearchBackendException(message, status_code=cls.get_exception_status(err), original=err)
 
+    @staticmethod
+    def opensearch_compatible_mappings(mappings: dict) -> dict:
+        compatible_mappings = deepcopy(mappings)
+
+        def replace_unsupported_types(value):
+            if isinstance(value, dict):
+                if value.get("type") == "wildcard":
+                    # OpenSearch 2.x has wildcard queries, but not Elasticsearch's wildcard field mapper.
+                    value["type"] = "keyword"
+                for child in value.values():
+                    replace_unsupported_types(child)
+            elif isinstance(value, list):
+                for child in value:
+                    replace_unsupported_types(child)
+
+        replace_unsupported_types(compatible_mappings)
+        return compatible_mappings
+
+    @staticmethod
+    def opensearch_compatible_sort(sort):
+        compatible_sort = deepcopy(sort)
+        for item in compatible_sort or []:
+            if isinstance(item, dict) and "_shard_doc" in item:
+                item["_doc"] = item.pop("_shard_doc")
+        return compatible_sort
+
     def info(self):
         return self._call(self.raw_client.info)
 
@@ -236,6 +266,8 @@ class SearchClientAdapter:
             body = {key: kwargs.pop(key) for key in list(kwargs.keys()) if key in body_keys}
             if "from_" in body:
                 body["from"] = body.pop("from_")
+            if "sort" in body:
+                body["sort"] = self.opensearch_compatible_sort(body["sort"])
             return self._call(self.raw_client.search, body=body, **kwargs)
         return self._call(self.raw_client.search, **kwargs)
 
