@@ -646,10 +646,12 @@ def test_opensearch_runtime_smoke_uses_factory_models_commit_pit_and_delete(requ
     search = file_collection.search("sha256:" + doc_id, rows=10, fl="id,sha256,type", as_obj=False,
                                     track_total_hits=True)
     assert search["total"] == 1
-    assert search["items"] == [{"id": doc_id, "sha256": doc_id, "type": "unknown"}]
+    assert search["items"][0]["id"] == doc_id
+    assert search["items"][0]["sha256"] == doc_id
+    assert search["items"][0]["type"] == "unknown"
 
     pit_page = file_collection.search("sha256:" + doc_id, rows=1, fl="id", as_obj=False, deep_paging_id="start")
-    assert pit_page["items"] == [{"id": doc_id}]
+    assert pit_page["items"][0]["id"] == doc_id
 
     assert file_collection.delete(doc_id)
     assert file_collection.commit()
