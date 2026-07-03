@@ -10,6 +10,7 @@ from assemblyline.datastore.compat import SearchBackend, SearchBackendException
 from assemblyline.datastore.support.build import build_mapping
 from assemblyline.odm.models.config import Config
 from assemblyline.odm.models.alert import Alert
+from assemblyline.odm.models.file import File
 from assemblyline.odm.models.result import Section
 from assemblyline.odm.models.submission import Submission
 
@@ -589,5 +590,70 @@ def test_opensearch_full_datastore_construction_via_forge(request):
     assert collection.search("id:doc-1", rows=10, fl="id", as_obj=False, track_total_hits=True)["total"] == 0
 
     datastore.ds.client.raw_client.indices.delete(index=f"{collection_name}*", ignore_unavailable=True)
+    datastore.ds.close()
+    assert datastore.ds.is_closed()
+
+
+def test_opensearch_runtime_smoke_uses_factory_models_commit_pit_and_delete(request):
+    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://127.0.0.1:9201')
+    config_data = Config().as_primitives()
+    config_data["datastore"]["type"] = "opensearch"
+    config_data["datastore"]["hosts"] = [host]
+    config_data["datastore"]["archive"]["enabled"] = False
+
+    datastore = forge.get_datastore(config=Config(config_data))
+    doc_id = "0" * 64
+
+    def cleanup():
+        try:
+            if datastore.ds.client:
+                datastore.ds.client.raw_client.indices.delete(index="file_hot", ignore_unavailable=True)
+        finally:
+            if not datastore.ds.is_closed():
+                datastore.ds.close()
+
+    request.addfinalizer(cleanup)
+
+    assert datastore.ds.backend == SearchBackend.OPENSEARCH
+    assert datastore.ds.client.info()["version"]["distribution"] == "opensearch"
+    assert datastore.ds.ping() is True
+
+    file_collection = datastore.file
+    assert datastore.submission.name == "submission"
+    assert datastore.alert.name == "alert"
+
+    document = File({
+        "ascii": "hello world.",
+        "classification": "U",
+        "entropy": 0.0,
+        "hex": "68656c6c6f20776f726c642e",
+        "magic": "ASCII text",
+        "md5": "0" * 32,
+        "sha1": "0" * 40,
+        "sha256": doc_id,
+        "size": 12,
+        "ssdeep": "3:abc:abc",
+        "type": "unknown",
+    })
+    assert file_collection.save(doc_id, document)
+    assert file_collection.commit()
+
+    fetched = file_collection.get(doc_id)
+    assert fetched.sha256 == doc_id
+    assert fetched.type == "unknown"
+
+    search = file_collection.search("sha256:" + doc_id, rows=10, fl="id,sha256,type", as_obj=False,
+                                    track_total_hits=True)
+    assert search["total"] == 1
+    assert search["items"] == [{"id": doc_id, "sha256": doc_id, "type": "unknown"}]
+
+    pit_page = file_collection.search("sha256:" + doc_id, rows=1, fl="id", as_obj=False, deep_paging_id="start")
+    assert pit_page["items"] == [{"id": doc_id}]
+
+    assert file_collection.delete(doc_id)
+    assert file_collection.commit()
+    assert file_collection.search("sha256:" + doc_id, rows=10, fl="id", as_obj=False,
+                                  track_total_hits=True)["total"] == 0
+
     datastore.ds.close()
     assert datastore.ds.is_closed()

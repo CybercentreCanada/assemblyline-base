@@ -414,11 +414,26 @@ def test_elasticsearch_delegates_existing_unsupported_operation_to_raw_client():
     raw.indices.clear_cache.assert_called_once_with(index="alert")
 
 
-def test_opensearch_rejects_same_unsupported_operation_clearly():
-    adapter = SearchClientAdapter(make_raw_client(), SearchBackend.OPENSEARCH)
+def test_opensearch_indices_clear_cache_delegates_basic_commit_call():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
 
-    with pytest.raises(UnsupportedSearchBackendOperation, match="indices.clear_cache"):
-        adapter.indices.clear_cache(index="alert")
+    response = adapter.indices.clear_cache(index="alert")
+
+    assert response == {"_shards": {"successful": 1}}
+    raw.indices.clear_cache.assert_called_once_with(index="alert")
+
+
+def test_opensearch_indices_clear_cache_moves_supported_flags_to_params():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    adapter.indices.clear_cache(index="alert", fielddata=True, fields="id", request=True)
+
+    raw.indices.clear_cache.assert_called_once_with(
+        index="alert",
+        params={"fielddata": True, "fields": "id", "request": True},
+    )
 
 
 def test_elasticsearch_adapter_preserves_not_found_exception():
