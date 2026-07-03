@@ -141,6 +141,38 @@ class _IndicesAdapter:
         raise UnsupportedSearchBackendOperation(f"indices.{name} is not supported by this adapter slice")
 
 
+class _TasksAdapter:
+    def __init__(self, adapter: "SearchClientAdapter"):
+        self._adapter = adapter
+
+    def get(self, **kwargs):
+        if self._adapter.backend == SearchBackend.ELASTICSEARCH:
+            return self._adapter._call(self._adapter.raw_client.tasks.get, **kwargs)
+
+        # opensearch-py 2.8 treats the tasks API timeout query parameter as a
+        # transport timeout, so Assemblyline enforces finite waits at ESStore.
+        kwargs.pop("timeout", None)
+        params = self._adapter._extract_opensearch_params(
+            kwargs,
+            {
+                "error_trace",
+                "filter_path",
+                "human",
+                "pretty",
+                "source",
+                "wait_for_completion",
+            },
+        )
+        params.pop("timeout", None)
+        self._adapter._reject_unsupported_kwargs("tasks.get", kwargs, {"task_id", "headers"})
+        return self._adapter._call(self._adapter.raw_client.tasks.get, params=params or None, **kwargs)
+
+    def __getattr__(self, name):
+        if self._adapter.backend == SearchBackend.ELASTICSEARCH:
+            return getattr(self._adapter.raw_client.tasks, name)
+        raise UnsupportedSearchBackendOperation(f"tasks.{name} is not supported by this adapter slice")
+
+
 class SearchClientAdapter:
     def __init__(self, raw_client: Any, backend: str = SearchBackend.ELASTICSEARCH):
         self.raw_client = raw_client
@@ -159,7 +191,7 @@ class SearchClientAdapter:
             self.ilm = _UnsupportedNamespace("ilm")
             self.nodes = _UnsupportedNamespace("nodes")
             self.security = _UnsupportedNamespace("security")
-            self.tasks = _UnsupportedNamespace("tasks")
+            self.tasks = _TasksAdapter(self)
 
     def _call(self, func: Callable, *args, **kwargs):
         try:
@@ -187,7 +219,10 @@ class SearchClientAdapter:
                 status = int(err.args[0])
             except (TypeError, ValueError):
                 pass
-        return int(status) if status is not None else None
+        try:
+            return int(status) if status is not None else None
+        except (TypeError, ValueError):
+            return None
 
     @classmethod
     def normalize_exception(cls, err: Exception) -> SearchBackendException:
@@ -196,6 +231,49 @@ class SearchClientAdapter:
 
         message = getattr(err, "message", None) or str(err)
         return SearchBackendException(message, status_code=cls.get_exception_status(err), original=err)
+
+    @staticmethod
+    def _opensearch_param_value(value):
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        return value
+
+    @classmethod
+    def _extract_opensearch_params(cls, kwargs: dict, supported_params: set[str]) -> dict:
+        params = {}
+        explicit_params = kwargs.pop("params", None)
+        if explicit_params:
+            params.update({
+                key: cls._opensearch_param_value(value)
+                for key, value in explicit_params.items()
+                if value is not None
+            })
+
+        for key in list(kwargs.keys()):
+            if key not in supported_params:
+                continue
+            value = kwargs.pop(key)
+            if value is not None:
+                params[key] = cls._opensearch_param_value(value)
+
+        return params
+
+    @staticmethod
+    def _extract_body_value(kwargs: dict, body: dict, key: str):
+        value = kwargs.pop(key, None)
+        if value is None:
+            return
+        if key in body:
+            raise SearchBackendCompatibilityError(f"{key} cannot be supplied both directly and in body")
+        body[key] = value
+
+    @staticmethod
+    def _reject_unsupported_kwargs(operation: str, kwargs: dict, allowed: set[str]):
+        unsupported = sorted(set(kwargs) - allowed)
+        if unsupported:
+            raise SearchBackendCompatibilityError(
+                f"{operation} does not support argument(s): {', '.join(unsupported)}"
+            )
 
     @staticmethod
     def opensearch_compatible_mappings(mappings: dict) -> dict:
@@ -296,6 +374,102 @@ class SearchClientAdapter:
                 body["sort"] = self.opensearch_compatible_sort(body["sort"])
             return self._call(self.raw_client.search, body=body, **kwargs)
         return self._call(self.raw_client.search, **kwargs)
+
+    def delete_by_query(self, **kwargs):
+        if self.backend == SearchBackend.ELASTICSEARCH:
+            return self._call(self.raw_client.delete_by_query, **kwargs)
+
+        body = kwargs.pop("body", {}) or {}
+        params = self._extract_opensearch_params(
+            kwargs,
+            {
+                "allow_no_indices",
+                "analyze_wildcard",
+                "analyzer",
+                "conflicts",
+                "default_operator",
+                "df",
+                "expand_wildcards",
+                "from_",
+                "ignore_unavailable",
+                "lenient",
+                "preference",
+                "q",
+                "refresh",
+                "request_cache",
+                "requests_per_second",
+                "routing",
+                "scroll",
+                "scroll_size",
+                "search_timeout",
+                "search_type",
+                "size",
+                "slices",
+                "sort",
+                "stats",
+                "terminate_after",
+                "timeout",
+                "version",
+                "wait_for_active_shards",
+                "wait_for_completion",
+            },
+        )
+        if "from_" in params:
+            params["from"] = params.pop("from_")
+        self._extract_body_value(kwargs, body, "query")
+        self._extract_body_value(kwargs, body, "max_docs")
+        self._extract_body_value(kwargs, body, "slice")
+        self._reject_unsupported_kwargs("delete_by_query", kwargs, {"index", "headers"})
+        return self._call(self.raw_client.delete_by_query, body=body, params=params or None, **kwargs)
+
+    def update_by_query(self, **kwargs):
+        if self.backend == SearchBackend.ELASTICSEARCH:
+            return self._call(self.raw_client.update_by_query, **kwargs)
+
+        body = kwargs.pop("body", {}) or {}
+        params = self._extract_opensearch_params(
+            kwargs,
+            {
+                "allow_no_indices",
+                "analyze_wildcard",
+                "analyzer",
+                "conflicts",
+                "default_operator",
+                "df",
+                "expand_wildcards",
+                "from_",
+                "ignore_unavailable",
+                "lenient",
+                "pipeline",
+                "preference",
+                "q",
+                "refresh",
+                "request_cache",
+                "requests_per_second",
+                "routing",
+                "scroll",
+                "scroll_size",
+                "search_timeout",
+                "search_type",
+                "size",
+                "slices",
+                "sort",
+                "stats",
+                "terminate_after",
+                "timeout",
+                "version",
+                "wait_for_active_shards",
+                "wait_for_completion",
+            },
+        )
+        if "from_" in params:
+            params["from"] = params.pop("from_")
+        self._extract_body_value(kwargs, body, "query")
+        self._extract_body_value(kwargs, body, "script")
+        self._extract_body_value(kwargs, body, "max_docs")
+        self._extract_body_value(kwargs, body, "slice")
+        self._reject_unsupported_kwargs("update_by_query", kwargs, {"index", "headers"})
+        return self._call(self.raw_client.update_by_query, body=body, params=params or None, **kwargs)
 
     def open_point_in_time(self, **kwargs):
         if self.backend == SearchBackend.ELASTICSEARCH:

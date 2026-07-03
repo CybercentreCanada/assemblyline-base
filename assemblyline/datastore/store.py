@@ -5,6 +5,7 @@ import re
 import time
 import typing
 import warnings
+
 from os import environ, path
 from random import random
 from urllib.parse import urlparse
@@ -294,7 +295,12 @@ class ESStore(object):
                                      max_docs=max_tasks)
 
         # Wait until the tasks deletion task is over
-        res = self._get_task_results(task)
+        try:
+            res = self._get_task_results(task)
+        except DataStoreException as err:
+            if "restricted indices [.tasks]" in str(err):
+                return 0
+            raise
 
         # return the number of deleted items
         return res['deleted']
@@ -308,8 +314,15 @@ class ESStore(object):
         if retry_function is None:
             retry_function = self.with_retries
 
+        deadline = None
+        task_wait_timeout = self.__dict__.get("task_wait_timeout")
+        if task_wait_timeout is not None:
+            deadline = time.monotonic() + task_wait_timeout
+
         res = None
         while res is None:
+            if deadline is not None and time.monotonic() > deadline:
+                raise DataStoreException(f"Timed out waiting for datastore task {task['task']}")
             try:
                 res = retry_function(self.client.tasks.get, task_id=task['task'],
                                      wait_for_completion=True, timeout='5s')
@@ -327,6 +340,14 @@ class ESStore(object):
                     pass
                 else:
                     raise
+
+        if 'error' in res:
+            error = res['error']
+            if isinstance(error, dict):
+                reason = error.get('reason') or error.get('type') or str(error)
+            else:
+                reason = str(error)
+            raise DataStoreException(f"Datastore task {task['task']} failed: {reason}")
 
         try:
             return res['response']

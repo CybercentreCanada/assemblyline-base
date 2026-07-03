@@ -15,7 +15,7 @@ from assemblyline.datastore.compat import (
     UnsupportedSearchBackendOperation,
     create_search_client,
 )
-from assemblyline.datastore.exceptions import UnsupportedElasticVersion, VersionConflictException
+from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion, VersionConflictException
 from assemblyline.datastore.store import ESStore
 from assemblyline.odm.models.config import Config
 
@@ -29,6 +29,7 @@ def make_raw_client():
         bulk=Mock(return_value={"errors": False}),
         close=Mock(),
         delete=Mock(return_value={"result": "deleted"}),
+        delete_by_query=Mock(return_value={"task": "node:1"}),
         exists=Mock(return_value=True),
         get=Mock(return_value={"_id": "id", "_source": {"id": "id"}}),
         index=Mock(return_value={"result": "created"}),
@@ -38,6 +39,7 @@ def make_raw_client():
         ping=Mock(return_value=True),
         search=Mock(return_value={"hits": {"hits": []}}),
         update=Mock(return_value={"result": "updated"}),
+        update_by_query=Mock(return_value={"task": "node:2"}),
         close_point_in_time=Mock(return_value={"succeeded": True, "num_freed": 1}),
         create_pit=Mock(return_value={"pit_id": "os-pit"}),
         delete_pit=Mock(return_value={"pits": [{"pit_id": "os-pit", "successful": True}]}),
@@ -56,7 +58,7 @@ def make_raw_client():
         ),
         nodes=SimpleNamespace(stats=Mock()),
         security=SimpleNamespace(put_role=Mock(), put_user=Mock()),
-        tasks=SimpleNamespace(get=Mock()),
+        tasks=SimpleNamespace(get=Mock(return_value={"completed": True, "response": {"updated": 1}})),
     )
 
 
@@ -92,6 +94,43 @@ def test_elasticsearch_adapter_preserves_es8_keywords():
 
     adapter.search(index="alert", query={"match_all": {}}, from_=1, size=10)
     raw.search.assert_called_once_with(index="alert", query={"match_all": {}}, from_=1, size=10)
+
+    adapter.delete_by_query(
+        index="alert",
+        query={"match_all": {}},
+        wait_for_completion=False,
+        conflicts="proceed",
+        sort="id:asc",
+        max_docs=10,
+    )
+    raw.delete_by_query.assert_called_once_with(
+        index="alert",
+        query={"match_all": {}},
+        wait_for_completion=False,
+        conflicts="proceed",
+        sort="id:asc",
+        max_docs=10,
+    )
+
+    adapter.update_by_query(
+        index="alert",
+        query={"match_all": {}},
+        script={"source": "ctx._source.count += 1"},
+        wait_for_completion=False,
+        conflicts="proceed",
+        max_docs=10,
+    )
+    raw.update_by_query.assert_called_once_with(
+        index="alert",
+        query={"match_all": {}},
+        script={"source": "ctx._source.count += 1"},
+        wait_for_completion=False,
+        conflicts="proceed",
+        max_docs=10,
+    )
+
+    adapter.tasks.get(task_id="node:1", wait_for_completion=True, timeout="5s")
+    raw.tasks.get.assert_called_once_with(task_id="node:1", wait_for_completion=True, timeout="5s")
 
 
 def test_elasticsearch_pit_open_call_is_forwarded_unchanged():
@@ -350,6 +389,117 @@ def test_opensearch_update_translates_script_to_body():
     )
 
 
+def test_opensearch_delete_by_query_translates_query_and_supported_params():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    response = adapter.delete_by_query(
+        index="alert",
+        query={"term": {"workflow_id": "wf1"}},
+        wait_for_completion=False,
+        conflicts="proceed",
+        sort="id:asc",
+        max_docs=5,
+    )
+
+    assert response == {"task": "node:1"}
+    raw.delete_by_query.assert_called_once_with(
+        index="alert",
+        body={"query": {"term": {"workflow_id": "wf1"}}, "max_docs": 5},
+        params={"wait_for_completion": "false", "conflicts": "proceed", "sort": "id:asc"},
+    )
+
+
+def test_opensearch_update_by_query_translates_query_script_and_supported_params():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    response = adapter.update_by_query(
+        index="alert",
+        query={"term": {"workflow_id": "wf1"}},
+        script={"source": "ctx._source.workflow_completed = true", "lang": "painless"},
+        wait_for_completion=False,
+        conflicts="proceed",
+        max_docs=5,
+    )
+
+    assert response == {"task": "node:2"}
+    raw.update_by_query.assert_called_once_with(
+        index="alert",
+        body={
+            "query": {"term": {"workflow_id": "wf1"}},
+            "script": {"source": "ctx._source.workflow_completed = true", "lang": "painless"},
+            "max_docs": 5,
+        },
+        params={"wait_for_completion": "false", "conflicts": "proceed"},
+    )
+
+
+def test_opensearch_tasks_get_translates_params_and_preserves_response():
+    raw = make_raw_client()
+    raw.tasks.get.return_value = {
+        "completed": True,
+        "response": {"deleted": 2, "version_conflicts": 1},
+    }
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    response = adapter.tasks.get(task_id="node:1", wait_for_completion=True, timeout="5s")
+
+    assert response["response"]["deleted"] == 2
+    assert response["response"]["version_conflicts"] == 1
+    raw.tasks.get.assert_called_once_with(
+        task_id="node:1",
+        params={"wait_for_completion": "true"},
+    )
+
+
+def test_opensearch_tasks_get_preserves_task_errors():
+    raw = make_raw_client()
+    raw.tasks.get.return_value = {"completed": True, "error": {"type": "script_exception", "reason": "compile error"}}
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    response = adapter.tasks.get(task_id="node:1", wait_for_completion=True)
+
+    assert response["error"]["type"] == "script_exception"
+
+
+def test_opensearch_query_task_exceptions_are_wrapped():
+    raw = make_raw_client()
+    original = Exception("query task failed")
+    original.status_code = 400
+    raw.update_by_query.side_effect = original
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    with pytest.raises(SearchBackendException) as exc:
+        adapter.update_by_query(index="alert", query={"match_all": {}})
+
+    assert exc.value.status_code == 400
+    assert exc.value.original is original
+
+
+def test_opensearch_query_task_duplicate_body_fields_fail_clearly():
+    adapter = SearchClientAdapter(make_raw_client(), SearchBackend.OPENSEARCH)
+
+    with pytest.raises(SearchBackendCompatibilityError, match="query"):
+        adapter.delete_by_query(index="alert", body={"query": {"match_all": {}}}, query={"term": {"id": "1"}})
+
+    with pytest.raises(SearchBackendCompatibilityError, match="script"):
+        adapter.update_by_query(index="alert", body={"script": {"source": "ctx.op = 'noop'"}}, script={"source": ""})
+
+
+def test_opensearch_query_task_unsupported_arguments_fail_clearly():
+    adapter = SearchClientAdapter(make_raw_client(), SearchBackend.OPENSEARCH)
+
+    with pytest.raises(SearchBackendCompatibilityError, match="unsupported"):
+        adapter.delete_by_query(index="alert", query={"match_all": {}}, unsupported=True)
+
+    with pytest.raises(SearchBackendCompatibilityError, match="unsupported"):
+        adapter.update_by_query(index="alert", query={"match_all": {}}, script={}, unsupported=True)
+
+    with pytest.raises(SearchBackendCompatibilityError, match="unsupported"):
+        adapter.tasks.get(task_id="node:1", unsupported=True)
+
+
 def test_exceptions_normalize_to_status_and_internal_type():
     original = Exception("missing")
     original.status_code = 404
@@ -389,10 +539,7 @@ def test_unsupported_opensearch_operations_fail_clearly():
         (lambda: adapter.security.put_role(name="role"), "security.put_role"),
         (lambda: adapter.security.put_user(username="user"), "security.put_user"),
         (lambda: adapter.ilm.get_lifecycle(name="policy"), "ilm.get_lifecycle"),
-        (lambda: adapter.delete_by_query(index="alert", query={"match_all": {}}), "delete_by_query"),
-        (lambda: adapter.update_by_query(index="alert", query={"match_all": {}}), "update_by_query"),
         (lambda: adapter.reindex(source={"index": "old"}, dest={"index": "new"}), "reindex"),
-        (lambda: adapter.tasks.get(task_id="task"), "tasks.get"),
         (lambda: adapter.indices.clone(index="old", target="new"), "indices.clone"),
         (lambda: adapter.indices.split(index="old", target="new"), "indices.split"),
         (lambda: adapter.indices.shrink(index="old", target="new"), "indices.shrink"),
@@ -465,6 +612,18 @@ def test_opensearch_normalized_status_extraction():
 
     assert SearchClientAdapter.get_exception_status(normalized) == 409
     assert normalized.status_code == 409
+
+
+def test_store_task_wait_raises_task_error():
+    store = object.__new__(ESStore)
+    store.client = SimpleNamespace(tasks=SimpleNamespace(get=Mock()))
+    store.with_retries = Mock(return_value={
+        "completed": True,
+        "error": {"type": "script_exception", "reason": "compile error"},
+    })
+
+    with pytest.raises(DataStoreException, match="compile error"):
+        store._get_task_results({"task": "node:1"})
 
 
 def test_create_search_client_selects_elasticsearch_client(monkeypatch):
