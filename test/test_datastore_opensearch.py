@@ -7,6 +7,7 @@ import pytest
 
 from assemblyline.common import forge
 from assemblyline.datastore.compat import SearchBackend, SearchBackendException
+from assemblyline.datastore.exceptions import DataStoreException
 from assemblyline.datastore.support.build import build_mapping
 from assemblyline.odm.models.config import Config
 from assemblyline.odm.models.alert import Alert
@@ -657,3 +658,99 @@ def test_opensearch_runtime_smoke_uses_factory_models_commit_pit_and_delete(requ
 
     datastore.ds.close()
     assert datastore.ds.is_closed()
+
+
+def _opensearch_datastore(request, collection_name):
+    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://127.0.0.1:9201')
+    config_data = Config().as_primitives()
+    config_data["datastore"]["type"] = "opensearch"
+    config_data["datastore"]["hosts"] = [host]
+    config_data["datastore"]["archive"]["enabled"] = False
+
+    datastore = forge.get_datastore(config=Config(config_data))
+    datastore.ds.task_wait_timeout = 30
+
+    def cleanup():
+        try:
+            if datastore.ds.client:
+                datastore.ds.client.raw_client.indices.delete(index=f"{collection_name}*", ignore_unavailable=True)
+        finally:
+            if not datastore.ds.is_closed():
+                datastore.ds.close()
+
+    request.addfinalizer(cleanup)
+    datastore.ds.register(collection_name)
+    return datastore, datastore.ds.__getattr__(collection_name)
+
+
+def test_opensearch_delete_by_query_async_task_via_datastore(request):
+    collection_name = f"al_os_dbq_{uuid.uuid4().hex}"
+    datastore, collection = _opensearch_datastore(request, collection_name)
+
+    for doc_id, group in (("delete-1", "delete"), ("delete-2", "delete"), ("keep-1", "keep")):
+        assert collection.save(doc_id, {"group": group, "count": 1})
+    assert collection.commit()
+
+    deleted = collection.delete_by_query("group:delete")
+    assert deleted == 2
+    assert collection.commit()
+
+    remaining = collection.search("id:*", rows=10, fl="id,group", as_obj=False, track_total_hits=True)
+    assert remaining["total"] == 1
+    assert remaining["items"] == [{"id": "keep-1", "group": "keep"}]
+
+    task = datastore.ds.client.delete_by_query(
+        index=collection_name,
+        query={"term": {"group": "missing"}},
+        wait_for_completion=False,
+        conflicts="proceed",
+    )
+    task_response = datastore.ds._get_task_results(task)
+    assert task_response["deleted"] == 0
+    assert task_response["version_conflicts"] == 0
+
+
+def test_opensearch_update_by_query_async_task_and_ui_style_update(request):
+    collection_name = f"al_os_ubq_{uuid.uuid4().hex}"
+    _, collection = _opensearch_datastore(request, collection_name)
+
+    for doc_id, group in (("update-1", "update"), ("update-2", "update"), ("keep-1", "keep")):
+        assert collection.save(doc_id, {"group": group, "count": 1, "owner": "old"})
+    assert collection.commit()
+
+    updated = collection.update_by_query("group:update", [(collection.UPDATE_INC, "count", 4)])
+    assert updated == 2
+    assert collection.commit()
+
+    update_docs = collection.search("group:update", rows=10, fl="id,count,owner", as_obj=False, track_total_hits=True)
+    assert update_docs["total"] == 2
+    assert {item["count"] for item in update_docs["items"]} == {5}
+
+    keep_doc = collection.get("keep-1", as_obj=False)
+    assert keep_doc["count"] == 1
+    assert keep_doc["owner"] == "old"
+
+    ui_style_updated = collection.update_by_query(
+        "id:update-1",
+        [(collection.UPDATE_SET, "owner", "analyst")],
+        filters=["group:update"],
+    )
+    assert ui_style_updated == 1
+    assert collection.commit()
+    assert collection.get("update-1", as_obj=False)["owner"] == "analyst"
+    assert collection.get("update-2", as_obj=False)["owner"] == "old"
+
+
+def test_opensearch_update_by_query_task_failure_is_visible(request):
+    collection_name = f"al_os_ubq_fail_{uuid.uuid4().hex}"
+    _, collection = _opensearch_datastore(request, collection_name)
+
+    assert collection.save("bad-1", {"group": "bad", "count": 1})
+    assert collection.commit()
+
+    with pytest.raises(DataStoreException, match="failed"):
+        collection._update_async(
+            collection_name,
+            {"lang": "painless", "source": "ctx._source.count += "},
+            {"term": {"group": "bad"}},
+        )
