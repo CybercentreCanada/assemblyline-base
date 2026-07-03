@@ -46,6 +46,7 @@ def make_raw_client():
             create=Mock(return_value={"acknowledged": True}),
             exists=Mock(return_value=True),
             exists_alias=Mock(return_value=False),
+            get=Mock(return_value={"alert": {"mappings": {"properties": {}}}}),
             put_alias=Mock(return_value={"acknowledged": True}),
             refresh=Mock(return_value={"_shards": {"successful": 1}}),
             clone=Mock(return_value={"acknowledged": True}),
@@ -139,6 +140,58 @@ def test_opensearch_index_create_combines_mappings_and_settings_under_body():
     )
 
 
+def test_opensearch_index_create_rewrites_unsupported_wildcard_mappings():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+    mappings = {
+        "properties": {
+            "result_key": {"type": "wildcard"},
+            "name": {"type": "keyword"},
+        },
+        "dynamic_templates": [
+            {
+                "metadata.*_wildcard_tpl": {
+                    "path_match": "metadata.*",
+                    "mapping": {"type": "wildcard", "copy_to": "__text__"},
+                }
+            }
+        ],
+    }
+
+    adapter.indices.create(index="alert_hot", mappings=mappings)
+
+    raw.indices.create.assert_called_once_with(
+        index="alert_hot",
+        body={
+            "mappings": {
+                "properties": {
+                    "result_key": {"type": "keyword"},
+                    "name": {"type": "keyword"},
+                },
+                "dynamic_templates": [
+                    {
+                        "metadata.*_wildcard_tpl": {
+                            "path_match": "metadata.*",
+                            "mapping": {"type": "keyword", "copy_to": "__text__"},
+                        }
+                    }
+                ],
+            }
+        },
+    )
+    assert mappings["properties"]["result_key"]["type"] == "wildcard"
+    assert mappings["dynamic_templates"][0]["metadata.*_wildcard_tpl"]["mapping"]["type"] == "wildcard"
+
+
+def test_opensearch_indices_get_is_supported_for_mapping_validation():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    adapter.indices.get(index="alert")
+
+    raw.indices.get.assert_called_once_with(index="alert")
+
+
 def test_opensearch_search_translates_query_structure_to_body():
     raw = make_raw_client()
     adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
@@ -169,13 +222,14 @@ def test_opensearch_search_translates_query_structure_to_body():
 def test_opensearch_pit_search_translates_paging_fields_to_body():
     raw = make_raw_client()
     adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+    sort = [{"_shard_doc": "desc"}]
 
     adapter.search(
         pit={"id": "os-pit", "keep_alive": "1m"},
         query={"match_all": {}},
         search_after=[10, "doc"],
         size=100,
-        sort=[{"_shard_doc": "desc"}],
+        sort=sort,
         _source=["id", "event"],
     )
 
@@ -185,10 +239,11 @@ def test_opensearch_pit_search_translates_paging_fields_to_body():
             "query": {"match_all": {}},
             "search_after": [10, "doc"],
             "size": 100,
-            "sort": [{"_shard_doc": "desc"}],
+            "sort": [{"_doc": "desc"}],
             "_source": ["id", "event"],
         },
     )
+    assert sort == [{"_shard_doc": "desc"}]
 
 
 def test_opensearch_pit_open_call_translates_to_create_pit_api():

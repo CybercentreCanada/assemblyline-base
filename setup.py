@@ -79,6 +79,7 @@ setup(
             'pytest-mock',
             'pyftpdlib',
             'pyopenssl==23.3.0',
+            'opensearch-py>=2.8.0,<3.0.0',
         ]
     },
     package_data={
