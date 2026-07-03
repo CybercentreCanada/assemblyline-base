@@ -194,6 +194,13 @@ class ESStore(object):
             log.warning(f"Unknown alternative user '{username}' to switch to for Elasticsearch")
             return
 
+        if self.backend == SearchBackend.OPENSEARCH:
+            # OpenSearch deployments use the configured service identity here. The Elasticsearch
+            # plumber switch relies on Elasticsearch-only security client APIs and restricted-index
+            # behavior, neither of which applies to the current OpenSearch test deployment.
+            log.info("Skipping alternative datastore user '%s' for OpenSearch", username)
+            return
+
         if username == "plumber":
             # Ensure roles for "plumber" user are created
             self.with_retries(
