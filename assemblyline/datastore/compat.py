@@ -114,6 +114,24 @@ class _IndicesAdapter:
     def refresh(self, **kwargs):
         return self._adapter._call(self._adapter.raw_client.indices.refresh, **kwargs)
 
+    def clear_cache(self, **kwargs):
+        if self._adapter.backend == SearchBackend.OPENSEARCH:
+            params = {}
+            for key in (
+                "allow_no_indices",
+                "expand_wildcards",
+                "fielddata",
+                "fields",
+                "ignore_unavailable",
+                "query",
+                "request",
+            ):
+                if key in kwargs:
+                    params[key] = kwargs.pop(key)
+            if params:
+                kwargs["params"] = params
+        return self._adapter._call(self._adapter.raw_client.indices.clear_cache, **kwargs)
+
     def get(self, **kwargs):
         return self._adapter._call(self._adapter.raw_client.indices.get, **kwargs)
 
