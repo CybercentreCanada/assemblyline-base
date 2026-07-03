@@ -1091,7 +1091,8 @@ class Datastore(odm.Model):
     cache_dtl = odm.Integer(
         min=0,
         default=5, description="Default cache lenght for computed indices (submission_tree, submission_summary...")
-    type = odm.Enum({"elasticsearch"}, description="Type of application used for the datastore")
+    type = odm.Enum({"elasticsearch", "opensearch"}, default="elasticsearch",
+                    description="Type of application used for the datastore")
 
 
 DEFAULT_DATASTORE = {

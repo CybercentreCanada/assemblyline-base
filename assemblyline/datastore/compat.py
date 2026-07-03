@@ -265,7 +265,13 @@ class SearchClientAdapter:
                 "_source",
                 "timeout",
             }
-            body = {key: kwargs.pop(key) for key in list(kwargs.keys()) if key in body_keys}
+            body = {}
+            for key in list(kwargs.keys()):
+                if key not in body_keys:
+                    continue
+                value = kwargs.pop(key)
+                if value is not None:
+                    body[key] = value
             if "from_" in body:
                 body["from"] = body.pop("from_")
             if "sort" in body:

@@ -1,10 +1,14 @@
 import json
+import os
+import uuid
 from copy import deepcopy
 
 import pytest
 
-from assemblyline.datastore.compat import SearchBackendException
+from assemblyline.common import forge
+from assemblyline.datastore.compat import SearchBackend, SearchBackendException
 from assemblyline.datastore.support.build import build_mapping
+from assemblyline.odm.models.config import Config
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.result import Section
 from assemblyline.odm.models.submission import Submission
@@ -542,3 +546,48 @@ def test_opensearch_point_in_time_search_after_and_close(opensearch_client):
     finally:
         response = opensearch_client.close_point_in_time(id=pit["id"])
         assert response["pits"][0]["successful"] is True
+
+
+def test_opensearch_full_datastore_construction_via_forge(request):
+    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://127.0.0.1:9201')
+    collection_name = f"al_os_forge_{uuid.uuid4().hex}"
+    config_data = Config().as_primitives()
+    config_data["datastore"]["type"] = "opensearch"
+    config_data["datastore"]["hosts"] = [host]
+    config_data["datastore"]["archive"]["enabled"] = False
+
+    datastore = forge.get_datastore(config=Config(config_data))
+
+    def cleanup():
+        try:
+            if datastore.ds.client:
+                datastore.ds.client.raw_client.indices.delete(index=f"{collection_name}*", ignore_unavailable=True)
+        finally:
+            if not datastore.ds.is_closed():
+                datastore.ds.close()
+
+    request.addfinalizer(cleanup)
+
+    assert datastore.ds.backend == SearchBackend.OPENSEARCH
+    assert datastore.ds.client.info()["version"]["distribution"] == "opensearch"
+    assert datastore.ds.ping() is True
+
+    datastore.ds.register(collection_name)
+    collection = datastore.ds.__getattr__(collection_name)
+    assert collection.save("doc-1", {"keyword_s": "Alpha", "text_t": "hello OpenSearch"}, refresh=True)
+    assert collection.get("doc-1", as_obj=False)["keyword_s"] == "Alpha"
+
+    search = collection.search("keyword_s:Alpha", rows=10, fl="id,keyword_s", as_obj=False, track_total_hits=True)
+    assert search["total"] == 1
+    assert search["items"] == [{"id": "doc-1", "keyword_s": "Alpha"}]
+
+    pit_page = collection.search("id:*", rows=1, fl="id", as_obj=False, deep_paging_id="start")
+    assert pit_page["items"] == [{"id": "doc-1"}]
+
+    assert collection.delete("doc-1")
+    datastore.ds.client.indices.refresh(index=collection_name)
+    assert collection.search("id:doc-1", rows=10, fl="id", as_obj=False, track_total_hits=True)["total"] == 0
+
+    datastore.ds.client.raw_client.indices.delete(index=f"{collection_name}*", ignore_unavailable=True)
+    datastore.ds.close()
+    assert datastore.ds.is_closed()
