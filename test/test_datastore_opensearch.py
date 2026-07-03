@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import pytest
 
+from assemblyline.datastore.compat import SearchBackendException
 from assemblyline.datastore.support.build import build_mapping
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.result import Section
@@ -157,6 +158,10 @@ def _create_index(client, index, alias=None):
 def _refresh(client, index):
     response = client.indices.refresh(index=index)
     assert response["_shards"]["failed"] == 0
+
+
+def _hit_ids(response):
+    return [hit["_source"]["id"] for hit in response["hits"]["hits"]]
 
 
 def _sample_doc(doc_id, **overrides):
@@ -351,6 +356,115 @@ def test_opensearch_actual_metadata_and_safelisted_tag_behavior(opensearch_clien
     assert properties["metadata"]["properties"]["campaign"]["copy_to"] == ["__text__"]
     assert properties["metadata"]["properties"]["submitter_team"]["type"] == "keyword"
     assert properties["safelisted_tags"]["properties"]["network"]["properties"]["static"]["properties"]["ip"]["type"] == "keyword"
+
+
+def test_opensearch_metadata_keyword_translation_edge_cases(opensearch_client):
+    index = opensearch_client.make_index_name("metadata_edges")
+    _create_index(opensearch_client, index)
+
+    near_keyword_limit = "n" * 32766
+    doc = _sample_doc(
+        "doc-edge",
+        metadata={
+            "plain": "simple",
+            "mixed_case": "MiXeDCase",
+            "punctuation": "big-bad value",
+            "url": "https://example.com/a/b?x=1&token=Alpha",
+            "path": r"C:\Users\Alice\AppData\Local\Temp\payload.exe",
+            "command": "powershell.exe -NoProfile -EncodedCommand SQBFAFgA",
+            "unicode": "caf\u00e9 \u2603",
+            "long_257": "l" * 257,
+            "near_limit": near_keyword_limit,
+            "secondary": "Beta-2026",
+            "regex_value": "abbbc",
+        },
+    )
+    created = opensearch_client.index(index=index, id="doc-edge", document=json.dumps(doc), refresh=True)
+    assert created["result"] == "created"
+
+    fetched = opensearch_client.get(index=index, id="doc-edge")
+    assert fetched["_source"]["metadata"] == doc["metadata"]
+
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"term": {"metadata.plain": "simple"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"term": {"metadata.long_257": "l" * 257}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"term": {"metadata.near_limit": near_keyword_limit}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"wildcard": {"metadata.secondary": "*-2026"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"wildcard": {"metadata.secondary": "Beta-*"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"wildcard": {"metadata.url": "*example.com/a/b*"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"query_string": {"query": r"metadata.punctuation:big\-bad\ value"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"regexp": {"metadata.regex_value": "ab+c"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"exists": {"field": "metadata.command"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"query_string": {"default_field": "__text__", "query": "EncodedCommand"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+
+    assert opensearch_client.search(
+        index=index,
+        query={"term": {"metadata.mixed_case": "mixedcase"}},
+        _source=["id"],
+    )["hits"]["total"]["value"] == 0
+    assert _hit_ids(opensearch_client.search(
+        index=index,
+        query={"term": {"metadata.mixed_case": "MiXeDCase"}},
+        _source=["id"],
+    )) == ["doc-edge"]
+
+    metadata_mapping = opensearch_client.indices.get(index=index)[index]["mappings"]["properties"]["metadata"]["properties"]
+    for key in ("plain", "mixed_case", "url", "path", "command", "unicode", "long_257", "near_limit", "secondary"):
+        assert metadata_mapping[key]["type"] == "keyword"
+        assert metadata_mapping[key]["copy_to"] == ["__text__"]
+        assert "ignore_above" not in metadata_mapping[key]
+        assert "normalizer" not in metadata_mapping[key]
+        assert metadata_mapping[key].get("doc_values", True) is True
+
+    settings = opensearch_client.indices.get(index=index)[index]["settings"]["index"]
+    assert "allow_expensive_queries" not in settings.get("search", {})
+
+    too_long_doc = _sample_doc("doc-too-long", metadata={"too_long": "x" * 32767})
+    with pytest.raises(SearchBackendException) as err:
+        opensearch_client.index(index=index, id="doc-too-long", document=json.dumps(too_long_doc), refresh=True)
+
+    assert err.value.status_code == 400
+    _refresh(opensearch_client, index)
+    assert opensearch_client.exists(index=index, id="doc-too-long", _source=False) is False
 
 
 def test_opensearch_search_queries_filters_sort_source_aggregation_and_totals(opensearch_client):
