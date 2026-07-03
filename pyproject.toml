@@ -63,6 +63,7 @@ dependencies = [
     "yara-python",
     "hauntedhouse==0.1.10",
     "magika",
+    "opensearch-py>=2.8.0,<3.0.0"
 ]
 
 [project.urls]
