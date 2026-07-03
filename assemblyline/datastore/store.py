@@ -11,12 +11,22 @@ from urllib.parse import urlparse
 
 import elasticsearch
 import elasticsearch.helpers
+from packaging import version
+
 from assemblyline.common import forge
 from assemblyline.common.isotime import now
 from assemblyline.common.security import generate_random_secret
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion, VersionConflictException
-from packaging import version
+from assemblyline.datastore.compat import (
+    SearchBackend,
+    SearchBackendException,
+    create_search_client,
+)
+from assemblyline.datastore.exceptions import (
+    DataStoreException,
+    UnsupportedElasticVersion,
+    VersionConflictException,
+)
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
 DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
@@ -78,8 +88,14 @@ class ESStore(object):
 
         self.ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
 
-        self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs, verify_certs=DATASTORE_VERIFY_CERTS)
+        self.client = create_search_client(
+            SearchBackend.ELASTICSEARCH,
+            hosts,
+            max_retries=0,
+            request_timeout=TRANSPORT_TIMEOUT,
+            ca_certs=self.ca_certs,
+            verify_certs=DATASTORE_VERIFY_CERTS,
+        )
         self.es_version = version.parse(self.with_retries(self.client.info)['version']['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
@@ -191,18 +207,21 @@ class ESStore(object):
         self.connection_reset()
 
     def connection_reset(self):
-        self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
-                                                  max_retries=0,
-                                                  request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs,
-                                                  verify_certs=DATASTORE_VERIFY_CERTS)
+        self.client = create_search_client(
+            SearchBackend.ELASTICSEARCH,
+            self._hosts,
+            max_retries=0,
+            request_timeout=TRANSPORT_TIMEOUT,
+            ca_certs=self.ca_certs,
+            verify_certs=DATASTORE_VERIFY_CERTS,
+        )
         log.info("Reconnected to Elasticsearch")
 
     def close(self):
         self._closed = True
         # Flatten the client object so that attempts to access without reconnecting errors hard
         # But 'cast' it so that mypy and other linters don't think that its normal for client to be None
-        self.client = typing.cast(elasticsearch.Elasticsearch, None)
+        self.client = typing.cast(object, None)
 
     def get_hosts(self, safe=False):
         if not safe:
@@ -427,5 +446,38 @@ class ESStore(object):
                     raise
 
                 # Loop and retry
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                retries += 1
+
+            except SearchBackendException as err:
+                index_name = kwargs.get('index', '').upper()
+                err_code = err.status_code
+
+                if err_code == 409:
+                    if raise_conflicts:
+                        time.sleep(random() * 0.1)
+                        raise VersionConflictException(str(err))
+
+                    original_info = getattr(err.original, "info", {})
+                    if isinstance(original_info, dict):
+                        updated += original_info.get('updated', 0)
+                        deleted += original_info.get('deleted', 0)
+                elif err_code == 404 and index_name and "No search context found" in err.message:
+                    log.warning(f"Index {index_name} was removed while a query was running, retrying...")
+                elif err_code == 429:
+                    if index_name:
+                        log.warning("Elasticsearch is too busy to perform the requested "
+                                    f"task on index {index_name}, retrying...")
+                    else:
+                        log.warning("Elasticsearch is too busy to perform the requested "
+                                    f"task ({str(err)}), retrying...")
+                elif err_code == 503 and index_name:
+                    log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
+                elif err_code == 403 and index_name:
+                    log.warning("Elasticsearch cluster is preventing writing operations "
+                                f"on index {index_name}, retrying...")
+                else:
+                    raise
+
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 retries += 1
