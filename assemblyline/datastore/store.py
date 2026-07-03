@@ -72,9 +72,11 @@ class ESStore(object):
     }
     ID = 'id'
     MIN_ELASTIC_VERSION = '7.10'
+    MIN_OPENSEARCH_VERSION = '2.12.0'
 
-    def __init__(self, hosts, archive_access=True, archive_alernate_dtl=0):
+    def __init__(self, hosts, backend=SearchBackend.ELASTICSEARCH, archive_access=True, archive_alernate_dtl=0):
         config = forge.get_config()
+        self.backend = SearchBackend(backend)
         self._hosts = hosts
         self._closed = False
         self._collections = {}
@@ -89,17 +91,13 @@ class ESStore(object):
         self.ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
 
         self.client = create_search_client(
-            SearchBackend.ELASTICSEARCH,
-            hosts,
-            max_retries=0,
-            request_timeout=TRANSPORT_TIMEOUT,
-            ca_certs=self.ca_certs,
-            verify_certs=DATASTORE_VERIFY_CERTS,
-        )
-        self.es_version = version.parse(self.with_retries(self.client.info)['version']['number'])
+            self.backend, hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
+            ca_certs=self.ca_certs, verify_certs=DATASTORE_VERIFY_CERTS)
+        self.version_info = self.with_retries(self.client.info).get('version', {})
+        self.es_version = version.parse(self.version_info['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
-        self._test_elastic_minimum_version()
+        self._test_minimum_version()
 
     def __enter__(self):
         return self
@@ -171,10 +169,21 @@ class ESStore(object):
     def date_separator(self):
         return self.DATE_FORMAT['SEPARATOR']
 
-    def _test_elastic_minimum_version(self):
-        if not self.is_supported_version(self.MIN_ELASTIC_VERSION):
-            raise UnsupportedElasticVersion(f"Elastic version {self.es_version} is not supported by Assemblyline. "
-                                            f"Upgrade to Elastic {self.MIN_ELASTIC_VERSION} at minimum.")
+    def _test_minimum_version(self):
+        if self.backend == SearchBackend.ELASTICSEARCH:
+            if not self.is_supported_version(self.MIN_ELASTIC_VERSION):
+                raise UnsupportedElasticVersion(f"Elastic version {self.es_version} is not supported by Assemblyline. "
+                                                f"Upgrade to Elastic {self.MIN_ELASTIC_VERSION} at minimum.")
+            return
+
+        if self.version_info.get("distribution") != "opensearch":
+            raise UnsupportedElasticVersion(
+                f"OpenSearch backend selected but datastore identified as "
+                f"{self.version_info.get('distribution', 'unknown')} {self.es_version}.")
+
+        if not self.is_supported_version(self.MIN_OPENSEARCH_VERSION):
+            raise UnsupportedElasticVersion(f"OpenSearch version {self.es_version} is not supported by Assemblyline. "
+                                            f"Upgrade to OpenSearch {self.MIN_OPENSEARCH_VERSION} at minimum.")
 
     def is_supported_version(self, min):
         return self.es_version >= version.parse(min)
@@ -208,17 +217,18 @@ class ESStore(object):
 
     def connection_reset(self):
         self.client = create_search_client(
-            SearchBackend.ELASTICSEARCH,
+            self.backend,
             self._hosts,
             max_retries=0,
             request_timeout=TRANSPORT_TIMEOUT,
             ca_certs=self.ca_certs,
-            verify_certs=DATASTORE_VERIFY_CERTS,
-        )
-        log.info("Reconnected to Elasticsearch")
+            verify_certs=DATASTORE_VERIFY_CERTS)
+        log.info("Reconnected to %s", self.backend.value)
 
     def close(self):
         self._closed = True
+        if self.client is not None:
+            self.client.close()
         # Flatten the client object so that attempts to access without reconnecting errors hard
         # But 'cast' it so that mypy and other linters don't think that its normal for client to be None
         self.client = typing.cast(object, None)

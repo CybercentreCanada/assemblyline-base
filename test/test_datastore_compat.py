@@ -5,6 +5,7 @@ import elasticsearch
 import pytest
 from elastic_transport import ApiResponseMeta, NodeConfig
 
+from assemblyline.common import forge
 from assemblyline.datastore.collection import ESCollection
 from assemblyline.datastore.compat import (
     SearchBackend,
@@ -12,9 +13,11 @@ from assemblyline.datastore.compat import (
     SearchBackendException,
     SearchClientAdapter,
     UnsupportedSearchBackendOperation,
+    create_search_client,
 )
-from assemblyline.datastore.exceptions import VersionConflictException
+from assemblyline.datastore.exceptions import UnsupportedElasticVersion, VersionConflictException
 from assemblyline.datastore.store import ESStore
+from assemblyline.odm.models.config import Config
 
 
 def make_response_meta(status):
@@ -55,6 +58,16 @@ def make_raw_client():
         security=SimpleNamespace(put_role=Mock(), put_user=Mock()),
         tasks=SimpleNamespace(get=Mock()),
     )
+
+
+def make_store_client(version_number, distribution=None):
+    version_info = {"number": version_number}
+    if distribution is not None:
+        version_info["distribution"] = distribution
+    raw = make_raw_client()
+    raw.info.return_value = {"version": version_info}
+    backend = SearchBackend.OPENSEARCH if distribution == "opensearch" else SearchBackend.ELASTICSEARCH
+    return SearchClientAdapter(raw, backend)
 
 
 def test_elasticsearch_adapter_preserves_es8_keywords():
@@ -246,6 +259,28 @@ def test_opensearch_pit_search_translates_paging_fields_to_body():
     assert sort == [{"_shard_doc": "desc"}]
 
 
+def test_opensearch_search_omits_null_body_fields():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    adapter.search(
+        pit={"id": "os-pit", "keep_alive": "1m"},
+        query={"match_all": {}},
+        search_after=None,
+        from_=0,
+        size=100,
+    )
+
+    raw.search.assert_called_once_with(
+        body={
+            "pit": {"id": "os-pit", "keep_alive": "1m"},
+            "query": {"match_all": {}},
+            "from": 0,
+            "size": 100,
+        },
+    )
+
+
 def test_opensearch_pit_open_call_translates_to_create_pit_api():
     raw = make_raw_client()
     adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
@@ -344,11 +379,30 @@ def test_opensearch_client_exceptions_are_wrapped():
 def test_unsupported_opensearch_operations_fail_clearly():
     adapter = SearchClientAdapter(make_raw_client(), SearchBackend.OPENSEARCH)
 
-    with pytest.raises(UnsupportedSearchBackendOperation):
+    with pytest.raises(UnsupportedSearchBackendOperation, match="indices.delete"):
         adapter.indices.delete(index="alert")
 
-    with pytest.raises(UnsupportedSearchBackendOperation):
+    with pytest.raises(UnsupportedSearchBackendOperation, match="cluster.health"):
         adapter.cluster.health()
+
+    unsupported_calls = [
+        (lambda: adapter.security.put_role(name="role"), "security.put_role"),
+        (lambda: adapter.security.put_user(username="user"), "security.put_user"),
+        (lambda: adapter.ilm.get_lifecycle(name="policy"), "ilm.get_lifecycle"),
+        (lambda: adapter.delete_by_query(index="alert", query={"match_all": {}}), "delete_by_query"),
+        (lambda: adapter.update_by_query(index="alert", query={"match_all": {}}), "update_by_query"),
+        (lambda: adapter.reindex(source={"index": "old"}, dest={"index": "new"}), "reindex"),
+        (lambda: adapter.tasks.get(task_id="task"), "tasks.get"),
+        (lambda: adapter.indices.clone(index="old", target="new"), "indices.clone"),
+        (lambda: adapter.indices.split(index="old", target="new"), "indices.split"),
+        (lambda: adapter.indices.shrink(index="old", target="new"), "indices.shrink"),
+        (lambda: adapter.indices.exists_template(name="template"), "indices.exists_template"),
+        (lambda: adapter.indices.delete_template(name="template"), "indices.delete_template"),
+    ]
+
+    for operation, message in unsupported_calls:
+        with pytest.raises(UnsupportedSearchBackendOperation, match=message):
+            operation()
 
 
 def test_elasticsearch_delegates_existing_unsupported_operation_to_raw_client():
@@ -396,6 +450,149 @@ def test_opensearch_normalized_status_extraction():
 
     assert SearchClientAdapter.get_exception_status(normalized) == 409
     assert normalized.status_code == 409
+
+
+def test_create_search_client_selects_elasticsearch_client(monkeypatch):
+    client_class = Mock(return_value=make_raw_client())
+    monkeypatch.setattr("assemblyline.datastore.compat.elasticsearch.Elasticsearch", client_class)
+
+    adapter = create_search_client(
+        SearchBackend.ELASTICSEARCH,
+        ["http://elastic:9200"],
+        max_retries=3,
+        request_timeout=30,
+        ca_certs="/tmp/ca.pem",
+        verify_certs=True,
+    )
+
+    assert adapter.backend == SearchBackend.ELASTICSEARCH
+    client_class.assert_called_once_with(
+        hosts=["http://elastic:9200"],
+        max_retries=3,
+        request_timeout=30,
+        ca_certs="/tmp/ca.pem",
+        verify_certs=True,
+    )
+
+
+def test_create_search_client_selects_opensearch_client(monkeypatch):
+    client_class = Mock(return_value=make_raw_client())
+    monkeypatch.setattr("assemblyline.datastore.compat._load_opensearch_client", Mock(return_value=client_class))
+
+    adapter = create_search_client(
+        SearchBackend.OPENSEARCH,
+        ["http://opensearch:9200"],
+        max_retries=2,
+        request_timeout=45,
+        ca_certs=None,
+        verify_certs=False,
+    )
+
+    assert adapter.backend == SearchBackend.OPENSEARCH
+    client_class.assert_called_once_with(
+        hosts=["http://opensearch:9200"],
+        max_retries=2,
+        timeout=45,
+        ca_certs=None,
+        verify_certs=False,
+    )
+
+
+def test_store_elasticsearch_version_validation_keeps_existing_minimum(monkeypatch):
+    client = make_store_client("8.10.2")
+    factory = Mock(return_value=client)
+    monkeypatch.setattr("assemblyline.datastore.store.create_search_client", factory)
+
+    store = ESStore(["http://elastic:9200"], backend=SearchBackend.ELASTICSEARCH)
+
+    assert store.backend == SearchBackend.ELASTICSEARCH
+    assert str(store.es_version) == "8.10.2"
+    factory.assert_called_once()
+    assert factory.call_args.args[0] == SearchBackend.ELASTICSEARCH
+
+
+def test_store_elasticsearch_rejects_unsupported_version(monkeypatch):
+    monkeypatch.setattr(
+        "assemblyline.datastore.store.create_search_client",
+        Mock(return_value=make_store_client("7.9.3")),
+    )
+
+    with pytest.raises(UnsupportedElasticVersion, match="Elastic version 7.9.3"):
+        ESStore(["http://elastic:9200"], backend=SearchBackend.ELASTICSEARCH)
+
+
+def test_store_opensearch_version_validation_uses_distribution(monkeypatch):
+    client = make_store_client("2.12.0", distribution="opensearch")
+    factory = Mock(return_value=client)
+    monkeypatch.setattr("assemblyline.datastore.store.create_search_client", factory)
+
+    store = ESStore(["http://opensearch:9200"], backend=SearchBackend.OPENSEARCH)
+
+    assert store.backend == SearchBackend.OPENSEARCH
+    assert str(store.es_version) == "2.12.0"
+    factory.assert_called_once()
+    assert factory.call_args.args[0] == SearchBackend.OPENSEARCH
+
+
+def test_store_opensearch_rejects_non_opensearch_product(monkeypatch):
+    monkeypatch.setattr(
+        "assemblyline.datastore.store.create_search_client",
+        Mock(return_value=make_store_client("8.10.2")),
+    )
+
+    with pytest.raises(UnsupportedElasticVersion, match="OpenSearch backend selected"):
+        ESStore(["http://elastic:9200"], backend=SearchBackend.OPENSEARCH)
+
+
+def test_store_opensearch_rejects_unsupported_version(monkeypatch):
+    monkeypatch.setattr(
+        "assemblyline.datastore.store.create_search_client",
+        Mock(return_value=make_store_client("2.11.1", distribution="opensearch")),
+    )
+
+    with pytest.raises(UnsupportedElasticVersion, match="OpenSearch version 2.11.1"):
+        ESStore(["http://opensearch:9200"], backend=SearchBackend.OPENSEARCH)
+
+
+def test_forge_get_datastore_defaults_to_elasticsearch(monkeypatch):
+    created = []
+
+    class FakeStore:
+        def __init__(self, hosts, backend, archive_access=False, archive_alernate_dtl=0):
+            created.append((hosts, backend, archive_access, archive_alernate_dtl))
+
+        def register(self, *args, **kwargs):
+            pass
+
+    monkeypatch.setattr("assemblyline.datastore.store.ESStore", FakeStore)
+
+    datastore = forge.get_datastore(config=Config())
+
+    assert datastore.ds.__class__ is FakeStore
+    assert created[0][1] == "elasticsearch"
+
+
+def test_forge_get_datastore_uses_explicit_opensearch(monkeypatch):
+    config_data = Config().as_primitives()
+    config_data["datastore"]["type"] = "opensearch"
+    config_data["datastore"]["hosts"] = ["http://opensearch:9200"]
+    created = []
+
+    class FakeStore:
+        def __init__(self, hosts, backend, archive_access=False, archive_alernate_dtl=0):
+            created.append((hosts, backend, archive_access, archive_alernate_dtl))
+
+        def register(self, *args, **kwargs):
+            pass
+
+    monkeypatch.setattr("assemblyline.datastore.store.ESStore", FakeStore)
+
+    datastore = forge.get_datastore(config=Config(config_data), archive_access=True)
+
+    assert datastore.ds.__class__ is FakeStore
+    assert created[0][0] == ["http://opensearch:9200"]
+    assert created[0][1] == "opensearch"
+    assert created[0][2] is True
 
 
 def test_unexpected_backend_exception_is_not_ignored():
