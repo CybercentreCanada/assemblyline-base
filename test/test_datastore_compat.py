@@ -8,6 +8,7 @@ from elastic_transport import ApiResponseMeta, NodeConfig
 from assemblyline.datastore.collection import ESCollection
 from assemblyline.datastore.compat import (
     SearchBackend,
+    SearchBackendCompatibilityError,
     SearchBackendException,
     SearchClientAdapter,
     UnsupportedSearchBackendOperation,
@@ -30,9 +31,13 @@ def make_raw_client():
         index=Mock(return_value={"result": "created"}),
         info=Mock(return_value={"version": {"number": "8.10.2"}}),
         mget=Mock(return_value={"docs": []}),
+        open_point_in_time=Mock(return_value={"id": "es-pit"}),
         ping=Mock(return_value=True),
         search=Mock(return_value={"hits": {"hits": []}}),
         update=Mock(return_value={"result": "updated"}),
+        close_point_in_time=Mock(return_value={"succeeded": True, "num_freed": 1}),
+        create_pit=Mock(return_value={"pit_id": "os-pit"}),
+        delete_pit=Mock(return_value={"pits": [{"pit_id": "os-pit", "successful": True}]}),
         cat=SimpleNamespace(nodes=Mock()),
         cluster=SimpleNamespace(health=Mock()),
         ilm=SimpleNamespace(get_lifecycle=Mock()),
@@ -73,6 +78,26 @@ def test_elasticsearch_adapter_preserves_es8_keywords():
 
     adapter.search(index="alert", query={"match_all": {}}, from_=1, size=10)
     raw.search.assert_called_once_with(index="alert", query={"match_all": {}}, from_=1, size=10)
+
+
+def test_elasticsearch_pit_open_call_is_forwarded_unchanged():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.ELASTICSEARCH)
+
+    response = adapter.open_point_in_time(index="alert", keep_alive="1m", preference="_local")
+
+    assert response == {"id": "es-pit"}
+    raw.open_point_in_time.assert_called_once_with(index="alert", keep_alive="1m", preference="_local")
+
+
+def test_elasticsearch_pit_close_call_is_forwarded_unchanged():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.ELASTICSEARCH)
+
+    response = adapter.close_point_in_time(id="es-pit")
+
+    assert response == {"succeeded": True, "num_freed": 1}
+    raw.close_point_in_time.assert_called_once_with(id="es-pit")
 
 
 def test_opensearch_index_document_translates_to_body():
@@ -141,6 +166,86 @@ def test_opensearch_search_translates_query_structure_to_body():
     )
 
 
+def test_opensearch_pit_search_translates_paging_fields_to_body():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    adapter.search(
+        pit={"id": "os-pit", "keep_alive": "1m"},
+        query={"match_all": {}},
+        search_after=[10, "doc"],
+        size=100,
+        sort=[{"_shard_doc": "desc"}],
+        _source=["id", "event"],
+    )
+
+    raw.search.assert_called_once_with(
+        body={
+            "pit": {"id": "os-pit", "keep_alive": "1m"},
+            "query": {"match_all": {}},
+            "search_after": [10, "doc"],
+            "size": 100,
+            "sort": [{"_shard_doc": "desc"}],
+            "_source": ["id", "event"],
+        },
+    )
+
+
+def test_opensearch_pit_open_call_translates_to_create_pit_api():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    adapter.open_point_in_time(index="alert", keep_alive="1m", preference="_local")
+
+    raw.create_pit.assert_called_once_with(index="alert", params={"keep_alive": "1m", "preference": "_local"})
+
+
+def test_opensearch_pit_open_response_normalizes_pit_id_to_id():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    response = adapter.open_point_in_time(index="alert", keep_alive="1m")
+
+    assert response == {"id": "os-pit"}
+
+
+def test_opensearch_pit_close_call_translates_to_delete_pit_body():
+    raw = make_raw_client()
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    response = adapter.close_point_in_time(id="os-pit")
+
+    assert response == {"pits": [{"pit_id": "os-pit", "successful": True}]}
+    raw.delete_pit.assert_called_once_with(body={"pit_id": ["os-pit"]})
+
+
+def test_opensearch_pit_exceptions_are_wrapped():
+    raw = make_raw_client()
+    original = Exception("pit failed")
+    original.status_code = 503
+    raw.create_pit.side_effect = original
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    with pytest.raises(SearchBackendException) as exc:
+        adapter.open_point_in_time(index="alert", keep_alive="1m")
+
+    assert exc.value.status_code == 503
+    assert exc.value.original is original
+
+
+def test_missing_opensearch_pit_support_fails_clearly():
+    raw = make_raw_client()
+    delattr(raw, "create_pit")
+    delattr(raw, "delete_pit")
+    adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
+
+    with pytest.raises(SearchBackendCompatibilityError, match="create_pit"):
+        adapter.open_point_in_time(index="alert", keep_alive="1m")
+
+    with pytest.raises(SearchBackendCompatibilityError, match="delete_pit"):
+        adapter.close_point_in_time(id="os-pit")
+
+
 def test_opensearch_update_translates_script_to_body():
     raw = make_raw_client()
     adapter = SearchClientAdapter(raw, SearchBackend.OPENSEARCH)
@@ -189,9 +294,6 @@ def test_unsupported_opensearch_operations_fail_clearly():
 
     with pytest.raises(UnsupportedSearchBackendOperation):
         adapter.cluster.health()
-
-    with pytest.raises(UnsupportedSearchBackendOperation):
-        adapter.search(index="alert", pit={"id": "pit"}, search_after=[1])
 
 
 def test_elasticsearch_delegates_existing_unsupported_operation_to_raw_client():

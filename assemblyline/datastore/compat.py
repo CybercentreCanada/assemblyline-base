@@ -26,6 +26,10 @@ class UnsupportedSearchBackendOperation(NotImplementedError):
     pass
 
 
+class SearchBackendCompatibilityError(UnsupportedSearchBackendOperation):
+    pass
+
+
 def _load_opensearch_client():
     try:
         from opensearchpy import OpenSearch
@@ -215,14 +219,14 @@ class SearchClientAdapter:
 
     def search(self, **kwargs):
         if self.backend == SearchBackend.OPENSEARCH:
-            if "pit" in kwargs or "search_after" in kwargs:
-                raise UnsupportedSearchBackendOperation("OpenSearch PIT search is not supported by this adapter slice")
             body_keys = {
                 "aggregations",
                 "collapse",
                 "from_",
+                "pit",
                 "query",
                 "script_fields",
+                "search_after",
                 "seq_no_primary_term",
                 "size",
                 "sort",
@@ -234,6 +238,39 @@ class SearchClientAdapter:
                 body["from"] = body.pop("from_")
             return self._call(self.raw_client.search, body=body, **kwargs)
         return self._call(self.raw_client.search, **kwargs)
+
+    def open_point_in_time(self, **kwargs):
+        if self.backend == SearchBackend.ELASTICSEARCH:
+            return self._call(self.raw_client.open_point_in_time, **kwargs)
+
+        create_pit = getattr(self.raw_client, "create_pit", None)
+        if create_pit is None:
+            raise SearchBackendCompatibilityError(
+                "OpenSearch client does not expose create_pit; PIT requires opensearch-py with PIT API support"
+            )
+
+        params = {}
+        for key in ("keep_alive", "allow_partial_pit_creation", "expand_wildcards", "preference", "routing"):
+            if key in kwargs:
+                params[key] = kwargs.pop(key)
+
+        response = self._call(create_pit, params=params, **kwargs)
+        if isinstance(response, dict) and "id" not in response and "pit_id" in response:
+            return {"id": response["pit_id"]}
+        return response
+
+    def close_point_in_time(self, **kwargs):
+        if self.backend == SearchBackend.ELASTICSEARCH:
+            return self._call(self.raw_client.close_point_in_time, **kwargs)
+
+        delete_pit = getattr(self.raw_client, "delete_pit", None)
+        if delete_pit is None:
+            raise SearchBackendCompatibilityError(
+                "OpenSearch client does not expose delete_pit; PIT requires opensearch-py with PIT API support"
+            )
+
+        pit_id = kwargs.pop("id")
+        return self._call(delete_pit, body={"pit_id": [pit_id]}, **kwargs)
 
     def __getattr__(self, name):
         if self.backend == SearchBackend.ELASTICSEARCH:
