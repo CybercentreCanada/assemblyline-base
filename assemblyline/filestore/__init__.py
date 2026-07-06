@@ -201,6 +201,24 @@ class FileStore(object):
                     self.log.info('Transport problem: %s', trace)
 
     @elasticapm.capture_span(span_type='filestore')
+    def delete_batch(self, file_list: list[str], location='all'):
+        # Don't even call into the transports if there are no files given
+        if not file_list:
+            return
+
+        with elasticapm.capture_span(name='delete_batch', span_type='filestore', labels={'batch_size': len(file_list)}):
+            for t in self.slice(location):
+                if t.read_only:
+                    # Don't attempt to delete from read only transports
+                    continue
+
+                try:
+                    t.delete_batch(file_list)
+                except Exception as ex:
+                    trace = get_stacktrace_info(ex)
+                    self.log.info('Transport problem: %s', trace)
+
+    @elasticapm.capture_span(span_type='filestore')
     def download(self, src_path: str, dest_path: str, location='any'):
         successful = False
         transports = []
