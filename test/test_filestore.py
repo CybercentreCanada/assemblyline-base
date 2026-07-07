@@ -237,17 +237,7 @@ def common_actions(fs, check_listing=True):
         uuid.uuid4().hex,
     ]
     fs.delete_batch(file_list)
-
-    attempts = 0
-    count = None
-    while (count is None or count > 0) and attempts < 10:
-        if count:
-            time.sleep(0.3)
-        count = 0
-        attempts += 1
-        for file in file_list:
-            if fs.exists(file):
-                count += 1
-    assert count == 0
+    for file in file_list:
+        assert not fs.exists(file)
 
 
