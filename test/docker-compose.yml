@@ -13,7 +13,7 @@ services:
       - "2222:2222"
 
   minio:
-    image: minio/minio
+    image: cccs/minio
     environment:
       MINIO_ROOT_USER: al_storage_key
       MINIO_ROOT_PASSWORD: Ch@ngeTh!sPa33w0rd

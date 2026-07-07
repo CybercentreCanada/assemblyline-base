@@ -36,12 +36,14 @@ class TransportS3(Transport):
     DEFAULT_HOST = "s3.amazonaws.com"
 
     def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket="al-storage",
-                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None, boto_defaults=False, read_only=False):
+                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None,
+                 boto_defaults=False, read_only=False, use_batch_delete: bool = False):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
         self.accesskey = accesskey
         self.retry_limit: int = connection_attempts
+        self.use_batch_delete: bool = use_batch_delete
 
         if use_ssl is None:
             self.use_ssl = True
@@ -142,6 +144,9 @@ class TransportS3(Transport):
 
     def delete_batch(self, file_list: Iterable[str]):
         """Deletes a batch of files."""
+        if not self.use_batch_delete:
+            return super().delete_batch(file_list)
+
         keys = [self.normalize(path) for path in file_list]
         for key_chunk in chunk.chunk(keys, 1000):
             response = self.with_retries(
@@ -150,7 +155,7 @@ class TransportS3(Transport):
                 Delete={
                     'Objects': [{'Key': key} for key in key_chunk],
                     'Quiet': True,
-                }
+                },
             )
 
             if response['Errors']:
