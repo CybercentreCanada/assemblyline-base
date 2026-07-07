@@ -240,4 +240,14 @@ def common_actions(fs, check_listing=True):
     for file in file_list:
         assert not fs.exists(file)
 
+    # test chunking in batch delete
+    file_list = []
+    for _ in range(round(fs.transports[0].delete_batch_chunk_size() * 2.1)):
+        name = uuid.uuid4().hex
+        file_list.append(name)
+        fs.put(name, name)
+        file_list.append(uuid.uuid4().hex)
 
+    fs.delete_batch(file_list)
+    for file in file_list:
+        assert not fs.exists(file)

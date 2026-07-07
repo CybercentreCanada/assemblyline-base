@@ -146,6 +146,9 @@ class TransportAzure(Transport):
             if not isinstance(error.cause, ResourceNotFoundError):
                 raise
 
+    def delete_batch_chunk_size(self):
+        return 256
+
     def delete_batch(self, file_list: Iterable[str]):
         """Deletes a batch of files."""
         container_client = self.service_client.get_container_client(self.blob_container)
