@@ -12,6 +12,7 @@ from botocore.exceptions import (
     EndpointConnectionError,
 )
 
+from assemblyline.common import chunk
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
 
@@ -138,6 +139,22 @@ class TransportS3(Transport):
     def delete(self, path):
         key = self.normalize(path)
         self.with_retries(self.client.delete_object, Bucket=self.bucket, Key=key)
+
+    def delete_batch(self, file_list: Iterable[str]):
+        """Deletes a batch of files."""
+        keys = [self.normalize(path) for path in file_list]
+        for key_chunk in chunk.chunk(keys, 1000):
+            response = self.with_retries(
+                self.client.delete_objects,
+                Bucket=self.bucket,
+                Delete={
+                    'Objects': [{'Key': key} for key in key_chunk],
+                    'Quiet': True,
+                }
+            )
+
+            if response['Errors']:
+                raise TransportException('Could not delete some member of batch', response['Errors'][0]['Message'])
 
     def exists(self, path):
         # checks to see if KEY exists

@@ -15,6 +15,7 @@ from azure.core.exceptions import (
     ServiceRequestError,
     TooManyRedirectsError,
 )
+from azure.core.pipeline.transport import HttpResponse
 from azure.identity import (
     ClientSecretCredential,
     DefaultAzureCredential,
@@ -22,6 +23,7 @@ from azure.identity import (
 )
 from azure.storage.blob import BlobServiceClient
 
+from assemblyline.common import chunk
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
 
@@ -143,6 +145,17 @@ class TransportAzure(Transport):
             # If its already not found, then consider it deleted.
             if not isinstance(error.cause, ResourceNotFoundError):
                 raise
+
+    def delete_batch(self, file_list: Iterable[str]):
+        """Deletes a batch of files."""
+        container_client = self.service_client.get_container_client(self.blob_container)
+        keys = [self.normalize(path) for path in file_list]
+        for key_chunk in chunk.chunk(keys, 256):
+            responses: Iterable[HttpResponse] = self.with_retries(container_client.delete_blobs(*key_chunk))
+            for response in responses:
+                if response.status_code == 404:
+                    continue
+                response.raise_for_status()
 
     def exists(self, path):
         key = self.normalize(path)
