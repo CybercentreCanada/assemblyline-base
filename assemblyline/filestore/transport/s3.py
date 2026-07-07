@@ -143,7 +143,10 @@ class TransportS3(Transport):
         self.with_retries(self.client.delete_object, Bucket=self.bucket, Key=key)
 
     def delete_batch_chunk_size(self):
-        return 1000
+        if self.use_batch_delete:
+            return 1000
+        else:
+            return 1
 
     def delete_batch(self, file_list: Iterable[str]):
         """Deletes a batch of files."""
