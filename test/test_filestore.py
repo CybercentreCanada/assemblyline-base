@@ -244,6 +244,7 @@ def common_actions(fs, check_listing=True):
         if count:
             time.sleep(0.3)
         count = 0
+        attempts += 1
         for file in file_list:
             if fs.exists(file):
                 count += 1
