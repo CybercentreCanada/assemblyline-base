@@ -117,8 +117,11 @@ class TransportSFTP(Transport):
 
     @reconnect_retry_on_fail
     def delete(self, path):
-        path = self.normalize(path)
-        self.sftp.remove(path)
+        try:
+            path = self.normalize(path)
+            self.sftp.remove(path)
+        except FileNotFoundError:
+            pass
 
     @reconnect_retry_on_fail
     def exists(self, path):

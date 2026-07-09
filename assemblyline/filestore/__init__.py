@@ -143,7 +143,7 @@ def create_transport(url, connection_attempts=None):
         valid_bool_keys = ['allow_directory_access', 'use_default_credentials', 'initalize_container', 'read_only']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
-        t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, **extras)
+        t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, port=port, **extras)
 
     else:
         raise FileStoreException("Unknown transport: %s" % scheme)
@@ -200,6 +200,9 @@ class FileStore(object):
                     trace = get_stacktrace_info(ex)
                     self.log.info('Transport problem: %s', trace)
 
+    def delete_batch_chunk_size(self) -> int:
+        return min(transport.delete_batch_chunk_size() for transport in self.transports)
+
     @elasticapm.capture_span(span_type='filestore')
     def delete_batch(self, file_list: list[str], location='all'):
         # Don't even call into the transports if there are no files given
@@ -211,12 +214,7 @@ class FileStore(object):
                 if t.read_only:
                     # Don't attempt to delete from read only transports
                     continue
-
-                try:
-                    t.delete_batch(file_list)
-                except Exception as ex:
-                    trace = get_stacktrace_info(ex)
-                    self.log.info('Transport problem: %s', trace)
+                t.delete_batch(file_list)
 
     @elasticapm.capture_span(span_type='filestore')
     def download(self, src_path: str, dest_path: str, location='any'):

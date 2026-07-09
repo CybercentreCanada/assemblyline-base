@@ -134,13 +134,19 @@ class TransportS3(Transport):
                 return ret_val
 
             except (EndpointConnectionError, ConnectionClosedError):
-                self.log.warning(f"No connection to S3 transport {self.endpoint_url}, retrying...")
+                self.log.warning("No connection to S3 transport %s, retrying...", self.endpoint_url)
                 retries += 1
         raise ConnectionError(f"Couldn't connect to the requested S3 endpoint {self.endpoint_url} inside retry limit")
 
     def delete(self, path):
         key = self.normalize(path)
         self.with_retries(self.client.delete_object, Bucket=self.bucket, Key=key)
+
+    def delete_batch_chunk_size(self) -> int:
+        if self.use_batch_delete:
+            return 1000
+        else:
+            return 1
 
     def delete_batch(self, file_list: Iterable[str]):
         """Deletes a batch of files."""
