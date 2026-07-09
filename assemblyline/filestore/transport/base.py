@@ -46,7 +46,7 @@ class Transport(object):
         """
         raise TransportException("Not Implemented")
 
-    def delete_batch_chunk_size(self):
+    def delete_batch_chunk_size(self) -> int:
         return 1
 
     def delete_batch(self, file_list: Iterable[str]):
