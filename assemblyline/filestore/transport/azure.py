@@ -15,6 +15,7 @@ from azure.core.exceptions import (
     ServiceRequestError,
     TooManyRedirectsError,
 )
+from azure.core.pipeline.transport import HttpResponse
 from azure.identity import (
     ClientSecretCredential,
     DefaultAzureCredential,
@@ -22,6 +23,7 @@ from azure.identity import (
 )
 from azure.storage.blob import BlobServiceClient
 
+from assemblyline.common import chunk
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
 
@@ -35,7 +37,7 @@ class TransportAzure(Transport):
 
     def __init__(self, base=None, access_key=None, tenant_id=None, client_id=None, client_secret=None,
                  host=None, connection_attempts=None, allow_directory_access=False, use_default_credentials=False,
-                 initalize_container=True, read_only=False):
+                 initalize_container=True, read_only=False, port=None):
         self.log = logging.getLogger('assemblyline.transport.azure')
         self.read_only = False
         self.connection_attempts: Optional[int] = connection_attempts
@@ -44,6 +46,8 @@ class TransportAzure(Transport):
         # Get URL
         self.host = host
         self.endpoint_url = f"https://{self.host}"
+        if port:
+            self.endpoint_url += ":" + str(port)
 
         # Get container and base_path
         parts = base.strip("/").split("/", 1)
@@ -57,7 +61,7 @@ class TransportAzure(Transport):
         if use_default_credentials:
             if (tenant_id and client_id) and (not client_secret):
                 self.credential = WorkloadIdentityCredential(tenant_id=tenant_id,
-                                                            client_id=client_id)
+                                                             client_id=client_id)
             else:
                 # Service accounts will by default create the enviromental variables, and use them as params
                 self.credential = DefaultAzureCredential()
@@ -143,6 +147,21 @@ class TransportAzure(Transport):
             # If its already not found, then consider it deleted.
             if not isinstance(error.cause, ResourceNotFoundError):
                 raise
+
+    def delete_batch_chunk_size(self) -> int:
+        return 256
+
+    def delete_batch(self, file_list: Iterable[str]):
+        """Deletes a batch of files."""
+        keys = [self.normalize(path) for path in file_list]
+        for key_chunk in chunk.chunk(keys, 256):
+            responses: Iterable[HttpResponse] = self.with_retries(
+                self.container_client.delete_blobs, *key_chunk, raise_on_any_failure=False
+            )
+            for response in responses:
+                if response.status_code == 404:
+                    continue
+                response.raise_for_status()
 
     def exists(self, path):
         key = self.normalize(path)

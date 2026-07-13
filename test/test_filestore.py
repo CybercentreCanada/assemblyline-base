@@ -2,6 +2,8 @@ import os
 import tempfile
 import threading
 import traceback
+import uuid
+import time
 
 import pytest
 
@@ -218,3 +220,34 @@ def common_actions(fs, check_listing=True):
         assert len(set(fs.transports[0].list('012'))) == 6
         assert len(set(fs.transports[0].list('0123'))) == 4
         assert set(fs.transports[0].list('01234')) == {'01234-file', '0123' + '4' * 60}
+
+    file_list = [
+        '0' * 64,
+        '0' + '1' * 63,
+        '01' + '2' * 62,
+        '012' + '3' * 61,
+        '0123' + '4' * 60,
+        '01-file',
+        '012-file',
+        '0123-file',
+        '01234-file',
+        # Files that don't exist should never disrupt a batch delete
+        uuid.uuid4().hex,
+        uuid.uuid4().hex,
+        uuid.uuid4().hex,
+    ]
+    fs.delete_batch(file_list)
+    for file in file_list:
+        assert not fs.exists(file)
+
+    # test chunking in batch delete
+    file_list = []
+    for _ in range(round(fs.transports[0].delete_batch_chunk_size() * 2.1)):
+        name = uuid.uuid4().hex
+        file_list.append(name)
+        fs.put(name, name)
+        file_list.append(uuid.uuid4().hex)
+
+    fs.delete_batch(file_list)
+    for file in file_list:
+        assert not fs.exists(file)

@@ -46,6 +46,16 @@ class Transport(object):
         """
         raise TransportException("Not Implemented")
 
+    def delete_batch_chunk_size(self) -> int:
+        return 1
+
+    def delete_batch(self, file_list: Iterable[str]):
+        """
+        Deletes a batch of files
+        """
+        for path in file_list:
+            self.delete(path)
+
     def exists(self, path: str) -> bool:
         """
         Returns True if the path exists, False otherwise.

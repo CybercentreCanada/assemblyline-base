@@ -12,6 +12,7 @@ from botocore.exceptions import (
     EndpointConnectionError,
 )
 
+from assemblyline.common import chunk
 from assemblyline.common.exceptions import ChainAll
 from assemblyline.filestore.transport.base import Transport, TransportException
 
@@ -35,12 +36,14 @@ class TransportS3(Transport):
     DEFAULT_HOST = "s3.amazonaws.com"
 
     def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket="al-storage",
-                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None, boto_defaults=False, read_only=False):
+                 host=None, port=None, use_ssl=None, verify=True, connection_attempts=None,
+                 boto_defaults=False, read_only=False, use_batch_delete: bool = False):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
         self.accesskey = accesskey
         self.retry_limit: int = connection_attempts
+        self.use_batch_delete: bool = use_batch_delete
 
         if use_ssl is None:
             self.use_ssl = True
@@ -131,13 +134,38 @@ class TransportS3(Transport):
                 return ret_val
 
             except (EndpointConnectionError, ConnectionClosedError):
-                self.log.warning(f"No connection to S3 transport {self.endpoint_url}, retrying...")
+                self.log.warning("No connection to S3 transport %s, retrying...", self.endpoint_url)
                 retries += 1
         raise ConnectionError(f"Couldn't connect to the requested S3 endpoint {self.endpoint_url} inside retry limit")
 
     def delete(self, path):
         key = self.normalize(path)
         self.with_retries(self.client.delete_object, Bucket=self.bucket, Key=key)
+
+    def delete_batch_chunk_size(self) -> int:
+        if self.use_batch_delete:
+            return 1000
+        else:
+            return 1
+
+    def delete_batch(self, file_list: Iterable[str]):
+        """Deletes a batch of files."""
+        if not self.use_batch_delete:
+            return super().delete_batch(file_list)
+
+        keys = [self.normalize(path) for path in file_list]
+        for key_chunk in chunk.chunk(keys, 1000):
+            response = self.with_retries(
+                self.client.delete_objects,
+                Bucket=self.bucket,
+                Delete={
+                    'Objects': [{'Key': key} for key in key_chunk],
+                    'Quiet': True,
+                },
+            )
+
+            if response['Errors']:
+                raise TransportException('Could not delete some member of batch', response['Errors'][0]['Message'])
 
     def exists(self, path):
         # checks to see if KEY exists

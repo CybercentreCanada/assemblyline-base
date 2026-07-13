@@ -154,7 +154,12 @@ class TransportFTP(Transport):
     @reconnect_retry_on_fail
     def delete(self, path):
         path = self.normalize(path)
-        self.ftp.delete(path)
+        try:
+            self.ftp.delete(path)
+        except ftplib.error_perm as e:
+            # If the file doesnt exist we get a 550.
+            if not str(e).startswith('550'):
+                raise
 
     @reconnect_retry_on_fail
     def exists(self, path) -> bool:
