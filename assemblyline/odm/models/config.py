@@ -881,6 +881,7 @@ class Scaler(odm.Model):
         default=False,
         description="Launch all containers in compliance with the 'Restricted' pod security standard.",
     )
+    max_pending = odm.integer(description="Maximum number of containers requested but not yet acknowledged.")
 
 
 DEFAULT_SCALER = {
@@ -907,6 +908,7 @@ DEFAULT_SCALER = {
     #     'field': [],
     #     'label': [],
     # },
+    'max_pending': 10,
 }
 
 
