@@ -908,7 +908,7 @@ DEFAULT_SCALER = {
     #     'field': [],
     #     'label': [],
     # },
-    'max_pending': 10,
+    'max_pending': 50,
 }
 
 
