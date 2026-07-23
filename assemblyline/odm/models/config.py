@@ -188,6 +188,11 @@ class OAuthProvider(odm.Model):
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
+    avatar_allowed_hosts: List[str] = odm.List(
+        odm.Keyword(), default=[],
+        description="Hosts from which user avatars may be downloaded. Entries match the URL hostname "
+                    "exactly, or a subdomain when prefixed with '*.' (e.g. '*.googleusercontent.com'). "
+                                                         "The host of `api_base_url` is always allowed.")
     ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
                                         description="List of CIDRs allowed to access internal authentication")
     uid_randomize: bool = odm.Boolean(default=False,
