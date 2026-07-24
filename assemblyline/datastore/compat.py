@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from enum import Enum
+import base64
+import json
+import ssl
 from typing import Any, Callable, Optional
+from urllib.error import HTTPError, URLError
+from urllib.parse import unquote, urlsplit, urlunsplit
+from urllib.request import Request, urlopen
 
 try:
     import elasticsearch
@@ -29,6 +35,93 @@ class UnsupportedSearchBackendOperation(NotImplementedError):
 
 class SearchBackendCompatibilityError(UnsupportedSearchBackendOperation):
     pass
+
+
+class SearchBackendDetectionError(Exception):
+    pass
+
+
+class SearchBackendAuthenticationError(SearchBackendDetectionError):
+    pass
+
+
+class SearchBackendConnectionError(SearchBackendDetectionError):
+    pass
+
+
+class SearchBackendMalformedResponseError(SearchBackendDetectionError):
+    pass
+
+
+class SearchBackendAmbiguousResponseError(SearchBackendDetectionError):
+    pass
+
+
+class UnsupportedSearchBackendError(SearchBackendDetectionError):
+    pass
+
+
+def detect_search_backend(hosts, *, request_timeout: int, ca_certs: Optional[str],
+                          verify_certs: bool) -> SearchBackend:
+    """Identify the configured search product with one authenticated root request."""
+    if not hosts:
+        raise SearchBackendConnectionError("Search backend detection requires at least one configured host.")
+
+    parsed = urlsplit(hosts[0])
+    if not parsed.scheme or not parsed.hostname:
+        raise SearchBackendConnectionError("Search backend detection could not use the configured host.")
+
+    hostname = f"[{parsed.hostname}]" if ":" in parsed.hostname else parsed.hostname
+    netloc = f"{hostname}:{parsed.port}" if parsed.port is not None else hostname
+    endpoint = urlunsplit((parsed.scheme, netloc, "/", "", ""))
+    headers = {"Accept": "application/json"}
+    if parsed.username is not None:
+        credentials = f"{unquote(parsed.username)}:{unquote(parsed.password or '')}".encode()
+        headers["Authorization"] = f"Basic {base64.b64encode(credentials).decode('ascii')}"
+
+    try:
+        context = None
+        if parsed.scheme == "https":
+            if verify_certs:
+                context = ssl.create_default_context(cafile=ca_certs)
+            else:
+                context = ssl._create_unverified_context()
+        response = urlopen(Request(endpoint, headers=headers), timeout=request_timeout, context=context)
+        with response:
+            product_header = response.headers.get("X-Elastic-Product")
+            payload = json.loads(response.read())
+    except HTTPError as err:
+        if err.code in (401, 403):
+            raise SearchBackendAuthenticationError(
+                f"Search backend detection authentication failed with HTTP status {err.code}.") from None
+        raise SearchBackendConnectionError(
+            f"Search backend detection request failed with HTTP status {err.code}.") from None
+    except (URLError, TimeoutError, OSError):
+        raise SearchBackendConnectionError("Search backend detection could not connect to the configured server.") from None
+    except (json.JSONDecodeError, UnicodeDecodeError, TypeError, ValueError):
+        raise SearchBackendMalformedResponseError(
+            "Search backend detection received malformed JSON from the configured server.") from None
+
+    if not isinstance(payload, dict):
+        raise SearchBackendMalformedResponseError(
+            "Search backend detection expected a JSON object from the configured server.")
+
+    is_elasticsearch = product_header == "Elasticsearch"
+    version_info = payload.get("version")
+    if version_info is not None and not isinstance(version_info, dict):
+        raise SearchBackendMalformedResponseError(
+            "Search backend detection received malformed version metadata.")
+    is_opensearch = isinstance(version_info, dict) and version_info.get("distribution") == "opensearch"
+
+    if is_elasticsearch and is_opensearch:
+        raise SearchBackendAmbiguousResponseError(
+            "Search backend detection received conflicting Elasticsearch and OpenSearch product indicators.")
+    if is_elasticsearch:
+        return SearchBackend.ELASTICSEARCH
+    if is_opensearch:
+        return SearchBackend.OPENSEARCH
+    raise UnsupportedSearchBackendError(
+        "Search backend detection found no supported Elasticsearch or OpenSearch product indicator.")
 
 
 def _load_opensearch_client():

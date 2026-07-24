@@ -22,6 +22,7 @@ from assemblyline.datastore.compat import (
     SearchBackend,
     SearchBackendException,
     create_search_client,
+    detect_search_backend,
 )
 from assemblyline.datastore.exceptions import (
     DataStoreException,
@@ -77,7 +78,6 @@ class ESStore(object):
 
     def __init__(self, hosts, backend=SearchBackend.ELASTICSEARCH, archive_access=True, archive_alernate_dtl=0):
         config = forge.get_config()
-        self.backend = SearchBackend(backend)
         self._hosts = hosts
         self._closed = False
         self._collections = {}
@@ -90,6 +90,12 @@ class ESStore(object):
         tracer.setLevel(logging.CRITICAL)
 
         self.ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
+        self.backend = (
+            detect_search_backend(
+                hosts, request_timeout=TRANSPORT_TIMEOUT, ca_certs=self.ca_certs,
+                verify_certs=DATASTORE_VERIFY_CERTS)
+            if backend == "auto" else SearchBackend(backend)
+        )
 
         self.client = create_search_client(
             self.backend, hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
