@@ -73,6 +73,13 @@ def test_datastore_opensearch_type_validates():
     assert datastore.type == "opensearch"
 
 
+def test_datastore_auto_type_validates_and_serializes():
+    datastore = Datastore({**DEFAULT_DATASTORE, "type": "auto"})
+
+    assert datastore.type == "auto"
+    assert datastore.as_primitives()["type"] == "auto"
+
+
 def test_datastore_invalid_type_is_rejected():
     datastore_config = {**DEFAULT_DATASTORE, "type": "solr"}
 

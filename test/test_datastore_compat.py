@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
+from urllib.error import HTTPError, URLError
 
 import elasticsearch
 import pytest
@@ -10,10 +11,16 @@ from assemblyline.datastore.collection import ESCollection
 from assemblyline.datastore.compat import (
     SearchBackend,
     SearchBackendCompatibilityError,
+    SearchBackendAmbiguousResponseError,
+    SearchBackendAuthenticationError,
+    SearchBackendConnectionError,
     SearchBackendException,
+    SearchBackendMalformedResponseError,
     SearchClientAdapter,
+    UnsupportedSearchBackendError,
     UnsupportedSearchBackendOperation,
     create_search_client,
+    detect_search_backend,
 )
 from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion, VersionConflictException
 from assemblyline.datastore.store import ESStore
@@ -70,6 +77,89 @@ def make_store_client(version_number, distribution=None):
     raw.info.return_value = {"version": version_info}
     backend = SearchBackend.OPENSEARCH if distribution == "opensearch" else SearchBackend.ELASTICSEARCH
     return SearchClientAdapter(raw, backend)
+
+
+def make_detection_response(payload, headers=None):
+    response = Mock()
+    response.headers = headers or {}
+    response.read.return_value = payload
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    return response
+
+
+def test_auto_detects_elasticsearch_from_product_header(monkeypatch):
+    response = make_detection_response(b'{"version":{"number":"8.10.2"}}',
+                                       {"X-Elastic-Product": "Elasticsearch"})
+    request = Mock(return_value=response)
+    monkeypatch.setattr("assemblyline.datastore.compat.urlopen", request)
+
+    backend = detect_search_backend(
+        ["http://service:secret@elastic:9200"], request_timeout=4, ca_certs=None, verify_certs=True)
+
+    assert backend == SearchBackend.ELASTICSEARCH
+    assert request.call_count == 1
+    sent_request = request.call_args.args[0]
+    assert sent_request.full_url == "http://elastic:9200/"
+    assert sent_request.get_header("Authorization").startswith("Basic ")
+
+
+def test_auto_detects_opensearch_from_distribution(monkeypatch):
+    response = make_detection_response(b'{"version":{"number":"2.12.0","distribution":"opensearch"}}')
+    monkeypatch.setattr("assemblyline.datastore.compat.urlopen", Mock(return_value=response))
+
+    assert detect_search_backend(
+        ["http://opensearch:9200"], request_timeout=4, ca_certs=None,
+        verify_certs=False) == SearchBackend.OPENSEARCH
+
+
+def test_auto_detection_rejects_ambiguous_response(monkeypatch):
+    response = make_detection_response(
+        b'{"version":{"distribution":"opensearch"}}', {"X-Elastic-Product": "Elasticsearch"})
+    monkeypatch.setattr("assemblyline.datastore.compat.urlopen", Mock(return_value=response))
+
+    with pytest.raises(SearchBackendAmbiguousResponseError, match="conflicting"):
+        detect_search_backend(["http://search:9200"], request_timeout=4, ca_certs=None, verify_certs=True)
+
+
+def test_auto_detection_rejects_unsupported_response(monkeypatch):
+    monkeypatch.setattr(
+        "assemblyline.datastore.compat.urlopen",
+        Mock(return_value=make_detection_response(b'{"version":{"number":"1.0"}}')))
+
+    with pytest.raises(UnsupportedSearchBackendError, match="no supported"):
+        detect_search_backend(["http://search:9200"], request_timeout=4, ca_certs=None, verify_certs=True)
+
+
+@pytest.mark.parametrize("status", [401, 403])
+def test_auto_detection_reports_authentication_failure(monkeypatch, status):
+    monkeypatch.setattr(
+        "assemblyline.datastore.compat.urlopen",
+        Mock(side_effect=HTTPError("http://redacted/", status, "denied", {}, None)))
+
+    with pytest.raises(SearchBackendAuthenticationError, match=f"status {status}") as exc:
+        detect_search_backend(
+            ["http://service:secret@search:9200"], request_timeout=4, ca_certs=None, verify_certs=True)
+    assert "secret" not in str(exc.value)
+
+
+def test_auto_detection_reports_connection_failure_without_host_details(monkeypatch):
+    monkeypatch.setattr("assemblyline.datastore.compat.urlopen", Mock(side_effect=URLError("secret details")))
+
+    with pytest.raises(SearchBackendConnectionError) as exc:
+        detect_search_backend(
+            ["http://service:secret@search:9200"], request_timeout=4, ca_certs=None, verify_certs=True)
+    assert "secret" not in str(exc.value)
+    assert "search:9200" not in str(exc.value)
+
+
+def test_auto_detection_reports_malformed_json(monkeypatch):
+    monkeypatch.setattr(
+        "assemblyline.datastore.compat.urlopen",
+        Mock(return_value=make_detection_response(b'not-json')))
+
+    with pytest.raises(SearchBackendMalformedResponseError, match="malformed JSON"):
+        detect_search_backend(["http://search:9200"], request_timeout=4, ca_certs=None, verify_certs=True)
 
 
 def test_elasticsearch_adapter_preserves_es8_keywords():
@@ -685,6 +775,48 @@ def test_store_elasticsearch_version_validation_keeps_existing_minimum(monkeypat
     assert factory.call_args.args[0] == SearchBackend.ELASTICSEARCH
 
 
+@pytest.mark.parametrize("backend", [SearchBackend.ELASTICSEARCH, SearchBackend.OPENSEARCH])
+def test_store_explicit_backend_bypasses_detection(monkeypatch, backend):
+    distribution = "opensearch" if backend == SearchBackend.OPENSEARCH else None
+    version_number = "2.12.0" if distribution else "8.10.2"
+    detector = Mock()
+    monkeypatch.setattr("assemblyline.datastore.store.detect_search_backend", detector)
+    monkeypatch.setattr(
+        "assemblyline.datastore.store.create_search_client",
+        Mock(return_value=make_store_client(version_number, distribution=distribution)),
+    )
+
+    store = ESStore(["http://search:9200"], backend=backend)
+
+    assert store.backend == backend
+    detector.assert_not_called()
+
+
+def test_store_auto_detection_runs_once_and_reuses_concrete_backend(monkeypatch):
+    detector = Mock(return_value=SearchBackend.OPENSEARCH)
+    client = make_store_client("2.12.0", distribution="opensearch")
+    factory = Mock(return_value=client)
+    monkeypatch.setattr("assemblyline.datastore.store.detect_search_backend", detector)
+    monkeypatch.setattr("assemblyline.datastore.store.create_search_client", factory)
+
+    store = ESStore(["http://opensearch:9200"], backend="auto")
+    store.client.indices.create(index="alert", mappings={"properties": {"value": {"type": "wildcard"}}})
+    store.client.open_point_in_time(index="alert", keep_alive="1m")
+    store.client.tasks.get(task_id="node:1", wait_for_completion=True)
+    store.client.indices.clear_cache(index="alert")
+    store.connection_reset()
+
+    assert store.backend == SearchBackend.OPENSEARCH
+    detector.assert_called_once()
+    assert factory.call_count == 2
+    assert all(call.args[0] == SearchBackend.OPENSEARCH for call in factory.call_args_list)
+    client.raw_client.indices.create.assert_called_once_with(
+        index="alert", body={"mappings": {"properties": {"value": {"type": "keyword"}}}})
+    client.raw_client.create_pit.assert_called_once()
+    client.raw_client.tasks.get.assert_called_once()
+    client.raw_client.indices.clear_cache.assert_called_once()
+
+
 def test_store_elasticsearch_rejects_unsupported_version(monkeypatch):
     monkeypatch.setattr(
         "assemblyline.datastore.store.create_search_client",
@@ -784,6 +916,25 @@ def test_forge_get_datastore_uses_explicit_opensearch(monkeypatch):
     assert created[0][0] == ["http://opensearch:9200"]
     assert created[0][1] == "opensearch"
     assert created[0][2] is True
+
+
+def test_forge_get_datastore_passes_auto_to_store_for_single_resolution(monkeypatch):
+    config_data = Config().as_primitives()
+    config_data["datastore"]["type"] = "auto"
+    created = []
+
+    class FakeStore:
+        def __init__(self, hosts, backend, archive_access=False, archive_alernate_dtl=0):
+            created.append((hosts, backend))
+
+        def register(self, *args, **kwargs):
+            pass
+
+    monkeypatch.setattr("assemblyline.datastore.store.ESStore", FakeStore)
+
+    forge.get_datastore(config=Config(config_data))
+
+    assert created[0][1] == "auto"
 
 
 def test_unexpected_backend_exception_is_not_ignored():
