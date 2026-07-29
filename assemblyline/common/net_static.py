@@ -2,7 +2,7 @@
 # DO NOT EDIT! Re-run the script instead...
 
 # Top level domains from: https://data.iana.org/TLD/tlds-alpha-by-domain.txt
-# Version 2026042100, Last Updated Tue Apr 21 07:07:01 2026 UTC
+# Version 2026072900, Last Updated Wed Jul 29 07:07:01 2026 UTC
 TLDS_ALPHA_BY_DOMAIN = {
     "AAA",
     "AARP",
@@ -1238,6 +1238,7 @@ TLDS_ALPHA_BY_DOMAIN = {
     "WATCHES",
     "WEATHER",
     "WEATHERCHANNEL",
+    "WEB",
     "WEBCAM",
     "WEBER",
     "WEBSITE",
