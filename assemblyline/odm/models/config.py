@@ -247,6 +247,7 @@ class OAuthProvider(odm.Model):
     groups_id_token_field: str = odm.Keyword(
         default="groups", description="Name of the field in the id token that contains the list of groups."
     )
+    scope_field: str = odm.Keyword(default="scope", description="Name of the field in the id token that contains the list of scopes.")
 
 OPEN_ID_CONFIGURATION_TO_OAUTH_PROVIDER_MAP = {
     "authorization_endpoint": "authorize_url",
