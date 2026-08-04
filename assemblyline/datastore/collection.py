@@ -22,6 +22,7 @@ from assemblyline import odm
 from assemblyline.common.dict_utils import recursive_update
 from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore.bulk import ElasticBulkPlan
+from assemblyline.datastore.compat import SearchBackendException
 from assemblyline.datastore.exceptions import (
     ArchiveDisabled,
     DataStoreException,
@@ -327,6 +328,14 @@ class ESCollection(Generic[ModelType]):
         while True:
             try:
                 return self.datastore.with_retries(func, *args, **kwargs)
+            except SearchBackendException as e:
+                if e.status_code == 404 and "index_not_found_exception" in e.message:
+                    time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                    log.debug("The index does not exist. Trying to recreate it...")
+                    self._ensure_collection()
+                    retries += 1
+                else:
+                    raise
             except elasticsearch.exceptions.NotFoundError as e:
                 if "index_not_found_exception" in str(e):
                     time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
@@ -968,6 +977,10 @@ class ESCollection(Generic[ModelType]):
                     if version:
                         return self._normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
                     return self._normalize_output(doc['_source'])
+                except SearchBackendException as err:
+                    if err.status_code != 404:
+                        raise
+                    pass
                 except elasticsearch.exceptions.NotFoundError:
                     pass
 
@@ -1137,6 +1150,10 @@ class ESCollection(Generic[ModelType]):
             try:
                 info = self.with_retries(self.datastore.client.delete, id=key, index=index)
                 deleted |= info['result'] == 'deleted'
+            except SearchBackendException as err:
+                if err.status_code != 404:
+                    raise
+                deleted = True
             except elasticsearch.NotFoundError:
                 deleted = True
 
@@ -1325,6 +1342,10 @@ class ESCollection(Generic[ModelType]):
                 res = self.with_retries(self.datastore.client.update, index=index, id=key,
                                         script=script, retry_on_conflict=retry_on_conflict)
                 return res['result'] == "updated"
+            except SearchBackendException as err:
+                if err.status_code != 404:
+                    raise
+                pass
             except elasticsearch.NotFoundError:
                 pass
             except Exception:
@@ -1606,6 +1627,9 @@ class ESCollection(Generic[ModelType]):
                                            track_total_hits=track_total_hits, **query_body)
 
             return result
+
+        except SearchBackendException as e:
+            raise SearchException(e.message)
 
         except (elasticsearch.TransportError, elasticsearch.RequestError) as e:
             try:
@@ -2170,6 +2194,10 @@ class ESCollection(Generic[ModelType]):
                     self.with_retries(self.datastore.client.indices.create, index=index,
                                       mappings=self._get_index_mappings(),
                                       settings=self._get_index_settings(archive=self.is_archive_index(index)))
+                except SearchBackendException as e:
+                    if "resource_already_exists_exception" not in e.message:
+                        raise
+                    log.warning("Tried to create an index template that already exists: %s", alias.upper())
                 except elasticsearch.exceptions.RequestError as e:
                     if "resource_already_exists_exception" not in str(e):
                         raise

@@ -5,18 +5,30 @@ import re
 import time
 import typing
 import warnings
+
 from os import environ, path
 from random import random
 from urllib.parse import urlparse
 
 import elasticsearch
 import elasticsearch.helpers
+from packaging import version
+
 from assemblyline.common import forge
 from assemblyline.common.isotime import now
 from assemblyline.common.security import generate_random_secret
 from assemblyline.datastore.collection import ESCollection
-from assemblyline.datastore.exceptions import DataStoreException, UnsupportedElasticVersion, VersionConflictException
-from packaging import version
+from assemblyline.datastore.compat import (
+    SearchBackend,
+    SearchBackendException,
+    create_search_client,
+    detect_search_backend,
+)
+from assemblyline.datastore.exceptions import (
+    DataStoreException,
+    UnsupportedElasticVersion,
+    VersionConflictException,
+)
 
 TRANSPORT_TIMEOUT = int(environ.get('AL_DATASTORE_TRANSPORT_TIMEOUT', '90'))
 DATASTORE_ROOT_CA_PATH = environ.get('DATASTORE_ROOT_CA_PATH', '/etc/assemblyline/ssl/al_root-ca.crt')
@@ -62,8 +74,9 @@ class ESStore(object):
     }
     ID = 'id'
     MIN_ELASTIC_VERSION = '7.10'
+    MIN_OPENSEARCH_VERSION = '2.12.0'
 
-    def __init__(self, hosts, archive_access=True, archive_alernate_dtl=0):
+    def __init__(self, hosts, backend=SearchBackend.ELASTICSEARCH, archive_access=True, archive_alernate_dtl=0):
         config = forge.get_config()
         self._hosts = hosts
         self._closed = False
@@ -77,13 +90,21 @@ class ESStore(object):
         tracer.setLevel(logging.CRITICAL)
 
         self.ca_certs = None if not path.exists(DATASTORE_ROOT_CA_PATH) else DATASTORE_ROOT_CA_PATH
+        self.backend = (
+            detect_search_backend(
+                hosts, request_timeout=TRANSPORT_TIMEOUT, ca_certs=self.ca_certs,
+                verify_certs=DATASTORE_VERIFY_CERTS)
+            if backend == "auto" else SearchBackend(backend)
+        )
 
-        self.client = elasticsearch.Elasticsearch(hosts=hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs, verify_certs=DATASTORE_VERIFY_CERTS)
-        self.es_version = version.parse(self.with_retries(self.client.info)['version']['number'])
+        self.client = create_search_client(
+            self.backend, hosts, max_retries=0, request_timeout=TRANSPORT_TIMEOUT,
+            ca_certs=self.ca_certs, verify_certs=DATASTORE_VERIFY_CERTS)
+        self.version_info = self.with_retries(self.client.info).get('version', {})
+        self.es_version = version.parse(self.version_info['number'])
         self.archive_access = archive_access
         self.url_path = 'elastic'
-        self._test_elastic_minimum_version()
+        self._test_minimum_version()
 
     def __enter__(self):
         return self
@@ -155,10 +176,21 @@ class ESStore(object):
     def date_separator(self):
         return self.DATE_FORMAT['SEPARATOR']
 
-    def _test_elastic_minimum_version(self):
-        if not self.is_supported_version(self.MIN_ELASTIC_VERSION):
-            raise UnsupportedElasticVersion(f"Elastic version {self.es_version} is not supported by Assemblyline. "
-                                            f"Upgrade to Elastic {self.MIN_ELASTIC_VERSION} at minimum.")
+    def _test_minimum_version(self):
+        if self.backend == SearchBackend.ELASTICSEARCH:
+            if not self.is_supported_version(self.MIN_ELASTIC_VERSION):
+                raise UnsupportedElasticVersion(f"Elastic version {self.es_version} is not supported by Assemblyline. "
+                                                f"Upgrade to Elastic {self.MIN_ELASTIC_VERSION} at minimum.")
+            return
+
+        if self.version_info.get("distribution") != "opensearch":
+            raise UnsupportedElasticVersion(
+                f"OpenSearch backend selected but datastore identified as "
+                f"{self.version_info.get('distribution', 'unknown')} {self.es_version}.")
+
+        if not self.is_supported_version(self.MIN_OPENSEARCH_VERSION):
+            raise UnsupportedElasticVersion(f"OpenSearch version {self.es_version} is not supported by Assemblyline. "
+                                            f"Upgrade to OpenSearch {self.MIN_OPENSEARCH_VERSION} at minimum.")
 
     def is_supported_version(self, min):
         return self.es_version >= version.parse(min)
@@ -166,6 +198,13 @@ class ESStore(object):
     def switch_user(self, username):
         if username not in ALT_ELASTICSEARCH_USERS:
             log.warning(f"Unknown alternative user '{username}' to switch to for Elasticsearch")
+            return
+
+        if self.backend == SearchBackend.OPENSEARCH:
+            # OpenSearch deployments use the configured service identity here. The Elasticsearch
+            # plumber switch relies on Elasticsearch-only security client APIs and restricted-index
+            # behavior, neither of which applies to the current OpenSearch test deployment.
+            log.info("Skipping alternative datastore user '%s' for OpenSearch", username)
             return
 
         if username == "plumber":
@@ -191,18 +230,22 @@ class ESStore(object):
         self.connection_reset()
 
     def connection_reset(self):
-        self.client = elasticsearch.Elasticsearch(hosts=self._hosts,
-                                                  max_retries=0,
-                                                  request_timeout=TRANSPORT_TIMEOUT,
-                                                  ca_certs=self.ca_certs,
-                                                  verify_certs=DATASTORE_VERIFY_CERTS)
-        log.info("Reconnected to Elasticsearch")
+        self.client = create_search_client(
+            self.backend,
+            self._hosts,
+            max_retries=0,
+            request_timeout=TRANSPORT_TIMEOUT,
+            ca_certs=self.ca_certs,
+            verify_certs=DATASTORE_VERIFY_CERTS)
+        log.info("Reconnected to %s", self.backend.value)
 
     def close(self):
         self._closed = True
+        if self.client is not None:
+            self.client.close()
         # Flatten the client object so that attempts to access without reconnecting errors hard
         # But 'cast' it so that mypy and other linters don't think that its normal for client to be None
-        self.client = typing.cast(elasticsearch.Elasticsearch, None)
+        self.client = typing.cast(object, None)
 
     def get_hosts(self, safe=False):
         if not safe:
@@ -265,7 +308,12 @@ class ESStore(object):
                                      max_docs=max_tasks)
 
         # Wait until the tasks deletion task is over
-        res = self._get_task_results(task)
+        try:
+            res = self._get_task_results(task)
+        except DataStoreException as err:
+            if "restricted indices [.tasks]" in str(err):
+                return 0
+            raise
 
         # return the number of deleted items
         return res['deleted']
@@ -279,8 +327,15 @@ class ESStore(object):
         if retry_function is None:
             retry_function = self.with_retries
 
+        deadline = None
+        task_wait_timeout = self.__dict__.get("task_wait_timeout")
+        if task_wait_timeout is not None:
+            deadline = time.monotonic() + task_wait_timeout
+
         res = None
         while res is None:
+            if deadline is not None and time.monotonic() > deadline:
+                raise DataStoreException(f"Timed out waiting for datastore task {task['task']}")
             try:
                 res = retry_function(self.client.tasks.get, task_id=task['task'],
                                      wait_for_completion=True, timeout='5s')
@@ -298,6 +353,14 @@ class ESStore(object):
                     pass
                 else:
                     raise
+
+        if 'error' in res:
+            error = res['error']
+            if isinstance(error, dict):
+                reason = error.get('reason') or error.get('type') or str(error)
+            else:
+                reason = str(error)
+            raise DataStoreException(f"Datastore task {task['task']} failed: {reason}")
 
         try:
             return res['response']
@@ -427,5 +490,38 @@ class ESStore(object):
                     raise
 
                 # Loop and retry
+                time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
+                retries += 1
+
+            except SearchBackendException as err:
+                index_name = kwargs.get('index', '').upper()
+                err_code = err.status_code
+
+                if err_code == 409:
+                    if raise_conflicts:
+                        time.sleep(random() * 0.1)
+                        raise VersionConflictException(str(err))
+
+                    original_info = getattr(err.original, "info", {})
+                    if isinstance(original_info, dict):
+                        updated += original_info.get('updated', 0)
+                        deleted += original_info.get('deleted', 0)
+                elif err_code == 404 and index_name and "No search context found" in err.message:
+                    log.warning(f"Index {index_name} was removed while a query was running, retrying...")
+                elif err_code == 429:
+                    if index_name:
+                        log.warning("Elasticsearch is too busy to perform the requested "
+                                    f"task on index {index_name}, retrying...")
+                    else:
+                        log.warning("Elasticsearch is too busy to perform the requested "
+                                    f"task ({str(err)}), retrying...")
+                elif err_code == 503 and index_name:
+                    log.warning(f"Looks like index {index_name} is not ready yet, retrying...")
+                elif err_code == 403 and index_name:
+                    log.warning("Elasticsearch cluster is preventing writing operations "
+                                f"on index {index_name}, retrying...")
+                else:
+                    raise
+
                 time.sleep(min(retries, self.MAX_RETRY_BACKOFF))
                 retries += 1
