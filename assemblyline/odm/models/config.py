@@ -217,6 +217,7 @@ class OAuthProvider(odm.Model):
     authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(
         odm.Keyword()), description="Parameters used to authorize access to a resource")
     api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
+    issuer_url: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWT token is valid")
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
     jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
@@ -247,12 +248,13 @@ class OAuthProvider(odm.Model):
     groups_id_token_field: str = odm.Keyword(
         default="groups", description="Name of the field in the id token that contains the list of groups."
     )
+    scope_field: str = odm.Keyword(default="scope", description="Name of the field in the id token that contains the list of scopes.")
 
 OPEN_ID_CONFIGURATION_TO_OAUTH_PROVIDER_MAP = {
-    "authorization_endpoint": "authorize_url",
-    "issuer": "api_base_url",
-    "token_endpoint": "access_token_url",
-    "jwks_uri": "jwks_uri",
+    "authorization_endpoint": ["authorize_url"],
+    "issuer": ["api_base_url", "issuer_url"],
+    "token_endpoint": ["access_token_url"],
+    "jwks_uri": ["jwks_uri"],
 }
 
 
