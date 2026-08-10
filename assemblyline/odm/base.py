@@ -65,7 +65,7 @@ IP_REGEX = f"(?:{IPV4_REGEX}|{IPV6_REGEX})"
 IP_ONLY_REGEX = f"^{IP_REGEX}$"
 IPV4_ONLY_REGEX = f"^{IPV4_REGEX}$"
 IPV6_ONLY_REGEX = f"^{IPV6_REGEX}$"
-PORT_REGEX = r"(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])"
+PORT_REGEX = r"(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])" # produce two matches containing respectively the first 4 digits and one with the last one on 5 digits port numbers, but work as expected for regular group or as a subregex.
 PRIVATE_IP = r"(?:(?:127|10)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|" \
              r"(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|" \
              r"(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))"

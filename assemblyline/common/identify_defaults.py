@@ -51,6 +51,7 @@ type_to_extension = {
     "code/java": ".java",
     "code/javascript": ".js",
     "code/jscript": ".js",
+    "code/lua": ".lua",
     "code/pdfjs": ".js",
     "code/perl": ".pl",
     "code/php": ".php",

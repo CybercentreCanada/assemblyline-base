@@ -962,6 +962,8 @@ class ESCollection(Generic[ModelType]):
                     # If this index has an archive, check is the document was found in it.
                     if self.archive_name:
                         doc['_source']['from_archive'] = self.is_archive_index(index)
+                    elif 'from_archive' in doc['_source']:
+                        doc['_source']['from_archive'] = False
 
                     if version:
                         return self._normalize_output(doc['_source']), f"{doc['_seq_no']}---{doc['_primary_term']}"
@@ -1012,13 +1014,24 @@ class ESCollection(Generic[ModelType]):
 
     @typing.overload
     def get_if_exists(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
-                      version=False) -> typing.Optional[ModelType]:
+                      version: typing.Literal[False] = False) -> typing.Optional[ModelType]:
         ...
 
     @typing.overload
     def get_if_exists(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
-                      version=False) -> typing.Optional[dict]:
+                      version: typing.Literal[False] = False) -> typing.Optional[dict]:
         ...
+
+    @typing.overload
+    def get_if_exists(self, key: str, as_obj: typing.Literal[True] = True, index_type: typing.Optional[Index] = None,
+                      version=True) -> tuple[typing.Optional[ModelType], str]:
+        ...
+
+    @typing.overload
+    def get_if_exists(self, key: str, as_obj: typing.Literal[False], index_type: typing.Optional[Index] = None,
+                      version=True) -> tuple[typing.Optional[dict], str]:
+        ...
+
 
     def get_if_exists(self, key, as_obj=True, index_type=None, version=False):
         """
@@ -1378,6 +1391,8 @@ class ESCollection(Generic[ModelType]):
         # If this index has an archive, check is the document was found in it.
         if self.archive_name:
             source_data['from_archive'] = self.is_archive_index(result['_index'])
+        elif 'from_archive' in source_data:
+            source_data['from_archive'] = False
 
         if self.model_class:
             if not fields:

@@ -1,12 +1,14 @@
 import json
 import os
 import tarfile
+import tempfile
 from io import BytesIO
 from itertools import product
 
 import pytest
 from assemblyline.common.bundling import (
     AlertNotFound,
+    BundlingException,
     SubmissionAlreadyExist,
     SubmissionNotFound,
     create_bundle,
@@ -14,6 +16,7 @@ from assemblyline.common.bundling import (
 )
 from assemblyline.common.forge import get_classification
 from assemblyline.common.isotime import format_time
+from assemblyline.common.uid import get_random_id
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.random_data import create_submission
 from assemblyline.odm.randomizer import random_model_obj
@@ -22,6 +25,7 @@ from cart import is_cart, unpack_stream
 ALERT_ID = "test_alert_id"
 SUBMISSION_ID = "test_submission_id"
 CLASSIFICATION = get_classification()
+
 
 def test_failed_alert_bundle():
     # Test creation failure
@@ -171,7 +175,6 @@ def test_submission_bundle(datastore_connection, filestore, config, as_user, dtl
                 for result in results['results']['results'].values():
                     assert CLASSIFICATION.is_accessible(user_classification, result['classification'])
 
-
     # Restore bundle
     new_submission = import_bundle(path, cleanup=False, allow_incomplete=as_user, dtl=dtl)
 
@@ -200,3 +203,120 @@ def test_submission_bundle(datastore_connection, filestore, config, as_user, dtl
     assert not os.path.exists(path)
     datastore_connection.delete_submission_tree_bulk(sid, transport=filestore)
     assert datastore_connection.submission.get_if_exists(sid) is None
+
+
+def _minimal_results_json(file_key: str) -> bytes:
+    submission = {
+        "sid": get_random_id(),
+        "classification": CLASSIFICATION.UNRESTRICTED,
+        "error_count": 0,
+        "errors": [],
+        "file_count": 0,
+        "files": [],
+        "max_score": 0,
+        "metadata": {},
+        "params": {
+            "classification": CLASSIFICATION.UNRESTRICTED,
+            "description": "test",
+            "submitter": "user",
+            "services": {},
+        },
+        "results": [],
+        "state": "completed",
+        "times": {"submitted": "2026-01-01T00:00:00.000000Z"},
+    }
+    file_info = {
+        "classification": CLASSIFICATION.UNRESTRICTED,
+        "ascii": ".", "hex": "00", "entropy": 0.0,
+        "md5": "a" * 32, "sha1": "a" * 40, "sha256": "a" * 64,
+        "size": 1, "ssdeep": "3::", "magic": "data",
+        "mime": "text/plain", "type": "unknown",
+    }
+    return json.dumps({
+        "submission": submission,
+        "files": {"list": [file_key], "tree": {}, "infos": {file_key: file_info}},
+        "results": {"results": {}},
+        "errors": {"errors": {}},
+    }).encode()
+
+
+def _write_bundle(members: list[tarfile.TarInfo], payloads: dict[str, bytes]) -> str:
+    fd, path = tempfile.mkstemp(suffix=".al_bundle")
+    os.close(fd)
+    with tarfile.open(path, "w:gz") as t:
+        for ti in members:
+            t.addfile(ti, BytesIO(payloads[ti.name]) if ti.name in payloads else None)
+    return path
+
+
+@pytest.mark.parametrize(
+    "link_type,link_target",
+    [
+        (tarfile.SYMTYPE, "/etc/hosts"),
+        (tarfile.SYMTYPE, "../../../../etc/hosts"),
+        (tarfile.LNKTYPE, "/etc/hosts"),
+    ],
+    ids=["symlink-absolute", "symlink-dotdot", "hardlink-absolute"],
+)
+def test_import_bundle_rejects_link_members(link_type, link_target):
+    """A tarfile data filter must refuse (sym|hard)links / escapes."""
+    key = "a" * 64
+    rj = tarfile.TarInfo("results.json")
+    rj_bytes = _minimal_results_json(key)
+    rj.size = len(rj_bytes)
+
+    link = tarfile.TarInfo(key)
+    link.type = link_type
+    link.linkname = link_target
+
+    path = _write_bundle([rj, link], {"results.json": rj_bytes})
+    try:
+        with pytest.raises(BundlingException):
+            import_bundle(path, allow_incomplete=True, exist_ok=True, cleanup=False)
+    finally:
+        if os.path.exists(path):
+            os.remove(path)
+
+
+def test_import_bundle_rejects_dotdot_member_name():
+    """A regular file with a path-escaping name must not extract."""
+    rj = tarfile.TarInfo("results.json")
+    rj_bytes = _minimal_results_json("a" * 64)
+    rj.size = len(rj_bytes)
+
+    bad = tarfile.TarInfo("../escape")
+    bad.size = 1
+
+    path = _write_bundle([rj, bad], {"results.json": rj_bytes, "../escape": b"x"})
+    try:
+        with pytest.raises(BundlingException):
+            import_bundle(path, allow_incomplete=True, exist_ok=True, cleanup=False)
+    finally:
+        if os.path.exists(path):
+            os.remove(path)
+
+
+@pytest.mark.parametrize(
+    "bad_key",
+    [
+        "secret",
+        "../../../../etc/passwd",
+        "/root/.ssh/authorized_keys",
+        "A" * 64,
+        "a" * 63,
+    ],
+    ids=["non-hex", "dotdot", "absolute", "uppercase", "short"],
+)
+def test_import_bundle_rejects_non_sha256_file_key(datastore_connection, bad_key):
+    """A files.infos keys must be 64 lowercase hex chars."""
+    rj = tarfile.TarInfo("results.json")
+    rj_bytes = _minimal_results_json(bad_key)
+    rj.size = len(rj_bytes)
+
+    path = _write_bundle([rj], {"results.json": rj_bytes})
+    try:
+        with pytest.raises(BundlingException, match="Invalid file key"):
+            import_bundle(path, allow_incomplete=True, exist_ok=True, cleanup=False)
+    finally:
+        if os.path.exists(path):
+            os.remove(path)

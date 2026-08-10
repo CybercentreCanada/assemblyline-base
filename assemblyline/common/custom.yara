@@ -1519,3 +1519,18 @@ rule text_rdp {
         // Add two optionals, to reduce false positives.
         and 2 of ($optional*)
 }
+
+rule code_lua {
+
+    meta:
+        type = "code/lua"
+
+    strings:
+        $local = "local" fullword
+        $nil = "nil" fullword
+        $end = "end" fullword
+        $then = "then" fullword
+
+    condition:
+        all of them
+}

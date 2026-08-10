@@ -128,7 +128,7 @@ def create_transport(url, connection_attempts=None):
 
     elif scheme == 's3':
         valid_str_keys = ['aws_region', 's3_bucket']
-        valid_bool_keys = ['use_ssl', 'verify', 'boto_defaults', 'read_only', 'debug']
+        valid_bool_keys = ['use_ssl', 'verify', 'boto_defaults', 'read_only', 'use_batch_delete', 'debug']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
         # If user/password not specified, access might be dictated by IAM roles
@@ -143,7 +143,7 @@ def create_transport(url, connection_attempts=None):
         valid_bool_keys = ['allow_directory_access', 'use_default_credentials', 'initalize_container', 'read_only']
         extras = _get_extras(parse_qs(parsed.query), valid_str_keys=valid_str_keys, valid_bool_keys=valid_bool_keys)
 
-        t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, **extras)
+        t = TransportAzure(base=base, host=host, connection_attempts=connection_attempts, port=port, **extras)
 
     else:
         raise FileStoreException("Unknown transport: %s" % scheme)
@@ -199,6 +199,22 @@ class FileStore(object):
                 except Exception as ex:
                     trace = get_stacktrace_info(ex)
                     self.log.info('Transport problem: %s', trace)
+
+    def delete_batch_chunk_size(self) -> int:
+        return min(transport.delete_batch_chunk_size() for transport in self.transports)
+
+    @elasticapm.capture_span(span_type='filestore')
+    def delete_batch(self, file_list: list[str], location='all'):
+        # Don't even call into the transports if there are no files given
+        if not file_list:
+            return
+
+        with elasticapm.capture_span(name='delete_batch', span_type='filestore', labels={'batch_size': len(file_list)}):
+            for t in self.slice(location):
+                if t.read_only:
+                    # Don't attempt to delete from read only transports
+                    continue
+                t.delete_batch(file_list)
 
     @elasticapm.capture_span(span_type='filestore')
     def download(self, src_path: str, dest_path: str, location='any'):
