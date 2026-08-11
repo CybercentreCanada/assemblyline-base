@@ -157,6 +157,23 @@ class PE(odm.Model):
             entries = odm.Optional(odm.List(odm.Compound(Entry)))
             signature = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
 
+        @odm.model(index=True, store=False)
+        class Repro(odm.Model):
+            hash = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
+
+        @odm.model(index=True, store=False)
+        class VCFeature(odm.Model):
+            c_cpp = odm.Optional(odm.Integer())
+            pre_vcpp = odm.Optional(odm.Integer())
+            gs = odm.Optional(odm.Integer())
+            sdl = odm.Optional(odm.Integer())
+            guards = odm.Optional(odm.Integer())
+
+        @odm.model(index=True, store=False)
+        class PDBChecksum(odm.Model):
+            algorithm = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
+            hash = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
+
         addressof_rawdata = odm.Optional(odm.Integer())
         characteristics = odm.Optional(odm.Integer())
         major_version = odm.Optional(odm.Integer())
@@ -168,6 +185,10 @@ class PE(odm.Model):
         type = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
         code_view = odm.Optional(odm.Compound(CodeView))
         pogo = odm.Optional(odm.Compound(POGO))
+        repro = odm.Optional(odm.Compound(Repro))
+        vc_feature = odm.Optional(odm.Compound(VCFeature))
+        ex_dll_characteristics = odm.Optional(odm.List(odm.EmptyableKeyword(copyto="__text__")))
+        pdb_checksum = odm.Optional(odm.Compound(PDBChecksum))
 
     @odm.model(index=True, store=False)
     class Export(odm.Model):
@@ -182,6 +203,7 @@ class PE(odm.Model):
             forward_information = odm.Optional(odm.Compound(Forward_Information))
             function_rva = odm.Optional(odm.Integer())
             is_extern = odm.Optional(odm.Boolean())
+            is_forwarded = odm.Optional(odm.Boolean())
             name = odm.Optional(odm.EmptyableKeyword(copyto="__text__"))
             ordinal = odm.Optional(odm.Integer())
 
