@@ -847,16 +847,23 @@ class TypedList(list):
         super().__init__([type_p.check(el, **kwargs) for el in items])
         self.type = type_p
         self._set_cache: typing.Optional[frozenset] = None
+        # Assume that the list is hashable until proven otherwise. This is an optimization to avoid creating a frozenset for every list.
+        self._unhashable: bool = False
 
     def _invalidate_cache(self):
         self._set_cache = None
 
     def __contains__(self, item):
+        if self._unhashable:
+            # If unhashable, fallback to legacy list scan.
+            return super().__contains__(item)
+
         if self._set_cache is None:
             try:
                 self._set_cache = frozenset(self)
             except TypeError:
                 # Elements are not hashable (e.g. compound objects); fall back to list scan
+                self._unhashable = True
                 return super().__contains__(item)
         return item in self._set_cache
 
