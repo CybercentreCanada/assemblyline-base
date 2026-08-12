@@ -1,6 +1,5 @@
 from __future__ import annotations
 import os
-import string
 import sys
 from typing import Optional
 
@@ -19,8 +18,24 @@ def splitpath(path: str, sep: Optional[str] = None) -> list:
 
 
 def strip_path_inclusion(path: str, base: str) -> str:
+    """Verifies that the provided path is safe with the desired base folder destination.
+
+    If the full path is safe, and no path traversal/inclusion are detected, the full path is
+    returned. If the path is not deemed safe, a simple base filename will be return.
+    In both case, an os.path.join between the desired folder and what gets return should be
+    safe to write to.
+
+    Args:
+        path: The path that needs safety validation.
+        base: The desired destination folder.
+
+    Returns:
+        A safe full path, or only the file basename if unsafe.
+    """
     path = path.replace("\\", os.path.sep).replace("/", os.path.sep)
-    return path if os.path.abspath(os.path.join(base, path)).startswith(base) else os.path.basename(path)
+    safe_base = base if base.endswith(os.path.sep) else base + os.path.sep
+    resolved = os.path.abspath(os.path.join(base, path))
+    return path if (resolved == base.rstrip(os.path.sep) or resolved.startswith(safe_base)) else os.path.basename(path)
 
 
 ASCII_NUMBERS = list(range(48, 58))
