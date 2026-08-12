@@ -37,7 +37,7 @@ class TransportS3(Transport):
 
     def __init__(self, base=None, accesskey=None, secretkey=None, aws_region=None, s3_bucket="al-storage",
                  host=None, port=None, use_ssl=None, verify=True, connection_attempts=None,
-                 boto_defaults=False, read_only=False, use_batch_delete: bool = False):
+                 boto_defaults=False, read_only=False, use_batch_delete: bool = False, debug: bool = False):
         self.log = logging.getLogger('assemblyline.transport.s3')
         self.base = base
         self.bucket = s3_bucket
@@ -83,6 +83,17 @@ class TransportS3(Transport):
                     use_ssl=self.use_ssl,
                     verify=verify,
                 )
+
+        # Log the credential provider being when debugging is enabled for the transport
+        if debug:
+            credentials = self.client._get_credentials()
+            self.log.debug(f"Credential provider for '{self.endpoint_url}': method: {credentials.method}, "
+                           f"account_id: {credentials.account_id}, "
+                           f"access_key: {credentials.access_key}, "
+                           f"secret_key: { 'set' if credentials.secret_key else 'not set' }"
+                           f"token: { 'set' if credentials.token else 'not set' }")
+
+
 
         bucket_exist = False
         try:
