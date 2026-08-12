@@ -258,6 +258,16 @@ class PE(odm.Model):
         hotpatch_table_offset = odm.Optional(odm.Integer())
         addressof_unicode_string = odm.Optional(odm.Integer())
         reserved3 = odm.Optional(odm.Integer())
+        enclave_configuration_ptr = odm.Optional(odm.Integer())
+        volatile_metadata_pointer = odm.Optional(odm.Integer())
+        guard_eh_continuation_count = odm.Optional(odm.Integer())
+        guard_eh_continuation_table = odm.Optional(odm.Integer())
+        guard_xfg_check_function_pointer = odm.Optional(odm.Integer())
+        guard_xfg_dispatch_function_pointer = odm.Optional(odm.Integer())
+        guard_xfg_table_dispatch_function_pointer = odm.Optional(odm.Integer())
+        cast_guard_os_determined_failure_mode = odm.Optional(odm.Integer())
+        guard_memcpy_function_pointer = odm.Optional(odm.Integer())
+        uma_function_pointers = odm.Optional(odm.Integer())
 
     @odm.model(index=True, store=False)
     class Resources_Manager(odm.Model):
