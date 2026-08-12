@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 from assemblyline import odm
 from assemblyline.common.constants import PRIORITIES
+from assemblyline.odm.base import DOMAIN_REGEX, IP_REGEX
 from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
@@ -40,6 +41,8 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
 }
 
 CIDR_REGEX = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(?:3[0-2]|[12]?[0-9])$"
+# Domain (optionally prefixed with '*.' to match subdomains), single-label intranet host, or IP
+AVATAR_HOST_REGEX = f"^(?:(?:\\*\\.)?{DOMAIN_REGEX}|[A-Za-z0-9](?:[A-Za-z0-9-]{{0,61}}[A-Za-z0-9])?|{IP_REGEX})$"
 
 @odm.model(index=False, store=False,
            description="Configuration block for [GC Notify](https://notification.canada.ca/) signup and password reset")
@@ -188,6 +191,11 @@ class OAuthProvider(odm.Model):
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
+    avatar_allowed_hosts: List[str] = odm.List(
+        odm.ValidatedKeyword(AVATAR_HOST_REGEX), default=[],
+        description="Hosts from which user avatars may be downloaded. Entries match the URL hostname "
+                    "exactly, or a subdomain when prefixed with '*.' (e.g. '*.googleusercontent.com'). "
+                                                         "The host of `api_base_url` is always allowed.")
     ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
                                         description="List of CIDRs allowed to access internal authentication")
     uid_randomize: bool = odm.Boolean(default=False,
