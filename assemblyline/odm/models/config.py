@@ -6,6 +6,7 @@ from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 from assemblyline.odm.models.submission import DEFAULT_SRV_SEL, ServiceSelection
+from assemblyline.odm.models.user import ROLES
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
@@ -249,6 +250,9 @@ class OAuthProvider(odm.Model):
         default="groups", description="Name of the field in the id token that contains the list of groups."
     )
     scope_field: str = odm.Keyword(default="scope", description="Name of the field in the id token that contains the list of scopes.")
+    azp_role_limits: Dict[str, List[str]] = odm.Mapping(
+        odm.List(odm.Enum(values=ROLES.keys())), description="Mapping of authorized party (azp) to role limits.", default={}
+    )
 
 OPEN_ID_CONFIGURATION_TO_OAUTH_PROVIDER_MAP = {
     "authorization_endpoint": ["authorize_url"],
