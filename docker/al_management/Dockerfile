@@ -47,11 +47,16 @@ RUN echo "source /var/lib/assemblyline/venv/bin/activate" >> /var/lib/assemblyli
 RUN mkdir -p /var/lib/assemblyline/jupyter
 RUN mkdir -p /var/lib/assemblyline/.jupyter
 RUN touch /var/lib/assemblyline/.jupyter/jupyter_notebook_config.py
-RUN echo 'import os' >> /var/lib/assemblyline/.jupyter/jupyter_notebook_config.py
-RUN echo 'from jupyter_server.auth import passwd' >> /var/lib/assemblyline/.jupyter/jupyter_notebook_config.py
-RUN echo 'c.NotebookApp.password = passwd(os.getenv("NB_PASSWORD", "devpass"))' >> /var/lib/assemblyline/.jupyter/jupyter_notebook_config.py
-RUN echo 'c.NotebookApp.allow_remote_access = True' >> /var/lib/assemblyline/.jupyter/jupyter_notebook_config.py
-RUN echo 'c.NotebookApp.base_url = "/notebook/"' >> /var/lib/assemblyline/.jupyter/jupyter_notebook_config.py
+RUN <<EOF cat > /var/lib/assemblyline/.jupyter/jupyter_notebook_config.py
+import os
+from jupyter_server.auth import passwd
+nb_password = os.getenv("NB_PASSWORD")
+if not nb_password:
+    raise RuntimeError("NB_PASSWORD must be set")
+c.NotebookApp.password = passwd(nb_password)
+c.NotebookApp.allow_remote_access = True
+c.NotebookApp.base_url = "/notebook/"
+EOF
 
 WORKDIR /var/lib/assemblyline
 
