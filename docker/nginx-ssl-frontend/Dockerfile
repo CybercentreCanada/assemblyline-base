@@ -6,28 +6,29 @@ RUN openssl req -nodes -x509 -newkey rsa:4096 -keyout /etc/ssl/nginx.key -out /e
 
 FROM nginx
 
-ENV DOLLAR $
-ENV FQDN localhost
-ENV MAX_BODY_SIZE 100M
-ENV FRONTEND_HOST al_frontend
-ENV SOCKET_HOST al_socketio
-ENV UI_HOST al_ui
-ENV KIBANA_HOST kibana
-ENV TEMPLATE full
-ENV ACCESS_LOG off
-ENV ERROR_LOG /dev/stderr
-ENV ERROR_LEVEL notice
-ENV READ_TIMEOUT 60s
-ENV CONNECT_TIMEOUT 60s
-ENV SEND_TIMEOUT 60s
+ENV FQDN=localhost
+ENV MAX_BODY_SIZE=100M
+ENV FRONTEND_HOST=al_frontend
+ENV SOCKET_HOST=al_socketio
+ENV UI_HOST=al_ui
+ENV MCP_HOST=al_mcp
+ENV KIBANA_HOST=kibana
+ENV ACCESS_LOG=off
+ENV ERROR_LOG=/dev/stderr
+ENV ERROR_LEVEL=notice
+ENV READ_TIMEOUT=60s
+ENV CONNECT_TIMEOUT=60s
+ENV SEND_TIMEOUT=60s
+
+# This variable is necessary to prevent envsubst from replacing NGINX variables in the template file.
+ENV NGINX_ENVSUBST_FILTER_VARIABLES="$$FQDN,$$MAX_BODY_SIZE,$$FRONTEND_HOST,$$SOCKET_HOST,$$UI_HOST,$$MCP_HOST,$$KIBANA_HOST,$$ACCESS_LOG,$$ERROR_LOG,$$ERROR_LEVEL,$$READ_TIMEOUT,$$CONNECT_TIMEOUT,$$SEND_TIMEOUT"
 
 COPY http_redirect.conf /etc/nginx/conf.d/
-COPY full.template /opt/
-COPY minimal.template /opt/
+COPY default.conf.template /etc/nginx/templates/
 
 COPY --from=builder /etc/ssl/ /etc/ssl/
 
 EXPOSE 443
 EXPOSE 80
 
-CMD /bin/bash -c "envsubst < /opt/$TEMPLATE.template > /etc/nginx/conf.d/default.conf && cat /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+CMD ["nginx", "-g", "daemon off;"]
