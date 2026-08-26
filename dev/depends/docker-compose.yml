@@ -128,10 +128,9 @@ services:
       - FRONTEND_HOST=172.17.0.1
       - UI_HOST=172.17.0.1
       - SOCKET_HOST=172.17.0.1
+      - MCP_HOST=172.17.0.1
       - FQDN=localhost
       - MAX_BODY_SIZE=100M
-    volumes:
-      - ${PATH_REWRITE:-.}/config/nginx_full.template:/opt/full.template:ro
     depends_on:
       kibana:
         condition: service_started
