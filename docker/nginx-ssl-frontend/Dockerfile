@@ -20,9 +20,6 @@ ENV READ_TIMEOUT=60s
 ENV CONNECT_TIMEOUT=60s
 ENV SEND_TIMEOUT=60s
 
-# This variable is necessary to prevent envsubst from replacing NGINX variables in the template file.
-ENV NGINX_ENVSUBST_FILTER_VARIABLES="$$FQDN,$$MAX_BODY_SIZE,$$FRONTEND_HOST,$$SOCKET_HOST,$$UI_HOST,$$MCP_HOST,$$KIBANA_HOST,$$ACCESS_LOG,$$ERROR_LOG,$$ERROR_LEVEL,$$READ_TIMEOUT,$$CONNECT_TIMEOUT,$$SEND_TIMEOUT"
-
 COPY http_redirect.conf /etc/nginx/conf.d/
 COPY default.conf.template /etc/nginx/templates/
 
