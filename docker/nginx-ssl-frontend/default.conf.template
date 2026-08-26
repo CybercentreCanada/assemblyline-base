@@ -47,8 +47,27 @@ server {
         try_files    $uri @frontend;
     }
 
-    # UI
+    # UI (for appliance only)
     location @frontend {
+        add_header            X-Frame-Options            SAMEORIGIN;
+        add_header            Strict-Transport-Security  "max-age=31536000; includeSubDomains";
+
+        proxy_set_header      X-Forwarded-For            $proxy_add_x_forwarded_for;
+        proxy_set_header      X-Remote-Cert-Verified     $ssl_client_verify;
+        proxy_set_header      X-Remote-DN                $ssl_client_s_dn;
+        proxy_set_header      Host                       $http_host;
+        proxy_set_header      Scheme                     $scheme;
+        proxy_set_header      Server-Port                $server_port;
+
+        set $frontend "http://${FRONTEND_HOST}:3000";
+
+        proxy_pass            $frontend;
+
+        error_page 502 = @frontend_https;
+    }
+
+    # UI over HTTPS (for development only)
+    location @frontend_https {
         add_header            X-Frame-Options            SAMEORIGIN;
         add_header            Strict-Transport-Security  "max-age=31536000; includeSubDomains";
 
