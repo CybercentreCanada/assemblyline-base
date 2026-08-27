@@ -56,6 +56,14 @@ services:
     working_dir: /opt/alv4/assemblyline-ui/assemblyline_ui/
     command: python3 app.py
 
+  # MCP
+  al_mcp:
+    image: cccs/assemblyline-mcp:latest
+    environment:
+      AL_UI: "http://al_ui:5000"
+    ports:
+      - "8000:8000"
+
   # SocketIO Server
   al_socketio:
     image: cccs/assemblyline_dev:4.7.1
