@@ -12,6 +12,8 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.19.3
+    ports:
+      - "5601:5601"
     volumes:
       - ${PATH_REWRITE:-.}/config/kibana.docker.yml:/usr/share/kibana/config/kibana.yml:ro
     depends_on:
@@ -19,29 +21,28 @@ services:
         condition: service_healthy
       setup:
         condition: service_completed_successfully
+    environment:
+      - ELASTIC_PASSWORD=devpass
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl --silent --fail -u $$ELASTICSEARCH_USERNAME:$$ELASTICSEARCH_PASSWORD http://localhost:5601/",
-         # "curl --silent --fail -u $$ELASTICSEARCH_USERNAME:$$ELASTICSEARCH_PASSWORD http://localhost:5601/kibana",
-        ]
+      test: ["CMD-SHELL", "curl --silent --fail -u elastic:$$ELASTIC_PASSWORD http://localhost:5601/kibana"]
       interval: 30s
       timeout: 10s
       retries: 5
-
+    profiles:
+      - full
   apm_server:
     image: docker.elastic.co/apm/apm-server:8.19.3
     volumes:
       - ${PATH_REWRITE:-.}/config/apm-server.docker.yml:/usr/share/apm-server/apm-server.yml:ro
-    command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e -strict.perms=false"
+    command: /bin/bash -c "/usr/local/bin/docker-entrypoint -e --strict.perms=false"
     ports:
       - "8200:8200"
     depends_on:
       # kibana:
       elasticsearch:
         condition: service_healthy
-
+    profiles:
+      - full
   setup:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.19.3
     environment:
@@ -55,7 +56,8 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
-
+    profiles:
+      - full
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.19.3
     environment:
@@ -89,10 +91,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${PATH_REWRITE:-.}/config/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
       - ${PATH_REWRITE:-.}/config/filebeat_policy.json:/usr/share/filebeat/filebeat_policy.json:ro
-    command: filebeat -e -strict.perms=false
+    command: filebeat -e --strict.perms=false
     depends_on:
       elasticsearch:
         condition: service_healthy
+    profiles:
+      - full
 
   metricbeat:
     image: docker.elastic.co/beats/metricbeat:8.19.3
@@ -107,6 +111,8 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+    profiles:
+      - full
 
   redis:
     image: redis
@@ -128,13 +134,10 @@ services:
       - FRONTEND_HOST=172.17.0.1
       - UI_HOST=172.17.0.1
       - SOCKET_HOST=172.17.0.1
+      - MCP_HOST=172.17.0.1
+      - KIBANA_HOST=172.17.0.1
       - FQDN=localhost
       - MAX_BODY_SIZE=100M
-    volumes:
-      - ${PATH_REWRITE:-.}/config/nginx_full.template:/opt/full.template:ro
-    depends_on:
-      kibana:
-        condition: service_started
 
 networks:
   default:
