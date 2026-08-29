@@ -313,8 +313,10 @@ class ESCollection(Generic[ModelType]):
 
         finally:
             try:
-                self.with_retries(self.datastore.client.close_point_in_time, id=pit['id'])
-            except elasticsearch.exceptions.NotFoundError:
+                self.datastore.client.close_point_in_time(id=pit['id'])
+            except (elasticsearch.exceptions.NotFoundError, elasticsearch.exceptions.ConnectionTimeout):
+                # Since the keep_alive defaults to 5 minutes, we will just ignore this error.
+                # The PIT will eventually expire on its own.
                 pass
 
     def with_retries(self, func, *args, **kwargs):
@@ -1712,8 +1714,10 @@ class ESCollection(Generic[ModelType]):
         if pit_id is not None and len(ret_data["items"]) < ret_data["rows"]:
             # Close the Point in Time
             try:
-                self.with_retries(self.datastore.client.close_point_in_time, id=pit_id)
-            except elasticsearch.exceptions.NotFoundError:
+                self.datastore.client.close_point_in_time(id=pit_id)
+            except (elasticsearch.exceptions.NotFoundError, elasticsearch.exceptions.ConnectionTimeout):
+                # Since the keep_alive defaults to 5 minutes, we will just ignore this error.
+                # The PIT will eventually expire on its own.
                 pass
 
         elif pit_id is not None and len(ret_data["items"]) > 0:
