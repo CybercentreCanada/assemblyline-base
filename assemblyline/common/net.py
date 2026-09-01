@@ -44,7 +44,7 @@ def is_valid_domain(domain: str) -> bool:
         return False
 
     # Normalize domain to punnycode uppercase
-    if not domain.is_ascii():
+    if not domain.isascii():
         try:
             domain = domain.encode('idna').decode('ascii')
         except ValueError:
