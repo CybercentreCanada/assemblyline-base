@@ -178,7 +178,7 @@ def submission_with_duplicate_extracted_files(ds: AssemblylineDatastore) -> Iter
     ds.submission.commit()
     yield submission
     # Ensure submission tree is deleted
-    ds.delete_submission_tree(submission.sid, transport=fs)
+    ds.delete_submission_tree_bulk(submission.sid, transport=fs)
     ds.submission.commit()
     ds.error.commit()
     ds.emptyresult.commit()
@@ -235,7 +235,7 @@ def test_create_empty_result(ds: AssemblylineDatastore):
 
 
 # noinspection PyShadowingNames
-def test_delete_submission_tree(ds: AssemblylineDatastore):
+def test_delete_submission_tree_bulk(ds: AssemblylineDatastore):
     # Reset the data
     fs = forge.get_filestore()
 
