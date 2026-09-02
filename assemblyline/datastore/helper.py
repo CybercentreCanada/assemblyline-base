@@ -374,7 +374,7 @@ class AssemblylineDatastore(object):
                         new_file_class = cl_engine.min_classification(new_file_class, c)
 
                     # Find the results for that classification and alter them if the new classification does not match
-                    for item in self.result.stream_search(f"id:{f}*", fl="classification,id,_index", as_obj=False):
+                    for item in self.result.stream_search(f"sha256:{f}", fl="classification,id,_index", as_obj=False):
                         try:
                             new_class = cl_engine.max_classification(
                                 item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
@@ -478,7 +478,7 @@ class AssemblylineDatastore(object):
                         new_file_class = cl_engine.min_classification(new_file_class, c)
 
                     # Find the results for that classification and alter them if the new classification does not match
-                    for item in self.result.stream_search(f"id:{f}*", fl="classification,id", as_obj=False):
+                    for item in self.result.stream_search(f"sha256:{f}", fl="classification,id", as_obj=False):
                         try:
                             new_class = cl_engine.max_classification(
                                 item.get('classification', cl_engine.UNRESTRICTED), new_file_class)
@@ -1409,7 +1409,7 @@ class AssemblylineDatastore(object):
             return None
 
         # Check for the max service score
-        items = self.result.search(f"id:{sha256}*", fl="result.score", access_control=user_access_control,
+        items = self.result.search(f"sha256:{sha256}", fl="result.score", access_control=user_access_control,
                                    as_obj=False, rows=1, sort="result.score desc", index_type=index_type)['items']
         if items:
             max_score = items[0]['result']['score']
@@ -1442,7 +1442,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def list_file_active_keys(self, sha256, access_control=None, min_score=None, index_type=None):
-        query = f"id:{sha256}*"
+        query = f":{sha256}*"
         if min_score:
             query += f" AND result.score:>={min_score}"
 
@@ -1466,7 +1466,7 @@ class AssemblylineDatastore(object):
 
     @elasticapm.capture_span(span_type='datastore')
     def list_file_childrens(self, sha256, access_control=None):
-        query = f'id:{sha256}* AND response.extracted.sha256:*'
+        query = f'sha256:{sha256} AND response.extracted.sha256:*'
         service_resp = self.result.grouped_search("response.service_name", query=query, fl='*',
                                                   sort="created desc", access_control=access_control,
                                                   as_obj=False)
