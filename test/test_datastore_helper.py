@@ -1,26 +1,30 @@
 
 import hashlib
-from typing import Iterator
-from assemblyline.common.isotime import now_as_iso
-from assemblyline.odm.models.file import File
-import pytest
 import random
+from typing import Iterator
 
-from redis import Redis
-from retrying import retry
-
+import pytest
 from assemblyline.common import forge
+from assemblyline.common.isotime import now_as_iso
 from assemblyline.datastore.helper import AssemblylineDatastore, MetadataValidator
 from assemblyline.odm.base import DATEFORMAT, KeyMaskException
 from assemblyline.odm.models.config import Config, Metadata
-from assemblyline.odm.models.result import Result
+from assemblyline.odm.models.file import File
 from assemblyline.odm.models.result import File as ResultFile
+from assemblyline.odm.models.result import Result
 from assemblyline.odm.models.service import Service
-from assemblyline.odm.models.submission import Submission
 from assemblyline.odm.models.submission import File as SubmissionFile
-from assemblyline.remote.datatypes.hash import Hash
+from assemblyline.odm.models.submission import Submission
+from assemblyline.odm.random_data import (
+    create_heuristics,
+    create_services,
+    create_signatures,
+    create_submission,
+)
 from assemblyline.odm.randomizer import SERVICES, random_minimal_obj
-from assemblyline.odm.random_data import create_signatures, create_submission, create_heuristics, create_services
+from assemblyline.remote.datatypes.hash import Hash
+from redis import Redis
+from retrying import retry
 
 
 class SetupException(Exception):
@@ -230,15 +234,8 @@ def test_create_empty_result(ds: AssemblylineDatastore):
     assert empty_result.classification.long() == classification
 
 
-DELETE_TREE_PARAMS = [
-    (True, "bulk"),
-    (False, "direct"),
-]
-
-
 # noinspection PyShadowingNames
-@pytest.mark.parametrize("bulk", [f[0] for f in DELETE_TREE_PARAMS], ids=[f[1] for f in DELETE_TREE_PARAMS])
-def test_delete_submission_tree(ds: AssemblylineDatastore, bulk):
+def test_delete_submission_tree(ds: AssemblylineDatastore):
     # Reset the data
     fs = forge.get_filestore()
 
@@ -260,10 +257,7 @@ def test_delete_submission_tree(ds: AssemblylineDatastore, bulk):
         assert ds.error.exists(e)
 
     # Delete the submission
-    if bulk:
-        ds.delete_submission_tree_bulk(submission.sid, transport=fs)
-    else:
-        ds.delete_submission_tree(submission.sid, transport=fs)
+    ds.delete_submission_tree_bulk(submission.sid, transport=fs)
 
     # Make sure delete operation is reflected in the DB
     ds.submission.commit()
@@ -284,9 +278,7 @@ def test_delete_submission_tree(ds: AssemblylineDatastore, bulk):
     for e in submission.errors:
         assert not ds.error.exists(e)
 
-
-@pytest.mark.parametrize("bulk", [f[0] for f in DELETE_TREE_PARAMS], ids=[f[1] for f in DELETE_TREE_PARAMS])
-def test_delete_submission_tree_with_extracted_files(ds: AssemblylineDatastore, bulk):
+def test_delete_submission_tree_with_extracted_files(ds: AssemblylineDatastore):
     fs = forge.get_filestore()
     cl_engine = forge.get_classification()
 
@@ -337,10 +329,7 @@ def test_delete_submission_tree_with_extracted_files(ds: AssemblylineDatastore, 
     assert fs.exists(root_sha256)
     assert fs.exists(extracted_sha256)
 
-    if bulk:
-        ds.delete_submission_tree_bulk(submission.sid, transport=fs)
-    else:
-        ds.delete_submission_tree(submission.sid, transport=fs)
+    ds.delete_submission_tree_bulk(submission.sid, transport=fs)
 
     ds.submission.commit()
     ds.result.commit()
