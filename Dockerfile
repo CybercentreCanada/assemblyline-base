@@ -1,6 +1,6 @@
 ARG version
 ARG version_tag=${version}
-FROM python:3.11-slim-bookworm AS base
+FROM python:3.14-slim-bookworm AS base
 
 # Upgrade packages
 RUN apt-get update && apt-get -yy upgrade && rm -rf /var/lib/apt/lists/*
@@ -20,7 +20,7 @@ ARG version_tag=${version}
 # This lets us build from local builds in dist, or from a version in pypi where a --mount won't.
 COPY setup.py dist* dist/
 RUN pip install --no-cache-dir --no-warn-script-location -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
-RUN chmod 750 /root/.local/lib/python3.11/site-packages
+RUN chmod 750 /root/.local/lib/python3.14/site-packages
 
 FROM base
 ARG version
