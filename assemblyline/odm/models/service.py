@@ -33,8 +33,8 @@ class EnvironmentVariable(odm.Model):
 
 @odm.model(index=False, store=False, description="Docker Container Configuration")
 class DockerConfig(odm.Model):
-    allow_internet_access: bool = odm.Boolean(default=False, description="Does the container have internet-access?")
-    command: Opt[list[str]] = odm.Optional(odm.List(odm.Keyword()),
+    allow_internet_access: bool = odm.boolean(default=False, description="Does the container have internet-access?")
+    command: Opt[list[str]] = odm.optional(odm.sequence(odm.keyword()),
                                            description="Command to run when container starts up.")
     cpu_cores: float = odm.Float(default=1.0, description="CPU allocation")
     environment: list[EnvironmentVariable] = odm.List(odm.Compound(EnvironmentVariable), default=[],
@@ -53,7 +53,7 @@ class DockerConfig(odm.Model):
     labels = odm.sequence(odm.compound(EnvironmentVariable), default=[], description="Additional container labels.")
 
 
-@ odm.model(index=False, store=False, description="Container's Persistent Volume Configuration")
+@odm.model(index=False, store=False, description="Container's Persistent Volume Configuration")
 class PersistentVolume(odm.Model):
     mount_path = odm.Keyword(description="Path into the container to mount volume")
     capacity = odm.Keyword(description="The amount of storage allocated for volume")
@@ -69,7 +69,7 @@ class DependencyConfig(odm.Model):
     run_as_core: bool = odm.Boolean(default=False, description="Should this dependency run as other core components?")
 
 
-@ odm.model(index=False, store=False, description="Update Source Configuration")
+@odm.model(index=False, store=False, description="Update Source Configuration")
 class UpdateSource(odm.Model):
     name: str = odm.Keyword(description="Name of source")
     password: Opt[str] = odm.Optional(odm.Keyword(default=""), description="Password used to authenticate with source")
@@ -104,7 +104,7 @@ class UpdateSource(odm.Model):
 
 
 
-@ odm.model(index=False, store=False, description="Update Configuration for Signatures")
+@odm.model(index=False, store=False, description="Update Configuration for Signatures")
 class UpdateConfig(odm.Model):
     generates_signatures = odm.Boolean(index=True, default=False, description="Does the updater produce signatures?")
     sources = odm.List(odm.Compound(UpdateSource), default=[], description="List of external sources")
@@ -117,7 +117,7 @@ class UpdateConfig(odm.Model):
     default_pattern = odm.Text(default=".*", description="Default pattern used for matching files")
 
 
-@ odm.model(index=False, store=False, description="Submission Parameters for Service")
+@odm.model(index=False, store=False, description="Submission Parameters for Service")
 class SubmissionParams(odm.Model):
     default = odm.Any(description="Default value (must match value in `value` field)")
     name = odm.Keyword(description="Name of parameter")
@@ -127,12 +127,12 @@ class SubmissionParams(odm.Model):
     hide = odm.Boolean(default=False, description="Should this parameter be hidden?")
 
 
-@ odm.model(index=True, store=False, description="Service Configuration")
+@odm.model(index=True, store=False, description="Service Configuration")
 class Service(odm.Model):
     # Regexes applied to assemblyline style file type string
     accepts = odm.Keyword(store=True, default=DEFAULT_SERVICE_ACCEPTS,
                           description="Regex to accept files as identified by Assemblyline")
-    auto_update: bool | None = odm.Optional(odm.Boolean(), description="Should the service be auto-updated?")
+    auto_update: bool | None = odm.optional(odm.boolean(), description="Should the service be auto-updated?")
     rejects = odm.Optional(odm.Keyword(store=True, default=DEFAULT_SERVICE_REJECTS),
                            description="Regex to reject files as identified by Assemblyline")
 
@@ -141,18 +141,18 @@ class Service(odm.Model):
     classification = odm.ClassificationString(
         default=Classification.UNRESTRICTED, description="Classification of the service"
     )
-    config = odm.Mapping(odm.Any(), default={}, index=False, store=False, description="Service Configuration")
+    config = odm.mapping(odm.Any(), default={}, index=False, store=False, description="Service Configuration")
     description = odm.Text(store=True, default="NA", copyto="__text__", description="Description of service")
     default_result_classification = odm.ClassificationString(
         default=Classification.UNRESTRICTED, description="Default classification assigned to service results")
-    enabled: bool = odm.Boolean(store=True, default=False, description="Is the service enabled (by default)?")
-    is_external: bool = odm.Boolean(
+    enabled: bool = odm.boolean(store=True, default=False, description="Is the service enabled (by default)?")
+    is_external: bool = odm.boolean(
         default=False, description="Does this service perform analysis outside of Assemblyline?")
-    licence_count: int = odm.Integer(default=0, description="How many licences is the service allowed to use?")
-    min_instances: int = odm.Optional(odm.Integer(), description="The minimum number of service instances. Overrides Scaler's min_instances configuration.")
-    max_queue_length: int = odm.Integer(
-        default=0,
-        description="If more than this many jobs are queued for this service drop those over this limit. 0 is unlimited.")
+    expected_queue_length: None | int = odm.optional(odm.integer(), description="Queue length per service instance.")
+    licence_count: int = odm.integer(default=0, description="How many licences is the service allowed to use?")
+    min_instances: None | int = odm.optional(odm.integer(), description="The minimum number of service instances. Overrides Scaler's min_instances configuration.")
+    max_queue_length: int = odm.integer(default=0, description="If more than this many jobs are queued for "
+                                        "this service drop those over this limit. 0 is unlimited.")
 
     uses_tags: bool = odm.Boolean(
         default=False, description="Does this service use tags from other services for analysis?")
@@ -167,7 +167,7 @@ class Service(odm.Model):
         description="This service watches these temporary keys for changes when partial results are produced.")
 
     name: str = odm.Keyword(store=True, copyto="__text__", description="Name of service")
-    version = odm.Keyword(store=True, description="Version of service")
+    version = odm.keyword(store=True, description="Version of service")
 
     privileged = odm.Boolean(
         default=False,
