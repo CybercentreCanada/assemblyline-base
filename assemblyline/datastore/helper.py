@@ -964,10 +964,10 @@ class AssemblylineDatastore(object):
                     except Exception:
                         log.warning(f"Unable to load screenshots during submission summary. ({section['body']})")
 
-            for htype in out['heuristics']:
-                for heur in out['heuristics'][htype]:
-                    cache_key = f"{heur['heur_id']}_{key}"
-                    heur['signatures'].extend(signatures.get(cache_key, []))
+        for htype in out['heuristics']:
+            for heur in out['heuristics'][htype]:
+                cache_key = f"{heur['heur_id']}_{heur['key']}"
+                heur['signatures'] = list(set(signatures.get(cache_key, [])))
 
         return out
 
