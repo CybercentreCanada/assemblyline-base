@@ -7,6 +7,7 @@ LOADER_CLASS = "assemblyline.odm.messages.expiry_heartbeat.ExpiryMessage"
 @odm.model(description="Expiry Stats")
 class Metrics(odm.Model):
     alert = odm.Integer(description="Number of alerts")
+    apikey = odm.Integer(description="Number of apikeys")
     badlist = odm.Integer(description="Number of badlisted items")
     cached_file = odm.Integer(description="Number of cached files")
     emptyresult = odm.Integer(description="Number of empty results")
@@ -14,6 +15,7 @@ class Metrics(odm.Model):
     file = odm.Integer(description="Number of files")
     filescore = odm.Integer(description="Number of filscores")
     result = odm.Integer(description="Number of results")
+    retrohunt = odm.Integer(description="Number of retrohunt searches")
     retrohunt_hit = odm.Integer(description="Number of retrohunt hits")
     safelist = odm.Integer(description="Number of safelisted items")
     submission = odm.Integer(description="Number of submissions")
