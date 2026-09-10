@@ -534,6 +534,93 @@ def test_get_summary_from_keys(ds: AssemblylineDatastore):
             assert h in heuristics
 
 
+def test_get_summary_from_keys_signature_attribution(ds: AssemblylineDatastore):
+    cl_engine = forge.get_classification()
+
+    sha256_1 = "1" * 64
+    sha256_2 = "2" * 64
+
+    # Save file objects
+    for sha in (sha256_1, sha256_2):
+        file_obj = random_minimal_obj(File)
+        file_obj.sha256 = sha
+        file_obj.classification = cl_engine.UNRESTRICTED
+        ds.file.save(sha, file_obj)
+
+    # Result for file 1 with Heuristic 1000 and duplicate signature 'sig_file1'
+    res_1 = random_minimal_obj(Result)
+    res_1.sha256 = sha256_1
+    res_1.classification = cl_engine.UNRESTRICTED
+    res_1.response.service_name = "service1"
+    res_1.response.service_version = "1.0"
+    res_1.result.sections = [{
+        "auto_collapse": False,
+        "body": "test section 1",
+        "body_format": "TEXT",
+        "classification": cl_engine.UNRESTRICTED,
+        "depth": 0,
+        "heuristic": {
+            "heur_id": "1000",
+            "name": "Heuristic 1000",
+            "attack": [],
+            "signature": [{"name": "sig_file1"}, {"name": "sig_file1"}],
+            "score": 100
+        },
+        "tags": {},
+        "safelisted_tags": {},
+        "title_text": "Section 1"
+    }]
+    key_1 = res_1.build_key()
+    ds.result.save(key_1, res_1)
+
+    # Result for file 2 with Heuristic 1000 and signature 'sig_file2'
+    res_2 = random_minimal_obj(Result)
+    res_2.sha256 = sha256_2
+    res_2.classification = cl_engine.UNRESTRICTED
+    res_2.response.service_name = "service2"
+    res_2.response.service_version = "1.0"
+    res_2.result.sections = [{
+        "auto_collapse": False,
+        "body": "test section 2",
+        "body_format": "TEXT",
+        "classification": cl_engine.UNRESTRICTED,
+        "depth": 0,
+        "heuristic": {
+            "heur_id": "1000",
+            "name": "Heuristic 1000",
+            "attack": [],
+            "signature": [{"name": "sig_file2"}],
+            "score": 100
+        },
+        "tags": {},
+        "safelisted_tags": {},
+        "title_text": "Section 2"
+    }]
+    key_2 = res_2.build_key()
+    ds.result.save(key_2, res_2)
+    ds.result.commit()
+
+    try:
+        summary = ds.get_summary_from_keys([key_1, key_2])
+
+        # Find heuristics by result key
+        heur_1 = next((h for h in summary['heuristics']['info'] if h['key'] == key_1), None)
+        heur_2 = next((h for h in summary['heuristics']['info'] if h['key'] == key_2), None)
+
+        assert heur_1 is not None
+        assert heur_2 is not None
+
+        # Signatures must be deduplicated and attributed ONLY to the corresponding file/result
+        assert heur_1['signatures'] == ['sig_file1']
+        assert heur_2['signatures'] == ['sig_file2']
+    finally:
+        ds.result.delete(key_1)
+        ds.result.delete(key_2)
+        ds.file.delete(sha256_1)
+        ds.file.delete(sha256_2)
+        ds.result.commit()
+
+
 def test_get_tag_list_from_keys(ds: AssemblylineDatastore):
     # Get a random submission
     submission: Submission = ds.submission.search("id:*", rows=1, fl="*")['items'][0]
