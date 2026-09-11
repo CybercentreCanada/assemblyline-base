@@ -34,7 +34,7 @@ jobs:
         python3_14:
           PYTHON_VERSION: "3.14"
 
-    timeoutInMinutes: 20
+    timeoutInMinutes: 10
     steps:
       - checkout: self
         fetchDepth: 1
@@ -51,3 +51,7 @@ jobs:
           docker compose run --build pytest pytest --durations=10 -rsx -vv
         displayName: Test
         workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
+
+      - script: docker compose logs
+        condition: failed()
+        displayName: Setup Logs
