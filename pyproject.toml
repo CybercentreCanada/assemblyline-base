@@ -73,7 +73,13 @@ dependencies = [
 Repository = "https://github.com/CybercentreCanada/assemblyline-base"
 
 [project.optional-dependencies]
-test = ["pytest", "retrying", "pytest-mock", "pyftpdlib", "pyopenssl"]
+test = [
+    "pytest",
+    "retrying",
+    "pytest-mock",
+    "pyftpdlib",
+    "pyopenssl==23.3.0",
+]
 
 [project.scripts]
 al_cli = "assemblyline.run.cli:shell_main"

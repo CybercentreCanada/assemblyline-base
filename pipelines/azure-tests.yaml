@@ -20,135 +20,35 @@ resources:
       ref: main
       endpoint: github-repo-sa
       trigger: ["*"]
-  containers:
-    - container: redis
-      image: redis
-      ports:
-        - 6379:6379
-    - container: sftp
-      image: linuxserver/openssh-server
-      env:
-        SUDO_ACCESS: "false"
-        PASSWORD_ACCESS: "true"
-        USER_PASSWORD: "password"
-        USER_NAME: "user"
-        LOG_STDOUT: "true"
-      ports:
-        - 2222:2222
-    - container: elasticsearch
-      image: docker.elastic.co/elasticsearch/elasticsearch:8.19.3
-      env:
-        xpack.security.enabled: true
-        discovery.type: single-node
-        ES_JAVA_OPTS: "-Xms256m -Xmx512m"
-        ELASTIC_PASSWORD: devpass
-      ports:
-        - 9200:9200
-    - container: minio
-      image: cccs/minio
-      env:
-        MINIO_ROOT_USER: al_storage_key
-        MINIO_ROOT_PASSWORD: Ch@ngeTh!sPa33w0rd
-      ports:
-        - 9000:9000
-    - container: floci
-      image: floci/floci
-      env:
-        FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED: "true"
-      ports:
-        - 4566:4566
 
 jobs:
   - job: run_test
     strategy:
       matrix:
-        python3_10:
-          python.version: "3.10"
         python3_11:
-          python.version: "3.11"
+          PYTHON_VERSION: "3.11"
         python3_12:
-          python.version: "3.12"
+          PYTHON_VERSION: "3.12"
         python3_13:
-          python.version: "3.13"
-        # onnxruntime does not yet support python 3.14 which is needed for magika
-        # https://github.com/microsoft/onnxruntime/issues/26309
-        # python3_14:
-        #   python.version: "3.14"
+          PYTHON_VERSION: "3.13"
+        python3_14:
+          PYTHON_VERSION: "3.14"
 
     timeoutInMinutes: 10
-    services:
-      elasticsearch: elasticsearch
-      sftp: sftp
-      redis: redis
-      minio: minio
-      floci: floci
-
     steps:
       - checkout: self
         fetchDepth: 1
-      - task: UsePythonVersion@0
-        displayName: Set python version
-        inputs:
-          versionSpec: "$(python.version)"
       - script: |
-          sudo mkdir -p /etc/assemblyline/
-          sudo mkdir -p /var/cache/assemblyline/
-          sudo cp pipelines/config.yml /etc/assemblyline
-          sudo chmod a+rw /var/cache/assemblyline/
-          sudo apt-get update
-          sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
-          sudo env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -U pip
-          sudo env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -e .
-          sudo env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -r test/requirements.txt
+          # Move into the test directory for Docker Compose context
+          cd test
+
+          # Start all services except pytest
+          docker compose up -d --wait $(docker compose config --services | grep - v pytest)
+
         displayName: Setup environment
-      - script: python -m pytest --durations=10 -rsx -vv --ignore=test/test_identify.py
+      - script: |
+          # Start up pytest service from Docker Compose and run the tests
+          docker compose -f test/docker-compose.yaml run --build \
+          -v $PWD/assemblyline-unittest-samples:/tmp/samples pytest \
+          pytest --durations=10 -rsx
         displayName: Test
-  - job: run_identify_test_latest
-    container:
-      image: cccstemp.azurecr.io/assemblyline-root-build:latest
-      endpoint: cccstemp
-    timeoutInMinutes: 10
-    steps:
-      - checkout: self
-        fetchDepth: 1
-      - checkout: unittest-samples
-      - script: |
-          set -exv
-          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -U pip cython setuptools wheel
-          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -e assemblyline-base
-          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
-        displayName: Setup environment
-      - script: |
-          set -exv
-          cd assemblyline-unittest-samples
-          git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
-          git status
-          cd ..
-          env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
-        displayName: Test File Identification w/ development nightly
-
-  - job: run_identify_test_stable
-    condition: eq(variables['System.PullRequest.targetBranchName'], 'master')
-    container:
-      image: cccstemp.azurecr.io/assemblyline-root-build:stable
-      endpoint: cccstemp
-    timeoutInMinutes: 10
-    steps:
-      - checkout: self
-        fetchDepth: 1
-      - checkout: unittest-samples
-        fetchDepth: 1
-      - script: |
-          set -exv
-          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -U pip cython setuptools wheel
-          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -e assemblyline-base
-          env "PATH=$PATH" "PIP_USE_PEP517=true" python -m pip install --no-cache-dir -r assemblyline-base/test/requirements.txt
-        displayName: Setup environment
-      - script: |
-          set -exv
-          cd assemblyline-unittest-samples
-          git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
-          git status
-          cd ..
-          env "PATH=$PATH" "SAMPLES_LOCATION=$PWD/assemblyline-unittest-samples" python -m pytest --durations=10 -rsx -vv assemblyline-base/test/test_identify.py
-        displayName: Test File Identification w/ stable nightly
