@@ -42,10 +42,10 @@ jobs:
           # Start all services except pytest
           docker compose up -d --wait $(docker compose config --services | grep -v pytest)
         displayName: Setup environment
-        workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
+        workingDirectory: $(System.DefaultWorkingDirectory)/test
 
       - script: |
           # Start up pytest service from Docker Compose and run the tests
           docker compose run --build pytest pytest --durations=10 -rsx
         displayName: Test
-        workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
+        workingDirectory: $(System.DefaultWorkingDirectory)/test
