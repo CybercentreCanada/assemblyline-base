@@ -30,8 +30,6 @@ RUN apt-get update -yy && apt-get -yy upgrade \
     && apt-get install --no-install-recommends -y $(grep -vE "^\s*(#|$)" required_pkglist.txt | tr "\n" " ") \
     # Update pip to the latest version
     && pip install --upgrade pip \
-    # Upgrade xmlsec to the latest version
-    && pip install --upgrade xmlsec \
     # Install Assemblyline packages in editable mode
     && pip install --no-warn-script-location \
         -e ./assemblyline-base[test] \
