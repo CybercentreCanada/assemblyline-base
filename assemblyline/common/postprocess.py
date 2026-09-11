@@ -231,7 +231,9 @@ class MatchOperation(NodeInterface):
             self.regex = True
         else:
             pattern = fnmatch.translate(self.search)
-            if pattern.endswith('\\z'):
+            # Support different case depending on Python version
+            # Ref: https://github.com/python/cpython/pull/133314
+            if pattern.endswith('\\z') or pattern.endswith('\\Z'):
                 pattern = pattern[0:-2]
             # if pattern.startswith('(?s:') and pattern.endswith(")"):
             #     pattern = pattern[4:-1]
