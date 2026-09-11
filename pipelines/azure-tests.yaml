@@ -53,5 +53,5 @@ jobs:
         workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
 
       - script: docker compose logs
-        condition: failed()
+        condition: always()
         displayName: Setup Logs
