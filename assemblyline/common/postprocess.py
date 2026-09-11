@@ -3,34 +3,16 @@ import operator
 import datetime
 import fnmatch
 import re
-import json
-import threading
 from typing import Any, Union, Optional
 import logging
-import random
-import time
-import asyncio
-import ssl
-import tempfile
-
-import yaml
-import aiohttp
 import lark
 import datemath
 import arrow
 
-from assemblyline.cachestore import CacheStore
-from assemblyline.common.uid import get_random_id
-from assemblyline.common.constants import CONFIG_HASH, POST_PROCESS_CONFIG_KEY
 from assemblyline.odm import base as odm
-from assemblyline.odm.models.actions import DEFAULT_POSTPROCESS_ACTIONS, PostprocessAction, Webhook
 from assemblyline.odm.models.submission import Submission
-from assemblyline.odm.messages.submission import Submission as SubmissionMessage, from_datastore_submission
+from assemblyline.odm.messages.submission import Submission as SubmissionMessage
 from assemblyline.odm.models.tagging import Tagging
-from assemblyline.remote.datatypes.events import EventWatcher
-from assemblyline.remote.datatypes.queues.named import NamedQueue
-from assemblyline.remote.datatypes.queues.priority import PriorityQueue
-from assemblyline.remote.datatypes.hash import Hash
 
 
 logger = logging.getLogger(__name__)
@@ -249,7 +231,7 @@ class MatchOperation(NodeInterface):
             self.regex = True
         else:
             pattern = fnmatch.translate(self.search)
-            if pattern.endswith('\\Z'):
+            if pattern.endswith('\\z'):
                 pattern = pattern[0:-2]
             # if pattern.startswith('(?s:') and pattern.endswith(")"):
             #     pattern = pattern[4:-1]
@@ -568,5 +550,3 @@ class SubmissionFilter:
 
     def __repr__(self) -> str:
         return '<SubmissionFilter ' + str(self.expression) + '>'
-
-
