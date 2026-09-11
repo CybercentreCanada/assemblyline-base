@@ -77,7 +77,7 @@ services:
       SAMPLES_LOCATION: /tmp/samples
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../..}/:/opt/alv4/
+      - ${ROOT_REWRITE:-../..}/assemblyline-base/test:/opt/alv4/assemblyline-base/test
       - ${ROOT_REWRITE:-../..}/unittest-samples:/tmp/samples
     working_dir: /opt/alv4/assemblyline-base
     command: "pytest -vv --full-trace"
