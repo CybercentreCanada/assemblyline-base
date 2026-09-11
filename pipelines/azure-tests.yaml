@@ -40,7 +40,7 @@ jobs:
         fetchDepth: 1
       - script: |
           # Start all services except pytest
-          docker compose -f test/docker-compose.yaml up -d --wait $(docker compose config --services | grep - v pytest)
+          docker compose up -d --wait $(docker compose config --services | grep - v pytest)
         displayName: Setup environment
         workingDirectory: $(System.DefaultWorkingDirectory)/test
 
