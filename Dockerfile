@@ -18,7 +18,7 @@ ARG version_tag=${version}
 # Install assemblyline base (setup.py is just a file we know exists so the command
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
 # This lets us build from local builds in dist, or from a version in pypi where a --mount won't.
-COPY setup.py dist* dist/
+COPY pyproject.toml dist* dist/
 RUN pip install --no-cache-dir --no-warn-script-location -f dist/ --user assemblyline==$version && rm -rf ~/.cache/pip
 RUN chmod 750 /root/.local/lib/python3.14/site-packages
 
@@ -52,7 +52,7 @@ RUN chown assemblyline:assemblyline /var/log/assemblyline
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
-ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.11/site-packages
+ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.14/site-packages
 ENV ASSEMBLYLINE_VERSION=$version
 ENV ASSEMBLYLINE_IMAGE_TAG=$version_tag
 
