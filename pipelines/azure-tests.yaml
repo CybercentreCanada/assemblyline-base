@@ -40,13 +40,12 @@ jobs:
         fetchDepth: 1
       - script: |
           # Start all services except pytest
-          docker compose up -d --wait $(docker compose config --services | grep - v pytest)
+          docker compose up -d --wait $(docker compose config --services | grep -v pytest)
         displayName: Setup environment
         workingDirectory: $(System.DefaultWorkingDirectory)/test
 
       - script: |
           # Start up pytest service from Docker Compose and run the tests
-          docker compose version
           docker compose run --build pytest pytest --durations=10 -rsx
         displayName: Test
         workingDirectory: $(System.DefaultWorkingDirectory)/test
