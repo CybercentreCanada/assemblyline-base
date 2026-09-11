@@ -38,6 +38,7 @@ jobs:
     steps:
       - checkout: self
         fetchDepth: 1
+      - checkout: unittest-samples
       - script: |
           # Start all services except pytest
           docker compose up -d --wait $(docker compose config --services | grep -v pytest)
