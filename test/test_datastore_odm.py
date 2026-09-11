@@ -1,20 +1,17 @@
 import logging
 import os
-
-import pytest
 import random
 import string
 import warnings
 
+import pytest
+from assemblyline.datastore.collection import log
+from assemblyline.datastore.exceptions import SearchException
+from assemblyline.datastore.support.build import back_mapping
 from datemath import dm
 from retrying import retry
 
 from assemblyline import odm
-from assemblyline.datastore.collection import log
-from assemblyline.datastore.exceptions import SearchException
-from assemblyline.datastore.support.build import back_mapping
-from assemblyline.odm import Mapping
-
 
 log.setLevel(logging.INFO)
 yml_config = os.path.join(os.path.dirname(__file__), "classification.yml")
@@ -140,7 +137,7 @@ def setup_store(docstore, request):
 @pytest.fixture(scope='module')
 def es_store():
     from assemblyline.datastore.store import ESStore
-    store = ESStore(['http://elastic:devpass@127.0.0.1:9200'])
+    store = ESStore(['http://elastic:devpass@localhost:9200'])
     ret_val = store.ping()
     if ret_val:
         return store
@@ -366,7 +363,7 @@ def _test_fields(col, _):
     db_fields = col.fields()
     model_fields = BaseTestModel.flat_fields()
     for k, v in model_fields.items():
-        if isinstance(v, Mapping):
+        if isinstance(v, odm.Mapping):
             continue
         else:
             f_type = back_mapping[db_fields[k]['type']]
