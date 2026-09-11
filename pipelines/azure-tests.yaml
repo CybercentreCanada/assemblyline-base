@@ -47,6 +47,7 @@ jobs:
 
       - script: |
           # Start up pytest service from Docker Compose and run the tests
-          docker compose run --build pytest pytest --durations=10 -rsx
+          docker compose ps
+          docker compose run --build pytest
         displayName: Test
         workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
