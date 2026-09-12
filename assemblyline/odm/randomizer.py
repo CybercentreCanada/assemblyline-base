@@ -360,6 +360,12 @@ def random_data_for_field(field, name: str, minimal: bool = False) -> _Any:
     elif isinstance(field, UpperKeyword):
         return get_random_word().upper()
     elif isinstance(field, ValidatedKeyword):
+        # Check if we are trying to generate something that is a DOMAIN_REGEX
+        # It is much faster to generate a random host, than use the overly large list of possible values
+        if '\\u00a1-\\U0010ffff' in field.validation_regex.pattern:
+            value = get_random_host()
+            if field.validation_regex.match(value):
+                return value
         # Generate value based on regex pattern
         return rstr.xeger(field.validation_regex)
     elif isinstance(field, Keyword) or isinstance(field, EmptyableKeyword):
