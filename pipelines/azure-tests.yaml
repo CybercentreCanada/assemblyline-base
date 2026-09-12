@@ -34,7 +34,7 @@ jobs:
         python3_14:
           PYTHON_VERSION: "3.14"
 
-    timeoutInMinutes: 20
+    timeoutInMinutes: 10
     steps:
       - checkout: self
         fetchDepth: 1
@@ -42,27 +42,19 @@ jobs:
       - script: |
           # Start all services except pytest
           docker compose up -d --wait $(docker compose config --services | grep -v pytest)
-          free -h; docker stats --no-stream
         displayName: Setup environment
         workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
 
       - script: |
           # Start up pytest service from Docker Compose and run the tests
-          docker compose ps
-          docker compose run --build pytest pytest --durations=10 -rsx -vv --color=yes -o faulthandler_timeout=600 --junitxml=/opt/alv4/assemblyline-base/test-results.xml
+          docker compose run --build pytest pytest --durations=10 -rsx -vv --color=yes --junitxml=/opt/alv4/assemblyline-base/test/test-results.xml
         displayName: Test
         workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
-
-      - script: |
-          free -h; docker stats --no-stream
-          docker compose logs
-        condition: always()
-        displayName: Setup Logs
 
       - task: PublishTestResults@2
         condition: always()
         displayName: Publish test results
         inputs:
-          testResultsFiles: "assemblyline-base/test-results.xml"
+          testResultsFiles: "assemblyline-base/test/test-results.xml"
           searchFolder: $(System.DefaultWorkingDirectory)
           testRunTitle: "python$(PYTHON_VERSION)"
