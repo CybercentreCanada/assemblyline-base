@@ -43,8 +43,10 @@ services:
       - xpack.security.enabled=true
       - discovery.type=single-node
       - logger.level=WARN
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - ELASTIC_PASSWORD=devpass
+    tmpfs:
+      - /usr/share/elasticsearch/data
     ports:
       - "9200:9200"
     healthcheck:
@@ -75,6 +77,7 @@ services:
         - PYTHON_VERSION=${PYTHON_VERSION:-3.14}
     environment:
       SAMPLES_LOCATION: /tmp/samples
+      PYTHONUNBUFFERED: "1"
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
       - ${ROOT_REWRITE:-../..}/assemblyline-base/test:/opt/alv4/assemblyline-base/test
