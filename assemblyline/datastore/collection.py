@@ -1142,6 +1142,27 @@ class ESCollection(Generic[ModelType]):
 
         return deleted
 
+    def simple_delete_by_query(self, query, sort=None, max_docs=None, index_type=None, slices='auto') -> int:
+        """A simpler delete by query function specialized for how expiry uses this api.
+
+        :param query: Query of the documents to download
+        :param sort: In which order to delete the documens
+        :param max_docs: maximum number of documents to delete
+        :param index_type: Type of indices to target
+        :param slices: Number of server side slices to break the query into
+        :return: number of deleted documents
+        """
+        index = self.get_joined_index(index_type)
+        query = {"bool": {"must": {"query_string": {"query": query}}}}
+        sort = sort_str(parse_sort(sort))
+
+        task = self.with_retries(self.datastore.client.delete_by_query, index=index,
+                                 query=query, wait_for_completion=False, conflicts='proceed',
+                                 sort=sort, max_docs=max_docs, slices=slices)
+        res = self.datastore._get_task_results(task, retry_function=self.with_retries)
+
+        return res.get('deleted', 0)
+
     def delete_by_query(self, query, sort=None, max_docs=None, index_type=None):
         """
         This function should delete the underlying documents referenced by the query.
