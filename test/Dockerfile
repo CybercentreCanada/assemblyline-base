@@ -27,8 +27,6 @@ RUN apt-get update -yy && apt-get -yy upgrade \
     && pip install --upgrade pip \
     # Install Assemblyline packages in editable mode
     && pip install ./assemblyline-base[test] \
-    # Clean up installed Assemblyline packages
-    && pip uninstall -y assemblyline-base \
     # Remove system packages used for building Python dependencies
     && apt-get purge -y $(grep -vE "^\s*(#|$)" compile_pkglist.txt | tr "\n" " ") && apt-get autoremove -y \
     # Remove pip cache and apt lists

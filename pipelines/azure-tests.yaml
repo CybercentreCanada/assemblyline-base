@@ -38,17 +38,23 @@ jobs:
     steps:
       - checkout: self
         fetchDepth: 1
+      - checkout: unittest-samples
       - script: |
-          # Move into the test directory for Docker Compose context
-          cd test
-
           # Start all services except pytest
-          docker compose up -d --wait $(docker compose config --services | grep - v pytest)
-
+          docker compose up -d --wait $(docker compose config --services | grep -v pytest)
         displayName: Setup environment
+        workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
+
       - script: |
           # Start up pytest service from Docker Compose and run the tests
-          docker compose -f test/docker-compose.yaml run --build \
-          -v $PWD/assemblyline-unittest-samples:/tmp/samples pytest \
-          pytest --durations=10 -rsx
+          docker compose run --build pytest pytest --durations=10 -rsx -vv --color=yes --junitxml=/opt/alv4/assemblyline-base/test/test-results.xml
         displayName: Test
+        workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-base/test
+
+      - task: PublishTestResults@2
+        condition: always()
+        displayName: Publish test results
+        inputs:
+          testResultsFiles: "assemblyline-base/test/test-results.xml"
+          searchFolder: $(System.DefaultWorkingDirectory)
+          testRunTitle: "python$(PYTHON_VERSION)"

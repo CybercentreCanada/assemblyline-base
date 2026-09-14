@@ -43,8 +43,10 @@ services:
       - xpack.security.enabled=true
       - discovery.type=single-node
       - logger.level=WARN
-      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - ELASTIC_PASSWORD=devpass
+    tmpfs:
+      - /usr/share/elasticsearch/data
     ports:
       - "9200:9200"
     healthcheck:
@@ -75,9 +77,10 @@ services:
         - PYTHON_VERSION=${PYTHON_VERSION:-3.14}
     environment:
       SAMPLES_LOCATION: /tmp/samples
+      PYTHONUNBUFFERED: "1"
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../..}/:/opt/alv4/
+      - ${ROOT_REWRITE:-../..}/assemblyline-base/test:/opt/alv4/assemblyline-base/test
       - ${ROOT_REWRITE:-../..}/unittest-samples:/tmp/samples
     working_dir: /opt/alv4/assemblyline-base
     command: "pytest -vv --full-trace"
