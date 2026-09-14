@@ -1154,6 +1154,14 @@ class Tagging(odm.Model):
                 odm.List(odm.Keyword(copyto="__text__")),
                 description="Potential MAC addresses recovered from the shortcut tracker block.",
             )
+            sid = odm.Optional(
+                odm.List(odm.Keyword(copyto="__text__")),
+                description="Security Identifier of the user who created the shortcut",
+            )
+            drive_serial = odm.Optional(
+                odm.List(odm.Keyword(copyto="__text__")),
+                description="Drive Serial Number",
+            )
 
         @odm.model(
             index=True,
