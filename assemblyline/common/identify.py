@@ -635,7 +635,7 @@ def uri_ident(path: str, info: Dict) -> str:
     return f"uri/{u.scheme}"
 
 
-if __name__ == "__main__":
+def shell_main():
     from pprint import pprint
 
     use_cache = True
@@ -682,3 +682,6 @@ if __name__ == "__main__":
                 )
             )
             name = sys.stdin.readline().strip()
+
+if __name__ == "__main__":
+    shell_main()
