@@ -80,7 +80,7 @@ services:
       PYTHONUNBUFFERED: "1"
     volumes:
       - ${PATH_REWRITE:-.}/config/:/etc/assemblyline/
-      - ${ROOT_REWRITE:-../..}/assemblyline-base/test:/opt/alv4/assemblyline-base/test
+      - ${ROOT_REWRITE:-../}:/opt/alv4/assemblyline-base
       - ${ROOT_REWRITE:-../..}/unittest-samples:/tmp/samples
     working_dir: /opt/alv4/assemblyline-base
     command: "pytest -vv --full-trace"

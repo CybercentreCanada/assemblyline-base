@@ -83,6 +83,7 @@ test = [
 
 [project.scripts]
 al_cli = "assemblyline.run.cli:shell_main"
+al_identify = "assemblyline.common.identify:shell_main"
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"], content-type = "text/markdown" }
