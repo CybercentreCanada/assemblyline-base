@@ -1272,7 +1272,7 @@ rule code_wsf {
         $ = /<script\s+?language=/
 
     condition:
-        mime startswith "text"
+        (mime startswith "text" or mime == "application/x-pem-file")
         and all of them
 }
 

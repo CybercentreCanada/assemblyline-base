@@ -1,5 +1,0 @@
-pytest
-retrying
-pytest-mock
-pyftpdlib
-pyopenssl==23.3.0

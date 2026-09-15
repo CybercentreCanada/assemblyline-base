@@ -1,16 +1,14 @@
 import random
 import string
-import warnings
 import uuid
-
+import warnings
 from copy import copy
-from datemath import dm
-from retrying import retry
-import pytest
 
+import pytest
 from assemblyline.datastore.collection import ESCollection, Index
 from assemblyline.datastore.exceptions import VersionConflictException
-
+from datemath import dm
+from retrying import retry
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -125,7 +123,7 @@ def es_connection(request):
     from assemblyline.datastore.store import ESStore
 
     try:
-        collection = setup_store(ESStore(['http://elastic:devpass@127.0.0.1:9200']), request)
+        collection = setup_store(ESStore(['http://elastic:devpass@localhost:9200']), request)
     except SetupException:
         collection = None
 
