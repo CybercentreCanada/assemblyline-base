@@ -33,6 +33,9 @@ UNC_PATH_COMP = re.compile(UNC_PATH_REGEX)
     (".://site.com/?e=stuff", False),
     ("-urihttps://site.com/", False),
     ("+://site.com/", False),
+    ("http://[::1]", True),
+    ("http://_wildcard_.blah.com", True),
+    ("http://_wildcard_.com", False),
 ])
 def test_full_uri_regex(value, ismatch):
     if ismatch:
