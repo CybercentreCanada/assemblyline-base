@@ -175,7 +175,7 @@ class TransportS3(Transport):
                 },
             )
 
-            if response['Errors']:
+            if response.get('Errors'):
                 raise TransportException('Could not delete some member of batch', response['Errors'][0]['Message'])
 
     def exists(self, path):
