@@ -40,7 +40,8 @@ UNC_PATH_COMP = re.compile(UNC_PATH_REGEX)
     ("http://.example.com", False),
     ("http://-.example.com", True),
     ("http://_one_._two_.example.com", True),
-    ("http://-_-.-_-.-_-.-_-.-_-.example.com", True)
+    ("http://-_-.-_-.-_-.-_-.-_-.example.com", True),
+    ("http://ü.example.com", True),
 ])
 def test_full_uri_regex(value, ismatch):
     if ismatch:
