@@ -43,29 +43,31 @@ def is_valid_domain(domain: str) -> bool:
     if "@" in domain or not domain:
         return False
 
+    # Normalize domain to punnycode uppercase
+    if not domain.isascii():
+        try:
+            domain = domain.encode('idna').decode('ascii')
+        except ValueError:
+            return False
+    domain = domain.upper()
+
     labels = domain.split(".")
+    if len(labels) < 2:
+        return False
+
     for label in labels:
         if not label or label.startswith("-") or label.endswith("-"):
             return False
         if not all(c.isalnum() or c == "-" for c in label):
             return False
 
-    if len(labels) < 2:
-        return False
-
-    tld = labels[-1].upper()
-    if not tld.isascii():
-        try:
-            tld = tld.encode('idna').decode('ascii').upper()
-        except ValueError:
-            return False
+    tld = labels[-1]
 
     combined_tlds = find_top_level_domains()
     if tld in combined_tlds:
         return True
 
-    domain_upper = domain.upper()
-    return any(domain_upper.endswith(d) for d in TLDS_SPECIAL_BY_DOMAIN)
+    return any(domain.endswith(d) for d in TLDS_SPECIAL_BY_DOMAIN)
 
 
 def is_valid_ip(ip: str) -> bool:
