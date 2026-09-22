@@ -42,6 +42,9 @@ UNC_PATH_COMP = re.compile(UNC_PATH_REGEX)
     ("http://_one_._two_.example.com", True),
     ("http://-_-.-_-.-_-.-_-.-_-.example.com", True),
     ("http://ü.example.com", True),
+    # Test uppercase
+    ("http://EXAMPLE.COM/", True),
+    ("http://EXAMPLE.COM@EXAMPLE.COM/", True),
 ])
 def test_full_uri_regex(value, ismatch):
     if ismatch:
