@@ -43,7 +43,7 @@ def is_valid_domain(domain: str) -> bool:
     if "@" in domain or not domain:
         return False
 
-    # Normalize domain to punnycode uppercase
+    # Normalize domain to punycode uppercase
     if not domain.isascii():
         try:
             domain = domain.encode('idna').decode('ascii')
