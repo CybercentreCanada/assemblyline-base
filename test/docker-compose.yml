@@ -16,7 +16,7 @@ services:
       retries: 5
 
   floci:
-    image: floci/floci
+    image: floci/floci:2.0.0
     environment:
       - FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED=true
     ports:
