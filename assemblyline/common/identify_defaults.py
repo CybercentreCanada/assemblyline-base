@@ -449,8 +449,6 @@ trusted_mimes = {
     "application/x-chrome-extension": "application/chrome/extension",
     # Android
     "application/vnd.android.package-archive": "android/apk",
-    # Windows executables
-    "application/vnd.microsoft.portable-executable": "executable/windows/pe",
 }
 
 # LibMagic mimetypes that we will fallback to when we can't determine a type

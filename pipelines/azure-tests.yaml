@@ -17,7 +17,6 @@ resources:
     - repository: unittest-samples
       type: github
       name: $(unittest_samples_repository)
-      ref: main
       endpoint: github-repo-sa
       trigger: ["*"]
 
@@ -39,6 +38,15 @@ jobs:
       - checkout: self
         fetchDepth: 1
       - checkout: unittest-samples
+
+      - script: |
+          # Checkout the branch corresponding to the pull request or the current branch
+          set -xv
+          git checkout -b $BRANCH_NAME -t origin/$BRANCH_NAME || true
+          git status
+        displayName: Checkout branch
+        workingDirectory: $(System.DefaultWorkingDirectory)/assemblyline-unittest-samples
+
       - script: |
           # Start all services except pytest
           docker compose up -d --wait $(docker compose config --services | grep -v pytest)
