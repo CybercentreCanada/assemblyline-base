@@ -242,6 +242,7 @@ magic_patterns = [
 ]
 
 # LibMagic mimetypes that we blindly trust to assign an Assemblyline type
+# Ref: https://www.rfc-editor.org/info/rfc6838/#section-3.2 for vendor-specific MIMEs
 trusted_mimes = {
     # Mpeg Audio
     "audio/mp2": "audio/mp2",
@@ -448,6 +449,8 @@ trusted_mimes = {
     "application/x-chrome-extension": "application/chrome/extension",
     # Android
     "application/vnd.android.package-archive": "android/apk",
+    # Windows executables
+    "application/vnd.microsoft.portable-executable": "executable/windows/pe",
 }
 
 # LibMagic mimetypes that we will fallback to when we can't determine a type
