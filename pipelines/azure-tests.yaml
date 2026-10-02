@@ -17,6 +17,7 @@ resources:
     - repository: unittest-samples
       type: github
       name: $(unittest_samples_repository)
+      ref: main
       endpoint: github-repo-sa
       trigger: ["*"]
 
