@@ -1,13 +1,16 @@
+import logging
 import os
 import tempfile
 import threading
 import traceback
 import uuid
 import time
+from unittest.mock import MagicMock
 
 import pytest
 from assemblyline.filestore import FileStore
 from assemblyline.filestore.transport.base import TransportException
+from assemblyline.filestore.transport.s3 import TransportS3
 
 _temp_body_a = b'temporary file string'
 
@@ -217,6 +220,24 @@ def test_s3_aws():
     del os.environ['AWS_DEFAULT_REGION']
     os.remove(token_file_path)
 
+
+def test_s3_delete_batch_quiet_success():
+    """
+    Test S3 delete_batch suceeds without Errors in the response.
+    """
+    transport = TransportS3.__new__(TransportS3)
+    transport.bucket = "test-bucket"
+    transport.retry_limit = None
+    transport.use_batch_delete = True
+    transport.normalize = lambda path: path
+    transport.log = logging.getLogger("test_s3_delete_batch_quiet_success")
+    transport.client = MagicMock()
+    # mimic real response behavior when whole batch succeeds; no 'Errors' key
+    transport.client.delete_objects.return_value = {
+        "ResponseMetadata": {"HTTPStatusCode": 200},
+    }
+
+    transport.delete_batch(["a", "b", "c"])
 
 
 def common_actions(fs, check_listing=True):
