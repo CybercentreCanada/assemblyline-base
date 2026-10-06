@@ -394,15 +394,10 @@ class Identify:
                         pass
             elif data["mime"] == "application/x-coff":
                 # We recognize this as a COFF (Common Object File Format) executable for Linux
-                if any(data["magic"].startswith(f"Intel {arch}") for arch in ["80386" "i386", "80386"]):
+                if data["magic"].startswith("Intel i386") or data["magic"].startswith("Intel 80386"):
                     # This indicates a 32-bit COFF executable for Linux
                     data["type"] = "executable/linux/coff32"
-                else:
-                    # Otherwise, assume a 64-bit COFF executable for Linux
-                    data["type"] = "executable/linux/coff64"
-
-                return data
-
+                    return data
             if data["type"] == "text/plain":
                 # Check if the file is a misidentified json first before running the yara rules
                 try:
