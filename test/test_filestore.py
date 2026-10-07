@@ -3,7 +3,6 @@ import tempfile
 import threading
 import traceback
 import uuid
-import time
 
 import pytest
 from assemblyline.filestore import FileStore
@@ -247,7 +246,8 @@ def common_actions(fs, check_listing=True):
         # Read a file body by download
         temp_file_name = os.path.join(temp_dir, 'scratch')
         fs.download('upload/b', temp_file_name)
-        assert open(temp_file_name, 'rb').read() == _temp_body_a
+        with open(temp_file_name, 'rb') as temp_file:
+            assert temp_file.read() == _temp_body_a
 
     assert fs.exists('put')
     fs.delete('put')

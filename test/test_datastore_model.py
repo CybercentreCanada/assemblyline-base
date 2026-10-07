@@ -1,10 +1,7 @@
 import pytest
-
-from retrying import retry
-
-from assemblyline.datastore.store import ESStore
 from assemblyline.datastore.exceptions import SearchException
-from assemblyline.odm import Model, Mapping, Classification
+from assemblyline.datastore.store import ESStore
+from assemblyline.odm import Classification, Mapping, Model
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
@@ -14,6 +11,7 @@ from assemblyline.odm.models.file import File
 from assemblyline.odm.models.filescore import FileScore
 from assemblyline.odm.models.heuristic import Heuristic
 from assemblyline.odm.models.result import Result
+from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.service import Service
 from assemblyline.odm.models.service_delta import ServiceDelta
 from assemblyline.odm.models.signature import Signature
@@ -23,9 +21,9 @@ from assemblyline.odm.models.submission_tree import SubmissionTree
 from assemblyline.odm.models.user import User
 from assemblyline.odm.models.user_favorites import UserFavorites
 from assemblyline.odm.models.user_settings import UserSettings
-from assemblyline.odm.models.safelist import Safelist
 from assemblyline.odm.models.workflow import Workflow
-from assemblyline.odm.randomizer import random_model_obj, random_minimal_obj
+from assemblyline.odm.randomizer import random_minimal_obj, random_model_obj
+from retrying import retry
 
 
 class SetupException(Exception):
@@ -46,7 +44,7 @@ def setup_store(docstore):
 @pytest.fixture(scope='module')
 def es_datastore():
     try:
-        document_store = setup_store(ESStore(['http://elastic:devpass@127.0.0.1:9200']))
+        document_store = setup_store(ESStore(['http://elastic:devpass@localhost:9200']))
     except SetupException:
         document_store = None
 

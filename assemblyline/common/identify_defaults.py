@@ -113,6 +113,7 @@ magic_patterns = [
     {"al_type": "executable/windows/ia/pe64", "regex": r"pe32\+?[^\|]+Intel Itanium[^\|]+windows"},
     {"al_type": "executable/windows/arm/dll64", "regex": r"pe32\+?[^\|]+dll[^\|]+Aarch64[^\|]+windows"},
     {"al_type": "executable/windows/arm/pe64", "regex": r"pe32\+?[^\|]+Aarch64[^\|]+windows"},
+    {"al_type": "executable/windows/pe64", "regex": r"pe with unknown[^\|]+windows[^\|]+x86-64"},
     {"al_type": "executable/windows/pe", "regex": r"pe unknown[^\|]+windows"},
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L183
     # Supported by https://github.com/mitre/multiscanner/blob/86e0145ba3c4a34611f257dc78cd2482ed6358db/multiscanner/modules/Metadata/fileextensions.py#L185
@@ -131,7 +132,7 @@ magic_patterns = [
     {"al_type": "executable/linux/coff32", "regex": r"^(Intel 80386|i386|80386) COFF"},
     {"al_type": "executable/linux/coff64", "regex": r"^64-bit XCOFF"},
     {"al_type": "executable/linux/ia/coff64", "regex": r"^Intel ia64 COFF"},
-    {"al_type": "executable/linux/misp/ecoff", "regex": r"^MIPS[^\|]+ ECOFF"},
+    {"al_type": "executable/linux/mips/ecoff", "regex": r"^MIPS[^\|]+ ECOFF"},
     {"al_type": "executable/linux/a.out", "regex": r"^a.out"},
     # Supported by https://github.com/EmersonElectricCo/fsf/blob/15303aa298414397f9aa5d19ca343040a0fe0bbd/fsf-server/yara/ft_macho.yara
     {"al_type": "executable/mach-o", "regex": r"^Mach-O"},
@@ -242,6 +243,7 @@ magic_patterns = [
 ]
 
 # LibMagic mimetypes that we blindly trust to assign an Assemblyline type
+# Ref: https://www.rfc-editor.org/info/rfc6838/#section-3.2 for vendor-specific MIMEs
 trusted_mimes = {
     # Mpeg Audio
     "audio/mp2": "audio/mp2",

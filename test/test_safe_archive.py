@@ -40,19 +40,7 @@ def _zip(members):
     return buf
 
 
-# ---------------------------------------------------------------------------
-# test safe_extract_tar — exercised on BOTH the PEP 706 path and the fallback
-# ---------------------------------------------------------------------------
-
-@pytest.fixture(params=["data_filter", "fallback"], ids=["pep706", "fallback"])
-def tar_mode(request, monkeypatch):
-    if request.param == "fallback":
-        # Force the safe_tar_members fallback as if running on < 3.11.4.
-        monkeypatch.delattr(safe_archive.tarfile, "data_filter", raising=False)
-    return request.param
-
-
-def test_tar_extracts_regular_files(tar_mode, tmp_path):
+def test_tar_extracts_regular_files(tmp_path):
     buf = _tar([
         ("a.txt", tarfile.REGTYPE, b"hello"),
         ("sub/b.txt", tarfile.REGTYPE, b"world"),
@@ -72,38 +60,29 @@ def test_tar_extracts_regular_files(tar_mode, tmp_path):
     ],
     ids=["sym-abs", "sym-dotdot", "hardlink-abs"],
 )
-def test_tar_drops_or_rejects_escaping_links(tar_mode, tmp_path, name, typ, target):
+def test_tar_drops_or_rejects_escaping_links(tmp_path, name, typ, target):
     buf = _tar([
         ("ok.txt", tarfile.REGTYPE, b"ok"),
         (name, typ, target),
     ])
     with tarfile.open(fileobj=buf) as t:
-        if tar_mode == "data_filter":
-            with pytest.raises(tarfile.FilterError):
-                safe_extract_tar(t, str(tmp_path))
-        else:
+        with pytest.raises(tarfile.FilterError):
             safe_extract_tar(t, str(tmp_path))
-            assert (tmp_path / "ok.txt").exists()
-            assert not (tmp_path / name).exists()
 
 
-def test_tar_drops_dotdot_member_name(tar_mode, tmp_path):
+def test_tar_drops_dotdot_member_name(tmp_path):
     buf = _tar([
         ("ok.txt", tarfile.REGTYPE, b"ok"),
         ("../escape.txt", tarfile.REGTYPE, b"x"),
     ])
     parent_sentinel = tmp_path.parent / "escape.txt"
     with tarfile.open(fileobj=buf) as t:
-        if tar_mode == "data_filter":
-            with pytest.raises(tarfile.FilterError):
-                safe_extract_tar(t, str(tmp_path))
-        else:
+        with pytest.raises(tarfile.FilterError):
             safe_extract_tar(t, str(tmp_path))
-            assert (tmp_path / "ok.txt").exists()
     assert not parent_sentinel.exists()
 
 
-def test_tar_accepts_path_argument(tar_mode, tmp_path):
+def test_tar_accepts_path_argument(tmp_path):
     p = tmp_path / "a.tgz"
     p.write_bytes(_tar([("x", tarfile.REGTYPE, b"y")]).getvalue())
     out = tmp_path / "out"

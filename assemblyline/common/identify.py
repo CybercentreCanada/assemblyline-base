@@ -392,7 +392,12 @@ class Identify:
                             return data
                     except Exception:
                         pass
-
+            elif data["mime"] == "application/x-coff":
+                # We recognize this as a COFF (Common Object File Format) executable for Linux
+                if data["magic"].startswith("Intel i386") or data["magic"].startswith("Intel 80386"):
+                    # This indicates a 32-bit COFF executable for Linux
+                    data["type"] = "executable/linux/coff32"
+                    return data
             if data["type"] == "text/plain":
                 # Check if the file is a misidentified json first before running the yara rules
                 try:
@@ -635,7 +640,7 @@ def uri_ident(path: str, info: Dict) -> str:
     return f"uri/{u.scheme}"
 
 
-if __name__ == "__main__":
+def shell_main():
     from pprint import pprint
 
     use_cache = True
@@ -682,3 +687,6 @@ if __name__ == "__main__":
                 )
             )
             name = sys.stdin.readline().strip()
+
+if __name__ == "__main__":
+    shell_main()
