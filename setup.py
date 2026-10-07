@@ -47,6 +47,7 @@ setup(
         'redis',
         'requests[socks]',
         'elasticsearch>=8.0.0,<9.0.0',
+        'opensearch-py>=2.8.0,<3.0.0',
         'python-datemath!=3.0.2',
         'packaging',
         'PyYAML',
