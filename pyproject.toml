@@ -8,7 +8,7 @@ description = "Assemblyline 4 - Automated malware analysis framework"
 license = "MIT"
 requires-python = ">=3.11"
 version = "4.0.0.dev0"
-dynamic = ["readme"]
+dynamic = ["readme", "version"]
 authors = [
     { name = "CCCS Assemblyline development team", email = "assemblyline@cyber.gc.ca" },
 ]
@@ -87,6 +87,7 @@ al_identify = "assemblyline.common.identify:shell_main"
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"], content-type = "text/markdown" }
+version = { attr = ["assemblyline.__version__"] }
 
 [tool.setuptools.packages.find]
 exclude = ["test", "test/*"]
