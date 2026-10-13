@@ -87,7 +87,7 @@ al_identify = "assemblyline.common.identify:shell_main"
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"], content-type = "text/markdown" }
-version = { attr = ["assemblyline.__version__"] }
+version = { attr = "assemblyline.__version__" }
 
 [tool.setuptools.packages.find]
 exclude = ["test", "test/*"]
