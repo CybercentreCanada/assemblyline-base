@@ -3,7 +3,6 @@ import tempfile
 import threading
 import traceback
 import uuid
-import time
 
 import pytest
 from assemblyline.filestore import FileStore
@@ -216,8 +215,6 @@ def test_s3_aws():
     del os.environ['AWS_WEB_IDENTITY_TOKEN_FILE']
     del os.environ['AWS_DEFAULT_REGION']
     os.remove(token_file_path)
-
-
 
 def common_actions(fs, check_listing=True):
     # Make sure a missing file returns None

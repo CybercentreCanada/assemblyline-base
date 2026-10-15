@@ -160,7 +160,10 @@ class TransportS3(Transport):
             return 1
 
     def delete_batch(self, file_list: Iterable[str]):
-        """Deletes a batch of files."""
+        """Deletes a batch of files using the DeleteObjects API.
+
+        Reference: https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
+        """
         if not self.use_batch_delete:
             return super().delete_batch(file_list)
 
@@ -175,7 +178,9 @@ class TransportS3(Transport):
                 },
             )
 
-            if response['Errors']:
+            # Check if there any errors returned as part of the response
+            if response.get('Errors'):
+                # If there are errors, we raise an exception with the first error message.
                 raise TransportException('Could not delete some member of batch', response['Errors'][0]['Message'])
 
     def exists(self, path):
