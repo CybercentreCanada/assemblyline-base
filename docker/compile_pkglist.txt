@@ -1,0 +1,9 @@
+# base
+build-essential
+# lxml (ui)
+pkg-config
+libxslt1-dev
+libxmlsec1-openssl
+zlib1g-dev
+# python-ldap (ui)
+libsasl2-dev

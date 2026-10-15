@@ -1,0 +1,7 @@
+# base
+libmagic1
+
+# ui
+libxml2-dev
+libxmlsec1-dev
+libldap2-dev
