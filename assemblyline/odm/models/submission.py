@@ -148,6 +148,8 @@ class Submission(odm.Model):
     metadata: dict[str, str] = odm.FlatMapping(odm.MetadataValue(), default={}, store=False, copyto="__text__", description="Metadata associated with the submission.")
     params: SubmissionParams = odm.Compound(SubmissionParams, description="Submission parameter details.", ai=False)
     results: list[str] = odm.List(odm.wildcard(), store=False, description="List of result keys from the submission.", ai=False)
+    # NEW FIELD: optimized lookup for file SHA256s (performance fix)
+    file_sha256s: list[str] = odm.List(odm.SHA256(),store=False,description="Denormalized list of all SHA256 hashes (files + results) for fast lookup.")
     sid: str = odm.UUID(copyto="__text__", description="The ID associated with a submission.")
     state = odm.Enum(values=SUBMISSION_STATES, description="State of the submission (ie. completed).", ai=False)
     to_be_deleted = odm.Boolean(
@@ -168,3 +170,23 @@ class Submission(odm.Model):
 
     def is_initial(self):
         return self.is_submit() and not self.params.psid
+
+    def build_file_sha256s(self):
+        sha256s = set()
+    
+        # Add original submitted files
+        for f in self.files:
+            if f.sha256:
+                sha256s.add(f.sha256)
+    
+        # Add result SHA256s (first 64 chars of result keys)
+        for r in self.results:
+            if r and len(r) >= 64:
+                sha256s.add(r[:64])
+    
+        # Add error SHA256s
+        for e in self.errors:
+            if e and len(e) >= 64:
+                sha256s.add(e[:64])
+    
+        self.file_sha256s = list(sha256s)
