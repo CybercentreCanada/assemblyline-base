@@ -191,22 +191,6 @@ def get_tag_safelist_data(yml_config=None):
     return tag_safelist_data
 
 
-def get_tag_safelister(log=None, yml_config=None, config=None, datastore=None):
-    from assemblyline.common.tagging import InvalidSafelist, TagSafelister
-
-    with get_cachestore('system', config=config, datastore=datastore) as cache:
-        tag_safelist_yml = cache.get('tag_safelist_yml')
-        if tag_safelist_yml:
-            tag_safelist_data = yaml.safe_load(tag_safelist_yml)
-        else:
-            tag_safelist_data = get_tag_safelist_data(yml_config=yml_config)
-
-    if not tag_safelist_data:
-        raise InvalidSafelist('Could not find any tag_safelist file to load.')
-
-    return TagSafelister(tag_safelist_data, log=log)
-
-
 def get_hauntedhouse_client(config: Config) -> Optional[Client]:
     if config.retrohunt.enabled:
         ca_path = None

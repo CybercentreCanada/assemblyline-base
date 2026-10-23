@@ -376,38 +376,6 @@ def test_safe_str():
     assert safe_str("\xc1\x90") == "\xc1\x90"
 
 
-def test_tag_safelisting():
-    forge.get_datastore().safelist.wipe()
-    original_tag_map = {
-        "network.static.ip": ['127.0.0.1', "1.1.1.1", "2.2.2.2", "192.168.22.22",
-                              "172.19.2.33", "10.10.10.10", "172.40.23.23"],
-        "network.dynamic.ip": "11.22.55.66",
-        "network.static.uri": ['http://localhost/', "https://192.168.0.1"],
-        "network.dynamic.uri": ['http://localhost', "https://193.168.0.1"],
-        "network.dynamic.domain": ['cyber.gc.ca', "localhost", "localhost.net"],
-        "network.static.domain": ['cse-cst.gc.ca', "google.ca", "microsoft.com"],
-        "file.behavior": ["Can't touch this !"]
-    }
-
-    default_safelist = os.path.join(os.path.dirname(__file__), "..", "assemblyline", "common", "tag_safelist.yml")
-    default_safelist = os.path.normpath(default_safelist)
-    twl = forge.get_tag_safelister(yml_config=default_safelist)
-
-    tag_map, safelisted_tag_map = twl.get_validated_tag_map(original_tag_map)
-    assert original_tag_map != tag_map
-    assert len(tag_map['network.static.ip']) == 3
-    assert len(safelisted_tag_map['network.static.ip']) == 4
-    assert len(tag_map['network.dynamic.ip']) == 1
-    assert 'network.static.uri' not in tag_map
-    assert len(safelisted_tag_map['network.static.uri']) == 2
-    assert len(tag_map['network.dynamic.uri']) == 1
-    assert len(safelisted_tag_map['network.dynamic.uri']) == 1
-    assert len(tag_map['network.dynamic.domain']) == 2
-    assert len(safelisted_tag_map['network.dynamic.domain']) == 1
-    assert tag_map['network.static.domain'] == original_tag_map['network.static.domain']
-    assert tag_map['file.behavior'] == original_tag_map['file.behavior']
-
-
 def test_security():
     passwd = get_random_password()
     p_hash = get_password_hash(passwd)

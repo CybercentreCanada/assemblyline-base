@@ -444,7 +444,8 @@ def create_users(ds, log=None):
         }},
         "password": get_password_hash(user_pass),
         "uname": "user",
-        "type": [TYPES.user]})
+        "type": [TYPES.user]
+    })
 
     apikey_id = get_apikey_id(DEV_APIKEY_NAME, "user")
     apikey = Apikey({
