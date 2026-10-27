@@ -61,6 +61,7 @@ RUN apt-get update -yy && apt-get -yy upgrade \
         -e ./assemblyline-ui[test,socketio] \
         -e ./assemblyline_client[test] \
         -e ./assemblyline-v4-service[test] \
+        debugpy \
     # Clean up installed Assemblyline packages
     && pip uninstall -y assemblyline-base assemblyline-core assemblyline-ui assemblyline_client assemblyline-v4-service \
     # Remove system packages used for building Python dependencies
