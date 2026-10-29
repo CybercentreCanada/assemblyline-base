@@ -65,7 +65,7 @@ IP_REGEX = f"(?:{IPV4_REGEX}|{IPV6_REGEX})"
 IP_ONLY_REGEX = f"^{IP_REGEX}$"
 IPV4_ONLY_REGEX = f"^{IPV4_REGEX}$"
 IPV6_ONLY_REGEX = f"^{IPV6_REGEX}$"
-PORT_REGEX = r"(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])"
+PORT_REGEX = r"(0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])" # produce two matches containing respectively the first 4 digits and one with the last one on 5 digits port numbers, but work as expected for regular group or as a subregex.
 PRIVATE_IP = r"(?:(?:127|10)(?:\.(?:[2](?:[0-5][0-5]|[01234][6-9])|[1][0-9][0-9]|[1-9][0-9]|[0-9])){3})|" \
              r"(?:172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.(?:2[0-4][0-9]|25[0-5]|[1][0-9][0-9]|[1-9][0-9]|[0-9])){2}|" \
              r"(?:192\.168(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){2}))"
@@ -78,8 +78,14 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
-URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]*@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
-            f"{URI_PATH}?)"
+URI_REGEX = (
+    f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]*@)?({IPV4_REGEX}|"
+    # Not using DOMAIN_REGEX so wildcard domains are handled without bad backtracking.
+    r"(?:[A-Za-z0-9\u00a1-\U0010ffff_-]{1,63}[.])*"
+    r"(?:[A-Za-z0-9\u00a1-\U0010ffff][A-Za-z0-9\u00a1-\U0010ffff_-]{0,62})?[A-Za-z0-9\u00a1-\U0010ffff]"
+    r"\.(?:[Xx][Nn]--)?(?:[A-Za-z0-9\u00a1-\U0010ffff]{2,}\.?)"
+    f"|\\[{IPV6_REGEX}\\])(?::\\d{{1,5}})?{URI_PATH}?)"
+)
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
 UNC_PATH_REGEX = r"^\\\\[a-zA-Z0-9-_\s]{1,63}(?:\.[a-zA-Z0-9-_\s]{1,63}){0,3}" \
@@ -546,11 +552,12 @@ class URI(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
                              f"validator: {self.validation_regex.pattern}")
 
-        if not is_valid_domain(match.group(2)) and not is_valid_ip(match.group(2)):
-            raise ValueError(f"[{self.name or self.parent_name}] '{match.group(2)}' in URI '{value}'"
+        hostname = match.group(2)
+        if not is_valid_domain('.'.join(hostname.rsplit('.', 2)[-2:])) and not is_valid_ip(hostname) and not hostname.startswith('['):
+            raise ValueError(f"[{self.name or self.parent_name}] '{hostname}' in URI '{value}'"
                              " is not a valid Domain or IP.")
 
-        return match.group(0).replace(match.group(2), match.group(2).lower())
+        return match.group(0).replace(hostname, hostname.lower())
 
 
 class UNCPath(ValidatedKeyword):
@@ -846,22 +853,70 @@ class TypedList(list):
     def __init__(self, type_p, *items, **kwargs):
         super().__init__([type_p.check(el, **kwargs) for el in items])
         self.type = type_p
+        self._set_cache: typing.Optional[frozenset] = None
+        # Assume that the list is hashable until proven otherwise. This is an optimization to avoid creating a frozenset for every list.
+        self._unhashable: bool = False
+
+    def _invalidate_cache(self):
+        self._set_cache = None
+
+    def __contains__(self, item):
+        if self._unhashable:
+            # If unhashable, fallback to legacy list scan.
+            return super().__contains__(item)
+
+        if self._set_cache is None:
+            try:
+                self._set_cache = frozenset(self)
+            except TypeError:
+                # Elements are not hashable (e.g. compound objects); fall back to list scan
+                self._unhashable = True
+                return super().__contains__(item)
+        return item in self._set_cache
 
     def append(self, item):
+        self._invalidate_cache()
         super().append(self.type.check(item))
 
     def extend(self, sequence):
+        self._invalidate_cache()
         super().extend(self.type.check(item) for item in sequence)
 
     def insert(self, index, item):
+        self._invalidate_cache()
         super().insert(index, self.type.check(item))
 
     def __setitem__(self, index, item):
+        self._invalidate_cache()
         if isinstance(index, slice):
             item = [self.type.check(val) for val in item]
             super().__setitem__(index, item)
         else:
             super().__setitem__(index, self.type.check(item))
+
+    def __delitem__(self, index):
+        self._invalidate_cache()
+        super().__delitem__(index)
+
+    def remove(self, item):
+        self._invalidate_cache()
+        super().remove(item)
+
+    def pop(self, index=-1):
+        self._invalidate_cache()
+        return super().pop(index)
+
+    def clear(self):
+        self._invalidate_cache()
+        super().clear()
+
+    def __iadd__(self, other):
+        self._invalidate_cache()
+        return super().__iadd__(other)
+
+    def __imul__(self, n):
+        self._invalidate_cache()
+        return super().__imul__(n)
 
 
 class List(_Field):

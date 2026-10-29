@@ -1,3 +1,4 @@
+# This definition file is for specific tests related to classification
 enforce: true
 groups:
 - aliases: [DEPTS, ANY]

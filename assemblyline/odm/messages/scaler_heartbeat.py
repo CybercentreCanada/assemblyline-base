@@ -10,6 +10,7 @@ class Metrics(odm.Model):
     cpu_free = odm.Float(description="Amount of free CPU")
     memory_total = odm.Float(description="Amount of total memory")
     cpu_total = odm.Float(description="Amount of total CPU")
+    pending_containers = odm.Integer(description="Containers that are requested but have not started running.")
 
 
 @odm.model(description="Heartbeat Model")

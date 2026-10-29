@@ -8,7 +8,7 @@ ARG version
 
 # Install assemblyline base (setup.py is just a file we know exists so the command
 # won't fail if dist isn't there. The dist* copies in any dist directory only if it exists.)
-COPY setup.py dist* dist/
+COPY pyproject.toml dist* dist/
 RUN pip install --no-cache-dir --no-warn-script-location -f dist/ -U --user assemblyline==$version && rm -rf ~/.cache/pip
 
 FROM $base:$tag
@@ -18,7 +18,7 @@ ARG version_tag=${version}
 # Install assemblyline base
 COPY --chown=assemblyline:assemblyline --from=builder /root/.local /var/lib/assemblyline/.local
 ENV PATH=/var/lib/assemblyline/.local/bin:$PATH
-ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.11/site-packages
+ENV PYTHONPATH=/var/lib/assemblyline/.local/lib/python3.14/site-packages
 ENV ASSEMBLYLINE_VERSION=${version}
 ENV ASSEMBLYLINE_IMAGE_TAG=${version_tag}
 

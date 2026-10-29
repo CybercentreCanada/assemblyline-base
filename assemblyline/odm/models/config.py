@@ -2,10 +2,12 @@ from typing import Any, Dict, List
 
 from assemblyline import odm
 from assemblyline.common.constants import PRIORITIES
+from assemblyline.odm.base import DOMAIN_REGEX, IP_REGEX
 from assemblyline.common.forge import get_classification
 from assemblyline.odm.models.service import EnvironmentVariable
 from assemblyline.odm.models.service_delta import DockerConfigDelta
 from assemblyline.odm.models.submission import DEFAULT_SRV_SEL, ServiceSelection
+from assemblyline.odm.models.user import ROLES
 
 AUTO_PROPERTY_TYPE = ['access', 'classification', 'type', 'role', 'remove_role', 'group',
                       'multi_group', 'api_quota', 'api_daily_quota', 'submission_quota',
@@ -40,6 +42,8 @@ DEFAULT_PASSWORD_REQUIREMENTS = {
 }
 
 CIDR_REGEX = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(?:3[0-2]|[12]?[0-9])$"
+# Domain (optionally prefixed with '*.' to match subdomains), single-label intranet host, or IP
+AVATAR_HOST_REGEX = f"^(?:(?:\\*\\.)?{DOMAIN_REGEX}|[A-Za-z0-9](?:[A-Za-z0-9-]{{0,61}}[A-Za-z0-9])?|{IP_REGEX})$"
 
 @odm.model(index=False, store=False,
            description="Configuration block for [GC Notify](https://notification.canada.ca/) signup and password reset")
@@ -187,6 +191,11 @@ class OAuthProvider(odm.Model):
     auto_properties: List[AutoProperty] = odm.List(odm.Compound(AutoProperty), default=[],
                                                    description="Automatic role and classification assignments")
     app_provider: AppProvider = odm.Optional(odm.Compound(AppProvider))
+    avatar_allowed_hosts: List[str] = odm.List(
+        odm.ValidatedKeyword(AVATAR_HOST_REGEX), default=[],
+        description="Hosts from which user avatars may be downloaded. Entries match the URL hostname "
+                    "exactly, or a subdomain when prefixed with '*.' (e.g. '*.googleusercontent.com'). "
+                                                         "The host of `api_base_url` is always allowed.")
     ip_filter: List[str] = odm.Optional(odm.List(odm.ValidatedKeyword(CIDR_REGEX)),
                                         description="List of CIDRs allowed to access internal authentication")
     uid_randomize: bool = odm.Boolean(default=False,
@@ -216,6 +225,7 @@ class OAuthProvider(odm.Model):
     authorize_params: Dict[str, str] = odm.Optional(odm.Mapping(
         odm.Keyword()), description="Parameters used to authorize access to a resource")
     api_base_url: str = odm.Optional(odm.Keyword(), description="Base URL for downloading the user's and groups info")
+    issuer_url: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWT token is valid")
     client_kwargs: Dict[str, str] = odm.Optional(odm.Mapping(odm.Keyword()),
                                                  description="Keyword arguments passed to the different URLs")
     jwks_uri: str = odm.Optional(odm.Keyword(), description="URL used to verify if a returned JWKS token is valid")
@@ -246,12 +256,16 @@ class OAuthProvider(odm.Model):
     groups_id_token_field: str = odm.Keyword(
         default="groups", description="Name of the field in the id token that contains the list of groups."
     )
+    scope_field: str = odm.Keyword(default="scope", description="Name of the field in the id token that contains the list of scopes.")
+    azp_role_limits: Dict[str, List[str]] = odm.Mapping(
+        odm.List(odm.Enum(values=ROLES.keys())), description="Mapping of authorized party (azp) to role limits.", default={}
+    )
 
 OPEN_ID_CONFIGURATION_TO_OAUTH_PROVIDER_MAP = {
-    "authorization_endpoint": "authorize_url",
-    "issuer": "api_base_url",
-    "token_endpoint": "access_token_url",
-    "jwks_uri": "jwks_uri",
+    "authorization_endpoint": ["authorize_url"],
+    "issuer": ["api_base_url", "issuer_url"],
+    "token_endpoint": ["access_token_url"],
+    "jwks_uri": ["jwks_uri"],
 }
 
 

@@ -19,7 +19,7 @@ services:
 
   # Create test data
   create_test_data:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     environment:
@@ -45,7 +45,7 @@ services:
 
   # UI
   al_ui:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     ports:
@@ -56,9 +56,17 @@ services:
     working_dir: /opt/alv4/assemblyline-ui/assemblyline_ui/
     command: python3 app.py
 
+  # MCP
+  al_mcp:
+    image: cccs/assemblyline-mcp:latest
+    environment:
+      AL_UI: "http://al_ui:5000"
+    ports:
+      - "8000:8000"
+
   # SocketIO Server
   al_socketio:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     ports:
@@ -71,7 +79,7 @@ services:
 
   # Alerter
   al_alerter:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     volumes:
@@ -89,7 +97,7 @@ services:
 
   # Alerter
   al_archiver:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     volumes:
@@ -107,7 +115,7 @@ services:
 
   # Expiry
   al_expiry:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     volumes:
@@ -125,7 +133,7 @@ services:
 
   # Elasticsearch Metrics
   al_elastic_metrics:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     volumes:
@@ -143,7 +151,7 @@ services:
 
   # Metrics aggregator
   al_metrics:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     volumes:
@@ -153,7 +161,7 @@ services:
 
   # Hearbeat manager
   al_heartbeat:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     volumes:
@@ -171,7 +179,7 @@ services:
 
   # Stats aggregator
   al_stats:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     volumes:
@@ -181,7 +189,7 @@ services:
 
   # Workflow
   al_workflow:
-    image: cccs/assemblyline_dev:4.7.1
+    image: cccs/assemblyline_dev:4.7.2
     env_file:
       - .env
     volumes:
