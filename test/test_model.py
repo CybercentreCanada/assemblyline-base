@@ -4,7 +4,7 @@ from assemblyline.common import forge
 from assemblyline.odm.models.alert import Alert
 from assemblyline.odm.models.badlist import Badlist
 from assemblyline.odm.models.cached_file import CachedFile
-from assemblyline.odm.models.config import DEFAULT_CONFIG, Config
+from assemblyline.odm.models.config import DEFAULT_CONFIG, DEFAULT_DATASTORE, Config, Datastore
 from assemblyline.odm.models.emptyresult import EmptyResult
 from assemblyline.odm.models.error import Error
 from assemblyline.odm.models.file import File
@@ -57,6 +57,43 @@ def test_config_model():
 def test_default_config_model():
     config = forge.get_config(yml_config="/etc/assemblyline/default.yml")
     assert config.as_primitives() == Config(DEFAULT_CONFIG).as_primitives()
+
+
+def test_datastore_elasticsearch_type_validates():
+    datastore = Datastore(DEFAULT_DATASTORE)
+
+    assert datastore.type == "elasticsearch"
+
+
+def test_datastore_opensearch_type_validates():
+    datastore_config = {**DEFAULT_DATASTORE, "type": "opensearch"}
+
+    datastore = Datastore(datastore_config)
+
+    assert datastore.type == "opensearch"
+
+
+def test_datastore_auto_type_validates_and_serializes():
+    datastore = Datastore({**DEFAULT_DATASTORE, "type": "auto"})
+
+    assert datastore.type == "auto"
+    assert datastore.as_primitives()["type"] == "auto"
+
+
+def test_datastore_invalid_type_is_rejected():
+    datastore_config = {**DEFAULT_DATASTORE, "type": "solr"}
+
+    with pytest.raises(ValueError, match="not in the possible values"):
+        Datastore(datastore_config)
+
+
+def test_datastore_omitted_type_defaults_to_elasticsearch():
+    datastore_config = DEFAULT_DATASTORE.copy()
+    datastore_config.pop("type")
+
+    datastore = Datastore(datastore_config)
+
+    assert datastore.type == "elasticsearch"
 
 
 def test_emptyresult_model():
