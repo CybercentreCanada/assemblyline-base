@@ -41,6 +41,10 @@ CUSTOM_PS1_ID = b"#!/usr/bin/env pwsh\n"
 CUSTOM_BATCH_ID = b"REM Batch extracted by Assemblyline\n"
 CUSTOM_URI_ID = "# Assemblyline URI file\n"
 
+PDF_ENCRYPT_MARKER = b"/Encrypt"
+PDF_PORTFOLIO_MARKER = b"/Type/Catalog/Collection"
+PDF_SCAN_BLOCKSIZE = 1048576
+
 
 class Identify:
     def __init__(self, use_cache: bool = True, config=None, datastore=None, log=None) -> None:
@@ -447,13 +451,9 @@ class Identify:
         #  - Check for encryption
         #  - Check for PDF collection (portfolio)
         if data["type"] == "document/pdf":
-            # Password protected documents typically contain '/Encrypt'
-            pdf_content = open(path, "rb").read()
-            if re.search(b"/Encrypt", pdf_content):
-                data["type"] = "document/pdf/passwordprotected"
-            # Portfolios typically contain '/Type/Catalog/Collection
-            elif re.search(b"/Type/Catalog/Collection", pdf_content):
-                data["type"] = "document/pdf/portfolio"
+            refined_type = pdf_ident(path)
+            if refined_type:
+                data["type"] = refined_type
 
         return data
 
@@ -633,6 +633,29 @@ def uri_ident(path: str, info: Dict) -> str:
         info["uri_info"]["port"] = u.port
 
     return f"uri/{u.scheme}"
+
+
+def pdf_ident(path: str) -> Optional[str]:
+    # The file is scanned in fixed-size blocks (with a small overlap so markers straddling a
+    # block boundary are still found) to keep memory usage flat no matter the file size.
+    overlap = len(PDF_PORTFOLIO_MARKER) - 1
+    saw_portfolio = False
+    tail = b""
+    with open(path, "rb") as fh:
+        while block := fh.read(PDF_SCAN_BLOCKSIZE):
+            boundary = tail + block[:overlap]
+            # Password protected documents typically contain '/Encrypt'
+            # '/Encrypt' anywhere in the file takes precedence over the portfolio marker.
+            if PDF_ENCRYPT_MARKER in block or PDF_ENCRYPT_MARKER in boundary:
+                return "document/pdf/passwordprotected"
+            # Portfolios typically contain '/Type/Catalog/Collection'
+            if not saw_portfolio and (PDF_PORTFOLIO_MARKER in block or PDF_PORTFOLIO_MARKER in boundary):
+                saw_portfolio = True
+            tail = block[-overlap:]
+
+    if saw_portfolio:
+        return "document/pdf/portfolio"
+    return None
 
 
 if __name__ == "__main__":
