@@ -2,7 +2,6 @@
 
 # Build core containers
 (cd nginx-ssl-frontend && docker build -t cccs/nginx-ssl-frontend .)
-(cd minio && docker build -t cccs/minio .)
 
 # Build default dev containers
 (cd ../.. && docker build --no-cache -f assemblyline-base/docker/al_dev/Dockerfile -t cccs/assemblyline_dev:latest -t cccs/assemblyline_dev:4.7.2 .)
