@@ -78,8 +78,14 @@ SHA256_REGEX = r"^[a-f0-9]{64}$"
 MAC_REGEX = r"^(?:(?:[0-9a-f]{2}-){5}[0-9a-f]{2}|(?:[0-9a-f]{2}:){5}[0-9a-f]{2})$"
 URI_PATH = r"([/?#]\S*)"
 # Used for finding URIs in a blob
-URI_REGEX = f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]*@)?({IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{1,5}})?" \
-            f"{URI_PATH}?)"
+URI_REGEX = (
+    f"((?:(?:[A-Za-z][A-Za-z0-9+.-]*:)//)(?:[^/?#\\s]*@)?({IPV4_REGEX}|"
+    # Not using DOMAIN_REGEX so wildcard domains are handled without bad backtracking.
+    r"(?:[A-Za-z0-9\u00a1-\U0010ffff_-]{1,63}[.])*"
+    r"(?:[A-Za-z0-9\u00a1-\U0010ffff][A-Za-z0-9\u00a1-\U0010ffff_-]{0,62})?[A-Za-z0-9\u00a1-\U0010ffff]"
+    r"\.(?:[Xx][Nn]--)?(?:[A-Za-z0-9\u00a1-\U0010ffff]{2,}\.?)"
+    f"|\\[{IPV6_REGEX}\\])(?::\\d{{1,5}})?{URI_PATH}?)"
+)
 # Used for direct matching
 FULL_URI = f"^{URI_REGEX}$"
 UNC_PATH_REGEX = r"^\\\\[a-zA-Z0-9-_\s]{1,63}(?:\.[a-zA-Z0-9-_\s]{1,63}){0,3}" \
@@ -546,11 +552,12 @@ class URI(Keyword):
             raise ValueError(f"[{self.name or self.parent_name}] '{value}' not match the "
                              f"validator: {self.validation_regex.pattern}")
 
-        if not is_valid_domain(match.group(2)) and not is_valid_ip(match.group(2)):
-            raise ValueError(f"[{self.name or self.parent_name}] '{match.group(2)}' in URI '{value}'"
+        hostname = match.group(2)
+        if not is_valid_domain('.'.join(hostname.rsplit('.', 2)[-2:])) and not is_valid_ip(hostname) and not hostname.startswith('['):
+            raise ValueError(f"[{self.name or self.parent_name}] '{hostname}' in URI '{value}'"
                              " is not a valid Domain or IP.")
 
-        return match.group(0).replace(match.group(2), match.group(2).lower())
+        return match.group(0).replace(hostname, hostname.lower())
 
 
 class UNCPath(ValidatedKeyword):

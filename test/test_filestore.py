@@ -216,8 +216,6 @@ def test_s3_aws():
     del os.environ['AWS_DEFAULT_REGION']
     os.remove(token_file_path)
 
-
-
 def common_actions(fs, check_listing=True):
     # Make sure a missing file returns None
     assert fs.get('__missing_file__') is None

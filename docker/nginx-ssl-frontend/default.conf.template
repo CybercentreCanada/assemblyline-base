@@ -96,7 +96,7 @@ server {
         proxy_set_header      Upgrade         $http_upgrade;
         proxy_set_header      Connection      "upgrade";
 
-        set $frontend_ws "https://${FRONTEND_HOST}:3000/ws";
+        set $frontend_ws "https://${FRONTEND_HOST}:3000";
 
         proxy_pass            $frontend_ws;
     }
