@@ -42,7 +42,7 @@ USER assemblyline
 RUN python -m venv /var/lib/assemblyline/venv
 
 # Install packages in the venv
-COPY setup.py dist* dist/
+COPY pyproject.toml dist* dist/
 RUN /bin/bash -c "source /var/lib/assemblyline/venv/bin/activate && pip install --no-cache-dir --upgrade pip wheel && pip install --no-cache-dir -f dist/ assemblyline==$version assemblyline_core==$version assemblyline_ui==$version assemblyline-client ipython jupyter"
 
 # Setup venv when bash is launched

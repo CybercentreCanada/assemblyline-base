@@ -50,10 +50,7 @@ def safe_extract_tar(tar: Union[str, tarfile.TarFile], dest: str) -> None:
     owns = isinstance(tar, str)
     tf = tarfile.open(tar) if owns else tar
     try:
-        if hasattr(tarfile, "data_filter"):
-            tf.extractall(dest, filter="data")
-        else:
-            tf.extractall(dest, members=list(safe_tar_members(tf, dest)))
+        tf.extractall(dest, filter="data")
     finally:
         if owns:
             tf.close()

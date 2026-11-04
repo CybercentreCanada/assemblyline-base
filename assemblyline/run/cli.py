@@ -512,7 +512,7 @@ class ALCommandLineInterface(cmd.Cmd):  # pylint:disable=R0904
 
             if cont:
                 if full and index == 'submission':
-                    pool = multiprocessing.Pool(processes=PROCESSES_COUNT, initializer=init)
+                    pool = multiprocessing.Pool(processes=min(PROCESSES_COUNT, test_data['total']), initializer=init)
                     for data in collection.stream_search(query, fl="id", item_buffer_size=COUNT_INCREMENT):
                         pool.apply_async(submission_delete_tree, (data.id, self.logger), callback=action_done)
                 else:
