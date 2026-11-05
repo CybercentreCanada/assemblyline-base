@@ -5,6 +5,7 @@
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	// Path to the docker-compose file relative to this json file
 	"dockerComposeFile": "../test/docker-compose.yml",
+    "overrideCommand": true,
 	// The primary service you want to develop inside
 	"service": "pytest",
 	// The path inside the container to open when connecting

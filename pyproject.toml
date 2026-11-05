@@ -36,9 +36,7 @@ classifiers = [
 ]
 dependencies = [
     "arrow",
-    "aiohttp",
     "lark",
-    "urllib3>=2.6.0",
     "python-baseconv",
     "boto3",
     "sftpretty",
@@ -54,7 +52,6 @@ dependencies = [
     "python-magic",
     "pytz",
     "apscheduler",
-    "websocket_client<1.0.0",
     "elastic-apm[flask]>=6.13.0",
     "notifications-python-client",
     "rstr",
