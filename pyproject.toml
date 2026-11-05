@@ -77,7 +77,8 @@ test = [
     "retrying",
     "pytest-mock",
     "pyftpdlib",
-    "pyopenssl==23.3.0",
+    "pyopenssl",
+    "cryptography",
 ]
 
 [project.scripts]
