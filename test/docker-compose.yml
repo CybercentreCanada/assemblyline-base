@@ -83,8 +83,7 @@ services:
       - ${ROOT_REWRITE:-../}:/opt/alv4/assemblyline-base
       - ${ROOT_REWRITE:-../..}/unittest-samples:/tmp/samples
     working_dir: /opt/alv4/assemblyline-base
-    #command: "pytest -vv --full-trace"
-    command: "sleep infinity"
+    command: "pytest -vv --full-trace"
     depends_on:
       floci:
         condition: service_healthy
