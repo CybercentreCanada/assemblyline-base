@@ -35,4 +35,9 @@
         "--ignore=E203,W503"
     ],
     "python.linting.pylintEnabled": false,
+    "python.testing.pytestArgs": [
+        "test"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
 }

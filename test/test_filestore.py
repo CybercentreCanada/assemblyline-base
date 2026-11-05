@@ -11,20 +11,54 @@ from assemblyline.filestore.transport.base import TransportException
 _temp_body_a = b'temporary file string'
 
 
+def _create_test_certificate(cert_path):
+    # Create a test certificate at run-time for secure FTP testing
+    from datetime import datetime, timedelta, timezone
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")])
+    now = datetime.now(timezone.utc)
+    certificate = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now)
+        .not_valid_after(now + timedelta(days=1))
+        .add_extension(x509.SubjectAlternativeName([x509.DNSName("localhost")]), critical=False)
+        .sign(key, hashes.SHA256())
+    )
+
+    with open(cert_path, "wb") as cert_file:
+        cert_file.write(key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        ))
+        cert_file.write(certificate.public_bytes(serialization.Encoding.PEM))
+
+
 def _temp_ftp_server(start: threading.Event, stop: threading.Event, user, password, port, secure):
     try:
         from pyftpdlib.authorizers import DummyAuthorizer
         from pyftpdlib.handlers import FTPHandler, TLS_FTPHandler
         from pyftpdlib.servers import FTPServer
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir, tempfile.TemporaryDirectory() as cert_dir:
             authorizer = DummyAuthorizer()
             authorizer.add_user(user, password, temp_dir, perm="elradfmwMT")
             authorizer.add_anonymous(temp_dir)
 
             if secure:
                 handler = TLS_FTPHandler
-                handler.certfile = os.path.join(os.path.dirname(__file__), 'key.pem')
+                handler.certfile = os.path.join(cert_dir, "key.pem")
+                _create_test_certificate(handler.certfile) 
             else:
                 handler = FTPHandler
 
