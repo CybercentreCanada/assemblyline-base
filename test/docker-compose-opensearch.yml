@@ -1,0 +1,18 @@
+services:
+  opensearch:
+    # OpenSearch 2.12.x supports the PIT API exercised by the adapter tests
+    # and is compatible with the opensearch-py 2.x client line.
+    image: opensearchproject/opensearch:2.12.0
+    environment:
+      - discovery.type=single-node
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - plugins.security.disabled=true
+      - logger.level=WARN
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9201:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
