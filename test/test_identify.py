@@ -21,12 +21,12 @@ def test_id_file_base():
         with open(map_path, "r") as f:
             contents = f.read()
             json_contents = loads(contents)
-        for root, _, files in os.walk(file_base_dir):
+        for _, _, files in os.walk(file_base_dir):
             for file_name in files:
-                if file_name in (map_file, "THIRD_PARTY_NOTICES.md"):
+                if file_name == map_file:
                     continue
 
-                file_path = os.path.join(root, file_name)
+                file_path = os.path.join(file_base_dir, file_name)
                 data = identify.fileinfo(file_path, generate_hashes=False)
                 actual_value = data.get("type", "")
                 expected_value = json_contents[file_name]

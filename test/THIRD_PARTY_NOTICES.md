@@ -3,7 +3,7 @@
 ## CERT Polska karton-classifier fixture
 
 ```text
-Fixture: applescript-hello.scpt
+Fixture: id_file_base/applescript-hello.scpt
 Original filename: tests/testdata/script.scpt
 Project: CERT-Polska/karton-classifier
 Revision: d3360e2b89a96e5712ce48de1181683a24941f89
