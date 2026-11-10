@@ -12,5 +12,9 @@
   "powershell.ps1": "code/ps1",
   "jpg.jpg": "image/jpg",
   "json.json": "text/json",
-  "javascript.js": "code/javascript"
+  "javascript.js": "code/javascript",
+  "applescript-dialog.applescript": "code/applescript",
+  "applescript-finder.applescript": "code/applescript",
+  "applescript-handler.applescript": "code/applescript",
+  "applescript-hello.scpt": "code/applescript/compiled"
 }

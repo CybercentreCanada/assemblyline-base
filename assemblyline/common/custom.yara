@@ -1520,6 +1520,54 @@ rule text_rdp {
         and 2 of ($optional*)
 }
 
+rule code_applescript {
+    meta:
+        type = "code/applescript"
+        score = 3
+
+    strings:
+        $interpreter = /#![ \t]*\/usr\/bin\/(env[ \t]+)?osascript([ \t]+-l[ \t]+AppleScript)?[ \t]*(\r|\n|$)/ nocase ascii wide
+        $jxa_interpreter = /#![^\r\n]*osascript[ \t]+-l[ \t]+JavaScript([ \t\r\n]|$)/ nocase ascii wide
+        $tell = /(^|[\r\n]|\xef\xbb\xbf)[ \t]*tell[ \t]+(application|app|process)[ \t]+"[^"\r\n]+"/ nocase ascii wide
+        $end_tell = /(^|[\r\n])[ \t]*end[ \t]+tell([ \t\r\n]|$)/ nocase ascii wide
+        $tell_inline = /(^|[\r\n]|\xef\xbb\xbf)[ \t]*tell[ \t]+(application|app|process)[ \t]+"[^"\r\n]+"[ \t]+to[ \t]+/ nocase ascii wide
+        $command = /(^|[\r\n]|\xef\xbb\xbf)[ \t]*(display[ \t]+(dialog|alert)|do[ \t]+shell[ \t]+script)[ \t]+"[^"\r\n]*"/ nocase ascii wide
+        $assignment = /(^|[\r\n]|\xef\xbb\xbf)[ \t]*set[ \t]+[a-z_][a-z0-9_]*[ \t]+to[ \t]+/ nocase ascii wide
+        $dialog_variable = /(^|[\r\n])[ \t]*display[ \t]+(dialog|alert)[ \t]+[a-z_][a-z0-9_]*/ nocase ascii wide
+        $shell_assignment = /(^|[\r\n]|\xef\xbb\xbf)[ \t]*set[ \t]+[a-z_][a-z0-9_]*[ \t]+to[ \t]+do[ \t]+shell[ \t]+script[ \t]+"/ nocase ascii wide
+
+        // A UTF-16LE BOM precedes the first wide character, rather than matching a wide regex.
+        $bom_tell = /[ \t]*tell[ \t]+(application|app|process)[ \t]+"[^"\r\n]+"/ nocase wide
+        $bom_inline = /[ \t]*tell[ \t]+(application|app|process)[ \t]+"[^"\r\n]+"[ \t]+to[ \t]+/ nocase wide
+        $bom_command = /[ \t]*(display[ \t]+(dialog|alert)|do[ \t]+shell[ \t]+script)[ \t]+"[^"\r\n]*"/ nocase wide
+        $bom_assignment = /[ \t]*set[ \t]+[a-z_][a-z0-9_]*[ \t]+to[ \t]+/ nocase wide
+        $bom_shell = /[ \t]*set[ \t]+[a-z_][a-z0-9_]*[ \t]+to[ \t]+do[ \t]+shell[ \t]+script[ \t]+"/ nocase wide
+
+    condition:
+        (mime startswith "text/" or mime == "application/octet-stream")
+        and not $jxa_interpreter
+        and (
+            $interpreter at 0
+            or (uint8(0) == 0xef and uint16(1) == 0xbfbb and $interpreter at 3)
+            or ($tell and $end_tell)
+            or $tell_inline
+            or $command
+            or ($assignment and $dialog_variable)
+            or $shell_assignment
+            or (
+                uint16(0) == 0xfeff
+                and (
+                    $interpreter at 2
+                    or ($bom_tell at 2 and $end_tell)
+                    or $bom_inline at 2
+                    or $bom_command at 2
+                    or ($bom_assignment at 2 and $dialog_variable)
+                    or $bom_shell at 2
+                )
+            )
+        )
+}
+
 rule code_lua {
 
     meta:
