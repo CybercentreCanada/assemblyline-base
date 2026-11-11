@@ -59,7 +59,7 @@ dependencies = [
     "azure-storage-blob!=12.4.0",
     "azure-identity",
     "msoffcrypto-tool",
-    "chardet<6",
+    "chardet<8",
     "yara-python",
     "hauntedhouse==0.1.10",
     "magika",
