@@ -109,6 +109,8 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+      opensearch:
+        condition: service_healthy
       minio:
         condition: service_healthy
       sftp:
