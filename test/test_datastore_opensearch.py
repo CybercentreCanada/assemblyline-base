@@ -551,7 +551,7 @@ def test_opensearch_point_in_time_search_after_and_close(opensearch_client):
 
 
 def test_opensearch_full_datastore_construction_via_forge(request):
-    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://127.0.0.1:9201')
+    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://localhost:9201')
     collection_name = f"al_os_forge_{uuid.uuid4().hex}"
     config_data = Config().as_primitives()
     config_data["datastore"]["type"] = "opensearch"
@@ -596,7 +596,7 @@ def test_opensearch_full_datastore_construction_via_forge(request):
 
 
 def test_opensearch_runtime_smoke_uses_factory_models_commit_pit_and_delete(request):
-    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://127.0.0.1:9201')
+    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://localhost:9201')
     config_data = Config().as_primitives()
     config_data["datastore"]["type"] = "opensearch"
     config_data["datastore"]["hosts"] = [host]
@@ -663,7 +663,7 @@ def test_opensearch_runtime_smoke_uses_factory_models_commit_pit_and_delete(requ
 
 
 def _opensearch_datastore(request, collection_name):
-    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://127.0.0.1:9201')
+    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://localhost:9201')
     config_data = Config().as_primitives()
     config_data["datastore"]["type"] = "opensearch"
     config_data["datastore"]["hosts"] = [host]
@@ -759,7 +759,7 @@ def test_opensearch_update_by_query_task_failure_is_visible(request):
 
 
 def test_opensearch_task_cleanup_uses_service_identity(request):
-    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://127.0.0.1:9201')
+    host = os.environ.get('AL_TEST_OPENSEARCH_HOST', 'http://localhost:9201')
     config_data = Config().as_primitives()
     config_data["datastore"]["type"] = "opensearch"
     config_data["datastore"]["hosts"] = [host]
