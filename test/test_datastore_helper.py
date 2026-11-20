@@ -60,16 +60,9 @@ def setup_store(al_datastore: AssemblylineDatastore, request):
 
 
 @pytest.fixture(scope='module')
-def config():
-    config = forge.get_config()
-    config.datastore.archive.enabled = True
-    return config
-
-
-@pytest.fixture(scope='module')
-def ds(request, config):
+def ds(request, datastore_connection):
     try:
-        return setup_store(forge.get_datastore(config=config), request)
+        return setup_store(datastore_connection, request)
     except SetupException:
         pass
 

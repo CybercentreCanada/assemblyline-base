@@ -28,9 +28,17 @@ def skip_or_fail(message):
 pytest.skip = skip_or_fail
 
 
-@pytest.fixture(scope='session')
-def config():
-    return forge.get_config()
+@pytest.fixture(scope='session', params=["elasticsearch", "opensearch"])
+def config(request):
+    config = forge.get_config()
+    config.datastore.type = request.param
+    if request.param == "opensearch":
+        # Use opensearch host
+        config.datastore.hosts = ["http://localhost:9201"]
+    else:
+        # Use elasticsearch host
+        config.datastore.hosts = ["http://elastic:devpass@localhost:9200"]
+    return config
 
 
 @pytest.fixture(scope='module')
@@ -40,11 +48,10 @@ def filestore(config):
     except ConnectionError as err:
         pytest.skip(str(err))
 
-
 @pytest.fixture(scope='module')
 def datastore_connection(config):
     ESCollection.MAX_RETRY_BACKOFF = 0.5
-    store = ESStore(config.datastore.hosts)
+    store = ESStore(config.datastore.hosts, backend=config.datastore.type)
     ret_val = store.ping()
     if not ret_val:
         pytest.skip("Could not connect to datastore")

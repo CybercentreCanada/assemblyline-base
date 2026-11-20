@@ -376,8 +376,8 @@ def test_safe_str():
     assert safe_str("\xc1\x90") == "\xc1\x90"
 
 
-def test_tag_safelisting():
-    forge.get_datastore().safelist.wipe()
+def test_tag_safelisting(datastore_connection):
+    datastore_connection.safelist.wipe()
     original_tag_map = {
         "network.static.ip": ['127.0.0.1', "1.1.1.1", "2.2.2.2", "192.168.22.22",
                               "172.19.2.33", "10.10.10.10", "172.40.23.23"],

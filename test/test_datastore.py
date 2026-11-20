@@ -119,11 +119,9 @@ def setup_store(docstore, request):
 
 
 @pytest.fixture(scope='module')
-def es_connection(request):
-    from assemblyline.datastore.store import ESStore
-
+def es_connection(request, datastore_connection):
     try:
-        collection = setup_store(ESStore(['http://elastic:devpass@localhost:9200']), request)
+        collection = setup_store(datastore_connection.ds, request)
     except SetupException:
         collection = None
 

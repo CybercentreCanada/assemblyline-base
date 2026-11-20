@@ -149,11 +149,18 @@ def test_backup_system(datastore, cli):
 
 
 def test_data_reset(datastore, cli):
+    # Keep a record of the number of records in the database before reset
+    submission_count = datastore.submission.search("id:*", rows=0)['total']
+    user_count = datastore.user.search("id:*", rows=0)['total']
+
+    # Perform reset
     reset_logger()
     cli.do_data_reset("")
     assert "Data reset completed." in LOGS['info'][-1]
-    assert datastore.submission.search("id:*")['total'] != 0
-    assert datastore.user.search("id:*")['total'] != 0
+
+    # Ensure that after reset, the data has been restored by just checking the count
+    assert datastore.submission.search("id:*")['total'] == submission_count
+    assert datastore.user.search("id:*")['total'] == user_count
 
 
 def test_delete(datastore, cli, fs):
