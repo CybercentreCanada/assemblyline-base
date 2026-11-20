@@ -58,10 +58,10 @@ def test_cache_cleanup(cachestore):
 
 
 @pytest.mark.parametrize("component", ["", "invalid-component", "/path"])
-def test_init_rejects_invalid_component(component):
+def test_init_rejects_invalid_component(component, datastore_connection):
     # Components prefix stored keys, so invalid names must be rejected at creation.
     with pytest.raises(ValueError, match="component"):
-        forge.get_cachestore(component)
+        forge.get_cachestore(component, datastore=datastore_connection)
 
 
 def test_save(cache_entry):
