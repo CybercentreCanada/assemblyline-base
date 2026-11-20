@@ -136,8 +136,7 @@ def setup_store(docstore, request):
 
 @pytest.fixture(scope='module')
 def es_store(datastore_connection):
-    from assemblyline.datastore.store import ESStore
-    store = datastore_connection
+    store = datastore_connection.ds
     ret_val = store.ping()
     if ret_val:
         return store

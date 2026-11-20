@@ -44,7 +44,7 @@ def setup_store(docstore):
 @pytest.fixture(scope='module')
 def es_datastore(datastore_connection):
     try:
-        document_store = setup_store(datastore_connection)
+        document_store = setup_store(datastore_connection.ds)
     except SetupException:
         document_store = None
 
