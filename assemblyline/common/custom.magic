@@ -168,6 +168,9 @@
 # Apple Disk Image
 -512 string koly\x00\x00\x00\x04\x00\x00\x02\x00 custom: archive/dmg
 !:mime	application/x-apple-diskimage
+# Compiled AppleScript
+0 string FasdUAS custom: code/applescript/compiled
+!:mime application/x-applescript
 # Python interpreters
 0 string \#\!\/bin\/python custom: code/python
 0 string \#\!\/usr\/bin\/python custom: code/python
