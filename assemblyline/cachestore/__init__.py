@@ -49,7 +49,7 @@ class CacheStore(object):
         new_key = f"{self.component}_{cache_key}" if self.component else cache_key
 
         self.datastore.cached_file.save(new_key, {'expiry_ts': now_as_iso(ttl), 'component': self.component})
-        self.filestore.upload(new_key, path, force=True)
+        self.filestore.upload(path, new_key, force=True)
 
     def touch(self, cache_key: str, ttl=DEFAULT_CACHE_LEN):
         if not COMPONENT_VALIDATOR.match(cache_key):

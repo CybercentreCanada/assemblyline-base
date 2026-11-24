@@ -4,11 +4,7 @@ import posixpath
 import tempfile
 import warnings
 
-# Stop Blowfish deprecation warning
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-
-    import pysftp
+import sftpretty
 
 from io import BytesIO
 
@@ -30,7 +26,7 @@ def reconnect_retry_on_fail(func):
 
             try:
                 if not self.sftp:
-                    self.sftp = pysftp.Connection(self.host,
+                    self.sftp = sftpretty.Connection(self.host,
                                                   username=self.user,
                                                   password=self.password,
                                                   private_key=self.private_key,
@@ -47,7 +43,7 @@ def reconnect_retry_on_fail(func):
                 self.sftp.close()   # Just best effort.
 
             # The original func will reconnect automatically.
-            self.sftp = pysftp.Connection(self.host,
+            self.sftp = sftpretty.Connection(self.host,
                                           username=self.user,
                                           password=self.password,
                                           private_key=self.private_key,
@@ -80,13 +76,12 @@ class TransportSFTP(Transport):
         self.private_key = private_key
         self.private_key_pass = private_key_pass
         if not validate_host:
-            self.cnopts = pysftp.CnOpts()
-            self.cnopts.hostkeys = None
+            self.cnopts = sftpretty.CnOpts(knownhosts=None)
         else:
             self.cnopts = None
 
         # Connect on create
-        self.sftp = pysftp.Connection(self.host,
+        self.sftp = sftpretty.Connection(self.host,
                                       username=self.user,
                                       password=self.password,
                                       private_key=self.private_key,
@@ -131,7 +126,7 @@ class TransportSFTP(Transport):
     @reconnect_retry_on_fail
     def makedirs(self, path):
         path = self.normalize(path)
-        self.sftp.makedirs(path)
+        self.sftp.mkdir_p(path)
 
     # File based functions
     @reconnect_retry_on_fail

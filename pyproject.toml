@@ -36,12 +36,10 @@ classifiers = [
 ]
 dependencies = [
     "arrow",
-    "aiohttp",
     "lark",
-    "urllib3>=2.6.0",
     "python-baseconv",
     "boto3",
-    "pysftp",
+    "sftpretty",
     "redis",
     "requests[socks]",
     "elasticsearch>=8.0.0,<9.0.0",
@@ -54,7 +52,6 @@ dependencies = [
     "python-magic",
     "pytz",
     "apscheduler",
-    "websocket_client<1.0.0",
     "elastic-apm[flask]>=6.13.0",
     "notifications-python-client",
     "rstr",
@@ -65,7 +62,6 @@ dependencies = [
     "yara-python",
     "hauntedhouse==0.1.10",
     "magika",
-    "paramiko<4",
 ]
 
 [project.urls]
@@ -73,7 +69,14 @@ Repository = "https://github.com/CybercentreCanada/assemblyline-base"
 
 
 [project.optional-dependencies]
-test = ["pytest", "retrying", "pytest-mock", "pyftpdlib", "pyopenssl==23.3.0"]
+test = [
+    "pytest",
+    "retrying",
+    "pytest-mock",
+    "pyftpdlib",
+    "pyopenssl",
+    "cryptography",
+]
 
 [project.scripts]
 al_cli = "assemblyline.run.cli:shell_main"

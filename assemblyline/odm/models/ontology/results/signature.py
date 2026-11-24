@@ -30,7 +30,7 @@ class Signature(odm.Model):
     objectid = odm.Compound(ObjectID, description="The object ID of the signature object")
 
     name = odm.Keyword(description="The name of the signature")
-    type = odm.Enum(values=['CUCKOO', 'YARA', 'SIGMA', 'SURICATA'], description="Type of signature")
+    type = odm.Enum(values=['CUCKOO', 'YARA', 'SIGMA', 'SURICATA', 'CAPE', 'SANDBOX'], description="Type of signature")
     classification = odm.ClassificationString(description="Classification of signature")
     attributes = odm.Optional(odm.List(odm.Compound(Attribute)), description="Attributes about the signature")
     attacks = odm.Optional(odm.List(odm.Compound(Attack)),
