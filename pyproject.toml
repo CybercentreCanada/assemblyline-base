@@ -59,7 +59,6 @@ dependencies = [
     "azure-storage-blob!=12.4.0",
     "azure-identity",
     "msoffcrypto-tool",
-    "chardet<6",
     "yara-python",
     "hauntedhouse==0.1.10",
     "magika",
@@ -67,6 +66,7 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/CybercentreCanada/assemblyline-base"
+
 
 [project.optional-dependencies]
 test = [
