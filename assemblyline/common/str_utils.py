@@ -3,6 +3,8 @@ from copy import copy
 from enum import Enum
 from typing import Literal, Union, overload
 
+import chardet
+
 # Reference: https://unicode.org/reports/tr9/#Directional_Formatting_Characters
 class DirectionalFormattingCharacter(Enum):
     LRE = u'\u202A' # Left-to-Right Embedding
@@ -157,6 +159,35 @@ def safe_str(s, force_str=False):
 
 def is_safe_str(s) -> bool:
     return escape_str(copy(s), reversible=False) == s
+
+
+# noinspection PyBroadException
+def translate_str(s: Union[str, bytes], min_confidence=0.7) -> dict:
+    if not isinstance(s, (str, bytes)):
+        raise TypeError(f'Expected str or bytes got {type(s)}')
+
+    if isinstance(s, str):
+        s = s.encode("utf-8")
+
+    try:
+        r = chardet.detect(s)
+    except Exception:
+        r = {'confidence': 0.0, 'encoding': None, 'language': None}
+
+    if r['confidence'] > 0 and r['confidence'] >= min_confidence:
+        try:
+            t: Union[bytes, str] = s.decode(r['encoding'])
+        except Exception:
+            t = s
+    else:
+        t = s
+
+    r['converted'] = safe_str(t)
+    r['encoding'] = r['encoding'] or 'unknown'
+    r['language'] = r['language'] or 'unknown'
+
+    return r
+
 
 # This method not really necessary. More to stop people from rolling their own.
 def unescape_str(s):
