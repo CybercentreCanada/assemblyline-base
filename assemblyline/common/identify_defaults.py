@@ -43,6 +43,8 @@ type_to_extension = {
     "archive/7-zip": ".7z",
     "audiovisual/flash": ".swf",
     "code/a3x": ".a3x",
+    "code/applescript": ".applescript",
+    "code/applescript/compiled": ".scpt",
     "code/batch": ".bat",
     "code/c": ".c",
     "code/csharp": ".cs",
@@ -294,6 +296,9 @@ trusted_mimes = {
     "text/x-script.python": "code/python",
     "application/x-bytecode.python": "resource/pyc",
     "text/x-bytecode.python": "resource/pyc",
+    # AppleScript
+    "application/x-applescript": "code/applescript",
+    "text/x-applescript": "code/applescript",
     # PHP
     "text/x-php": "code/php",
     # XML file
