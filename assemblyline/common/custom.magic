@@ -2,8 +2,7 @@
 0	string	CART
 >0x6	quad	0	custom: archive/cart
 # Internet Explorer RecoveryStore files
-0	string
->&0	search/0x2000	\005\000K\000j\000j\000a\000q\000f\000a\000j\000N\0002\000c\0000\000u\000z\000g\000v\0001\000l\0004\000q\000y\0005\000n\000f\000W\000e\000	custom: document/office/recoverystore
+0	search/0x2000	\005\000K\000j\000j\000a\000q\000f\000a\000j\000N\0002\000c\0000\000u\000z\000g\000v\0001\000l\0004\000q\000y\0005\000n\000f\000W\000e\000	custom: document/office/recoverystore
 # IDA Analysis files
 0	string	IDA1\000\000	custom: code/ida
 # JFIF (JPEG) files
@@ -15,19 +14,16 @@
 0	string	CWS custom: archive/audiovisual/flash
 0	string	FWS custom: audiovisual/flash
 # MHTML files
-0		string
->&0     regex/10        \^(Subject|MIME)
->>0x10 	search/0x100    multipart/related
->>>0x50	search/0x300	urn:schemas-microsoft-com:office    custom: document/office/mhtml
+0       regex/10/bt     \^(Subject|MIME)
+>0x10 	search/0x100    multipart/related
+>>0x50	search/0x300	urn:schemas-microsoft-com:office    custom: document/office/mhtml
 # OneNote Files
 0	string	\344R\\{\214\330\247M\256\261Sx\320)\226\323	custom: document/office/onenote
 # Open XML files with Microsoft Word
-0   string
->0  search/0x100 =<?mso-application\ progid="Word.Document"?>    custom: document/office/word
+0   search/0x100/bt =<?mso-application\ progid="Word.Document"?>    custom: document/office/word
 # MSBuild Project Files
-0      string
->0     search/0x40    \<Project
->>&0   search/0x40    http://schemas.microsoft.com/developer/msbuild    custom: code/xml/msbuild
+0      search/0x40/bt \<Project
+>&0    search/0x40    http://schemas.microsoft.com/developer/msbuild    custom: code/xml/msbuild
 # VBE files
 0 string #@~^
 >&0 regex/9 \^[^=]{6}== custom: code/vbe
@@ -84,21 +80,17 @@
 # Java signature file
 0   string   Signature-Version:  custom: java/signature
 # RSA Certs
-0   string
->0  search/0x20 \006\011\052\206\110\206\367\015\001\007\002\240    custom: certificate/rsa
+0   search/0x20 \006\011\052\206\110\206\367\015\001\007\002\240    custom: certificate/rsa
 # Java Jbdiff files
 0   string  \x001jbdiff     custom: java/jbdiff
 # Resources files
 0    long 4
 >8   byte 0                 custom: resource/pak
-0    long 4
 >8   byte 1                 custom: resource/pak
-0    long 4
 >8   byte 2                 custom: resource/pak
 0	 string	CPK\040\377     custom: resource/cpk
 0	 string	DTRZ            custom: resource/dz
-0   string
->(0.S-2)   string  Mesh   custom: resource/sbm
+(0.S-2)   string  Mesh   custom: resource/sbm
 0   string  SC\000\000\000\001\000\000\000\020  custom: resource/sc
 0   string  CCZ!\000\000\000\001\000\000\000\000  custom: resource/ccz
 0   string  EB\000\003\000\000\000  custom: resource/big
@@ -111,22 +103,19 @@
 # sqlite
 0   string  SQLite\040format\040    custom: db/sqlite
 # WSF code files
-0      string
->0     search/0x40    \<job
->>&0   search/0x40    \<script\ language   custom: code/wsf
+0      search/0x40/bt \<job
+>&0    search/0x40    \<script\ language   custom: code/wsf
 # WSC code files
-0      string
->0     search/0x40    \<component
->>&0   search/0x40    \<script\ language   custom: code/wsc
+0      search/0x40/bt \<component
+>&0    search/0x40    \<script\ language   custom: code/wsc
 # TCPDump capture
 0   short   0x3C4D
 >&0 short   0xA1B2        custom: network/tcpdump
 # Email
 0   string  DKIM-Signature:     custom: document/email
 # Email with MultipartBoundary
-0    string
->&0 search/300 Content-Type:\ multipart/
->>&0 search/300 ------MultipartBoundary-- custom: document/email
+0   search/300/bt Content-Type:\ multipart/
+>&0 search/300 ------MultipartBoundary-- custom: document/email
 # Quarantine Files
 0	string	AhnLab\040Inc.\0402006	custom: quarantine/ahnlab
 0	string	\055chest\055\040		custom: quarantine/avast
