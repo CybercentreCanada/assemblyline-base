@@ -124,6 +124,30 @@ def dotdump(s):
     return ''.join(['.' if x < 32 or x > 126 else chr(x) for x in s])
 
 
+def dotdump_utf8(s: Union[str, bytes]) -> str:
+    """Like dotdump, but preserves valid UTF-8 multi-byte characters.
+
+    Bytes that form a valid UTF-8 sequence representing a printable character
+    (or tab/LF/CR) are kept as their decoded code point. Invalid sequences and
+    non-printable Unicode characters, including formatting controls, are
+    replaced with one '.' per input byte.
+    """
+    if isinstance(s, str):
+        s = s.encode('utf-8', errors='surrogateescape')
+
+    out = []
+    # _valid_utf8.split returns alternating non-matching/matching segments.
+    # Odd indices are the captured valid UTF-8 segments; even indices are
+    # the bytes that did not match (i.e. invalid or non-printable bytes).
+    for i, part in enumerate(_valid_utf8.split(s)):
+        if i % 2:
+            for char in part.decode('utf-8'):
+                out.append(char if char.isprintable() or char in '\t\n\r' else '.' * len(char.encode('utf-8')))
+        else:
+            out.append('.' * len(part))
+    return ''.join(out)
+
+
 def escape_str(s, reversible=True, force_str=False) -> str:
     if isinstance(s, bytes):
         return escape_str_strict(s, reversible)

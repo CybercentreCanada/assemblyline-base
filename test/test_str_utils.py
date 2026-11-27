@@ -26,6 +26,37 @@ def test_dotdump():
     result = str_utils.dotdump([1, 8, 22, 33, 66, 99, 126, 127, 1000])
     assert result == "...!Bc~.."
 
+@pytest.mark.parametrize("input,expected_output",
+    # Example of input and expected output from original PR:
+    # https://github.com/CybercentreCanada/assemblyline-base/pull/2146
+    [
+        (b'hello\nworld','hello\nworld'),
+        ('café'.encode(), 'café'),
+        ('日本語'.encode(), '日本語'),
+        ('🎉ok'.encode(), '🎉ok'),
+        (b'A\x00B\x07C', 'A.B.C'),
+        (b'\xc3(', '.('),
+        (b'\xed\xa0\x80', '...'),
+        (b'\t\r\n abc', '\t\r\n abc')
+    ] +
+    # Add testing for control characters that can manipulate output, these should be replaced with dots
+    [
+
+        (f"A{c}B", f"A{'.' * len(c.encode('utf-8'))}B")
+        for c in str_utils.CONTROL_CHARS +
+        [
+            '\u200b',  # ZERO WIDTH SPACE
+            '\u200d',  # ZERO WIDTH JOINER
+            '\u009b',  # C1 CONTROL SEQUENCE INTRODUCER
+            '\u0085',  # C1 NEXT LINE
+            '\u2028',  # LINE SEPARATOR
+            '\u2029',  # PARAGRAPH SEPARATOR
+        ]
+    ]
+)
+def test_dotdump_utf8(input, expected_output):
+    result = str_utils.dotdump_utf8(input)
+    assert result == expected_output
 
 def test_safe_str():
     test_str = 'helloÌ\x02Í\udcf9'
