@@ -128,10 +128,9 @@ def dotdump_utf8(s: Union[str, bytes]) -> str:
     """Like dotdump, but preserves valid UTF-8 multi-byte characters.
 
     Bytes that form a valid UTF-8 sequence representing a printable character
-    (or tab/LF/CR) are kept as their decoded code point. Every other byte
-    (control bytes, lone continuation bytes, overlong/invalid sequences) is
-    replaced with a single '.' so the output length matches the input in
-    bytes for the invalid sections.
+    (or tab/LF/CR) are kept as their decoded code point. Invalid sequences and
+    non-printable Unicode characters, including formatting controls, are
+    replaced with one '.' per input byte.
     """
     if isinstance(s, str):
         s = s.encode('utf-8', errors='surrogateescape')
@@ -142,7 +141,8 @@ def dotdump_utf8(s: Union[str, bytes]) -> str:
     # the bytes that did not match (i.e. invalid or non-printable bytes).
     for i, part in enumerate(_valid_utf8.split(s)):
         if i % 2:
-            out.append(part.decode('utf-8'))
+            for char in part.decode('utf-8'):
+                out.append(char if char.isprintable() or char in '\t\n\r' else '.' * len(char.encode('utf-8')))
         else:
             out.append('.' * len(part))
     return ''.join(out)
