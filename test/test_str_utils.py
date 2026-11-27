@@ -26,6 +26,20 @@ def test_dotdump():
     result = str_utils.dotdump([1, 8, 22, 33, 66, 99, 126, 127, 1000])
     assert result == "...!Bc~.."
 
+@pytest.mark.parametrize("input,expected_output", [
+    (b'hello\nworld','hello\nworld'),
+    ('café'.encode(), 'café'),
+    ('日本語'.encode(), '日本語'),
+    ('🎉ok'.encode(), '🎉ok'),
+    (b'A\x00B\x07C', 'A.B.C'),
+    (b'\xc3(', '.('),
+    (b'\xed\xa0\x80', '...'),
+    (b'\t\r\n abc', '\t\r\n abc')
+])
+def test_dotdump_utf8(input, expected_output):
+    result = str_utils.dotdump_utf8(input)
+    assert result == expected_output
+
 
 def test_safe_str():
     test_str = 'helloÌ\x02Í\udcf9'
